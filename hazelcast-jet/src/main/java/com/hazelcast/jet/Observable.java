@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -125,7 +125,7 @@ public interface Observable<T> extends Iterable<T> {
      * This method can be called only before the {@code Ringbuffer} gets
      * created. This means before any {@link Observer Observers} are added
      * to the {@code Observable} and before any jobs containing
-     * {@link com.hazelcast.jet.pipeline.Sinks#observable(String) observable
+     * {@link Sinks#observable(String) observable
      * sinks} (with the same observable name) are submitted for execution.
      * <p>
      * <strong>Important:</strong> only configure capacity once, multiple
@@ -143,7 +143,7 @@ public interface Observable<T> extends Iterable<T> {
      * been created. If so, it will be queried for its actual capacity,
      * which can't be changed any longer. (Reminder: the {@code Ringbuffer}
      * gets created either when the first {@link Observer} is added or when
-     * the job containing the {@link com.hazelcast.jet.pipeline.Sinks#observable(String)
+     * the job containing the {@link Sinks#observable(String)
      * observable sink} (with the same observable name) is submitted for
      * execution.)
      *

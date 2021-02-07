@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,12 @@ import java.io.Serializable;
 /**
  * Represents a four-arity function that accepts four arguments and
  * produces a result.
+ *
+ * @param <T0> the type of the first argument
+ * @param <T1> the type of the second argument
+ * @param <T2> the type of the third argument
+ * @param <T3> the type of the fourth argument
+ * @param <R>  the type of the result
  *
  * @since 3.0
  */

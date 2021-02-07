@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package com.hazelcast.jet.pipeline;
 import com.hazelcast.collection.IList;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.aggregate.AggregateOperations;
-import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.DAGImpl;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
@@ -143,7 +143,7 @@ public class StreamSourceStageTest extends StreamSourceStageTestBase {
          .withIngestionTimestamps()
          .writeTo(Sinks.list(sinkList));
 
-        instance.newJob(p);
+        instance.getJetInstance().newJob(p);
         assertTrueEventually(() -> assertEquals(Arrays.asList(1, 2), new ArrayList<>(sinkList)), 5);
     }
 
@@ -159,7 +159,7 @@ public class StreamSourceStageTest extends StreamSourceStageTestBase {
          .aggregate(AggregateOperations.counting())
          .writeTo(Sinks.list(sinkList));
 
-        Job job = instance.newJob(p);
+        Job job = instance.getJetInstance().newJob(p);
         assertEquals(0, sinkList.size());
         map.put(3, 3);
         assertTrueEventually(() -> assertEquals(1, sinkList.size()), 10);
@@ -183,7 +183,7 @@ public class StreamSourceStageTest extends StreamSourceStageTestBase {
          .writeTo(Sinks.list(sinkList));
 
         long start = System.nanoTime();
-        Job job = instance.newJob(p);
+        Job job = instance.getJetInstance().newJob(p);
         assertEquals(0, sinkList.size());
         map.put(5, 5);
         assertTrueEventually(() -> assertEquals(1, sinkList.size()), 30);
@@ -212,7 +212,7 @@ public class StreamSourceStageTest extends StreamSourceStageTestBase {
                 ProcessorMetaSupplier.of(lp, ProcessorSupplier.of(noopP()))))
          .withTimestamps(o -> 0L, 0)
          .writeTo(Sinks.noop());
-        DAG dag = p.toDag();
+        DAGImpl dag = (DAGImpl) p.toDag();
 
         // Then
         Vertex srcVertex = requireNonNull(dag.getVertex("src"));
@@ -233,7 +233,7 @@ public class StreamSourceStageTest extends StreamSourceStageTestBase {
          .withTimestamps(o -> 0L, 0)
          .setLocalParallelism(lp)
          .writeTo(Sinks.noop());
-        DAG dag = p.toDag();
+        DAGImpl dag = (DAGImpl) p.toDag();
 
         // Then
         Vertex srcVertex = requireNonNull(dag.getVertex("src"));
@@ -254,7 +254,7 @@ public class StreamSourceStageTest extends StreamSourceStageTestBase {
         p.readFrom(source)
          .withTimestamps(o -> 0L, 0)
          .writeTo(Sinks.noop());
-        DAG dag = p.toDag();
+        DAGImpl dag = (DAGImpl) p.toDag();
 
         // Then
         Vertex srcVertex = requireNonNull(dag.getVertex("src"));

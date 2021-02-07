@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -180,7 +180,8 @@ public final class JmsSinkBuilder<T> {
         }
 
         FunctionEx<ConnectionFactory, Connection> connectionFnLocal = connectionFn;
-        @SuppressWarnings("UnnecessaryLocalVariable") // it's necessary to not capture this in the lambda
+        // it's necessary to not capture this in the lambda
+        @SuppressWarnings("UnnecessaryLocalVariable")
         SupplierEx<ConnectionFactory> factorySupplierLocal = factorySupplier;
         SupplierEx<Connection> newConnectionFn = () -> connectionFnLocal.apply(factorySupplierLocal.get());
         return Sinks.fromProcessor(sinkName(),

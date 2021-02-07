@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,17 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.instance.JetBuildInfo;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Packet;
+import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.impl.operation.PrepareForPassiveClusterOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.sql.impl.JetSqlCoreBackend;
 
 import javax.annotation.Nonnull;
@@ -31,29 +36,65 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.cluster.ClusterState.PASSIVE;
+import static com.hazelcast.jet.core.JetProperties.JOB_RESULTS_TTL_SECONDS;
+import static com.hazelcast.jet.impl.JobRepository.INTERNAL_JET_OBJECTS_PREFIX;
+import static com.hazelcast.jet.impl.JobRepository.JOB_METRICS_MAP_NAME;
+import static com.hazelcast.jet.impl.JobRepository.JOB_RESULTS_MAP_NAME;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
 class NodeExtensionCommon {
     private static final String JET_LOGO =
-            "\to   o   o   o---o o---o o     o---o   o   o---o o-o-o        o o---o o-o-o\n" +
-            "\t|   |  / \\     /  |     |     |      / \\  |       |          | |       |\n" +
-            "\to---o o---o   o   o-o   |     o     o---o o---o   |          | o-o     |\n" +
-            "\t|   | |   |  /    |     |     |     |   |     |   |      \\   | |       |\n" +
-            "\to   o o   o o---o o---o o---o o---o o   o o---o   o       o--o o---o   o";
+              "\to   o   o   o---o o---o o     o---o   o   o---o o-o-o        o o---o o-o-o\n"
+            + "\t|   |  / \\     /  |     |     |      / \\  |       |          | |       |\n"
+            + "\to---o o---o   o   o-o   |     o     o---o o---o   |          | o-o     |\n"
+            + "\t|   | |   |  /    |     |     |     |   |     |   |      \\   | |       |\n"
+            + "\to   o o   o o---o o---o o---o o---o o   o o---o   o       o--o o---o   o";
     private static final String COPYRIGHT_LINE = "Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.";
 
     private final Node node;
     private final ILogger logger;
     private final JetService jetService;
 
-    NodeExtensionCommon(Node node, JetService jetService) {
+    private JetInstance jetInstance;
+
+    NodeExtensionCommon(Node node) {
         this.node = node;
-        this.logger = node.getLogger(getClass().getName());
-        this.jetService = jetService;
+        this.logger = node.getLogger(getClass());
+        this.jetService = new JetService(node);
     }
 
     void afterStart() {
+        Config config = node.getConfig();
+        JetConfig jetConfig = config.getJetConfig();
+
+        MapConfig internalMapConfig = new MapConfig(INTERNAL_JET_OBJECTS_PREFIX + '*')
+                .setBackupCount(jetConfig.getInstanceConfig().getBackupCount())
+                // we query creationTime of resources maps
+                .setStatisticsEnabled(true);
+
+        internalMapConfig.getMergePolicyConfig().setPolicy(DiscardMergePolicy.class.getName());
+
+        MapConfig resultsMapConfig = new MapConfig(internalMapConfig)
+                .setName(JOB_RESULTS_MAP_NAME)
+                .setTimeToLiveSeconds(node.getProperties().getSeconds(JOB_RESULTS_TTL_SECONDS));
+
+        MapConfig metricsMapConfig = new MapConfig(internalMapConfig)
+                .setName(JOB_METRICS_MAP_NAME)
+                .setTimeToLiveSeconds(node.getProperties().getSeconds(JOB_RESULTS_TTL_SECONDS));
+
+        config.addMapConfig(internalMapConfig)
+                .addMapConfig(resultsMapConfig)
+                .addMapConfig(metricsMapConfig);
+
+        //this should be on enterprise jet node extension TODO merge
+//        if (jetConfig.getInstanceConfig().isLosslessRestartEnabled() &&
+//                !hzConfig.getHotRestartPersistenceConfig().isEnabled()) {
+//            LOGGER.warning("Lossless Restart is enabled but Hot Restart is disabled. Auto-enabling Hot Restart. " +
+//                    "The following path will be used: " + hzConfig.getHotRestartPersistenceConfig().getBaseDir());
+//            hzConfig.getHotRestartPersistenceConfig().setEnabled(true);
+
         jetService.getJobCoordinationService().startScanningForJobs();
+        jetInstance = new JetInstanceImpl(node);
     }
 
     void beforeClusterStateChange(ClusterState requestedState) {
@@ -73,6 +114,10 @@ class NodeExtensionCommon {
 
     void onClusterStateChange(ClusterState ignored) {
         jetService.getJobCoordinationService().clusterChangeDone();
+    }
+
+    void beforeShutdown() {
+        jetService.shutDownJobs();
     }
 
     void handlePacket(Packet packet) {
@@ -95,8 +140,8 @@ class NodeExtensionCommon {
         if (!revision.isEmpty()) {
             build += " - " + revision;
         }
-        return "Hazelcast Jet" + addToName + ' ' + jetBuildInfo.getVersion() +
-                " (" + build + ") starting at " + node.getThisAddress();
+        return "Hazelcast Jet" + addToName + ' ' + jetBuildInfo.getVersion()
+                + " (" + build + ") starting at " + node.getThisAddress();
     }
 
     private String imdgVersionMessage() {
@@ -126,5 +171,9 @@ class NodeExtensionCommon {
         }
 
         return extensionServices;
+    }
+
+    JetInstance getJetInstance() {
+        return jetInstance;
     }
 }

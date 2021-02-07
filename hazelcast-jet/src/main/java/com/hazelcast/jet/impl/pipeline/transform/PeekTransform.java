@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,9 +29,9 @@ import static com.hazelcast.jet.core.processor.DiagnosticProcessors.peekOutputP;
 
 public class PeekTransform<T> extends AbstractTransform {
     @Nonnull
-    public final PredicateEx<? super T> shouldLogFn;
+    private final PredicateEx<? super T> shouldLogFn;
     @Nonnull
-    public final FunctionEx<? super T, ? extends CharSequence> toStringFn;
+    private final FunctionEx<? super T, ? extends CharSequence> toStringFn;
 
     public PeekTransform(
             @Nonnull Transform upstream,
@@ -46,10 +46,10 @@ public class PeekTransform<T> extends AbstractTransform {
     @Override
     public void addToDag(Planner p, Context context) {
         determineLocalParallelism(LOCAL_PARALLELISM_USE_DEFAULT, context, p.isPreserveOrder());
-        PlannerVertex peekedPv = p.xform2vertex.get(this.upstream().get(0));
+        PlannerVertex peekedPv = p.getPlannerVertex(this.upstream().get(0));
         // Peeking transform doesn't add a vertex, so point to the upstream
         // transform's vertex:
-        p.xform2vertex.put(this, peekedPv);
-        peekedPv.v.updateMetaSupplier(sup -> peekOutputP(toStringFn, shouldLogFn, sup));
+        p.putPlannerVertex(this, peekedPv);
+        peekedPv.vertex().updateMetaSupplier(sup -> peekOutputP(toStringFn, shouldLogFn, sup));
     }
 }

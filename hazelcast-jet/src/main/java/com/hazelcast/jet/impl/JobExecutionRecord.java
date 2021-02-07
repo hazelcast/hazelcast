@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -166,9 +166,10 @@ public class JobExecutionRecord implements IdentifiedDataSerializable {
      * written.
      */
     int ongoingDataMapIndex() {
-        assert dataMapIndex == 0 // we'll return 1
-                || dataMapIndex == 1 // we'll return 0
-                || dataMapIndex == -1 // we'll return 0
+        //return 1 if dataMapIndex=0, 0 otherwise
+        assert dataMapIndex == 0
+                || dataMapIndex == 1
+                || dataMapIndex == -1
                 : "dataMapIndex=" + dataMapIndex;
         return (dataMapIndex + 1) & 1;
     }
@@ -286,19 +287,19 @@ public class JobExecutionRecord implements IdentifiedDataSerializable {
 
     @Override
     public String toString() {
-        return "JobExecutionRecord{" +
-                "jobId=" + jobId +
-                ", timestamp=" + toLocalTime(timestamp.get()) +
-                ", quorumSize=" + quorumSize +
-                ", suspended=" + (suspensionCause != null) +
-                ", executed=" + executed +
-                ", dataMapIndex=" + dataMapIndex +
-                ", snapshotId=" + snapshotId +
-                ", ongoingSnapshotId=" + ongoingSnapshotId +
-                ", ongoingSnapshotStartTime=" + toLocalTime(ongoingSnapshotStartTime) +
-                ", snapshotStats=" + snapshotStats +
-                ", lastSnapshotFailure=" + (lastSnapshotFailure == null ? "null" : '\'' + lastSnapshotFailure + '\'') +
-                '}';
+        return "JobExecutionRecord{"
+                + "jobId=" + jobId
+                + ", timestamp=" + toLocalTime(timestamp.get())
+                + ", quorumSize=" + quorumSize
+                + ", suspended=" + (suspensionCause != null)
+                + ", executed=" + executed
+                + ", dataMapIndex=" + dataMapIndex
+                + ", snapshotId=" + snapshotId
+                + ", ongoingSnapshotId=" + ongoingSnapshotId
+                + ", ongoingSnapshotStartTime=" + toLocalTime(ongoingSnapshotStartTime)
+                + ", snapshotStats=" + snapshotStats
+                + ", lastSnapshotFailure=" + (lastSnapshotFailure == null ? "null" : '\'' + lastSnapshotFailure + '\'')
+                + '}';
     }
 
     public static class SnapshotStats implements IdentifiedDataSerializable {
@@ -402,12 +403,12 @@ public class JobExecutionRecord implements IdentifiedDataSerializable {
                 return false;
             }
             SnapshotStats that = (SnapshotStats) o;
-            return snapshotId == that.snapshotId &&
-                    startTime == that.startTime &&
-                    endTime == that.endTime &&
-                    numBytes == that.numBytes &&
-                    numKeys == that.numKeys &&
-                    numChunks == that.numChunks;
+            return snapshotId == that.snapshotId
+                    && startTime == that.startTime
+                    && endTime == that.endTime
+                    && numBytes == that.numBytes
+                    && numKeys == that.numKeys
+                    && numChunks == that.numChunks;
         }
 
         @Override
@@ -417,14 +418,14 @@ public class JobExecutionRecord implements IdentifiedDataSerializable {
 
         @Override
         public String toString() {
-            return "SnapshotStats{" +
-                    "snapshotId=" + snapshotId +
-                    ", startTime=" + startTime +
-                    ", endTime=" + endTime +
-                    ", numBytes=" + numBytes +
-                    ", numKeys=" + numKeys +
-                    ", numChunks=" + numChunks +
-                    '}';
+            return "SnapshotStats{"
+                    + "snapshotId=" + snapshotId
+                    + ", startTime=" + startTime
+                    + ", endTime=" + endTime
+                    + ", numBytes=" + numBytes
+                    + ", numKeys=" + numKeys
+                    + ", numChunks=" + numChunks
+                    + '}';
         }
     }
 }

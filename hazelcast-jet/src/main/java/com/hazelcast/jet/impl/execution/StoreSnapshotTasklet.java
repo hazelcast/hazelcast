@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -151,8 +151,8 @@ public class StoreSnapshotTasklet implements Tasklet {
     private boolean addToInbox(Object o) {
         if (o instanceof SnapshotBarrier) {
             SnapshotBarrier barrier = (SnapshotBarrier) o;
-            assert pendingSnapshotId == barrier.snapshotId() : "Unexpected barrier, expected was " +
-                    pendingSnapshotId + ", but barrier was " + barrier.snapshotId() + ", this=" + this;
+            assert pendingSnapshotId == barrier.snapshotId() : "Unexpected barrier, expected was "
+                    + pendingSnapshotId + ", but barrier was " + barrier.snapshotId() + ", this=" + this;
             hasReachedBarrier = true;
         } else {
             if (!ssWriter.offer((Entry<Data, Data>) o)) {

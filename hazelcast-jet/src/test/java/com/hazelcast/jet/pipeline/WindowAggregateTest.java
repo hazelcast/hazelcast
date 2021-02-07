@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,11 @@ package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.jet.accumulator.LongAccumulator;
+import com.hazelcast.jet.aggregate.AggregateBuilders;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.aggregate.CoAggregateOperationBuilder;
+import com.hazelcast.jet.aggregate.WindowAggregateBuilder;
+import com.hazelcast.jet.aggregate.WindowAggregateBuilder1;
 import com.hazelcast.jet.datamodel.ItemsByTag;
 import com.hazelcast.jet.datamodel.Tag;
 import com.hazelcast.jet.datamodel.Tuple2;
@@ -411,7 +414,7 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
         CoAggregateFixture fx = new CoAggregateFixture();
 
         // When
-        WindowAggregateBuilder<Long> b = fx.stage0.aggregateBuilder(SUMMING);
+        WindowAggregateBuilder<Long> b = AggregateBuilders.aggregateBuilder(fx.stage0, SUMMING);
         Tag<Long> tag0 = b.tag0();
         Tag<Long> tag1 = b.add(fx.newStage(), SUMMING);
         StreamStage<WindowResult<ItemsByTag>> aggregated = b.build();
@@ -430,7 +433,7 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
         CoAggregateFixture fx = new CoAggregateFixture();
 
         // When
-        WindowAggregateBuilder1<Integer> b = fx.stage0.aggregateBuilder();
+        WindowAggregateBuilder1<Integer> b = AggregateBuilders.aggregateBuilder1(fx.stage0);
         Tag<Integer> tag0_in = b.tag0();
         Tag<Integer> tag1_in = b.add(fx.newStage());
 

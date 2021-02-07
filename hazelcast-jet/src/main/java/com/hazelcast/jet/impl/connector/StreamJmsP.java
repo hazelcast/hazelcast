@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -153,8 +153,8 @@ public class StreamJmsP<T> extends AbstractProcessor {
                     }
                     Object msgId = messageIdFn.apply(t);
                     if (msgId == null) {
-                        throw new JetException("Received a message without an ID. All messages must have an ID, " +
-                                "you can specify an extracting function using "
+                        throw new JetException("Received a message without an ID. All messages must have an ID, "
+                                + "you can specify an extracting function using "
                                 + JmsSourceBuilder.class.getSimpleName() + ".messageIdFn()");
                     }
                     seenIds.add(msgId);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,11 @@
 
 package com.hazelcast.jet.impl;
 
-import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectsCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.client.protocol.codec.JetExistsDistributedObjectCodec;
 import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobIdsByNameCodec;
@@ -40,26 +37,45 @@ import java.util.function.Function;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.Util.toList;
 
-/**
- * Client-side {@code JetInstance} implementation
- */
 public class JetClientInstanceImpl extends AbstractJetInstance {
 
     private final HazelcastClientInstanceImpl client;
     private final SerializationService serializationService;
 
-    public JetClientInstanceImpl(HazelcastClientInstanceImpl hazelcastInstance) {
-        super(hazelcastInstance);
-        this.client = hazelcastInstance;
+    public JetClientInstanceImpl(HazelcastClientInstanceImpl client) {
+        super(client);
+        this.client = client;
         this.serializationService = client.getSerializationService();
-
-        ExceptionUtil.registerJetExceptions(hazelcastInstance.getClientExceptionFactory());
+        ExceptionUtil.registerJetExceptions(client.getClientExceptionFactory());
     }
 
-    @Nonnull
     @Override
-    public JetConfig getConfig() {
-        throw new UnsupportedOperationException("Jet Configuration is not available on the client");
+    public Job newJobProxy(long jobId) {
+        return new ClientJobProxy(this, jobId);
+    }
+
+    @Override
+    public Job newJobProxy(long jobId, Object jobDefinition, JobConfig config) {
+        return new ClientJobProxy(this, jobId, jobDefinition, config);
+    }
+
+    @Override
+    public List<Long> getJobIdsByName(String name) {
+        return invokeRequestOnMasterAndDecodeResponse(JetGetJobIdsByNameCodec.encodeRequest(name),
+                response -> JetGetJobIdsByNameCodec.decodeResponse(response).response);
+    }
+
+    @Override
+    public boolean existsDistributedObject(@Nonnull String serviceName, @Nonnull String objectName) {
+        return invokeRequestOnAnyMemberAndDecodeResponse(
+                JetExistsDistributedObjectCodec.encodeRequest(serviceName, objectName),
+                response -> JetExistsDistributedObjectCodec.decodeResponse(response).response
+        );
+    }
+
+    @Override
+    public ILogger getLogger() {
+        return client.getLoggingService().getLogger(getClass());
     }
 
     @Nonnull
@@ -80,45 +96,8 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
                 response -> JetGetJobSummaryListCodec.decodeResponse(response).response);
     }
 
-    @Nonnull
-    public HazelcastClientInstanceImpl getHazelcastClient() {
+    public HazelcastClientInstanceImpl client() {
         return client;
-    }
-
-    @Override
-    public boolean existsDistributedObject(@Nonnull String serviceName, @Nonnull String objectName) {
-        return invokeRequestOnAnyMemberAndDecodeResponse(
-                JetExistsDistributedObjectCodec.encodeRequest(serviceName, objectName),
-                response -> JetExistsDistributedObjectCodec.decodeResponse(response).response
-        );
-    }
-
-    public List<DistributedObjectInfo> getDistributedObjects() {
-        return invokeRequestOnAnyMemberAndDecodeResponse(
-                ClientGetDistributedObjectsCodec.encodeRequest(),
-                response -> ClientGetDistributedObjectsCodec.decodeResponse(response)
-        );
-    }
-
-    @Override
-    public List<Long> getJobIdsByName(String name) {
-        return invokeRequestOnMasterAndDecodeResponse(JetGetJobIdsByNameCodec.encodeRequest(name),
-                response -> JetGetJobIdsByNameCodec.decodeResponse(response).response);
-    }
-
-    @Override
-    public Job newJobProxy(long jobId, Object jobDefinition, JobConfig config) {
-        return new ClientJobProxy(this, jobId, jobDefinition, config);
-    }
-
-    @Override
-    public Job newJobProxy(long jobId) {
-        return new ClientJobProxy(this, jobId);
-    }
-
-    @Override
-    public ILogger getLogger() {
-        return client.getLoggingService().getLogger(getClass());
     }
 
     private <S> S invokeRequestOnMasterAndDecodeResponse(ClientMessage request,
@@ -142,5 +121,4 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
             throw rethrow(t);
         }
     }
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,9 @@ import javax.annotation.Nonnull;
 import static java.util.Collections.emptyList;
 
 public class BatchSourceTransform<T> extends AbstractTransform implements BatchSource<T> {
+
     @Nonnull
-    public final ProcessorMetaSupplier metaSupplier;
+    private final ProcessorMetaSupplier metaSupplier;
     private boolean isAssignedToStage;
 
     public BatchSourceTransform(

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,9 +58,9 @@ public class JobMetrics_StreamTest extends TestInClusterSupport {
 
     @Test
     public void when_jobRunning_then_metricsEventuallyExist() {
-        Map<String, String> map = jet().getMap(journalMapName);
+        Map<String, String> map = instance().getMap(journalMapName);
         putIntoMap(map, 2, 1);
-        List<String> sink = jet().getList(sinkListName);
+        List<String> sink = instance().getList(sinkListName);
 
         // When
         Job job = jet().newJob(createPipeline());
@@ -77,9 +77,9 @@ public class JobMetrics_StreamTest extends TestInClusterSupport {
 
     @Test
     public void when_jobCancelled_then_terminalMetricsExist() {
-        Map<String, String> map = jet().getMap(journalMapName);
+        Map<String, String> map = instance().getMap(journalMapName);
         putIntoMap(map, 2, 1);
-        List<String> sink = jet().getList(sinkListName);
+        List<String> sink = instance().getList(sinkListName);
 
         Job job = jet().newJob(createPipeline(), JOB_CONFIG_WITH_METRICS);
 
@@ -96,13 +96,13 @@ public class JobMetrics_StreamTest extends TestInClusterSupport {
 
     @Test
     public void when_suspendAndResume_then_metricsReset() {
-        Map<String, String> map = jet().getMap(journalMapName);
+        Map<String, String> map = instance().getMap(journalMapName);
         putIntoMap(map, 2, 1);
-        List<String> sink = jet().getList(sinkListName);
+        List<String> sink = instance().getList(sinkListName);
 
         JobConfig jobConfig = new JobConfig()
-            .setStoreMetricsAfterJobCompletion(true)
-            .setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
+                .setStoreMetricsAfterJobCompletion(true)
+                .setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
         // When
         Job job = jet().newJob(createPipeline(), jobConfig);
 
@@ -138,9 +138,9 @@ public class JobMetrics_StreamTest extends TestInClusterSupport {
 
     @Test
     public void when_jobRestarted_then_metricsReset() {
-        Map<String, String> map = jet().getMap(journalMapName);
+        Map<String, String> map = instance().getMap(journalMapName);
         putIntoMap(map, 2, 1);
-        List<String> sink = jet().getList(sinkListName);
+        List<String> sink = instance().getList(sinkListName);
 
         Job job = jet().newJob(createPipeline(), JOB_CONFIG_WITH_METRICS);
 
@@ -171,8 +171,8 @@ public class JobMetrics_StreamTest extends TestInClusterSupport {
 
     @Test
     public void when_jobRestarted_then_metricsReset_withJournal() {
-        Map<String, String> map = jet().getMap(journalMapName);
-        List<String> sink = jet().getList(sinkListName);
+        Map<String, String> map = instance().getMap(journalMapName);
+        List<String> sink = instance().getList(sinkListName);
 
         Job job = jet().newJob(createPipeline(), JOB_CONFIG_WITH_METRICS);
 
@@ -230,10 +230,10 @@ public class JobMetrics_StreamTest extends TestInClusterSupport {
     }
 
     private long sumValueFor(JobMetrics metrics, String vertex, String metric) {
-        Collection<Measurement> measurements = metrics
+        Collection<MeasurementImpl> measurements = ((JobMetricsImpl) metrics)
                 .filter(MeasurementPredicates.tagValueEquals(MetricTags.VERTEX, vertex)
-                            .and(MeasurementPredicates.tagValueEquals(MetricTags.ORDINAL, "snapshot").negate()))
+                        .and(MeasurementPredicates.tagValueEquals(MetricTags.ORDINAL, "snapshot").negate()))
                 .get(metric);
-        return measurements.stream().mapToLong(Measurement::value).sum();
+        return measurements.stream().mapToLong(MeasurementImpl::value).sum();
     }
 }

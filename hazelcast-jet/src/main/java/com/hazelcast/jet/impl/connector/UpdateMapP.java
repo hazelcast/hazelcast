@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -109,8 +109,8 @@ public final class UpdateMapP<T, K, V> extends AbstractUpdateMapP<T, K, V> {
                 // Implementing equals/hashCode is not required for IMap keys since serialized version is used
                 // instead. After serializing/deserializing the keys they will have different identity. And since they
                 // don't implement the methods, they key can't be found in the map.
-                throw new JetException("A key not found in the map - is equals/hashCode " +
-                        "correctly implemented for the key? Key type: " + entry.getKey().getClass().getName());
+                throw new JetException("A key not found in the map - is equals/hashCode "
+                        + "correctly implemented for the key? Key type: " + entry.getKey().getClass().getName());
             }
             if (item instanceof List) {
                 @SuppressWarnings("unchecked")

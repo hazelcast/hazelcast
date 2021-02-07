@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,17 +17,13 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.EndpointQualifier;
-import com.hazelcast.instance.impl.HazelcastInstanceImpl;
-import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.internal.server.FirewallingServer.FirewallingServerConnectionManager;
 import com.hazelcast.internal.server.ServerConnectionManager;
-import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -41,10 +37,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
 
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
-import static java.util.stream.Collectors.toList;
 
 /**
  * A support class for high-level split-brain tests. It will form a
@@ -65,7 +59,7 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
 
     /**
      * If new nodes have been created during split brain via
-     * {@link #createHazelcastInstanceInBrain(JetInstance[], JetInstance[], boolean)}, then their joiners
+     * {@link #createHazelcastInstanceInBrain(HazelcastInstance[], HazelcastInstance[], boolean)}, then their joiners
      * are initialized with the other brain's addresses being blacklisted.
      */
     private boolean unblacklistHint;
@@ -84,32 +78,32 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
 
     }
 
-    private JetConfig createConfig() {
-        final JetConfig jetConfig = new JetConfig();
-        jetConfig.getInstanceConfig().setCooperativeThreadCount(PARALLELISM);
-        jetConfig.getHazelcastConfig().setProperty(ClusterProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5");
-        jetConfig.getHazelcastConfig().setProperty(ClusterProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "5");
-        onJetConfigCreated(jetConfig);
-        return jetConfig;
+    private Config createConfig() {
+        Config config = new Config();
+        config.getJetConfig().getInstanceConfig().setCooperativeThreadCount(PARALLELISM);
+        config.setProperty(ClusterProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5");
+        config.setProperty(ClusterProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "5");
+        onConfigCreated(config);
+        return config;
     }
 
     /**
      * Override this for custom Jet configuration
      */
-    protected void onJetConfigCreated(JetConfig jetConfig) {
+    protected void onConfigCreated(Config config) {
 
     }
 
     final void testSplitBrain(int firstSubClusterSize, int secondSubClusterSize,
-                              Consumer<JetInstance[]> beforeSplit,
-                              BiConsumer<JetInstance[], JetInstance[]> onSplit,
-                              Consumer<JetInstance[]> afterMerge) {
+                              Consumer<HazelcastInstance[]> beforeSplit,
+                              BiConsumer<HazelcastInstance[], HazelcastInstance[]> onSplit,
+                              Consumer<HazelcastInstance[]> afterMerge) {
         checkPositive(firstSubClusterSize, "invalid first sub cluster size: " + firstSubClusterSize);
         checkPositive(secondSubClusterSize, "invalid second sub cluster size: " + secondSubClusterSize);
 
-        JetConfig config = createConfig();
+        Config config = createConfig();
         int clusterSize = firstSubClusterSize + secondSubClusterSize;
-        JetInstance[] instances = startInitialCluster(config, clusterSize);
+        HazelcastInstance[] instances = startInitialCluster(config, clusterSize);
 
         if (beforeSplit != null) {
             beforeSplit.accept(instances);
@@ -133,32 +127,29 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
         }
     }
 
-    private JetInstance[] startInitialCluster(JetConfig config, int clusterSize) {
-        JetInstance[] instances = new JetInstance[clusterSize];
-        for (int i = 0; i < clusterSize; i++) {
-            instances[i] = createJetMember(config);
-        }
-        return instances;
+    private HazelcastInstance[] startInitialCluster(Config config, int clusterSize) {
+        return createMembers(config, clusterSize);
     }
 
     /**
      * Starts a new {@code JetInstance} which is only able to communicate
      * with members on one of the two brains.
-     * @param firstSubCluster jet instances in the first sub cluster
-     * @param secondSubCluster jet instances in the first sub cluster
+     *
+     * @param firstSubCluster         jet instances in the first sub cluster
+     * @param secondSubCluster        jet instances in the first sub cluster
      * @param createOnFirstSubCluster if true, new instance is created on the first sub cluster.
      * @return a HazelcastInstance whose {@code MockJoiner} has blacklisted the other brain's
-     *         members and its connection manager blocks connections to other brain's members
+     * members and its connection manager blocks connections to other brain's members
      * @see TestHazelcastInstanceFactory#newHazelcastInstance(Address, com.hazelcast.config.Config, Address[])
      */
-    protected final JetInstance createHazelcastInstanceInBrain(JetInstance[] firstSubCluster,
-                                                               JetInstance[] secondSubCluster,
-                                                               boolean createOnFirstSubCluster) {
+    protected final HazelcastInstance createHazelcastInstanceInBrain(HazelcastInstance[] firstSubCluster,
+                                                                     HazelcastInstance[] secondSubCluster,
+                                                                     boolean createOnFirstSubCluster) {
         Address newMemberAddress = nextAddress();
-        JetInstance[] instancesToBlock = createOnFirstSubCluster ? secondSubCluster : firstSubCluster;
+        HazelcastInstance[] instancesToBlock = createOnFirstSubCluster ? secondSubCluster : firstSubCluster;
 
         List<Address> addressesToBlock = new ArrayList<>(instancesToBlock.length);
-        for (JetInstance anInstancesToBlock : instancesToBlock) {
+        for (HazelcastInstance anInstancesToBlock : instancesToBlock) {
             if (isInstanceActive(anInstancesToBlock)) {
                 addressesToBlock.add(getAddress(anInstancesToBlock));
                 // block communication from these instances to the new address
@@ -170,45 +161,45 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
         // indicate we need to unblacklist addresses from joiner when split-brain will be healed
         unblacklistHint = true;
         // create a new Hazelcast instance which has blocked addresses blacklisted in its joiner
-        return createJetMember(createConfig(), addressesToBlock.toArray(new Address[addressesToBlock.size()]));
+        return createMember(createConfig(), addressesToBlock.toArray(new Address[addressesToBlock.size()]));
     }
 
-    private void createSplitBrain(JetInstance[] instances, int firstSubClusterSize, int secondSubClusterSize) {
+    private void createSplitBrain(HazelcastInstance[] instances, int firstSubClusterSize, int secondSubClusterSize) {
         applyOnBrains(instances, firstSubClusterSize, SplitBrainTestSupport::blockCommunicationBetween);
         applyOnBrains(instances, firstSubClusterSize, HazelcastTestSupport::closeConnectionBetween);
         assertSplitBrainCreated(instances, firstSubClusterSize, secondSubClusterSize);
     }
 
-    private void assertSplitBrainCreated(JetInstance[] instances, int firstSubClusterSize, int secondSubClusterSize) {
+    private void assertSplitBrainCreated(HazelcastInstance[] instances, int firstSubClusterSize, int secondSubClusterSize) {
         for (int isolatedIndex = 0; isolatedIndex < firstSubClusterSize; isolatedIndex++) {
-            JetInstance isolatedInstance = instances[isolatedIndex];
-            assertClusterSizeEventually(firstSubClusterSize, isolatedInstance.getHazelcastInstance());
+            HazelcastInstance isolatedInstance = instances[isolatedIndex];
+            assertClusterSizeEventually(firstSubClusterSize, isolatedInstance);
         }
         for (int i = firstSubClusterSize; i < instances.length; i++) {
-            JetInstance currentInstance = instances[i];
-            assertClusterSizeEventually(secondSubClusterSize, currentInstance.getHazelcastInstance());
+            HazelcastInstance currentInstance = instances[i];
+            assertClusterSizeEventually(secondSubClusterSize, currentInstance);
         }
     }
 
-    private void healSplitBrain(JetInstance[] instances, int firstSubClusterSize) {
+    private void healSplitBrain(HazelcastInstance[] instances, int firstSubClusterSize) {
         applyOnBrains(instances, firstSubClusterSize, SplitBrainTestSupport::unblockCommunicationBetween);
         if (unblacklistHint) {
             applyOnBrains(instances, firstSubClusterSize, JetSplitBrainTestSupport::unblacklistJoinerBetween);
         }
-        for (JetInstance instance : instances) {
-            assertClusterSizeEventually(instances.length, instance.getHazelcastInstance());
+        for (HazelcastInstance instance : instances) {
+            assertClusterSizeEventually(instances.length, instance);
         }
-        waitAllForSafeState(Stream.of(instances).map(JetInstance::getHazelcastInstance).collect(toList()));
+        waitAllForSafeState(instances);
     }
 
-    private static FirewallingServerConnectionManager getFireWalledEndpointManager(JetInstance hz) {
-        ServerConnectionManager cm = getNode(hz).getServer().getConnectionManager(EndpointQualifier.MEMBER);
+    private static FirewallingServerConnectionManager getFireWalledEndpointManager(HazelcastInstance instance) {
+        ServerConnectionManager cm = getNode(instance).getServer().getConnectionManager(EndpointQualifier.MEMBER);
         return (FirewallingServerConnectionManager) cm;
     }
 
-    private Brains getBrains(JetInstance[] instances, int firstSubClusterSize, int secondSubClusterSize) {
-        JetInstance[] firstSubCluster = new JetInstance[firstSubClusterSize];
-        JetInstance[] secondSubCluster = new JetInstance[secondSubClusterSize];
+    private Brains getBrains(HazelcastInstance[] instances, int firstSubClusterSize, int secondSubClusterSize) {
+        HazelcastInstance[] firstSubCluster = new HazelcastInstance[firstSubClusterSize];
+        HazelcastInstance[] secondSubCluster = new HazelcastInstance[secondSubClusterSize];
         for (int i = 0; i < instances.length; i++) {
             if (i < firstSubClusterSize) {
                 firstSubCluster[i] = instances[i];
@@ -219,37 +210,38 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
         return new Brains(firstSubCluster, secondSubCluster);
     }
 
-    private void applyOnBrains(JetInstance[] instances, int firstSubClusterSize,
+    private void applyOnBrains(HazelcastInstance[] instances, int firstSubClusterSize,
                                BiConsumer<HazelcastInstance, HazelcastInstance> action) {
         for (int i = 0; i < firstSubClusterSize; i++) {
-            JetInstance isolatedInstance = instances[i];
+            HazelcastInstance isolatedInstance = instances[i];
             // do not take into account instances which have been shutdown
             if (!isInstanceActive(isolatedInstance)) {
                 continue;
             }
             for (int j = firstSubClusterSize; j < instances.length; j++) {
-                JetInstance currentInstance = instances[j];
+                HazelcastInstance currentInstance = instances[j];
                 if (!isInstanceActive(currentInstance)) {
                     continue;
                 }
-                action.accept(isolatedInstance.getHazelcastInstance(), currentInstance.getHazelcastInstance());
+                action.accept(isolatedInstance, currentInstance);
             }
         }
     }
 
-    private static boolean isInstanceActive(JetInstance instance) {
-        if (instance.getHazelcastInstance() instanceof HazelcastInstanceProxy) {
-            try {
-                ((HazelcastInstanceProxy) instance.getHazelcastInstance()).getOriginal();
-                return true;
-            } catch (HazelcastInstanceNotActiveException exception) {
-                return false;
-            }
-        } else if (instance.getHazelcastInstance() instanceof HazelcastInstanceImpl) {
-            return getNode(instance).getState() == NodeState.ACTIVE;
-        } else {
-            throw new AssertionError("Unsupported HazelcastInstance type");
-        }
+    private static boolean isInstanceActive(HazelcastInstance instance) {
+        return getNode(instance).getState() == NodeState.ACTIVE;
+//        if (instance instanceof HazelcastInstanceProxy) {
+//            try {
+//                ((HazelcastInstanceProxy) instance).getOriginal();
+//                return true;
+//            } catch (HazelcastInstanceNotActiveException exception) {
+//                return false;
+//            }
+//        } else if (instance instanceof HazelcastInstanceImpl) {
+//            ;
+//        } else {
+//            throw new AssertionError("Unsupported HazelcastInstance type");
+//        }
     }
 
     private static void unblacklistJoinerBetween(HazelcastInstance h1, HazelcastInstance h2) {
@@ -260,10 +252,10 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
     }
 
     private static final class Brains {
-        private final JetInstance[] firstSubCluster;
-        private final JetInstance[] secondSubCluster;
+        private final HazelcastInstance[] firstSubCluster;
+        private final HazelcastInstance[] secondSubCluster;
 
-        private Brains(JetInstance[] firstSubCluster, JetInstance[] secondSubCluster) {
+        private Brains(HazelcastInstance[] firstSubCluster, HazelcastInstance[] secondSubCluster) {
             this.firstSubCluster = firstSubCluster;
             this.secondSubCluster = secondSubCluster;
         }

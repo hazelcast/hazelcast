@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,15 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.core.processor.SinkProcessors;
@@ -82,16 +82,16 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
-    private JetInstance instance1;
-    private JetInstance instance2;
+    private HazelcastInstance instance1;
+    private HazelcastInstance instance2;
 
     @Before
     public void setup() {
-        JetConfig config = new JetConfig();
-        config.getInstanceConfig().setCooperativeThreadCount(LOCAL_PARALLELISM);
+        Config config = new Config();
+        config.getJetConfig().getInstanceConfig().setCooperativeThreadCount(LOCAL_PARALLELISM);
 
-        instance1 = createJetMember(config);
-        instance2 = createJetMember(config);
+        instance1 = createMember(config);
+        instance2 = createMember(config);
     }
 
     @Test
@@ -136,7 +136,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         The resulting contents of the sink map are compared to expected value.
         */
 
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
 
         SlidingWindowPolicy wDef = SlidingWindowPolicy.tumblingWinPolicy(3);
         AggregateOperation1<Object, LongAccumulator, Long> aggrOp = counting();
@@ -196,7 +196,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         JobConfig config = new JobConfig();
         config.setProcessingGuarantee(EXACTLY_ONCE);
         config.setSnapshotIntervalMillis(1200);
-        Job job = instance1.newJob(dag, config);
+        Job job = instance1.getJetInstance().newJob(dag, config);
 
         JobRepository jobRepository = new JobRepository(instance1);
         int timeout = (int) (MILLISECONDS.toSeconds(config.getSnapshotIntervalMillis() * 3) + 8);
@@ -206,7 +206,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         // wait a little more to emit something, so that it will be overwritten in the sink map
         Thread.sleep(300);
 
-        instance2.getHazelcastInstance().getLifecycleService().terminate();
+        instance2.getLifecycleService().terminate();
 
         // Now the job should detect member shutdown and restart from snapshot.
         // Let's wait until the next snapshot appears.
@@ -265,17 +265,17 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
     public void when_snapshotStartedBeforeExecution_then_firstSnapshotIsSuccessful() {
         // instance1 is always coordinator
         // delay ExecuteOperation so that snapshot is started before execution is started on the worker member
-        delayOperationsFrom(hz(instance1), JetInitDataSerializerHook.FACTORY_ID,
+        delayOperationsFrom(instance1, JetInitDataSerializerHook.FACTORY_ID,
                 singletonList(JetInitDataSerializerHook.START_EXECUTION_OP)
         );
 
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         dag.newVertex("p", FirstSnapshotProcessor::new).localParallelism(1);
 
         JobConfig config = new JobConfig();
         config.setProcessingGuarantee(EXACTLY_ONCE);
         config.setSnapshotIntervalMillis(0);
-        Job job = instance1.newJob(dag, config);
+        Job job = instance1.getJetInstance().newJob(dag, config);
         JobRepository repository = new JobRepository(instance1);
 
         // the first snapshot should succeed
@@ -288,7 +288,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
 
     @Test
     public void when_jobRestartedGracefully_then_noOutputDuplicated() {
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         int elementsInPartition = 100;
         SupplierEx<Processor> sup = () ->
                 new SequencesInPartitionsGeneratorP(3, elementsInPartition, true);
@@ -300,7 +300,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         JobConfig config = new JobConfig();
         config.setProcessingGuarantee(EXACTLY_ONCE);
         config.setSnapshotIntervalMillis(3600_000); // set long interval so that the first snapshot does not execute
-        Job job = instance1.newJob(dag, config);
+        Job job = instance1.getJetInstance().newJob(dag, config);
 
         // wait for the job to start producing output
         List<Entry<Integer, Integer>> sinkList = instance1.getList("sink");

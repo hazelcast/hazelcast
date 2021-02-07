@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ public class SnapshotPhase1Operation extends AsyncJobOperation {
 
     /** If set to true, responses to SnapshotOperation will be postponed until set back to false. */
     // for test
+    @SuppressWarnings("checkstyle:VisibilityModifier")
     public static volatile boolean postponeResponses;
     private static final int RETRY_MS = 100;
 
@@ -69,8 +70,8 @@ public class SnapshotPhase1Operation extends AsyncJobOperation {
                                 "Snapshot %s phase 1 for %s finished successfully on member",
                                 snapshotId, ctx.jobNameAndExecutionId());
                     } else {
-                        getLogger().warning(String.format("Snapshot %d phase 1 for %s finished with an error on member: " +
-                                        "%s", snapshotId, ctx.jobNameAndExecutionId(), result.getError()));
+                        getLogger().warning(String.format("Snapshot %d phase 1 for %s finished with an error on member: "
+                                + "%s", snapshotId, ctx.jobNameAndExecutionId(), result.getError()));
                     }
                     return result;
                 });
@@ -171,12 +172,12 @@ public class SnapshotPhase1Operation extends AsyncJobOperation {
 
         @Override
         public String toString() {
-            return "SnapshotOperationResult{" +
-                    "numBytes=" + numBytes +
-                    ", numKeys=" + numKeys +
-                    ", numChunks=" + numChunks +
-                    ", error=" + error +
-                    '}';
+            return "SnapshotOperationResult{"
+                    + "numBytes=" + numBytes
+                    + ", numKeys=" + numKeys
+                    + ", numChunks=" + numChunks
+                    + ", error=" + error
+                    + '}';
         }
 
         @Override

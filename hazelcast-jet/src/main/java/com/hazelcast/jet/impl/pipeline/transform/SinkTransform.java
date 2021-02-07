@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
 import com.hazelcast.jet.impl.pipeline.SinkImpl;
 import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -37,6 +38,7 @@ public class SinkTransform<T> extends AbstractTransform {
     private final SinkImpl<T> sink;
     private final int[] ordinalsToAdapt;
 
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public SinkTransform(@Nonnull SinkImpl<T> sink, @Nonnull List<Transform> upstream, @Nonnull int[] ordinalsToAdapt) {
         super(sink.name(), upstream);
         this.sink = sink;
@@ -55,7 +57,7 @@ public class SinkTransform<T> extends AbstractTransform {
         determineLocalParallelism(sink.metaSupplier().preferredLocalParallelism(), context, false);
         PlannerVertex pv = p.addVertex(this, name(), determinedLocalParallelism(),
                 adaptingMetaSupplier(sink.metaSupplier(), ordinalsToAdapt));
-        p.addEdges(this, pv.v, (e, ord) -> {
+        p.addEdges(this, pv.vertex(), (e, ord) -> {
             // note: have to use an all-to-one edge for the assertion sink.
             // all the items will be routed to the member with the partition key
             if (sink.getType() == TOTAL_PARALLELISM_ONE) {

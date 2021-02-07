@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,10 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.jet.Jet;
-import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.TestProcessors.MockP;
 import com.hazelcast.jet.impl.util.ImdgUtil;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -47,7 +47,7 @@ public class MemberReconnectionStressTest extends JetTestSupport {
     @After
     public void after() {
         terminated.set(true);
-        Jet.shutdownAll();
+        Hazelcast.shutdownAll();
     }
 
     @Test
@@ -63,14 +63,15 @@ public class MemberReconnectionStressTest extends JetTestSupport {
         typically at most 1 restart per job. We assert that the jobs
         eventually successfully complete.
          */
-        JetConfig config = new JetConfig();
+        Config config = new Config();
+        config.getNetworkConfig().getJoin().getMulticastConfig().setLoopbackModeEnabled(true);
         // The connection drop often causes regular IMap operations to fail - shorten the timeout so that
         // it recovers more quickly
-        config.getHazelcastConfig().setProperty(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "2000");
-        config.getHazelcastConfig().setClusterName(randomName());
+        config.setProperty(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "2000");
+        config.setClusterName(randomName());
 
-        JetInstance inst1 = Jet.newJetInstance(config);
-        JetInstance inst2 = Jet.newJetInstance(config);
+        HazelcastInstance inst1 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance inst2 = Hazelcast.newHazelcastInstance(config);
 
         logger.info("Instances started");
 
@@ -87,7 +88,7 @@ public class MemberReconnectionStressTest extends JetTestSupport {
             }
         }).start();
 
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex v1 = dag.newVertex("v1", () -> new MockP()).localParallelism(2);
         Vertex v2 = dag.newVertex("v2", () -> new MockP()).localParallelism(2);
         dag.edge(between(v1, v2).distributed());
@@ -96,7 +97,7 @@ public class MemberReconnectionStressTest extends JetTestSupport {
         new Thread(() -> {
             while (!terminated.get()) {
                 try {
-                    inst1.newJob(dag).getFuture().join();
+                    inst1.getJetInstance().newJob(dag).getFuture().join();
                     logger.info("job completed");
                     jobCount.incrementAndGet();
                 } catch (Exception e) {

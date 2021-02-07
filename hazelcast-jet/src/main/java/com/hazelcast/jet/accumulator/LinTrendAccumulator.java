@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -106,20 +106,24 @@ public final class LinTrendAccumulator {
      */
     public double export() {
         BigInteger bigN = BigInteger.valueOf(n);
-        return bigN.multiply(sumXY).subtract(sumX.multiply(sumY)).doubleValue() /
-                bigN.multiply(sumX2).subtract(sumX.multiply(sumX)).doubleValue();
+        return bigN.multiply(sumXY).subtract(sumX.multiply(sumY)).doubleValue()
+                / bigN.multiply(sumX2).subtract(sumX.multiply(sumX)).doubleValue();
     }
 
     @Override
     public boolean equals(Object obj) {
-        LinTrendAccumulator that;
-        return this == obj ||
-                obj instanceof LinTrendAccumulator
-                        && this.n == (that = (LinTrendAccumulator) obj).n
-                        && Objects.equals(this.sumX, that.sumX)
-                        && Objects.equals(this.sumY, that.sumY)
-                        && Objects.equals(this.sumXY, that.sumXY)
-                        && Objects.equals(this.sumX2, that.sumX2);
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof LinTrendAccumulator)) {
+            return false;
+        }
+        LinTrendAccumulator that = (LinTrendAccumulator) obj;
+        return this.n == that.n
+                && Objects.equals(this.sumX, that.sumX)
+                && Objects.equals(this.sumY, that.sumY)
+                && Objects.equals(this.sumXY, that.sumXY)
+                && Objects.equals(this.sumX2, that.sumX2);
     }
 
     @Override

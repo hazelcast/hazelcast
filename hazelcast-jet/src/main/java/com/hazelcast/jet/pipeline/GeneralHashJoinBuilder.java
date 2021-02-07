@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,7 +65,7 @@ public abstract class GeneralHashJoinBuilder<T0> {
         this.stage0 = stage0;
         this.pipelineImpl = (PipelineImpl) stage0.getPipeline();
         this.createOutStageFn = createOutStageFn;
-        this.fnAdapter = ((ComputeStageImplBase) stage0).fnAdapter;
+        this.fnAdapter = ((ComputeStageImplBase) stage0).getFnAdapter();
     }
 
     /**

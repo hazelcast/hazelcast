@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -93,8 +93,7 @@ public class JobMetricsPublisher implements MetricsPublisher {
 
     private MetricsCompressor getCompressor(MetricDescriptor descriptor) {
         Long executionId = JobMetricsUtil.getExecutionIdFromMetricsDescriptor(descriptor);
-        return executionId == null ?
-                null
-                : executionIdToCompressor.computeIfAbsent(executionId, id -> new MetricsCompressor());
+        return executionId == null
+                ? null : executionIdToCompressor.computeIfAbsent(executionId, id -> new MetricsCompressor());
     }
 }

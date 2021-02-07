@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,8 @@ public final class SnapshotFlags {
      * If set, the snapshot is an export (with or without cancellation). If not
      * set, it's an automatic snapshot for fault tolerance.
      */
-    private static final int EXPORT = 2; // 0b10
+    // 0b10
+    private static final int EXPORT = 2;
 
     private SnapshotFlags() { }
 

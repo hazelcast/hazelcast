@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.core;
 
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
@@ -44,15 +44,15 @@ public class TerminalSnapshotSynchronizationTest extends JetTestSupport {
     }
 
     private Job setup(boolean snapshotting) {
-        JetInstance[] instances = createJetMembers(NODE_COUNT);
+        HazelcastInstance[] instances = createMembers(NODE_COUNT);
 
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         dag.newVertex("generator", () -> new NoOutputSourceP()).localParallelism(1);
 
         JobConfig config = new JobConfig()
                 .setProcessingGuarantee(snapshotting ? EXACTLY_ONCE : NONE)
                 .setSnapshotIntervalMillis(DAYS.toMillis(1));
-        Job job = instances[0].newJob(dag, config);
+        Job job = instances[0].getJetInstance().newJob(dag, config);
         assertJobStatusEventually(job, RUNNING);
         return job;
     }

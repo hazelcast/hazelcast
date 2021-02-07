@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -150,25 +150,25 @@ public abstract class XaSinkProcessorBase implements Processor {
                         LoggingUtil.logFine(context.logger(), "Retrying commit %s", xid);
                         continue;
                     case XAException.XA_HEURCOM:
-                        context.logger().info("Due to a heuristic decision, the work done on behalf of " +
-                                "the specified transaction branch was already committed. Transaction ID: " + xid);
+                        context.logger().info("Due to a heuristic decision, the work done on behalf of "
+                                + "the specified transaction branch was already committed. Transaction ID: " + xid);
                         break;
                     case XAException.XA_HEURRB:
-                        context.logger().warning("Due to a heuristic decision, the work done on behalf of the restored " +
-                                        "transaction ID was rolled back. Messages written in that transaction are lost. " +
-                                        "Ignoring the problem and will continue the job. Transaction ID: " + xid,
+                        context.logger().warning("Due to a heuristic decision, the work done on behalf of the restored "
+                                        + "transaction ID was rolled back. Messages written in that transaction are lost. "
+                                        + "Ignoring the problem and will continue the job. Transaction ID: " + xid,
                                 handleXAException(e, xid));
                         break;
                     case XAException.XAER_NOTA:
-                        LoggingUtil.logFine(context.logger(), "Failed to commit XID restored from snapshot: The " +
-                                "specified XID is not known to the resource manager. This happens normally when the " +
-                                "transaction was committed in phase 2 of the snapshot and can be ignored, but can " +
-                                "happen also if the transaction wasn't committed in phase 2 and the RM lost it (in " +
-                                "this case data written in it is lost). Transaction ID: %s", xid);
+                        LoggingUtil.logFine(context.logger(), "Failed to commit XID restored from snapshot: The "
+                                + "specified XID is not known to the resource manager. This happens normally when the "
+                                + "transaction was committed in phase 2 of the snapshot and can be ignored, but can "
+                                + "happen also if the transaction wasn't committed in phase 2 and the RM lost it (in "
+                                + "this case data written in it is lost). Transaction ID: %s", xid);
                         break;
                     default:
-                        throw new JetException("Failed to commit XID restored from the snapshot, XA error code: " +
-                                e.errorCode + ". Data loss is possible. Transaction ID: " + xid + ", cause: " + e,
+                        throw new JetException("Failed to commit XID restored from the snapshot, XA error code: "
+                                + e.errorCode + ". Data loss is possible. Transaction ID: " + xid + ", cause: " + e,
                                 handleXAException(e, xid));
                 }
             }
@@ -285,11 +285,11 @@ public abstract class XaSinkProcessorBase implements Processor {
         private static final int OFFSET_TRANSACTION_INDEX = OFFSET_PROCESSOR_INDEX + Bits.INT_SIZE_IN_BYTES;
         private static final int GTRID_LENGTH = OFFSET_TRANSACTION_INDEX + Bits.INT_SIZE_IN_BYTES;
 
-        @SuppressWarnings("unused") // needed for deserialization
+        @SuppressWarnings("unused")
         private XaTransactionId() {
         }
 
-        private XaTransactionId(Processor.Context context, int processorIndex, int transactionIndex) {
+        private XaTransactionId(Context context, int processorIndex, int transactionIndex) {
             super(JET_FORMAT_ID,
                     createGtrid(context.jobId(),
                             stringHash(context.jobConfig().getName()),

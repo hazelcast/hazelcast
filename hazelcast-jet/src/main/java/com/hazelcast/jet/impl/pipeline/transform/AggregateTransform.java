@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,7 +79,7 @@ public class AggregateTransform<A, R> extends AbstractTransform {
     private void addToDagSingleStage(Planner p) {
         determinedLocalParallelism(1);
         PlannerVertex pv = p.addVertex(this, name(), determinedLocalParallelism(), aggregateP(aggrOp));
-        p.addEdges(this, pv.v, edge -> edge.distributed().allToOne(name().hashCode()));
+        p.addEdges(this, pv.vertex(), edge -> edge.distributed().allToOne(name().hashCode()));
     }
 
     //  WHEN PRESERVE ORDER IS NOT ACTIVE
@@ -121,7 +121,7 @@ public class AggregateTransform<A, R> extends AbstractTransform {
     private void addToDagTwoStage(Planner p, Context context) {
         String vertexName = name();
         determineLocalParallelism(LOCAL_PARALLELISM_USE_DEFAULT, context, p.isPreserveOrder());
-        Vertex v1 = p.dag.newVertex(vertexName + FIRST_STAGE_VERTEX_NAME_SUFFIX, accumulateP(aggrOp))
+        Vertex v1 = p.getDag().newVertex(vertexName + FIRST_STAGE_VERTEX_NAME_SUFFIX, accumulateP(aggrOp))
                          .localParallelism(determinedLocalParallelism());
         if (p.isPreserveOrder()) {
             p.addEdges(this, v1, Edge::isolated);
@@ -134,7 +134,7 @@ public class AggregateTransform<A, R> extends AbstractTransform {
                 ProcessorMetaSupplier.forceTotalParallelismOne(
                         ProcessorSupplier.of(combineP(aggrOp)), vertexName));
 
-        p.dag.edge(between(v1, pv2.v)
+        p.getDag().edge(between(v1, pv2.vertex())
                 .distributed()
                 .allToOne(vertexName));
     }

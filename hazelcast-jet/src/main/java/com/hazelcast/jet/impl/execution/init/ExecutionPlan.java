@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,9 @@
 package com.hazelcast.jet.impl.execution.init;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.jet.config.EdgeConfig;
+import com.hazelcast.jet.config.JetConfig;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.partition.IPartitionService;
@@ -25,8 +28,6 @@ import com.hazelcast.internal.util.concurrent.ConcurrentConveyor;
 import com.hazelcast.internal.util.concurrent.OneToOneConcurrentArrayQueue;
 import com.hazelcast.internal.util.concurrent.QueuedPipe;
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.Edge.RoutingPolicy;
@@ -74,7 +75,6 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static com.hazelcast.internal.util.concurrent.ConcurrentConveyor.concurrentConveyor;
-import static com.hazelcast.jet.config.EdgeConfig.DEFAULT_QUEUE_SIZE;
 import static com.hazelcast.jet.core.Edge.DISTRIBUTE_TO_ALL;
 import static com.hazelcast.jet.impl.execution.OutboundCollector.compositeCollector;
 import static com.hazelcast.jet.impl.execution.TaskletExecutionService.TASKLET_INIT_CLOSE_EXECUTOR_NAME;
@@ -84,7 +84,6 @@ import static com.hazelcast.jet.impl.util.ImdgUtil.readList;
 import static com.hazelcast.jet.impl.util.ImdgUtil.writeList;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefix;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefixedLogger;
-import static com.hazelcast.jet.impl.util.Util.getJetInstance;
 import static com.hazelcast.jet.impl.util.Util.memoize;
 import static com.hazelcast.jet.impl.util.Util.toList;
 import static java.util.stream.Collectors.toList;
@@ -97,7 +96,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
 
     // use same size as DEFAULT_QUEUE_SIZE from Edges. In the future we might
     // want to make this configurable
-    private static final int SNAPSHOT_QUEUE_SIZE = DEFAULT_QUEUE_SIZE;
+    private static final int SNAPSHOT_QUEUE_SIZE = EdgeConfig.DEFAULT_QUEUE_SIZE;
 
     /** Snapshot of partition table used to route items on partitioned edges */
     private Address[] partitionOwners;
@@ -166,7 +165,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         initDag(jobSerializationService);
 
         this.ptionArrgmt = new PartitionArrangement(partitionOwners, nodeEngine.getThisAddress());
-        JetInstance instance = getJetInstance(nodeEngine);
+        HazelcastInstance instance = nodeEngine.getHazelcastInstance();
         Set<Integer> higherPriorityVertices = VertexDef.getHigherPriorityVertices(vertices);
         for (Address destAddr : remoteMembers.get()) {
             memberConnections.put(destAddr, getMemberConnection(nodeEngine, destAddr));
@@ -317,7 +316,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             ILogger logger = prefixedLogger(nodeEngine.getLogger(supplier.getClass()), prefix);
             try {
                 supplier.init(new ProcSupplierCtx(
-                        service.getJetInstance(),
+                        service.instance(),
                         jobId,
                         executionId,
                         jobConfig,
@@ -357,8 +356,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     private static Collection<? extends Processor> createProcessors(VertexDef vertexDef, int parallelism) {
         final Collection<? extends Processor> processors = vertexDef.processorSupplier().get(parallelism);
         if (processors.size() != parallelism) {
-            throw new JetException("ProcessorSupplier failed to return the requested number of processors." +
-                    " Requested: " + parallelism + ", returned: " + processors.size());
+            throw new JetException("ProcessorSupplier failed to return the requested number of processors."
+                    + " Requested: " + parallelism + ", returned: " + processors.size());
         }
         return processors;
     }
@@ -636,8 +635,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     }
 
     private JetConfig getConfig() {
-        JetService service = nodeEngine.getService(JetService.SERVICE_NAME);
-        return service.getJetInstance().getConfig();
+        return nodeEngine.getConfig().getJetConfig();
     }
 
     private List<InboundEdgeStream> createInboundEdgeStreams(VertexDef srcVertex, int localProcessorIdx,

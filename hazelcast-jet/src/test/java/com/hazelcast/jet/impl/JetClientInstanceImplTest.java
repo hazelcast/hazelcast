@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,15 @@
 
 package com.hazelcast.jet.impl;
 
-import com.hazelcast.client.impl.client.DistributedObjectInfo;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.util.List;
+import java.util.Collection;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -35,21 +35,21 @@ public class JetClientInstanceImplTest extends JetTestSupport {
     @Test
     public void given_singleMapOnMember_when_getDistributedObjectsCalled_then_ReturnedObjectInfo() {
         // Given
-        JetInstance member = createJetMember();
-        JetClientInstanceImpl client = (JetClientInstanceImpl) createJetClient();
+        HazelcastInstance member = createMember();
+        HazelcastInstance client = createClient();
         String mapName = randomMapName();
         member.getMap(mapName);
 
         // When
-        List<DistributedObjectInfo> objects = client.getDistributedObjects();
+        Collection<DistributedObject> objects = client.getDistributedObjects();
 
 
         // Then
         assertFalse(objects.isEmpty());
-        DistributedObjectInfo info = objects.stream()
-                                            .filter(i -> mapName.equals(i.getName()))
-                                            .findFirst()
-                                            .orElseThrow(AssertionError::new);
+        DistributedObject info = objects.stream()
+                .filter(i -> mapName.equals(i.getName()))
+                .findFirst()
+                .orElseThrow(AssertionError::new);
         assertEquals(MapService.SERVICE_NAME, info.getServiceName());
     }
 

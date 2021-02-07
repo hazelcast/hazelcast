@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import static java.util.Collections.emptyList;
 
 public class StreamSourceTransform<T> extends AbstractTransform implements StreamSource<T> {
 
-    public final FunctionEx<? super EventTimePolicy<? super T>, ? extends ProcessorMetaSupplier> metaSupplierFn;
+    private final FunctionEx<? super EventTimePolicy<? super T>, ? extends ProcessorMetaSupplier> metaSupplierFn;
     private boolean isAssignedToStage;
     private final boolean emitsWatermarks;
 
@@ -87,12 +87,12 @@ public class StreamSourceTransform<T> extends AbstractTransform implements Strea
             String v1name = name();
             final ProcessorMetaSupplier metaSupplier = metaSupplierFn.apply(eventTimePolicy);
             determineLocalParallelism(metaSupplier.preferredLocalParallelism(), context, false);
-            Vertex v1 = p.dag.newVertex(v1name, metaSupplier)
+            Vertex v1 = p.getDag().newVertex(v1name, metaSupplier)
                              .localParallelism(determinedLocalParallelism());
             PlannerVertex pv2 = p.addVertex(
                     this, v1name + "-add-timestamps", determinedLocalParallelism(), insertWatermarksP(eventTimePolicy)
             );
-            p.dag.edge(between(v1, pv2.v).isolated());
+            p.getDag().edge(between(v1, pv2.vertex()).isolated());
         }
     }
 
@@ -124,5 +124,10 @@ public class StreamSourceTransform<T> extends AbstractTransform implements Strea
     @Override
     public long partitionIdleTimeout() {
         return partitionIdleTimeout;
+    }
+
+    // used for testing
+    public FunctionEx<? super EventTimePolicy<? super T>, ? extends ProcessorMetaSupplier> getMetaSupplierFn() {
+        return metaSupplierFn;
     }
 }

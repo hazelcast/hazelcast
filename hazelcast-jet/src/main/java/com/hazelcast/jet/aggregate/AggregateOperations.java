@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,7 +68,7 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
  * Utility class with factory methods for several useful aggregate
  * operations. See the Javadoc on {@link AggregateOperation}. You can
  * also create your own aggregate operation using the {@link
- * AggregateOperation#withCreate builder object}.
+ * AggregateOperationBuilder builder object}.
  *
  * @since 3.0
  */
@@ -91,8 +91,7 @@ public final class AggregateOperations {
      */
     @Nonnull
     public static <T> AggregateOperation1<T, LongAccumulator, Long> counting() {
-        return AggregateOperation
-                .withCreate(LongAccumulator::new)
+        return withCreate(LongAccumulator::new)
                 .andAccumulate((LongAccumulator a, T item) -> a.add(1))
                 .andCombine(LongAccumulator::add)
                 .andDeduct(LongAccumulator::subtractAllowingOverflow)
@@ -117,17 +116,16 @@ public final class AggregateOperations {
      * will fail with an {@code ArithmeticException}.
      *
      * @param getLongValueFn function that extracts the {@code long} values you
-     *     want to sum. It must be stateless and {@linkplain
-     *     Processor#isCooperative() cooperative}.
-     * @param <T> type of the input item
+     *                       want to sum. It must be stateless and {@linkplain
+     *                       Processor#isCooperative() cooperative}.
+     * @param <T>            type of the input item
      */
     @Nonnull
     public static <T> AggregateOperation1<T, LongAccumulator, Long> summingLong(
             @Nonnull ToLongFunctionEx<? super T> getLongValueFn
     ) {
         checkSerializable(getLongValueFn, "getLongValueFn");
-        return AggregateOperation
-                .withCreate(LongAccumulator::new)
+        return withCreate(LongAccumulator::new)
                 .andAccumulate((LongAccumulator a, T item) -> a.add(getLongValueFn.applyAsLong(item)))
                 .andCombine(LongAccumulator::add)
                 .andDeduct(LongAccumulator::subtract)
@@ -149,17 +147,16 @@ public final class AggregateOperations {
      * }</pre>
      *
      * @param getDoubleValueFn function that extracts the {@code double} values
-     *     you want to sum. It must be stateless and {@linkplain
-     *     Processor#isCooperative() cooperative}.
-     * @param <T> type of the input item
+     *                         you want to sum. It must be stateless and {@linkplain
+     *                         Processor#isCooperative() cooperative}.
+     * @param <T>              type of the input item
      */
     @Nonnull
     public static <T> AggregateOperation1<T, DoubleAccumulator, Double> summingDouble(
             @Nonnull ToDoubleFunctionEx<? super T> getDoubleValueFn
     ) {
         checkSerializable(getDoubleValueFn, "getDoubleValueFn");
-        return AggregateOperation
-                .withCreate(DoubleAccumulator::new)
+        return withCreate(DoubleAccumulator::new)
                 .andAccumulate((DoubleAccumulator a, T item) -> a.accumulate(getDoubleValueFn.applyAsDouble(item)))
                 .andCombine(DoubleAccumulator::combine)
                 .andDeduct(DoubleAccumulator::deduct)
@@ -192,8 +189,8 @@ public final class AggregateOperations {
      * window aggregation</a>.
      *
      * @param comparator comparator to compare the items. It must be stateless
-     *     and {@linkplain Processor#isCooperative() cooperative}.
-     * @param <T> type of the input item
+     *                   and {@linkplain Processor#isCooperative() cooperative}.
+     * @param <T>        type of the input item
      */
     @Nonnull
     public static <T> AggregateOperation1<T, MutableReference<T>, T> minBy(
@@ -229,16 +226,15 @@ public final class AggregateOperations {
      * window aggregation</a>.
      *
      * @param comparator comparator to compare the items. It must be stateless
-     *     and {@linkplain Processor#isCooperative() cooperative}.
-     * @param <T> type of the input item
+     *                   and {@linkplain Processor#isCooperative() cooperative}.
+     * @param <T>        type of the input item
      */
     @Nonnull
     public static <T> AggregateOperation1<T, MutableReference<T>, T> maxBy(
             @Nonnull ComparatorEx<? super T> comparator
     ) {
         checkSerializable(comparator, "comparator");
-        return AggregateOperation
-                .withCreate(MutableReference<T>::new)
+        return withCreate(MutableReference<T>::new)
                 .andAccumulate((MutableReference<T> a, T i) -> {
                     if (a.isNull() || comparator.compare(i, a.get()) > 0) {
                         a.set(i);
@@ -269,10 +265,10 @@ public final class AggregateOperations {
      * href="https://jet-start.sh/docs/architecture/sliding-window">sliding
      * window aggregation</a>.
      *
-     * @param n number of top items to find
+     * @param n          number of top items to find
      * @param comparator compares the items. It must be stateless and
-     *     {@linkplain Processor#isCooperative() cooperative}.
-     * @param <T> type of the input item
+     *                   {@linkplain Processor#isCooperative() cooperative}.
+     * @param <T>        type of the input item
      */
     @Nonnull
     public static <T> AggregateOperation1<T, PriorityQueue<T>, List<T>> topN(
@@ -290,8 +286,7 @@ public final class AggregateOperations {
             }
             queue.offer(item);
         };
-        return AggregateOperation
-                .withCreate(() -> new PriorityQueue<T>(n, comparator))
+        return withCreate(() -> new PriorityQueue<T>(n, comparator))
                 .andAccumulate(accumulateFn)
                 .andCombine((left, right) -> {
                     for (T item : right) {
@@ -323,10 +318,10 @@ public final class AggregateOperations {
      * href="https://jet-start.sh/docs/architecture/sliding-window">sliding
      * window aggregation</a>.
      *
-     * @param n number of bottom items to find
+     * @param n          number of bottom items to find
      * @param comparator compares the items. It must be stateless and
-     *     {@linkplain Processor#isCooperative() cooperative}.
-     * @param <T> type of the input item
+     *                   {@linkplain Processor#isCooperative() cooperative}.
+     * @param <T>        type of the input item
      */
     @Nonnull
     public static <T> AggregateOperation1<T, PriorityQueue<T>, List<T>> bottomN(
@@ -355,9 +350,9 @@ public final class AggregateOperations {
      * Long.MAX_VALUE}, the job will fail with an {@link ArithmeticException}.
      *
      * @param getLongValueFn function that extracts the {@code long} value from
-     *     the item. It must be stateless and {@linkplain Processor#isCooperative()
-     *     cooperative}.
-     * @param <T> type of the input item
+     *                       the item. It must be stateless and {@linkplain Processor#isCooperative()
+     *                       cooperative}.
+     * @param <T>            type of the input item
      */
     @Nonnull
     public static <T> AggregateOperation1<T, LongLongAccumulator, Double> averagingLong(
@@ -366,8 +361,7 @@ public final class AggregateOperations {
         checkSerializable(getLongValueFn, "getLongValueFn");
         // count == accumulator.value1
         // sum == accumulator.value2
-        return AggregateOperation
-                .withCreate(LongLongAccumulator::new)
+        return withCreate(LongLongAccumulator::new)
                 .andAccumulate((LongLongAccumulator a, T i) -> {
                     // a bit faster check than in addExact, specialized for increment
                     if (a.get1() == Long.MAX_VALUE) {
@@ -402,9 +396,9 @@ public final class AggregateOperations {
      * {@link Double#NaN NaN}.
      *
      * @param getDoubleValueFn function that extracts the {@code double} value
-     *     from the item. It must be stateless and {@linkplain
-     *     Processor#isCooperative() cooperative}.
-     * @param <T> type of the input item
+     *                         from the item. It must be stateless and {@linkplain
+     *                         Processor#isCooperative() cooperative}.
+     * @param <T>              type of the input item
      */
     @Nonnull
     public static <T> AggregateOperation1<T, LongDoubleAccumulator, Double> averagingDouble(
@@ -413,8 +407,7 @@ public final class AggregateOperations {
         checkSerializable(getDoubleValueFn, "getDoubleValueFn");
         // count == accumulator.value1
         // sum == accumulator.value2
-        return AggregateOperation
-                .withCreate(LongDoubleAccumulator::new)
+        return withCreate(LongDoubleAccumulator::new)
                 .andAccumulate((LongDoubleAccumulator a, T item) -> {
                     // a bit faster check than in addExact, specialized for increment
                     if (a.getLong() == Long.MAX_VALUE) {
@@ -459,12 +452,12 @@ public final class AggregateOperations {
      * {@link Double#NaN NaN}.
      *
      * @param getXFn a function to extract <strong>x</strong> from the input.
-     *     It must be stateless and {@linkplain Processor#isCooperative()
-     *     cooperative}.
+     *               It must be stateless and {@linkplain Processor#isCooperative()
+     *               cooperative}.
      * @param getYFn a function to extract <strong>y</strong> from the input.
-     *     It must be stateless and {@linkplain Processor#isCooperative()
-     *     cooperative}.
-     * @param <T> type of the input item
+     *               It must be stateless and {@linkplain Processor#isCooperative()
+     *               cooperative}.
+     * @param <T>    type of the input item
      */
     @Nonnull
     public static <T> AggregateOperation1<T, LinTrendAccumulator, Double> linearTrend(
@@ -473,8 +466,7 @@ public final class AggregateOperations {
     ) {
         checkSerializable(getXFn, "getXFn");
         checkSerializable(getYFn, "getYFn");
-        return AggregateOperation
-                .withCreate(LinTrendAccumulator::new)
+        return withCreate(LinTrendAccumulator::new)
                 .andAccumulate((LinTrendAccumulator a, T item) ->
                         a.accumulate(getXFn.applyAsLong(item), getYFn.applyAsLong(item)))
                 .andCombine(LinTrendAccumulator::combine)
@@ -497,8 +489,7 @@ public final class AggregateOperations {
      * }</pre>
      */
     public static AggregateOperation1<CharSequence, StringBuilder, String> concatenating() {
-        return AggregateOperation
-                .withCreate(StringBuilder::new)
+        return withCreate(StringBuilder::new)
                 .<CharSequence>andAccumulate(StringBuilder::append)
                 .andCombine(StringBuilder::append)
                 .andExportFinish(StringBuilder::toString);
@@ -546,8 +537,7 @@ public final class AggregateOperations {
             CharSequence delimiter, CharSequence prefix, CharSequence suffix
     ) {
         int prefixLen = prefix.length();
-        return AggregateOperation
-                .withCreate(() -> new StringBuilder().append(prefix))
+        return withCreate(() -> new StringBuilder().append(prefix))
                 .<CharSequence>andAccumulate((builder, val) -> {
                     if (builder.length() != prefixLen && val.length() > 0) {
                         builder.append(delimiter);
@@ -590,16 +580,15 @@ public final class AggregateOperations {
      *         mapping(Person::getLastName, sorting(ComparatorEx.naturalOrder()))));
      * }</pre>
      *
+     * @param mapFn      the function to apply to the input items. It must be
+     *                   stateless and {@linkplain Processor#isCooperative() cooperative}.
+     * @param downstream the downstream aggregate operation
+     * @param <T>        type of the input item
+     * @param <U>        input type of the downstream aggregate operation
+     * @param <A>        downstream operation's accumulator type
+     * @param <R>        downstream operation's result type
      * @see #filtering
      * @see #flatMapping
-     *
-     * @param mapFn the function to apply to the input items. It must be
-     *     stateless and {@linkplain Processor#isCooperative() cooperative}.
-     * @param downstream the downstream aggregate operation
-     * @param <T> type of the input item
-     * @param <U> input type of the downstream aggregate operation
-     * @param <A> downstream operation's accumulator type
-     * @param <R> downstream operation's result type
      */
     public static <T, U, A, R> AggregateOperation1<T, A, R> mapping(
             @Nonnull FunctionEx<? super T, ? extends U> mapFn,
@@ -607,8 +596,7 @@ public final class AggregateOperations {
     ) {
         checkSerializable(mapFn, "mapFn");
         BiConsumerEx<? super A, ? super U> downstreamAccumulateFn = downstream.accumulateFn();
-        return AggregateOperation
-                .withCreate(downstream.createFn())
+        return withCreate(downstream.createFn())
                 .andAccumulate((A a, T t) -> {
                     U mapped = mapFn.apply(t);
                     if (mapped != null) {
@@ -637,16 +625,15 @@ public final class AggregateOperations {
      *     filtering((Person p) -> p.getAge() >= 18, averagingLong(Person::getHeight))
      * ));
      * }</pre>
+     *
+     * @param filterFn   the filtering function. It must be stateless and
+     *                   {@linkplain Processor#isCooperative() cooperative}.
+     * @param downstream the downstream aggregate operation
+     * @param <T>        type of the input item
+     * @param <A>        downstream operation's accumulator type
+     * @param <R>        downstream operation's result type
      * @see #mapping
      * @see #flatMapping
-     *
-     * @param filterFn the filtering function. It must be stateless and
-     *     {@linkplain Processor#isCooperative() cooperative}.
-     * @param downstream the downstream aggregate operation
-     * @param <T> type of the input item
-     * @param <A> downstream operation's accumulator type
-     * @param <R> downstream operation's result type
-     *
      * @since 3.1
      */
     public static <T, A, R> AggregateOperation1<T, A, R> filtering(
@@ -655,8 +642,7 @@ public final class AggregateOperations {
     ) {
         checkSerializable(filterFn, "filterFn");
         BiConsumerEx<? super A, ? super T> downstreamAccumulateFn = downstream.accumulateFn();
-        return AggregateOperation
-                .withCreate(downstream.createFn())
+        return withCreate(downstream.createFn())
                 .andAccumulate((A a, T t) -> {
                     if (filterFn.test(t)) {
                         downstreamAccumulateFn.accept(a, t);
@@ -690,17 +676,16 @@ public final class AggregateOperations {
      *             averagingLong(Person::getAge))
      * ));
      * }</pre>
+     *
+     * @param flatMapFn  the flat-mapping function to apply. It must be
+     *                   stateless and {@linkplain Processor#isCooperative() cooperative}.
+     * @param downstream the downstream aggregate operation
+     * @param <T>        type of the input item
+     * @param <U>        input type of the downstream aggregate operation
+     * @param <A>        downstream operation's accumulator type
+     * @param <R>        downstream operation's result type
      * @see #mapping
      * @see #filtering
-     *
-     * @param flatMapFn the flat-mapping function to apply. It must be
-     *     stateless and {@linkplain Processor#isCooperative() cooperative}.
-     * @param downstream the downstream aggregate operation
-     * @param <T> type of the input item
-     * @param <U> input type of the downstream aggregate operation
-     * @param <A> downstream operation's accumulator type
-     * @param <R> downstream operation's result type
-     *
      * @since 3.1
      */
     public static <T, U, A, R> AggregateOperation1<T, A, R> flatMapping(
@@ -709,8 +694,7 @@ public final class AggregateOperations {
     ) {
         checkSerializable(flatMapFn, "flatMapFn");
         BiConsumerEx<? super A, ? super U> downstreamAccumulateFn = downstream.accumulateFn();
-        return AggregateOperation
-                .withCreate(downstream.createFn())
+        return withCreate(downstream.createFn())
                 .andAccumulate((A a, T t) -> {
                     Traverser<? extends U> trav = flatMapFn.apply(t);
                     for (U u; (u = trav.next()) != null; ) {
@@ -741,17 +725,16 @@ public final class AggregateOperations {
      * any specified order.
      *
      * @param createCollectionFn a {@code Supplier} of empty, mutable {@code
-     *     Collection}s. It must be stateless and {@linkplain
-     *     Processor#isCooperative() cooperative}.
-     * @param <T> type of the input item
-     * @param <C> the type of the collection
+     *                           Collection}s. It must be stateless and {@linkplain
+     *                           Processor#isCooperative() cooperative}.
+     * @param <T>                type of the input item
+     * @param <C>                the type of the collection
      */
     public static <T, C extends Collection<T>> AggregateOperation1<T, C, C> toCollection(
             @Nonnull SupplierEx<C> createCollectionFn
     ) {
         checkSerializable(createCollectionFn, "createCollectionFn");
-        return AggregateOperation
-                .withCreate(createCollectionFn)
+        return withCreate(createCollectionFn)
                 .<T>andAccumulate(Collection::add)
                 .andCombine(Collection::addAll)
                 .andExport(acc -> {
@@ -798,6 +781,7 @@ public final class AggregateOperations {
      * <strong>Note:</strong> accumulating all the data into an in-memory set
      * shouldn't be your first choice in designing a pipeline. Consider
      * draining the result stream to a sink.
+     *
      * @param <T> type of the input item
      */
     public static <T> AggregateOperation1<T, Set<T>, Set<T>> toSet() {
@@ -827,15 +811,14 @@ public final class AggregateOperations {
      * shouldn't be your first choice in designing a pipeline. Consider
      * draining the stream to a sink.
      *
-     * @param keyFn a function to extract the key from the input item. It must
-     *     be stateless and {@linkplain Processor#isCooperative() cooperative}.
+     * @param keyFn   a function to extract the key from the input item. It must
+     *                be stateless and {@linkplain Processor#isCooperative() cooperative}.
      * @param valueFn a function to extract the value from the input item. It
-     *     must be stateless and {@linkplain Processor#isCooperative()
-     *     cooperative}.
-     * @param <T> type of the input item
-     * @param <K> type of the key
-     * @param <U> type of the value
-     *
+     *                must be stateless and {@linkplain Processor#isCooperative()
+     *                cooperative}.
+     * @param <T>     type of the input item
+     * @param <K>     type of the key
+     * @param <U>     type of the value
      * @see #toMap(FunctionEx, FunctionEx, BinaryOperatorEx)
      * @see #toMap(FunctionEx, FunctionEx, BinaryOperatorEx, SupplierEx)
      * @see #groupingBy(FunctionEx)
@@ -880,15 +863,14 @@ public final class AggregateOperations {
      * The given functions must be stateless and {@linkplain
      * Processor#isCooperative() cooperative}.
      *
-     * @param keyFn a function to extract the key from input item
+     * @param keyFn   a function to extract the key from input item
      * @param valueFn a function to extract value from input item
      * @param mergeFn the function used to resolve collisions between values associated
      *                with the same key, will be passed to {@link Map#merge(Object, Object,
      *                java.util.function.BiFunction)}
-     * @param <T> type of the input item
-     * @param <K> the type of key
-     * @param <U> the output type of the value mapping function
-     *
+     * @param <T>     type of the input item
+     * @param <K>     the type of key
+     * @param <U>     the output type of the value mapping function
      * @see #toMap(FunctionEx, FunctionEx)
      * @see #toMap(FunctionEx, FunctionEx, BinaryOperatorEx, SupplierEx)
      */
@@ -927,19 +909,18 @@ public final class AggregateOperations {
      * The given functions must be stateless and {@linkplain
      * Processor#isCooperative() cooperative}.
      *
-     * @param keyFn a function to extract the key from input item
-     * @param valueFn a function to extract value from input item
-     * @param mergeFn a merge function, used to resolve collisions between
-     *                      values associated with the same key, as supplied
-     *                      to {@link Map#merge(Object, Object,
-     *                      java.util.function.BiFunction)}
+     * @param keyFn       a function to extract the key from input item
+     * @param valueFn     a function to extract value from input item
+     * @param mergeFn     a merge function, used to resolve collisions between
+     *                    values associated with the same key, as supplied
+     *                    to {@link Map#merge(Object, Object,
+     *                    java.util.function.BiFunction)}
      * @param createMapFn a function which returns a new, empty {@code Map} into
      *                    which the results will be inserted
-     * @param <T> type of the input item
-     * @param <K> the output type of the key mapping function
-     * @param <U> the output type of the value mapping function
-     * @param <M> the type of the resulting {@code Map}
-     *
+     * @param <T>         type of the input item
+     * @param <K>         the output type of the key mapping function
+     * @param <U>         the output type of the value mapping function
+     * @param <M>         the type of the resulting {@code Map}
      * @see #toMap(FunctionEx, FunctionEx)
      * @see #toMap(FunctionEx, FunctionEx, BinaryOperatorEx)
      */
@@ -955,8 +936,7 @@ public final class AggregateOperations {
         checkSerializable(createMapFn, "createMapFn");
         BiConsumerEx<M, T> accumulateFn =
                 (map, element) -> map.merge(keyFn.apply(element), valueFn.apply(element), mergeFn);
-        return AggregateOperation
-                .withCreate(createMapFn)
+        return withCreate(createMapFn)
                 .andAccumulate(accumulateFn)
                 .andCombine((l, r) -> r.forEach((key, value) -> l.merge(key, value, mergeFn)))
                 .andExport(acc -> {
@@ -986,7 +966,7 @@ public final class AggregateOperations {
      *               .aggregate(groupingBy(Person::getGender));
      *     }
      * }</pre>
-     *
+     * <p>
      * This aggregate operation has a similar effect to the dedicated {@link
      * GeneralStage#groupingKey(FunctionEx) groupingKey()} pipeline transform
      * so you may wonder why not use it in all cases, not just cascaded
@@ -1003,7 +983,7 @@ public final class AggregateOperations {
      * BatchStage<Map<String, List<Person>>> byCountry2 =
      *         people.aggregate(groupingBy(Person::getCountry));
      * }</pre>
-     *
+     * <p>
      * Notice that snippet 1 outputs a <em>stream of map entries</em> whereas
      * snippet 2 outputs a <em>single map</em>. To produce the single map,
      * Jet must do all the work on a single thread and hold all the data on a
@@ -1014,10 +994,9 @@ public final class AggregateOperations {
      * grouping.
      *
      * @param keyFn a function to extract the key from input item. It must be
-     *     stateless and {@linkplain Processor#isCooperative() cooperative}.
-     * @param <T> type of the input item
-     * @param <K> the output type of the key mapping function
-     *
+     *              stateless and {@linkplain Processor#isCooperative() cooperative}.
+     * @param <T>   type of the input item
+     * @param <K>   the output type of the key mapping function
      * @see #groupingBy(FunctionEx, AggregateOperation1)
      * @see #groupingBy(FunctionEx, SupplierEx, AggregateOperation1)
      * @see #toMap(FunctionEx, FunctionEx)
@@ -1050,15 +1029,13 @@ public final class AggregateOperations {
      *               .aggregate(groupingBy(Person::getGender, counting()));
      * }</pre>
      *
-     *
-     * @param keyFn a function to extract the key from input item. It must be
-     *     stateless and {@linkplain Processor#isCooperative() cooperative}.
+     * @param keyFn      a function to extract the key from input item. It must be
+     *                   stateless and {@linkplain Processor#isCooperative() cooperative}.
      * @param downstream the downstream aggregate operation
-     * @param <T> type of the input item
-     * @param <K> the output type of the key mapping function
-     * @param <R> the type of the downstream aggregation result
-     * @param <A> downstream aggregation's accumulator type
-     *
+     * @param <T>        type of the input item
+     * @param <K>        the output type of the key mapping function
+     * @param <R>        the type of the downstream aggregation result
+     * @param <A>        downstream aggregation's accumulator type
      * @see #groupingBy(FunctionEx)
      * @see #groupingBy(FunctionEx, SupplierEx, AggregateOperation1)
      * @see #toMap(FunctionEx, FunctionEx)
@@ -1096,23 +1073,22 @@ public final class AggregateOperations {
      *                       counting()));
      * }</pre>
      *
-     * @param keyFn a function to extract the key from input item. It must be
-     *     stateless and {@linkplain Processor#isCooperative() cooperative}.
+     * @param keyFn       a function to extract the key from input item. It must be
+     *                    stateless and {@linkplain Processor#isCooperative() cooperative}.
      * @param createMapFn a function which returns a new, empty {@code Map} into
-     *     which the results will be inserted. It must be stateless and {@linkplain
-     *     Processor#isCooperative() cooperative}.
-     * @param downstream the downstream aggregate operation
-     * @param <T> type of the input item
-     * @param <K> the output type of the key mapping function
-     * @param <R> the type of the downstream aggregation result
-     * @param <A> downstream aggregation's accumulator type
-     * @param <M> output type of the resulting {@code Map}
-     *
+     *                    which the results will be inserted. It must be stateless and {@linkplain
+     *                    Processor#isCooperative() cooperative}.
+     * @param downstream  the downstream aggregate operation
+     * @param <T>         type of the input item
+     * @param <K>         the output type of the key mapping function
+     * @param <R>         the type of the downstream aggregation result
+     * @param <A>         downstream aggregation's accumulator type
+     * @param <M>         output type of the resulting {@code Map}
      * @see #groupingBy(FunctionEx)
      * @see #groupingBy(FunctionEx, AggregateOperation1)
      * @see #toMap(FunctionEx, FunctionEx)
      */
-    @SuppressWarnings({ "rawtypes", "unchecked" })
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public static <T, K, R, A, M extends Map<K, R>> AggregateOperation1<T, Map<K, A>, M> groupingBy(
             FunctionEx<? super T, ? extends K> keyFn,
             SupplierEx<M> createMapFn,
@@ -1141,19 +1117,19 @@ public final class AggregateOperations {
         // replace the map contents with finished values
         SupplierEx<Map<K, A>> createAccMapFn = (SupplierEx<Map<K, A>>) createMapFn;
 
-        return (AggregateOperation1<T, Map<K, A>, M>) AggregateOperation
-                .withCreate(createAccMapFn)
-                .andAccumulate(accumulateFn)
-                .andCombine(combineFn)
-                .andExport(accMap -> accMap.entrySet().stream()
-                                           .collect(Collectors.toMap(
-                                                   Entry::getKey,
-                                                   e -> downstream.exportFn().apply(e.getValue()))))
-                .andFinish(accMap -> {
-                    // replace the values in map in-place
-                    accMap.replaceAll((K k, A v) -> ((FunctionEx<A, A>) downstream.finishFn()).apply(v));
-                    return (Map) accMap;
-                });
+        return (AggregateOperation1<T, Map<K, A>, M>)
+                withCreate(createAccMapFn)
+                        .andAccumulate(accumulateFn)
+                        .andCombine(combineFn)
+                        .andExport(accMap -> accMap.entrySet().stream()
+                                .collect(Collectors.toMap(
+                                        Entry::getKey,
+                                        e -> downstream.exportFn().apply(e.getValue()))))
+                        .andFinish(accMap -> {
+                            // replace the values in map in-place
+                            accMap.replaceAll((K k, A v) -> ((FunctionEx<A, A>) downstream.finishFn()).apply(v));
+                            return (Map) accMap;
+                        });
     }
 
     /**
@@ -1196,13 +1172,13 @@ public final class AggregateOperations {
      * The given functions must be stateless and {@linkplain
      * Processor#isCooperative() cooperative}.
      *
-     * @param emptyAccValue the reducing operation's emptyAccValue element
-     * @param toAccValueFn transforms the stream item into its accumulated value
+     * @param emptyAccValue      the reducing operation's emptyAccValue element
+     * @param toAccValueFn       transforms the stream item into its accumulated value
      * @param combineAccValuesFn combines two accumulated values into one
-     * @param deductAccValueFn deducts the right-hand accumulated value from the left-hand one
-     *                        (optional)
-     * @param <T> type of the input item
-     * @param <A> type of the accumulated value
+     * @param deductAccValueFn   deducts the right-hand accumulated value from the left-hand one
+     *                           (optional)
+     * @param <T>                type of the input item
+     * @param <A>                type of the accumulated value
      */
     @Nonnull
     public static <T, A> AggregateOperation1<T, MutableReference<A>, A> reducing(
@@ -1219,8 +1195,7 @@ public final class AggregateOperations {
         // workaround for spotbugs issue: https://github.com/spotbugs/spotbugs/issues/552
         @SuppressWarnings("UnnecessaryLocalVariable")
         BinaryOperatorEx<A> deductFn = deductAccValueFn;
-        return AggregateOperation
-                .withCreate(() -> new MutableReference<>(emptyAccValue))
+        return withCreate(() -> new MutableReference<>(emptyAccValue))
                 .andAccumulate((MutableReference<A> a, T t) ->
                         a.set(combineAccValuesFn.apply(a.get(), toAccValueFn.apply(t))))
                 .andCombine((a, b) -> a.set(combineAccValuesFn.apply(a.get(), b.get())))
@@ -1251,13 +1226,13 @@ public final class AggregateOperations {
      * BatchStage#aggregate} emits just the naked aggregation result, and since
      * a {@code null} cannot travel through a Jet pipeline, you will not get
      * any output in that case.
+     *
      * @param <T> type of the input item
      */
     @Nonnull
     @SuppressWarnings("checkstyle:needbraces")
     public static <T> AggregateOperation1<T, MutableReference<T>, T> pickAny() {
-        return AggregateOperation
-                .withCreate(MutableReference<T>::new)
+        return withCreate(MutableReference<T>::new)
                 // Result would be correct even without the acc.isNull() check, but that
                 // can cause more GC churn due to medium-lived objects.
                 .<T>andAccumulate((acc, item) -> {
@@ -1284,15 +1259,14 @@ public final class AggregateOperations {
      * }</pre>
      *
      * @param comparator the comparator to use for sorting. It must be
-     *     stateless and {@linkplain Processor#isCooperative() cooperative}.
-     * @param <T> the type of input items
+     *                   stateless and {@linkplain Processor#isCooperative() cooperative}.
+     * @param <T>        the type of input items
      */
     public static <T> AggregateOperation1<T, ArrayList<T>, List<T>> sorting(
             @Nonnull ComparatorEx<? super T> comparator
     ) {
         checkSerializable(comparator, "comparator");
-        return AggregateOperation
-                .withCreate(ArrayList<T>::new)
+        return withCreate(ArrayList<T>::new)
                 .<T>andAccumulate(ArrayList::add)
                 .andCombine(ArrayList::addAll)
                 .andExport(acc -> {
@@ -1322,19 +1296,17 @@ public final class AggregateOperations {
      * ));
      * }</pre>
      *
-     * @param op0 1st operation
-     * @param op1 2nd operation
+     * @param op0            1st operation
+     * @param op1            2nd operation
      * @param exportFinishFn function combining the two results into a single
-     *     target instance. It must be stateless and {@linkplain
-     *     Processor#isCooperative() cooperative}.
-     *
-     * @param <T> type of input items
-     * @param <A0> 1st accumulator type
-     * @param <A1> 2nd accumulator type
-     * @param <R0> 1st result type
-     * @param <R1> 2nd result type
-     * @param <R> final result type
-     *
+     *                       target instance. It must be stateless and {@linkplain
+     *                       Processor#isCooperative() cooperative}.
+     * @param <T>            type of input items
+     * @param <A0>           1st accumulator type
+     * @param <A1>           2nd accumulator type
+     * @param <R0>           1st result type
+     * @param <R1>           2nd result type
+     * @param <R>            final result type
      * @return the composite operation
      */
     @Nonnull
@@ -1348,22 +1320,21 @@ public final class AggregateOperations {
         BiConsumerEx<? super A1, ? super A1> combine1 = op1.combineFn();
         BiConsumerEx<? super A0, ? super A0> deduct0 = op0.deductFn();
         BiConsumerEx<? super A1, ? super A1> deduct1 = op1.deductFn();
-        return AggregateOperation
-                .withCreate(() -> tuple2(op0.createFn().get(), op1.createFn().get()))
+        return withCreate(() -> tuple2(op0.createFn().get(), op1.createFn().get()))
                 .<T>andAccumulate((acc, item) -> {
                     op0.accumulateFn().accept(acc.f0(), item);
                     op1.accumulateFn().accept(acc.f1(), item);
                 })
-                .andCombine(combine0 == null || combine1 == null ? null :
-                        (acc1, acc2) -> {
-                            combine0.accept(acc1.f0(), acc2.f0());
-                            combine1.accept(acc1.f1(), acc2.f1());
-                        })
-                .andDeduct(deduct0 == null || deduct1 == null ? null :
-                        (acc1, acc2) -> {
-                            deduct0.accept(acc1.f0(), acc2.f0());
-                            deduct1.accept(acc1.f1(), acc2.f1());
-                        })
+                .andCombine(combine0 == null || combine1 == null ? null
+                        : (acc1, acc2) -> {
+                    combine0.accept(acc1.f0(), acc2.f0());
+                    combine1.accept(acc1.f1(), acc2.f1());
+                })
+                .andDeduct(deduct0 == null || deduct1 == null ? null
+                        : (acc1, acc2) -> {
+                    deduct0.accept(acc1.f0(), acc2.f0());
+                    deduct1.accept(acc1.f1(), acc2.f1());
+                })
                 .<R>andExport(acc ->
                         exportFinishFn.apply(op0.exportFn().apply(acc.f0()), op1.exportFn().apply(acc.f1())))
                 .andFinish(acc ->
@@ -1401,22 +1372,20 @@ public final class AggregateOperations {
      * ));
      * }</pre>
      *
-     * @param op0 1st operation
-     * @param op1 2nd operation
-     * @param op2 3rd operation
+     * @param op0            1st operation
+     * @param op1            2nd operation
+     * @param op2            3rd operation
      * @param exportFinishFn function combining the three results into a single
-     *     target instance. It must be stateless and {@linkplain
-     *     Processor#isCooperative() cooperative}.
-     *
-     * @param <T> type of input items
-     * @param <A0> 1st accumulator type
-     * @param <A1> 2nd accumulator type
-     * @param <A2> 3rd accumulator type
-     * @param <R0> 1st result type
-     * @param <R1> 2nd result type
-     * @param <R2> 3rd result type
-     * @param <R> final result type
-     *
+     *                       target instance. It must be stateless and {@linkplain
+     *                       Processor#isCooperative() cooperative}.
+     * @param <T>            type of input items
+     * @param <A0>           1st accumulator type
+     * @param <A1>           2nd accumulator type
+     * @param <A2>           3rd accumulator type
+     * @param <R0>           1st result type
+     * @param <R1>           2nd result type
+     * @param <R2>           3rd result type
+     * @param <R>            final result type
      * @return the composite operation
      */
     @Nonnull
@@ -1433,25 +1402,24 @@ public final class AggregateOperations {
         BiConsumerEx<? super A0, ? super A0> deduct0 = op0.deductFn();
         BiConsumerEx<? super A1, ? super A1> deduct1 = op1.deductFn();
         BiConsumerEx<? super A2, ? super A2> deduct2 = op2.deductFn();
-        return AggregateOperation
-                .withCreate(() -> tuple3(op0.createFn().get(), op1.createFn().get(), op2.createFn().get()))
+        return withCreate(() -> tuple3(op0.createFn().get(), op1.createFn().get(), op2.createFn().get()))
                 .<T>andAccumulate((acc, item) -> {
                     op0.accumulateFn().accept(acc.f0(), item);
                     op1.accumulateFn().accept(acc.f1(), item);
                     op2.accumulateFn().accept(acc.f2(), item);
                 })
-                .andCombine(combine0 == null || combine1 == null || combine2 == null ? null :
-                        (acc1, acc2) -> {
-                            combine0.accept(acc1.f0(), acc2.f0());
-                            combine1.accept(acc1.f1(), acc2.f1());
-                            combine2.accept(acc1.f2(), acc2.f2());
-                        })
-                .andDeduct(deduct0 == null || deduct1 == null || deduct2 == null ? null :
-                        (acc1, acc2) -> {
-                            deduct0.accept(acc1.f0(), acc2.f0());
-                            deduct1.accept(acc1.f1(), acc2.f1());
-                            deduct2.accept(acc1.f2(), acc2.f2());
-                        })
+                .andCombine(combine0 == null || combine1 == null || combine2 == null ? null
+                        : (acc1, acc2) -> {
+                    combine0.accept(acc1.f0(), acc2.f0());
+                    combine1.accept(acc1.f1(), acc2.f1());
+                    combine2.accept(acc1.f2(), acc2.f2());
+                })
+                .andDeduct(deduct0 == null || deduct1 == null || deduct2 == null ? null
+                        : (acc1, acc2) -> {
+                    deduct0.accept(acc1.f0(), acc2.f0());
+                    deduct1.accept(acc1.f1(), acc2.f1());
+                    deduct2.accept(acc1.f2(), acc2.f2());
+                })
                 .<R>andExport(acc -> exportFinishFn.apply(
                         op0.exportFn().apply(acc.f0()),
                         op1.exportFn().apply(acc.f1()),
@@ -1498,7 +1466,7 @@ public final class AggregateOperations {
      * <pre>{@code
      * BatchStage<Order> orders = pipeline.readFrom(orderSource);
      * }</pre>
-     *
+     * <p>
      * Now we construct the aggregate operation using the builder:
      *
      * <pre>{@code
@@ -1507,7 +1475,7 @@ public final class AggregateOperations {
      * Tag<Order> maxTag = builder.add(maxBy(ComparatorEx.comparing(Order::getAmount)));
      * AggregateOperation1<Order, ?, ItemsByTag> aggrOp = builder.build();
      * }</pre>
-     *
+     * <p>
      * Finally, we apply the aggregate operation and use the tags we got
      * above to extract the components:
      *
@@ -1539,7 +1507,7 @@ public final class AggregateOperations {
      * independent aggregate operations where you combine their final results.
      * If you need an operation that combines the two inputs in the
      * accumulation phase, you can create an aggregate operation by specifying
-     * each primitive using the {@linkplain AggregateOperation#withCreate
+     * each primitive using the {@linkplain AggregateOperationBuilder
      * aggregate operation builder}.
      * <p>
      * As a quick example, let's say you have two data streams coming from an
@@ -1563,18 +1531,18 @@ public final class AggregateOperations {
      * the user ID and the value is the ratio of page visits to payments for
      * that user.
      *
-     * @param op0 the aggregate operation that will receive the first stage's input
-     * @param op1 the aggregate operation that will receive the second stage's input
+     * @param op0            the aggregate operation that will receive the first stage's input
+     * @param op1            the aggregate operation that will receive the second stage's input
      * @param exportFinishFn the function that transforms the individual aggregate results into the
-     *                 overall result that the co-aggregating stage emits. It must be stateless
-     *                 and {@linkplain Processor#isCooperative() cooperative}.
-     * @param <T0> type of items in the first stage
-     * @param <A0> type of the first aggregate operation's accumulator
-     * @param <R0> type of the first aggregate operation's result
-     * @param <T1> type of items in the second stage
-     * @param <A1> type of the second aggregate operation's accumulator
-     * @param <R1> type of the second aggregate operation's result
-     * @param <R> type of the result
+     *                       overall result that the co-aggregating stage emits. It must be stateless
+     *                       and {@linkplain Processor#isCooperative() cooperative}.
+     * @param <T0>           type of items in the first stage
+     * @param <A0>           type of the first aggregate operation's accumulator
+     * @param <R0>           type of the first aggregate operation's result
+     * @param <T1>           type of items in the second stage
+     * @param <A1>           type of the second aggregate operation's accumulator
+     * @param <R1>           type of the second aggregate operation's result
+     * @param <R>            type of the result
      */
     public static <T0, A0, R0, T1, A1, R1, R> AggregateOperation2<T0, T1, Tuple2<A0, A1>, R> aggregateOperation2(
             @Nonnull AggregateOperation1<? super T0, A0, ? extends R0> op0,
@@ -1586,20 +1554,19 @@ public final class AggregateOperations {
         BiConsumerEx<? super A1, ? super A1> combine1 = op1.combineFn();
         BiConsumerEx<? super A0, ? super A0> deduct0 = op0.deductFn();
         BiConsumerEx<? super A1, ? super A1> deduct1 = op1.deductFn();
-        return AggregateOperation
-                .withCreate(() -> tuple2(op0.createFn().get(), op1.createFn().get()))
+        return withCreate(() -> tuple2(op0.createFn().get(), op1.createFn().get()))
                 .<T0>andAccumulate0((acc, item) -> op0.accumulateFn().accept(acc.f0(), item))
                 .<T1>andAccumulate1((acc, item) -> op1.accumulateFn().accept(acc.f1(), item))
-                .andCombine(combine0 == null || combine1 == null ? null :
-                        (acc1, acc2) -> {
-                            combine0.accept(acc1.f0(), acc2.f0());
-                            combine1.accept(acc1.f1(), acc2.f1());
-                        })
-                .andDeduct(deduct0 == null || deduct1 == null ? null :
-                        (acc1, acc2) -> {
-                            deduct0.accept(acc1.f0(), acc2.f0());
-                            deduct1.accept(acc1.f1(), acc2.f1());
-                        })
+                .andCombine(combine0 == null || combine1 == null ? null
+                        : (acc1, acc2) -> {
+                    combine0.accept(acc1.f0(), acc2.f0());
+                    combine1.accept(acc1.f1(), acc2.f1());
+                })
+                .andDeduct(deduct0 == null || deduct1 == null ? null
+                        : (acc1, acc2) -> {
+                    deduct0.accept(acc1.f0(), acc2.f0());
+                    deduct1.accept(acc1.f1(), acc2.f1());
+                })
                 .<R>andExport(acc ->
                         exportFinishFn.apply(op0.exportFn().apply(acc.f0()), op1.exportFn().apply(acc.f1())))
                 .andFinish(acc ->
@@ -1608,12 +1575,12 @@ public final class AggregateOperations {
 
     /**
      * Convenience for {@link #aggregateOperation2(AggregateOperation1,
-     *      AggregateOperation1, BiFunctionEx)
+     * AggregateOperation1, BiFunctionEx)
      * aggregateOperation2(aggrOp0, aggrOp1, finishFn)} that outputs a
      * {@code Tuple2(result0, result1)}.
      *
-     * @param op0 the aggregate operation that will receive the first stage's input
-     * @param op1 the aggregate operation that will receive the second stage's input
+     * @param op0  the aggregate operation that will receive the first stage's input
+     * @param op1  the aggregate operation that will receive the second stage's input
      * @param <T0> type of items in the first stage
      * @param <A0> type of the first aggregate operation's accumulator
      * @param <R0> type of the first aggregate operation's result
@@ -1674,23 +1641,22 @@ public final class AggregateOperations {
      *         ));
      * }</pre>
      *
-     * @param op0 the aggregate operation that will receive the first stage's input
-     * @param op1 the aggregate operation that will receive the second stage's input
-     * @param op2 the aggregate operation that will receive the third stage's input
+     * @param op0            the aggregate operation that will receive the first stage's input
+     * @param op1            the aggregate operation that will receive the second stage's input
+     * @param op2            the aggregate operation that will receive the third stage's input
      * @param exportFinishFn the function that transforms the individual aggregate results into the
-     *                 overall result that the co-aggregating stage emits. It must be stateless
-     *                 and {@linkplain Processor#isCooperative() cooperative}.
-     *
-     * @param <T0> type of items in the first stage
-     * @param <A0> type of the first aggregate operation's accumulator
-     * @param <R0> type of the first aggregate operation's result
-     * @param <T1> type of items in the second stage
-     * @param <A1> type of the second aggregate operation's accumulator
-     * @param <R1> type of the second aggregate operation's result
-     * @param <T2> type of items in the third stage
-     * @param <A2> type of the third aggregate operation's accumulator
-     * @param <R2> type of the third aggregate operation's result
-     * @param <R> type of the result
+     *                       overall result that the co-aggregating stage emits. It must be stateless
+     *                       and {@linkplain Processor#isCooperative() cooperative}.
+     * @param <T0>           type of items in the first stage
+     * @param <A0>           type of the first aggregate operation's accumulator
+     * @param <R0>           type of the first aggregate operation's result
+     * @param <T1>           type of items in the second stage
+     * @param <A1>           type of the second aggregate operation's accumulator
+     * @param <R1>           type of the second aggregate operation's result
+     * @param <T2>           type of items in the third stage
+     * @param <A2>           type of the third aggregate operation's accumulator
+     * @param <R2>           type of the third aggregate operation's result
+     * @param <R>            type of the result
      */
     public static <T0, T1, T2, A0, A1, A2, R0, R1, R2, R>
     AggregateOperation3<T0, T1, T2, Tuple3<A0, A1, A2>, R> aggregateOperation3(
@@ -1706,23 +1672,22 @@ public final class AggregateOperations {
         BiConsumerEx<? super A0, ? super A0> deduct0 = op0.deductFn();
         BiConsumerEx<? super A1, ? super A1> deduct1 = op1.deductFn();
         BiConsumerEx<? super A2, ? super A2> deduct2 = op2.deductFn();
-        return AggregateOperation
-                .withCreate(() -> tuple3(op0.createFn().get(), op1.createFn().get(), op2.createFn().get()))
+        return withCreate(() -> tuple3(op0.createFn().get(), op1.createFn().get(), op2.createFn().get()))
                 .<T0>andAccumulate0((acc, item) -> op0.accumulateFn().accept(acc.f0(), item))
                 .<T1>andAccumulate1((acc, item) -> op1.accumulateFn().accept(acc.f1(), item))
                 .<T2>andAccumulate2((acc, item) -> op2.accumulateFn().accept(acc.f2(), item))
-                .andCombine(combine0 == null || combine1 == null || combine2 == null ? null :
-                        (acc1, acc2) -> {
-                            combine0.accept(acc1.f0(), acc2.f0());
-                            combine1.accept(acc1.f1(), acc2.f1());
-                            combine2.accept(acc1.f2(), acc2.f2());
-                        })
-                .andDeduct(deduct0 == null || deduct1 == null || deduct2 == null ? null :
-                        (acc1, acc2) -> {
-                            deduct0.accept(acc1.f0(), acc2.f0());
-                            deduct1.accept(acc1.f1(), acc2.f1());
-                            deduct2.accept(acc1.f2(), acc2.f2());
-                        })
+                .andCombine(combine0 == null || combine1 == null || combine2 == null ? null
+                        : (acc1, acc2) -> {
+                    combine0.accept(acc1.f0(), acc2.f0());
+                    combine1.accept(acc1.f1(), acc2.f1());
+                    combine2.accept(acc1.f2(), acc2.f2());
+                })
+                .andDeduct(deduct0 == null || deduct1 == null || deduct2 == null ? null
+                        : (acc1, acc2) -> {
+                    deduct0.accept(acc1.f0(), acc2.f0());
+                    deduct1.accept(acc1.f1(), acc2.f1());
+                    deduct2.accept(acc1.f2(), acc2.f2());
+                })
                 .<R>andExport(acc -> exportFinishFn.apply(
                         op0.exportFn().apply(acc.f0()),
                         op1.exportFn().apply(acc.f1()),
@@ -1735,13 +1700,13 @@ public final class AggregateOperations {
 
     /**
      * Convenience for {@link #aggregateOperation3(AggregateOperation1, AggregateOperation1,
-     *      AggregateOperation1, TriFunction)
+     * AggregateOperation1, TriFunction)
      * aggregateOperation3(aggrOp0, aggrOp1, aggrOp2, finishFn)} that outputs a
      * {@code Tuple3(result0, result1, result2)}.
      *
-     * @param op0 the aggregate operation that will receive the first stage's input
-     * @param op1 the aggregate operation that will receive the second stage's input
-     * @param op2 the aggregate operation that will receive the third stage's input
+     * @param op0  the aggregate operation that will receive the first stage's input
+     * @param op1  the aggregate operation that will receive the second stage's input
+     * @param op2  the aggregate operation that will receive the third stage's input
      * @param <T0> type of items in the first stage
      * @param <A0> type of the first aggregate operation's accumulator
      * @param <R0> type of the first aggregate operation's result
@@ -1802,7 +1767,7 @@ public final class AggregateOperations {
      * Tag<PageVisit> visitTag_in = stageBuilder.tag0();
      * Tag<Payment> payTag_in = stageBuilder.add(payments.groupingKey(Payment::userId));
      * }</pre>
-     *
+     * <p>
      * Now we have the tags we need to build the aggregate operation, and while
      * building it we get new tags to get the results of the operation:
      *
@@ -1811,20 +1776,20 @@ public final class AggregateOperations {
      * Tag<Long> visitTag = opBuilder.add(visitTag_in, counting());
      * Tag<Long> payTag = opBuilder.add(payTag_in, counting());
      * }</pre>
-     *
+     * <p>
      * We use these tags in the {@code exportFinishFn} we specify at the end:
      *
      * <pre>{@code
      * AggregateOperation<Object[], Double> aggrOp =
      *         opBuilder.build(ibt -> 1.0 * ibt.get(visitTag) / ibt.get(payTag));
      * }</pre>
-     *
+     * <p>
      * And now we're ready to construct the output stage:
      *
      * <pre>{@code
      * BatchStage<Entry<Long, Double>> visitsPerPurchase = stageBuilder.build(aggrOp);
      * }</pre>
-     *
+     * <p>
      * The output stage's stream contains {@code Map.Entry}s where the key is
      * the user ID and the value is the ratio of page visits to payments for
      * that user.
@@ -1860,13 +1825,13 @@ public final class AggregateOperations {
             throw new IllegalArgumentException("This aggregate operation doesn't implement combineFn()");
         }
         return Collector.of(
-            aggrOp.createFn(),
-            (acc, t) -> aggrOp.accumulateFn().accept(acc, t),
-            (l, r) -> {
-                combineFn.accept(l, r);
-                return l;
-            },
-            a -> aggrOp.finishFn().apply(a));
+                aggrOp.createFn(),
+                (acc, t) -> aggrOp.accumulateFn().accept(acc, t),
+                (l, r) -> {
+                    combineFn.accept(l, r);
+                    return l;
+                },
+                a -> aggrOp.finishFn().apply(a));
     }
 
     /**
@@ -1894,8 +1859,12 @@ public final class AggregateOperations {
      */
     @Nonnull
     public static <T, A, R> Aggregator<T, R> toAggregator(
-        AggregateOperation1<? super T, A, ? extends R> aggrOp
+            AggregateOperation1<? super T, A, ? extends R> aggrOp
     ) {
         return new AggregateOpAggregator<>(aggrOp);
+    }
+
+    public static <A> AggregateOperationBuilder<A> withCreate(SupplierEx<A> createFn) {
+        return new AggregateOperationBuilder<>(createFn);
     }
 }

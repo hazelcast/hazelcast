@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,13 +22,12 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ResourceConfig;
 import com.hazelcast.jet.core.JetProperties;
 import com.hazelcast.jet.core.JobNotFoundException;
-import com.hazelcast.jet.core.metrics.JobMetrics;
+import com.hazelcast.jet.core.metrics.JobMetricsImpl;
 import com.hazelcast.jet.impl.deployment.IMapOutputStream;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.jet.impl.metrics.RawJobMetrics;
@@ -143,7 +142,7 @@ public class JobRepository {
     public static final String JOB_RESULTS_MAP_NAME = INTERNAL_JET_OBJECTS_PREFIX + "results";
 
     /**
-     * Name of internal IMap which stores {@link JobMetrics}s.
+     * Name of internal IMap which stores {@link JobMetricsImpl}s.
      */
     public static final String JOB_METRICS_MAP_NAME = INTERNAL_JET_OBJECTS_PREFIX + "results.metrics";
 
@@ -179,8 +178,8 @@ public class JobRepository {
 
     private long resourcesExpirationMillis = DEFAULT_RESOURCES_EXPIRATION_MILLIS;
 
-    public JobRepository(JetInstance jetInstance) {
-        this.instance = jetInstance.getHazelcastInstance();
+    public JobRepository(HazelcastInstance instance) {
+        this.instance = instance;
         this.logger = instance.getLoggingService().getLogger(getClass());
 
         this.idGenerator = instance.getFlakeIdGenerator(RANDOM_ID_GENERATOR_NAME);
@@ -476,8 +475,8 @@ public class JobRepository {
             IMap resourceMap = (IMap) map;
             long creationTime = resourceMap.getLocalMapStats().getCreationTime();
             if (isResourceMapExpired(creationTime)) {
-                logger.fine("Deleting job resource map " + map.getName() + " because the map " +
-                        "was created long ago and job record or result still doesn't exist");
+                logger.fine("Deleting job resource map " + map.getName() + " because the map "
+                        + "was created long ago and job record or result still doesn't exist");
                 resourceMap.destroy();
             }
         }

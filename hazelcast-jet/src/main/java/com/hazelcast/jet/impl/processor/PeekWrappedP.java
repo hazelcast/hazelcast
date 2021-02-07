@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,8 +91,8 @@ public final class PeekWrappedP<T> extends ProcessorWrapper {
         if (shouldLogFn.test(object)) {
             logger.info(prefix + ": " + toStringFn.apply(object)
                     + (object instanceof JetEvent
-                            ? " (eventTime=" + toLocalTime(((JetEvent) object).timestamp()) + ")"
-                            : ""));
+                    ? " (eventTime=" + toLocalTime(((JetEvent) object).timestamp()) + ")"
+                    : ""));
         }
     }
 
@@ -125,7 +125,8 @@ public final class PeekWrappedP<T> extends ProcessorWrapper {
             return wrappedInbox.peek();
         }
 
-        @Nonnull @Override
+        @Nonnull
+        @Override
         public Iterator<Object> iterator() {
             Iterator<Object> it = wrappedInbox.iterator();
             return new Iterator<Object>() {
@@ -143,16 +144,16 @@ public final class PeekWrappedP<T> extends ProcessorWrapper {
 
         @Override
         public Object poll() {
-            @SuppressWarnings("unchecked")
-            T res = (T) wrappedInbox.poll();
-            if (res != null) {
-                log(res);
-            }
+            Object res = wrappedInbox.poll();
+            log(res);
             return res;
         }
 
-        private void log(@Nonnull T res) {
-            PeekWrappedP.this.log("Input from ordinal " + ordinal, res);
+        @SuppressWarnings("unchecked")
+        private void log(Object res) {
+            if (res != null) {
+                PeekWrappedP.this.log("Input from ordinal " + ordinal, (T) res);
+            }
         }
 
         @Override
@@ -164,7 +165,12 @@ public final class PeekWrappedP<T> extends ProcessorWrapper {
 
         @Override
         public void clear() {
-            while (poll() != null) { }
+            Object res;
+            do {
+                res = wrappedInbox.poll();
+                log(res);
+            }
+            while (res != null);
         }
 
         @Override

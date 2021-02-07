@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,8 @@ import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.aggregate.AggregateOperation2;
 import com.hazelcast.jet.aggregate.AggregateOperation3;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.datamodel.Tuple2;
+import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.function.TriPredicate;
 import com.hazelcast.jet.impl.pipeline.transform.DistinctTransform;
@@ -40,6 +42,8 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
 
+import static com.hazelcast.jet.aggregate.AggregateOperations.aggregateOperation2;
+import static com.hazelcast.jet.aggregate.AggregateOperations.aggregateOperation3;
 import static com.hazelcast.jet.impl.pipeline.ComputeStageImplBase.DO_NOT_ADAPT;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -53,7 +57,8 @@ public class BatchStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> imp
         super(computeStage, keyFn);
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public <S, R> BatchStage<R> mapStateful(
             @Nonnull SupplierEx<? extends S> createFn,
             @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends R> mapFn
@@ -61,7 +66,8 @@ public class BatchStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> imp
         return attachMapStateful(0, createFn, mapFn, null);
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public <S> BatchStage<T> filterStateful(
             @Nonnull SupplierEx<? extends S> createFn,
             @Nonnull BiPredicateEx<? super S, ? super T> filterFn
@@ -69,7 +75,8 @@ public class BatchStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> imp
         return attachMapStateful(0, createFn, (s, k, t) -> filterFn.test(s, t) ? t : null, null);
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public <S, R> BatchStage<R> flatMapStateful(
             @Nonnull SupplierEx<? extends S> createFn,
             @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends Traverser<R>> flatMapFn
@@ -77,12 +84,14 @@ public class BatchStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> imp
         return attachFlatMapStateful(0, createFn, flatMapFn, null);
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public BatchStage<T> distinct() {
         return computeStage.attach(new DistinctTransform<>(computeStage.transform, keyFn()), DO_NOT_ADAPT);
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public <S, R> BatchStage<R> mapUsingService(
             @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends R> mapFn
@@ -90,7 +99,8 @@ public class BatchStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> imp
         return attachMapUsingService(serviceFactory, mapFn);
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public <S, R> BatchStage<R> mapUsingServiceAsync(
             @Nonnull ServiceFactory<?, S> serviceFactory,
             int maxConcurrentOps,
@@ -100,7 +110,8 @@ public class BatchStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> imp
         return attachMapUsingServiceAsync(serviceFactory, maxConcurrentOps, preserveOrder, mapAsyncFn);
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public <S, R> BatchStage<R> mapUsingServiceAsyncBatched(
             @Nonnull ServiceFactory<?, S> serviceFactory,
             int maxBatchSize,
@@ -109,7 +120,8 @@ public class BatchStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> imp
         return attachMapUsingServiceAsyncBatched(serviceFactory, maxBatchSize, mapAsyncFn);
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public <S, R> BatchStage<R> mapUsingServiceAsyncBatched(
             @Nonnull ServiceFactory<?, S> serviceFactory,
             int maxBatchSize,
@@ -119,7 +131,8 @@ public class BatchStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> imp
         return attachMapUsingServiceAsyncBatched(serviceFactory, maxBatchSize, mapAsyncFn);
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public <S> BatchStage<T> filterUsingService(
             @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull TriPredicate<? super S, ? super K, ? super T> filterFn
@@ -127,7 +140,8 @@ public class BatchStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> imp
         return attachFilterUsingService(serviceFactory, filterFn);
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public <S, R> BatchStage<R> flatMapUsingService(
             @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull TriFunction<? super S, ? super K, ? super T, ? extends Traverser<R>> flatMapFn
@@ -135,12 +149,14 @@ public class BatchStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> imp
         return attachFlatMapUsingService(serviceFactory, flatMapFn);
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public <R> BatchStage<R> customTransform(@Nonnull String stageName, @Nonnull ProcessorMetaSupplier procSupplier) {
         return computeStage.attachPartitionedCustomTransform(stageName, procSupplier, keyFn());
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public <R> BatchStage<Entry<K, R>> aggregate(
             @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp
     ) {
@@ -152,7 +168,8 @@ public class BatchStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> imp
                 DO_NOT_ADAPT);
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     @SuppressWarnings("rawtypes")
     public <T1, R> BatchStage<Entry<K, R>> aggregate2(
             @Nonnull BatchStageWithKey<T1, ? extends K> stage1,
@@ -170,7 +187,20 @@ public class BatchStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> imp
                 DO_NOT_ADAPT);
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
+    public <T1, R0, R1> BatchStage<Entry<K, Tuple2<R0, R1>>> aggregate2(
+            @Nonnull AggregateOperation1<? super T, ?, ? extends R0> aggrOp0,
+            @Nonnull BatchStageWithKey<? extends T1, ? extends K> stage1,
+            @Nonnull AggregateOperation1<? super T1, ?, ? extends R1> aggrOp1
+    ) {
+        AggregateOperation2<? super T, ? super T1, ?, Tuple2<R0, R1>> aggrOp =
+                aggregateOperation2(aggrOp0, aggrOp1, Tuple2::tuple2);
+        return aggregate2(stage1, aggrOp);
+    }
+
+    @Nonnull
+    @Override
     @SuppressWarnings("rawtypes")
     public <T1, T2, R> BatchStage<Entry<K, R>> aggregate3(
             @Nonnull BatchStageWithKey<T1, ? extends K> stage1,
@@ -187,5 +217,17 @@ public class BatchStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> imp
                         Util::entry),
                 asList((GeneralStage<?>) computeStage1, (GeneralStage<?>) computeStage2),
                 DO_NOT_ADAPT);
+    }
+
+    public <T1, T2, R0, R1, R2> BatchStage<Entry<K, Tuple3<R0, R1, R2>>> aggregate3(
+            @Nonnull AggregateOperation1<? super T, ?, ? extends R0> aggrOp0,
+            @Nonnull BatchStageWithKey<T1, ? extends K> stage1,
+            @Nonnull AggregateOperation1<? super T1, ?, ? extends R1> aggrOp1,
+            @Nonnull BatchStageWithKey<T2, ? extends K> stage2,
+            @Nonnull AggregateOperation1<? super T2, ?, ? extends R2> aggrOp2
+    ) {
+        AggregateOperation3<T, T1, T2, ?, Tuple3<R0, R1, R2>> aggrOp =
+                aggregateOperation3(aggrOp0, aggrOp1, aggrOp2, Tuple3::tuple3);
+        return aggregate3(stage1, stage2, aggrOp);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ public class AggregateOperation1Test {
         FunctionEx<LongAccumulator, Long> finishFn = acc -> 2L;
 
         // When
-        AggregateOperation1<Object, LongAccumulator, Long> aggrOp = AggregateOperation
+        AggregateOperation1<Object, LongAccumulator, Long> aggrOp = AggregateOperations
                 .withCreate(createFn)
                 .andAccumulate(accFn0)
                 .andCombine(combineFn)
@@ -70,11 +70,11 @@ public class AggregateOperation1Test {
         BiConsumerEx<LongAccumulator, Object> accFn = (acc, item) -> acc.addAllowingOverflow(1);
 
         // When
-        AggregateOperation1<Object, LongAccumulator, Long> aggrOp1 = AggregateOperation
+        AggregateOperation1<Object, LongAccumulator, Long> aggrOp1 = AggregateOperations
                 .withCreate(LongAccumulator::new)
                 .andAccumulate(accFn)
                 .andExportFinish(LongAccumulator::get);
-        AggregateOperation1<Object, LongAccumulator, Long> aggrOp2 = AggregateOperation
+        AggregateOperation1<Object, LongAccumulator, Long> aggrOp2 = AggregateOperations
                 .withCreate(LongAccumulator::new)
                 .andAccumulate0(accFn)
                 .andExportFinish(LongAccumulator::get);
@@ -87,7 +87,7 @@ public class AggregateOperation1Test {
     @Test(expected = IllegalArgumentException.class)
     public void when_askForNonexistentTag_then_exception() {
         // Given
-        AggregateOperation1<Object, LongAccumulator, Long> aggrOp = AggregateOperation
+        AggregateOperation1<Object, LongAccumulator, Long> aggrOp = AggregateOperations
                 .withCreate(LongAccumulator::new)
                 .andAccumulate0((x, y) -> { })
                 .andExportFinish(LongAccumulator::get);
@@ -99,7 +99,7 @@ public class AggregateOperation1Test {
     @Test
     public void when_withIdentityFinish() {
         // Given
-        AggregateOperation1<Object, LongAccumulator, Long> aggrOp = AggregateOperation
+        AggregateOperation1<Object, LongAccumulator, Long> aggrOp = AggregateOperations
                 .withCreate(LongAccumulator::new)
                 .andAccumulate((acc, item) -> acc.addAllowingOverflow(1))
                 .andExportFinish(LongAccumulator::get);
@@ -116,7 +116,7 @@ public class AggregateOperation1Test {
     @Test
     public void when_withCombiningAccumulateFn_then_accumulateFnCombines() {
         // Given
-        AggregateOperation1<Object, LongAccumulator, Long> aggrOp = AggregateOperation
+        AggregateOperation1<Object, LongAccumulator, Long> aggrOp = AggregateOperations
                 .withCreate(LongAccumulator::new)
                 .andAccumulate((acc, item) -> acc.addAllowingOverflow(1))
                 .andCombine(LongAccumulator::addAllowingOverflow)

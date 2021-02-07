@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -356,7 +356,7 @@ public class SourceBuilderTest extends PipelineStreamTestSupport {
 
     private void testFaultTolerance(StreamSource<?> source) {
         long windowSize = 100;
-        IList<WindowResult<Long>> result = jet().getList("result-" + UuidUtil.newUnsecureUuidString());
+        IList<WindowResult<Long>> result = instance().getList("result-" + UuidUtil.newUnsecureUuidString());
 
         Pipeline p = Pipeline.create();
         p.readFrom(source)
@@ -391,7 +391,7 @@ public class SourceBuilderTest extends PipelineStreamTestSupport {
         StreamSource<Integer> source = integerSequenceSource(true);
 
         long windowSize = 100;
-        IList<WindowResult<Long>> result = jet().getList("result-" + UuidUtil.newUnsecureUuidString());
+        IList<WindowResult<Long>> result = instance().getList("result-" + UuidUtil.newUnsecureUuidString());
 
         Pipeline p = Pipeline.create();
         p.readFrom(source)
@@ -436,7 +436,7 @@ public class SourceBuilderTest extends PipelineStreamTestSupport {
         StreamSource<Integer> source = integerSequenceSource(false);
 
         long windowSize = 100;
-        IList<WindowResult<Long>> result = jet().getList("result-" + UuidUtil.newUnsecureUuidString());
+        IList<WindowResult<Long>> result = instance().getList("result-" + UuidUtil.newUnsecureUuidString());
 
         Pipeline p = Pipeline.create();
         p.readFrom(source)
@@ -488,13 +488,13 @@ public class SourceBuilderTest extends PipelineStreamTestSupport {
                 .build();
 
         Pipeline p = Pipeline.create();
-        IList<Integer> result = jet().getList("result-" + UuidUtil.newUnsecureUuidString());
+        IList<Integer> result = instance().getList("result-" + UuidUtil.newUnsecureUuidString());
         p.readFrom(source)
          .withoutTimestamps()
          .writeTo(Sinks.list(result));
 
         Job job = jet().newJob(p, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE).setSnapshotIntervalMillis(100));
-        JobRepository jr = new JobRepository(jet());
+        JobRepository jr = new JobRepository(instance());
         waitForFirstSnapshot(jr, job.getId(), 10, true);
 
         job.restart();

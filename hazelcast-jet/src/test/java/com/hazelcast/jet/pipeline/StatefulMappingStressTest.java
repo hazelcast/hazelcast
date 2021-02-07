@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.pipeline;
 
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Traversers;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -46,11 +46,11 @@ public class StatefulMappingStressTest extends JetTestSupport {
     private static final long TTL = SECONDS.toMillis(2);
     private static final String MAP_SINK_NAME = StatefulMappingStressTest.class.getSimpleName() + "_sink";
 
-    private JetInstance instance;
+    private HazelcastInstance instance;
 
     @Before
     public void setup() {
-        instance = createJetMembers(new JetConfig(), 2)[0];
+        instance = createHazelcastInstanceFactory(2).newInstances(new Config())[0];
     }
 
     @Test
@@ -92,7 +92,7 @@ public class StatefulMappingStressTest extends JetTestSupport {
         StreamStage<Map.Entry<Integer, Integer>> statefulStage = statefulFn.apply(streamStageWithKey);
         statefulStage.writeTo(Sinks.mapWithMerging(MAP_SINK_NAME, (oldValue, newValue) -> oldValue + newValue));
 
-        instance.newJob(p);
+        instance.getJetInstance().newJob(p);
 
         Map<Integer, Integer> map = instance.getMap(MAP_SINK_NAME);
 

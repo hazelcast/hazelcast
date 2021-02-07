@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,14 +58,14 @@ public final class JetExistsDistributedObjectCodec {
 
         /**
          */
-        public java.lang.String serviceName;
+        public String serviceName;
 
         /**
          */
-        public java.lang.String objectName;
+        public String objectName;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String serviceName, java.lang.String objectName) {
+    public static ClientMessage encodeRequest(String serviceName, String objectName) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setOperationName("Jet.ExistsDistributedObject");
@@ -77,7 +77,7 @@ public final class JetExistsDistributedObjectCodec {
         return clientMessage;
     }
 
-    public static JetExistsDistributedObjectCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         //empty initial frame
@@ -105,7 +105,7 @@ public final class JetExistsDistributedObjectCodec {
         return clientMessage;
     }
 
-    public static JetExistsDistributedObjectCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();

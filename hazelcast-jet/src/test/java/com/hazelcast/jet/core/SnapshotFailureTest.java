@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,12 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.client.map.helpers.AMapStore;
+import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.SupplierEx;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.JobRestartWithSnapshotTest.SequencesInPartitionsGeneratorP;
@@ -54,22 +54,21 @@ public class SnapshotFailureTest extends JetTestSupport {
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
-    private JetInstance instance1;
+    private HazelcastInstance instance;
 
     @Before
     public void setup() {
-        JetConfig config = new JetConfig();
-        config.getInstanceConfig().setCooperativeThreadCount(LOCAL_PARALLELISM);
+        Config config = new Config();
+        config.getJetConfig().getInstanceConfig().setCooperativeThreadCount(LOCAL_PARALLELISM);
 
         // force snapshots to fail by adding a failing map store configuration for snapshot data maps
         MapConfig mapConfig = new MapConfig(JobRepository.SNAPSHOT_DATA_MAP_PREFIX + '*');
         MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
         mapStoreConfig.setEnabled(true);
         mapStoreConfig.setImplementation(new FailingMapStore());
-        config.getHazelcastConfig().addMapConfig(mapConfig);
+        config.addMapConfig(mapConfig);
 
-        JetInstance[] instances = createJetMembers(config, 2);
-        instance1 = instances[0];
+        instance = createMembers(config, 2)[0];
     }
 
     @Test
@@ -77,12 +76,12 @@ public class SnapshotFailureTest extends JetTestSupport {
         storeFailed = false;
         int numPartitions = 2;
         int numElements = 10;
-        IMap<Object, Object> results = instance1.getMap("results");
+        IMap<Object, Object> results = instance.getMap("results");
 
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         SupplierEx<Processor> sup = () -> new SequencesInPartitionsGeneratorP(numPartitions, numElements, false);
         Vertex generator = dag.newVertex("generator", peekOutputP(throttle(sup, 2)))
-                              .localParallelism(1);
+                .localParallelism(1);
         Vertex writeMap = dag.newVertex("writeMap", writeMapP(results.getName())).localParallelism(1);
         dag.edge(between(generator, writeMap));
 
@@ -90,7 +89,7 @@ public class SnapshotFailureTest extends JetTestSupport {
         config.setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
         config.setSnapshotIntervalMillis(100);
 
-        Job job = instance1.newJob(dag, config);
+        Job job = instance.getJetInstance().newJob(dag, config);
         job.join();
 
         assertEquals("numPartitions", numPartitions, results.size());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,12 @@ import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.aggregate.AggregateOperation;
+import com.hazelcast.jet.aggregate.AggregateOperation1;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+
+import java.util.Objects;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
@@ -116,6 +119,22 @@ public class AggregateOperationImpl<A, R> implements AggregateOperation<A, R> {
                 createFn(), accumulateFns, combineFn(), deductFn(),
                 exportFn().andThen(thenFn), finishFn().andThen(thenFn)
         );
+    }
+
+    @Nonnull
+    @Override
+    public  <T> AggregateOperation1<T, A, R> withCombiningAccumulateFn(
+            @Nonnull FunctionEx<T, A> getAccFn
+    ) {
+        BiConsumerEx<? super A, ? super A> combineFn =
+                Objects.requireNonNull(combineFn(), "The 'combine' primitive is missing");
+        return new AggregateOperation1Impl<>(
+                createFn(),
+                (A acc, T item) -> combineFn.accept(acc, getAccFn.apply(item)),
+                combineFn,
+                deductFn(),
+                exportFn(),
+                finishFn());
     }
 
     @Nonnull

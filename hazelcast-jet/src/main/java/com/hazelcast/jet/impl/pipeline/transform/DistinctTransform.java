@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,11 +44,11 @@ public class DistinctTransform<T, K> extends AbstractTransform {
     public void addToDag(Planner p, Context context) {
         String vertexName = name();
         determineLocalParallelism(LOCAL_PARALLELISM_USE_DEFAULT, context, false);
-        Vertex v1 = p.dag.newVertex(vertexName + FIRST_STAGE_VERTEX_NAME_SUFFIX, distinctP(keyFn))
+        Vertex v1 = p.getDag().newVertex(vertexName + FIRST_STAGE_VERTEX_NAME_SUFFIX, distinctP(keyFn))
                          .localParallelism(determinedLocalParallelism());
         PlannerVertex pv2 = p.addVertex(this, vertexName, determinedLocalParallelism(), distinctP(keyFn));
         p.addEdges(this, v1, (e, ord) -> e.partitioned(keyFn, HASH_CODE));
-        p.dag.edge(between(v1, pv2.v).distributed().partitioned(keyFn));
+        p.getDag().edge(between(v1, pv2.vertex()).distributed().partitioned(keyFn));
     }
 
     @SuppressWarnings("unchecked")

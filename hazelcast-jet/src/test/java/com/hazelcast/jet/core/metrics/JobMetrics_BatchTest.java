@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.core.metrics;
 
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.TestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
@@ -69,7 +69,7 @@ public class JobMetrics_BatchTest extends TestInClusterSupport {
         Job job = execute(p, new JobConfig());
 
         // Then
-        assertEquals("non-empty metrics", JobMetrics.empty(), job.getMetrics());
+        assertEquals("non-empty metrics", JobMetricsImpl.empty(), job.getMetrics());
     }
 
     @Test
@@ -79,14 +79,14 @@ public class JobMetrics_BatchTest extends TestInClusterSupport {
         Job job = execute(p, JOB_CONFIG_WITH_METRICS);
 
         // When
-        JetInstance instance = factory.newMember(prepareConfig());
+        HazelcastInstance instance = hazelcastFactory.newHazelcastInstance(prepareConfig());
         try {
-            assertClusterSizeEventually(MEMBER_COUNT + 1, jet());
+            assertClusterSizeEventually(MEMBER_COUNT + 1, instance());
             // Then
             assertMetrics(job.getMetrics());
         } finally {
             instance.shutdown();
-            assertClusterSizeEventually(MEMBER_COUNT, jet());
+            assertClusterSizeEventually(MEMBER_COUNT, instance());
         }
     }
 
@@ -94,15 +94,15 @@ public class JobMetrics_BatchTest extends TestInClusterSupport {
     public void when_memberRemovedAfterJobFinished_then_metricsNotAffected() {
         Pipeline p = createPipeline();
 
-        JetInstance newMember = factory.newMember(prepareConfig());
+        HazelcastInstance newMember = hazelcastFactory.newHazelcastInstance(prepareConfig());
         Job job;
         try {
-            assertClusterSizeEventually(MEMBER_COUNT + 1, jet());
+            assertClusterSizeEventually(MEMBER_COUNT + 1, instance());
             job = execute(p, JOB_CONFIG_WITH_METRICS);
         } finally {
             newMember.shutdown();
         }
-        assertClusterSizeEventually(MEMBER_COUNT, jet());
+        assertClusterSizeEventually(MEMBER_COUNT, instance());
         assertMetrics(job.getMetrics());
     }
 
@@ -143,11 +143,11 @@ public class JobMetrics_BatchTest extends TestInClusterSupport {
     private Pipeline createPipeline(String text) {
         Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items(text))
-         .flatMap(line -> traverseArray(line.toLowerCase().split("\\W+")))
-         .filter(word -> !word.isEmpty())
-         .groupingKey(wholeItem())
-         .aggregate(counting())
-         .writeTo(Sinks.map("counts"));
+                .flatMap(line -> traverseArray(line.toLowerCase().split("\\W+")))
+                .filter(word -> !word.isEmpty())
+                .groupingKey(wholeItem())
+                .aggregate(counting())
+                .writeTo(Sinks.map("counts"));
         return p;
     }
 
@@ -173,9 +173,9 @@ public class JobMetrics_BatchTest extends TestInClusterSupport {
     }
 
     private long sumValueFor(JobMetrics metrics, String vertex, String metric) {
-        Collection<Measurement> measurements = metrics
+        Collection<MeasurementImpl> measurements = ((JobMetricsImpl) metrics)
                 .filter(MeasurementPredicates.tagValueEquals(MetricTags.VERTEX, vertex))
                 .get(metric);
-        return measurements.stream().mapToLong(Measurement::value).sum();
+        return measurements.stream().mapToLong(MeasurementImpl::value).sum();
     }
 }

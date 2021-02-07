@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.SupplierEx;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.jet.core.processor.SinkProcessors;
@@ -58,14 +58,14 @@ public class GracefulShutdownTest extends JetTestSupport {
 
     private static final int NODE_COUNT = 2;
 
-    private JetInstance[] instances;
-    private JetInstance client;
+    private HazelcastInstance[] instances;
+    private HazelcastInstance client;
 
     @Before
     public void setup() {
         TestProcessors.reset(0);
-        instances = createJetMembers(NODE_COUNT);
-        client = createJetClient();
+        instances = createMembers(NODE_COUNT);
+        client = createClient();
         EmitIntegersP.savedCounters.clear();
     }
 
@@ -90,13 +90,13 @@ public class GracefulShutdownTest extends JetTestSupport {
     }
 
     private void when_shutDown(boolean shutdownCoordinator, boolean snapshotted) {
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         final int numItems = 50_000;
         Vertex source = dag.newVertex("source", throttle(() -> new EmitIntegersP(numItems), 10_000)).localParallelism(1);
         Vertex sink = dag.newVertex("sink", SinkProcessors.writeListP("sink"));
         dag.edge(between(source, sink));
 
-        Job job = client.newJob(dag, new JobConfig()
+        Job job = client.getJetInstance().newJob(dag, new JobConfig()
                 .setProcessingGuarantee(snapshotted ? EXACTLY_ONCE : NONE)
                 .setSnapshotIntervalMillis(HOURS.toMillis(1)));
         assertJobStatusEventually(job, JobStatus.RUNNING);
@@ -137,12 +137,10 @@ public class GracefulShutdownTest extends JetTestSupport {
 
     @Test
     public void when_liteMemberShutDown_then_jobKeepsRunning() throws Exception {
-        JetConfig liteMemberConfig = new JetConfig();
-        liteMemberConfig.getHazelcastConfig().setLiteMember(true);
-        JetInstance liteMember = createJetMember(liteMemberConfig);
-        DAG dag = new DAG();
+        HazelcastInstance liteMember = createMember(new Config().setLiteMember(true));
+        DAGImpl dag = new DAGImpl();
         dag.newVertex("v", (SupplierEx<Processor>) NoOutputSourceP::new);
-        Job job = instances[0].newJob(dag);
+        Job job = instances[0].getJetInstance().newJob(dag);
         assertJobStatusEventually(job, JobStatus.RUNNING, 10);
         Future future = spawn(liteMember::shutdown);
         assertTrueAllTheTime(() -> assertEquals(RUNNING, job.getStatus()), 5);
@@ -151,12 +149,12 @@ public class GracefulShutdownTest extends JetTestSupport {
 
     @Test
     public void when_nonParticipatingMemberShutDown_then_jobKeepsRunning() throws Exception {
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         dag.newVertex("v", (SupplierEx<Processor>) NoOutputSourceP::new);
-        Job job = instances[0].newJob(dag);
+        Job job = instances[0].getJetInstance().newJob(dag);
         assertJobStatusEventually(job, JobStatus.RUNNING, 10);
         Future future = spawn(() -> {
-            JetInstance nonParticipatingMember = createJetMember();
+            HazelcastInstance nonParticipatingMember = createMember();
             sleepSeconds(1);
             nonParticipatingMember.shutdown();
         });
@@ -168,19 +166,19 @@ public class GracefulShutdownTest extends JetTestSupport {
     public void when_shutdownGracefulWhileRestartGraceful_then_restartsFromTerminalSnapshot() throws Exception {
         MapConfig mapConfig = new MapConfig(JobRepository.SNAPSHOT_DATA_MAP_PREFIX + "*");
         mapConfig.getMapStoreConfig()
-                 .setClassName(BlockingMapStore.class.getName())
-                 .setEnabled(true);
-        instances[0].getConfig().getHazelcastConfig().addMapConfig(mapConfig);
+                .setClassName(BlockingMapStore.class.getName())
+                .setEnabled(true);
+        instances[0].getConfig().addMapConfig(mapConfig);
         BlockingMapStore.shouldBlock = false;
         BlockingMapStore.wasBlocked = false;
 
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         int numItems = 5000;
         Vertex source = dag.newVertex("source", throttle(() -> new EmitIntegersP(numItems), 500));
         Vertex sink = dag.newVertex("sink", SinkProcessors.writeListP("sink"));
         dag.edge(between(source, sink));
         source.localParallelism(1);
-        Job job = instances[0].newJob(dag, new JobConfig()
+        Job job = instances[0].getJetInstance().newJob(dag, new JobConfig()
                 .setProcessingGuarantee(EXACTLY_ONCE)
                 .setSnapshotIntervalMillis(2000));
 

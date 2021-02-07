@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ final class JobMetricsChecker {
 
     void assertNoMetricValues(String metricName) {
         JobMetrics jobMetrics = getJobMetrics();
-        List<Measurement> measurements = jobMetrics.get(metricName);
+        List<? extends Measurement> measurements = jobMetrics.get(metricName);
         assertTrue(
                 String.format("Did not expect measurements for metric '%s', but there were some", metricName),
                 measurements.isEmpty()
@@ -70,8 +70,8 @@ final class JobMetricsChecker {
     }
 
     private void assertAggregatedMetricValue(String metricName, long expectedValue,
-                                             Function<List<Measurement>, Long> aggregateFn) {
-        List<Measurement> measurements = getJobMetrics().get(metricName);
+                                             Function<List<? extends Measurement>, Long> aggregateFn) {
+        List<? extends Measurement> measurements = getJobMetrics().get(metricName);
         assertFalse(
                 String.format("Expected measurements for metric '%s', but there were none", metricName),
                 measurements.isEmpty()
@@ -86,8 +86,8 @@ final class JobMetricsChecker {
     }
 
     private long assertAggregatedMetricValueAtLeast(String metricName, long minExpectedValue,
-                                                    Function<List<Measurement>, Long> aggregateFn) {
-        List<Measurement> measurements = getJobMetrics().get(metricName);
+                                                    Function<List<? extends Measurement>, Long> aggregateFn) {
+        List<? extends Measurement> measurements = getJobMetrics().get(metricName);
         assertFalse(
                 String.format("Expected measurements for metric '%s', but there were none", metricName),
                 measurements.isEmpty()

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.pipeline;
 
-import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.DAGImpl;
 import com.hazelcast.jet.impl.pipeline.transform.AbstractTransform;
 import com.hazelcast.jet.impl.pipeline.transform.BatchSourceTransform;
 import com.hazelcast.jet.impl.pipeline.transform.SinkTransform;
@@ -115,12 +115,12 @@ public class PipelineImpl implements Pipeline {
     }
 
     @Nonnull
-    public DAG toDag(Context context) {
+    public DAGImpl toDag(Context context) {
         return new Planner(this).createDag(context);
     }
 
     @Nonnull @Override
-    public DAG toDag() {
+    public DAGImpl toDag() {
         final int localParallelismUseDefault = -1;
         return toDag(new Context() {
             @Override public int defaultLocalParallelism() {

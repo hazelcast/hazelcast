@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -88,7 +88,7 @@ public class GroupTransform<K, A, R, OUT> extends AbstractTransform {
     private void addToDagSingleStage(Planner p) {
         PlannerVertex pv = p.addVertex(this, name(), determinedLocalParallelism(),
                 aggregateByKeyP(groupKeyFns, aggrOp, mapToOutputFn));
-        p.addEdges(this, pv.v, (e, ord) -> e.distributed().partitioned(groupKeyFns.get(ord)));
+        p.addEdges(this, pv.vertex(), (e, ord) -> e.distributed().partitioned(groupKeyFns.get(ord)));
     }
 
     //                   ---------        ---------
@@ -110,11 +110,11 @@ public class GroupTransform<K, A, R, OUT> extends AbstractTransform {
     //                         ---------------
     private void addToDagTwoStage(Planner p) {
         List<FunctionEx<?, ? extends K>> groupKeyFns = this.groupKeyFns;
-        Vertex v1 = p.dag.newVertex(name() + FIRST_STAGE_VERTEX_NAME_SUFFIX, accumulateByKeyP(groupKeyFns, aggrOp))
+        Vertex v1 = p.getDag().newVertex(name() + FIRST_STAGE_VERTEX_NAME_SUFFIX, accumulateByKeyP(groupKeyFns, aggrOp))
                 .localParallelism(determinedLocalParallelism());
         PlannerVertex pv2 = p.addVertex(this, name(), determinedLocalParallelism(),
                 combineByKeyP(aggrOp, mapToOutputFn));
         p.addEdges(this, v1, (e, ord) -> e.partitioned(groupKeyFns.get(ord), HASH_CODE));
-        p.dag.edge(between(v1, pv2.v).distributed().partitioned(entryKey()));
+        p.getDag().edge(between(v1, pv2.vertex()).distributed().partitioned(entryKey()));
     }
 }

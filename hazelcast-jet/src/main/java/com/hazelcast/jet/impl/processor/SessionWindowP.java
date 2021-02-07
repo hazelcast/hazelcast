@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -130,8 +130,8 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
             @Nonnull AggregateOperation<A, ? extends R> aggrOp,
             @Nonnull KeyedWindowResultFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
     ) {
-        checkTrue(keyFns.size() == aggrOp.arity(), keyFns.size() + " key functions " +
-                "provided for " + aggrOp.arity() + "-arity aggregate operation");
+        checkTrue(keyFns.size() == aggrOp.arity(), keyFns.size() + " key functions "
+                + "provided for " + aggrOp.arity() + "-arity aggregate operation");
         this.timestampFns = (List<ToLongFunction<Object>>) timestampFns;
         this.keyFns = (List<Function<Object, K>>) keyFns;
         this.earlyResultsPeriod = earlyResultsPeriod;

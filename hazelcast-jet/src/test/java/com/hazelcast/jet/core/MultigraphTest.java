@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.core;
 
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.core.TestProcessors.ListSource;
 import com.hazelcast.jet.core.processor.SinkProcessors;
 import org.junit.Test;
@@ -35,16 +35,16 @@ public class MultigraphTest extends JetTestSupport {
 
     @Test
     public void test() {
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         List<Integer> input = IntStream.range(0, 200_000).boxed().collect(Collectors.toList());
         Vertex source = dag.newVertex("source", ListSource.supplier(input));
         Vertex sink = dag.newVertex("sink", SinkProcessors.writeListP("sink"));
         dag.edge(from(source, 0).to(sink, 0));
         dag.edge(from(source, 1).to(sink, 1).partitioned(wholeItem()).distributed());
 
-        JetInstance instance = createJetMember();
-        createJetMember();
-        instance.newJob(dag).join();
+        HazelcastInstance instance = createMember();
+        createMember();
+        instance.getJetInstance().newJob(dag).join();
 
         int numMembers = 2;
         long numEdges = 2;

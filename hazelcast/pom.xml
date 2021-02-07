@@ -243,6 +243,7 @@
                                 <includes>
                                     <include>com.fasterxml.jackson.core:jackson-core</include>
                                     <include>org.snakeyaml:snakeyaml-engine</include>
+                                    <include>io.github.classgraph:classgraph</include>
                                 </includes>
                             </artifactSet>
                             <relocations>
@@ -253,6 +254,14 @@
                                 <relocation>
                                     <pattern>org.snakeyaml</pattern>
                                     <shadedPattern>${relocation.root}.org.snakeyaml</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>io.github.classgraph</pattern>
+                                    <shadedPattern>${relocation.root}.io.github.classgraph</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>nonapi.io.github.classgraph</pattern>
+                                    <shadedPattern>${relocation.root}.nonapi.io.github.classgraph</shadedPattern>
                                 </relocation>
                             </relocations>
                             <transformers>
@@ -268,6 +277,12 @@
                                 </filter>
                                 <filter>
                                     <artifact>org.snakeyaml:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>io.github.classgraph:*</artifact>
                                     <excludes>
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                     </excludes>
@@ -358,6 +373,12 @@
             <groupId>org.snakeyaml</groupId>
             <artifactId>snakeyaml-engine</artifactId>
             <version>${snakeyaml.engine.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.github.classgraph</groupId>
+            <artifactId>classgraph</artifactId>
+            <version>${classgraph.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>

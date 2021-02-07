@@ -19,6 +19,7 @@ package com.hazelcast.test.compatibility;
 import com.hazelcast.auditlog.AuditlogService;
 import com.hazelcast.auditlog.impl.NoOpAuditlogService;
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.cp.internal.persistence.CPPersistenceService;
 import com.hazelcast.cp.internal.persistence.NopCPPersistenceService;
 import com.hazelcast.hotrestart.HotRestartService;
@@ -41,6 +42,7 @@ import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.ByteArrayProcessor;
+import com.hazelcast.jet.JetInstance;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.SecurityService;
@@ -282,6 +284,11 @@ public class SamplingNodeExtension implements NodeExtension {
 
     public CPPersistenceService getCPPersistenceService() {
         return NopCPPersistenceService.INSTANCE;
+    }
+
+    @Override
+    public JetInstance getJetInstance() {
+        throw new HazelcastException("Jet is not available");
     }
 
 }

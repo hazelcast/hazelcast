@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,10 @@
 
 package com.hazelcast.jet.core;
 
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.util.concurrent.locks.LockSupport;
 
-import static com.hazelcast.spi.properties.ClusterProperty.SHUTDOWNHOOK_ENABLED;
 import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -43,17 +41,6 @@ public final class JetProperties {
      */
     public static final HazelcastProperty JOB_SCAN_PERIOD
             = new HazelcastProperty("jet.job.scan.period", SECONDS.toMillis(5), MILLISECONDS);
-
-    /**
-     * Whether a JVM shutdown hook is registered to shutdown the node
-     * gracefully when the process is terminated. The shutdown hook will
-     * terminate all running jobs and then gracefully terminate the note, in a
-     * way that is equivalent to calling {@link JetInstance#shutdown()}.
-     *
-     * @since 3.2
-     */
-    public static final HazelcastProperty JET_SHUTDOWNHOOK_ENABLED
-            = new HazelcastProperty("jet.shutdownhook.enabled", SHUTDOWNHOOK_ENABLED.getDefaultValue());
 
     /**
      * Maximum number of time in seconds the job results will be kept in

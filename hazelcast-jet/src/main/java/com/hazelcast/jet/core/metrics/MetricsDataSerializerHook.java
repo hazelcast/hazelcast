@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,17 +33,20 @@ import static com.hazelcast.jet.impl.JetFactoryIdHelper.JET_JOB_METRICS_DS_FACTO
 public class MetricsDataSerializerHook implements DataSerializerHook {
 
     /**
-     * Serialization ID of the {@link JobMetrics} class.
+     * Serialization ID of the {@link JobMetricsImpl} class.
      */
     public static final int JOB_METRICS = 0;
 
     /**
-     * Serialization ID of the {@link Measurement} class.
+     * Serialization ID of the {@link MeasurementImpl} class.
      */
     public static final int MEASUREMENT = 1;
 
-    public static final int FACTORY_ID = FactoryIdHelper.getFactoryId(JET_JOB_METRICS_DS_FACTORY,
-            JET_JOB_METRICS_DS_FACTORY_ID);
+    /**
+     * Factory ID of Jet Job Metrics
+     */
+    public static final int FACTORY_ID =
+            FactoryIdHelper.getFactoryId(JET_JOB_METRICS_DS_FACTORY, JET_JOB_METRICS_DS_FACTORY_ID);
 
     @Override
     public int getFactoryId() {
@@ -60,9 +63,9 @@ public class MetricsDataSerializerHook implements DataSerializerHook {
         public IdentifiedDataSerializable create(int typeId) {
             switch (typeId) {
                 case JOB_METRICS:
-                    return new JobMetrics();
+                    return new JobMetricsImpl();
                 case MEASUREMENT:
-                    return new Measurement();
+                    return new MeasurementImpl();
                 default:
                     throw new IllegalArgumentException("Unknown type id " + typeId);
             }

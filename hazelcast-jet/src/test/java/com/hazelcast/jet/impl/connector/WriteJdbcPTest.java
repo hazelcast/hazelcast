@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.postgresql.ds.PGSimpleDataSource;
 import org.postgresql.ds.common.BaseDataSource;
 import org.postgresql.xa.PGXADataSource;
@@ -47,7 +48,6 @@ import java.util.Map.Entry;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
-import org.junit.experimental.categories.Category;
 
 import static com.hazelcast.jet.Util.entry;
 import static org.junit.Assert.assertEquals;
@@ -95,7 +95,7 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
                  }
          ));
 
-        instance().newJob(p).join();
+        jetInstance().newJob(p).join();
         assertEquals(PERSON_COUNT, rowCount());
     }
 
@@ -108,7 +108,7 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
                  failTwiceDataSourceSupplier(), failOnceBindFn()
          ));
 
-        instance().newJob(p).join();
+        jetInstance().newJob(p).join();
         assertEquals(PERSON_COUNT, rowCount());
     }
 
@@ -124,7 +124,7 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
                  }
          ));
 
-        instance().newJob(p).join();
+        jetInstance().newJob(p).join();
     }
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,9 @@
 
 package com.hazelcast.jet.pipeline;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.test.SerialTest;
 import org.junit.After;
@@ -47,18 +48,18 @@ public class LoggerSinkTest extends JetTestSupport {
     @Test
     public void loggerSink() {
         // Given
-        JetConfig jetConfig = new JetConfig();
-        JetInstance jet = createJetMember(jetConfig);
+        HazelcastInstance instance = createHazelcastInstance(new Config());
+        JetInstance jet = instance.getJetInstance();
         String srcName = randomName();
 
-        jet.getList(srcName).add(0);
+        instance.getList(srcName).add(0);
 
         Pipeline p = Pipeline.create();
 
         // When
         p.readFrom(Sources.<Integer>list(srcName))
-         .map(i -> i + "-shouldBeSeenOnTheSystemOutput")
-         .writeTo(Sinks.logger());
+                .map(i -> i + "-shouldBeSeenOnTheSystemOutput")
+                .writeTo(Sinks.logger());
 
         jet.newJob(p).join();
 

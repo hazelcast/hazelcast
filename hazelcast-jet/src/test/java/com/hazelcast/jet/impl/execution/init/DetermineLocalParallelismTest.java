@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,11 @@
 package com.hazelcast.jet.impl.execution.init;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.config.Config;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.DAGImpl;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -43,8 +43,8 @@ public class DetermineLocalParallelismTest extends SimpleTestInClusterSupport {
 
     @BeforeClass
     public static void before() {
-        JetConfig cfg = new JetConfig();
-        cfg.getInstanceConfig().setCooperativeThreadCount(DEFAULT_PARALLELISM);
+        Config cfg = new Config();
+        cfg.getJetConfig().getInstanceConfig().setCooperativeThreadCount(DEFAULT_PARALLELISM);
         initialize(1, cfg);
         nodeEngine = getNode(instance()).getNodeEngine();
     }
@@ -75,13 +75,13 @@ public class DetermineLocalParallelismTest extends SimpleTestInClusterSupport {
     }
 
     private void testWithParallelism(int preferred, int specified, int expected) {
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         dag.newVertex("x", new ValidatingMetaSupplier(preferred, expected))
            .localParallelism(specified);
         validateExecutionPlans(dag);
     }
 
-    private void validateExecutionPlans(DAG dag) {
+    private void validateExecutionPlans(DAGImpl dag) {
         ExecutionPlanBuilder.createExecutionPlans(
                 nodeEngine,
                 ((ClusterServiceImpl) nodeEngine.getClusterService()).getMembershipManager().getMembersView(),

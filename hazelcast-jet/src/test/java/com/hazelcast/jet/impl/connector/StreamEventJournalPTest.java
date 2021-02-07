@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@
 
 package com.hazelcast.jet.impl.connector;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.SupplierEx;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.DAGImpl;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.Processor;
@@ -66,22 +66,21 @@ public class StreamEventJournalPTest extends JetTestSupport {
 
     private MapProxyImpl<String, Integer> map;
     private SupplierEx<Processor> supplier;
-    private JetInstance instance;
+    private HazelcastInstance instance;
     private String key0;
     private String key1;
 
     @Before
     public void setUp() {
-        JetConfig config = new JetConfig();
 
+        Config config = new Config();
+        config.setProperty(PARTITION_COUNT.getName(), String.valueOf(NUM_PARTITIONS));
+        config.getMapConfig("*")
+                .getEventJournalConfig().setEnabled(true)
+                .setCapacity(JOURNAL_CAPACITY);
+        instance = createMember(config);
 
-        config.getHazelcastConfig().setProperty(PARTITION_COUNT.getName(), String.valueOf(NUM_PARTITIONS));
-        config.getHazelcastConfig().getMapConfig("*")
-              .getEventJournalConfig().setEnabled(true)
-              .setCapacity(JOURNAL_CAPACITY);
-        instance = this.createJetMember(config);
-
-        map = (MapProxyImpl<String, Integer>) instance.getHazelcastInstance().<String, Integer>getMap("test");
+        map = (MapProxyImpl<String, Integer>) instance.<String, Integer>getMap("test");
 
         List<Integer> allPartitions = IntStream.range(0, NUM_PARTITIONS).boxed().collect(toList());
 
@@ -89,8 +88,8 @@ public class StreamEventJournalPTest extends JetTestSupport {
                 EventJournalMapEvent::getNewValue, START_FROM_OLDEST, false,
                 noEventTime());
 
-        key0 = generateKeyForPartition(instance.getHazelcastInstance(), 0);
-        key1 = generateKeyForPartition(instance.getHazelcastInstance(), 1);
+        key0 = generateKeyForPartition(instance, 0);
+        key1 = generateKeyForPartition(instance, 1);
     }
 
     @Test
@@ -98,11 +97,11 @@ public class StreamEventJournalPTest extends JetTestSupport {
         fillJournal(2);
 
         TestSupport.verifyProcessor(supplier)
-                   .disableProgressAssertion() // no progress assertion because of async calls
-                   .runUntilOutputMatches(60_000, 100)
-                   .outputChecker(SAME_ITEMS_ANY_ORDER) // ordering is only per partition
-                   .jetInstance(instance)
-                   .expectOutput(Arrays.asList(0, 1, 2, 3));
+                .disableProgressAssertion() // no progress assertion because of async calls
+                .runUntilOutputMatches(60_000, 100)
+                .outputChecker(SAME_ITEMS_ANY_ORDER) // ordering is only per partition
+                .instance(instance)
+                .expectOutput(Arrays.asList(0, 1, 2, 3));
     }
 
     @Test
@@ -111,7 +110,7 @@ public class StreamEventJournalPTest extends JetTestSupport {
         List<Object> actual = new ArrayList<>();
         Processor p = supplier.get();
 
-        p.init(outbox, new TestProcessorContext().setJetInstance(instance));
+        p.init(outbox, new TestProcessorContext().setInstance(instance));
 
         fillJournal(CAPACITY_PER_PARTITION);
 
@@ -138,7 +137,7 @@ public class StreamEventJournalPTest extends JetTestSupport {
     public void when_lostItems() throws Exception {
         TestOutbox outbox = new TestOutbox(new int[]{16}, 16);
         Processor p = supplier.get();
-        p.init(outbox, new TestProcessorContext().setJetInstance(instance));
+        p.init(outbox, new TestProcessorContext().setInstance(instance));
 
         // overflow the journal
         fillJournal(CAPACITY_PER_PARTITION + 1);
@@ -156,7 +155,7 @@ public class StreamEventJournalPTest extends JetTestSupport {
     public void when_lostItems_afterRestore() throws Exception {
         TestOutbox outbox = new TestOutbox(new int[]{16}, 16);
         final Processor p = supplier.get();
-        p.init(outbox, new TestProcessorContext().setJetInstance(instance));
+        p.init(outbox, new TestProcessorContext().setInstance(instance));
         List<Object> output = new ArrayList<>();
 
         assertTrueEventually(() -> {
@@ -189,7 +188,7 @@ public class StreamEventJournalPTest extends JetTestSupport {
         fillJournal(CAPACITY_PER_PARTITION + 1);
 
         // initial offsets will be 5, since capacity per partition is 5
-        p.init(outbox, new TestProcessorContext().setJetInstance(instance));
+        p.init(outbox, new TestProcessorContext().setInstance(instance));
 
         // clear partitions before doing any read, but after initializing offsets
         map.destroy();
@@ -218,14 +217,14 @@ public class StreamEventJournalPTest extends JetTestSupport {
 
     @Test
     public void when_processorsWithNoPartitions_then_snapshotRestoreWorks() {
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex vertex = dag.newVertex("src",
                 streamMapP(map.getName(), JournalInitialPosition.START_FROM_OLDEST, noEventTime()))
-                           .localParallelism(8);
-        int partitionCount = instance.getHazelcastInstance().getPartitionService().getPartitions().size();
+                .localParallelism(8);
+        int partitionCount = instance.getPartitionService().getPartitions().size();
         assertTrue("partition count should be lower than local parallelism",
                 vertex.getLocalParallelism() > partitionCount);
-        Job job = instance.newJob(dag, new JobConfig()
+        Job job = instance.getJetInstance().newJob(dag, new JobConfig()
                 .setProcessingGuarantee(EXACTLY_ONCE)
                 .setSnapshotIntervalMillis(200_000));
         assertJobStatusEventually(job, JobStatus.RUNNING, 25);
@@ -249,7 +248,7 @@ public class StreamEventJournalPTest extends JetTestSupport {
         Processor p = supplier.get();
         TestOutbox newOutbox = new TestOutbox(new int[]{16}, 16);
         List<Object> output = new ArrayList<>();
-        p.init(newOutbox, new TestProcessorContext().setJetInstance(instance));
+        p.init(newOutbox, new TestProcessorContext().setInstance(instance));
         TestInbox inbox = new TestInbox();
 
         inbox.addAll(snapshotItems);

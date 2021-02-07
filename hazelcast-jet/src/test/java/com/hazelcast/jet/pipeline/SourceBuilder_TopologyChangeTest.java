@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,17 +17,19 @@
 package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.collection.IList;
+import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.UuidUtil;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.aggregate.AggregateOperations;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.datamodel.WindowResult;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -47,26 +49,31 @@ import static org.junit.Assert.assertTrue;
 public class SourceBuilder_TopologyChangeTest extends JetTestSupport {
 
     private static volatile boolean stateRestored;
+    private final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory();
+
+    @After
+    public void teardown() {
+        factory.terminateAll();
+    }
 
     @Test
     public void test_restartJob_nodeShutDown() {
-        testTopologyChange(() -> createJetMember(), node -> node.shutdown(), true);
+        testTopologyChange(this::createInstance, HazelcastInstance::shutdown, true);
     }
 
     @Test
     public void test_restartJob_nodeTerminated() {
-        testTopologyChange(() -> createJetMember(), node -> node.getHazelcastInstance().getLifecycleService().terminate(),
-                false);
+        testTopologyChange(this::createInstance, node -> node.getLifecycleService().terminate(), false);
     }
 
     @Test
     public void test_restartJob_nodeAdded() {
-        testTopologyChange(() -> null, ignore -> createJetMember(), true);
+        testTopologyChange(() -> null, ignore -> createInstance(), true);
     }
 
     private void testTopologyChange(
-            Supplier<JetInstance> secondMemberSupplier,
-            Consumer<JetInstance> changeTopologyFn,
+            Supplier<HazelcastInstance> secondMemberSupplier,
+            Consumer<HazelcastInstance> changeTopologyFn,
             boolean assertMonotonicity) {
         stateRestored = false;
         StreamSource<Integer> source = SourceBuilder
@@ -91,13 +98,13 @@ public class SourceBuilder_TopologyChangeTest extends JetTestSupport {
                 })
                 .build();
 
-        JetConfig jetConfig = new JetConfig();
-        jetConfig.getInstanceConfig().setScaleUpDelayMillis(1000); // restart sooner after member add
-        JetInstance jet = createJetMember(jetConfig);
-        JetInstance possibleSecondNode = secondMemberSupplier.get();
+        Config config = new Config();
+        config.getJetConfig().getInstanceConfig().setScaleUpDelayMillis(1000); // restart sooner after member add
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
+        HazelcastInstance possibleSecondNode = secondMemberSupplier.get();
 
         long windowSize = 100;
-        IList<WindowResult<Long>> result = jet.getList("result-" + UuidUtil.newUnsecureUuidString());
+        IList<WindowResult<Long>> result = instance.getList("result-" + UuidUtil.newUnsecureUuidString());
 
         Pipeline p = Pipeline.create();
         p.readFrom(source)
@@ -107,10 +114,11 @@ public class SourceBuilder_TopologyChangeTest extends JetTestSupport {
                 .peek()
                 .writeTo(Sinks.list(result));
 
-        Job job = jet.newJob(p, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE).setSnapshotIntervalMillis(500));
+        Job job = instance.getJetInstance()
+                .newJob(p, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE).setSnapshotIntervalMillis(500));
         assertTrueEventually(() -> assertFalse("result list is still empty", result.isEmpty()));
         assertJobStatusEventually(job, JobStatus.RUNNING);
-        JobRepository jr = new JobRepository(jet);
+        JobRepository jr = new JobRepository(instance);
         waitForFirstSnapshot(jr, job.getId(), 10, false);
 
         assertFalse(stateRestored);
@@ -133,6 +141,12 @@ public class SourceBuilder_TopologyChangeTest extends JetTestSupport {
                 assertEquals(i * windowSize, next.start());
             }
         }
+    }
+
+    private HazelcastInstance createInstance() {
+        Config config = new Config();
+        config.getJetConfig().getInstanceConfig().setScaleUpDelayMillis(1000); // restart sooner after member add
+        return factory.newHazelcastInstance(config);
     }
 
     private static final class NumberGeneratorContext implements Serializable {

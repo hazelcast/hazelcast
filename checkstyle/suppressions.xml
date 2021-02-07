@@ -378,4 +378,73 @@
     <!-- module-info.java -->
     <suppress checks="" files="[\\/]module-info"/>
 
+    <!-- jet codec-->
+    <suppress checks="LineLength|VisibilityModifier|AvoidStarImport|RegexpSingleline|ParameterNumber"
+              files="com[\\/]hazelcast[\\/]jet[\\/]impl[\\/]client[\\/]protocol[\\/]codec[\\/]"/>
+
+    <suppress checks="MethodCount"
+              files="jet[\\/]config[\\/]JobConfig|
+              |jet[\\/]pipeline[\\/]GeneralStage|
+              |jet[\\/]pipeline[\\/]StreamStage|
+              |jet[\\/]pipeline[\\/]BatchStage|
+              |jet[\\/]pipeline[\\/]Sinks|
+              |jet[\\/]pipeline[\\/]Sources|
+              |jet[\\/]core[\\/]AbstractProcessor|
+              |jet[\\/]core[\\/]test[\\/]TestSupport|
+              |jet[\\/]core[\\/]Edge|
+              |jet[\\/]aggregate[\\/]AggregateOperations|
+              |jet[\\/]impl[\\/]MasterJobContext|
+              |jet[\\/]impl[\\/]util[\\/]Util|
+              |jet[\\/]impl[\\/]pipeline[\\/]BatchStageImpl|
+              |jet[\\/]impl[\\/]JobRepository|
+              |jet[\\/]impl[\\/]JobCoordinationService|
+              |jet[\\/]impl[\\/]execution[\\/]init[\\/]ExecutionPlan"/>
+
+    <suppress checks="FileLength"
+              files="jet[\\/]aggregate[\\/]AggregateOperations"/>
+
+    <suppress checks="MethodLength"
+              files="jet[\\/]impl[\\/]MasterSnapshotContext|
+              |jet[\\/]impl[\\/]JobCoordinationService|
+              |jet[\\/]impl[\\/]execution[\\/]init[\\/]ExecutionPlan|
+              |jet[\\/]impl[\\/]execution[\\/]ProcessorTasklet|
+              |jet[\\/]impl[\\/]execution[\\/]ConcurrentInboundEdgeStream|
+              |jet[\\/]core[\\/]test[\\/]TestSupport|
+              |jet[\\/]impl[\\/]MasterJobContext"/>
+
+    <suppress checks="CyclomaticComplexity"
+              files="jet[\\/]config[\\/]JobConfig|
+              |jet[\\/]impl[\\/]pipeline[\\/]Planner|
+              |jet[\\/]impl[\\/]MasterSnapshotContext|
+              |jet[\\/]impl[\\/]processor[\\/]AsyncTransformUsingServiceUnorderedP|
+              |jet[\\/]impl[\\/]execution[\\/]ProcessorTasklet|
+              |jet[\\/]impl[\\/]execution[\\/]OutboxImpl|
+              |jet[\\/]impl[\\/]execution[\\/]ConcurrentInboundEdgeStream|
+              |jet[\\/]impl[\\/]connector[\\/]StreamFilesP|
+              |jet[\\/]core[\\/]test[\\/]TestSupport|
+              |jet[\\/]core[\\/]Edge|
+              |jet[\\/]core[\\/]DAGImpl|
+              |jet[\\/]impl[\\/]MasterJobContext"/>
+
+    <suppress checks="NPathComplexity"
+              files="jet[\\/]impl[\\/]pipeline[\\/]Planner|
+              |jet[\\/]impl[\\/]MasterSnapshotContext|
+              |jet[\\/]impl[\\/]processor[\\/]AsyncTransformUsingServiceUnorderedP|
+              |jet[\\/]impl[\\/]execution[\\/]ProcessorTasklet|
+              |jet[\\/]impl[\\/]execution[\\/]ConcurrentInboundEdgeStream|
+              |jet[\\/]impl[\\/]connector[\\/]StreamFilesP|
+              |jet[\\/]core[\\/]test[\\/]TestSupport|
+              |jet[\\/]core[\\/]Edge|
+              |jet[\\/]core[\\/]DAGImpl|
+              |jet[\\/]impl[\\/]MasterJobContext"/>
+
+    <suppress checks="ClassFanOutComplexity"
+              files="jet[\\/]impl[\\/]util[\\/]Util|
+              |jet[\\/]impl[\\/]JobCoordinationService|
+              |jet[\\/]impl[\\/]execution[\\/]init[\\/]ExecutionPlan"/>
+
+    <suppress checks="ClassDataAbstractionCoupling"
+              files="jet[\\/]impl[\\/]JobCoordinationService|
+              |jet[\\/]impl[\\/]execution[\\/]init[\\/]ExecutionPlan"/>
+
 </suppressions>

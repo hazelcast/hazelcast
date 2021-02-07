@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.AbstractProcessor;
-import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.DAGImpl;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
@@ -55,7 +55,7 @@ public class VertexDef_HigherPrioritySourceTest extends SimpleTestInClusterSuppo
     private static NodeEngineImpl nodeEngineImpl;
     private static MembersView membersView;
 
-    private DAG dag = new DAG();
+    private DAGImpl dag = new DAGImpl();
     private Vertex v1 = dag.newVertex("v1", MOCK_PMS);
     private Vertex v2 = dag.newVertex("v2", MOCK_PMS);
     private Vertex v3 = dag.newVertex("v3", MOCK_PMS);

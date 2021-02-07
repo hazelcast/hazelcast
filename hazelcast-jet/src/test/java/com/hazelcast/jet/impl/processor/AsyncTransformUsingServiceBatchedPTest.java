@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ public class AsyncTransformUsingServiceBatchedPTest extends SimpleTestInClusterS
     public ExpectedException exception = ExpectedException.none();
 
     private ProcessorSupplier getSupplier(BiFunctionEx<? super String, ? super List<String>,
-                            CompletableFuture<Traverser<String>>> mapFn
+            CompletableFuture<Traverser<String>>> mapFn
     ) {
         ServiceFactory<?, String> serviceFactory = ServiceFactories.nonSharedService(pctx -> "foo");
         return AsyncTransformUsingServiceBatchedP.supplier(serviceFactory, DEFAULT_MAX_CONCURRENT_OPS, 128, mapFn);
@@ -67,7 +67,7 @@ public class AsyncTransformUsingServiceBatchedPTest extends SimpleTestInClusterS
         TestSupport
                 .verifyProcessor(getSupplier((ctx, items) -> completedFuture(
                         traverseIterable(items).flatMap(item -> traverseItems(item + "-1", item + "-2")))))
-                .jetInstance(instance())
+                .instance(instance())
                 .input(asList("a", "b"))
                 .outputChecker((expected, actual) ->
                         actual.equals(asList("a-1", "a-2", "b-1", "b-2")))
@@ -85,7 +85,7 @@ public class AsyncTransformUsingServiceBatchedPTest extends SimpleTestInClusterS
                             return f;
                         })
                 )
-                .jetInstance(instance())
+                .instance(instance())
                 .input(asList("a", "b", new Watermark(10)))
                 .outputChecker((expected, actual) ->
                         actual.equals(asList("a-1", "a-2", "b-1", "b-2", wm(10))))
@@ -99,7 +99,7 @@ public class AsyncTransformUsingServiceBatchedPTest extends SimpleTestInClusterS
                 .verifyProcessor(getSupplier((ctx, item) -> {
                     throw new UnsupportedOperationException();
                 }))
-                .jetInstance(instance())
+                .instance(instance())
                 .input(singletonList(wm(10)))
                 .expectOutput(singletonList(wm(10)));
     }
@@ -108,7 +108,7 @@ public class AsyncTransformUsingServiceBatchedPTest extends SimpleTestInClusterS
     public void when_mapFnReturnsNullFuture_then_resultFilteredOut() {
         TestSupport
                 .verifyProcessor(getSupplier((ctx, item) -> null))
-                .jetInstance(instance())
+                .instance(instance())
                 .input(asList("a", "b"))
                 .expectOutput(emptyList());
     }
@@ -117,7 +117,7 @@ public class AsyncTransformUsingServiceBatchedPTest extends SimpleTestInClusterS
     public void when_returnedListContainsNull_then_error() {
         TestSupport testSupport = TestSupport
                 .verifyProcessor(getSupplier((ctx, items) -> completedFuture(traverseItems(items).flatMap(item -> null))))
-                .jetInstance(instance())
+                .instance(instance())
                 .input(asList("a", "b"));
 
         exception.expect(NullPointerException.class);
@@ -128,7 +128,7 @@ public class AsyncTransformUsingServiceBatchedPTest extends SimpleTestInClusterS
     public void when_futureReturnsNullTraverser_then_resultFilteredOut() {
         TestSupport
                 .verifyProcessor(getSupplier((ctx, item) -> null))
-                .jetInstance(instance())
+                .instance(instance())
                 .input(singletonList(wm(10)))
                 .expectOutput(singletonList(wm(10)));
     }
@@ -140,7 +140,7 @@ public class AsyncTransformUsingServiceBatchedPTest extends SimpleTestInClusterS
         TestSupport
                 .verifyProcessor(getSupplier((ctx, item) ->
                         exceptionallyCompletedFuture(new RuntimeException("test exception"))))
-                .jetInstance(instance())
+                .instance(instance())
                 .input(singletonList("a"))
                 .expectOutput(emptyList());
 

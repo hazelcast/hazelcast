@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,6 +72,7 @@ import static com.hazelcast.jet.impl.util.Util.distributeObjects;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static com.hazelcast.jet.impl.util.Util.arrayIndexOf;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
+import static com.hazelcast.jet.impl.util.Util.getImpl;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_CURRENT;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
@@ -159,19 +160,20 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         CompletableFuture<EventJournalInitialSubscriberState>[] futures = new CompletableFuture[partitionIds.length];
         Arrays.setAll(futures, i -> eventJournalReader.subscribeToEventJournal(partitionIds[i]));
         for (int i = 0; i < futures.length; i++) {
-            emitOffsets[i] = readOffsets[i] = getSequence(futures[i].get());
+            emitOffsets[i] = getSequence(futures[i].get());
+            readOffsets[i] = emitOffsets[i];
         }
 
         if (!isRemoteReader) {
             // try to serde projection/predicate to fail fast if they aren't known to IMDG
-            HazelcastInstanceImpl hzInstance = (HazelcastInstanceImpl) context.jetInstance().getHazelcastInstance();
+            HazelcastInstanceImpl hzInstance = getImpl(context.instance());
             InternalSerializationService ss = hzInstance.getSerializationService();
             try {
                 deserializeWithCustomClassLoader(ss, hzInstance.getClass().getClassLoader(), ss.toData(predicate));
                 deserializeWithCustomClassLoader(ss, hzInstance.getClass().getClassLoader(), ss.toData(projection));
             } catch (HazelcastSerializationException e) {
-                throw new JetException("The projection or predicate classes are not known to IMDG. It's not enough to " +
-                        "add them to the job class path, they must be deployed using User code deployment: " + e, e);
+                throw new JetException("The projection or predicate classes are not known to IMDG. It's not enough to "
+                        + "add them to the job class path, they must be deployed using User code deployment: " + e, e);
             }
         }
     }
@@ -314,9 +316,9 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
                 // so we shouldn't unnecessarily throw an exception here.
                 return null;
             } else if (ex instanceof HazelcastSerializationException) {
-                throw new JetException("Serialization error when reading the journal: are the key, value, " +
-                        "predicate and projection classes visible to IMDG? You need to use User Code " +
-                        "Deployment, adding the classes to JetConfig isn't enough", e);
+                throw new JetException("Serialization error when reading the journal: are the key, value, "
+                        + "predicate and projection classes visible to IMDG? You need to use User Code "
+                        + "Deployment, adding the classes to JetConfig isn't enough", e);
             } else {
                 throw rethrow(ex);
             }
@@ -372,7 +374,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
             if (clientXml != null) {
                 initRemote();
             } else {
-                initLocal(context.jetInstance().getHazelcastInstance().getPartitionService().getPartitions());
+                initLocal(context.instance().getPartitionService().getPartitions());
             }
         }
 
@@ -452,7 +454,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
 
         @Override
         public void init(@Nonnull Context context) {
-            HazelcastInstance instance = context.jetInstance().getHazelcastInstance();
+            HazelcastInstance instance = context.instance();
             if (clientXml != null) {
                 client = newHazelcastClient(asClientConfig(clientXml));
                 instance = client;

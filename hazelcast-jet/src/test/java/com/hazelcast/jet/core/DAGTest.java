@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,14 +50,14 @@ public class DAGTest {
 
     @Test
     public void when_newVertex_then_hasIt() {
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
         assertSame(a, dag.getVertex("a"));
     }
 
     @Test
     public void when_newUniqueVertex_then_hasIt() {
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex a0 = dag.newUniqueVertex("a", PROCESSOR_SUPPLIER);
         assertSame(a0, dag.getVertex("a"));
 
@@ -67,7 +67,7 @@ public class DAGTest {
 
     @Test
     public void when_connectKnownVertices_then_success() {
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
         Vertex b = dag.newVertex("b", PROCESSOR_SUPPLIER);
         dag.edge(between(a, b));
@@ -76,7 +76,7 @@ public class DAGTest {
     @Test
     public void when_selfEdge_then_illegalArgument() {
         // Given
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
 
         // Then
@@ -89,7 +89,7 @@ public class DAGTest {
     @Test
     public void when_unknownSource_then_illegalArgument() {
         // Given
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex a = new Vertex("a", PROCESSOR_SUPPLIER);
         Vertex b = dag.newVertex("b", PROCESSOR_SUPPLIER);
 
@@ -103,7 +103,7 @@ public class DAGTest {
     @Test
     public void when_unknownDestination_then_illegalArgument() {
         // Given
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
         Vertex b = new Vertex("b", PROCESSOR_SUPPLIER);
 
@@ -117,7 +117,7 @@ public class DAGTest {
     @Test
     public void when_addEdgeWithoutDestination_then_illegalArgument() {
         // Given
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
 
         // Then
@@ -134,7 +134,7 @@ public class DAGTest {
         Vertex a1 = new Vertex("a", Processors.mapP(Object::hashCode));
         Vertex a2 = new Vertex("a", Processors.mapP(Object::toString));
         Vertex b = new Vertex("b", PROCESSOR_SUPPLIER);
-        DAG dag = new DAG()
+        DAGImpl dag = new DAGImpl()
                 .vertex(a1)
                 .vertex(b);
 
@@ -151,7 +151,7 @@ public class DAGTest {
         Vertex a = new Vertex("a", PROCESSOR_SUPPLIER);
         Vertex b1 = new Vertex("b", Processors.mapP(Object::toString));
         Vertex b2 = new Vertex("b", Processors.mapP(Object::hashCode));
-        DAG dag = new DAG()
+        DAGImpl dag = new DAGImpl()
                 .vertex(a)
                 .vertex(b1);
 
@@ -165,7 +165,7 @@ public class DAGTest {
     @Test
     public void inboundEdges() {
         // Given
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
         Vertex b = dag.newVertex("b", PROCESSOR_SUPPLIER);
         Vertex c = dag.newVertex("c", PROCESSOR_SUPPLIER);
@@ -188,7 +188,7 @@ public class DAGTest {
     @Test
     public void outboundEdges() {
         // Given
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
         Vertex b = dag.newVertex("b", PROCESSOR_SUPPLIER);
         Vertex c = dag.newVertex("c", PROCESSOR_SUPPLIER);
@@ -216,7 +216,7 @@ public class DAGTest {
         // c --> d /
 
         // Given
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
         Vertex b = dag.newVertex("b", PROCESSOR_SUPPLIER);
         Vertex c = dag.newVertex("c", PROCESSOR_SUPPLIER);
@@ -248,7 +248,7 @@ public class DAGTest {
     @Test
     public void when_cycle_then_invalid() {
         // Given
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex x = dag.newVertex("x", PROCESSOR_SUPPLIER);
         Vertex y = dag.newVertex("y", PROCESSOR_SUPPLIER);
         Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
@@ -275,7 +275,7 @@ public class DAGTest {
     @Test
     public void when_duplicateOutputOrdinal_then_invalid() {
         // Given
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
         Vertex b = dag.newVertex("b", PROCESSOR_SUPPLIER);
         Vertex c = dag.newVertex("c", PROCESSOR_SUPPLIER);
@@ -291,7 +291,7 @@ public class DAGTest {
     @Test
     public void when_gapInOutputOrdinal_then_invalid() {
         // Given
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
         Vertex b = dag.newVertex("b", PROCESSOR_SUPPLIER);
         Vertex c = dag.newVertex("c", PROCESSOR_SUPPLIER);
@@ -308,7 +308,7 @@ public class DAGTest {
     @Test
     public void when_duplicateInputOrdinal_then_invalid() {
         // Given
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
         Vertex b = dag.newVertex("b", PROCESSOR_SUPPLIER);
         Vertex c = dag.newVertex("c", PROCESSOR_SUPPLIER);
@@ -324,7 +324,7 @@ public class DAGTest {
     @Test
     public void when_gapInInputOrdinal_then_invalid() {
         // Given
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
         Vertex b = dag.newVertex("b", PROCESSOR_SUPPLIER);
         Vertex c = dag.newVertex("c", PROCESSOR_SUPPLIER);
@@ -341,7 +341,7 @@ public class DAGTest {
     @Test
     public void when_multigraph_then_valid() {
         // Given
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
         Vertex b = dag.newVertex("b", PROCESSOR_SUPPLIER);
         dag.edge(from(a, 0).to(b, 0));
@@ -352,7 +352,7 @@ public class DAGTest {
 
     @Test
     public void when_duplicateZeroDestOrdinal_then_errorAdvisesFromTo() {
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
         Vertex b = dag.newVertex("b", PROCESSOR_SUPPLIER);
         Vertex c = dag.newVertex("c", PROCESSOR_SUPPLIER);
@@ -368,7 +368,7 @@ public class DAGTest {
 
     @Test
     public void when_duplicateNonZeroDestOrdinal_then_errorDoesntAdviseFromTo() {
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
         Vertex b = dag.newVertex("b", PROCESSOR_SUPPLIER);
         Vertex c = dag.newVertex("c", PROCESSOR_SUPPLIER);

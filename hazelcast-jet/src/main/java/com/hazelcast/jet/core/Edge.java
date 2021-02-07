@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,11 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.jet.config.EdgeConfig;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.config.EdgeConfig;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.impl.MasterJobContext;
 import com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject;
 import com.hazelcast.jet.impl.util.ConstantFunctionEx;
@@ -44,7 +44,7 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Represents an edge between two {@link Vertex vertices} in a {@link DAG}.
+ * Represents an edge between two {@link Vertex vertices} in a {@link DAGImpl}.
  * Conceptually, data travels over the edge from the source vertex to the
  * destination vertex. Practically, since the vertex is distributed across
  * the cluster and across threads in each cluster member, the edge is
@@ -83,11 +83,13 @@ public class Edge implements IdentifiedDataSerializable {
         }
     }
 
-    private Vertex source; // transient field, restored during DAG deserialization
+    // transient field, restored during DAG deserialization
+    private Vertex source;
     private String sourceName;
     private int sourceOrdinal;
 
-    private Vertex destination; // transient field, restored during DAG deserialization
+    // transient field, restored during DAG deserialization
+    private Vertex destination;
     private String destName;
     private int destOrdinal;
 
@@ -578,10 +580,14 @@ public class Edge implements IdentifiedDataSerializable {
 
     @Override
     public boolean equals(Object obj) {
-        final Edge that;
-        return this == obj
-                || obj instanceof Edge
-                    && this.sourceName.equals((that = (Edge) obj).sourceName)
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof Edge)) {
+            return false;
+        }
+        Edge that = (Edge) obj;
+        return this.sourceName.equals(that.sourceName)
                     && this.destName.equals(that.destName)
                     && this.sourceOrdinal == that.sourceOrdinal
                     && this.destOrdinal == that.destOrdinal;

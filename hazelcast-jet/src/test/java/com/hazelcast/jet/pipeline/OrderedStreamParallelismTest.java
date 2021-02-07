@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package com.hazelcast.jet.pipeline;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.accumulator.LongAccumulator;
-import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.DAGImpl;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.impl.pipeline.PipelineImpl;
 import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
@@ -130,7 +130,7 @@ public class OrderedStreamParallelismTest {
     @Test
     public void when_transform_applied_lp_should_match_expectedLP() {
         // When
-        DAG dag = applyTransformAndGetDag(transform);
+        DAGImpl dag = applyTransformAndGetDag(transform);
         System.out.println(dag.toJson(DEFAULT_PARALLELISM));
         // Then
         for (int i = 0; i < vertexNames.size(); i++) {
@@ -139,7 +139,7 @@ public class OrderedStreamParallelismTest {
         }
     }
 
-    private DAG applyTransformAndGetDag(FunctionEx<StreamStage<Integer>, StreamStage<Integer>> transform) {
+    private DAGImpl applyTransformAndGetDag(FunctionEx<StreamStage<Integer>, StreamStage<Integer>> transform) {
         PipelineImpl p = (PipelineImpl) Pipeline.create().setPreserveOrder(true);
         StreamStage<Integer> source = p.readFrom(TestSources.items(1))
                                        .setLocalParallelism(UPSTREAM_PARALLELISM)

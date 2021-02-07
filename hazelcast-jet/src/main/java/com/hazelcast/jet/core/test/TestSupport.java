@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.jet.core.test;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.NetworkConfig;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -25,7 +26,6 @@ import com.hazelcast.internal.serialization.SerializationServiceAware;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.internal.util.concurrent.IdleStrategy;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Processor.Context;
@@ -35,6 +35,7 @@ import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.impl.LoggingServiceImpl;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
 import java.net.UnknownHostException;
@@ -91,7 +92,7 @@ import static java.util.stream.Collectors.toMap;
  *     <li>does snapshot or snapshot+restore each time the {@code complete()}
  *     method returned {@code false} and made a progress
  * </ul>
- *
+ * <p>
  * The {@code init()} and {@code close()} methods of {@link
  * ProcessorSupplier} and {@link ProcessorMetaSupplier} are called if you call
  * the {@link #verifyProcessor} using one of these.
@@ -174,7 +175,7 @@ public final class TestSupport {
      */
     public static final BiPredicate<List<?>, List<?>> SAME_ITEMS_ANY_ORDER =
             (expected, actual) -> {
-                if (expected.size() != actual.size()) { // shortcut
+                if (expected.size() != actual.size()) {
                     return false;
                 }
                 Map<Object, Integer> expectedMap = expected.stream().collect(toMap(identity(), e -> 1, Integer::sum));
@@ -213,14 +214,15 @@ public final class TestSupport {
     private boolean logInputOutput = true;
     private boolean callComplete = true;
     private int outputOrdinalCount;
-    private Runnable beforeEachRun = () -> { };
+    private Runnable beforeEachRun = () -> {
+    };
 
     private int localProcessorIndex;
     private int globalProcessorIndex;
     private int localParallelism = 1;
     private int totalParallelism = 1;
 
-    private JetInstance jetInstance;
+    private HazelcastInstance instance;
     private long cooperativeTimeout = COOPERATIVE_TIME_LIMIT_MS_FAIL;
     private long runUntilOutputMatchesTimeoutMillis = -1;
     private long runUntilOutputMatchesExtraTimeMillis;
@@ -277,9 +279,9 @@ public final class TestSupport {
      * item0 from input0, item0 from input1, item1 from input0 etc.
      * <p>
      * See also:<ul>
-     *     <li>{@link #input(List)} - if you have just one input ordinal
-     *     <li>{@link #inputs(List, int[])} - if you want to specify input
-     *     priorities
+     * <li>{@link #input(List)} - if you have just one input ordinal
+     * <li>{@link #inputs(List, int[])} - if you want to specify input
+     * priorities
      * </ul>
      *
      * @param inputs one list of input items for each input edge
@@ -296,13 +298,14 @@ public final class TestSupport {
      * round-robin fashion.
      * <p>
      * See also:<ul>
-     *     <li>{@link #input(List)} - if you have just one input ordinal
-     *     <li>{@link #inputs(List)} - if all inputs are of equal priority
+     * <li>{@link #input(List)} - if you have just one input ordinal
+     * <li>{@link #inputs(List)} - if all inputs are of equal priority
      * </ul>
      *
      * @param inputs one list of input items for each input edge
      * @return {@code this} instance for fluent API
      */
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public TestSupport inputs(@Nonnull List<List<?>> inputs, int[] priorities) {
         if (inputs.size() != priorities.length) {
             throw new IllegalArgumentException("Number of inputs must be equal to number of priorities");
@@ -316,7 +319,7 @@ public final class TestSupport {
      * Sets the expected output and runs the test.
      * <p>
      * The {@code expectedOutput} can contain {@link
-     * com.hazelcast.jet.core.Watermark}s. Each Watermark in the input will be
+     * Watermark}s. Each Watermark in the input will be
      * found in the output, as well as other watermarks the processor emits.
      *
      * @throws AssertionError If some assertion does not hold.
@@ -336,7 +339,7 @@ public final class TestSupport {
      */
     public void expectOutputs(@Nonnull List<List<?>> expectedOutputs) {
         assertOutput(
-            expectedOutputs.size(), (mode, actual) -> assertExpectedOutput(mode, expectedOutputs, actual)
+                expectedOutputs.size(), (mode, actual) -> assertExpectedOutput(mode, expectedOutputs, actual)
         );
     }
 
@@ -347,23 +350,23 @@ public final class TestSupport {
      * can be used in the assertion message.
      *
      * @param outputOrdinalCount how many output ordinals should be created
-     * @param assertFn an assertion function which takes the current mode and the collected output
+     * @param assertFn           an assertion function which takes the current mode and the collected output
      */
     public void assertOutput(int outputOrdinalCount, BiConsumer<TestMode, List<List<Object>>> assertFn) {
         assertOutputFn = assertFn;
         this.outputOrdinalCount = outputOrdinalCount;
         try {
             TestProcessorMetaSupplierContext metaSupplierContext = new TestProcessorMetaSupplierContext();
-            if (jetInstance != null) {
-                metaSupplierContext.setJetInstance(jetInstance);
+            if (instance != null) {
+                metaSupplierContext.setInstance(instance);
             }
             metaSupplier.init(metaSupplierContext);
-            Address address = jetInstance != null
-                    ? jetInstance.getHazelcastInstance().getCluster().getLocalMember().getAddress() : LOCAL_ADDRESS;
+            Address address = instance != null
+                    ? instance.getCluster().getLocalMember().getAddress() : LOCAL_ADDRESS;
             supplier = metaSupplier.get(singletonList(address)).apply(address);
             TestProcessorSupplierContext supplierContext = new TestProcessorSupplierContext();
-            if (jetInstance != null) {
-                supplierContext.setJetInstance(jetInstance);
+            if (instance != null) {
+                supplierContext.setInstance(instance);
             }
             supplier.init(supplierContext);
             runTest(new TestMode(false, 0, 1));
@@ -408,9 +411,9 @@ public final class TestSupport {
      * Has no effect if calling {@code complete()} is {@linkplain
      * #disableCompleteCall() disabled}.
      *
-     * @param timeoutMillis maximum time to wait for the output to match
+     * @param timeoutMillis   maximum time to wait for the output to match
      * @param extraTimeMillis for how long to call {@code complete()}
-     *                       after the output matches
+     *                        after the output matches
      * @return {@code this} instance for fluent API
      */
     public TestSupport runUntilOutputMatches(long timeoutMillis, long extraTimeMillis) {
@@ -527,12 +530,12 @@ public final class TestSupport {
     }
 
     /**
-     * Use the given instance for {@link Context#jetInstance()}
+     * Use the given instance for {@link Context#instance()}
      *
      * @return {@code this} instance for fluent API
      */
-    public TestSupport jetInstance(@Nonnull JetInstance jetInstance) {
-        this.jetInstance = jetInstance;
+    public TestSupport instance(@Nonnull HazelcastInstance instance) {
+        this.instance = instance;
         return this;
     }
 
@@ -551,7 +554,7 @@ public final class TestSupport {
         beforeEachRun.run();
 
         assert testMode.isSnapshotsEnabled() || testMode.snapshotRestoreInterval() == 0
-            : "Illegal combination: don't do snapshots, but do restore";
+                : "Illegal combination: don't do snapshots, but do restore";
 
         boolean doSnapshots = testMode.doSnapshots;
         int doRestoreEvery = testMode.restoreInterval;
@@ -588,11 +591,11 @@ public final class TestSupport {
             if (inbox.isEmpty() && inputPosition < input.size()) {
                 inboxOrdinal = input.get(inputPosition).ordinal;
                 for (int added = 0;
-                        inputPosition < input.size()
-                                && added < testMode.inboxLimit()
-                                && inboxOrdinal == input.get(inputPosition).ordinal
-                                && (added == 0 || !(input.get(inputPosition).item instanceof Watermark));
-                        added++
+                     inputPosition < input.size()
+                             && added < testMode.inboxLimit()
+                             && inboxOrdinal == input.get(inputPosition).ordinal
+                             && (added == 0 || !(input.get(inputPosition).item instanceof Watermark));
+                     added++
                 ) {
                     ObjectWithOrdinal objectWithOrdinal = input.get(inputPosition++);
                     inbox.queue().add(objectWithOrdinal.item);
@@ -605,8 +608,8 @@ public final class TestSupport {
             int lastInboxSize = inbox.size();
             String methodName;
             methodName = processInbox(inbox, inboxOrdinal, isCooperative, processor);
-            boolean madeProgress = inbox.size() < lastInboxSize ||
-                (outbox[0].bucketCount() > 0 && !outbox[0].queue(0).isEmpty());
+            boolean madeProgress = inbox.size() < lastInboxSize
+                    || (outbox[0].bucketCount() > 0 && !outbox[0].queue(0).isEmpty());
             assertTrue(methodName + "() call without progress", !assertProgress || madeProgress);
             idleCount = idle(idler, idleCount, madeProgress);
             if (outbox[0].bucketCount() > 0 && outbox[0].queue(0).size() == 1 && !inbox.isEmpty()) {
@@ -633,8 +636,8 @@ public final class TestSupport {
             boolean[] done = {false};
             do {
                 doCall("complete", isCooperative, () -> done[0] = processor[0].complete());
-                boolean madeProgress = done[0] ||
-                    (outbox[0].bucketCount() > 0 && !outbox[0].queue(0).isEmpty());
+                boolean madeProgress = done[0]
+                        || (outbox[0].bucketCount() > 0 && !outbox[0].queue(0).isEmpty());
                 assertTrue("complete() call without progress", !assertProgress || madeProgress);
                 outbox[0].drainQueuesAndReset(actualOutputs, logInputOutput);
                 if (outbox[0].hasUnfinishedItem()) {
@@ -674,7 +677,7 @@ public final class TestSupport {
         assertOutputFn.accept(testMode, actualOutputs);
     }
 
-    private void assertExpectedOutput(TestMode mode, List<List<?>> expected , List<List<Object>> actual) {
+    private void assertExpectedOutput(TestMode mode, List<List<?>> expected, List<List<Object>> actual) {
         for (int i = 0; i < expected.size(); i++) {
             List<?> expectedOutput = expected.get(i);
             List<?> actualOutput = actual.get(i);
@@ -698,7 +701,7 @@ public final class TestSupport {
         SortedMap<Integer, List<Integer>> ordinalsByPriority = new TreeMap<>();
         for (int i = 0; i < priorities.length; i++) {
             ordinalsByPriority.computeIfAbsent(priorities[i], k -> new ArrayList<>())
-                            .add(i);
+                    .add(i);
         }
 
         List<ObjectWithOrdinal> result = new ArrayList<>();
@@ -831,16 +834,16 @@ public final class TestSupport {
             }
         } else {
             if (elapsed > MILLISECONDS.toNanos(BLOCKING_TIME_LIMIT_MS_WARN)) {
-                System.out.println(String.format("Warning: call to %s() took %.2fms in non-cooperative processor. Is " +
-                                "this expected?", methodName, toMillis(elapsed)));
+                System.out.println(String.format("Warning: call to %s() took %.2fms in non-cooperative processor. Is "
+                        + "this expected?", methodName, toMillis(elapsed)));
             }
         }
     }
 
     private void initProcessor(Processor processor, TestOutbox outbox) {
         SerializationService serializationService;
-        if (jetInstance != null && jetInstance.getHazelcastInstance() instanceof SerializationServiceSupport) {
-            SerializationServiceSupport impl = (SerializationServiceSupport) jetInstance.getHazelcastInstance();
+        if (instance instanceof SerializationServiceSupport) {
+            SerializationServiceSupport impl = (SerializationServiceSupport) instance;
             serializationService = impl.getSerializationService();
         } else {
             serializationService = new DefaultSerializationServiceBuilder()
@@ -856,8 +859,8 @@ public final class TestSupport {
                 .setLocalParallelism(localParallelism)
                 .setTotalParallelism(totalParallelism);
 
-        if (jetInstance != null) {
-            context.setJetInstance(jetInstance);
+        if (instance != null) {
+            context.setInstance(instance);
         }
         if (processor instanceof SerializationServiceAware) {
             ((SerializationServiceAware) processor).setSerializationService(serializationService);
@@ -935,13 +938,13 @@ public final class TestSupport {
      */
     private static String listToString(List<?> list) {
         return list.stream()
-                   .map(obj -> {
-                       if (obj instanceof Object[]) {
-                           return Arrays.toString((Object[]) obj);
-                       }
-                       return String.valueOf(obj);
-                   })
-                   .collect(Collectors.joining("\n"));
+                .map(obj -> {
+                    if (obj instanceof Object[]) {
+                        return Arrays.toString((Object[]) obj);
+                    }
+                    return String.valueOf(obj);
+                })
+                .collect(Collectors.joining("\n"));
     }
 
     private static class ObjectWithOrdinal {
@@ -1009,7 +1012,7 @@ public final class TestSupport {
                 return "snapshots enabled, never restoring them, inboxLimit=" + sInboxSize;
             } else {
                 throw new IllegalArgumentException("Unknown mode, doSnapshots=" + doSnapshots + ", restoreInterval="
-                    + restoreInterval + ", inboxLimit=" + inboxLimit);
+                        + restoreInterval + ", inboxLimit=" + inboxLimit);
             }
         }
     }

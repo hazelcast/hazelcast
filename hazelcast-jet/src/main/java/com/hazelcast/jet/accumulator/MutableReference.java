@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,17 +59,21 @@ public class MutableReference<T> {
     /**
      * Sets the value as given.
      */
-    public MutableReference set(T value) {
+    public MutableReference<T> set(T value) {
         this.value = value;
         return this;
     }
 
     @Override
+    @SuppressWarnings("rawtypes")
     public boolean equals(Object o) {
-        return this == o ||
-                o != null
-                && this.getClass() == o.getClass()
-                && Objects.equals(this.value, ((MutableReference) o).value);
+        if (this == o) {
+            return true;
+        }
+        if (o == null || this.getClass() != o.getClass()) {
+            return false;
+        }
+        return Objects.equals(this.value, ((MutableReference) o).value);
     }
 
     @Override

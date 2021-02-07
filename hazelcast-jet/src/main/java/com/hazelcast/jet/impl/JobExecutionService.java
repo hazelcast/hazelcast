@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -274,8 +274,8 @@ public class JobExecutionService implements DynamicMetricsProvider {
 
             nodeEngine.getOperationService().send(new TriggerMemberListPublishOp(), masterAddress);
             throw new RetryableHazelcastException(String.format(
-                    "Cannot initialize %s for coordinator %s, local member list version %s," +
-                            " coordinator member list version %s",
+                    "Cannot initialize %s for coordinator %s, local member list version %s,"
+                            + " coordinator member list version %s",
                     jobIdAndExecutionId(jobId, executionId), coordinator, localMemberListVersion,
                     coordinatorMemberListVersion));
         }
@@ -288,8 +288,8 @@ public class JobExecutionService implements DynamicMetricsProvider {
 
             if (membershipManager.getMember(participant.getAddress(), participant.getUuid()) == null) {
                 throw new TopologyChangedException(String.format(
-                        "Cannot initialize %s for coordinator %s: participant %s not found in local member list." +
-                                " Local member list version: %s, coordinator member list version: %s",
+                        "Cannot initialize %s for coordinator %s: participant %s not found in local member list."
+                                + " Local member list version: %s, coordinator member list version: %s",
                         jobIdAndExecutionId(jobId, executionId), coordinator, participant,
                         localMemberListVersion, coordinatorMemberListVersion));
             }

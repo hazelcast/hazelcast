@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,8 +79,8 @@ public class LocalFileSourceFactory implements FileSourceFactory {
         FileFormat<T> format = requireNonNull(fsc.getFormat());
         ReadFileFnProvider readFileFnProvider = readFileFnProviders.get(format.format());
         if (readFileFnProvider == null) {
-            throw new JetException("Could not find ReadFileFnProvider for FileFormat: " + format.format() + ". " +
-                    "Did you provide correct modules on classpath?");
+            throw new JetException("Could not find ReadFileFnProvider for FileFormat: " + format.format() + ". "
+                    + "Did you provide correct modules on classpath?");
         }
         FunctionEx<Path, Stream<T>> mapFn = readFileFnProvider.createReadFileFn(format);
         return SourceProcessors.readFilesP(fsc.getPath(), fsc.getGlob(), fsc.isSharedFileSystem(),
@@ -156,9 +156,8 @@ public class LocalFileSourceFactory implements FileSourceFactory {
 
         @Nonnull @Override
         public <T> FunctionEx<Path, Stream<T>> createReadFileFn(@Nonnull FileFormat<T> format) {
-            throw new UnsupportedOperationException("Reading Parquet files is not supported in local filesystem mode." +
-                    " " +
-                    "Use Jet Hadoop module with FileSourceBuilder.useHadoopForLocalFiles option instead.");
+            throw new UnsupportedOperationException("Reading Parquet files is not supported in local filesystem mode."
+                    + "Use Jet Hadoop module with FileSourceBuilder.useHadoopForLocalFiles option instead.");
         }
 
         @Nonnull @Override

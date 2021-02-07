@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package com.hazelcast.jet.impl.connector;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.DAGImpl;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Processor;
@@ -85,8 +85,8 @@ public class WriteBufferedPTest extends JetTestSupport {
 
     @Test
     public void when_writeBufferedJobFailed_then_bufferDisposed() throws Exception {
-        JetInstance instance = createJetMember();
-        DAG dag = new DAG();
+        JetInstance instance = createMember().getJetInstance();
+        DAGImpl dag = new DAGImpl();
         Vertex source = dag.newVertex("source", () -> new NoOutputSourceP());
         Vertex sink = dag.newVertex("sink", getLoggingBufferedWriter()).localParallelism(1);
 

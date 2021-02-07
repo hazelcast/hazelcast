@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,14 +20,14 @@ import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.jet.Jet;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.AbstractProcessor;
-import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.DAGImpl;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.SinkProcessors;
@@ -83,40 +83,40 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
     private static final int WARMUP_TIME = 10_000;
     private static final int TOTAL_TIME = 30_000;
 
-    private JetInstance instance;
+    private HazelcastInstance instance;
     private ILogger logger;
 
     @AfterClass
     public static void afterClass() {
-        Jet.shutdownAll();
+        Hazelcast.shutdownAll();
     }
 
     @Before
     public void before() {
-        JetConfig config = new JetConfig();
-        config.getInstanceConfig().setCooperativeThreadCount(PARALLELISM);
-        Config hazelcastConfig = config.getHazelcastConfig();
-        hazelcastConfig.setClusterName(randomName());
-        final JoinConfig join = hazelcastConfig.getNetworkConfig().getJoin();
+        Config config = new Config();
+        JetConfig jetConfig = config.getJetConfig();
+        jetConfig.getInstanceConfig().setCooperativeThreadCount(PARALLELISM);
+        config.setClusterName(randomName());
+        final JoinConfig join = config.getNetworkConfig().getJoin();
         join.getMulticastConfig().setEnabled(false);
         join.getTcpIpConfig().setEnabled(true).addMember("127.0.0.1");
 
         for (int i = 0; i < NODE_COUNT; i++) {
-            instance = Jet.newJetInstance(config);
+            instance = Hazelcast.newHazelcastInstance(config);
         }
-        logger = instance.getHazelcastInstance().getLoggingService().getLogger(WordCountTest.class);
+        logger = instance.getLoggingService().getLogger(WordCountTest.class);
         generateMockInput();
     }
 
     private void generateMockInput() {
         logger.info("Generating input");
-        final DAG dag = new DAG();
+        final DAGImpl dag = new DAGImpl();
         Vertex source = dag.newVertex("source",
                 (List<Address> addrs) -> (Address addr) -> ProcessorSupplier.of(
                         addr.equals(addrs.get(0)) ? MockInputP::new : noopP()));
         Vertex sink = dag.newVertex("sink", SinkProcessors.writeMapP("words"));
         dag.edge(between(source.localParallelism(1), sink.localParallelism(1)));
-        instance.newJob(dag).join();
+        instance.getJetInstance().newJob(dag).join();
         logger.info("Input generated.");
     }
 
@@ -155,11 +155,11 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
 
     @Test
     public void testJet() {
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
 
         Vertex source = dag.newVertex("source", SourceProcessors.readMapP("words"));
         Vertex tokenize = dag.newVertex("tokenize",
-                flatMapP((Map.Entry<?, String> line) -> {
+                flatMapP((Entry<?, String> line) -> {
                     StringTokenizer s = new StringTokenizer(line.getValue());
                     return () -> s.hasMoreTokens() ? s.nextToken() : null;
                 })
@@ -186,14 +186,14 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
                    .partitioned(entryKey()))
            .edge(between(aggregateStage2, sink));
 
-        benchmark("jet", () -> instance.newJob(dag).join());
+        benchmark("jet", () -> instance.getJetInstance().newJob(dag).join());
         assertCounts(instance.getMap("counts"));
     }
 
     @Test
     @Ignore
     public void testJetTwoPhaseAggregation() {
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex source = dag.newVertex("source", SourceProcessors.readMapP("words"));
         Vertex mapReduce = dag.newVertex("map-reduce", MapReduceP::new);
         Vertex combineLocal = dag.newVertex("combine-local", CombineP::new);
@@ -205,7 +205,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
            .edge(between(combineLocal, combineGlobal).distributed().allToOne("ALL"))
            .edge(between(combineGlobal, sink));
 
-        benchmark("jet", () -> instance.newJob(dag).join());
+        benchmark("jet", () -> instance.getJetInstance().newJob(dag).join());
 
         assertCounts((Map<String, Long>) instance.getMap("counts").get("result"));
     }
@@ -253,7 +253,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
         }
     }
 
-    private static class WordCountAggregator implements Aggregator<Map.Entry<Integer, String>, Map<String, Long>> {
+    private static class WordCountAggregator implements Aggregator<Entry<Integer, String>, Map<String, Long>> {
         private static final Pattern PATTERN = Pattern.compile("\\w+");
 
         private Map<String, Long> counts = new HashMap<>();

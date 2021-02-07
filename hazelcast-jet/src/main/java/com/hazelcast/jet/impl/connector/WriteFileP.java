@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -245,8 +245,8 @@ public final class WriteFileP<T> implements Processor {
         if (Files.exists(tempFile)) {
             Files.move(tempFile, finalFile, StandardCopyOption.ATOMIC_MOVE);
         } else if (!Files.exists(finalFile)) {
-            context.logger().warning("Neither temporary nor final file from the previous execution exists, data loss " +
-                    "might occur: " + tempFile);
+            context.logger().warning("Neither temporary nor final file from the previous execution exists, data loss "
+                    + "might occur: " + tempFile);
         }
     }
 

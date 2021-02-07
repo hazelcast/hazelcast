@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ package com.hazelcast.jet.core;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.Util;
-import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
+import com.hazelcast.jet.aggregate.AggregateOperations;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -79,7 +79,7 @@ public class ProcessorsTest extends SimpleTestInClusterSupport {
                 .verifyProcessor(Processors.mapUsingServiceP(
                         nonSharedService(pctx -> new int[1], arr -> assertEquals(6, arr[0])),
                         (int[] context, Integer item) -> context[0] += item))
-                .jetInstance(instance())
+                .instance(instance())
                 .disableSnapshots()
                 .input(asList(1, 2, 3))
                 .expectOutput(asList(1, 3, 6));
@@ -98,7 +98,7 @@ public class ProcessorsTest extends SimpleTestInClusterSupport {
                             context.addAndGet(item);
                             return item;
                         })))
-                .jetInstance(instance())
+                .instance(instance())
                 .disableSnapshots()
                 .disableProgressAssertion()
                 .input(asList(1, 2, 3))
@@ -125,7 +125,7 @@ public class ProcessorsTest extends SimpleTestInClusterSupport {
                                 context[0] = item;
                             }
                         }))
-                .jetInstance(instance())
+                .instance(instance())
                 .disableSnapshots()
                 .input(asList(1, 2, 3))
                 .expectOutput(asList(1, 3));
@@ -141,7 +141,7 @@ public class ProcessorsTest extends SimpleTestInClusterSupport {
                         t -> "k",
                         (int[] context, Integer item) ->
                                 supplyAsync(() -> item % context[0] != 0 ? item : null)))
-                .jetInstance(instance())
+                .instance(instance())
                 .disableSnapshots()
                 .disableProgressAssertion()
                 .input(asList(1, 2, 3))
@@ -178,7 +178,7 @@ public class ProcessorsTest extends SimpleTestInClusterSupport {
                                 context[0] = item;
                             }
                         }))
-                .jetInstance(instance())
+                .instance(instance())
                 .input(asList(1, 2, 1, 2))
                 .disableSnapshots()
                 .expectOutput(asList(1, 2, 2));
@@ -200,7 +200,7 @@ public class ProcessorsTest extends SimpleTestInClusterSupport {
                 .verifyProcessor(flatMapUsingServiceP(
                         nonSharedService(pctx -> context, c -> c[0] = 0),
                         (int[] c, Integer item) -> traverseItems(item, c[0] += item)))
-                .jetInstance(instance())
+                .instance(instance())
                 .disableSnapshots()
                 .input(asList(1, 2, 3))
                 .expectOutput(asList(1, 1, 2, 3, 3, 6));
@@ -293,7 +293,7 @@ public class ProcessorsTest extends SimpleTestInClusterSupport {
     }
 
     private static <T> AggregateOperation1<T, List<T>, String> aggregateToListAndString() {
-        return AggregateOperation
+        return AggregateOperations
                 .<List<T>>withCreate(ArrayList::new)
                 .<T>andAccumulate(List::add)
                 .andCombine(List::addAll)

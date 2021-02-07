@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,12 @@
 
 package com.hazelcast.jet.core.metrics;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.config.JetConfig;
-import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.DAGImpl;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.TestProcessors;
@@ -46,26 +47,28 @@ public class JobMetrics_NonSharedClusterTest extends JetTestSupport {
 
     @Test
     public void when_metricsCollectionOff_then_emptyMetrics() {
-        JetConfig config = new JetConfig().configureHazelcast(c -> c.getMetricsConfig().setEnabled(false));
-        JetInstance inst = createJetMember(config);
+        Config config = new Config();
+        config.getMetricsConfig().setEnabled(false);
+        HazelcastInstance instance = createMember(config);
 
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         dag.newVertex("v1", (SupplierEx<Processor>) NoOutputSourceP::new).localParallelism(1);
-        Job job = inst.newJob(dag, JOB_CONFIG_WITH_METRICS);
+        Job job = instance.getJetInstance().newJob(dag, JOB_CONFIG_WITH_METRICS);
         assertTrue(job.getMetrics().metrics().isEmpty());
     }
 
     @Test
     public void when_noMetricCollectionYet_then_emptyMetrics() {
-        JetConfig config = new JetConfig()
-                .configureHazelcast(c -> c.getMetricsConfig().setCollectionFrequencySeconds(10_000));
-        JetInstance inst = createJetMember(config);
+        Config config = new Config();
+        config.getMetricsConfig().setCollectionFrequencySeconds(10_000);
+        HazelcastInstance instance = createMember(config);
+        JetInstance jetInstance = instance.getJetInstance();
 
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         dag.newVertex("v1", (SupplierEx<Processor>) NoOutputSourceP::new).localParallelism(1);
 
         // Initial collection interval is 1 second. So let's run a job and wait until it has metrics.
-        Job job1 = inst.newJob(dag, JOB_CONFIG_WITH_METRICS);
+        Job job1 = jetInstance.newJob(dag, JOB_CONFIG_WITH_METRICS);
         try {
             JetTestSupport.assertTrueEventually(() -> assertFalse(job1.getMetrics().metrics().isEmpty()), 10);
         } catch (AssertionError e) {
@@ -76,7 +79,7 @@ public class JobMetrics_NonSharedClusterTest extends JetTestSupport {
 
         // Let's do a second job for which we know there will be no metrics collection. It should
         // return empty metrics because the next collection will be in 10_000 seconds.
-        Job job2 = inst.newJob(dag, JOB_CONFIG_WITH_METRICS);
+        Job job2 = jetInstance.newJob(dag, JOB_CONFIG_WITH_METRICS);
         assertJobStatusEventually(job2, RUNNING);
         assertTrue(job2.getMetrics().metrics().isEmpty());
     }

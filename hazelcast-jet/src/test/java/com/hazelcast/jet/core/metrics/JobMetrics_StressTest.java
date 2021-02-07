@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,13 @@
 
 package com.hazelcast.jet.core.metrics;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.AbstractProcessor;
-import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.DAGImpl;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.Processor;
@@ -54,7 +54,7 @@ public class JobMetrics_StressTest extends JetTestSupport {
     private static volatile Throwable restartThreadException;
     private static volatile Throwable obtainMetricsThreadException;
 
-    private JetInstance instance;
+    private HazelcastInstance instance;
 
     @Before
     public void setup() {
@@ -63,9 +63,9 @@ public class JobMetrics_StressTest extends JetTestSupport {
         IncrementingProcessor.initCount.set(0);
         IncrementingProcessor.completeCount.set(0);
 
-        JetConfig config = new JetConfig();
-        config.getHazelcastConfig().getMetricsConfig().setCollectionFrequencySeconds(1);
-        instance = createJetMember(config);
+        Config config = new Config();
+        config.getMetricsConfig().setCollectionFrequencySeconds(1);
+        instance = createMember(config);
     }
 
     @Test
@@ -79,8 +79,8 @@ public class JobMetrics_StressTest extends JetTestSupport {
     }
 
     private void stressTest(Function<Job, Runnable> restart) throws Throwable {
-        DAG dag = buildDag();
-        Job job = instance.newJob(dag, JOB_CONFIG_WITH_METRICS);
+        DAGImpl dag = buildDag();
+        Job job = instance.getJetInstance().newJob(dag, JOB_CONFIG_WITH_METRICS);
         try {
             assertTrueEventually(() -> assertEquals(JobStatus.RUNNING, job.getStatus()));
 
@@ -106,8 +106,8 @@ public class JobMetrics_StressTest extends JetTestSupport {
         }
     }
 
-    private DAG buildDag() {
-        DAG dag = new DAG();
+    private DAGImpl buildDag() {
+        DAGImpl dag = new DAGImpl();
         dag.newVertex("p", (SupplierEx<Processor>) IncrementingProcessor::new);
         return dag;
     }
@@ -201,29 +201,29 @@ public class JobMetrics_StressTest extends JetTestSupport {
                 while (!stop) {
                     assertNotNull(job.getMetrics());
 
-                    Collection<Measurement> initCountMeasurements = job.getMetrics().get("initCount");
+                    Collection<? extends Measurement> initCountMeasurements = job.getMetrics().get("initCount");
                     if (initCountMeasurements.size() != TOTAL_PROCESSORS) {
                         continue;
                     }
                     long initCountSum = initCountMeasurements.stream().mapToLong(Measurement::value).sum();
                     assertTrue("Metrics value should be increasing, current: " + initCountSum
-                            + ", previous: " + previousInitCountSum,
+                                    + ", previous: " + previousInitCountSum,
                             initCountSum >= previousInitCountSum);
                     previousInitCountSum = initCountSum;
 
-                    Collection<Measurement> completeCountMeasurements = job.getMetrics().get("completeCount");
+                    Collection<? extends Measurement> completeCountMeasurements = job.getMetrics().get("completeCount");
                     if (completeCountMeasurements.size() != TOTAL_PROCESSORS) {
                         continue;
                     }
                     long completeCountSum = completeCountMeasurements.stream().mapToLong(Measurement::value).sum();
                     assertTrue("Metrics value should be increasing, current: " + completeCountSum
-                            + ", previous: " + previousCompleteCountSum,
+                                    + ", previous: " + previousCompleteCountSum,
                             completeCountSum >= previousCompleteCountSum);
                     previousCompleteCountSum = completeCountSum;
                 }
                 assertTrueEventually(() -> {
                     assertNotNull(job.getMetrics());
-                    Collection<Measurement> initCountMeasurements = job.getMetrics().get("initCount");
+                    Collection<? extends Measurement> initCountMeasurements = job.getMetrics().get("initCount");
                     assertEquals(TOTAL_PROCESSORS, initCountMeasurements.size());
                     long sum = initCountMeasurements.stream().mapToLong(Measurement::value).sum();
                     assertEquals((RESTART_COUNT + 1) * TOTAL_PROCESSORS * TOTAL_PROCESSORS, sum);

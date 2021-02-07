@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,16 +21,14 @@ import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.ServiceConfig;
-import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.partition.MigrationAwareService;
 import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
 import com.hazelcast.internal.services.CoreService;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.DAGImpl;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.TestProcessors.ListSource;
 import com.hazelcast.jet.core.Vertex;
@@ -59,39 +57,38 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 public class HazelcastConnector_RestartTest extends JetTestSupport {
 
-    private JetInstance instance1;
-    private JetInstance instance2;
+    private HazelcastInstance instance1;
+    private HazelcastInstance instance2;
 
     @Before
     public void setup() {
-        JetConfig config = new JetConfig();
-        Config hazelcastConfig = config.getHazelcastConfig();
+        Config config = new Config();
         CacheSimpleConfig cacheConfig = new CacheSimpleConfig().setName("*");
         cacheConfig.getEventJournalConfig().setEnabled(true);
-        hazelcastConfig.addCacheConfig(cacheConfig);
-        ConfigAccessor.getServicesConfig(config.getHazelcastConfig())
-                      .addServiceConfig(
-                              new ServiceConfig()
-                                      .setName("MigrationBlockingService")
-                                      .setEnabled(true)
-                                      .setImplementation(new MigrationBlockingService()));
+        config.addCacheConfig(cacheConfig);
+        ConfigAccessor.getServicesConfig(config)
+                .addServiceConfig(
+                        new ServiceConfig()
+                                .setName("MigrationBlockingService")
+                                .setEnabled(true)
+                                .setImplementation(new MigrationBlockingService()));
 
-        instance1 = createJetMember(config);
-        instance2 = createJetMember(config);
+        instance1 = createMember(config);
+        instance2 = createMember(config);
     }
 
     @Test
     public void when_iListWrittenAndMemberShutdown_then_jobRestarts() throws Exception {
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex source = dag.newVertex("source",
                 throttle(() -> new ListSource(range(0, 1000).boxed().collect(toList())), 10));
         Vertex sink = dag.newVertex("sink", writeListP("sink"));
         dag.edge(between(source, sink));
         source.localParallelism(1);
 
-        Job job = instance1.newJob(dag, new JobConfig().setAutoScaling(true));
+        Job job = instance1.getJetInstance().newJob(dag, new JobConfig().setAutoScaling(true));
         // wait for the job to start producing
-        IList<Integer> sinkList = instance1.getHazelcastInstance().getList("sink");
+        IList<Integer> sinkList = instance1.getList("sink");
         assertTrueEventually(() -> assertTrue("no output to sink", sinkList.size() >= 4), 5);
 
         // When
@@ -102,8 +99,9 @@ public class HazelcastConnector_RestartTest extends JetTestSupport {
         // Then - assert that the job stopped producing output
         waitExecutionDoneOnMember(instance1, job);
         waitExecutionDoneOnMember(instance2, job);
+
         assertTrueEventually(() -> assertFalse("node engine is running",
-                ((HazelcastInstanceImpl) instance2.getHazelcastInstance()).node.nodeEngine.isRunning()));
+                getNode(instance2).nodeEngine.isRunning()));
         int sizeAfterShutdown = sinkList.size();
         assertTrueAllTheTime(() -> assertEquals("output continues after shutdown", sizeAfterShutdown, sinkList.size()), 3);
 
@@ -118,7 +116,7 @@ public class HazelcastConnector_RestartTest extends JetTestSupport {
                 assertTrue("no output after migration completed", sinkList.size() > sizeAfterShutdown + 4), 10);
     }
 
-    private void waitExecutionDoneOnMember(JetInstance instance, Job job) {
+    private void waitExecutionDoneOnMember(HazelcastInstance instance, Job job) {
         JetService jetService = getNodeEngineImpl(instance).getService(JetService.SERVICE_NAME);
         JobExecutionService executionService = jetService.getJobExecutionService();
         Long executionId = executionService.getExecutionIdForJobId(job.getId());

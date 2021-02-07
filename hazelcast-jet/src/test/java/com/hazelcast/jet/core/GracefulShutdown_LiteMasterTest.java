@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,10 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.SupplierEx;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.DummyStatefulP;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -36,25 +36,26 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastSerialClassRunner.class)
 public class GracefulShutdown_LiteMasterTest extends JetTestSupport {
 
-    private JetInstance instance;
-    private JetInstance liteMaster;
+    private HazelcastInstance instance;
+    private HazelcastInstance liteMaster;
 
     @Before
     public void setup() {
         TestProcessors.reset(0);
-        JetConfig liteMemberConfig = new JetConfig();
-        liteMemberConfig.getHazelcastConfig().setLiteMember(true);
-        liteMaster = createJetMember(liteMemberConfig);
-        instance = createJetMember();
+        Config config = new Config();
+        config.setLiteMember(true);
+
+        liteMaster = createMember(config);
+        instance = createMember();
     }
 
     @Test
     public void test() {
         DummyStatefulP.parallelism = 2;
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         dag.newVertex("v", (SupplierEx<Processor>) DummyStatefulP::new)
-           .localParallelism(DummyStatefulP.parallelism);
-        Job job = instance.newJob(dag, new JobConfig()
+                .localParallelism(DummyStatefulP.parallelism);
+        Job job = instance.getJetInstance().newJob(dag, new JobConfig()
                 .setSnapshotIntervalMillis(DAYS.toMillis(1))
                 .setProcessingGuarantee(EXACTLY_ONCE));
         assertJobStatusEventually(job, RUNNING, 10);

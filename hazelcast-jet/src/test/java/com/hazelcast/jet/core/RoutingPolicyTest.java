@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ public class RoutingPolicyTest extends SimpleTestInClusterSupport {
 
     @Test
     public void when_unicast() throws Throwable {
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex producer = producer(NUMBERS_LOW, NUMBERS_HIGH);
         Vertex consumer = consumer(2);
 
@@ -83,7 +83,7 @@ public class RoutingPolicyTest extends SimpleTestInClusterSupport {
 
     @Test
     public void when_broadcast() throws Throwable {
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex producer = producer(NUMBERS_LOW, NUMBERS_HIGH);
         Vertex consumer = consumer(4);
 
@@ -101,7 +101,7 @@ public class RoutingPolicyTest extends SimpleTestInClusterSupport {
 
     @Test
     public void when_partitioned() throws Throwable {
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex producer = producer(NUMBERS_LOW, NUMBERS_LOW, NUMBERS_HIGH, NUMBERS_HIGH);
         Vertex consumer = consumer(2);
 
@@ -117,7 +117,7 @@ public class RoutingPolicyTest extends SimpleTestInClusterSupport {
 
     @Test
     public void when_isolated_downstreamEqualsUpstream() throws Throwable {
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex producer = producer(NUMBERS_LOW, NUMBERS_HIGH);
         Vertex consumer = consumer(2);
 
@@ -134,7 +134,7 @@ public class RoutingPolicyTest extends SimpleTestInClusterSupport {
 
     @Test
     public void when_isolated_downstreamGreaterThanUpstream() throws Throwable {
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex producer = producer(NUMBERS_LOW, NUMBERS_HIGH);
         Vertex consumer = consumer(4);
 
@@ -156,7 +156,7 @@ public class RoutingPolicyTest extends SimpleTestInClusterSupport {
 
     @Test
     public void when_isolated_downstreamLowerThanUpstream() throws Throwable {
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex producer = producer(NUMBERS_LOW, NUMBERS_HIGH);
         Vertex consumer = consumer(1);
 
@@ -176,7 +176,7 @@ public class RoutingPolicyTest extends SimpleTestInClusterSupport {
 
         final List<Integer> numbersHighest = IntStream.range(8192, 16384).boxed().collect(toList());
 
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex producer = producer(NUMBERS_LOW, NUMBERS_HIGH, numbersHighest);
         Vertex consumer = consumer(2);
 
@@ -195,7 +195,7 @@ public class RoutingPolicyTest extends SimpleTestInClusterSupport {
 
     @Test
     public void when_fanout() throws Throwable {
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex producer = producer(NUMBERS_LOW, NUMBERS_HIGH);
         Vertex consumer = consumer(2);
 
@@ -215,8 +215,8 @@ public class RoutingPolicyTest extends SimpleTestInClusterSupport {
         assertEquals(setOf(NUMBERS_LOW, NUMBERS_HIGH), setOf(combined));
     }
 
-    private void execute(DAG dag) throws Throwable {
-        executeAndPeel(instance().newJob(dag));
+    private void execute(DAGImpl dag) throws Throwable {
+        executeAndPeel(jetInstance().newJob(dag));
     }
 
     private Vertex consumer(int localParallelism) {

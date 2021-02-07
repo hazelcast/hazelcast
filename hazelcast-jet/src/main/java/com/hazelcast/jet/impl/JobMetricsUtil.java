@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,8 @@ import com.hazelcast.internal.metrics.MetricConsumer;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.impl.MetricsCompressor;
 import com.hazelcast.internal.util.MapUtil;
-import com.hazelcast.jet.core.metrics.JobMetrics;
-import com.hazelcast.jet.core.metrics.Measurement;
+import com.hazelcast.jet.core.metrics.JobMetricsImpl;
+import com.hazelcast.jet.core.metrics.MeasurementImpl;
 import com.hazelcast.jet.core.metrics.MetricTags;
 import com.hazelcast.jet.impl.metrics.RawJobMetrics;
 
@@ -55,7 +55,7 @@ public final class JobMetricsUtil {
         return d -> d.copy().withTag(MetricTags.MEMBER, uuid).withTag(MetricTags.ADDRESS, addr);
     }
 
-    static JobMetrics toJobMetrics(List<RawJobMetrics> rawJobMetrics) {
+    static JobMetricsImpl toJobMetrics(List<RawJobMetrics> rawJobMetrics) {
         JobMetricsConsumer consumer = null;
         for (RawJobMetrics metrics : rawJobMetrics) {
             if (metrics.getBlob() == null) {
@@ -67,13 +67,13 @@ public final class JobMetricsUtil {
             consumer.timestamp = metrics.getTimestamp();
             MetricsCompressor.extractMetrics(metrics.getBlob(), consumer);
         }
-        return consumer == null ? JobMetrics.empty() : JobMetrics.of(consumer.metrics);
+        return consumer == null ? JobMetricsImpl.empty() : JobMetricsImpl.of(consumer.metrics);
 
     }
 
     private static class JobMetricsConsumer implements MetricConsumer {
 
-        final Map<String, List<Measurement>> metrics = new HashMap<>();
+        final Map<String, List<MeasurementImpl>> metrics = new HashMap<>();
         long timestamp;
 
         @Override
@@ -87,7 +87,7 @@ public final class JobMetricsUtil {
             consumeLong(descriptor, (long) value);
         }
 
-        private Measurement measurement(MetricDescriptor descriptor, long value) {
+        private MeasurementImpl measurement(MetricDescriptor descriptor, long value) {
             Map<String, String> tags = MapUtil.createHashMap(descriptor.tagCount());
             for (int i = 0; i < descriptor.tagCount(); i++) {
                 tags.put(descriptor.tag(i), descriptor.tagValue(i));
@@ -95,7 +95,7 @@ public final class JobMetricsUtil {
             if (descriptor.discriminator() != null || descriptor.discriminatorValue() != null) {
                 tags.put(descriptor.discriminator(), descriptor.discriminatorValue());
             }
-            return Measurement.of(descriptor.metric(), value, timestamp, tags);
+            return MeasurementImpl.of(descriptor.metric(), value, timestamp, tags);
         }
     }
 }

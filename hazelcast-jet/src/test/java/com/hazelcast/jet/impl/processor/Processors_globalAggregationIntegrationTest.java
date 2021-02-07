@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,9 @@
 package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.collection.IList;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
-import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.DAGImpl;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.TestProcessors.ListSource;
 import com.hazelcast.jet.core.Vertex;
@@ -62,11 +62,11 @@ public class Processors_globalAggregationIntegrationTest extends JetTestSupport 
 
     private void runTest(List<Long> sourceItems, Long expectedOutput)
             throws Exception {
-        JetInstance instance = createJetMember();
+        HazelcastInstance instance = createMember();
 
         AggregateOperation1<Long, ?, Long> summingOp = summingLong((Long l) -> l);
 
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex source = dag.newVertex("source", () -> new ListSource(sourceItems)).localParallelism(1);
         Vertex sink = dag.newVertex("sink", writeListP("sink"));
 
@@ -86,7 +86,7 @@ public class Processors_globalAggregationIntegrationTest extends JetTestSupport 
                     .edge(between(combine, sink).isolated());
         }
 
-        instance.newJob(dag).join();
+        instance.getJetInstance().newJob(dag).join();
 
         IList<Long> sinkList = instance.getList("sink");
 

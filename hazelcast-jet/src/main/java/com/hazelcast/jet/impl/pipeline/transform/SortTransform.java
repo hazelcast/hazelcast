@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,7 +54,7 @@ public class SortTransform<T> extends AbstractTransform {
     public void addToDag(Planner p, Context context) {
         String vertexName = name();
         determineLocalParallelism(LOCAL_PARALLELISM_USE_DEFAULT, context, p.isPreserveOrder());
-        Vertex v1 = p.dag.newVertex(vertexName, sortP(comparator))
+        Vertex v1 = p.getDag().newVertex(vertexName, sortP(comparator))
                          .localParallelism(determinedLocalParallelism());
         if (p.isPreserveOrder()) {
             p.addEdges(this, v1, Edge::isolated);
@@ -64,7 +64,7 @@ public class SortTransform<T> extends AbstractTransform {
         determinedLocalParallelism(1);
         PlannerVertex pv2 = p.addVertex(this, vertexName + COLLECT_STAGE_SUFFIX, determinedLocalParallelism(),
                 ProcessorMetaSupplier.forceTotalParallelismOne(ProcessorSupplier.of(mapP(identity())), vertexName));
-        p.dag.edge(between(v1, pv2.v)
+        p.getDag().edge(between(v1, pv2.vertex())
                 .distributed()
                 .allToOne(vertexName)
                 .ordered(comparator));

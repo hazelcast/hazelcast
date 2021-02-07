@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,12 +71,16 @@ public class TimestampedItem<T> {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public boolean equals(Object obj) {
-        TimestampedItem<T> that;
-        return obj != null
-                && this.getClass() == obj.getClass()
-                && this.timestamp == (that = (TimestampedItem<T>) obj).timestamp
+    @SuppressWarnings("rawtypes")
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || this.getClass() != o.getClass()) {
+            return false;
+        }
+        TimestampedItem that = (TimestampedItem) o;
+        return this.timestamp == that.timestamp
                 && Objects.equals(this.item, that.item);
     }
 

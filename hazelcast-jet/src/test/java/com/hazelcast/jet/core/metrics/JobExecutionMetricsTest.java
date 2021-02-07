@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.core.metrics;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.impl.JobRepository;
@@ -40,8 +40,8 @@ public class JobExecutionMetricsTest extends SimpleTestInClusterSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        JetConfig config = new JetConfig();
-        config.configureHazelcast(hzConfig -> hzConfig.getMetricsConfig().setCollectionFrequencySeconds(1));
+        Config config = new Config();
+        config.getMetricsConfig().setCollectionFrequencySeconds(1);
         initialize(1, config);
     }
 
@@ -49,7 +49,7 @@ public class JobExecutionMetricsTest extends SimpleTestInClusterSupport {
     public void testExecutionMetricsBatchJob() {
         JobConfig jobConfig = new JobConfig();
         jobConfig.setStoreMetricsAfterJobCompletion(true);
-        Job job = instance().newJob(batchPipeline(), jobConfig);
+        Job job = jetInstance().newJob(batchPipeline(), jobConfig);
         job.join();
 
         JobMetricsChecker checker = new JobMetricsChecker(job);
@@ -64,7 +64,7 @@ public class JobExecutionMetricsTest extends SimpleTestInClusterSupport {
 
         JobConfig jobConfig = new JobConfig();
         jobConfig.setStoreMetricsAfterJobCompletion(true);
-        Job job = instance().newJob(streamPipeline(), jobConfig);
+        Job job = jetInstance().newJob(streamPipeline(), jobConfig);
 
         JobMetricsChecker jobChecker = new JobMetricsChecker(job);
         assertTrueEventually(() -> jobChecker.assertSummedMetricValueAtLeast(EXECUTION_START_TIME, 1));
@@ -82,7 +82,7 @@ public class JobExecutionMetricsTest extends SimpleTestInClusterSupport {
 
     @Test
     public void testExecutionMetricsJobRestart() throws Exception {
-        Job job = instance().newJob(streamPipeline());
+        Job job = jetInstance().newJob(streamPipeline());
 
         JobMetricsChecker jobChecker = new JobMetricsChecker(job);
         assertTrueEventually(() -> jobChecker.assertSummedMetricValueAtLeast(EXECUTION_START_TIME, 1));
@@ -102,7 +102,7 @@ public class JobExecutionMetricsTest extends SimpleTestInClusterSupport {
         JobConfig jobConfig = new JobConfig();
         jobConfig.setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE)
                 .setSnapshotIntervalMillis(50);
-        Job job = instance().newJob(snapshotPipeline(), jobConfig);
+        Job job = jetInstance().newJob(snapshotPipeline(), jobConfig);
 
         JobRepository jr = new JobRepository(instance());
         waitForFirstSnapshot(jr, job.getId(), 20, false);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,15 @@
 
 package com.hazelcast.jet.pipeline;
 
-import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.JetTestInstanceFactory;
+import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.aggregate.AggregateOperations;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.test.AssertTask;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -45,9 +45,9 @@ import static org.junit.Assert.fail;
 
 public abstract class StreamSourceStageTestBase extends JetTestSupport {
 
-    protected static JetInstance instance;
+    protected static HazelcastInstance instance;
     static final String JOURNALED_MAP_NAME = "journaledMap";
-    private static JetTestInstanceFactory factory = new JetTestInstanceFactory();
+    private static final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory();
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
@@ -67,13 +67,12 @@ public abstract class StreamSourceStageTestBase extends JetTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        JetConfig config = new JetConfig();
-        config.getHazelcastConfig()
-              .getMapConfig("*")
+        Config config = new Config();
+        config.getMapConfig("*")
               .getEventJournalConfig().setEnabled(true);
         // use 1 partition for the map journal to have an item in each ption
-        config.getHazelcastConfig().setProperty(PARTITION_COUNT.getName(), "1");
-        instance = factory.newMember(config);
+        config.setProperty(PARTITION_COUNT.getName(), "1");
+        instance = factory.newHazelcastInstance(config);
     }
 
     @AfterClass
@@ -111,7 +110,7 @@ public abstract class StreamSourceStageTestBase extends JetTestSupport {
                 .writeTo(Sinks.fromProcessor("wmCollector",
                         preferLocalParallelismOne(WatermarkCollector::new))
                 );
-        Job job = instance.newJob(p);
+        Job job = instance.getJetInstance().newJob(p);
 
         AssertTask assertTask = () -> assertEquals(expectedWms, WatermarkCollector.watermarks);
         assertTrueEventually(assertTask, 24);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.jet.RestartableException;
-import com.hazelcast.jet.config.InstanceConfig;
 import com.hazelcast.jet.core.metrics.MetricNames;
 import com.hazelcast.jet.core.metrics.MetricTags;
 import com.hazelcast.jet.impl.util.ObjectWithPartitionId;
@@ -259,7 +258,8 @@ public class ReceiverTasklet implements Tasklet {
     // Only one thread writes to ackedSeq
     @SuppressWarnings("NonAtomicOperationOnVolatileField")
     long ackItem(long itemWeight) {
-        return ackedSeq += itemWeight;
+        ackedSeq += itemWeight;
+        return ackedSeq;
     }
 
     /**
@@ -278,6 +278,7 @@ public class ReceiverTasklet implements Tasklet {
         return (int) (seq >> COMPRESSED_SEQ_UNIT_LOG2);
     }
 
+    @SuppressWarnings("checkstyle:TrailingComment")
     static long estimatedMemoryFootprint(long itemBlobSize) {
         final int inboxSlot = 4; // slot in ArrayDeque<ObjPtionAndSenderId> inbox
         final int objPtionAndSenderIdHeader = 16; // object header of ObjPtionAndSenderId instance

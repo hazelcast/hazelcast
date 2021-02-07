@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,10 +55,10 @@ public class SimpleEvent implements Serializable {
 
     @Override
     public String toString() {
-        return "SimpleEvent(" +
-            "timestamp=" + Util.toLocalTime(timestamp) +
-            ", sequence=" + sequence +
-            ')';
+        return "SimpleEvent("
+            + "timestamp=" + Util.toLocalTime(timestamp)
+            + ", sequence=" + sequence
+            + ')';
     }
 
     @Override
@@ -70,8 +70,8 @@ public class SimpleEvent implements Serializable {
             return false;
         }
         SimpleEvent that = (SimpleEvent) o;
-        return timestamp == that.timestamp &&
-            sequence == that.sequence;
+        return timestamp == that.timestamp
+                && sequence == that.sequence;
     }
 
     @Override

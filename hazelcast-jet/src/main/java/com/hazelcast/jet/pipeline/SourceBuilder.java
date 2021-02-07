@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -153,7 +153,7 @@ public final class SourceBuilder<C> {
      * fillBufferFn} again and at some later point it will call the {@code
      * destroyFn} with the context object.
      * <p>
-     * Unless you call {@link SourceBuilder.Batch#distributed builder.distributed()},
+     * Unless you call {@link Batch#distributed builder.distributed()},
      * Jet will create just a single processor that should emit all the data.
      * If you do call it, make sure your distributed source takes care of
      * splitting the data between processors. Your {@code createFn} should
@@ -196,7 +196,7 @@ public final class SourceBuilder<C> {
     @Nonnull
     public static <C> SourceBuilder<C>.Batch<Void> batch(
             @Nonnull String name,
-            @Nonnull FunctionEx<? super Processor.Context, ? extends C> createFn
+            @Nonnull FunctionEx<? super Context, ? extends C> createFn
     ) {
         return new SourceBuilder<C>(name, createFn).new Batch<Void>();
     }
@@ -219,7 +219,7 @@ public final class SourceBuilder<C> {
      * you risk interfering with Jet's coordination mechanisms and getting bad
      * performance.
      * <p>
-     * Unless you call {@link SourceBuilder.Stream#distributed builder.distributed()},
+     * Unless you call {@link Stream#distributed builder.distributed()},
      * Jet will create just a single processor that should emit all the data.
      * If you do call it, make sure your distributed source takes care of
      * splitting the data between processors. Your {@code createFn} should
@@ -257,7 +257,7 @@ public final class SourceBuilder<C> {
     @Nonnull
     public static <C> SourceBuilder<C>.Stream<Void> stream(
             @Nonnull String name,
-            @Nonnull FunctionEx<? super Processor.Context, ? extends C> createFn
+            @Nonnull FunctionEx<? super Context, ? extends C> createFn
     ) {
         return new SourceBuilder<C>(name, createFn).new Stream<Void>();
     }
@@ -275,7 +275,7 @@ public final class SourceBuilder<C> {
      * of a <i>context object</i> it gets from the given {@code createFn}. To get
      * the data items to emit to the pipeline, the processor repeatedly calls
      * your {@code fillBufferFn} with the context object and a buffer object. The
-     * buffer's {@link SourceBuilder.TimestampedSourceBuffer#add add()} method
+     * buffer's {@link TimestampedSourceBuffer#add add()} method
      * takes two arguments: the item and the timestamp in milliseconds.
      * <p>
      * Your function should add some items to the buffer, ideally those it has
@@ -286,7 +286,7 @@ public final class SourceBuilder<C> {
      * you risk interfering with Jet's coordination mechanisms and getting bad
      * performance.
      * <p>
-     * Unless you call {@link SourceBuilder.TimestampedStream#distributed(int)
+     * Unless you call {@link TimestampedStream#distributed(int)
      * builder.distributed()}, Jet will create just a single processor that
      * should emit all the data. If you do call it, make sure your distributed
      * source takes care of splitting the data between processors. Your {@code
@@ -341,7 +341,7 @@ public final class SourceBuilder<C> {
     @Nonnull
     public static <C> SourceBuilder<C>.TimestampedStream<Void> timestampedStream(
             @Nonnull String name,
-            @Nonnull FunctionEx<? super Processor.Context, ? extends C> createFn
+            @Nonnull FunctionEx<? super Context, ? extends C> createFn
     ) {
         return new SourceBuilder<C>(name, createFn).new TimestampedStream<Void>();
     }
@@ -371,8 +371,8 @@ public final class SourceBuilder<C> {
          * {@code preferredLocalParallelism} parameter. If you call this, you must
          * ensure that all the source processors are coordinated and not emitting
          * duplicated data. The {@code createFn} can consult {@link
-         * Processor.Context#totalParallelism processorContext.totalParallelism()}
-         * and {@link Processor.Context#globalProcessorIndex
+         * Context#totalParallelism processorContext.totalParallelism()}
+         * and {@link Context#globalProcessorIndex
          * processorContext.globalProcessorIndex()}. Jet calls {@code createFn}
          * exactly once with each {@code globalProcessorIndex} from 0 to {@code
          * totalParallelism - 1} and you can use this to make all the instances
@@ -489,7 +489,7 @@ public final class SourceBuilder<C> {
          * SourceBuffer#close}.
          */
         @Override @Nonnull
-        public <T_NEW> SourceBuilder<C>.Batch<T_NEW> fillBufferFn(
+        public <T_NEW> Batch<T_NEW> fillBufferFn(
                 @Nonnull BiConsumerEx<? super C, ? super SourceBuffer<T_NEW>> fillBufferFn
         ) {
             return (Batch<T_NEW>) super.fillBufferFn(fillBufferFn);
@@ -601,7 +601,7 @@ public final class SourceBuilder<C> {
          * your source. The function receives the context object obtained from
          * {@code createFn} and Jet's buffer object. It should add some items
          * to the buffer, ideally those it can produce without making any blocking
-         * calls. The buffer's {@link SourceBuilder.TimestampedSourceBuffer#add add()}
+         * calls. The buffer's {@link TimestampedSourceBuffer#add add()}
          * method takes two arguments: the item and the timestamp in milliseconds.
          * <p>
          * On any given invocation the function may also choose not to add

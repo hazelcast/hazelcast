@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,9 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.collection.IList;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.ToLongFunctionEx;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.accumulator.LongAccumulator;
@@ -79,11 +79,11 @@ public class Processors_slidingWindowingIntegrationTest extends JetTestSupport {
 
     @Test
     public void smokeTest() throws Exception {
-        JetInstance instance = createJetMember();
+        HazelcastInstance instance = createMember();
 
         SlidingWindowPolicy wDef = slidingWinPolicy(2000, 1000);
 
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         boolean isBatchLocal = isBatch; // to prevent serialization of whole class
 
         FunctionEx<? super MyEvent, ?> keyFn = MyEvent::getKey;
@@ -130,7 +130,7 @@ public class Processors_slidingWindowingIntegrationTest extends JetTestSupport {
                     .edge(between(slidingWin, sink));
         }
 
-        Job job = instance.newJob(dag);
+        Job job = instance.getJetInstance().newJob(dag);
 
         if (isBatch) {
             job.join();

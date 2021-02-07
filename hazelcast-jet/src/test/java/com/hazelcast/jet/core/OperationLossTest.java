@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.DummyStatefulP;
 import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
@@ -59,17 +59,15 @@ public class OperationLossTest extends SimpleTestInClusterSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        JetConfig config = new JetConfig();
-        config.getHazelcastConfig().setProperty(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "2000");
-
+        Config config = new Config().setProperty(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "2000");
         initialize(2, config);
     }
 
     @Before
     public void before() {
         TestProcessors.reset(1);
-        for (JetInstance instance : instances()) {
-            PacketFiltersUtil.resetPacketFiltersFrom(instance.getHazelcastInstance());
+        for (HazelcastInstance instance : instances()) {
+            PacketFiltersUtil.resetPacketFiltersFrom(instance);
         }
     }
 
@@ -84,40 +82,40 @@ public class OperationLossTest extends SimpleTestInClusterSupport {
     }
 
     private void when_operationLost_then_jobRestarts(int operationId, JobStatus expectedStatus) {
-        PacketFiltersUtil.dropOperationsFrom(instance().getHazelcastInstance(), JetInitDataSerializerHook.FACTORY_ID,
+        PacketFiltersUtil.dropOperationsFrom(instance(), JetInitDataSerializerHook.FACTORY_ID,
                 singletonList(operationId));
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex v1 = dag.newVertex("v1", () -> new NoOutputSourceP()).localParallelism(1);
         Vertex v2 = dag.newVertex("v2", mapP(identity())).localParallelism(1);
         dag.edge(between(v1, v2).distributed());
 
-        Job job = instance().newJob(dag);
+        Job job = jetInstance().newJob(dag);
         assertJobStatusEventually(job, expectedStatus);
         // NOT_RUNNING will occur briefly, we might miss to observe it. But restart occurs every
         // second (that's the operation heartbeat timeout) so hopefully we'll eventually succeed.
         assertJobStatusEventually(job, NOT_RUNNING);
 
         // now allow the job to complete normally
-        PacketFiltersUtil.resetPacketFiltersFrom(instance().getHazelcastInstance());
+        PacketFiltersUtil.resetPacketFiltersFrom(instance());
         NoOutputSourceP.proceedLatch.countDown();
         job.join();
     }
 
     @Test
     public void when_completeExecutionOperationLost_then_jobCompletes() {
-        PacketFiltersUtil.dropOperationsFrom(instance().getHazelcastInstance(), JetInitDataSerializerHook.FACTORY_ID,
+        PacketFiltersUtil.dropOperationsFrom(instance(), JetInitDataSerializerHook.FACTORY_ID,
                 singletonList(JetInitDataSerializerHook.COMPLETE_EXECUTION_OP));
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex v1 = dag.newVertex("v1", () -> new DummyStatefulP()).localParallelism(1);
         Vertex v2 = dag.newVertex("v2", mapP(identity())).localParallelism(1);
         dag.edge(between(v1, v2).distributed());
 
-        Job job = instance().newJob(dag);
+        Job job = jetInstance().newJob(dag);
         assertJobStatusEventually(job, RUNNING);
         job.suspend();
         assertJobStatusEventually(job, COMPLETING);
         assertTrueAllTheTime(() -> assertEquals(COMPLETING, job.getStatus()), 1);
-        PacketFiltersUtil.resetPacketFiltersFrom(instance().getHazelcastInstance());
+        PacketFiltersUtil.resetPacketFiltersFrom(instance());
         assertJobStatusEventually(job, SUSPENDED);
         job.resume();
         assertJobStatusEventually(job, RUNNING);
@@ -126,14 +124,14 @@ public class OperationLossTest extends SimpleTestInClusterSupport {
 
     @Test
     public void when_snapshotOperationLost_then_retried() {
-        PacketFiltersUtil.dropOperationsFrom(instance().getHazelcastInstance(), JetInitDataSerializerHook.FACTORY_ID,
+        PacketFiltersUtil.dropOperationsFrom(instance(), JetInitDataSerializerHook.FACTORY_ID,
                 singletonList(JetInitDataSerializerHook.SNAPSHOT_PHASE1_OPERATION));
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex v1 = dag.newVertex("v1", () -> new DummyStatefulP()).localParallelism(1);
         Vertex v2 = dag.newVertex("v2", mapP(identity())).localParallelism(1);
         dag.edge(between(v1, v2).distributed());
 
-        Job job = instance().newJob(dag, new JobConfig()
+        Job job = jetInstance().newJob(dag, new JobConfig()
                 .setProcessingGuarantee(EXACTLY_ONCE)
                 .setSnapshotIntervalMillis(100));
         assertJobStatusEventually(job, RUNNING);
@@ -146,18 +144,18 @@ public class OperationLossTest extends SimpleTestInClusterSupport {
         sleepSeconds(1);
         // now lift the filter and check that a snapshot is done
         logger.info("Lifting the packet filter...");
-        PacketFiltersUtil.resetPacketFiltersFrom(instance().getHazelcastInstance());
+        PacketFiltersUtil.resetPacketFiltersFrom(instance());
         waitForFirstSnapshot(jobRepository, job.getId(), 10, false);
         cancelAndJoin(job);
     }
 
     @Test
     public void when_connectionDroppedWithoutMemberLeaving_then_jobRestarts() {
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex source = dag.newVertex("source", () -> new NoOutputSourceP()).localParallelism(1);
         Vertex sink = dag.newVertex("sink", DiagnosticProcessors.writeLoggerP());
         dag.edge(between(source, sink).distributed());
-        Job job = instance().newJob(dag);
+        Job job = jetInstance().newJob(dag);
         assertJobStatusEventually(job, RUNNING);
         assertTrueEventually(() -> assertEquals(2, NoOutputSourceP.initCount.get()));
 
@@ -176,20 +174,20 @@ public class OperationLossTest extends SimpleTestInClusterSupport {
 
     @Test
     public void when_terminateExecutionOperationLost_then_jobTerminates() {
-        PacketFiltersUtil.dropOperationsFrom(instance().getHazelcastInstance(), JetInitDataSerializerHook.FACTORY_ID,
+        PacketFiltersUtil.dropOperationsFrom(instance(), JetInitDataSerializerHook.FACTORY_ID,
                 singletonList(JetInitDataSerializerHook.TERMINATE_EXECUTION_OP));
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex v1 = dag.newVertex("v1", () -> new NoOutputSourceP()).localParallelism(1);
         Vertex v2 = dag.newVertex("v2", mapP(identity())).localParallelism(1);
         dag.edge(between(v1, v2).distributed());
 
-        Job job = instance().newJob(dag);
+        Job job = jetInstance().newJob(dag);
         assertJobStatusEventually(job, RUNNING);
         job.cancel();
         // sleep so that the TerminateExecutionOperation is sent out, but lost
         sleepSeconds(1);
         // reset filters so that the situation can resolve
-        PacketFiltersUtil.resetPacketFiltersFrom(instance().getHazelcastInstance());
+        PacketFiltersUtil.resetPacketFiltersFrom(instance());
 
         try {
             // Then
@@ -199,20 +197,20 @@ public class OperationLossTest extends SimpleTestInClusterSupport {
 
     @Test
     public void when_terminalSnapshotOperationLost_then_jobRestarts() {
-        PacketFiltersUtil.dropOperationsFrom(instance().getHazelcastInstance(), JetInitDataSerializerHook.FACTORY_ID,
+        PacketFiltersUtil.dropOperationsFrom(instance(), JetInitDataSerializerHook.FACTORY_ID,
                 singletonList(JetInitDataSerializerHook.SNAPSHOT_PHASE1_OPERATION));
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex v1 = dag.newVertex("v1", () -> new NoOutputSourceP()).localParallelism(1);
         Vertex v2 = dag.newVertex("v2", mapP(identity())).localParallelism(1);
         dag.edge(between(v1, v2).distributed());
 
-        Job job = instance().newJob(dag, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE));
+        Job job = jetInstance().newJob(dag, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE));
         assertJobStatusEventually(job, RUNNING, 20);
         job.restart();
         // sleep so that the SnapshotOperation is sent out, but lost
         sleepSeconds(1);
         // reset filters so that the situation can resolve
-        PacketFiltersUtil.resetPacketFiltersFrom(instance().getHazelcastInstance());
+        PacketFiltersUtil.resetPacketFiltersFrom(instance());
 
         // Then
         assertTrueEventually(() -> assertEquals(4, NoOutputSourceP.initCount.get()));

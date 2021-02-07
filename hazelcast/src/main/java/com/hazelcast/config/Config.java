@@ -45,6 +45,7 @@ import com.hazelcast.internal.config.XmlConfigLocator;
 import com.hazelcast.internal.config.YamlConfigLocator;
 import com.hazelcast.internal.config.override.ExternalConfigurationOverride;
 import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.map.IMap;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
@@ -184,6 +185,8 @@ public class Config {
     private MetricsConfig metricsConfig = new MetricsConfig();
 
     private InstanceTrackingConfig instanceTrackingConfig = new InstanceTrackingConfig();
+
+    private JetConfig jetConfig = new JetConfig();
 
     public Config() {
     }
@@ -2668,6 +2671,23 @@ public class Config {
     public Config setSqlConfig(@Nonnull SqlConfig sqlConfig) {
         Preconditions.checkNotNull(sqlConfig, "sqlConfig");
         this.sqlConfig = sqlConfig;
+        return this;
+    }
+
+    /**
+     * @return Return Jet config
+     */
+    @Nonnull
+    public JetConfig getJetConfig() {
+        return jetConfig;
+    }
+
+    /**
+     * Sets Jet config
+     */
+    @Nonnull
+    public Config setJetConfig(@Nonnull JetConfig jetConfig) {
+        this.jetConfig = jetConfig;
         return this;
     }
 

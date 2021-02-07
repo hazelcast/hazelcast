@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.deployment;
 
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.core.AbstractProcessor;
-import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.DAGImpl;
 import com.hazelcast.jet.core.JetTestSupport;
 import org.junit.Test;
 
@@ -28,10 +28,10 @@ public class JetClassLoaderTest extends JetTestSupport {
 
     @Test
     public void when_jobCompleted_then_classLoaderShutDown() {
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         dag.newVertex("v", LeakClassLoaderP::new).localParallelism(1);
 
-        JetInstance instance = createJetMember();
+        JetInstance instance = createMember().getJetInstance();
 
         // When
         instance.newJob(dag).join();

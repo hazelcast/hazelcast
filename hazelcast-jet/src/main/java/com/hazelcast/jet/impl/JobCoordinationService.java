@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.instance.impl.Node;
@@ -32,9 +33,8 @@ import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JobAlreadyExistsException;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.DAGImpl;
 import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.JobSuspensionCause;
@@ -100,7 +100,6 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
-import static com.hazelcast.jet.impl.util.Util.getJetInstance;
 import static java.util.Collections.emptyList;
 import static java.util.Comparator.comparing;
 import static java.util.concurrent.TimeUnit.HOURS;
@@ -128,7 +127,7 @@ public class JobCoordinationService {
 
     private final NodeEngineImpl nodeEngine;
     private final JetService jetService;
-    private final JetConfig config;
+    private final JetConfig jetConfig;
     private final ILogger logger;
     private final JobRepository jobRepository;
     private final ConcurrentMap<Long, MasterContext> masterContexts = new ConcurrentHashMap<>();
@@ -156,11 +155,11 @@ public class JobCoordinationService {
     private long maxJobScanPeriodInMillis;
 
     JobCoordinationService(
-            NodeEngineImpl nodeEngine, JetService jetService, JetConfig config, JobRepository jobRepository
+            NodeEngineImpl nodeEngine, JetService jetService, JetConfig jetConfig, JobRepository jobRepository
     ) {
         this.nodeEngine = nodeEngine;
         this.jetService = jetService;
-        this.config = config;
+        this.jetConfig = jetConfig;
         this.logger = nodeEngine.getLogger(getClass());
         this.jobRepository = jobRepository;
 
@@ -180,7 +179,7 @@ public class JobCoordinationService {
 
     void startScanningForJobs() {
         ExecutionService executionService = nodeEngine.getExecutionService();
-        HazelcastProperties properties = new HazelcastProperties(config.getProperties());
+        HazelcastProperties properties = new HazelcastProperties(nodeEngine.getConfig().getProperties());
         maxJobScanPeriodInMillis = properties.getMillis(JOB_SCAN_PERIOD);
         executionService.schedule(COORDINATOR_EXECUTOR_NAME, this::scanJobs, 0, MILLISECONDS);
     }
@@ -206,12 +205,10 @@ public class JobCoordinationService {
 
                 int quorumSize = config.isSplitBrainProtectionEnabled() ? getQuorumSize() : 0;
                 Object jobDefinition = deserializeJobDefinition(jobId, config, serializedJobDefinition);
-                DAG dag;
+                DAGImpl dag;
                 Data serializedDag;
                 if (jobDefinition instanceof PipelineImpl) {
-                    int coopThreadCount = getJetInstance(nodeEngine).getConfig()
-                                                                    .getInstanceConfig()
-                                                                    .getCooperativeThreadCount();
+                    int coopThreadCount = jetConfig.getInstanceConfig().getCooperativeThreadCount();
                     dag = ((PipelineImpl) jobDefinition).toDag(new Context() {
                         @Override public int defaultLocalParallelism() {
                             return coopThreadCount;
@@ -219,7 +216,7 @@ public class JobCoordinationService {
                     });
                     serializedDag = nodeEngine().getSerializationService().toData(dag);
                 } else {
-                    dag = (DAG) jobDefinition;
+                    dag = (DAGImpl) jobDefinition;
                     serializedDag = serializedJobDefinition;
                 }
                 Set<String> ownedObservables = ownedObservables(dag);
@@ -269,14 +266,15 @@ public class JobCoordinationService {
         return res;
     }
 
-    private static Set<String> ownedObservables(DAG dag) {
+    private static Set<String> ownedObservables(DAGImpl dag) {
         return StreamSupport.stream(Spliterators.spliteratorUnknownSize(dag.iterator(), 0), false)
                 .map(vertex -> vertex.getMetaSupplier().getTags().get(ObservableImpl.OWNED_OBSERVABLE))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
     }
 
-    @SuppressWarnings("WeakerAccess") // used by jet-enterprise
+    // used by jet-enterprise
+    @SuppressWarnings("WeakerAccess")
     MasterContext createMasterContext(JobRecord jobRecord, JobExecutionRecord jobExecutionRecord) {
         return new MasterContext(nodeEngine, this, jobRecord, jobExecutionRecord);
     }
@@ -349,8 +347,8 @@ public class JobCoordinationService {
                 null
         );
 
-        return future
-                .thenCompose(identity()); // unwrap the inner future
+        // unwrap the inner future
+        return future.thenCompose(identity());
     }
 
     public CompletableFuture<Void> terminateJob(long jobId, TerminationMode terminationMode) {
@@ -558,8 +556,8 @@ public class JobCoordinationService {
             return oldFuture;
         }
         if (removedMembers.containsKey(uuid)) {
-            logFine(logger, "NotifyMemberShutdownOperation received for a member that was already " +
-                    "removed from the cluster: %s", uuid);
+            logFine(logger, "NotifyMemberShutdownOperation received for a member that was already "
+                    + "removed from the cluster: %s", uuid);
             return CompletableFuture.completedFuture(null);
         }
         logFine(logger, "Added a shutting-down member: %s", uuid);
@@ -675,12 +673,15 @@ public class JobCoordinationService {
             }
 
             // the job might not be yet discovered by job record scanning
-            JobExecutionRecord jobExRecord;
-            if (jobExecutionRecordHandler != null && (jobExRecord = jobRepository.getJobExecutionRecord(jobId)) != null) {
-                return jobExecutionRecordHandler.apply(jobExRecord);
+            if (jobExecutionRecordHandler != null) {
+                JobExecutionRecord jobExRecord = jobRepository.getJobExecutionRecord(jobId);
+                if (jobExRecord != null) {
+                    return jobExecutionRecordHandler.apply(jobExRecord);
+                }
             }
-            JobRecord jobRecord;
-            if ((jobRecord = jobRepository.getJobRecord(jobId)) != null) {
+
+            JobRecord jobRecord = jobRepository.getJobRecord(jobId);
+            if (jobRecord != null) {
                 return jobRecordHandler.apply(jobRecord);
             }
 
@@ -703,7 +704,7 @@ public class JobCoordinationService {
         }
 
         updateQuorumValues();
-        scheduleScaleUp(config.getInstanceConfig().getScaleUpDelayMillis());
+        scheduleScaleUp(jetConfig.getInstanceConfig().getScaleUpDelayMillis());
     }
 
     void onMemberRemoved(UUID uuid) {
@@ -876,8 +877,8 @@ public class JobCoordinationService {
         return deserializeWithCustomClassLoader(nodeEngine().getSerializationService(), classLoader, jobDefinitionData);
     }
 
-    private String dagToJson(DAG dag) {
-        int coopThreadCount = getJetInstance(nodeEngine).getConfig().getInstanceConfig().getCooperativeThreadCount();
+    private String dagToJson(DAGImpl dag) {
+        int coopThreadCount = jetConfig.getInstanceConfig().getCooperativeThreadCount();
         return dag.toJson(coopThreadCount).toString();
     }
 
@@ -1018,7 +1019,8 @@ public class JobCoordinationService {
         return record != null ? record : new JobExecutionRecord(jobId, getQuorumSize());
     }
 
-    @SuppressWarnings("WeakerAccess") // used by jet-enterprise
+    // used by jet-enterprise
+    @SuppressWarnings("WeakerAccess")
     void assertIsMaster(String error) {
         if (!isMaster()) {
             throw new JetException(error + ". Master address: " + nodeEngine.getClusterService().getMasterAddress());
@@ -1029,7 +1031,8 @@ public class JobCoordinationService {
         return nodeEngine.getClusterService().isMaster();
     }
 
-    @SuppressWarnings("unused") // used in jet-enterprise
+    // used in jet-enterprise
+    @SuppressWarnings("unused")
     NodeEngineImpl nodeEngine() {
         return nodeEngine;
     }

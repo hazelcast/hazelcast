@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -171,8 +171,8 @@ public final class SinkBuilder<C, T> {
      * Sets the local parallelism of the sink. On each member of the cluster
      * Jet will create this many parallel processors for the sink. To identify
      * each processor instance, your {@code createFn} can consult {@link
-     * Processor.Context#totalParallelism() procContext.totalParallelism()} and {@link
-     * Processor.Context#globalProcessorIndex() procContext.globalProcessorIndex()}.
+     * Context#totalParallelism() procContext.totalParallelism()} and {@link
+     * Context#globalProcessorIndex() procContext.globalProcessorIndex()}.
      * Jet calls {@code createFn} exactly once with each {@code
      * globalProcessorIndex} from 0 to {@code totalParallelism - 1}.
      * <p>

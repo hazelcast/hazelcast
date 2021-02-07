@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,7 +70,8 @@ public class ParallelStreamP<T> extends AbstractProcessor {
      */
     public ParallelStreamP(long eventsPerSecondPerGenerator, EventTimePolicy<? super T> eventTimePolicy,
                     List<? extends GeneratorFunction<T>> generators) {
-        this.startNanoTime = System.currentTimeMillis(); // temporarily holds the parameter value until init
+        // temporarily holds the parameter value until init
+        this.startNanoTime = System.currentTimeMillis();
         this.periodNanos = NANOS_PER_SECOND / eventsPerSecondPerGenerator;
         this.eventTimeMapper = new EventTimeMapper<>(eventTimePolicy);
         eventTimeMapper.addPartitions(generators.size());
@@ -81,8 +82,8 @@ public class ParallelStreamP<T> extends AbstractProcessor {
     protected void init(@Nonnull Context context) {
         totalParallelism = context.totalParallelism();
         globalProcessorIndex = context.globalProcessorIndex();
-        startNanoTime = MILLISECONDS.toNanos(startNanoTime + nanoTimeMillisToCurrentTimeMillis) +
-                globalProcessorIndex * periodNanos;
+        startNanoTime = MILLISECONDS.toNanos(startNanoTime + nanoTimeMillisToCurrentTimeMillis)
+                + globalProcessorIndex * periodNanos;
         // Assigned generator
         assignedGenerators = IntStream.range(0, generators.size())
                 .filter(i -> i % totalParallelism == globalProcessorIndex)

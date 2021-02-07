@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.pipeline;
 
-import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.EventJournalCacheEvent;
+import com.hazelcast.cache.ICache;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.collection.IList;
 import com.hazelcast.config.CacheSimpleConfig;
@@ -27,8 +27,9 @@ import com.hazelcast.function.PredicateEx;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.map.IMap;
 import com.hazelcast.map.EventJournalMapEvent;
+import com.hazelcast.map.IMap;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -52,6 +53,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 public class Sources_withEventJournalTest extends PipelineTestSupport {
+
+    private static final TestHazelcastInstanceFactory REMOTE_FACTORY = new TestHazelcastInstanceFactory();
     private static HazelcastInstance remoteHz;
     private static ClientConfig clientConfig;
 
@@ -76,7 +79,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
     public void mapJournal_byName() {
         // Given
         String mapName = JOURNALED_MAP_PREFIX + randomName();
-        IMap<String, Integer> map = jet().getMap(mapName);
+        IMap<String, Integer> map = instance().getMap(mapName);
 
         // When
         StreamSource<Entry<String, Integer>> source = Sources.mapJournal(mapName, START_FROM_OLDEST);
@@ -89,7 +92,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
     public void mapJournal_byRef() {
         // Given
         String mapName = JOURNALED_MAP_PREFIX + randomName();
-        IMap<String, Integer> map = jet().getMap(mapName);
+        IMap<String, Integer> map = instance().getMap(mapName);
 
         // When
         StreamSource<Entry<String, Integer>> source = Sources.mapJournal(map, START_FROM_OLDEST);
@@ -120,9 +123,9 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
 
         // When we start the job...
         p.readFrom(source)
-         .withoutTimestamps()
-         .map(entryValue())
-         .writeTo(sink);
+                .withoutTimestamps()
+                .map(entryValue())
+                .writeTo(sink);
         jet().newJob(p);
 
         // Then eventually we get all the map values in the sink.
@@ -144,7 +147,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         // The values we got are exactly all the original values
         // and all the updated values.
         List<Integer> expected = Stream.concat(input.stream().map(i -> Integer.MIN_VALUE + i), input.stream())
-                                       .collect(toList());
+                .collect(toList());
         assertEquals(toBag(expected), sinkToBag());
     }
 
@@ -154,7 +157,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         String mapName = JOURNALED_MAP_PREFIX + randomName();
 
         // When
-        StreamSource<String> source = Sources.mapJournal(jet().getMap(mapName), START_FROM_OLDEST,
+        StreamSource<String> source = Sources.mapJournal(instance().getMap(mapName), START_FROM_OLDEST,
                 (EventJournalMapEvent<Integer, Entry<Integer, String>> entry) -> entry.getNewValue().getValue(),
                 mapPutEvents()
         );
@@ -182,7 +185,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
             String mapName, StreamSource<String> source
     ) {
         // Given
-        IMap<Integer, Entry<Integer, String>> sourceMap = jet().getMap(mapName);
+        IMap<Integer, Entry<Integer, String>> sourceMap = instance().getMap(mapName);
         range(0, itemCount).forEach(i -> sourceMap.put(i, entry(i, i % 2 == 0 ? null : String.valueOf(i))));
 
         // When
@@ -196,7 +199,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
                         .mapToObj(String::valueOf)
                         .sorted()
                         .collect(joining("\n")),
-                jet().getHazelcastInstance().<String>getList(sinkName)
+                instance().<String>getList(sinkName)
                         .stream()
                         .sorted()
                         .collect(joining("\n"))
@@ -207,7 +210,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
     public void mapJournal_withDefaultFilter() {
         // Given
         String mapName = JOURNALED_MAP_PREFIX + randomName();
-        IMap<Integer, Integer> sourceMap = jet().getMap(mapName);
+        IMap<Integer, Integer> sourceMap = instance().getMap(mapName);
         sourceMap.put(1, 1); // ADDED
         sourceMap.remove(1); // REMOVED - filtered out
         sourceMap.put(1, 2); // ADDED
@@ -218,7 +221,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         // Then
         p.readFrom(source).withoutTimestamps().writeTo(sink);
         jet().newJob(p);
-        IList<Entry<Integer, Integer>> sinkList = jet().getList(sinkName);
+        IList<Entry<Integer, Integer>> sinkList = instance().getList(sinkName);
         assertTrueEventually(() -> {
                     assertEquals(2, sinkList.size());
 
@@ -237,7 +240,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
     public void cacheJournal_withDefaultFilter() {
         // Given
         String cacheName = JOURNALED_CACHE_PREFIX + randomName();
-        ICache<Integer, Integer> sourceMap = jet().getCacheManager().getCache(cacheName);
+        ICache<Integer, Integer> sourceMap = instance().getCacheManager().getCache(cacheName);
         sourceMap.put(1, 1); // ADDED
         sourceMap.remove(1); // REMOVED - filtered out
         sourceMap.put(1, 2); // ADDED
@@ -248,7 +251,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         // Then
         p.readFrom(source).withoutTimestamps().writeTo(sink);
         jet().newJob(p);
-        IList<Entry<Integer, Integer>> sinkList = jet().getList(sinkName);
+        IList<Entry<Integer, Integer>> sinkList = instance().getList(sinkName);
         assertTrueEventually(() -> {
                     assertEquals(2, sinkList.size());
 
@@ -267,7 +270,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
     public void mapJournal_withPredicateAndProjection() {
         // Given
         String mapName = JOURNALED_MAP_PREFIX + randomName();
-        IMap<String, Integer> map = jet().getMap(mapName);
+        IMap<String, Integer> map = instance().getMap(mapName);
         PredicateEx<EventJournalMapEvent<String, Integer>> p = e -> e.getNewValue() % 2 == 0;
 
         // When
@@ -327,12 +330,12 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
     public void remoteMapJournal_withUnknownValueClass() throws Exception {
         // Given
         URL jarResource = Thread.currentThread().getContextClassLoader()
-                                .getResource("deployment/sample-pojo-1.0-car.jar");
+                .getResource("deployment/sample-pojo-1.0-car.jar");
         assertNotNull("jar not found", jarResource);
         ClassLoader cl = new URLClassLoader(new URL[]{jarResource});
         Class<?> carClz = cl.loadClass("com.sample.pojo.car.Car");
         Object car = carClz.getConstructor(String.class, String.class)
-                                 .newInstance("make", "model");
+                .newInstance("make", "model");
         IMap<String, Object> map = remoteHz.getMap(srcName);
         // the class of the value is unknown to the remote IMDG member, it will be only known to Jet
         map.put("key", car);
@@ -354,7 +357,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
     public void cacheJournal_byName() {
         // Given
         String cacheName = JOURNALED_CACHE_PREFIX + randomName();
-        ICache<String, Integer> cache = jet().getCacheManager().getCache(cacheName);
+        ICache<String, Integer> cache = instance().getCacheManager().getCache(cacheName);
 
         // When
         StreamSource<Entry<String, Integer>> source = Sources.cacheJournal(cacheName, START_FROM_OLDEST);
@@ -385,9 +388,9 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
 
         // When we start the job...
         p.readFrom(source)
-         .withoutTimestamps()
-         .map(entryValue())
-         .writeTo(sink);
+                .withoutTimestamps()
+                .map(entryValue())
+                .writeTo(sink);
         jet().newJob(p);
 
         // Then eventually we get all the cache values in the sink.
@@ -409,7 +412,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         // The values we got are exactly all the original values
         // and all the updated values.
         List<Integer> expected = Stream.concat(input.stream().map(i -> Integer.MIN_VALUE + i), input.stream())
-                                       .collect(toList());
+                .collect(toList());
         assertEquals(toBag(expected), sinkToBag());
     }
 
@@ -418,7 +421,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         // Given
         String cacheName = JOURNALED_CACHE_PREFIX + randomName();
         PredicateEx<EventJournalCacheEvent<String, Integer>> p = e -> e.getNewValue() % 2 == 0;
-        ICache<String, Integer> cache = jet().getCacheManager().getCache(cacheName);
+        ICache<String, Integer> cache = instance().getCacheManager().getCache(cacheName);
 
         // When
         StreamSource<Integer> source = Sources.cacheJournal(
@@ -453,8 +456,8 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
 
         // When we start the job...
         p.readFrom(source)
-         .withoutTimestamps()
-         .writeTo(sink);
+                .withoutTimestamps()
+                .writeTo(sink);
         jet().newJob(p);
 
         // Then eventually we get all the map values in the sink.
@@ -481,12 +484,12 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
     public void remoteCacheJournal_withUnknownValueClass() throws Exception {
         // Given
         URL jarResource = Thread.currentThread().getContextClassLoader()
-                                .getResource("deployment/sample-pojo-1.0-car.jar");
+                .getResource("deployment/sample-pojo-1.0-car.jar");
         assertNotNull("jar not found", jarResource);
         ClassLoader cl = new URLClassLoader(new URL[]{jarResource});
         Class<?> carClz = cl.loadClass("com.sample.pojo.car.Car");
         Object car = carClz.getConstructor(String.class, String.class)
-                                 .newInstance("make", "model");
+                .newInstance("make", "model");
         String cacheName = JOURNALED_CACHE_PREFIX + randomName();
         ICache<String, Object> cache = remoteHz.getCacheManager().getCache(cacheName);
         // the class of the value is unknown to the remote IMDG member, it will be only known to Jet

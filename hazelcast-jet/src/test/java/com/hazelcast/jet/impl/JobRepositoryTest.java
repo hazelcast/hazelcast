@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,15 @@
 
 package com.hazelcast.jet.impl;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
-import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.DAGImpl;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.TestProcessors;
@@ -42,7 +42,6 @@ import java.io.File;
 import java.net.URL;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Properties;
 
 import static com.hazelcast.jet.core.JetProperties.JOB_RESULTS_MAX_SIZE;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -59,16 +58,15 @@ public class JobRepositoryTest extends JetTestSupport {
     private static final int MAX_JOB_RESULTS_COUNT = 2;
 
     private final JobConfig jobConfig = new JobConfig();
-    private JetInstance instance;
+    private HazelcastInstance instance;
     private JobRepository jobRepository;
 
     @Before
     public void setup() {
-        JetConfig config = new JetConfig();
-        Properties properties = config.getProperties();
-        properties.setProperty(JOB_RESULTS_MAX_SIZE.getName(), Integer.toString(MAX_JOB_RESULTS_COUNT));
+        Config config = new Config()
+                .setProperty(JOB_RESULTS_MAX_SIZE.getName(), Integer.toString(MAX_JOB_RESULTS_COUNT));
 
-        instance = createJetMember(config);
+        instance = createMember(config);
         jobRepository = new JobRepository(instance);
         jobRepository.setResourcesExpirationMillis(RESOURCES_EXPIRATION_TIME_MILLIS);
 
@@ -164,7 +162,7 @@ public class JobRepositoryTest extends JetTestSupport {
             jobRepository.uploadJobResources(jobConfig);
             fail();
         } catch (JetException e) {
-            Collection<DistributedObject> objects = instance.getHazelcastInstance().getDistributedObjects();
+            Collection<DistributedObject> objects = instance.getDistributedObjects();
             assertTrue(objects.stream().noneMatch(o -> o.getName().startsWith(JobRepository.RESOURCES_MAP_NAME_PREFIX)));
         }
     }
@@ -175,14 +173,14 @@ public class JobRepositoryTest extends JetTestSupport {
 
     @Test
     public void test_getJobRecordFromClient() {
-        JetInstance client = createJetClient();
+        HazelcastInstance client = createClient();
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.streamFromProcessor("source", ProcessorMetaSupplier.of(() -> new NoOutputSourceP())))
-         .withoutTimestamps()
-         .writeTo(Sinks.logger());
-        Job job = instance.newJob(p, new JobConfig()
-            .setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE)
-            .setSnapshotIntervalMillis(100));
+                .withoutTimestamps()
+                .writeTo(Sinks.logger());
+        Job job = instance.getJetInstance().newJob(p, new JobConfig()
+                .setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE)
+                .setSnapshotIntervalMillis(100));
         JobRepository jobRepository = new JobRepository(client);
         assertTrueEventually(() -> assertNotNull(jobRepository.getJobRecord(job.getId())));
         client.shutdown();
@@ -190,12 +188,12 @@ public class JobRepositoryTest extends JetTestSupport {
 
     @Test
     public void test_maxNumberOfJobResults() {
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         dag.newVertex("v", Processors.noopP());
 
         // create max+1 jobs
         for (int i = 0; i < MAX_JOB_RESULTS_COUNT + 1; i++) {
-            instance.newJob(dag).join();
+            instance.getJetInstance().newJob(dag).join();
         }
 
         jobRepository.cleanup(getNodeEngineImpl(instance));
@@ -212,7 +210,7 @@ public class JobRepositoryTest extends JetTestSupport {
     }
 
     private Data createDagData() {
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         dag.newVertex("v", () -> new TestProcessors.MockP().streaming());
         return getNodeEngineImpl(instance).toData(dag);
     }

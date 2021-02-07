@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,13 +69,13 @@ public abstract class PipelineTestSupport extends TestInClusterSupport {
     @Before
     public void beforePipelineTestSupport() {
         p = Pipeline.create();
-        srcMap = jet().getMap(srcName);
-        srcCache = jet().getCacheManager().getCache(srcName);
-        srcList = jet().getList(srcName);
+        srcMap = instance().getMap(srcName);
+        srcCache = instance().getCacheManager().getCache(srcName);
+        srcList = instance().getList(srcName);
         source = Sources.list(srcName);
 
         sink = Sinks.list(sinkName);
-        sinkList = jet().getList(sinkName);
+        sinkList = instance().getList(sinkName);
     }
 
     protected Job execute() {
@@ -162,11 +162,11 @@ public abstract class PipelineTestSupport extends TestInClusterSupport {
     ) {
         if (distinctKeyFn != null) {
             stream = stream.collect(toMap(distinctKeyFn, identity(), (t0, t1) -> t1))
-                           .values().stream();
+                    .values().stream();
         }
         return stream.map(formatFn)
-                     .sorted()
-                     .collect(joining("\n"));
+                .sorted()
+                .collect(joining("\n"));
     }
 
     /**
@@ -201,6 +201,7 @@ public abstract class PipelineTestSupport extends TestInClusterSupport {
     }
 
     protected static List<HazelcastInstance> createRemoteCluster(Config config, int size) {
+        config.getNetworkConfig().getJoin().getMulticastConfig().setLoopbackModeEnabled(true);
         ArrayList<HazelcastInstance> instances = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             instances.add(Hazelcast.newHazelcastInstance(config));

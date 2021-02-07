@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ public class ReadMapOrCachePTest extends SimpleTestInClusterSupport {
     public void test_whenEmpty() {
         TestSupport
                 .verifyProcessor(adaptSupplier(SourceProcessors.readMapP(randomMapName())))
-                .jetInstance(instance())
+                .instance(instance())
                 .disableSnapshots()
                 .disableProgressAssertion()
                 .expectOutput(emptyList());
@@ -65,7 +65,7 @@ public class ReadMapOrCachePTest extends SimpleTestInClusterSupport {
 
         TestSupport
                 .verifyProcessor(adaptSupplier(SourceProcessors.readMapP(map.getName())))
-                .jetInstance(instance())
+                .instance(instance())
                 .disableSnapshots()
                 .disableProgressAssertion()
                 .outputChecker(TestSupport.SAME_ITEMS_ANY_ORDER)
@@ -87,7 +87,7 @@ public class ReadMapOrCachePTest extends SimpleTestInClusterSupport {
         Projection<Entry<Integer, String>, String> projection = toProjection(Entry::getValue);
         TestSupport
                 .verifyProcessor(adaptSupplier(SourceProcessors.readMapP(map.getName(), predicate, projection)))
-                .jetInstance(instance())
+                .instance(instance())
                 .disableSnapshots()
                 .disableProgressAssertion()
                 .outputChecker(TestSupport.SAME_ITEMS_ANY_ORDER)
@@ -104,7 +104,7 @@ public class ReadMapOrCachePTest extends SimpleTestInClusterSupport {
 
         TestSupport
                 .verifyProcessor(adaptSupplier(SourceProcessors.readMapP(map.getName())))
-                .jetInstance(instance())
+                .instance(instance())
                 .disableSnapshots()
                 .disableProgressAssertion()
                 .outputChecker((expected, actual) -> 2 == actual.size())

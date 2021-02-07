@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet.job;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.EdgeConfig;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.DAGImpl;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Vertex;
@@ -66,9 +66,9 @@ public final class JobSubmissionSlownessRegressionTest extends JetTestSupport {
 
     @Before
     public void setup() {
-        JetConfig config = new JetConfig();
-        config.getHazelcastConfig().setProperty("hazelcast.logging.type", "none");
-        createJetMember(config);
+        Config config = new Config();
+        config.setProperty("hazelcast.logging.type", "none");
+        createMember(config);
     }
 
     @Test
@@ -80,8 +80,8 @@ public final class JobSubmissionSlownessRegressionTest extends JetTestSupport {
         double measurementARateSum = 0;
         double measurementBRateSum = 0;
 
-        DAG dag = twoVertex();
-        JetInstance client = createJetClient();
+        DAGImpl dag = twoVertex();
+        JetInstance client = createClient().getJetInstance();
         while (measurementCount < MEASUREMENT_B_CYCLE_SECTION) {
             AtomicInteger completedRoundTrips = new AtomicInteger();
             long start = System.nanoTime();
@@ -117,8 +117,8 @@ public final class JobSubmissionSlownessRegressionTest extends JetTestSupport {
                 + ", second rate: " + measurementBRate, measurementARate * 0.8 < measurementBRate);
     }
 
-    private static DAG twoVertex() {
-        DAG dag = new DAG();
+    private static DAGImpl twoVertex() {
+        DAGImpl dag = new DAGImpl();
         Vertex v1 = dag.newVertex("v", noopP());
         Vertex v2 = dag.newVertex("v2", noopP());
         dag.edge(Edge.between(v1, v2).setConfig(new EdgeConfig().setQueueSize(1)));

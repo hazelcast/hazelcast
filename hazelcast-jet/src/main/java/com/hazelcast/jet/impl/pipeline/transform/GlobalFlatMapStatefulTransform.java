@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,6 +53,6 @@ public class GlobalFlatMapStatefulTransform<T, S, R> extends AbstractTransform {
         ConstantFunctionEx<T, Integer> keyFn = new ConstantFunctionEx<>(name().hashCode());
         PlannerVertex pv = p.addVertex(this, name(), determinedLocalParallelism(),
                 flatMapStatefulP(Long.MAX_VALUE, keyFn, timestampFn, createFn, statefulFlatMapFn, null));
-        p.addEdges(this, pv.v, edge -> edge.partitioned(keyFn).distributed());
+        p.addEdges(this, pv.vertex(), edge -> edge.partitioned(keyFn).distributed());
     }
 }

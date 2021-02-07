@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,8 @@ public class CoAggregateOperationBuilder {
 
     private final Map<Tag, AggregateOperation1> opsByTag = new HashMap<>();
 
-    CoAggregateOperationBuilder() { }
+    CoAggregateOperationBuilder() {
+    }
 
     /**
      * Registers the given aggregate operation with the tag corresponding to an
@@ -93,8 +94,8 @@ public class CoAggregateOperationBuilder {
      * it creates to the result type it emits as the actual result.
      *
      * @param exportFinishFn function to convert {@link ItemsByTag} to the
-     *     target result type. It must be stateless and {@linkplain
-     *     Processor#isCooperative() cooperative}.
+     *                       target result type. It must be stateless and {@linkplain
+     *                       Processor#isCooperative() cooperative}.
      */
     @Nonnull
     @SuppressWarnings({"unchecked", "ConstantConditions"})
@@ -110,7 +111,7 @@ public class CoAggregateOperationBuilder {
         }
         // Variable `sorted` extracted due to type inference failure
         Stream<Entry<Tag, AggregateOperation1>> sorted = opsByTag.entrySet().stream()
-                                                                 .sorted(comparing(Entry::getKey));
+                .sorted(comparing(Entry::getKey));
         List<AggregateOperation1> ops = sorted.map(Entry::getValue).collect(toList());
         BiConsumerEx[] combineFns =
                 ops.stream().map(AggregateOperation::combineFn).toArray(BiConsumerEx[]::new);
@@ -121,25 +122,25 @@ public class CoAggregateOperationBuilder {
         FunctionEx[] finishFns =
                 ops.stream().map(AggregateOperation::finishFn).toArray(FunctionEx[]::new);
 
-        AggregateOperationBuilder.VarArity<Object[], Void> b = AggregateOperation
+        AggregateOperationBuilder.VarArity<Object[], Void> b = AggregateOperations
                 .withCreate(() -> ops.stream().map(op -> op.createFn().get()).toArray())
                 .varArity();
         opsByTag.forEach((tag, op) -> {
             int index = tag.index();
             b.andAccumulate(tag, (acc, item) -> op.accumulateFn().accept(acc[index], item));
         });
-        return b.andCombine(stream(combineFns).anyMatch(Objects::isNull) ? null :
-                        (acc1, acc2) -> {
-                            for (int i = 0; i < combineFns.length; i++) {
-                                combineFns[i].accept(acc1[i], acc2[i]);
-                            }
-                        })
-                .andDeduct(stream(deductFns).anyMatch(Objects::isNull) ? null :
-                        (acc1, acc2) -> {
-                            for (int i = 0; i < deductFns.length; i++) {
-                                deductFns[i].accept(acc1[i], acc2[i]);
-                            }
-                        })
+        return b.andCombine(stream(combineFns).anyMatch(Objects::isNull) ? null
+                : (acc1, acc2) -> {
+            for (int i = 0; i < combineFns.length; i++) {
+                combineFns[i].accept(acc1[i], acc2[i]);
+            }
+        })
+                .andDeduct(stream(deductFns).anyMatch(Objects::isNull) ? null
+                        : (acc1, acc2) -> {
+                    for (int i = 0; i < deductFns.length; i++) {
+                        deductFns[i].accept(acc1[i], acc2[i]);
+                    }
+                })
                 .<R>andExport(acc -> {
                     ItemsByTag result = new ItemsByTag();
                     for (int i = 0; i < exportFns.length; i++) {

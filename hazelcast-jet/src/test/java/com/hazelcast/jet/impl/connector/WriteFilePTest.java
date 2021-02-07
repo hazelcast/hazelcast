@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.AbstractProcessor;
-import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.DAGImpl;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.impl.JobProxy;
 import com.hazelcast.jet.impl.JobRepository;
@@ -108,11 +108,11 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
         // Given
         Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items(0, 1, 2))
-         .writeTo(Sinks.files(directory.toString()))
-         .setLocalParallelism(2);
+                .writeTo(Sinks.files(directory.toString()))
+                .setLocalParallelism(2);
 
         // When
-        instance().newJob(p).join();
+        jetInstance().newJob(p).join();
 
         // Then
         try (Stream<Path> stream = Files.list(directory)) {
@@ -126,7 +126,7 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
         Pipeline p = buildPipeline(null, rangeIterable(0, 10));
 
         // When
-        instance().newJob(p).join();
+        jetInstance().newJob(p).join();
 
         // Then
         checkFileContents(0, 10, false, false, true);
@@ -138,7 +138,7 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
         Pipeline p = buildPipeline(null, rangeIterable(0, 100_000));
 
         // When
-        instance().newJob(p).join();
+        jetInstance().newJob(p).join();
 
         // Then
         checkFileContents(0, 100_000, false, false, true);
@@ -154,7 +154,7 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
         }
 
         // When
-        instance().newJob(p).join();
+        jetInstance().newJob(p).join();
 
         // Then
         checkFileContents(0, 10, false, false, true);
@@ -165,15 +165,15 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
         // Given
         int numItems = 10;
 
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex source = dag.newVertex("source", () -> new SlowSourceP(semaphore, numItems))
-                           .localParallelism(1);
+                .localParallelism(1);
         Vertex sink = dag.newVertex("sink",
                 writeFileP(directory.toString(), StandardCharsets.UTF_8, null, DISABLE_ROLLING, true, Object::toString))
-                         .localParallelism(1);
+                .localParallelism(1);
         dag.edge(between(source, sink));
 
-        Job job = instance().newJob(dag);
+        Job job = jetInstance().newJob(dag);
         for (int i = 0; i < numItems; i++) {
             // When
             semaphore.release();
@@ -194,7 +194,7 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
         Pipeline p = buildPipeline(charset, singletonList(text));
 
         // When
-        instance().newJob(p).join();
+        jetInstance().newJob(p).join();
 
         // Then
         assertEquals(text + System.getProperty("line.separator"), new String(Files.readAllBytes(onlyFile), charset));
@@ -207,10 +207,10 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
 
         Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items(rangeIterable(0, 10)))
-         .writeTo(Sinks.files(myFile.toString()));
+                .writeTo(Sinks.files(myFile.toString()));
 
         // When
-        instance().newJob(p).join();
+        jetInstance().newJob(p).join();
 
         // Then
         assertTrue(Files.exists(directory.resolve("subdir1")));
@@ -222,12 +222,12 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
         // Given
         Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items(rangeIterable(1, 11)))
-         .writeTo(Sinks.<Integer>filesBuilder(directory.toString())
-                 .toStringFn(val -> Integer.toString(val - 1))
-                 .build());
+                .writeTo(Sinks.<Integer>filesBuilder(directory.toString())
+                        .toStringFn(val -> Integer.toString(val - 1))
+                        .build());
 
         // When
-        instance().newJob(p).join();
+        jetInstance().newJob(p).join();
 
         // Then
         checkFileContents(0, 10, false, false, true);
@@ -236,7 +236,7 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
     @Test
     public void test_rollByDate() {
         int numItems = 10;
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex src = dag.newVertex("src", () -> new SlowSourceP(semaphore, numItems)).localParallelism(1);
         @SuppressWarnings("Convert2MethodRef")
         Vertex sink = dag.newVertex("sink", WriteFileP.metaSupplier(
@@ -244,7 +244,7 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
                 (LongSupplier & Serializable) () -> clock.get()));
         dag.edge(between(src, sink));
 
-        Job job = instance().newJob(dag);
+        Job job = jetInstance().newJob(dag);
 
         for (int i = 0; i < numItems; i++) {
             // When
@@ -264,7 +264,7 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
     @Test
     public void test_rollByFileSize() throws Exception {
         int numItems = 10;
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex src = dag.newVertex("src", () -> new SlowSourceP(semaphore, numItems)).localParallelism(1);
         Vertex map = dag.newVertex("map", mapP((Integer i) -> i + 100));
         // maxFileSize is always large enough for 1 item but never for 2, both with windows and linux newlines
@@ -274,7 +274,7 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
         dag.edge(between(src, map));
         dag.edge(between(map, sink));
 
-        Job job = instance().newJob(dag);
+        Job job = jetInstance().newJob(dag);
 
         // Then
         for (int i = 0; i < numItems; i++) {
@@ -297,10 +297,10 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
         Pipeline p = Pipeline.create();
         TestPerson testPerson = new TestPerson("foo", 5, true);
         p.readFrom(TestSources.items(testPerson))
-         .writeTo(Sinks.json(directory.toString()));
+                .writeTo(Sinks.json(directory.toString()));
 
         // When
-        instance().newJob(p).join();
+        jetInstance().newJob(p).join();
 
         // Then
         List<String> lines = Files
@@ -316,13 +316,13 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
     public void stressTest_noSnapshot() throws Exception {
         Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items(rangeIterable(0, 10)))
-         .writeTo(Sinks.files(directory.toString()));
+                .writeTo(Sinks.files(directory.toString()));
 
         // When
         JobConfig config = new JobConfig()
                 .setProcessingGuarantee(EXACTLY_ONCE)
                 .setSnapshotIntervalMillis(HOURS.toMillis(1));
-        instance().newJob(p, config).join();
+        jetInstance().newJob(p, config).join();
 
         // Then
         checkFileContents(0, 10, false, false, true);
@@ -330,19 +330,19 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
 
     @Test
     public void stressTest_snapshots_noRestarts() throws Exception {
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         int numItems = 5;
         Vertex source = dag.newVertex("source", () -> new SlowSourceP(semaphore, numItems))
-                           .localParallelism(1);
+                .localParallelism(1);
         Vertex sink = dag.newVertex("sink",
                 writeFileP(directory.toString(), StandardCharsets.UTF_8, null, DISABLE_ROLLING, true, Object::toString))
-                         .localParallelism(1);
+                .localParallelism(1);
         dag.edge(between(source, sink));
 
         JobConfig config = new JobConfig()
                 .setProcessingGuarantee(EXACTLY_ONCE)
                 .setSnapshotIntervalMillis(500);
-        Job job = instance().newJob(dag, config);
+        Job job = jetInstance().newJob(dag, config);
         assertJobStatusEventually(job, RUNNING);
 
         JobRepository jr = new JobRepository(instance());
@@ -375,31 +375,31 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
         int numItems = 500;
         Pipeline p = Pipeline.create();
         p.readFrom(SourceBuilder.stream("src", procCtx -> tuple2(new int[1], procCtx.logger()))
-                                .fillBufferFn((ctx, buf) -> {
-                                    if (ctx.f0()[0] < numItems) {
-                                        buf.add(ctx.f0()[0]++);
-                                        sleepMillis(5);
-                                    }
-                                })
-                                .createSnapshotFn(ctx -> {
-                                    ctx.f1().fine("src vertex saved to snapshot: " + ctx.f0()[0]);
-                                    return ctx.f0()[0];
-                                })
-                                .restoreSnapshotFn((ctx, state) -> {
-                                    ctx.f0()[0] = state.get(0);
-                                    ctx.f1().fine("src vertex restored from snapshot: " + ctx.f0()[0]);
-                                })
-                                .build())
-         .withoutTimestamps()
-         .writeTo(Sinks.filesBuilder(directory.toString())
-                       .exactlyOnce(exactlyOnce)
-                       .build())
-         .setLocalParallelism(2);
+                .fillBufferFn((ctx, buf) -> {
+                    if (ctx.f0()[0] < numItems) {
+                        buf.add(ctx.f0()[0]++);
+                        sleepMillis(5);
+                    }
+                })
+                .createSnapshotFn(ctx -> {
+                    ctx.f1().fine("src vertex saved to snapshot: " + ctx.f0()[0]);
+                    return ctx.f0()[0];
+                })
+                .restoreSnapshotFn((ctx, state) -> {
+                    ctx.f0()[0] = state.get(0);
+                    ctx.f1().fine("src vertex restored from snapshot: " + ctx.f0()[0]);
+                })
+                .build())
+                .withoutTimestamps()
+                .writeTo(Sinks.filesBuilder(directory.toString())
+                        .exactlyOnce(exactlyOnce)
+                        .build())
+                .setLocalParallelism(2);
 
         JobConfig config = new JobConfig()
                 .setProcessingGuarantee(EXACTLY_ONCE)
                 .setSnapshotIntervalMillis(50);
-        JobProxy job = (JobProxy) instance().newJob(p, config);
+        JobProxy job = (JobProxy) jetInstance().newJob(p, config);
 
         long endTime = System.nanoTime() + SECONDS.toNanos(60);
         do {
@@ -424,19 +424,19 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
                                    boolean assertSorted
     ) throws Exception {
         List<Integer> actual = Files.list(directory)
-                                    .peek(f -> {
-                                        if (!ignoreTempFiles && f.getFileName().toString().endsWith(TEMP_FILE_SUFFIX)) {
-                                            throw new IllegalArgumentException("Temp file found: " + f);
-                                        }
-                                    })
-                                    .filter(f -> !f.toString().endsWith(TEMP_FILE_SUFFIX))
-                                    // sort by sequence number, if there is one
-                                    .sorted(Comparator.comparing(f -> f.getFileName().toString().length() == 1 ? 0
-                                            : Integer.parseInt(f.getFileName().toString().substring(2))))
-                                    .flatMap(file -> uncheckCall(() -> Files.readAllLines(file).stream()))
-                                    .map(Integer::parseInt)
-                                    .sorted(assertSorted ? (l, r) -> 0 : Comparator.naturalOrder())
-                                    .collect(Collectors.toList());
+                .peek(f -> {
+                    if (!ignoreTempFiles && f.getFileName().toString().endsWith(TEMP_FILE_SUFFIX)) {
+                        throw new IllegalArgumentException("Temp file found: " + f);
+                    }
+                })
+                .filter(f -> !f.toString().endsWith(TEMP_FILE_SUFFIX))
+                // sort by sequence number, if there is one
+                .sorted(Comparator.comparing(f -> f.getFileName().toString().length() == 1 ? 0
+                        : Integer.parseInt(f.getFileName().toString().substring(2))))
+                .flatMap(file -> uncheckCall(() -> Files.readAllLines(file).stream()))
+                .map(Integer::parseInt)
+                .sorted(assertSorted ? (l, r) -> 0 : Comparator.naturalOrder())
+                .collect(Collectors.toList());
 
         if (exactlyOnce) {
             String expectedStr = IntStream.range(numFrom, numTo).mapToObj(Integer::toString).collect(joining("\n"));
@@ -457,10 +457,10 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
         }
         Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items(iterable))
-         .writeTo(Sinks.filesBuilder(directory.toString())
-                       .toStringFn(Objects::toString)
-                       .charset(charset)
-                       .build());
+                .writeTo(Sinks.filesBuilder(directory.toString())
+                        .toStringFn(Objects::toString)
+                        .charset(charset)
+                        .build());
         return p;
     }
 

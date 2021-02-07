@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ public class AggregateOperation2Test {
         FunctionEx<LongAccumulator, Long> finishFn = acc -> 2L;
 
         // When
-        AggregateOperation2<Object, Object, LongAccumulator, Long> aggrOp = AggregateOperation
+        AggregateOperation2<Object, Object, LongAccumulator, Long> aggrOp = AggregateOperations
                 .withCreate(createFn)
                 .andAccumulate0(accFn0)
                 .andAccumulate1(accFn1)
@@ -74,7 +74,7 @@ public class AggregateOperation2Test {
     @Test(expected = IllegalArgumentException.class)
     public void when_askForNonexistentTag_then_exception() {
         // Given
-        AggregateOperation2<Object, Object, LongAccumulator, Long> aggrOp = AggregateOperation
+        AggregateOperation2<Object, Object, LongAccumulator, Long> aggrOp = AggregateOperations
                 .withCreate(LongAccumulator::new)
                 .andAccumulate0((x, y) -> { })
                 .andAccumulate1((x, y) -> { })
@@ -87,7 +87,7 @@ public class AggregateOperation2Test {
     @Test
     public void when_withIdentityFinish() {
         // Given
-        AggregateOperation2<Object, Object, LongAccumulator, Long> aggrOp = AggregateOperation
+        AggregateOperation2<Object, Object, LongAccumulator, Long> aggrOp = AggregateOperations
                 .withCreate(LongAccumulator::new)
                 .andAccumulate0((acc, item) -> acc.addAllowingOverflow(1))
                 .andAccumulate1((acc, item) -> acc.addAllowingOverflow(1))
@@ -104,7 +104,7 @@ public class AggregateOperation2Test {
     @Test
     public void when_withCombiningAccumulateFn_then_accumulateFnCombines() {
         // Given
-        AggregateOperation2<Object, Object, LongAccumulator, Long> aggrOp = AggregateOperation
+        AggregateOperation2<Object, Object, LongAccumulator, Long> aggrOp = AggregateOperations
                 .withCreate(LongAccumulator::new)
                 .andAccumulate0((acc, item) -> acc.addAllowingOverflow(1))
                 .andAccumulate1((acc, item) -> acc.addAllowingOverflow(10))

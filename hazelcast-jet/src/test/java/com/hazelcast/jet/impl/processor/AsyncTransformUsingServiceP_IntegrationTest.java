@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,15 @@
 package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.collection.IList;
+import com.hazelcast.config.Config;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.config.EdgeConfig;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.DAGImpl;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.WatermarkPolicy;
@@ -93,9 +93,8 @@ public class AsyncTransformUsingServiceP_IntegrationTest extends SimpleTestInClu
 
     @BeforeClass
     public static void beforeClass() {
-        JetConfig config = new JetConfig();
-        config.getHazelcastConfig()
-              .getMapConfig("journaledMap*")
+        Config config = new Config();
+        config.getMapConfig("journaledMap*")
               .getEventJournalConfig()
               .setEnabled(true)
               .setCapacity(100_000);
@@ -133,7 +132,7 @@ public class AsyncTransformUsingServiceP_IntegrationTest extends SimpleTestInClu
         int numItems = 10_000;
         journaledMap.putAll(IntStream.range(NUM_ITEMS, numItems).boxed().collect(toMap(i -> i, i -> i)));
 
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex source = dag.newVertex("source", throttle(streamMapP(journaledMap.getName(), alwaysTrue(),
                 EventJournalMapEvent::getNewValue, START_FROM_OLDEST, eventTimePolicy(
                         i -> (long) ((Integer) i),
@@ -159,7 +158,7 @@ public class AsyncTransformUsingServiceP_IntegrationTest extends SimpleTestInClu
         dag.edge(between(source, map).setConfig(edgeToMapperConfig))
            .edge(between(map, sink).setConfig(edgeFromMapperConfig));
 
-        Job job = instance().newJob(dag, jobConfig);
+        Job job = jetInstance().newJob(dag, jobConfig);
         for (int i = 0; restart && i < 5; i++) {
             assertJobStatusEventually(job, RUNNING);
             sleepMillis(100);
@@ -177,7 +176,7 @@ public class AsyncTransformUsingServiceP_IntegrationTest extends SimpleTestInClu
          .setLocalParallelism(2)
          .writeTo(Sinks.list(sinkList));
 
-        instance().newJob(p, jobConfig);
+        jetInstance().newJob(p, jobConfig);
         assertResultEventually(i -> Stream.of(i + "-1"), NUM_ITEMS);
     }
 
@@ -191,7 +190,7 @@ public class AsyncTransformUsingServiceP_IntegrationTest extends SimpleTestInClu
          .setLocalParallelism(2)
          .writeTo(Sinks.list(sinkList));
 
-        instance().newJob(p, jobConfig);
+        jetInstance().newJob(p, jobConfig);
         assertResultEventually(i -> Stream.of(i + "-1"), NUM_ITEMS);
     }
 

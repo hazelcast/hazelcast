@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,6 +51,7 @@ import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 
 public class SenderTasklet implements Tasklet {
 
+    @SuppressWarnings("checkstyle:MagicNumber")
     private static final int BUFFER_SIZE = 1 << 15;
 
     private final Connection connection;
@@ -146,8 +147,8 @@ public class SenderTasklet implements Tasklet {
                          && (item = inbox.poll()) != null;
                  writtenCount++
             ) {
-                ObjectWithPartitionId itemWithPId = item instanceof ObjectWithPartitionId ?
-                        (ObjectWithPartitionId) item : new ObjectWithPartitionId(item, -1);
+                ObjectWithPartitionId itemWithPId = item instanceof ObjectWithPartitionId
+                        ? (ObjectWithPartitionId) item : new ObjectWithPartitionId(item, -1);
                 final int mark = outputBuffer.position();
                 outputBuffer.writeObject(itemWithPId.getItem());
                 sentSeq += estimatedMemoryFootprint(outputBuffer.position() - mark);
@@ -176,11 +177,11 @@ public class SenderTasklet implements Tasklet {
 
     @Override
     public String toString() {
-        return "SenderTasklet{" +
-                "ordinal=" + inboundEdgeStream.ordinal() +
-                ", destinationAddress=" + destinationAddressString +
-                ", sourceVertexName='" + sourceVertexName + '\'' +
-                '}';
+        return "SenderTasklet{"
+                + "ordinal=" + inboundEdgeStream.ordinal()
+                + ", destinationAddress=" + destinationAddressString
+                + ", sourceVertexName='" + sourceVertexName + '\''
+                + '}';
     }
 
     /**

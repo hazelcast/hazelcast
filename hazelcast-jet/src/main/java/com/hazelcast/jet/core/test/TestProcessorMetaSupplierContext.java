@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.core.test;
 
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
@@ -37,7 +37,7 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
 
     protected ILogger logger;
 
-    private JetInstance jetInstance;
+    private HazelcastInstance instance;
     private long jobId = 1;
     private long executionId = 1;
     private JobConfig jobConfig = new JobConfig();
@@ -46,17 +46,18 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
     private String vertexName = "testVertex";
     private ProcessingGuarantee processingGuarantee = NONE;
 
-    @Nonnull @Override
-    public JetInstance jetInstance() {
-        return jetInstance;
+    @Nonnull
+    @Override
+    public HazelcastInstance instance() {
+        return instance;
     }
 
     /**
      * Sets the jet instance.
      */
     @Nonnull
-    public TestProcessorMetaSupplierContext setJetInstance(@Nonnull JetInstance jetInstance) {
-        this.jetInstance = jetInstance;
+    public TestProcessorMetaSupplierContext setInstance(@Nonnull HazelcastInstance instance) {
+        this.instance = instance;
         return this;
     }
 
@@ -86,7 +87,8 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
         return this;
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public JobConfig jobConfig() {
         return jobConfig;
     }
@@ -115,8 +117,8 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
 
     @Override
     public int localParallelism() {
-        assert totalParallelism % localParallelism == 0 :
-                "totalParallelism=" + totalParallelism + " not divisible with localParallelism=" + localParallelism;
+        assert totalParallelism % localParallelism == 0
+                : "totalParallelism=" + totalParallelism + " not divisible with localParallelism=" + localParallelism;
         return localParallelism;
     }
 
@@ -129,7 +131,8 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
         return this;
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public ILogger logger() {
         if (logger == null) {
             logger = Logger.getLogger(loggerName());
@@ -150,7 +153,8 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
         return totalParallelism() / localParallelism();
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public String vertexName() {
         return vertexName;
     }

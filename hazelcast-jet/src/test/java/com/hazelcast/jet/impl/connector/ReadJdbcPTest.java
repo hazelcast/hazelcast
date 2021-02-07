@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,7 +81,7 @@ public class ReadJdbcPTest extends SimpleTestInClusterSupport {
                 resultSet -> entry(resultSet.getInt(1), resultSet.getString(2))))
          .writeTo(assertAnyOrder(tableContents));
 
-        instance().newJob(p).join();
+        jetInstance().newJob(p).join();
     }
 
     @Test
@@ -91,6 +91,6 @@ public class ReadJdbcPTest extends SimpleTestInClusterSupport {
                 resultSet -> entry(resultSet.getInt(1), resultSet.getString(2))))
          .writeTo(assertOrdered(tableContents));
 
-        instance().newJob(p).join();
+        jetInstance().newJob(p).join();
     }
 }

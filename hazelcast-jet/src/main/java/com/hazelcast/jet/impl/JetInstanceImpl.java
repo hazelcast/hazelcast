@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,17 +17,15 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.cluster.Address;
-import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.operation.GetJobIdsByNameOperation;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation;
 import com.hazelcast.jet.impl.util.ImdgUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import javax.annotation.Nonnull;
@@ -37,25 +35,17 @@ import java.util.concurrent.Future;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static java.util.stream.Collectors.toList;
 
-/**
- * Member-side {@code JetInstance} implementation
- */
 public class JetInstanceImpl extends AbstractJetInstance {
-    private final NodeEngine nodeEngine;
-    private final JetConfig config;
 
-    JetInstanceImpl(HazelcastInstanceImpl hazelcastInstance, JetConfig config) {
-        super(hazelcastInstance);
-        this.nodeEngine = hazelcastInstance.node.getNodeEngine();
-        this.config = config;
+    private final NodeEngineImpl nodeEngine;
+
+    public JetInstanceImpl(Node node) {
+        super(node.hazelcastInstance);
+        this.nodeEngine = node.nodeEngine;
     }
 
-    @Nonnull @Override
-    public JetConfig getConfig() {
-        return config;
-    }
-
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public List<Job> getJobs() {
         Address masterAddress = getMasterAddress();
         Future<List<Long>> future = nodeEngine
@@ -65,15 +55,26 @@ public class JetInstanceImpl extends AbstractJetInstance {
 
         try {
             return future.get()
-                         .stream()
-                         .map(jobId -> new JobProxy((NodeEngineImpl) nodeEngine, jobId))
-                         .collect(toList());
+                    .stream()
+                    .map(jobId -> new JobProxy(this, jobId))
+                    .collect(toList());
         } catch (Throwable t) {
             throw rethrow(t);
         }
     }
 
-    @Override
+    public Job newJobProxy(long jobId) {
+        return new JobProxy(this, jobId);
+    }
+
+    public Job newJobProxy(long jobId, Object jobDefinition, JobConfig config) {
+        return new JobProxy(this, jobId, jobDefinition, config);
+    }
+
+    public ILogger getLogger() {
+        return nodeEngine.getLogger(getClass());
+    }
+
     public List<Long> getJobIdsByName(String name) {
         Address masterAddress = getMasterAddress();
         Future<List<Long>> future = nodeEngine
@@ -83,22 +84,6 @@ public class JetInstanceImpl extends AbstractJetInstance {
 
         try {
             return future.get();
-        } catch (Throwable t) {
-            throw rethrow(t);
-        }
-    }
-
-    @Nonnull
-    private Address getMasterAddress() {
-        return Preconditions.checkNotNull(nodeEngine.getMasterAddress(), "Cluster has not elected a master");
-    }
-
-    @Override
-    public void shutdown() {
-        try {
-            JetService jetService = nodeEngine.getService(JetService.SERVICE_NAME);
-            jetService.shutDownJobs();
-            super.shutdown();
         } catch (Throwable t) {
             throw rethrow(t);
         }
@@ -125,19 +110,11 @@ public class JetInstanceImpl extends AbstractJetInstance {
         return ImdgUtil.existsDistributedObject(nodeEngine, serviceName, objectName);
     }
 
-    @Override
-    public Job newJobProxy(long jobId) {
-        return new JobProxy((NodeEngineImpl) nodeEngine, jobId);
+    public NodeEngineImpl nodeEngine() {
+        return nodeEngine;
     }
 
-    @Override
-    public Job newJobProxy(long jobId, Object jobDefinition, JobConfig config) {
-        return new JobProxy((NodeEngineImpl) nodeEngine, jobId, jobDefinition, config);
+    private Address getMasterAddress() {
+        return Preconditions.checkNotNull(nodeEngine.getMasterAddress(), "Cluster has not elected a master");
     }
-
-    @Override
-    public ILogger getLogger() {
-        return nodeEngine.getLogger(getClass());
-    }
-
 }

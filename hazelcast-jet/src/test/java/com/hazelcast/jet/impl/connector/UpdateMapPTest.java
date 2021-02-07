@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,8 @@
 
 package com.hazelcast.jet.impl.connector;
 
-import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.SupplierEx;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.test.TestSupport;
@@ -54,35 +51,35 @@ public class UpdateMapPTest extends JetTestSupport {
     @Parameterized.Parameter(1)
     public int keyRange;
 
-    private JetInstance jet;
+    private HazelcastInstance instance;
     private HazelcastInstance client;
     private IMap<String, Integer> sinkMap;
 
     @Parameterized.Parameters(name = "asyncLimit: {0}, keyRange: {1}")
     public static Collection<Object[]> parameters() {
         return Arrays.asList(
-            new Object[]{1, 4},
-            new Object[]{1, 1024},
-            new Object[]{MAX_PARALLEL_ASYNC_OPS_DEFAULT, 4},
-            new Object[]{MAX_PARALLEL_ASYNC_OPS_DEFAULT, 1024}
+                new Object[]{1, 4},
+                new Object[]{1, 1024},
+                new Object[]{MAX_PARALLEL_ASYNC_OPS_DEFAULT, 4},
+                new Object[]{MAX_PARALLEL_ASYNC_OPS_DEFAULT, 1024}
         );
     }
 
     @Before
     public void setup() {
-        jet = createJetMember();
-        client = new HazelcastClientProxy((HazelcastClientInstanceImpl) createJetClient().getHazelcastInstance());
-        sinkMap = jet.getMap("results");
+        instance = createMember();
+        client = createClient();
+        sinkMap = instance.getMap("results");
     }
 
     @Test
     public void test_localMap() {
-        runTest(updateMap(jet.getHazelcastInstance()));
+        runTest(updateMap(instance));
     }
 
     @Test
     public void test_localMap_with_EP() {
-        runTest(updateMapWithEP(jet.getHazelcastInstance()));
+        runTest(updateMapWithEP(instance));
     }
 
     @Test
@@ -99,46 +96,46 @@ public class UpdateMapPTest extends JetTestSupport {
 
     private SupplierEx<Processor> updateMap(HazelcastInstance instance) {
         return () -> new UpdateMapP<Integer, String, Integer>(
-            instance,
-            asyncLimit,
-            sinkMap.getName(),
-            Object::toString,
-            (prev, next) -> {
-                if (prev == null) {
-                    return 1;
-                }
-                return prev + 1;
-            });
+                instance,
+                asyncLimit,
+                sinkMap.getName(),
+                Object::toString,
+                (prev, next) -> {
+                    if (prev == null) {
+                        return 1;
+                    }
+                    return prev + 1;
+                });
     }
 
     private SupplierEx<Processor> updateMapWithEP(HazelcastInstance instance) {
         return () -> new UpdateMapWithEntryProcessorP<Integer, String, Integer, Void>(
-                    instance,
-                    asyncLimit,
-                    sinkMap.getName(),
-                    Object::toString,
-                    i -> new IncrementEntryProcessor());
+                instance,
+                asyncLimit,
+                sinkMap.getName(),
+                Object::toString,
+                i -> new IncrementEntryProcessor());
     }
 
     private void runTest(SupplierEx<Processor> sup) {
         List<Integer> input = IntStream.range(0, keyRange * COUNT_PER_KEY)
-                                       .map(i -> i % keyRange)
-                                       .boxed()
-                                       .collect(Collectors.toList());
+                .map(i -> i % keyRange)
+                .boxed()
+                .collect(Collectors.toList());
 
         TestSupport
-            .verifyProcessor(sup)
-            .jetInstance(jet)
-            .input(input)
-            .disableSnapshots()
-            .disableLogging()
-            .disableProgressAssertion()
-            .assertOutput(0, (mode, output) -> {
-                for (int i = 0; i < keyRange; i++) {
-                    assertEquals(Integer.valueOf(COUNT_PER_KEY), sinkMap.get(String.valueOf(i)));
-                }
-                sinkMap.clear();
-            });
+                .verifyProcessor(sup)
+                .instance(instance)
+                .input(input)
+                .disableSnapshots()
+                .disableLogging()
+                .disableProgressAssertion()
+                .assertOutput(0, (mode, output) -> {
+                    for (int i = 0; i < keyRange; i++) {
+                        assertEquals(Integer.valueOf(COUNT_PER_KEY), sinkMap.get(String.valueOf(i)));
+                    }
+                    sinkMap.clear();
+                });
     }
 
     private static class IncrementEntryProcessor implements EntryProcessor<String, Integer, Void> {

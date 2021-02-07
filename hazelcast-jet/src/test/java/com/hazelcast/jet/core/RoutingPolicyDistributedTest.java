@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.core;
 
+import com.google.common.collect.ImmutableSet;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.core.TestProcessors.CollectPerProcessorSink;
@@ -25,7 +26,6 @@ import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.testcontainers.shaded.com.google.common.collect.ImmutableSet;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -60,7 +60,7 @@ public class RoutingPolicyDistributedTest extends SimpleTestInClusterSupport {
     @BeforeClass
     public static void beforeClass() {
         initialize(2, null);
-        address1 = instances()[1].getHazelcastInstance().getCluster().getLocalMember().getAddress();
+        address1 = instances()[1].getCluster().getLocalMember().getAddress();
     }
 
     @Before
@@ -71,15 +71,15 @@ public class RoutingPolicyDistributedTest extends SimpleTestInClusterSupport {
 
     @Test
     public void when_distributedToOne_partitioned() {
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex producer = producer(NUMBERS);
         Vertex consumer = consumer();
 
         dag.vertex(producer)
-           .vertex(consumer)
-           .edge(between(producer, consumer).distributeTo(address1).partitioned((Integer i) -> i % 271));
+                .vertex(consumer)
+                .edge(between(producer, consumer).distributeTo(address1).partitioned((Integer i) -> i % 271));
 
-        instance().newJob(dag).join();
+        jetInstance().newJob(dag).join();
 
         for (int i = 0; i < consumerSup.getLists().size(); i++) {
             logger.info("size" + i + ": " + consumerSup.getListAt(i).size());
@@ -125,7 +125,7 @@ public class RoutingPolicyDistributedTest extends SimpleTestInClusterSupport {
     }
 
     private void when_distributedToOne_notPartitioned(Consumer<Edge> configureEdgeFn, String expectedError) {
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex producer = producer(NUMBERS);
         Vertex consumer = consumer();
 
@@ -133,40 +133,40 @@ public class RoutingPolicyDistributedTest extends SimpleTestInClusterSupport {
         configureEdgeFn.accept(edge);
 
         dag.vertex(producer)
-           .vertex(consumer)
-           .edge(edge);
+                .vertex(consumer)
+                .edge(edge);
 
         exception.expectMessage(expectedError);
-        instance().newJob(dag).join();
+        jetInstance().newJob(dag).join();
     }
 
     @Test
     public void when_distributedToOne_and_targetMemberMissing() throws Exception {
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex producer = producer(NUMBERS);
         Vertex consumer = consumer();
 
         dag.vertex(producer)
-           .vertex(consumer)
-           .edge(between(producer, consumer)
-                   .distributeTo(new Address("1.2.3.4", 9999))
-                   .allToOne("foo"));
+                .vertex(consumer)
+                .edge(between(producer, consumer)
+                        .distributeTo(new Address("1.2.3.4", 9999))
+                        .allToOne("foo"));
 
         exception.expectMessage("The target member of an edge is not present in the cluster");
-        instance().newJob(dag).join();
+        jetInstance().newJob(dag).join();
     }
 
     @Test
     public void when_local_fanout() {
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex producer = new Vertex("producer", new ListsSourceP(asList(1, 2), asList(3, 4))).localParallelism(1);
         Vertex consumer = new Vertex("consumer", consumerSup).localParallelism(2);
 
         dag.vertex(producer)
-           .vertex(consumer)
-           .edge(between(producer, consumer).fanout());
+                .vertex(consumer)
+                .edge(between(producer, consumer).fanout());
 
-        instance().newJob(dag).join();
+        jetInstance().newJob(dag).join();
 
         assertEquals("items on member0-processor0", ImmutableSet.of(1), new HashSet<>(consumerSup.getListAt(0)));
         assertEquals("items on member0-processor1", ImmutableSet.of(2), new HashSet<>(consumerSup.getListAt(1)));
@@ -176,15 +176,15 @@ public class RoutingPolicyDistributedTest extends SimpleTestInClusterSupport {
 
     @Test
     public void when_distributed_fanout() {
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex producer = new Vertex("producer", new ListsSourceP(asList(1, 2), asList(3, 4))).localParallelism(1);
         Vertex consumer = new Vertex("consumer", consumerSup).localParallelism(2);
 
         dag.vertex(producer)
-           .vertex(consumer)
-           .edge(between(producer, consumer).distributed().fanout());
+                .vertex(consumer)
+                .edge(between(producer, consumer).distributed().fanout());
 
-        instance().newJob(dag).join();
+        jetInstance().newJob(dag).join();
 
         assertEquals("items on member0-processor0", ImmutableSet.of(1, 3), new HashSet<>(consumerSup.getListAt(0)));
         assertEquals("items on member0-processor1", ImmutableSet.of(2, 4), new HashSet<>(consumerSup.getListAt(1)));

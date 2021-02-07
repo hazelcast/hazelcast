@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,6 +47,7 @@ import static java.util.Objects.requireNonNull;
  */
 public class FileSourceBuilder<T> {
 
+    @SuppressWarnings("checkstyle:TrailingComment")
     private static final List<String> HADOOP_PREFIXES = Collections.unmodifiableList(asList(
             "s3a://",   // Amazon S3
             "hdfs://",  // HDFS
@@ -214,8 +215,8 @@ public class FileSourceBuilder<T> {
             // Only one implementation is expected to be present on classpath
             Iterator<FileSourceFactory> iterator = loader.iterator();
             if (!iterator.hasNext()) {
-                throw new JetException("No suitable FileSourceFactory found. " +
-                                       "Do you have Jet's Hadoop module on classpath?");
+                throw new JetException("No suitable FileSourceFactory found. "
+                                       + "Do you have Jet's Hadoop module on classpath?");
             }
             FileSourceFactory fileSourceFactory = iterator.next();
             if (iterator.hasNext()) {

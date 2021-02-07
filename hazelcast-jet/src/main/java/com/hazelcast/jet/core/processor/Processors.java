@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -651,9 +651,9 @@ public final class Processors {
 
     /**
      * Returns a supplier of processors for a vertex that inserts {@link
-     * com.hazelcast.jet.core.Watermark watermark items} into the stream. The
+     * Watermark watermark items} into the stream. The
      * value of the watermark is determined by the supplied {@link
-     * com.hazelcast.jet.core.EventTimePolicy} instance.
+     * EventTimePolicy} instance.
      * <p>
      * This processor also drops late items. It never allows an event which is
      * late with regard to already emitted watermark to pass.

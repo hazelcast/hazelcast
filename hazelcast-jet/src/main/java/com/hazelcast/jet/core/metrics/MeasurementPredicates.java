@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 /**
- * Static utility class for creating various {@link Measurement} filtering
+ * Static utility class for creating various {@link MeasurementImpl} filtering
  * predicates.
  *
  * @since 3.2
@@ -30,17 +30,17 @@ public final class MeasurementPredicates {
     private MeasurementPredicates() { }
 
     /**
-     * Matches a {@link Measurement} which contain the specified tag.
+     * Matches a {@link MeasurementImpl} which contain the specified tag.
      *
      * @param tag the tag of interest
      * @return a filtering predicate
      */
-    public static Predicate<Measurement> containsTag(String tag) {
+    public static Predicate<MeasurementImpl> containsTag(String tag) {
         return measurement -> measurement.tag(tag) != null;
     }
 
     /**
-     * Matches a {@link Measurement} which contains the specified tag and
+     * Matches a {@link MeasurementImpl} which contains the specified tag and
      * the tag has the specified value.
      *
      * @param tag   the tag to match
@@ -52,14 +52,14 @@ public final class MeasurementPredicates {
     }
 
     /**
-     * Matches a {@link Measurement} which has this exact tag with a value
+     * Matches a {@link MeasurementImpl} which has this exact tag with a value
      * matching the provided regular expression.
      *
      * @param tag         the tag to match
      * @param valueRegexp regular expression to match the value against
      * @return a filtering predicate
      */
-    public static Predicate<Measurement> tagValueMatches(String tag, String valueRegexp) {
+    public static Predicate<MeasurementImpl> tagValueMatches(String tag, String valueRegexp) {
         return measurement -> {
             String value = measurement.tag(tag);
             return value != null && Pattern.compile(valueRegexp).matcher(value).matches();

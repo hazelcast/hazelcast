@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.aggregate.AggregateOperation2;
 import com.hazelcast.jet.aggregate.AggregateOperation3;
 import com.hazelcast.jet.datamodel.KeyedWindowResult;
+import com.hazelcast.jet.datamodel.Tuple2;
+import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.impl.pipeline.transform.Transform;
 import com.hazelcast.jet.impl.pipeline.transform.WindowGroupTransform;
 import com.hazelcast.jet.pipeline.GeneralStage;
@@ -31,6 +33,9 @@ import com.hazelcast.jet.pipeline.WindowDefinition;
 
 import javax.annotation.Nonnull;
 
+import static com.hazelcast.jet.aggregate.AggregateOperations.aggregateOperation2;
+import static com.hazelcast.jet.aggregate.AggregateOperations.aggregateOperation3;
+import static com.hazelcast.jet.aggregate.AggregateOperations.pickAny;
 import static com.hazelcast.jet.impl.pipeline.ComputeStageImplBase.ADAPT_TO_JET_EVENT;
 import static com.hazelcast.jet.impl.pipeline.ComputeStageImplBase.ensureJetEvents;
 import static com.hazelcast.jet.impl.pipeline.JetEventFunctionAdapter.adaptAggregateOperation2;
@@ -54,12 +59,20 @@ public class StageWithKeyAndWindowImpl<T, K>
         this.wDef = wDef;
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public WindowDefinition windowDefinition() {
         return wDef;
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
+    public StreamStage<KeyedWindowResult<K, T>> distinct() {
+        return aggregate(pickAny());
+    }
+
+    @Nonnull
+    @Override
     public <R> StreamStage<KeyedWindowResult<K, R>> aggregate(
             @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp
     ) {
@@ -74,7 +87,8 @@ public class StageWithKeyAndWindowImpl<T, K>
                 fnAdapter);
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     @SuppressWarnings("rawtypes")
     public <T1, R> StreamStage<KeyedWindowResult<K, R>> aggregate2(
             @Nonnull StreamStageWithKey<T1, ? extends K> stage1,
@@ -96,7 +110,18 @@ public class StageWithKeyAndWindowImpl<T, K>
                 fnAdapter);
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
+    public <T1, R0, R1> StreamStage<KeyedWindowResult<K, Tuple2<R0, R1>>> aggregate2(
+            @Nonnull AggregateOperation1<? super T, ?, ? extends R0> aggrOp0,
+            @Nonnull StreamStageWithKey<T1, ? extends K> stage1,
+            @Nonnull AggregateOperation1<? super T1, ?, ? extends R1> aggrOp1
+    ) {
+        return aggregate2(stage1, aggregateOperation2(aggrOp0, aggrOp1, Tuple2::tuple2));
+    }
+
+    @Nonnull
+    @Override
     @SuppressWarnings("rawtypes")
     public <T1, T2, R> StreamStage<KeyedWindowResult<K, R>> aggregate3(
             @Nonnull StreamStageWithKey<T1, ? extends K> stage1,
@@ -121,6 +146,16 @@ public class StageWithKeyAndWindowImpl<T, K>
                 ),
                 asList((GeneralStage<?>) computeStage1, (GeneralStage<?>) computeStage2),
                 fnAdapter);
+    }
+
+    public <T1, T2, R0, R1, R2> StreamStage<KeyedWindowResult<K, Tuple3<R0, R1, R2>>> aggregate3(
+            @Nonnull AggregateOperation1<? super T, ?, ? extends R0> aggrOp0,
+            @Nonnull StreamStageWithKey<T1, ? extends K> stage1,
+            @Nonnull AggregateOperation1<? super T1, ?, ? extends R1> aggrOp1,
+            @Nonnull StreamStageWithKey<T2, ? extends K> stage2,
+            @Nonnull AggregateOperation1<? super T2, ?, ? extends R2> aggrOp2
+    ) {
+        return aggregate3(stage1, stage2, aggregateOperation3(aggrOp0, aggrOp1, aggrOp2, Tuple3::tuple3));
     }
 
 }

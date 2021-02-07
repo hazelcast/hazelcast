@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -205,8 +205,8 @@ public final class ExceptionUtil {
         while (cause != null) {
             if (cause instanceof ClassCastException
                     && cause.getMessage().startsWith("cannot assign instance of java.lang.invoke.SerializedLambda")) {
-                throw new JetException("Class containing the lambda probably missing from class path, did you add it " +
-                        "using JobConfig.addClass()?: " + e, e);
+                throw new JetException("Class containing the lambda probably missing from class path, did you add it "
+                        + "using JobConfig.addClass()?: " + e, e);
             }
             cause = cause.getCause();
         }

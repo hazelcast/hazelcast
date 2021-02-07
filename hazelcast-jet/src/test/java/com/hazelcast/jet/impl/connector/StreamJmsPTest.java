@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -148,12 +148,12 @@ public class StreamJmsPTest extends JetTestSupport {
         String topicName = randomString();
         logger.info("using topic: " + topicName);
         StreamSource<Message> source = Sources.jmsTopicBuilder(StreamJmsPTest::getConnectionFactory)
-                                              // When
-                                              .destinationName("foo")
-                                              .sharedConsumer(true)
-                                              .build();
+                // When
+                .destinationName("foo")
+                .sharedConsumer(true)
+                .build();
         ProcessorMetaSupplier metaSupplier =
-                ((StreamSourceTransform<Message>) source).metaSupplierFn.apply(noEventTime());
+                ((StreamSourceTransform<Message>) source).getMetaSupplierFn().apply(noEventTime());
         Address address1 = new Address("127.0.0.1", 1);
         Address address2 = new Address("127.0.0.1", 2);
         Function<? super Address, ? extends ProcessorSupplier> function = metaSupplier.get(asList(address1, address2));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,13 +67,13 @@ public class DelegatingSerializationService extends AbstractSerializationService
                 String serializerClassName = serializer.getClass().getName();
 
                 if (typeId <= 0) {
-                    throw new IllegalArgumentException("Cannot register Serializer[" + serializerClassName + "] - " +
-                            "typeId should be > 0");
+                    throw new IllegalArgumentException("Cannot register Serializer[" + serializerClassName + "] - "
+                            + "typeId should be > 0");
                 }
                 if (serializersById.containsKey(typeId)) {
                     Serializer registered = serializersById.get(typeId).getImpl();
-                    throw new IllegalStateException("Cannot register Serializer[" + serializerClassName + "] - " +
-                            registered.getClass().getName() + " has been already registered for type ID: " + typeId);
+                    throw new IllegalStateException("Cannot register Serializer[" + serializerClassName + "] - "
+                            + registered.getClass().getName() + " has been already registered for type ID: " + typeId);
                 }
 
                 SerializerAdapter serializerAdapter = createSerializerAdapter(serializer);
@@ -136,13 +136,13 @@ public class DelegatingSerializationService extends AbstractSerializationService
     }
 
     private RuntimeException serializationException(@Nullable Class<?> clazz, Throwable t) {
-        return new JetException("Unable to serialize instance of " + clazz + ": " +
-                t.getMessage() + " - Note: You can register a serializer using JobConfig.registerSerializer()", t);
+        return new JetException("Unable to serialize instance of " + clazz + ": "
+                + t.getMessage() + " - Note: You can register a serializer using JobConfig.registerSerializer()", t);
     }
 
     private RuntimeException serializationException(@Nullable Class<?> clazz) {
-        return new JetException("There is no suitable serializer for " + clazz +
-                ", did you register it with JobConfig.registerSerializer()?");
+        return new JetException("There is no suitable serializer for " + clazz
+                + ", did you register it with JobConfig.registerSerializer()?");
     }
 
     @Override
@@ -162,8 +162,8 @@ public class DelegatingSerializationService extends AbstractSerializationService
     }
 
     private RuntimeException serializationException(int typeId, Throwable t) {
-        return new JetException("Unable to deserialize object for type " + typeId + ": " +
-                t.getMessage(), t);
+        return new JetException("Unable to deserialize object for type " + typeId + ": "
+                + t.getMessage(), t);
     }
 
     private RuntimeException serializationException(int typeId) {

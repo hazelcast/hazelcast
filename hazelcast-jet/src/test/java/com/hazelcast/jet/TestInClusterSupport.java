@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,10 @@
 
 package com.hazelcast.jet;
 
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JetTestSupport;
@@ -51,11 +53,11 @@ public abstract class TestInClusterSupport extends JetTestSupport {
     protected static final String JOURNALED_CACHE_PREFIX = "journaledCache.";
     protected static final int MEMBER_COUNT = 2;
 
-    protected static JetTestInstanceFactory factory = new JetTestInstanceFactory();
-    private static JetInstance[] allJetInstances;
+    protected static TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    private static HazelcastInstance[] instances;
 
-    protected static JetInstance member;
-    protected static JetInstance client;
+    protected static HazelcastInstance member;
+    protected static HazelcastInstance client;
 
     private static final TestMode MEMBER_TEST_MODE = new TestMode("member", () -> member);
     private static final TestMode CLIENT_TEST_MODE = new TestMode("client", () -> client);
@@ -72,32 +74,32 @@ public abstract class TestInClusterSupport extends JetTestSupport {
     @BeforeClass
     public static void setupCluster() {
         member = createCluster(MEMBER_COUNT, prepareConfig());
-        client = factory.newClient();
+        client = hazelcastFactory.newHazelcastClient();
     }
 
-    protected static JetConfig prepareConfig() {
+    protected static Config prepareConfig() {
+        Config config = new Config();
         parallelism = Runtime.getRuntime().availableProcessors() / MEMBER_COUNT / 2;
-        JetConfig config = new JetConfig();
-        config.getInstanceConfig().setCooperativeThreadCount(max(2, parallelism));
-        config.getHazelcastConfig().getMetricsConfig().setCollectionFrequencySeconds(1);
-        Config hzConfig = config.getHazelcastConfig();
+        JetConfig jetConfig = new JetConfig();
+        jetConfig.getInstanceConfig().setCooperativeThreadCount(max(2, parallelism));
+        config.getMetricsConfig().setCollectionFrequencySeconds(1);
         // Set partition count to match the parallelism of IMap sources.
         // Their preferred local parallelism is 2, therefore partition count
         // should be 2 * MEMBER_COUNT.
-        hzConfig.getProperties().setProperty("hazelcast.partition.count", "" + 2 * MEMBER_COUNT);
-        hzConfig.addCacheConfig(new CacheSimpleConfig().setName("*"));
-        hzConfig.getMapConfig(JOURNALED_MAP_PREFIX + '*').getEventJournalConfig().setEnabled(true);
-        hzConfig.getCacheConfig(JOURNALED_CACHE_PREFIX + '*').getEventJournalConfig().setEnabled(true);
+        config.getProperties().setProperty("hazelcast.partition.count", "" + 2 * MEMBER_COUNT);
+        config.addCacheConfig(new CacheSimpleConfig().setName("*"));
+        config.getMapConfig(JOURNALED_MAP_PREFIX + '*').getEventJournalConfig().setEnabled(true);
+        config.getCacheConfig(JOURNALED_CACHE_PREFIX + '*').getEventJournalConfig().setEnabled(true);
         return config;
     }
 
     @AfterClass
     public static void tearDown() throws Exception {
-        spawn(() -> factory.terminateAll())
+        spawn(() -> hazelcastFactory.terminateAll())
                 .get(1, TimeUnit.MINUTES);
 
-        factory = null;
-        allJetInstances = null;
+        hazelcastFactory = null;
+        instances = null;
         member = null;
         client = null;
     }
@@ -105,12 +107,16 @@ public abstract class TestInClusterSupport extends JetTestSupport {
     @After
     public void after() throws Exception {
         Future future = spawn(() ->
-                cleanUpCluster(allJetInstances()));
+                cleanUpCluster(allInstances()));
         future.get(1, TimeUnit.MINUTES);
     }
 
     protected JetInstance jet() {
-        return testMode.getJet();
+        return testMode.getInstance().getJetInstance();
+    }
+
+    protected HazelcastInstance instance() {
+        return testMode.getInstance();
     }
 
     protected Job execute(Pipeline p, JobConfig config) {
@@ -119,30 +125,28 @@ public abstract class TestInClusterSupport extends JetTestSupport {
         return job;
     }
 
-    protected static JetInstance[] allJetInstances() {
-        return allJetInstances;
+    protected static HazelcastInstance[] allInstances() {
+        return instances;
     }
 
-    private static JetInstance createCluster(int nodeCount, JetConfig config) {
-        factory = new JetTestInstanceFactory();
-        allJetInstances = new JetInstance[nodeCount];
-        for (int i = 0; i < nodeCount; i++) {
-            allJetInstances[i] = factory.newMember(config);
-        }
-        return allJetInstances[0];
+    private static HazelcastInstance createCluster(int nodeCount, Config config) {
+        hazelcastFactory = new TestHazelcastFactory();
+        instances = new HazelcastInstance[nodeCount];
+        instances = hazelcastFactory.newInstances(config, nodeCount);
+        return instances[0];
     }
 
     protected static final class TestMode {
 
         private final String name;
-        private final Supplier<JetInstance> getJetFn;
+        private final Supplier<HazelcastInstance> getJetFn;
 
-        TestMode(String name, Supplier<JetInstance> getJetFn) {
+        TestMode(String name, Supplier<HazelcastInstance> getJetFn) {
             this.name = name;
             this.getJetFn = getJetFn;
         }
 
-        public JetInstance getJet() {
+        public HazelcastInstance getInstance() {
             return getJetFn.get();
         }
 

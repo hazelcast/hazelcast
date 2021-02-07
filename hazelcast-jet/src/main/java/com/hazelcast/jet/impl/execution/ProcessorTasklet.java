@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.execution;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricDescriptor;
@@ -101,10 +102,11 @@ public class ProcessorTasklet implements Tasklet {
     private final ProgressTracker progTracker = new ProgressTracker();
     private final OutboundEdgeStream[] outstreams;
     private final OutboxImpl outbox;
-    private final Processor.Context context;
+    private final Context context;
 
     private final SnapshotContext ssContext;
-    private final BitSet receivedBarriers; // indicates if current snapshot is received on the ordinal
+    // indicates if current snapshot is received on the ordinal
+    private final BitSet receivedBarriers;
 
     private final ArrayDequeInbox inbox = new ArrayDequeInbox(progTracker);
     private final Queue<ArrayList<InboundEdgeStream>> instreamGroupQueue;
@@ -116,7 +118,8 @@ public class ProcessorTasklet implements Tasklet {
     private final boolean isSource;
 
     private Processor processor;
-    private int numActiveOrdinals; // counter for remaining active ordinals
+    // counter for remaining active ordinals
+    private int numActiveOrdinals;
     private CircularListCursor<InboundEdgeStream> instreamCursor;
     private InboundEdgeStream currInstream;
     private ProcessorState state;
@@ -187,7 +190,8 @@ public class ProcessorTasklet implements Tasklet {
         outbox = createOutbox(ssCollector);
         receivedBarriers = new BitSet(instreams.size());
         state = processingState();
-        pendingSnapshotId1 = pendingSnapshotId2 = ssContext.activeSnapshotIdPhase1() + 1;
+        pendingSnapshotId1 = ssContext.activeSnapshotIdPhase1() + 1;
+        pendingSnapshotId2 = pendingSnapshotId1;
         waitForAllBarriers = ssContext.processingGuarantee() == ProcessingGuarantee.EXACTLY_ONCE;
 
         watermarkCoalescer = WatermarkCoalescer.create(instreams.size());
@@ -196,8 +200,9 @@ public class ProcessorTasklet implements Tasklet {
     @SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE",
             justification = "jetInstance() can be null in TestProcessorContext")
     private ILogger getLogger(@Nonnull Context context) {
-        return context.jetInstance() != null
-                ? context.jetInstance().getHazelcastInstance().getLoggingService().getLogger(getClass())
+        HazelcastInstance instance = context.instance();
+        return instance != null
+                ? instance.getLoggingService().getLogger(getClass())
                 : Logger.getLogger(getClass());
     }
 
@@ -270,7 +275,8 @@ public class ProcessorTasklet implements Tasklet {
                     long wm = watermarkCoalescer.checkWmHistory();
                     if (wm == NO_NEW_WM) {
                         state = NULLARY_PROCESS;
-                        stateMachineStep(); // recursion
+                        // recursion
+                        stateMachineStep();
                         break;
                     }
                     pendingWatermark = new Watermark(wm);
@@ -288,7 +294,8 @@ public class ProcessorTasklet implements Tasklet {
                 if (currInstream == null || isSnapshotInbox() || processor.tryProcess()) {
                     state = PROCESS_INBOX;
                     outbox.reset();
-                    stateMachineStep(); // recursion
+                    // recursion
+                    stateMachineStep();
                 }
                 break;
 
@@ -299,8 +306,8 @@ public class ProcessorTasklet implements Tasklet {
             case COMPLETE_EDGE:
                 if (isSnapshotInbox()
                         ? processor.finishSnapshotRestore() : processor.completeEdge(currInstream.ordinal())) {
-                    assert !outbox.hasUnfinishedItem() || !isSnapshotInbox() :
-                            "outbox has an unfinished item after successful finishSnapshotRestore()";
+                    assert !outbox.hasUnfinishedItem() || !isSnapshotInbox()
+                            : "outbox has an unfinished item after successful finishSnapshotRestore()";
                     progTracker.madeProgress();
                     state = processingState();
                 }
@@ -310,7 +317,8 @@ public class ProcessorTasklet implements Tasklet {
                 if (processor.saveToSnapshot()) {
                     progTracker.madeProgress();
                     state = ssContext.isExportOnly() ? EMIT_BARRIER : SNAPSHOT_COMMIT_PREPARE;
-                    stateMachineStep(); // recursion
+                    // recursion
+                    stateMachineStep();
                 }
                 return;
 
@@ -318,7 +326,8 @@ public class ProcessorTasklet implements Tasklet {
                 if (processor.snapshotCommitPrepare()) {
                     progTracker.madeProgress();
                     state = EMIT_BARRIER;
-                    stateMachineStep(); // recursion
+                    // recursion
+                    stateMachineStep();
                 }
                 return;
 
@@ -364,7 +373,8 @@ public class ProcessorTasklet implements Tasklet {
                 long currSnapshotId2 = ssContext.activeSnapshotIdPhase2();
                 if (currSnapshotId2 >= pendingSnapshotId2) {
                     state = SNAPSHOT_COMMIT_FINISH__FINAL;
-                    stateMachineStep(); // recursion
+                    // recursion
+                    stateMachineStep();
                 }
                 return;
 
@@ -558,8 +568,8 @@ public class ProcessorTasklet implements Tasklet {
 
     private void observeBarrier(int ordinal, SnapshotBarrier barrier) {
         if (barrier.snapshotId() != pendingSnapshotId1) {
-            throw new JetException("Unexpected snapshot barrier ID " + barrier.snapshotId() + " from ordinal " + ordinal +
-                    ", expected " + pendingSnapshotId1);
+            throw new JetException("Unexpected snapshot barrier ID " + barrier.snapshotId() + " from ordinal " + ordinal
+                    + ", expected " + pendingSnapshotId1);
         }
         currentBarrier = barrier;
         if (barrier.isTerminal()) {
@@ -590,10 +600,12 @@ public class ProcessorTasklet implements Tasklet {
     private long lastForwardedWmLatency() {
         long wm = outbox.lastForwardedWm();
         if (wm == IDLE_MESSAGE.timestamp()) {
-            return Long.MIN_VALUE; // idle
+            // idle
+            return Long.MIN_VALUE;
         }
         if (wm == Long.MIN_VALUE) {
-            return Long.MAX_VALUE; // no wms emitted
+            // no wms emitted
+            return Long.MAX_VALUE;
         }
         return System.currentTimeMillis() - wm;
     }

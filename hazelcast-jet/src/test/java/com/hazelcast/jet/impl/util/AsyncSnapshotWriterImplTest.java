@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.util;
 
 import com.hazelcast.client.map.helpers.AMapStore;
 import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
@@ -25,8 +26,6 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.HeapData;
-import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.execution.SnapshotContext;
@@ -54,6 +53,7 @@ import java.util.Map.Entry;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.impl.util.Util.getImpl;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static java.util.Collections.nCopies;
 import static java.util.stream.Collectors.joining;
@@ -83,16 +83,16 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
 
     @Before
     public void before() {
-        JetConfig jetConfig = new JetConfig();
-        Config config = jetConfig.getHazelcastConfig();
+        Config config = new Config();
         config.getMapConfig(ALWAYS_FAILING_MAP)
-              .getMapStoreConfig()
-              .setEnabled(true)
-              .setImplementation(new AlwaysFailingMapStore());
+                .getMapStoreConfig()
+                .setEnabled(true)
+                .setImplementation(new AlwaysFailingMapStore());
 
-        JetInstance instance = createJetMember(jetConfig);
-        nodeEngine = ((HazelcastInstanceImpl) instance.getHazelcastInstance()).node.nodeEngine;
-        serializationService = ((HazelcastInstanceImpl) instance.getHazelcastInstance()).getSerializationService();
+        HazelcastInstance instance = createMember(config);
+        HazelcastInstanceImpl impl = getImpl(instance);
+        nodeEngine = impl.node.nodeEngine;
+        serializationService = impl.getSerializationService();
         partitionService = nodeEngine.getPartitionService();
         snapshotContext = mock(SnapshotContext.class);
         when(snapshotContext.currentMapName()).thenReturn("map1");
@@ -100,7 +100,7 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
         writer = new AsyncSnapshotWriterImpl(128, nodeEngine, snapshotContext, "vertex", 0, 1,
                 nodeEngine.getSerializationService());
         when(snapshotContext.currentSnapshotId()).thenReturn(1L); // simulates starting new snapshot
-        map = instance.getHazelcastInstance().getMap("map1");
+        map = instance.getMap("map1");
         assertTrue(writer.usableChunkCapacity > 0);
     }
 
@@ -154,8 +154,8 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
         assertTrueAllTheTime(() ->
                 assertTrue(
                         map.entrySet().stream()
-                           .map(Entry::toString)
-                           .collect(joining(", ", "[", "]")),
+                                .map(Entry::toString)
+                                .collect(joining(", ", "[", "]")),
                         map.isEmpty()), 1);
         // this entry will cause automatic flush
         assertTrue(writer.offer(entry));

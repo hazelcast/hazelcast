@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,9 +73,9 @@ public final class TestUtil {
         boolean found = false;
         Throwable t = caught;
         while (!found && t != null) {
-            found = Objects.equals(t.getMessage(), expected.getMessage()) && t.getClass() == expected.getClass() ||
-                    (t.getMessage().contains(expected.getMessage()) &&
-                            t.getMessage().contains(expected.getClass().getName()));
+            found = Objects.equals(t.getMessage(), expected.getMessage()) && t.getClass() == expected.getClass()
+                    || (t.getMessage().contains(expected.getMessage())
+                    && t.getMessage().contains(expected.getClass().getName()));
             t = t.getCause();
         }
 
@@ -101,7 +101,7 @@ public final class TestUtil {
      * Create {@code HashSet} from a list of items.
      */
     @Nonnull
-    public static <T> Set<T> set(T ... foo) {
+    public static <T> Set<T> set(T... foo) {
         return new HashSet<>(asList(foo));
     }
 
@@ -111,7 +111,7 @@ public final class TestUtil {
      * value2, ...}
      *
      * @throws ArrayIndexOutOfBoundsException if odd number of parameters is
-     *      passed
+     *                                        passed
      */
     @SuppressWarnings("unchecked")
     @Nonnull
@@ -131,7 +131,8 @@ public final class TestUtil {
             shutdown = true;
         }
 
-        @Nonnull @Override
+        @Nonnull
+        @Override
         public List<Runnable> shutdownNow() {
             shutdown = true;
             return Collections.emptyList();
@@ -152,7 +153,8 @@ public final class TestUtil {
             throw new UnsupportedOperationException();
         }
 
-        @Nonnull @Override
+        @Nonnull
+        @Override
         public <T> Future<T> submit(@Nonnull Callable<T> task) {
             try {
                 return completedFuture(task.call());
@@ -161,7 +163,8 @@ public final class TestUtil {
             }
         }
 
-        @Nonnull @Override
+        @Nonnull
+        @Override
         public <T> Future<T> submit(@Nonnull Runnable task, T result) {
             return submit(() -> {
                 task.run();
@@ -169,23 +172,27 @@ public final class TestUtil {
             });
         }
 
-        @Nonnull @Override
+        @Nonnull
+        @Override
         public Future<?> submit(@Nonnull Runnable task) {
             return submit(task, null);
         }
 
-        @Nonnull @Override
+        @Nonnull
+        @Override
         public <T> List<Future<T>> invokeAll(@Nonnull Collection<? extends Callable<T>> tasks) {
             throw new UnsupportedOperationException();
         }
 
-        @Nonnull @Override
+        @Nonnull
+        @Override
         public <T> List<Future<T>> invokeAll(@Nonnull Collection<? extends Callable<T>> tasks, long timeout,
                                              @Nonnull TimeUnit unit) {
             throw new UnsupportedOperationException();
         }
 
-        @Nonnull @Override
+        @Nonnull
+        @Override
         public <T> T invokeAny(@Nonnull Collection<? extends Callable<T>> tasks) {
             throw new UnsupportedOperationException();
         }

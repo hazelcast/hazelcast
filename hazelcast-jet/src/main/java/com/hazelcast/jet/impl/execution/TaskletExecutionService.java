@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -219,8 +219,8 @@ public class TaskletExecutionService {
         }
         if (firstFailure != null) {
             throw new JetException(String.format(
-                    "%,d of %,d tasklets failed to initialize." +
-                            " One of the failures is attached as the cause and its summary is %s",
+                    "%,d of %,d tasklets failed to initialize."
+                            + " One of the failures is attached as the cause and its summary is %s",
                     failureCount, futures.size(), firstFailure
             ), firstFailure);
         }
@@ -253,8 +253,8 @@ public class TaskletExecutionService {
         if (min >= max) {
             logger.warning(
                 String.format(
-                    "The property %s must be set less than or equal to %s but current values are: %s=%d, %s=%d." +
-                        " Using minimum value as maximum instead.",
+                    "The property %s must be set less than or equal to %s but current values are: %s=%d, %s=%d."
+                        + " Using minimum value as maximum instead.",
                     minName, maxName, minName, min, maxName, max));
             max = min;
         }

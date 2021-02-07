@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,10 +63,11 @@ public final class ReadIListP extends AbstractProcessor {
         HazelcastInstance instance;
         SerializationService serializationService;
         if (isRemote()) {
-            instance = client = newHazelcastClient(asClientConfig(clientXml));
+            instance = newHazelcastClient(asClientConfig(clientXml));
             serializationService = ((HazelcastClientProxy) instance).getSerializationService();
+            client = instance;
         } else {
-            instance = context.jetInstance().getHazelcastInstance();
+            instance = context.instance();
             serializationService = ((ProcCtx) context).serializationService();
         }
         traverser = createTraverser(instance, name).map(serializationService::toObject);
@@ -88,12 +89,11 @@ public final class ReadIListP extends AbstractProcessor {
         }
     }
 
-    private Traverser<Data> createTraverser(int size,
-                                            BiFunction<Integer, Integer, List<Data>> subListSupplier) {
-        return size <= FETCH_SIZE ?
-                traverseIterable(subListSupplier.apply(0, size)) :
-                traverseStream(rangeClosed(0, size / FETCH_SIZE).mapToObj(chunkIndex -> chunkIndex * FETCH_SIZE))
-                        .flatMap(start -> traverseIterable(subListSupplier.apply(start, min(start + FETCH_SIZE, size))));
+    private Traverser<Data> createTraverser(int size, BiFunction<Integer, Integer, List<Data>> subListSupplier) {
+        return size <= FETCH_SIZE
+                ? traverseIterable(subListSupplier.apply(0, size))
+                : traverseStream(rangeClosed(0, size / FETCH_SIZE).mapToObj(chunkIndex -> chunkIndex * FETCH_SIZE))
+                .flatMap(start -> traverseIterable(subListSupplier.apply(start, min(start + FETCH_SIZE, size))));
     }
 
     @Override

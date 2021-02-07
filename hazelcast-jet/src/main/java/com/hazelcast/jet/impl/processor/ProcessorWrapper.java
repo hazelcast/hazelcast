@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,10 +74,10 @@ public abstract class ProcessorWrapper implements Processor, DynamicMetricsProvi
         // and also other objects could be mocked or null, such as jetInstance())
         if (context instanceof ProcCtx) {
             ProcCtx c = (ProcCtx) context;
-            LoggingService loggingService = c.jetInstance().getHazelcastInstance().getLoggingService();
+            LoggingService loggingService = c.instance().getLoggingService();
             String prefix = prefix(c.jobConfig().getName(), c.jobId(), c.vertexName(), c.globalProcessorIndex());
             ILogger newLogger = prefixedLogger(loggingService.getLogger(wrapped.getClass()), prefix);
-            context = new ProcCtx(c.jetInstance(), c.jobId(), c.executionId(), c.jobConfig(),
+            context = new ProcCtx(c.instance(), c.jobId(), c.executionId(), c.jobConfig(),
                     newLogger, c.vertexName(), c.localProcessorIndex(), c.globalProcessorIndex(), c.processingGuarantee(),
                     c.localParallelism(), c.memberIndex(), c.memberCount(), c.tempDirectories(), c.serializationService());
         }

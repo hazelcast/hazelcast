@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,14 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.collection.IList;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.function.RunnableEx;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.JobExecutionRecord;
@@ -72,7 +71,7 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
     private static final ILogger SUPPORT_LOGGER = Logger.getLogger(JetTestSupport.class);
 
     protected ILogger logger = Logger.getLogger(getClass());
-    private JetTestInstanceFactory instanceFactory;
+    private TestHazelcastFactory instanceFactory;
 
     @After
     public void shutdownFactory() throws Exception {
@@ -83,44 +82,45 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
         }
     }
 
-    protected JetInstance createJetClient() {
-        return instanceFactory.newClient();
+    protected HazelcastInstance createClient() {
+        return instanceFactory.newHazelcastClient();
     }
 
-    protected JetInstance createJetClient(ClientConfig config) {
-        return instanceFactory.newClient(config);
+    protected HazelcastInstance createClient(ClientConfig config) {
+        return instanceFactory.newHazelcastClient(config);
     }
 
-    protected JetInstance createJetMember() {
-        return this.createJetMember(new JetConfig());
+    protected HazelcastInstance createMember() {
+        return createMember(new Config());
     }
 
-    protected JetInstance createJetMember(JetConfig config) {
+    protected HazelcastInstance createMember(Config config) {
         if (instanceFactory == null) {
-            instanceFactory = new JetTestInstanceFactory();
+            instanceFactory = new TestHazelcastFactory();
         }
-        return instanceFactory.newMember(config);
+        return instanceFactory.newHazelcastInstance(config);
     }
 
-    protected JetInstance[] createJetMembers(int nodeCount) {
-        return createJetMembers(new JetConfig(), nodeCount);
+    protected HazelcastInstance[] createMembers(int nodeCount) {
+        return createMembers(new Config(), nodeCount);
     }
 
-    protected JetInstance[] createJetMembers(JetConfig config, int nodeCount) {
+    protected HazelcastInstance[] createMembers(Config config, int nodeCount) {
         if (instanceFactory == null) {
-            instanceFactory = new JetTestInstanceFactory();
+            instanceFactory = new TestHazelcastFactory();
         }
-        return instanceFactory.newMembers(config, nodeCount);
+        return instanceFactory.newInstances(config, nodeCount);
     }
 
-    protected JetInstance createJetMember(JetConfig config, Address[] blockedAddress) {
+    protected HazelcastInstance createMember(Config config, Address[] blockedAddress) {
         if (instanceFactory == null) {
-            instanceFactory = new JetTestInstanceFactory();
+            instanceFactory = new TestHazelcastFactory();
         }
-        return instanceFactory.newMember(config, blockedAddress);
+        return instanceFactory.newHazelcastInstance(config, blockedAddress);
     }
 
-    protected static <K, V> IMap<K, V> getMap(JetInstance instance) {
+
+    protected static <K, V> IMap<K, V> getMap(HazelcastInstance instance) {
         return instance.getMap(randomName());
     }
 
@@ -130,7 +130,7 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
         }
     }
 
-    protected static <E> IList<E> getList(JetInstance instance) {
+    protected static <E> IList<E> getList(HazelcastInstance instance) {
         return instance.getList(randomName());
     }
 
@@ -165,7 +165,7 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
      *     // Subsequent steps can fail because the job is restarting.
      *     assertJobStatusEventually(job, RUNNING);
      * }</pre>
-     *
+     * <p>
      * This method allows an equivalent code:
      * <pre>{@code
      *     long oldExecutionId = assertJobRunningEventually(instance, job, null);
@@ -176,11 +176,11 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
      * }</pre>
      *
      * @param ignoredExecutionId If job is running and has this execution ID,
-     *      wait longer. If null, no execution ID is ignored.
+     *                           wait longer. If null, no execution ID is ignored.
      * @return the execution ID of the new execution or 0 if {@code
-     *      ignoredExecutionId == null}
+     * ignoredExecutionId == null}
      */
-    public static long assertJobRunningEventually(JetInstance instance, Job job, Long ignoredExecutionId) {
+    public static long assertJobRunningEventually(HazelcastInstance instance, Job job, Long ignoredExecutionId) {
         Long executionId;
         JobExecutionService service = getNodeEngineImpl(instance)
                 .<JetService>getService(JetService.SERVICE_NAME)
@@ -199,35 +199,27 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
                 assertEquals("jobId=" + idToString(job.getId()), expected, job.getStatus()), timeoutSeconds);
     }
 
-    public static void assertClusterSizeEventually(int size, JetInstance jetInstance) {
-        HazelcastTestSupport.assertClusterSizeEventually(size, jetInstance.getHazelcastInstance());
+    public static JetService getJetService(HazelcastInstance instance) {
+        return getNodeEngineImpl(instance).getService(JetService.SERVICE_NAME);
     }
 
-    public static JetService getJetService(JetInstance jetInstance) {
-        return getNodeEngineImpl(jetInstance).getService(JetService.SERVICE_NAME);
+    public static Address getAddress(HazelcastInstance instance) {
+        return Accessors.getAddress(instance);
     }
 
-    public static HazelcastInstance hz(JetInstance instance) {
-        return instance.getHazelcastInstance();
+    public static Node getNode(HazelcastInstance instance) {
+        return Accessors.getNode(instance);
     }
 
-    public static Address getAddress(JetInstance instance) {
-        return Accessors.getAddress(hz(instance));
-    }
-
-    public static Node getNode(JetInstance instance) {
-        return Accessors.getNode(hz(instance));
-    }
-
-    public static NodeEngineImpl getNodeEngineImpl(JetInstance instance) {
-        return Accessors.getNodeEngineImpl(hz(instance));
+    public static NodeEngineImpl getNodeEngineImpl(HazelcastInstance instance) {
+        return Accessors.getNodeEngineImpl(instance);
     }
 
     public Address nextAddress() {
         return instanceFactory.nextAddress();
     }
 
-    protected void terminateInstance(JetInstance instance) {
+    protected void terminateInstance(HazelcastInstance instance) {
         instanceFactory.terminate(instance);
     }
 
@@ -284,13 +276,13 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
      * to, shut it down so that next tests don't run on a messed-up cluster.
      *
      * @param instances cluster instances, must contain at least
-     *                            one instance
+     *                  one instance
      */
-    public void cleanUpCluster(JetInstance ... instances) {
-        for (Job job : instances[0].getJobs()) {
+    public void cleanUpCluster(HazelcastInstance... instances) {
+        for (Job job : instances[0].getJetInstance().getJobs()) {
             ditchJob(job, instances);
         }
-        for (DistributedObject o : instances[0].getHazelcastInstance().getDistributedObjects()) {
+        for (DistributedObject o : instances[0].getDistributedObjects()) {
             o.destroy();
         }
     }
@@ -300,7 +292,7 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
      * will ignore if it's not running. If the cancellation fails, it will
      * retry.
      */
-    public void ditchJob(@Nonnull Job job, @Nonnull JetInstance... instancesToShutDown) {
+    public void ditchJob(@Nonnull Job job, @Nonnull HazelcastInstance... instancesToShutDown) {
         int numAttempts;
         for (numAttempts = 0; numAttempts < 10; numAttempts++) {
             JobStatus status = null;
@@ -329,18 +321,18 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
 
             sleepMillis(500);
             SUPPORT_LOGGER.warning("Failed to cancel the job and it is " + status + ", retrying. Failure: "
-                            + cancellationFailure, cancellationFailure);
+                    + cancellationFailure, cancellationFailure);
         }
         // if we got here, 10 attempts to cancel the job have failed. Cluster is in bad shape probably, shut it down
         try {
-            for (JetInstance instance : instancesToShutDown) {
-                instance.getHazelcastInstance().getLifecycleService().terminate();
+            for (HazelcastInstance instance : instancesToShutDown) {
+                instance.getLifecycleService().terminate();
             }
         } catch (Exception e) {
             // ignore, proceed to throwing RuntimeException
         }
-        throw new RuntimeException(numAttempts + " attempts to cancel the job failed" +
-                (instancesToShutDown.length > 0 ? ", shut down the cluster" : ""));
+        throw new RuntimeException(numAttempts + " attempts to cancel the job failed"
+                + (instancesToShutDown.length > 0 ? ", shut down the cluster" : ""));
     }
 
     /**

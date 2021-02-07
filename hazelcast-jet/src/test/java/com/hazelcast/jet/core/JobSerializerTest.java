@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,16 @@
 
 package com.hazelcast.jet.core;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.hazelcast.cache.ICache;
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.collection.IList;
 import com.hazelcast.config.CacheSimpleConfig;
+import com.hazelcast.config.Config;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.jet.Observable;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
-import com.hazelcast.jet.config.JetClientConfig;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
@@ -39,8 +41,6 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
-import org.testcontainers.shaded.com.google.common.collect.ImmutableSet;
 
 import javax.cache.Cache;
 import java.io.IOException;
@@ -68,14 +68,13 @@ public class JobSerializerTest extends SimpleTestInClusterSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        JetConfig config = new JetConfig();
-        config.getHazelcastConfig()
-              .addCacheConfig(new CacheSimpleConfig().setName(SOURCE_CACHE_NAME))
-              .addCacheConfig(new CacheSimpleConfig().setName(SINK_CACHE_NAME));
+        Config config = new Config();
+        config.addCacheConfig(new CacheSimpleConfig().setName(SOURCE_CACHE_NAME))
+                .addCacheConfig(new CacheSimpleConfig().setName(SINK_CACHE_NAME));
 
-        JetClientConfig clientConfig = new JetClientConfig();
+        ClientConfig clientConfig = new ClientConfig();
         clientConfig.getSerializationConfig()
-                    .addSerializerConfig(new SerializerConfig().setTypeClass(Value.class).setClass(ValueSerializer.class));
+                .addSerializerConfig(new SerializerConfig().setTypeClass(Value.class).setClass(ValueSerializer.class));
 
         initializeWithClient(1, config, clientConfig);
     }
@@ -97,7 +96,7 @@ public class JobSerializerTest extends SimpleTestInClusterSupport {
                 .map(entry -> entry.getValue().value())
                 .writeTo(AssertionSinks.assertAnyOrder(asList(1, 2)));
 
-        client().newJob(pipeline, jobConfig()).join();
+        client().getJetInstance().newJob(pipeline, jobConfig()).join();
     }
 
     @Test
@@ -107,7 +106,7 @@ public class JobSerializerTest extends SimpleTestInClusterSupport {
                 .map(i -> new SimpleEntry<>(i, new Value(i)))
                 .writeTo(Sinks.map(SINK_MAP_NAME));
 
-        client().newJob(pipeline, jobConfig()).join();
+        client().getJetInstance().newJob(pipeline, jobConfig()).join();
 
         IMap<Integer, Value> map = client().getMap(SINK_MAP_NAME);
         assertThat(map).containsExactlyInAnyOrderEntriesOf(
@@ -132,7 +131,7 @@ public class JobSerializerTest extends SimpleTestInClusterSupport {
                 .map(entry -> entry.getValue().value())
                 .writeTo(AssertionSinks.assertAnyOrder(asList(1, 2)));
 
-        client().newJob(pipeline, jobConfig()).join();
+        client().getJetInstance().newJob(pipeline, jobConfig()).join();
     }
 
     @Test
@@ -142,7 +141,7 @@ public class JobSerializerTest extends SimpleTestInClusterSupport {
                 .map(i -> new SimpleEntry<>(i, new Value(i)))
                 .writeTo(Sinks.cache(SINK_CACHE_NAME));
 
-        client().newJob(pipeline, jobConfig()).join();
+        client().getJetInstance().newJob(pipeline, jobConfig()).join();
 
         ICache<Integer, Value> cache = client().getCacheManager().getCache(SINK_CACHE_NAME);
         assertThat(cache).hasSize(2);
@@ -168,7 +167,7 @@ public class JobSerializerTest extends SimpleTestInClusterSupport {
                 .map(Value::value)
                 .writeTo(AssertionSinks.assertAnyOrder(asList(1, 2)));
 
-        client().newJob(pipeline, jobConfig()).join();
+        client().getJetInstance().newJob(pipeline, jobConfig()).join();
     }
 
     @Test
@@ -178,7 +177,7 @@ public class JobSerializerTest extends SimpleTestInClusterSupport {
                 .map(Value::new)
                 .writeTo(Sinks.list(SINK_LIST_NAME));
 
-        client().newJob(pipeline, jobConfig()).join();
+        client().getJetInstance().newJob(pipeline, jobConfig()).join();
 
         IList<Value> list = client().getList(SINK_LIST_NAME);
         assertThat(list).containsExactlyInAnyOrder(
@@ -195,11 +194,11 @@ public class JobSerializerTest extends SimpleTestInClusterSupport {
                 .writeTo(Sinks.observable(OBSERVABLE_NAME));
 
         // When
-        Observable<Value> observable = client().getObservable(OBSERVABLE_NAME);
+        Observable<Value> observable = null; //client().getObservable(OBSERVABLE_NAME);
         CompletableFuture<Long> counter = observable.toFuture(values -> values.map(Value::value).count());
 
         // Then
-        client().newJob(pipeline, jobConfig()).join();
+        client().getJetInstance().newJob(pipeline, jobConfig()).join();
         assertThat(counter.get(5, TimeUnit.SECONDS).intValue()).isEqualTo(2);
     }
 

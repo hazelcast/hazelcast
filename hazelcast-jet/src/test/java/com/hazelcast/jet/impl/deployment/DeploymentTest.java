@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.impl.deployment;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.internal.util.FilteringClassLoader;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
@@ -30,15 +30,15 @@ public class DeploymentTest extends AbstractDeploymentTest {
 
     @BeforeClass
     public static void beforeClass() {
-        JetConfig jetConfig = new JetConfig();
+        Config config = new Config();
         FilteringClassLoader filteringClassLoader = new FilteringClassLoader(singletonList("deployment"), null);
-        jetConfig.getHazelcastConfig().setClassLoader(filteringClassLoader);
+        config.setClassLoader(filteringClassLoader);
 
-        initialize(2, jetConfig);
+        initialize(2, config);
     }
 
     @Override
     protected JetInstance getJetInstance() {
-        return instance();
+        return instance().getJetInstance();
     }
 }

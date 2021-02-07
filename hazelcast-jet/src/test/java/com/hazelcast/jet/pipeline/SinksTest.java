@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -86,6 +86,7 @@ public class SinksTest extends PipelineTestSupport {
     @AfterClass
     public static void afterClass() {
         HazelcastInstanceFactory.terminateAll();
+        //HazelcastClient.shutdownAll();
     }
 
     @Test
@@ -126,7 +127,7 @@ public class SinksTest extends PipelineTestSupport {
         String secondSourceName = randomName();
         List<Integer> input = sequence(itemCount);
         addToSrcList(input);
-        jet().getList(secondSourceName).addAll(input);
+        instance().getList(secondSourceName).addAll(input);
         BatchStage<Entry<Object, Object>> firstSource = p.readFrom(Sources.list(srcName));
         BatchStage<Entry<Object, Object>> secondSource = p.readFrom(Sources.list(secondSourceName));
 
@@ -151,9 +152,9 @@ public class SinksTest extends PipelineTestSupport {
         p.readFrom(Sources.<String, Integer>cache(srcName)).writeTo(sink);
         execute();
         List<Entry<String, Integer>> expected = input.stream()
-                                                     .map(i -> entry(String.valueOf(i), i))
-                                                     .collect(toList());
-        ICache<String, Integer> cache = jet().getCacheManager().getCache(sinkName);
+                .map(i -> entry(String.valueOf(i), i))
+                .collect(toList());
+        ICache<String, Integer> cache = instance().getCacheManager().getCache(sinkName);
         assertEquals(expected.size(), cache.size());
         expected.forEach(entry -> assertEquals(entry.getValue(), cache.get(entry.getKey())));
     }
@@ -171,8 +172,8 @@ public class SinksTest extends PipelineTestSupport {
         p.readFrom(Sources.<String, Integer>cache(srcName)).writeTo(sink);
         execute();
         List<Entry<String, Integer>> expected = input.stream()
-                                                     .map(i -> entry(String.valueOf(i), i))
-                                                     .collect(toList());
+                .map(i -> entry(String.valueOf(i), i))
+                .collect(toList());
         ICache<String, Integer> remoteCache = remoteHz.getCacheManager().getCache(sinkName);
         assertEquals(expected.size(), remoteCache.size());
         expected.forEach(entry -> assertEquals(entry.getValue(), remoteCache.get(entry.getKey())));
@@ -191,9 +192,9 @@ public class SinksTest extends PipelineTestSupport {
         p.readFrom(Sources.<String, Integer>map(srcName)).writeTo(sink);
         execute();
         List<Entry<String, Integer>> expected = input.stream()
-                                                     .map(i -> entry(String.valueOf(i), i))
-                                                     .collect(toList());
-        Set<Entry<String, Integer>> actual = jet().<String, Integer>getMap(sinkName).entrySet();
+                .map(i -> entry(String.valueOf(i), i))
+                .collect(toList());
+        Set<Entry<String, Integer>> actual = instance().<String, Integer>getMap(sinkName).entrySet();
         assertEquals(expected.size(), actual.size());
         expected.forEach(entry -> assertTrue(actual.contains(entry)));
     }
@@ -203,7 +204,7 @@ public class SinksTest extends PipelineTestSupport {
         // Given
         List<Integer> input = sequence(itemCount);
         putToBatchSrcMap(input);
-        IMap<String, Integer> sinkMap = jet().getMap(sinkName);
+        IMap<String, Integer> sinkMap = instance().getMap(sinkName);
 
         // When
         Sink<Entry<String, Integer>> sink = Sinks.map(sinkMap);
@@ -212,8 +213,8 @@ public class SinksTest extends PipelineTestSupport {
         p.readFrom(Sources.<String, Integer>map(srcName)).writeTo(sink);
         execute();
         List<Entry<String, Integer>> expected = input.stream()
-                                                     .map(i -> entry(String.valueOf(i), i))
-                                                     .collect(toList());
+                .map(i -> entry(String.valueOf(i), i))
+                .collect(toList());
         Set<Entry<String, Integer>> actual = sinkMap.entrySet();
         assertEquals(expected.size(), actual.size());
         expected.forEach(entry -> assertTrue(actual.contains(entry)));
@@ -229,7 +230,7 @@ public class SinksTest extends PipelineTestSupport {
 
         // Then
         execute();
-        IMap<Integer, String> sinkMap = jet().getMap(sinkName);
+        IMap<Integer, String> sinkMap = instance().getMap(sinkName);
         assertEquals(5, sinkMap.size());
         IntStream.range(0, 5).forEach(i -> assertEquals(String.valueOf(i), sinkMap.get(i)));
     }
@@ -244,7 +245,7 @@ public class SinksTest extends PipelineTestSupport {
 
         // Then
         execute();
-        IMap<HazelcastJsonValue, HazelcastJsonValue> sinkMap = jet().getMap(sinkName);
+        IMap<HazelcastJsonValue, HazelcastJsonValue> sinkMap = instance().getMap(sinkName);
         assertEquals(5, sinkMap.size());
         IntStream.range(0, 5).forEach(i -> assertEquals(hazelcastJsonValue(String.valueOf(i)),
                 sinkMap.get(hazelcastJsonValue(i))));
@@ -263,8 +264,8 @@ public class SinksTest extends PipelineTestSupport {
         p.readFrom(Sources.<String, Integer>remoteMap(srcName, clientConfig)).writeTo(sink);
         execute();
         List<Entry<String, Integer>> expected = input.stream()
-                                                     .map(i -> entry(String.valueOf(i), i))
-                                                     .collect(toList());
+                .map(i -> entry(String.valueOf(i), i))
+                .collect(toList());
         Set<Entry<String, Integer>> actual = remoteHz.<String, Integer>getMap(sinkName).entrySet();
         assertEquals(expected.size(), actual.size());
         expected.forEach(entry -> assertTrue(actual.contains(entry)));
@@ -288,9 +289,9 @@ public class SinksTest extends PipelineTestSupport {
         p.readFrom(Sources.<String, Integer>map(srcName)).writeTo(sink);
         execute();
         List<Entry<String, Integer>> expected = input.stream()
-                                                     .map(i -> entry(String.valueOf(i), i + i))
-                                                     .collect(toList());
-        Set<Entry<String, Integer>> actual = jet().<String, Integer>getMap(srcName).entrySet();
+                .map(i -> entry(String.valueOf(i), i + i))
+                .collect(toList());
+        Set<Entry<String, Integer>> actual = instance().<String, Integer>getMap(srcName).entrySet();
         assertEquals(expected.size(), actual.size());
         expected.forEach(entry -> assertTrue(actual.contains(entry)));
     }
@@ -300,7 +301,7 @@ public class SinksTest extends PipelineTestSupport {
         // Given
         List<Integer> input = sequence(itemCount);
         putToBatchSrcMap(input);
-        IMap<String, Integer> srcMap = jet().getMap(srcName);
+        IMap<String, Integer> srcMap = instance().getMap(srcName);
 
         // When
         Sink<Entry<String, Integer>> sink = Sinks.mapWithMerging(
@@ -314,9 +315,9 @@ public class SinksTest extends PipelineTestSupport {
         p.readFrom(Sources.<String, Integer>map(srcName)).writeTo(sink);
         execute();
         List<Entry<String, Integer>> expected = input.stream()
-                                                     .map(i -> entry(String.valueOf(i), i + i))
-                                                     .collect(toList());
-        Set<Entry<String, Integer>> actual = jet().<String, Integer>getMap(srcName).entrySet();
+                .map(i -> entry(String.valueOf(i), i + i))
+                .collect(toList());
+        Set<Entry<String, Integer>> actual = instance().<String, Integer>getMap(srcName).entrySet();
         assertEquals(expected.size(), actual.size());
         expected.forEach(entry -> assertTrue(actual.contains(entry)));
     }
@@ -326,7 +327,7 @@ public class SinksTest extends PipelineTestSupport {
         // Given
         List<Integer> input = sequence(itemCount);
         putToBatchSrcMap(input);
-        IMap<String, Integer> srcMap = jet().getMap(srcName);
+        IMap<String, Integer> srcMap = instance().getMap(srcName);
 
         // When
         Sink<Entry<String, Integer>> sink = Sinks.mapWithMerging(
@@ -338,9 +339,9 @@ public class SinksTest extends PipelineTestSupport {
         p.readFrom(Sources.<String, Integer>map(srcName)).writeTo(sink);
         execute();
         List<Entry<String, Integer>> expected = input.stream()
-                                                     .map(i -> entry(String.valueOf(i), i + i))
-                                                     .collect(toList());
-        Set<Entry<String, Integer>> actual = jet().<String, Integer>getMap(srcName).entrySet();
+                .map(i -> entry(String.valueOf(i), i + i))
+                .collect(toList());
+        Set<Entry<String, Integer>> actual = instance().<String, Integer>getMap(srcName).entrySet();
         assertEquals(expected.size(), actual.size());
         expected.forEach(entry -> assertTrue(actual.contains(entry)));
     }
@@ -357,7 +358,7 @@ public class SinksTest extends PipelineTestSupport {
         // Then
         p.readFrom(Sources.<String, Integer>map(srcName)).writeTo(sink);
         execute();
-        Set<Entry<String, Integer>> actual = jet().<String, Integer>getMap(srcName).entrySet();
+        Set<Entry<String, Integer>> actual = instance().<String, Integer>getMap(srcName).entrySet();
         assertEquals(0, actual.size());
     }
 
@@ -381,7 +382,7 @@ public class SinksTest extends PipelineTestSupport {
     public void mapWithMerging_when_sameKey_then_valuesMerged() {
         // Given
         List<Integer> input = sequence(itemCount);
-        jet().getList(srcName).addAll(input);
+        instance().getList(srcName).addAll(input);
 
         // When
         Sink<Entry<String, Integer>> sink = Sinks.mapWithMerging(
@@ -391,10 +392,10 @@ public class SinksTest extends PipelineTestSupport {
 
         // Then
         p.readFrom(Sources.<Integer>list(srcName))
-         .map(e -> entry("listSum", e))
-         .writeTo(sink);
+                .map(e -> entry("listSum", e))
+                .writeTo(sink);
         execute();
-        IMap<Object, Object> actual = jet().getMap(srcName);
+        IMap<Object, Object> actual = instance().getMap(srcName);
         assertEquals(1, actual.size());
         assertEquals(((itemCount - 1) * itemCount) / 2, actual.get("listSum"));
     }
@@ -404,11 +405,11 @@ public class SinksTest extends PipelineTestSupport {
         ProcessorMetaSupplier metaSupplier = adaptSupplier(SinkProcessors.<Entry<String, Integer>, String,
                 Integer>mergeMapP(sinkName, Entry::getKey, Entry::getValue, Integer::sum));
 
-        TestProcessorSupplierContext psContext = new TestProcessorSupplierContext().setJetInstance(member);
+        TestProcessorSupplierContext psContext = new TestProcessorSupplierContext().setInstance(member);
         Processor p = TestSupport.supplierFrom(metaSupplier, psContext).get();
 
         TestOutbox outbox = new TestOutbox();
-        p.init(outbox, new TestProcessorContext().setJetInstance(member));
+        p.init(outbox, new TestProcessorContext().setInstance(member));
         TestInbox inbox = new TestInbox();
         inbox.add(entry("k", 1));
         inbox.add(entry("k", 2));
@@ -428,28 +429,28 @@ public class SinksTest extends PipelineTestSupport {
     @Test
     public void mapWithMerging_when_targetHasPartitionStrategy() {
         String targetMap = randomMapName();
-        member.getHazelcastInstance().getConfig().addMapConfig(new MapConfig(targetMap)
+        instance().getConfig().addMapConfig(new MapConfig(targetMap)
                 .setPartitioningStrategyConfig(
                         new PartitioningStrategyConfig(StringPartitioningStrategy.class.getName())));
 
         List<Integer> input = sequence(itemCount);
-        jet().getList(srcName).addAll(input);
+        instance().getList(srcName).addAll(input);
 
         p.readFrom(Sources.<Integer>list(srcName))
-         .map(e -> {
-             e = e % 100;
-             return entry(e + "@" + e, e);
-         })
-         .writeTo(Sinks.mapWithMerging(targetMap, Integer::sum));
+                .map(e -> {
+                    e = e % 100;
+                    return entry(e + "@" + e, e);
+                })
+                .writeTo(Sinks.mapWithMerging(targetMap, Integer::sum));
         execute();
-        Map<String, Integer> actual = new HashMap<>(jet().getMap(targetMap));
+        Map<String, Integer> actual = new HashMap<>(instance().getMap(targetMap));
         Map<String, Integer> expected =
                 input.stream()
-                     .map(e -> {
-                         e = e % 100;
-                         return entry(e + "@" + e, e);
-                     })
-                     .collect(toMap(Entry::getKey, Entry::getValue, Integer::sum));
+                        .map(e -> {
+                            e = e % 100;
+                            return entry(e + "@" + e, e);
+                        })
+                        .collect(toMap(Entry::getKey, Entry::getValue, Integer::sum));
         assertEquals(expected, actual);
     }
 
@@ -472,8 +473,8 @@ public class SinksTest extends PipelineTestSupport {
         p.readFrom(Sources.<String, Integer>remoteMap(srcName, clientConfig)).writeTo(sink);
         execute();
         List<Entry<String, Integer>> expected = input.stream()
-                                                     .map(i -> entry(String.valueOf(i), i + i))
-                                                     .collect(toList());
+                .map(i -> entry(String.valueOf(i), i + i))
+                .collect(toList());
         Set<Entry<String, Integer>> actual = remoteHz.<String, Integer>getMap(srcName).entrySet();
         assertEquals(expected.size(), actual.size());
         expected.forEach(entry -> assertTrue(actual.contains(entry)));
@@ -514,9 +515,9 @@ public class SinksTest extends PipelineTestSupport {
         sinkStage.setLocalParallelism(2);
         execute();
         List<Entry<String, Integer>> expected = input.stream()
-                                                     .map(i -> entry(String.valueOf(i), i + 10))
-                                                     .collect(toList());
-        Set<Entry<String, Integer>> actual = jet().<String, Integer>getMap(srcName).entrySet();
+                .map(i -> entry(String.valueOf(i), i + 10))
+                .collect(toList());
+        Set<Entry<String, Integer>> actual = instance().<String, Integer>getMap(srcName).entrySet();
         assertEquals(expected.size(), actual.size());
         expected.forEach(entry -> assertTrue(actual.contains(entry)));
     }
@@ -526,7 +527,7 @@ public class SinksTest extends PipelineTestSupport {
         // Given
         List<Integer> input = sequence(itemCount);
         putToBatchSrcMap(input);
-        IMap<String, Integer> srcMap = jet().getMap(srcName);
+        IMap<String, Integer> srcMap = instance().getMap(srcName);
 
         // When
         Sink<Entry<String, Integer>> sink = Sinks.mapWithUpdating(
@@ -539,8 +540,8 @@ public class SinksTest extends PipelineTestSupport {
         sinkStage.setLocalParallelism(2);
         execute();
         List<Entry<String, Integer>> expected = input.stream()
-                                                     .map(i -> entry(String.valueOf(i), i + 10))
-                                                     .collect(toList());
+                .map(i -> entry(String.valueOf(i), i + 10))
+                .collect(toList());
         Set<Entry<String, Integer>> actual = srcMap.entrySet();
         assertEquals(expected.size(), actual.size());
         expected.forEach(entry -> assertTrue(actual.contains(entry)));
@@ -551,7 +552,7 @@ public class SinksTest extends PipelineTestSupport {
         // Given
         List<Integer> input = sequence(itemCount);
         putToBatchSrcMap(input);
-        IMap<String, Integer> srcMap = jet().getMap(srcName);
+        IMap<String, Integer> srcMap = instance().getMap(srcName);
 
         // When
         Sink<Entry<String, Integer>> sink = Sinks.mapWithUpdating(
@@ -563,8 +564,8 @@ public class SinksTest extends PipelineTestSupport {
         sinkStage.setLocalParallelism(2);
         execute();
         List<Entry<String, Integer>> expected = input.stream()
-                                                     .map(i -> entry(String.valueOf(i), i + 10))
-                                                     .collect(toList());
+                .map(i -> entry(String.valueOf(i), i + 10))
+                .collect(toList());
         Set<Entry<String, Integer>> actual = srcMap.entrySet();
         assertEquals(expected.size(), actual.size());
         expected.forEach(entry -> assertTrue(actual.contains(entry)));
@@ -582,14 +583,14 @@ public class SinksTest extends PipelineTestSupport {
         // Then
         p.readFrom(Sources.<String, Integer>map(srcName)).writeTo(sink);
         execute();
-        Set<Entry<String, Integer>> actual = jet().<String, Integer>getMap(srcName).entrySet();
+        Set<Entry<String, Integer>> actual = instance().<String, Integer>getMap(srcName).entrySet();
         assertEquals(0, actual.size());
     }
 
     @Test
     public void mapWithUpdating_when_itemDataSerializable_then_exceptionShouldNotThrown() {
         // Given
-        IMap<String, DataSerializableObject> sourceMap = jet().getMap(srcName);
+        IMap<String, DataSerializableObject> sourceMap = instance().getMap(srcName);
         List<Integer> input = sequence(itemCount);
         input.forEach(i -> sourceMap.put(String.valueOf(i), new DataSerializableObject(i)));
 
@@ -642,8 +643,8 @@ public class SinksTest extends PipelineTestSupport {
         p.readFrom(Sources.<String, Integer>remoteMap(srcName, clientConfig)).writeTo(sink);
         execute();
         List<Entry<String, Integer>> expected = input.stream()
-                                                     .map(i -> entry(String.valueOf(i), i + 10))
-                                                     .collect(toList());
+                .map(i -> entry(String.valueOf(i), i + 10))
+                .collect(toList());
         Set<Entry<String, Integer>> actual = remoteHz.<String, Integer>getMap(srcName).entrySet();
         assertEquals(expected.size(), actual.size());
         expected.forEach(entry -> assertTrue(actual.contains(entry)));
@@ -704,9 +705,9 @@ public class SinksTest extends PipelineTestSupport {
         p.readFrom(Sources.<String, Integer>map(srcName)).writeTo(sink);
         execute();
         List<Entry<String, Integer>> expected = input.stream()
-                                                     .map(i -> entry(String.valueOf(i), i + 10))
-                                                     .collect(toList());
-        Set<Entry<String, Integer>> actual = jet().<String, Integer>getMap(srcName).entrySet();
+                .map(i -> entry(String.valueOf(i), i + 10))
+                .collect(toList());
+        Set<Entry<String, Integer>> actual = instance().<String, Integer>getMap(srcName).entrySet();
         assertEquals(expected.size(), actual.size());
         expected.forEach(entry -> assertTrue(actual.contains(entry)));
     }
@@ -716,7 +717,7 @@ public class SinksTest extends PipelineTestSupport {
         // Given
         List<Integer> input = sequence(itemCount);
         putToBatchSrcMap(input);
-        IMap<String, Integer> map = jet().getMap(srcName);
+        IMap<String, Integer> map = instance().getMap(srcName);
 
         // When
         Sink<Entry<String, Integer>> sink = Sinks.mapWithEntryProcessor(
@@ -726,8 +727,8 @@ public class SinksTest extends PipelineTestSupport {
         p.readFrom(Sources.<String, Integer>map(srcName)).writeTo(sink);
         execute();
         List<Entry<String, Integer>> expected = input.stream()
-                                                     .map(i -> entry(String.valueOf(i), i + 10))
-                                                     .collect(toList());
+                .map(i -> entry(String.valueOf(i), i + 10))
+                .collect(toList());
         Set<Entry<String, Integer>> actual = map.entrySet();
         assertEquals(expected.size(), actual.size());
         expected.forEach(entry -> assertTrue(actual.contains(entry)));
@@ -750,8 +751,8 @@ public class SinksTest extends PipelineTestSupport {
         p.readFrom(Sources.<String, Integer>remoteMap(srcName, clientConfig)).writeTo(sink);
         execute();
         List<Entry<String, Integer>> expected = input.stream()
-                                                     .map(i -> entry(String.valueOf(i), i + 10))
-                                                     .collect(toList());
+                .map(i -> entry(String.valueOf(i), i + 10))
+                .collect(toList());
         Set<Entry<String, Integer>> actual = remoteHz.<String, Integer>getMap(srcName).entrySet();
         assertEquals(expected.size(), actual.size());
         expected.forEach(entry -> assertTrue(actual.contains(entry)));
@@ -794,12 +795,12 @@ public class SinksTest extends PipelineTestSupport {
 
         List<Integer> input = sequence(5_001);
         p.readFrom(TestSources.items(input))
-         .writeTo(Sinks.mapWithEntryProcessor(targetMap, FunctionEx.identity(), SleepingEntryProcessor::new));
+                .writeTo(Sinks.mapWithEntryProcessor(targetMap, FunctionEx.identity(), SleepingEntryProcessor::new));
         execute();
-        Map<Integer, Integer> actual = new HashMap<>(jet().getMap(targetMap));
+        Map<Integer, Integer> actual = new HashMap<>(instance().getMap(targetMap));
         Map<Integer, Integer> expected =
                 input.stream()
-                     .collect(toMap(Function.identity(), Function.identity(), Integer::sum));
+                        .collect(toMap(Function.identity(), Function.identity(), Integer::sum));
         assertEquals(expected, actual);
     }
 
@@ -865,7 +866,7 @@ public class SinksTest extends PipelineTestSupport {
         populateList(srcList);
 
         List<Object> receivedList = new ArrayList<>();
-        jet().getReliableTopic(sinkName).addMessageListener(message -> receivedList.add(message.getMessageObject()));
+        instance().getReliableTopic(sinkName).addMessageListener(message -> receivedList.add(message.getMessageObject()));
 
         // When
         Sink<Object> sink = Sinks.reliableTopic(sinkName);
@@ -882,10 +883,10 @@ public class SinksTest extends PipelineTestSupport {
         populateList(srcList);
 
         List<Object> receivedList = new ArrayList<>();
-        jet().getReliableTopic(sinkName).addMessageListener(message -> receivedList.add(message.getMessageObject()));
+        instance().getReliableTopic(sinkName).addMessageListener(message -> receivedList.add(message.getMessageObject()));
 
         // When
-        Sink<Object> sink = Sinks.reliableTopic(jet().getReliableTopic(sinkName));
+        Sink<Object> sink = Sinks.reliableTopic(instance().getReliableTopic(sinkName));
         p.readFrom(Sources.list(srcName)).writeTo(sink);
         execute();
 
@@ -916,14 +917,14 @@ public class SinksTest extends PipelineTestSupport {
         Pipeline p = Pipeline.create();
         StreamStage<KeyedWindowResult<String, Long>> input1 =
                 p.readFrom(TestSources.items(0))
-                 .addTimestamps(i -> i, 0)
-                 .groupingKey(item -> "key0")
-                 .window(WindowDefinition.sliding(1, 1))
-                 .aggregate(AggregateOperations.counting());
+                        .addTimestamps(i -> i, 0)
+                        .groupingKey(item -> "key0")
+                        .window(WindowDefinition.sliding(1, 1))
+                        .aggregate(AggregateOperations.counting());
         BatchStage<Entry<String, Long>> input2 =
                 p.readFrom(TestSources.items(entry("key1", 2L)));
 
-        IMap<String, Long> sinkMap = jet().getMap(randomMapName());
+        IMap<String, Long> sinkMap = instance().getMap(randomMapName());
         p.writeTo(Sinks.map(sinkMap), input1, input2);
 
         jet().newJob(p).join();

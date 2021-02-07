@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,9 @@ import com.hazelcast.core.LocalMemberResetException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.Util;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.util.NonCompletableFuture;
 import com.hazelcast.logging.ILogger;
@@ -45,7 +47,7 @@ import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
 /**
  * Base {@link Job} implementation for both client and member proxy.
  */
-public abstract class AbstractJobProxy<T> implements Job {
+public abstract class AbstractJobProxy<T extends JetInstance> implements Job {
 
     private final long jobId;
     private final ILogger logger;
@@ -85,6 +87,11 @@ public abstract class AbstractJobProxy<T> implements Job {
     @Override
     public long getId() {
         return jobId;
+    }
+
+    @Override
+    public String getIdString() {
+        return Util.idToString(getId());
     }
 
     @Nonnull
@@ -266,8 +273,8 @@ public abstract class AbstractJobProxy<T> implements Job {
                 masterUuid();
             } catch (IllegalStateException e) {
                 // job data will be cleaned up eventually by the coordinator
-                String msg = operationName() + " failed for job " + idAndName() + " because the cluster " +
-                        "is performing  split-brain merge and the coordinator is not known";
+                String msg = operationName() + " failed for job " + idAndName() + " because the cluster "
+                        + "is performing  split-brain merge and the coordinator is not known";
                 logger.warning(msg, t);
                 future.internalCompleteExceptionally(new CancellationException(msg));
                 return;

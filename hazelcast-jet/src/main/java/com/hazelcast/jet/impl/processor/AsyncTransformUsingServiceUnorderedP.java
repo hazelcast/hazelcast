@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.BroadcastKey;
-import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.ResettableSingletonTraverser;
 import com.hazelcast.jet.core.Watermark;
@@ -113,7 +112,7 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
     }
 
     @Override
-    protected void init(@Nonnull Processor.Context context) throws Exception {
+    protected void init(@Nonnull Context context) throws Exception {
         super.init(context);
         resultQueue = new ManyToOneConcurrentArrayQueue<>(maxConcurrentOps);
     }
@@ -231,7 +230,8 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
             if (!emitFromTraverser(currentTraverser)) {
                 return false;
             }
-            restoredObjects = new ArrayDeque<>(0); // minimize the internal storage
+            // minimize the internal storage
+            restoredObjects = new ArrayDeque<>(0);
             lastReceivedWm = minRestoredWm;
             logFine(getLogger(), "restored lastReceivedWm=%s", minRestoredWm);
             return true;

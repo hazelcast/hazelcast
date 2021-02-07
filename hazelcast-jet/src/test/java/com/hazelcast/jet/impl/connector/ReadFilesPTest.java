@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,7 +68,7 @@ public class ReadFilesPTest extends SimpleTestInClusterSupport {
         File file2 = new File(directory, randomName());
         appendToFile(file2, "hello2", "world2");
 
-        instance().newJob(p).join();
+        jetInstance().newJob(p).join();
 
         assertEquals(4, list.size());
 
@@ -83,7 +83,7 @@ public class ReadFilesPTest extends SimpleTestInClusterSupport {
         final int listLength = 10000;
         appendToFile(file1, IntStream.range(0, listLength).mapToObj(String::valueOf).toArray(String[]::new));
 
-        instance().newJob(p).join();
+        jetInstance().newJob(p).join();
 
         assertEquals(listLength, list.size());
 
@@ -99,7 +99,7 @@ public class ReadFilesPTest extends SimpleTestInClusterSupport {
         File file2 = new File(directory, "file2.txt");
         appendToFile(file2, "hello2", "world2");
 
-        instance().newJob(p).join();
+        jetInstance().newJob(p).join();
 
         assertEquals(Arrays.asList(entry("file2.txt", "hello2"), entry("file2.txt", "world2")), new ArrayList<>(list));
 
@@ -113,7 +113,7 @@ public class ReadFilesPTest extends SimpleTestInClusterSupport {
         File file1 = new File(directory, randomName());
         assertTrue(file1.mkdir());
 
-        instance().newJob(p).join();
+        jetInstance().newJob(p).join();
 
         assertEquals(0, list.size());
 
@@ -144,7 +144,7 @@ public class ReadFilesPTest extends SimpleTestInClusterSupport {
         File[] jsonFiles = createJsonFiles(prettyPrinted);
 
         Pipeline p = pipelineJson(false);
-        instance().newJob(p).join();
+        jetInstance().newJob(p).join();
 
         assertEquals(4, listJson.size());
         TestPerson testPerson = (TestPerson) listJson.get(0);
@@ -157,7 +157,7 @@ public class ReadFilesPTest extends SimpleTestInClusterSupport {
         File[] jsonFiles = createJsonFiles(prettyPrinted);
 
         Pipeline p = pipelineJson(true);
-        instance().newJob(p).join();
+        jetInstance().newJob(p).join();
 
         assertEquals(4, listJson.size());
         Map<String, Object> testPersonMap = (Map) listJson.get(0);
@@ -200,8 +200,8 @@ public class ReadFilesPTest extends SimpleTestInClusterSupport {
 
     private Pipeline pipelineJson(boolean asMap) {
         Pipeline p = Pipeline.create();
-        BatchSource<?> source  = asMap ? Sources.json(directory.getPath()) :
-                Sources.json(directory.getPath(), TestPerson.class);
+        BatchSource<?> source  = asMap ? Sources.json(directory.getPath())
+                : Sources.json(directory.getPath(), TestPerson.class);
         p.readFrom(source)
          .writeTo(Sinks.list(listJson));
 
@@ -239,9 +239,9 @@ public class ReadFilesPTest extends SimpleTestInClusterSupport {
                 return false;
             }
             TestPerson that = (TestPerson) o;
-            return age == that.age &&
-                    status == that.status &&
-                    Objects.equals(name, that.name);
+            return age == that.age
+                    && status == that.status
+                    && Objects.equals(name, that.name);
         }
 
         @Override

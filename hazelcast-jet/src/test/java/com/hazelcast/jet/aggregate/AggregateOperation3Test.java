@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,7 +52,7 @@ public class AggregateOperation3Test {
         FunctionEx<LongAccumulator, Long> finishFn = acc -> 2L;
 
         // When
-        AggregateOperation3<Object, Object, Object, LongAccumulator, Long> aggrOp = AggregateOperation
+        AggregateOperation3<Object, Object, Object, LongAccumulator, Long> aggrOp = AggregateOperations
                 .withCreate(createFn)
                 .andAccumulate0(accFn0)
                 .andAccumulate1(accFn1)
@@ -79,7 +79,7 @@ public class AggregateOperation3Test {
     @Test(expected = IllegalArgumentException.class)
     public void when_askForNonexistentTag_then_exception() {
         // Given
-        AggregateOperation3<Object, Object, Object, LongAccumulator, Long> aggrOp = AggregateOperation
+        AggregateOperation3<Object, Object, Object, LongAccumulator, Long> aggrOp = AggregateOperations
                 .withCreate(LongAccumulator::new)
                 .andAccumulate0((x, y) -> { })
                 .andAccumulate1((x, y) -> { })
@@ -93,7 +93,7 @@ public class AggregateOperation3Test {
     @Test
     public void when_withIdentityFinish() {
         // Given
-        AggregateOperation3<Object, Object, Object, LongAccumulator, Long> aggrOp = AggregateOperation
+        AggregateOperation3<Object, Object, Object, LongAccumulator, Long> aggrOp = AggregateOperations
                 .withCreate(LongAccumulator::new)
                 .andAccumulate0((acc, item) -> { })
                 .andAccumulate1((acc, item) -> { })
@@ -112,7 +112,7 @@ public class AggregateOperation3Test {
     @Test
     public void when_withCombiningAccumulateFn_then_accumulateFnCombines() {
         // Given
-        AggregateOperation3<Object, Object, Object, LongAccumulator, Long> aggrOp = AggregateOperation
+        AggregateOperation3<Object, Object, Object, LongAccumulator, Long> aggrOp = AggregateOperations
                 .withCreate(LongAccumulator::new)
                 .andAccumulate0((acc, item) -> acc.addAllowingOverflow(1))
                 .andAccumulate1((acc, item) -> acc.addAllowingOverflow(10))

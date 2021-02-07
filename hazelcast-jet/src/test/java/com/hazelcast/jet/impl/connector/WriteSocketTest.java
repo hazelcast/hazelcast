@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.connector;
 
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
@@ -91,16 +91,16 @@ public class WriteSocketTest extends JetTestSupport {
             }
         }));
 
-        JetInstance jetInstance = createJetMember();
-        createJetMember();
-        IMap<Integer, String> map = jetInstance.getMap("map");
+        HazelcastInstance instance = createMember();
+        createMember();
+        IMap<Integer, String> map = instance.getMap("map");
         range(0, ITEM_COUNT).forEach(i -> map.put(i, String.valueOf(i)));
 
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.map("map"))
-         .writeTo(Sinks.socket("localhost", serverSocket.getLocalPort()));
+                .writeTo(Sinks.socket("localhost", serverSocket.getLocalPort()));
 
-        jetInstance.newJob(p).join();
+        instance.getJetInstance().newJob(p).join();
         assertTrueEventually(() -> assertEquals(ITEM_COUNT, counter.get()));
         serverSocket.close();
         // wait a little to check, if the counter doesn't get too far

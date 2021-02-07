@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,7 +56,7 @@ public class ConvenientSourcePTest {
                 .build();
 
         TestSupport
-                .verifyProcessor(((StreamSourceTransform<Integer>) source).metaSupplierFn.apply(noEventTime()))
+                .verifyProcessor(((StreamSourceTransform<Integer>) source).getMetaSupplierFn().apply(noEventTime()))
                 .runUntilOutputMatches(10_000, 0)
                 .disableProgressAssertion()
                 .expectOutput(Arrays.asList(0, 1, 2, 3, 4));
@@ -78,7 +78,7 @@ public class ConvenientSourcePTest {
                 .build();
 
         TestSupport
-                .verifyProcessor(((StreamSourceTransform<String>) source).metaSupplierFn.apply(noEventTime()))
+                .verifyProcessor(((StreamSourceTransform<String>) source).getMetaSupplierFn().apply(noEventTime()))
                 .runUntilOutputMatches(10_000, 0)
                 .disableProgressAssertion()
                 .outputChecker((e, a) -> new HashSet<>(e).equals(new HashSet<>(a)))
@@ -95,7 +95,7 @@ public class ConvenientSourcePTest {
 
         exception.expectMessage("streaming source must not close the buffer");
         TestSupport
-                .verifyProcessor(((StreamSourceTransform<Integer>) source).metaSupplierFn.apply(noEventTime()))
+                .verifyProcessor(((StreamSourceTransform<Integer>) source).getMetaSupplierFn().apply(noEventTime()))
                 .expectOutput(Collections.emptyList());
     }
 }

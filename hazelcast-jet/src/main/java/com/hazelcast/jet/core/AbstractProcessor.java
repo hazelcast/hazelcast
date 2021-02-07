@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Function;
 
@@ -90,7 +89,7 @@ public abstract class AbstractProcessor implements Processor {
      */
     @Override
     public final void restoreFromSnapshot(@Nonnull Inbox inbox) {
-        for (Map.Entry entry; (entry = (Map.Entry) inbox.poll()) != null; ) {
+        for (Entry entry; (entry = (Entry) inbox.poll()) != null; ) {
             restoreFromSnapshot(entry.getKey(), entry.getValue());
         }
     }
@@ -497,7 +496,8 @@ public abstract class AbstractProcessor implements Processor {
      * all defined output ordinals.
      */
     @Nonnull
-    @SuppressFBWarnings("NP_NULL_PARAM_DEREF_NONVIRTUAL") // possible spotbugs bug
+    // possible spotbugs bug
+    @SuppressFBWarnings("NP_NULL_PARAM_DEREF_NONVIRTUAL")
     protected final <T, R> FlatMapper<T, R> flatMapper(
             @Nonnull Function<? super T, ? extends Traverser<? extends R>> mapper
     ) {

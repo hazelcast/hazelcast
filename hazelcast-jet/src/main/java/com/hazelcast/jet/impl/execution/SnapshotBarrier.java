@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,8 @@ public final class SnapshotBarrier implements BroadcastItem {
     private final boolean isTerminal;
 
     public SnapshotBarrier(long snapshotId, boolean isTerminal) {
-        assert snapshotId >= 0; // snapshot ID starts at 0 and is only incremented
+        // snapshot ID starts at 0 and is only incremented
+        assert snapshotId >= 0;
         this.snapshotId = snapshotId;
         this.isTerminal = isTerminal;
     }
@@ -54,8 +55,8 @@ public final class SnapshotBarrier implements BroadcastItem {
             return false;
         }
         SnapshotBarrier that = (SnapshotBarrier) o;
-        return snapshotId == that.snapshotId &&
-                isTerminal == that.isTerminal;
+        return snapshotId == that.snapshotId
+                && isTerminal == that.isTerminal;
     }
 
     @Override

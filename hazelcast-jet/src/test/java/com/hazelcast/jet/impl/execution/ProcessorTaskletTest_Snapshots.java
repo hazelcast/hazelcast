@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -406,7 +406,7 @@ public class ProcessorTaskletTest_Snapshots {
 
     private List<Object> getSnapshotBufferValues() {
         return snapshotCollector.getBuffer().stream()
-                                .map(e -> (e instanceof Map.Entry) ? deserializeEntryValue((Map.Entry) e) : e)
+                                .map(e -> (e instanceof Map.Entry) ? deserializeEntryValue((Entry) e) : e)
                                 .collect(Collectors.toList());
     }
 
@@ -451,7 +451,7 @@ public class ProcessorTaskletTest_Snapshots {
         boolean isStreaming;
         private Outbox outbox;
 
-        private Queue<Map.Entry> snapshotQueue = new ArrayDeque<>();
+        private Queue<Entry> snapshotQueue = new ArrayDeque<>();
 
         @Override
         public void init(@Nonnull Outbox outbox, @Nonnull Context context) {
@@ -505,7 +505,7 @@ public class ProcessorTaskletTest_Snapshots {
 
         @Override
         public boolean saveToSnapshot() {
-            for (Map.Entry item; (item = snapshotQueue.peek()) != null; ) {
+            for (Entry item; (item = snapshotQueue.peek()) != null; ) {
                 if (!outbox.offerToSnapshot(item.getKey(), item.getValue())) {
                     return false;
                 } else {

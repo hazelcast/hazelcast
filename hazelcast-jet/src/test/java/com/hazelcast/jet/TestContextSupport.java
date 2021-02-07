@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.cluster.Address;
-import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.core.Processor;
@@ -36,6 +35,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
+import static com.hazelcast.jet.impl.util.Util.getImpl;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -95,8 +95,8 @@ public final class TestContextSupport {
         public void init(@Nonnull Context context) throws Exception {
             if (context instanceof TestProcessorSupplierContext) {
                 TestProcessorSupplierContext c = (TestProcessorSupplierContext) context;
-                NodeEngine nodeEngine = ((HazelcastInstanceImpl) c.jetInstance().getHazelcastInstance()).node.nodeEngine;
-                context = new ProcCtx(c.jetInstance(), c.jobId(), c.executionId(), c.jobConfig(),
+                NodeEngine nodeEngine = getImpl(c.instance()).node.nodeEngine;
+                context = new ProcCtx(c.instance(), c.jobId(), c.executionId(), c.jobConfig(),
                         c.logger(), c.vertexName(), 1, 1, c.processingGuarantee(),
                         c.localParallelism(), 1, c.memberCount(), new ConcurrentHashMap<>(),
                         (InternalSerializationService) nodeEngine.getSerializationService());
@@ -116,8 +116,8 @@ public final class TestContextSupport {
             context = super.initContext(context);
             if (context instanceof TestProcessorContext) {
                 TestProcessorContext c = (TestProcessorContext) context;
-                NodeEngine nodeEngine = ((HazelcastInstanceImpl) c.jetInstance().getHazelcastInstance()).node.nodeEngine;
-                context = new ProcCtx(c.jetInstance(), c.jobId(), c.executionId(), c.jobConfig(),
+                NodeEngine nodeEngine = getImpl(c.instance()).node.nodeEngine;
+                context = new ProcCtx(c.instance(), c.jobId(), c.executionId(), c.jobConfig(),
                         c.logger(), c.vertexName(), c.localProcessorIndex(), c.globalProcessorIndex(),
                         c.processingGuarantee(), c.localParallelism(), c.memberIndex(), c.memberCount(),
                         new ConcurrentHashMap<>(), (InternalSerializationService) nodeEngine.getSerializationService());

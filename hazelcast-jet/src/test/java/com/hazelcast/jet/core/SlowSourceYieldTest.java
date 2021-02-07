@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,12 +39,12 @@ public class SlowSourceYieldTest extends SimpleTestInClusterSupport {
 
     @Test
     public void when_slowSource_then_completeYields() {
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex source = dag.newVertex("source", SlowSourceP::new).localParallelism(1);
         Vertex sink = dag.newVertex("sink", noopP()).localParallelism(1);
         dag.edge(between(source, sink));
 
-        instance().newJob(dag).join();
+        jetInstance().newJob(dag).join();
         assertTrue("processor never yielded", SlowSourceP.yieldCount > 0);
     }
 

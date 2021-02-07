@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -143,8 +143,8 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
             @Nonnull KeyedWindowResultFunction<? super K, ? super R, ? extends OUT> mapToOutputFn,
             boolean isLastStage
     ) {
-        checkTrue(keyFns.size() == aggrOp.arity(), keyFns.size() + " key functions " +
-                "provided for " + aggrOp.arity() + "-arity aggregate operation");
+        checkTrue(keyFns.size() == aggrOp.arity(), keyFns.size() + " key functions "
+                + "provided for " + aggrOp.arity() + "-arity aggregate operation");
         if (!winPolicy.isTumbling()) {
             requireNonNull(aggrOp.combineFn(), "AggregateOperation.combineFn is required for sliding windows");
         }
@@ -203,7 +203,7 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
                 rangeStart,
                 topTs + winPolicy.windowSize() - winPolicy.frameSize(),
                 winPolicy.frameSize())
-            .boxed();
+                .boxed();
         earlyWinTraverser = traverseStream(earlyWinRange)
                 .flatMap(winEnd -> traverseIterable(computeWindow(winEnd).entrySet())
                         .map(e -> mapToOutputFn.apply(
@@ -287,7 +287,7 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
                     || minRestoredNextWinToEmit == Long.MAX_VALUE
                     || minRestoredNextWinToEmit == newNextWinToEmit
                     : "different values for nextWinToEmit restored, before=" + minRestoredNextWinToEmit
-                            + ", new=" + newNextWinToEmit;
+                    + ", new=" + newNextWinToEmit;
             minRestoredNextWinToEmit = Math.min(newNextWinToEmit, minRestoredNextWinToEmit);
             return;
         }
@@ -298,9 +298,9 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
         if (higherFrameTs != k.timestamp) {
             if (!badFrameRestored) {
                 badFrameRestored = true;
-                getLogger().warning("Frames in the state do not match the current frame size: they were likely " +
-                        "saved for a different window slide step or a different offset. The window results will " +
-                        "probably be incorrect until all restored frames are emitted.");
+                getLogger().warning("Frames in the state do not match the current frame size: they were likely "
+                        + "saved for a different window slide step or a different offset. The window results will "
+                        + "probably be incorrect until all restored frames are emitted.");
             }
         }
         minRestoredFrameTs = Math.min(higherFrameTs, minRestoredFrameTs);
@@ -337,7 +337,7 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
             // has smaller window size
             if (nextWinToEmit > Long.MIN_VALUE + winPolicy.windowSize()) {
                 for (long ts = minRestoredFrameTs; ts <= nextWinToEmit - winPolicy.windowSize();
-                        ts += winPolicy.frameSize()) {
+                     ts += winPolicy.frameSize()) {
                     Map<K, A> removed = tsToKeyToAcc.remove(ts);
                     if (removed != null) {
                         totalFrames.inc(-1);
@@ -524,11 +524,14 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
 
         @Override
         public boolean equals(Object o) {
-            SnapshotKey that;
-            return this == o
-                    || o instanceof SnapshotKey
-                    && this.timestamp == (that = (SnapshotKey) o).timestamp
-                    && Objects.equals(this.key, that.key);
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof SnapshotKey)) {
+                return false;
+            }
+            SnapshotKey that = (SnapshotKey) o;
+            return this.timestamp == that.timestamp && Objects.equals(this.key, that.key);
         }
 
         @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -119,7 +119,7 @@ public class WindowGroupTransform<K, R> extends AbstractTransform {
                         aggrOp,
                         jetEventOfKeyedWindowResultFn()
                 ));
-        p.addEdges(this, pv.v, (e, ord) -> e.distributed().partitioned(keyFns.get(ord)));
+        p.addEdges(this, pv.vertex(), (e, ord) -> e.distributed().partitioned(keyFns.get(ord)));
     }
 
     //              ---------       ---------
@@ -141,7 +141,7 @@ public class WindowGroupTransform<K, R> extends AbstractTransform {
     //              -------------------------
     private void addSlidingWindowTwoStage(Planner p, SlidingWindowDefinition wDef) {
         SlidingWindowPolicy winPolicy = slidingWinPolicy(wDef.windowSize(), wDef.slideBy());
-        Vertex v1 = p.dag.newVertex(name() + FIRST_STAGE_VERTEX_NAME_SUFFIX, accumulateByFrameP(
+        Vertex v1 = p.getDag().newVertex(name() + FIRST_STAGE_VERTEX_NAME_SUFFIX, accumulateByFrameP(
                 keyFns,
                 nCopies(keyFns.size(), (ToLongFunctionEx<JetEvent<?>>) JetEvent::timestamp),
                 TimestampKind.EVENT,
@@ -151,7 +151,7 @@ public class WindowGroupTransform<K, R> extends AbstractTransform {
         PlannerVertex pv2 = p.addVertex(this, name(), determinedLocalParallelism(),
                 combineToSlidingWindowP(winPolicy, aggrOp, jetEventOfKeyedWindowResultFn()));
         p.addEdges(this, v1, (e, ord) -> e.partitioned(keyFns.get(ord), HASH_CODE));
-        p.dag.edge(between(v1, pv2.v).distributed().partitioned(entryKey()));
+        p.getDag().edge(between(v1, pv2.vertex()).distributed().partitioned(entryKey()));
     }
 
     //               ---------       ---------
@@ -176,7 +176,7 @@ public class WindowGroupTransform<K, R> extends AbstractTransform {
                         aggrOp,
                         jetEventOfKeyedWindowResultFn()
                 ));
-        p.addEdges(this, pv.v, (e, ord) -> e.distributed().partitioned(keyFns.get(ord)));
+        p.addEdges(this, pv.vertex(), (e, ord) -> e.distributed().partitioned(keyFns.get(ord)));
     }
 
     @SuppressWarnings("unchecked")

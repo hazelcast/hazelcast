@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,12 @@
 package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.jet.accumulator.LongAccumulator;
+import com.hazelcast.jet.aggregate.AggregateBuilders;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.aggregate.AggregateOperations;
 import com.hazelcast.jet.aggregate.CoAggregateOperationBuilder;
+import com.hazelcast.jet.aggregate.WindowGroupAggregateBuilder;
+import com.hazelcast.jet.aggregate.WindowGroupAggregateBuilder1;
 import com.hazelcast.jet.datamodel.ItemsByTag;
 import com.hazelcast.jet.datamodel.KeyedWindowResult;
 import com.hazelcast.jet.datamodel.Tag;
@@ -141,7 +144,7 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
                     ? streamStageFromList(input, EARLY_RESULTS_PERIOD)
                     : streamStageFromList(input);
             return sourceStage.flatMap(i -> traverseItems(entry("a", i), entry("b", i)))
-                              .groupingKey(Entry::getKey);
+                    .groupingKey(Entry::getKey);
         }
     }
 
@@ -163,10 +166,10 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
         execute();
         assertEquals(
                 IntStream.range(0, itemCount)
-                         .mapToObj(i -> String.format("(%04d, %04d)", roundUp(i + 1, winSize), i / 2))
-                         .distinct()
-                         .sorted()
-                         .collect(joining("\n")),
+                        .mapToObj(i -> String.format("(%04d, %04d)", roundUp(i + 1, winSize), i / 2))
+                        .distinct()
+                        .sorted()
+                        .collect(joining("\n")),
                 streamToString(
                         this.<Integer>sinkStreamOfWinResult(),
                         wr -> String.format("(%04d, %04d)", wr.end(), wr.result() / 2))
@@ -441,7 +444,8 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
         StreamStageWithKey<Entry<String, Integer>, String> stage1 = fx.newSourceStage();
 
         // When
-        WindowGroupAggregateBuilder<String, Long> b = stage0.window(fx.tumblingWinDef).aggregateBuilder(SUMMING);
+        WindowGroupAggregateBuilder<String, Long> b =
+                AggregateBuilders.aggregateBuilder(stage0.window(fx.tumblingWinDef), SUMMING);
         Tag<Long> tag0 = b.tag0();
         Tag<Long> tag1 = b.add(stage1, SUMMING);
         StreamStage<KeyedWindowResult<String, ItemsByTag>> aggregated = b.build();
@@ -463,9 +467,9 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
         StreamStageWithKey<Entry<String, Integer>, String> stage0 = fx.newSourceStage();
         StreamStageWithKey<Entry<String, Integer>, String> stage1 = fx.newSourceStage();
 
-        WindowGroupAggregateBuilder1<Entry<String, Integer>, String> b = stage0
-                .window(fx.tumblingWinDef)
-                .aggregateBuilder();
+
+        WindowGroupAggregateBuilder1<Entry<String, Integer>, String> b =
+                AggregateBuilders.aggregateBuilder1(stage0.window(fx.tumblingWinDef));
         Tag<Entry<String, Integer>> tag0_in = b.tag0();
         Tag<Entry<String, Integer>> tag1_in = b.add(stage1);
 

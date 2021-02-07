@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.JetTestInstanceFactory;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -40,26 +40,26 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 @RunWith(HazelcastSerialClassRunner.class)
 public class Job_StaleInstanceTest extends JetTestSupport {
 
-    private static JetTestInstanceFactory instanceFactory;
-    private static JetInstance client;
+    private static TestHazelcastFactory instanceFactory;
+    private static HazelcastInstance client;
     private static Job job;
 
     @BeforeClass
     public static void beforeClass() {
         TestProcessors.reset(1);
-        instanceFactory = new JetTestInstanceFactory();
-        JetInstance instance = instanceFactory.newMember();
-        DAG dag = new DAG();
+        instanceFactory = new TestHazelcastFactory();
+        HazelcastInstance instance = instanceFactory.newHazelcastInstance();
+        DAGImpl dag = new DAGImpl();
         dag.newVertex("v", () -> new NoOutputSourceP());
-        client = instanceFactory.newClient();
-        job = client.newJob(dag);
+        client = instanceFactory.newHazelcastClient();
+        job = client.getJetInstance().newJob(dag);
         assertJobStatusEventually(job, RUNNING);
 
-        instance.getHazelcastInstance().getLifecycleService().terminate();
-        instance = instanceFactory.newMember();
-        assertEqualsEventually(() -> firstItem(client.getHazelcastInstance().getCluster().getMembers())
+        instance.getLifecycleService().terminate();
+        instance = instanceFactory.newHazelcastInstance();
+        assertEqualsEventually(() -> firstItem(client.getCluster().getMembers())
                         .map(Member::getAddress).orElse(null),
-                instance.getHazelcastInstance().getCluster().getLocalMember().getAddress());
+                instance.getCluster().getLocalMember().getAddress());
     }
 
     private static <E> Optional<E> firstItem(Iterable<E> iterable) {
@@ -73,7 +73,7 @@ public class Job_StaleInstanceTest extends JetTestSupport {
     @AfterClass
     public static void afterClass() {
         TestProcessors.reset(1);
-        instanceFactory.shutdownAll();
+        instanceFactory.terminateAll();
     }
 
     @Test(expected = JobNotFoundException.class)

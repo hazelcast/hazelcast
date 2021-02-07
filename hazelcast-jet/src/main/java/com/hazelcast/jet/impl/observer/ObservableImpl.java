@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -222,8 +222,8 @@ public class ObservableImpl<T> implements Observable<T> {
                         }
                         onNewMessage(result.get(i));
                     } catch (Throwable t) {
-                        logger.warning("Terminating message listener '" + id + "'. " +
-                                "Reason: Unhandled exception, message: " + t.getMessage(), t);
+                        logger.warning("Terminating message listener '" + id + "'. "
+                                + "Reason: Unhandled exception, message: " + t.getMessage(), t);
                         cancel();
                         return;
                     }
@@ -252,8 +252,8 @@ public class ObservableImpl<T> implements Observable<T> {
                     observer.onNext((T) message);
                 }
             } catch (Throwable t) {
-                logger.warning("Exception thrown while calling observer callback for listener '" + id + "'. Will be " +
-                        "ignored. Reason: " + t.getMessage(), t);
+                logger.warning("Exception thrown while calling observer callback for listener '" + id + "'. Will be "
+                        + "ignored. Reason: " + t.getMessage(), t);
             }
         }
 
@@ -275,8 +275,8 @@ public class ObservableImpl<T> implements Observable<T> {
             } else if (t instanceof DistributedObjectDestroyedException) {
                 logFine(logger, "Terminating message listener '%s'. Reason: Topic is destroyed", id);
             } else {
-                logger.warning("Terminating message listener '" + id + "'. " +
-                        "Reason: Unhandled exception, message: " + t.getMessage(), t);
+                logger.warning("Terminating message listener '" + id + "'. "
+                        + "Reason: Unhandled exception, message: " + t.getMessage(), t);
             }
             return false;
         }
@@ -297,8 +297,8 @@ public class ObservableImpl<T> implements Observable<T> {
          */
         private boolean handleIllegalArgumentException(IllegalArgumentException t) {
             final long currentHeadSequence = ringbuffer.headSequence();
-            logFine(logger, "Message listener '%s' requested a too large sequence: %s. Jumping from old " +
-                    "sequence %d to sequence %d.", id, t.getMessage(), sequence, currentHeadSequence);
+            logFine(logger, "Message listener '%s' requested a too large sequence: %s. Jumping from old "
+                    + "sequence %d to sequence %d.", id, t.getMessage(), sequence, currentHeadSequence);
             adjustSequence(currentHeadSequence);
             return true;
         }
@@ -314,8 +314,8 @@ public class ObservableImpl<T> implements Observable<T> {
          */
         private boolean handleStaleSequenceException(StaleSequenceException staleSequenceException) {
             long headSeq = ringbuffer.headSequence();
-            logFine(logger, "Message listener '%s' ran into a stale sequence. Jumping from oldSequence %d to " +
-                    "sequence %d.", id, sequence, headSeq);
+            logFine(logger, "Message listener '%s' ran into a stale sequence. Jumping from oldSequence %d to "
+                    + "sequence %d.", id, sequence, headSeq);
             adjustSequence(headSeq);
             return true;
         }

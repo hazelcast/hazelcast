@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import javax.annotation.Nonnull;
 import java.io.Serializable;
 
 /**
- * Encapsulates the logic associated with a {@link DAG} edge that decides
+ * Encapsulates the logic associated with a {@link DAGImpl} edge that decides
  * on the partition ID of an item traveling over it. The partition ID
  * determines which cluster member and which instance of {@link Processor} on
  * that member an item will be forwarded to.

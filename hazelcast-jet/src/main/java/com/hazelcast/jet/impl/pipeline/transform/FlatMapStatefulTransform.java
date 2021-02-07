@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,6 +55,6 @@ public class FlatMapStatefulTransform<T, K, S, R> extends StatefulKeyedTransform
         determineLocalParallelism(LOCAL_PARALLELISM_USE_DEFAULT, context, false);
         PlannerVertex pv = p.addVertex(this, name(), determinedLocalParallelism(),
                 flatMapStatefulP(ttl, keyFn, timestampFn, createFn, statefulFlatMapFn, onEvictFn));
-        p.addEdges(this, pv.v, edge -> edge.partitioned(keyFn).distributed());
+        p.addEdges(this, pv.vertex(), edge -> edge.partitioned(keyFn).distributed());
     }
 }

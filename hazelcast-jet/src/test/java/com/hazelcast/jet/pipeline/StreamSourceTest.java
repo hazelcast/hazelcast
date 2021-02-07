@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,7 +62,7 @@ public class StreamSourceTest extends PipelineTestSupport {
          .aggregate(counting())
          .writeTo(sink);
 
-        Job job = allJetInstances()[0].newJob(p);
+        Job job = allInstances()[0].getJetInstance().newJob(p);
 
         if (idleTimeout > 10_000) {
             assertTrueAllTheTime(() -> assertEquals("unexpected sink size", 0, sinkList.size()), 5);

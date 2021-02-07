@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,9 @@ package com.hazelcast.jet.impl.deployment;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.cluster.Address;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.JobStatus;
@@ -45,22 +45,22 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastSerialClassRunner.class)
 public class NonSmartClientTest extends JetTestSupport {
 
-    private JetInstance client;
-    private JetInstance instance;
+    private HazelcastInstance client;
+    private HazelcastInstance instance;
 
     @Before
     public void setUp() {
-        JetConfig jetConfig = new JetConfig();
-        jetConfig.getHazelcastConfig().getMapConfig("journal*").getEventJournalConfig().setEnabled(true);
-        instance = createJetMember(jetConfig);
-        JetInstance jetInstance = createJetMember(jetConfig);
+        Config config = new Config();
+        config.getMapConfig("journal*").getEventJournalConfig().setEnabled(true);
+        instance = createMember(config);
+        HazelcastInstance jetInstance = createMember(config);
         Address address = jetInstance.getCluster().getLocalMember().getAddress();
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().setSmartRouting(false);
-        clientConfig.setClusterName(jetConfig.getHazelcastConfig().getClusterName());
+        clientConfig.setClusterName(config.getClusterName());
         clientConfig.getNetworkConfig().getAddresses().clear();
         clientConfig.getNetworkConfig().getAddresses().add(address.getHost() + ":" + address.getPort());
-        client = createJetClient(clientConfig);
+        client = createClient(clientConfig);
     }
 
     @Test
@@ -73,8 +73,8 @@ public class NonSmartClientTest extends JetTestSupport {
         //When
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.list(sourceName))
-         .writeTo(Sinks.list(sinkName));
-        client.newJob(p).join();
+                .writeTo(Sinks.list(sinkName));
+        client.getJetInstance().newJob(p).join();
 
         //Then
         assertEquals(10, instance.getList(sinkName).size());
@@ -87,19 +87,19 @@ public class NonSmartClientTest extends JetTestSupport {
 
         //When
         Pipeline p = streamingPipeline();
-        Job job = client.newJob(p, new JobConfig().setName(jobName));
+        Job job = client.getJetInstance().newJob(p, new JobConfig().setName(jobName));
 
         long jobId = job.getId();
 
         //Then
         assertTrueEventually(() -> {
-            assertNotNull(client.getJob(jobId));
-            assertNotNull(client.getJob(jobName));
-            assertTrue(client.getJobs().stream().anyMatch(j -> j.getId() == jobId));
-            assertFalse(client.getJobs(jobName).isEmpty());
-            assertNotNull(client.getJob(jobId).getStatus());
-            assertEquals(client.getJob(jobId).getStatus(), JobStatus.RUNNING);
-            Job j = client.getJob(jobName);
+            assertNotNull(client.getJetInstance().getJob(jobId));
+            assertNotNull(client.getJetInstance().getJob(jobName));
+            assertTrue(client.getJetInstance().getJobs().stream().anyMatch(j -> j.getId() == jobId));
+            assertFalse(client.getJetInstance().getJobs(jobName).isEmpty());
+            assertNotNull(client.getJetInstance().getJob(jobId).getStatus());
+            assertEquals(client.getJetInstance().getJob(jobId).getStatus(), JobStatus.RUNNING);
+            Job j = client.getJetInstance().getJob(jobName);
             assertNotNull(j.getConfig());
             assertGreaterOrEquals("submissionTime", j.getSubmissionTime(), 0);
         }, 10);
@@ -115,7 +115,7 @@ public class NonSmartClientTest extends JetTestSupport {
         job.suspend();
 
         //Then
-        assertJobStatusEventually(client.getJob(job.getName()), JobStatus.SUSPENDED);
+        assertJobStatusEventually(client.getJetInstance().getJob(job.getName()), JobStatus.SUSPENDED);
     }
 
     @Test
@@ -124,13 +124,13 @@ public class NonSmartClientTest extends JetTestSupport {
         Job job = startJobAndVerifyItIsRunning();
         job.suspend();
         String jobName = job.getName();
-        assertJobStatusEventually(client.getJob(jobName), JobStatus.SUSPENDED);
+        assertJobStatusEventually(client.getJetInstance().getJob(jobName), JobStatus.SUSPENDED);
 
         //When
         job.resume();
 
         //Then
-        assertJobStatusEventually(client.getJob(jobName), JobStatus.RUNNING);
+        assertJobStatusEventually(client.getJetInstance().getJob(jobName), JobStatus.RUNNING);
     }
 
     @Test
@@ -142,7 +142,7 @@ public class NonSmartClientTest extends JetTestSupport {
         job.cancel();
 
         //Then
-        assertJobStatusEventually(client.getJob(job.getName()), JobStatus.FAILED);
+        assertJobStatusEventually(client.getJetInstance().getJob(job.getName()), JobStatus.FAILED);
     }
 
     @Test
@@ -151,7 +151,7 @@ public class NonSmartClientTest extends JetTestSupport {
         startJobAndVerifyItIsRunning();
 
         //When
-        List<JobSummary> summaryList = ((JetClientInstanceImpl) client).getJobSummaryList();
+        List<JobSummary> summaryList = ((JetClientInstanceImpl) client.getJetInstance()).getJobSummaryList();
 
         //Then
         assertNotNull(summaryList);
@@ -161,16 +161,16 @@ public class NonSmartClientTest extends JetTestSupport {
     private Job startJobAndVerifyItIsRunning() {
         String jobName = randomName();
         Pipeline p = streamingPipeline();
-        Job job = client.newJob(p, new JobConfig().setName(jobName));
-        assertJobStatusEventually(client.getJob(jobName), JobStatus.RUNNING);
+        Job job = client.getJetInstance().newJob(p, new JobConfig().setName(jobName));
+        assertJobStatusEventually(client.getJetInstance().getJob(jobName), JobStatus.RUNNING);
         return job;
     }
 
     private Pipeline streamingPipeline() {
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.mapJournal("journal" + randomMapName(), JournalInitialPosition.START_FROM_OLDEST))
-         .withoutTimestamps()
-         .writeTo(Sinks.map(randomMapName()));
+                .withoutTimestamps()
+                .writeTo(Sinks.map(randomMapName()));
         return p;
     }
 }

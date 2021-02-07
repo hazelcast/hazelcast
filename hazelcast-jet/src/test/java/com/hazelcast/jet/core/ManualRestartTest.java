@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.client.map.helpers.AMapStore;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobRestartWithSnapshotTest.SequencesInPartitionsGeneratorP;
@@ -63,15 +63,15 @@ public class ManualRestartTest extends JetTestSupport {
     @Rule
     public ExpectedException exception = ExpectedException.none();
 
-    private DAG dag;
-    private JetInstance[] instances;
+    private DAGImpl dag;
+    private HazelcastInstance[] instances;
 
     @Before
     public void setup() {
         TestProcessors.reset(NODE_COUNT * LOCAL_PARALLELISM);
 
-        dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, NODE_COUNT)));
-        instances = createJetMembers(NODE_COUNT);
+        dag = new DAGImpl().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, NODE_COUNT)));
+        instances = createMembers(NODE_COUNT);
     }
 
     @Test
@@ -86,15 +86,15 @@ public class ManualRestartTest extends JetTestSupport {
 
     private void testJobRestartWhenJobIsRunning(boolean autoRestartOnMemberFailureEnabled) {
         // Given that the job is running
-        JetInstance client = createJetClient();
-        Job job = client.newJob(dag, new JobConfig().setAutoScaling(autoRestartOnMemberFailureEnabled));
+        HazelcastInstance client = createClient();
+        Job job = client.getJetInstance().newJob(dag, new JobConfig().setAutoScaling(autoRestartOnMemberFailureEnabled));
 
         assertTrueEventually(() -> assertEquals(NODE_COUNT, MockPS.initCount.get()));
 
         // When the job is restarted after new members join to the cluster
         int newMemberCount = 2;
         for (int i = 0; i < newMemberCount; i++) {
-            createJetMember();
+            createMember();
         }
 
         assertTrueAllTheTime(() -> assertEquals(NODE_COUNT, MockPS.initCount.get()), 3);
@@ -109,11 +109,11 @@ public class ManualRestartTest extends JetTestSupport {
     @Test
     public void when_jobIsNotBeingExecuted_then_itCannotBeRestarted() {
         // Given that the job execution has not started
-        rejectOperationsBetween(instances[0].getHazelcastInstance(), instances[1].getHazelcastInstance(),
+        rejectOperationsBetween(instances[0], instances[1],
                 JetInitDataSerializerHook.FACTORY_ID, singletonList(JetInitDataSerializerHook.INIT_EXECUTION_OP));
 
-        JetInstance client = createJetClient();
-        Job job = client.newJob(dag);
+        HazelcastInstance client = createClient();
+        Job job = client.getJetInstance().newJob(dag);
 
         assertJobStatusEventually(job, STARTING);
 
@@ -126,8 +126,8 @@ public class ManualRestartTest extends JetTestSupport {
     @Test
     public void when_jobIsCompleted_then_itCannotBeRestarted() {
         // Given that the job is completed
-        JetInstance client = createJetClient();
-        Job job = client.newJob(dag);
+        HazelcastInstance client = createClient();
+        Job job = client.getJetInstance().newJob(dag);
         job.cancel();
 
         cancelAndJoin(job);
@@ -144,17 +144,17 @@ public class ManualRestartTest extends JetTestSupport {
         mapConfig.getMapStoreConfig()
                  .setClassName(FailingMapStore.class.getName())
                  .setEnabled(true);
-        instances[0].getConfig().getHazelcastConfig().addMapConfig(mapConfig);
+        instances[0].getConfig().addMapConfig(mapConfig);
         FailingMapStore.fail = false;
         FailingMapStore.failed = false;
 
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex source = dag.newVertex("source",
                 throttle(() -> new SequencesInPartitionsGeneratorP(2, 10000, true), 1000));
         Vertex sink = dag.newVertex("sink", writeListP("sink"));
         dag.edge(between(source, sink));
         source.localParallelism(1);
-        Job job = instances[0].newJob(dag, new JobConfig()
+        Job job = instances[0].getJetInstance().newJob(dag, new JobConfig()
                 .setProcessingGuarantee(EXACTLY_ONCE)
                 .setSnapshotIntervalMillis(2000));
 

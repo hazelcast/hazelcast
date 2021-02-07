@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,8 @@ import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.aggregate.AggregateOperation2;
 import com.hazelcast.jet.aggregate.AggregateOperation3;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.datamodel.Tuple2;
+import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.impl.pipeline.transform.AbstractTransform;
 import com.hazelcast.jet.impl.pipeline.transform.AggregateTransform;
@@ -41,6 +43,9 @@ import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import static com.hazelcast.jet.aggregate.AggregateOperations.aggregateOperation2;
+import static com.hazelcast.jet.aggregate.AggregateOperations.aggregateOperation3;
+import static com.hazelcast.jet.impl.pipeline.TransformFactory.sortTransform;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.jet.impl.util.Util.toList;
 import static java.util.Arrays.asList;
@@ -68,51 +73,60 @@ public class BatchStageImpl<T> extends ComputeStageImplBase<T> implements BatchS
         super(toCopy, keyFn);
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public <K> BatchStageWithKey<T, K> groupingKey(@Nonnull FunctionEx<? super T, ? extends K> keyFn) {
         checkSerializable(keyFn, "keyFn");
         return new BatchStageWithKeyImpl<>(this, keyFn);
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public <K> BatchStage<T> rebalance(@Nonnull FunctionEx<? super T, ? extends K> keyFn) {
         checkSerializable(keyFn, "keyFn");
         return new BatchStageImpl<>(this, keyFn);
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public BatchStage<T> rebalance() {
         return new BatchStageImpl<>(this, true);
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public BatchStage<T> sort() {
-        return attachSort(null);
+        return sortInternal(null);
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public BatchStage<T> sort(@Nonnull ComparatorEx<? super T> comparator) {
-        return attachSort(comparator);
+        return sortInternal(comparator);
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public <R> BatchStage<R> map(@Nonnull FunctionEx<? super T, ? extends R> mapFn) {
         return attachMap(mapFn);
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public BatchStage<T> filter(@Nonnull PredicateEx<T> filterFn) {
         return attachFilter(filterFn);
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public <R> BatchStage<R> flatMap(
             @Nonnull FunctionEx<? super T, ? extends Traverser<R>> flatMapFn
     ) {
         return attachFlatMap(flatMapFn);
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public <S, R> BatchStage<R> mapStateful(
             @Nonnull SupplierEx<? extends S> createFn,
             @Nonnull BiFunctionEx<? super S, ? super T, ? extends R> mapFn
@@ -120,7 +134,8 @@ public class BatchStageImpl<T> extends ComputeStageImplBase<T> implements BatchS
         return attachGlobalMapStateful(createFn, mapFn);
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public <S> BatchStage<T> filterStateful(
             @Nonnull SupplierEx<? extends S> createFn,
             @Nonnull BiPredicateEx<? super S, ? super T> filterFn
@@ -128,7 +143,8 @@ public class BatchStageImpl<T> extends ComputeStageImplBase<T> implements BatchS
         return attachGlobalMapStateful(createFn, (s, t) -> filterFn.test(s, t) ? t : null);
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public <S, R> BatchStage<R> flatMapStateful(
             @Nonnull SupplierEx<? extends S> createFn,
             @Nonnull BiFunctionEx<? super S, ? super T, ? extends Traverser<R>> flatMapFn
@@ -136,7 +152,8 @@ public class BatchStageImpl<T> extends ComputeStageImplBase<T> implements BatchS
         return attachGlobalFlatMapStateful(createFn, flatMapFn);
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public <S, R> BatchStage<R> mapUsingService(
             @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull BiFunctionEx<? super S, ? super T, ? extends R> mapFn
@@ -144,7 +161,8 @@ public class BatchStageImpl<T> extends ComputeStageImplBase<T> implements BatchS
         return attachMapUsingService(serviceFactory, mapFn);
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public <S, R> BatchStage<R> mapUsingServiceAsync(
             @Nonnull ServiceFactory<?, S> serviceFactory,
             int maxConcurrentOps,
@@ -155,7 +173,8 @@ public class BatchStageImpl<T> extends ComputeStageImplBase<T> implements BatchS
                 (s, t) -> mapAsyncFn.apply(s, t).thenApply(Traversers::singleton));
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public <S, R> BatchStage<R> mapUsingServiceAsyncBatched(
             @Nonnull ServiceFactory<?, S> serviceFactory,
             int maxBatchSize,
@@ -165,7 +184,8 @@ public class BatchStageImpl<T> extends ComputeStageImplBase<T> implements BatchS
                 (s, t) -> mapAsyncFn.apply(s, t).thenApply(list -> toList(list, Traversers::singleton)));
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public <S> BatchStage<T> filterUsingService(
             @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull BiPredicateEx<? super S, ? super T> filterFn
@@ -173,7 +193,8 @@ public class BatchStageImpl<T> extends ComputeStageImplBase<T> implements BatchS
         return attachFilterUsingService(serviceFactory, filterFn);
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public <S, R> BatchStage<R> flatMapUsingService(
             @Nonnull ServiceFactory<?, S> serviceFactory,
             @Nonnull BiFunctionEx<? super S, ? super T, ? extends Traverser<R>> flatMapFn
@@ -181,12 +202,14 @@ public class BatchStageImpl<T> extends ComputeStageImplBase<T> implements BatchS
         return attachFlatMapUsingService(serviceFactory, flatMapFn);
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public BatchStage<T> merge(@Nonnull BatchStage<? extends T> other) {
         return attachMerge(other);
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public <K, T1_IN, T1, R> BatchStage<R> hashJoin(
             @Nonnull BatchStage<T1_IN> stage1,
             @Nonnull JoinClause<K, ? super T, ? super T1_IN, ? extends T1> joinClause1,
@@ -195,7 +218,8 @@ public class BatchStageImpl<T> extends ComputeStageImplBase<T> implements BatchS
         return attachHashJoin(stage1, joinClause1, mapToOutputFn);
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public <K, T1_IN, T1, R> BatchStage<R> innerHashJoin(
             @Nonnull BatchStage<T1_IN> stage1,
             @Nonnull JoinClause<K, ? super T, ? super T1_IN, ? extends T1> joinClause1,
@@ -210,7 +234,8 @@ public class BatchStageImpl<T> extends ComputeStageImplBase<T> implements BatchS
         return attachHashJoin(stage1, joinClause1, finalOutputFn);
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public <K1, K2, T1_IN, T2_IN, T1, T2, R> BatchStage<R> hashJoin2(
             @Nonnull BatchStage<T1_IN> stage1,
             @Nonnull JoinClause<K1, ? super T, ? super T1_IN, ? extends T1> joinClause1,
@@ -221,7 +246,8 @@ public class BatchStageImpl<T> extends ComputeStageImplBase<T> implements BatchS
         return attachHashJoin2(stage1, joinClause1, stage2, joinClause2, mapToOutputFn);
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public <K1, K2, T1_IN, T2_IN, T1, T2, R> BatchStage<R> innerHashJoin2(
             @Nonnull BatchStage<T1_IN> stage1,
             @Nonnull JoinClause<K1, ? super T, ? super T1_IN, ? extends T1> joinClause1,
@@ -238,12 +264,14 @@ public class BatchStageImpl<T> extends ComputeStageImplBase<T> implements BatchS
         return attachHashJoin2(stage1, joinClause1, stage2, joinClause2, finalOutputFn);
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public <R> BatchStage<R> aggregate(@Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp) {
         return attach(new AggregateTransform<>(singletonList(transform), aggrOp), fnAdapter);
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public <T1, R> BatchStage<R> aggregate2(
             @Nonnull BatchStage<T1> stage1,
             @Nonnull AggregateOperation2<? super T, ? super T1, ?, ? extends R> aggrOp
@@ -254,7 +282,18 @@ public class BatchStageImpl<T> extends ComputeStageImplBase<T> implements BatchS
                 DO_NOT_ADAPT);
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
+    public <T1, R0, R1> BatchStage<Tuple2<R0, R1>> aggregate2(
+            @Nonnull AggregateOperation1<? super T, ?, ? extends R0> aggrOp0,
+            @Nonnull BatchStage<T1> stage1,
+            @Nonnull AggregateOperation1<? super T1, ?, ? extends R1> aggrOp1
+    ) {
+        return aggregate2(stage1, aggregateOperation2(aggrOp0, aggrOp1));
+    }
+
+    @Nonnull
+    @Override
     public <T1, T2, R> BatchStage<R> aggregate3(
             @Nonnull BatchStage<T1> stage1,
             @Nonnull BatchStage<T2> stage2,
@@ -265,7 +304,20 @@ public class BatchStageImpl<T> extends ComputeStageImplBase<T> implements BatchS
                 DO_NOT_ADAPT);
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
+    public <T1, T2, R0, R1, R2> BatchStage<Tuple3<R0, R1, R2>> aggregate3(
+            @Nonnull AggregateOperation1<? super T, ?, ? extends R0> aggrOp0,
+            @Nonnull BatchStage<T1> stage1,
+            @Nonnull AggregateOperation1<? super T1, ?, ? extends R1> aggrOp1,
+            @Nonnull BatchStage<T2> stage2,
+            @Nonnull AggregateOperation1<? super T2, ?, ? extends R2> aggrOp2
+    ) {
+        return aggregate3(stage1, stage2, aggregateOperation3(aggrOp0, aggrOp1, aggrOp2, Tuple3::tuple3));
+    }
+
+    @Nonnull
+    @Override
     public BatchStage<T> peek(
             @Nonnull PredicateEx<? super T> shouldLogFn,
             @Nonnull FunctionEx<? super T, ? extends CharSequence> toStringFn
@@ -273,7 +325,8 @@ public class BatchStageImpl<T> extends ComputeStageImplBase<T> implements BatchS
         return attachPeek(shouldLogFn, toStringFn);
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public <R> BatchStage<R> customTransform(
             @Nonnull String stageName,
             @Nonnull ProcessorMetaSupplier procSupplier
@@ -281,13 +334,15 @@ public class BatchStageImpl<T> extends ComputeStageImplBase<T> implements BatchS
         return attachCustomTransform(stageName, procSupplier);
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public BatchStage<T> setLocalParallelism(int localParallelism) {
         super.setLocalParallelism(localParallelism);
         return this;
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public BatchStage<T> setName(@Nonnull String name) {
         super.setName(name);
         return this;
@@ -297,5 +352,9 @@ public class BatchStageImpl<T> extends ComputeStageImplBase<T> implements BatchS
     @SuppressWarnings("unchecked")
     <RET> RET newStage(@Nonnull AbstractTransform transform, @Nonnull FunctionAdapter fnAdapter) {
         return (RET) new BatchStageImpl<>(transform, pipelineImpl);
+    }
+
+    private BatchStage<T> sortInternal(ComparatorEx<? super T> comparator) {
+        return attach(sortTransform(transform, comparator), fnAdapter);
     }
 }

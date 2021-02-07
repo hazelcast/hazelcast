@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.config.JobClassLoaderFactory;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.DAGImpl;
 import com.hazelcast.jet.impl.deployment.LoadResource.LoadResourceMetaSupplier;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.ServiceFactories;
@@ -62,7 +62,7 @@ public abstract class AbstractDeploymentTest extends SimpleTestInClusterSupport 
 
     @Test
     public void testDeployment_whenJarAddedAsResource_thenClassesAvailableOnClassLoader() throws Throwable {
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         dag.newVertex("load class", () -> new LoadClassesIsolated(true));
 
         JetInstance jetInstance = getJetInstance();
@@ -74,7 +74,7 @@ public abstract class AbstractDeploymentTest extends SimpleTestInClusterSupport 
 
     @Test
     public void testDeployment_whenClassAddedAsResource_thenClassAvailableOnClassLoader() throws Throwable {
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         dag.newVertex("create and print person", () -> new LoadClassesIsolated(true));
 
         JobConfig jobConfig = new JobConfig();
@@ -88,7 +88,7 @@ public abstract class AbstractDeploymentTest extends SimpleTestInClusterSupport 
 
     @Test
     public void testDeployment_whenClassAddedAsResource_then_availableInDestroyWhenCancelled() throws Throwable {
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         LoadClassesIsolated.assertionErrorInClose = null;
         dag.newVertex("v", () -> new LoadClassesIsolated(false));
 
@@ -108,7 +108,7 @@ public abstract class AbstractDeploymentTest extends SimpleTestInClusterSupport 
 
     @Test
     public void testDeployment_whenAddClass_thenNestedClassesAreAddedAsWell() throws Throwable {
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         dag.newVertex("executes lambda from a nested class", NestedClassIsLoaded::new);
 
         JobConfig jobConfig = new JobConfig();
@@ -122,7 +122,7 @@ public abstract class AbstractDeploymentTest extends SimpleTestInClusterSupport 
 
     @Test
     public void testDeployment_when_customClassLoaderFactory_then_used() throws Throwable {
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         dag.newVertex("load resource", new LoadResourceMetaSupplier());
 
         JobConfig jobConfig = new JobConfig();
@@ -133,7 +133,7 @@ public abstract class AbstractDeploymentTest extends SimpleTestInClusterSupport 
 
     @Test
     public void testDeployment_whenZipAddedAsResource_thenClassesAvailableOnClassLoader() throws Throwable {
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         dag.newVertex("load class", () -> new LoadClassesIsolated(true));
 
         JetInstance jetInstance = getJetInstance();
@@ -145,7 +145,7 @@ public abstract class AbstractDeploymentTest extends SimpleTestInClusterSupport 
 
     @Test
     public void testDeployment_whenZipAddedAsResource_thenClassesFromAllJarsAvailableOnClassLoader() throws Throwable {
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         List<String> onClasspath = new ArrayList<>();
         onClasspath.add("com.sample.pojo.person.Person$Appereance");
         onClasspath.add("com.sample.pojo.car.Car");
@@ -316,7 +316,7 @@ public abstract class AbstractDeploymentTest extends SimpleTestInClusterSupport 
 
     @Test
     public void testDeployment_whenFileAddedAsResource_thenAvailableOnClassLoader() throws Throwable {
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         dag.newVertex("load resource", new LoadResourceMetaSupplier());
 
         JobConfig jobConfig = new JobConfig();

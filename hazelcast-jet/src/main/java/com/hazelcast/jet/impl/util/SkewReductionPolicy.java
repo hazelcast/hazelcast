@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -134,8 +134,8 @@ public class SkewReductionPolicy {
             // this is possible if force-advancing the watermark because we increase
             // the queueWmValue without receiving watermark from that queue
             if (!forceAdvanceWm) {
-                throw new JetException("Watermarks not monotonically increasing on queue: " +
-                        "last one=" + queueWms[queueIndex] + ", new one=" + wmValue);
+                throw new JetException("Watermarks not monotonically increasing on queue: "
+                        + "last one=" + queueWms[queueIndex] + ", new one=" + wmValue);
             }
             return false;
         }

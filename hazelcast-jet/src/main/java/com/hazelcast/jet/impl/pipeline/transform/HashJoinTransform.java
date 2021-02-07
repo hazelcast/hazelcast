@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -121,7 +121,7 @@ public class HashJoinTransform<T0, R> extends AbstractTransform {
     @SuppressWarnings("unchecked")
     public void addToDag(Planner p, Context context) {
         determineLocalParallelism(LOCAL_PARALLELISM_USE_DEFAULT, context, p.isPreserveOrder());
-        PlannerVertex primary = p.xform2vertex.get(this.upstream().get(0));
+        PlannerVertex primary = p.getPlannerVertex(this.upstream().get(0));
         List keyFns = toList(this.clauses, JoinClause::leftKeyFn);
 
         List<Tag> tags = this.tags;
@@ -132,29 +132,29 @@ public class HashJoinTransform<T0, R> extends AbstractTransform {
         BiFunctionEx<List<Tag>, Object[], ItemsByTag> tupleToItems = tupleToItemsByTag(whereNullsNotAllowed);
 
         Vertex joiner = p.addVertex(this, name() + "-joiner", determinedLocalParallelism(),
-                () -> new HashJoinP<>(keyFns, tags, mapToOutputBiFn, mapToOutputTriFn, tupleToItems)).v;
-        Edge edgeToJoiner = from(primary.v, primary.nextAvailableOrdinal()).to(joiner, 0);
+                () -> new HashJoinP<>(keyFns, tags, mapToOutputBiFn, mapToOutputTriFn, tupleToItems)).vertex();
+        Edge edgeToJoiner = from(primary.vertex(), primary.nextAvailableOrdinal()).to(joiner, 0);
         if (p.isPreserveOrder()) {
             edgeToJoiner.isolated();
         } else {
             applyRebalancing(edgeToJoiner, this);
         }
-        p.dag.edge(edgeToJoiner);
+        p.getDag().edge(edgeToJoiner);
 
         String collectorName = name() + "-collector";
         int collectorOrdinal = 1;
         for (Transform fromTransform : tailList(this.upstream())) {
-            PlannerVertex fromPv = p.xform2vertex.get(fromTransform);
+            PlannerVertex fromPv = p.getPlannerVertex(fromTransform);
             JoinClause<?, ?, ?, ?> clause = this.clauses.get(collectorOrdinal - 1);
             FunctionEx<Object, Object> getKeyFn = (FunctionEx<Object, Object>) clause.rightKeyFn();
             FunctionEx<Object, Object> projectFn = (FunctionEx<Object, Object>) clause.rightProjectFn();
-            Vertex collector = p.dag.newVertex(collectorName + collectorOrdinal,
+            Vertex collector = p.getDag().newVertex(collectorName + collectorOrdinal,
                     () -> new HashJoinCollectP(getKeyFn, projectFn));
             collector.localParallelism(1);
-            p.dag.edge(from(fromPv.v, fromPv.nextAvailableOrdinal())
+            p.getDag().edge(from(fromPv.vertex(), fromPv.nextAvailableOrdinal())
                     .to(collector, 0)
                     .distributed().broadcast());
-            p.dag.edge(from(collector, 0)
+            p.getDag().edge(from(collector, 0)
                     .to(joiner, collectorOrdinal)
                     .broadcast().priority(-1));
             collectorOrdinal++;

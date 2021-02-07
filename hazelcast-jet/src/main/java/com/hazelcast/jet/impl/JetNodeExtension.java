@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,11 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.config.Config;
 import com.hazelcast.instance.impl.DefaultNodeExtension;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Packet;
+import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.spi.impl.NodeEngineImpl.JetPacketConsumer;
 
@@ -30,15 +32,16 @@ public class JetNodeExtension extends DefaultNodeExtension implements JetPacketC
 
     public JetNodeExtension(Node node) {
         super(node);
-        extCommon = new NodeExtensionCommon(node, new JetService(node));
+        extCommon = new NodeExtensionCommon(node);
     }
 
     @Override
     public void beforeStart() {
-        JetConfig config = JetService.findJetServiceConfig(node.getConfig());
-        if (config.getInstanceConfig().isLosslessRestartEnabled()) {
-            throw new UnsupportedOperationException("Lossless Restart is not available in the open-source version of " +
-                    "Hazelcast Jet");
+        Config config = node.getConfig();
+        JetConfig jetConfig = config.getJetConfig();
+        if (jetConfig.getInstanceConfig().isLosslessRestartEnabled()) {
+            throw new UnsupportedOperationException("Lossless Restart is not available in the open-source version of "
+                    + "Hazelcast Jet");
         }
         super.beforeStart();
     }
@@ -62,6 +65,12 @@ public class JetNodeExtension extends DefaultNodeExtension implements JetPacketC
     }
 
     @Override
+    public void beforeShutdown() {
+        extCommon.beforeShutdown();
+        super.beforeShutdown();
+    }
+
+    @Override
     public Map<String, Object> createExtensionServices() {
         return extCommon.createExtensionServices();
     }
@@ -74,5 +83,10 @@ public class JetNodeExtension extends DefaultNodeExtension implements JetPacketC
     @Override
     public void accept(Packet packet) {
         extCommon.handlePacket(packet);
+    }
+
+    @Override
+    public JetInstance getJetInstance() {
+        return extCommon.getJetInstance();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.jet.accumulator.LongAccumulator;
-import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
+import com.hazelcast.jet.aggregate.AggregateOperations;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.SlidingWindowPolicy;
 import com.hazelcast.jet.core.TimestampKind;
@@ -92,7 +92,7 @@ public class SlidingWindowPTest {
     public void before() {
         SlidingWindowPolicy winPolicy = slidingWinPolicy(4, 1);
 
-        AggregateOperation1<Entry<?, Long>, LongAccumulator, Long> operation = AggregateOperation
+        AggregateOperation1<Entry<?, Long>, LongAccumulator, Long> operation = AggregateOperations
                 .withCreate(LongAccumulator::new)
                 .andAccumulate((LongAccumulator acc, Entry<?, Long> item) -> acc.add(item.getValue()))
                 .andCombine(LongAccumulator::add)
@@ -103,12 +103,12 @@ public class SlidingWindowPTest {
         ToLongFunctionEx<Entry<Long, Long>> timestampFn = Entry::getKey;
         SupplierEx<Processor> procSupplier = singleStageProcessor
                 ? aggregateToSlidingWindowP(
-                        singletonList(keyFn),
-                        singletonList(timestampFn),
-                        TimestampKind.EVENT,
-                        winPolicy,
-                        0L,
-                        operation,
+                singletonList(keyFn),
+                singletonList(timestampFn),
+                TimestampKind.EVENT,
+                winPolicy,
+                0L,
+                operation,
                 KeyedWindowResult::new)
                 : combineToSlidingWindowP(winPolicy, operation, KeyedWindowResult::new);
 
@@ -207,23 +207,23 @@ public class SlidingWindowPTest {
                         wm(6),
                         wm(7)
                 )).expectOutput(asList(
-                        outboxFrame(0, 1),
-                        wm(0),
-                        outboxFrame(1, 2),
-                        wm(1),
-                        outboxFrame(2, 3),
-                        wm(2),
-                        outboxFrame(3, 4),
-                        wm(3),
-                        outboxFrame(4, 4),
-                        wm(4),
-                        outboxFrame(5, 3),
-                        wm(5),
-                        outboxFrame(6, 2),
-                        wm(6),
-                        outboxFrame(7, 1),
-                        wm(7)
-                ));
+                outboxFrame(0, 1),
+                wm(0),
+                outboxFrame(1, 2),
+                wm(1),
+                outboxFrame(2, 3),
+                wm(2),
+                outboxFrame(3, 4),
+                wm(3),
+                outboxFrame(4, 4),
+                wm(4),
+                outboxFrame(5, 3),
+                wm(5),
+                outboxFrame(6, 2),
+                wm(6),
+                outboxFrame(7, 1),
+                wm(7)
+        ));
     }
 
     @Test
@@ -281,12 +281,12 @@ public class SlidingWindowPTest {
                         // no WM to emit any window, everything should be emitted in complete as if we received
                         // wm(5)
                 )).expectOutput(asList(
-                        outboxFrame(0, 1),
-                        outboxFrame(1, 2),
-                        outboxFrame(2, 2),
-                        outboxFrame(3, 2),
-                        outboxFrame(4, 1)
-                ));
+                outboxFrame(0, 1),
+                outboxFrame(1, 2),
+                outboxFrame(2, 2),
+                outboxFrame(3, 2),
+                outboxFrame(4, 1)
+        ));
     }
 
     @Test
@@ -304,12 +304,12 @@ public class SlidingWindowPTest {
                         // this event is the first one not late
                         event(11L, 123L)
                 )).expectOutput(asList(
-                        wm(10),
-                        outboxFrame(11L, 123L),
-                        outboxFrame(12L, 123L),
-                        outboxFrame(13L, 123L),
-                        outboxFrame(14L, 123L)
-                ));
+                wm(10),
+                outboxFrame(11L, 123L),
+                outboxFrame(12L, 123L),
+                outboxFrame(13L, 123L),
+                outboxFrame(14L, 123L)
+        ));
     }
 
     private Entry<Long, ?> event(long frameTs, long value) {

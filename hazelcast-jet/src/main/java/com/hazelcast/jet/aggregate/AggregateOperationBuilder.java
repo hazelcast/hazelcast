@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,12 +37,9 @@ import static java.util.stream.IntStream.range;
 
 /**
  * A builder object that can be used to construct the definition of an
- * aggregate operation in a step-by-step manner. Please refer to
- * {@link AggregateOperation#withCreate(SupplierEx)
- * AggregateOperation.withCreate()} for more details.
+ * aggregate operation in a step-by-step manner.
  *
  * @param <A> the type of the accumulator
- *
  * @since 3.0
  */
 public final class AggregateOperationBuilder<A> {
@@ -50,7 +47,37 @@ public final class AggregateOperationBuilder<A> {
     @Nonnull
     private final SupplierEx<A> createFn;
 
-    AggregateOperationBuilder(@Nonnull SupplierEx<A> createFn) {
+    /**
+     * Returns a builder object, initialized with the supplied {@code createFn
+     * create} primitive, that can be used to construct the definition of an
+     * aggregate operation in a step-by-step manner.
+     * <p>
+     * The same builder is used to construct both fixed- and variable-arity
+     * aggregate operations:
+     * <ul><li>
+     *     For fixed arity use {@link
+     *     AggregateOperationBuilder#andAccumulate0(BiConsumerEx)
+     *     andAccumulate0()}, optionally followed by {@code .andAccumulate1()},
+     *     {@code .andAccumulate2()}. The return type of these methods changes as the
+     *     static types of the contributing streams are captured.
+     * </li><li>
+     *     For variable arity use {@link AggregateOperationBuilder#andAccumulate(Tag,
+     *     BiConsumerEx) andAccumulate(tag)}.
+     * </li></ul>
+     * The {@link AggregateOperationBuilder.Arity1#andExportFinish
+     * andExportFinish()} method returns the constructed aggregate operation.
+     * Its static type receives all the type parameters captured in the above
+     * method calls. For optimization purposes you may want to specify a {@code
+     * finish} primitive that is different from {@code export}, for example
+     * return the accumulator itself without copying. In that case you'll use
+     * {@code builder.andExport(exportFn).andFinish(finishFn)}.
+     * <p>
+     * The given function must be stateless and {@linkplain
+     * Processor#isCooperative() cooperative}.
+     *
+     * @param createFn the {@code create} primitive
+     */
+    public AggregateOperationBuilder(@Nonnull SupplierEx<A> createFn) {
         this.createFn = createFn;
     }
 
@@ -64,9 +91,9 @@ public final class AggregateOperationBuilder<A> {
      * aggregate operation.
      *
      * @param accumulateFn the {@code accumulate} primitive, parameters are
-     *              {@code (accumulator, item)}. It must be stateless and {@linkplain
-     *              Processor#isCooperative() cooperative}.
-     * @param <T> the expected type of input item
+     *                     {@code (accumulator, item)}. It must be stateless and {@linkplain
+     *                     Processor#isCooperative() cooperative}.
+     * @param <T>          the expected type of input item
      * @return a new builder object that captures the {@code T0} type parameter
      */
     @Nonnull
@@ -81,8 +108,8 @@ public final class AggregateOperationBuilder<A> {
      * aggregate operation.
      *
      * @param accumulateFn0 the {@code accumulate} primitive for stream-0. It
-     *     must be stateless and {@linkplain Processor#isCooperative() cooperative}.
-     * @param <T0> the expected type of item in stream-0
+     *                      must be stateless and {@linkplain Processor#isCooperative() cooperative}.
+     * @param <T0>          the expected type of item in stream-0
      * @return a new builder object that captures the {@code T0} type parameter
      */
     @Nonnull
@@ -95,7 +122,7 @@ public final class AggregateOperationBuilder<A> {
      * Selects the variable-arity variant for this aggregate operation builder.
      *
      * @return a new builder object for variable-arity aggregate operations which has
-     *         the {@code createFn} of the current builder
+     * the {@code createFn} of the current builder
      */
     public VarArity<A, Void> varArity() {
         return new VarArity<>(createFn);
@@ -106,12 +133,12 @@ public final class AggregateOperationBuilder<A> {
      * primitive for the stream tagged with the supplied tag. Also selects the
      * variable-arity variant of the aggregate operation.
      *
-     * @param tag the tag of the associated input stream
+     * @param tag          the tag of the associated input stream
      * @param accumulateFn the {@code accumulate} primitive. It must be
-     *     stateless and {@linkplain Processor#isCooperative() cooperative}.
-     * @param <T> the expected type of input item
+     *                     stateless and {@linkplain Processor#isCooperative() cooperative}.
+     * @param <T>          the expected type of input item
      * @return a new builder object for variable-arity aggregate operations which has
-     *         the {@code createFn} of the current builder
+     * the {@code createFn} of the current builder
      */
     @Nonnull
     public <T> VarArity<A, Void> andAccumulate(
@@ -126,8 +153,8 @@ public final class AggregateOperationBuilder<A> {
      * arity-2 by calling {@link #andAccumulate1(BiConsumerEx) andAccumulate1()}.
      *
      * @param <T0> type of item in stream-0
-     * @param <A> type of the accumulator
-     * @param <R> type of the aggregation result
+     * @param <A>  type of the accumulator
+     * @param <R>  type of the aggregation result
      */
     public static class Arity1<T0, A, R> {
         @Nonnull
@@ -151,8 +178,8 @@ public final class AggregateOperationBuilder<A> {
          * primitive for stream-1, returning the arity-2 variant of the builder.
          *
          * @param accumulateFn1 the {@code accumulate} primitive for stream-1. It
-         *     must be stateless and {@linkplain Processor#isCooperative() cooperative}.
-         * @param <T1> the expected type of item in stream-1
+         *                      must be stateless and {@linkplain Processor#isCooperative() cooperative}.
+         * @param <T1>          the expected type of item in stream-1
          * @return a new builder object that captures the {@code T1} type parameter
          */
         @Nonnull
@@ -215,7 +242,7 @@ public final class AggregateOperationBuilder<A> {
          * Processor#isCooperative() cooperative}.
          *
          * @throws IllegalStateException if the {@code export} primitive was
-         * not registered
+         *                               not registered
          */
         @Nonnull
         public AggregateOperation1<T0, A, R> andFinish(
@@ -223,9 +250,9 @@ public final class AggregateOperationBuilder<A> {
         ) {
             if (exportFn == null) {
                 throw new IllegalStateException(
-                        "The export primitive is not registered. Either add the missing andExport() call" +
-                        " or use andExportFinish() to register the same function as both the export and" +
-                        " finish primitive");
+                        "The export primitive is not registered. Either add the missing andExport() call"
+                                + " or use andExportFinish() to register the same function as both the export and"
+                                + " finish primitive");
             }
             checkSerializable(finishFn, "finishFn");
             return new AggregateOperation1Impl<>(
@@ -242,15 +269,15 @@ public final class AggregateOperationBuilder<A> {
          * Processor#isCooperative() cooperative}.
          *
          * @throws IllegalStateException if the {@code export} primitive is
-         * already registered
+         *                               already registered
          */
         @Nonnull
         public <R_NEW> AggregateOperation1<T0, A, R_NEW> andExportFinish(
                 @Nonnull FunctionEx<? super A, ? extends R_NEW> exportFinishFn
         ) {
             if (exportFn != null) {
-                throw new IllegalStateException("The export primitive is already registered. Call" +
-                        " andFinish() if you want to register a separate finish primitive.");
+                throw new IllegalStateException("The export primitive is already registered. Call"
+                        + " andFinish() if you want to register a separate finish primitive.");
             }
             checkSerializable(exportFinishFn, "exportFinishFn");
             return new AggregateOperation1Impl<>(
@@ -264,8 +291,8 @@ public final class AggregateOperationBuilder<A> {
      *
      * @param <T0> the type of item in stream-0
      * @param <T1> the type of item in stream-1
-     * @param <A> the type of the accumulator
-     * @param <R> type of the aggregation result
+     * @param <A>  the type of the accumulator
+     * @param <R>  type of the aggregation result
      */
     public static class Arity2<T0, T1, A, R> {
         @Nonnull
@@ -289,8 +316,8 @@ public final class AggregateOperationBuilder<A> {
          * primitive for stream-2, returning the arity-3 variant of the builder.
          *
          * @param accumulateFn2 the {@code accumulate} primitive for stream-2. It
-         *     must be stateless and {@linkplain Processor#isCooperative() cooperative}.
-         * @param <T2> the expected type of item in stream-2
+         *                      must be stateless and {@linkplain Processor#isCooperative() cooperative}.
+         * @param <T2>          the expected type of item in stream-2
          * @return a new builder object that captures the {@code T2} type parameter
          */
         @Nonnull
@@ -353,7 +380,7 @@ public final class AggregateOperationBuilder<A> {
          * Processor#isCooperative() cooperative}.
          *
          * @throws IllegalStateException if the {@code export} primitive was
-         * not registered
+         *                               not registered
          */
         @Nonnull
         public AggregateOperation2<T0, T1, A, R> andFinish(
@@ -362,9 +389,9 @@ public final class AggregateOperationBuilder<A> {
             checkSerializable(finishFn, "finishFn");
             if (exportFn == null) {
                 throw new IllegalStateException(
-                        "The export primitive is not registered. Either add the missing andExport() call" +
-                        " or use andExportFinish() to register the same function as both the export and" +
-                        " finish primitive");
+                        "The export primitive is not registered. Either add the missing andExport() call"
+                                + " or use andExportFinish() to register the same function as both the export and"
+                                + " finish primitive");
             }
             return new AggregateOperation2Impl<>(
                     createFn, accumulateFn0, accumulateFn1, combineFn, deductFn, exportFn, finishFn);
@@ -380,7 +407,7 @@ public final class AggregateOperationBuilder<A> {
          * Processor#isCooperative() cooperative}.
          *
          * @throws IllegalStateException if the {@code export} primitive is
-         * already registered
+         *                               already registered
          */
         @Nonnull
         public <R_NEW> AggregateOperation2<T0, T1, A, R_NEW> andExportFinish(
@@ -397,8 +424,8 @@ public final class AggregateOperationBuilder<A> {
      * @param <T0> the type of item in stream-0
      * @param <T1> the type of item in stream-1
      * @param <T2> the type of item in stream-2
-     * @param <A> the type of the accumulator
-     * @param <R> type of the aggregation result
+     * @param <A>  the type of the accumulator
+     * @param <R>  type of the aggregation result
      */
     public static class Arity3<T0, T1, T2, A, R> {
         @Nonnull
@@ -472,7 +499,7 @@ public final class AggregateOperationBuilder<A> {
          * Processor#isCooperative() cooperative}.
          *
          * @throws IllegalStateException if the {@code export} primitive was
-         * not registered
+         *                               not registered
          */
         @Nonnull
         public AggregateOperation3<T0, T1, T2, A, R> andFinish(
@@ -480,9 +507,9 @@ public final class AggregateOperationBuilder<A> {
         ) {
             if (exportFn == null) {
                 throw new IllegalStateException(
-                        "The export primitive is not registered. Either add the missing andExport() call" +
-                                " or use andExportFinish() to register the same function as both the export and" +
-                                " finish primitive");
+                        "The export primitive is not registered. Either add the missing andExport() call"
+                                + " or use andExportFinish() to register the same function as both the export and"
+                                + " finish primitive");
             }
             checkSerializable(finishFn, "finishFn");
             return new AggregateOperation3Impl<>(createFn,
@@ -500,7 +527,7 @@ public final class AggregateOperationBuilder<A> {
          * Processor#isCooperative() cooperative}.
          *
          * @throws IllegalStateException if the {@code export} primitive is
-         * already registered
+         *                               already registered
          */
         @Nonnull
         public <R_NEW> AggregateOperation3<T0, T1, T2, A, R_NEW> andExportFinish(
@@ -546,10 +573,10 @@ public final class AggregateOperationBuilder<A> {
          * Registers the {@link AggregateOperation#accumulateFn(Tag) accumulate}
          * primitive for the stream tagged with the supplied tag.
          *
-         * @param tag the tag of the associated input stream
+         * @param tag          the tag of the associated input stream
          * @param accumulateFn the {@code accumulate} primitive. It must be
-         *     stateless and {@linkplain Processor#isCooperative() cooperative}.
-         * @param <T> the expected type of input item
+         *                     stateless and {@linkplain Processor#isCooperative() cooperative}.
+         * @param <T>          the expected type of input item
          * @return this
          */
         @Nonnull
@@ -615,7 +642,7 @@ public final class AggregateOperationBuilder<A> {
          * Processor#isCooperative() cooperative}.
          *
          * @throws IllegalStateException if the {@code export} primitive was
-         * not registered
+         *                               not registered
          */
         @Nonnull
         public AggregateOperation<A, R> andFinish(
@@ -623,9 +650,9 @@ public final class AggregateOperationBuilder<A> {
         ) {
             if (exportFn == null) {
                 throw new IllegalStateException(
-                        "The export primitive is not registered. Either add the missing andExport() call" +
-                                " or use andExportFinish() to register the same function as both the export and" +
-                                " finish primitive");
+                        "The export primitive is not registered. Either add the missing andExport() call"
+                                + " or use andExportFinish() to register the same function as both the export and"
+                                + " finish primitive");
             }
             checkSerializable(finishFn, "finishFn");
             return new AggregateOperationImpl<>(
@@ -642,15 +669,15 @@ public final class AggregateOperationBuilder<A> {
          * Processor#isCooperative() cooperative}.
          *
          * @throws IllegalStateException if the {@code export} primitive is
-         * already registered
+         *                               already registered
          */
         @Nonnull
         public <R_NEW> AggregateOperation<A, R_NEW> andExportFinish(
                 @Nonnull FunctionEx<? super A, ? extends R_NEW> exportFinishFn
         ) {
             if (exportFn != null) {
-                throw new IllegalStateException("The export primitive is already registered. Call" +
-                        " andFinish() if you want to register a separate finish primitive.");
+                throw new IllegalStateException("The export primitive is already registered. Call"
+                        + " andFinish() if you want to register a separate finish primitive.");
             }
             checkSerializable(exportFinishFn, "exportFinishFn");
             return new AggregateOperationImpl<>(

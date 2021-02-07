@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.util;
 
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.DAGImpl;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.TestProcessors.MockP;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -67,12 +67,12 @@ public class ExceptionUtilTest extends JetTestSupport {
     @Test
     public void test_serializationFromNodeToClient() {
         // create one member and one client
-        createJetMember();
-        JetInstance client = createJetClient();
+        createMember();
+        JetInstance client = createClient().getJetInstance();
 
         RuntimeException exc = new RuntimeException("myException");
         try {
-            DAG dag = new DAG();
+            DAGImpl dag = new DAGImpl();
             dag.newVertex("source", () -> new MockP().setCompleteError(exc)).localParallelism(1);
             client.newJob(dag).join();
         } catch (Exception caught) {
@@ -83,13 +83,13 @@ public class ExceptionUtilTest extends JetTestSupport {
     @Test
     public void test_serializationOnNode() {
         // create one member and one client
-        JetInstance client = createJetMember();
+        JetInstance instance = createMember().getJetInstance();
 
         RuntimeException exc = new RuntimeException("myException");
         try {
-            DAG dag = new DAG();
+            DAGImpl dag = new DAGImpl();
             dag.newVertex("source", () -> new MockP().setCompleteError(exc)).localParallelism(1);
-            client.newJob(dag).join();
+            instance.newJob(dag).join();
         } catch (Exception caught) {
             assertThat(caught.toString(), containsString(exc.toString()));
         }

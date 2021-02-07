@@ -32,6 +32,7 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
@@ -47,6 +48,7 @@ import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.util.JVMUtil;
 import com.hazelcast.internal.util.MapUtil;
+import com.hazelcast.jet.JetInstance;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.impl.MapService;
@@ -224,5 +226,10 @@ public class DefaultClientExtension implements ClientExtension {
         HazelcastProperties properties = client.getProperties();
 
         return new DefaultNearCacheManager(ss, taskScheduler, classLoader, properties);
+    }
+
+    @Override
+    public JetInstance getJetInstance() {
+        throw new HazelcastException("Jet is not available");
     }
 }

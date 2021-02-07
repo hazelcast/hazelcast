@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ public class SuspendExecutionOnFailureTest extends TestInClusterSupport {
     @Test
     public void when_jobRunning_then_suspensionCauseThrows() {
         // Given
-        DAG dag = new DAG().vertex(new Vertex("test", () -> new NoOutputSourceP()));
+        DAGImpl dag = new DAGImpl().vertex(new Vertex("test", () -> new NoOutputSourceP()));
         Job job = jet().newJob(dag, jobConfig);
         assertJobStatusEventually(job, RUNNING);
 
@@ -73,7 +73,7 @@ public class SuspendExecutionOnFailureTest extends TestInClusterSupport {
     @Test
     public void when_jobCompleted_then_suspensionCauseThrows() {
         // Given
-        DAG dag = new DAG().vertex(new Vertex("test", Processors.noopP()));
+        DAGImpl dag = new DAGImpl().vertex(new Vertex("test", Processors.noopP()));
         Job job = jet().newJob(dag, jobConfig);
 
         // When
@@ -89,7 +89,7 @@ public class SuspendExecutionOnFailureTest extends TestInClusterSupport {
     @Test
     public void when_jobFailed_then_suspensionCauseThrows() {
         // Given
-        DAG dag = new DAG().vertex(new Vertex("test", () -> new NoOutputSourceP()));
+        DAGImpl dag = new DAGImpl().vertex(new Vertex("test", () -> new NoOutputSourceP()));
         Job job = jet().newJob(dag, jobConfig);
         assertJobStatusEventually(job, RUNNING);
 
@@ -106,7 +106,7 @@ public class SuspendExecutionOnFailureTest extends TestInClusterSupport {
     @Test
     public void when_jobSuspendedByUser_then_suspensionCauseSaysSo() {
         // Given
-        DAG dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, MEMBER_COUNT)));
+        DAGImpl dag = new DAGImpl().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, MEMBER_COUNT)));
 
         // When
         Job job = jet().newJob(dag, jobConfig);
@@ -125,7 +125,7 @@ public class SuspendExecutionOnFailureTest extends TestInClusterSupport {
     @Test
     public void when_jobSuspendedDueToFailure_then_suspensionCauseDescribeProblem() {
         // Given
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         dag.newVertex("faulty", () -> new MockP().setCompleteError(MOCK_ERROR));
 
         // When
@@ -138,10 +138,10 @@ public class SuspendExecutionOnFailureTest extends TestInClusterSupport {
         assertThat(job.getSuspensionCause()).matches(JobSuspensionCause::dueToError);
         assertThat(job.getSuspensionCause().errorCause())
                 .isNotNull()
-                .matches(error -> error.matches("(?s)Execution failure:\n" +
-                        "com.hazelcast.jet.JetException: Exception in ProcessorTasklet" +
-                        "\\{faultyJob/faulty#[0-9]+}: " +
-                        "java.lang.AssertionError: mock error.*"));
+                .matches(error -> error.matches("(?s)Execution failure:\n"
+                        + "com.hazelcast.jet.JetException: Exception in ProcessorTasklet"
+                        + "\\{faultyJob/faulty#[0-9]+}: "
+                        + "java.lang.AssertionError: mock error.*"));
 
         cancelAndJoin(job);
     }
@@ -175,7 +175,7 @@ public class SuspendExecutionOnFailureTest extends TestInClusterSupport {
                         }).setLocalParallelism(1)
                 .writeTo(Sinks.map("SuspendExecutionOnFailureTest_sinkMap"));
 
-        IMap<String, Boolean> counterMap = jet().getMap("SuspendExecutionOnFailureTest_failureMap");
+        IMap<String, Boolean> counterMap = instance().getMap("SuspendExecutionOnFailureTest_failureMap");
         counterMap.put("key", true);
 
         jobConfig.setProcessingGuarantee(ProcessingGuarantee.AT_LEAST_ONCE)
@@ -184,7 +184,7 @@ public class SuspendExecutionOnFailureTest extends TestInClusterSupport {
         Job job = jet().newJob(p, jobConfig);
         assertJobStatusEventually(job, SUSPENDED);
 
-        IMap<Integer, Integer> sinkMap = jet().getMap("SuspendExecutionOnFailureTest_sinkMap");
+        IMap<Integer, Integer> sinkMap = instance().getMap("SuspendExecutionOnFailureTest_sinkMap");
         assertTrueEventually(() -> assertEquals(interuptItem, sinkMap.size()));
 
         counterMap.put("key", false);

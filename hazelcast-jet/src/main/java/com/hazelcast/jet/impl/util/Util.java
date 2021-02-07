@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,20 +17,20 @@
 package com.hazelcast.jet.impl.util;
 
 import com.hazelcast.cluster.Address;
-import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.jet.config.EdgeConfig;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
-import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.DAGImpl;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.function.RunnableEx;
 import com.hazelcast.jet.impl.JetEvent;
-import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.spi.impl.NodeEngine;
 
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
@@ -133,10 +133,6 @@ public final class Util {
             }
         } while (!value.compareAndSet(prev, next));
         return true;
-    }
-
-    public static JetInstance getJetInstance(NodeEngine nodeEngine) {
-        return nodeEngine.<JetService>getService(JetService.SERVICE_NAME).getJetInstance();
     }
 
     public static long addClamped(long a, long b) {
@@ -249,7 +245,7 @@ public final class Util {
     public static <T> Map<Integer, List<T>> distributeObjects(int count, List<T> objects) {
         Map<Integer, List<T>> processorToObjects = range(0, objects.size())
                 .mapToObj(i -> entry(i, objects.get(i)))
-                .collect(groupingBy(e -> e.getKey() % count, mapping(Map.Entry::getValue, Collectors.toList())));
+                .collect(groupingBy(e -> e.getKey() % count, mapping(Entry::getValue, Collectors.toList())));
 
         for (int i = 0; i < count; i++) {
             processorToObjects.putIfAbsent(i, emptyList());
@@ -425,16 +421,17 @@ public final class Util {
         return value.replace("\"", "\\\"");
     }
 
-    @SuppressWarnings("WeakerAccess")  // used in jet-enterprise
-    public static CompletableFuture<Void> copyMapUsingJob(JetInstance instance, int queueSize,
+    // used in jet-enterprise
+    @SuppressWarnings("WeakerAccess")
+    public static CompletableFuture<Void> copyMapUsingJob(HazelcastInstance instance, int queueSize,
                                                           String sourceMap, String targetMap) {
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex source = dag.newVertex("readMap(" + sourceMap + ')', readMapP(sourceMap));
         Vertex sink = dag.newVertex("writeMap(" + targetMap + ')', writeMapP(targetMap));
         dag.edge(between(source, sink).setConfig(new EdgeConfig().setQueueSize(queueSize)));
         JobConfig jobConfig = new JobConfig()
                 .setName("copy-" + sourceMap + "-to-" + targetMap);
-        return instance.newJob(dag, jobConfig).getFuture();
+        return instance.getJetInstance().newJob(dag, jobConfig).getFuture();
     }
 
     /**
@@ -540,7 +537,7 @@ public final class Util {
      * </ul>
      */
     @Nonnull
-    @SuppressWarnings("checkstyle:MagicNumber") // number of hours per day isn't magic :)
+    @SuppressWarnings("checkstyle:MagicNumber")
     public static String formatJobDuration(long durationMs) {
         if (durationMs == Long.MIN_VALUE) {
             return "" + Long.MIN_VALUE;
@@ -644,5 +641,20 @@ public final class Util {
             }
             return projectedRow;
         };
+    }
+
+    /**
+     * Returns the implementation of {@link HazelcastInstance}, also handles
+     * proxy.
+     */
+    @Nonnull
+    public static HazelcastInstanceImpl getImpl(HazelcastInstance instance) {
+        if (instance instanceof HazelcastInstanceImpl) {
+            return (HazelcastInstanceImpl) instance;
+        }
+        if (instance instanceof HazelcastInstanceProxy) {
+            return ((HazelcastInstanceProxy) instance).getOriginal();
+        }
+        throw new IllegalArgumentException("Unknown HazelcastInstance implementation: " + instance.getClass());
     }
 }

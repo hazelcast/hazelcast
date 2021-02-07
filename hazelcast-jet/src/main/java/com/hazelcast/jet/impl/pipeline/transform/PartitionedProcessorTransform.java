@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -127,6 +127,6 @@ public final class PartitionedProcessorTransform<T, K> extends ProcessorTransfor
     public void addToDag(Planner p, Context context) {
         determineLocalParallelism(processorSupplier.preferredLocalParallelism(), context, p.isPreserveOrder());
         PlannerVertex pv = p.addVertex(this, name(), determinedLocalParallelism(), processorSupplier);
-        p.addEdges(this, pv.v, e -> e.partitioned(partitionKeyFn).distributed());
+        p.addEdges(this, pv.vertex(), e -> e.partitioned(partitionKeyFn).distributed());
     }
 }

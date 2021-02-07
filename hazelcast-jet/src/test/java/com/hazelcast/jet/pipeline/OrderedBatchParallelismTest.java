@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package com.hazelcast.jet.pipeline;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.accumulator.LongAccumulator;
-import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.DAGImpl;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.impl.pipeline.PipelineImpl;
@@ -215,7 +215,7 @@ public class OrderedBatchParallelismTest {
     @Test
     public void when_transform_applied_lp_should_match_expectedLP() {
         // When
-        DAG dag = applyTransformAndGetDag(transform);
+        DAGImpl dag = applyTransformAndGetDag(transform);
         // Then
         for (int i = 0; i < vertexNames.size(); i++) {
             Vertex tsVertex = dag.getVertex(vertexNames.get(i));
@@ -225,7 +225,7 @@ public class OrderedBatchParallelismTest {
         }
     }
 
-    private DAG applyTransformAndGetDag(FunctionEx<BatchStage<Long>, BatchStage<Long>> transform) {
+    private DAGImpl applyTransformAndGetDag(FunctionEx<BatchStage<Long>, BatchStage<Long>> transform) {
         PipelineImpl p = (PipelineImpl) Pipeline.create().setPreserveOrder(true);
         BatchStage<Long> source = p.readFrom(TestSources.items(1L))
                                    .setLocalParallelism(UPSTREAM_PARALLELISM);

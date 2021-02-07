@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.JobSuspensionCause;
-import com.hazelcast.jet.core.metrics.JobMetrics;
+import com.hazelcast.jet.core.metrics.JobMetricsImpl;
 import com.hazelcast.jet.impl.client.protocol.codec.JetExportSnapshotCodec;
 import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobConfigCodec;
 import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobMetricsCodec;
@@ -72,7 +72,7 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
     @Nonnull
     @Override
     public JobStatus getStatus() {
-        return callAndRetryIfTargetNotFound(()  -> {
+        return callAndRetryIfTargetNotFound(() -> {
             ClientMessage request = JetGetJobStatusCodec.encodeRequest(getId());
             ClientMessage response = invocation(request, masterUuid()).invoke().get();
             ResponseParameters parameters = JetGetJobStatusCodec.decodeResponse(response);
@@ -83,7 +83,7 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
     @Nonnull
     @Override
     public JobSuspensionCause getSuspensionCause() {
-        return callAndRetryIfTargetNotFound(()  -> {
+        return callAndRetryIfTargetNotFound(() -> {
             ClientMessage request = JetGetJobSuspensionCauseCodec.encodeRequest(getId());
             ClientMessage response = invocation(request, masterUuid()).invoke().get();
             Data data = JetGetJobSuspensionCauseCodec.decodeResponse(response);
@@ -93,8 +93,8 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
 
     @Nonnull
     @Override
-    public JobMetrics getMetrics() {
-        return callAndRetryIfTargetNotFound(()  -> {
+    public JobMetricsImpl getMetrics() {
+        return callAndRetryIfTargetNotFound(() -> {
             ClientMessage request = JetGetJobMetricsCodec.encodeRequest(getId());
             ClientMessage response = invocation(request, masterUuid()).invoke().get();
             JetGetJobMetricsCodec.ResponseParameters parameters = JetGetJobMetricsCodec.decodeResponse(response);
@@ -114,7 +114,8 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
         ClientMessage request = JetJoinSubmittedJobCodec.encodeRequest(getId());
         ClientInvocation invocation = invocation(request, masterUuid());
         // this invocation should never time out, as the job may be running for a long time
-        invocation.setInvocationTimeoutMillis(Long.MAX_VALUE); // 0 is not supported
+        // 0 is not supported so Long.MAX_VALUE
+        invocation.setInvocationTimeoutMillis(Long.MAX_VALUE);
         return invocation.invoke().thenApply(c -> null);
     }
 
@@ -173,9 +174,10 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
         });
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     protected UUID masterUuid() {
-        Member masterMember = container().getHazelcastClient().getClientClusterService().getMasterMember();
+        Member masterMember = container().client().getClientClusterService().getMasterMember();
         if (masterMember == null) {
             throw new IllegalStateException("Master isn't known");
         }
@@ -184,28 +186,28 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
 
     @Override
     protected SerializationService serializationService() {
-        return container().getHazelcastClient().getSerializationService();
+        return container().client().getSerializationService();
     }
 
     @Override
     protected LoggingService loggingService() {
-        return container().getHazelcastClient().getLoggingService();
+        return container().client().getLoggingService();
     }
 
     @Override
     protected boolean isRunning() {
-        return container().getHazelcastClient().getLifecycleService().isRunning();
+        return container().client().getLifecycleService().isRunning();
     }
 
     private ClientInvocation invocation(ClientMessage request, UUID invocationUuid) {
         return new ClientInvocation(
-                container().getHazelcastClient(), request, "jobId=" + getIdString(), invocationUuid
+                container().client(), request, "jobId=" + getIdString(), invocationUuid
         );
     }
 
     private <T> T callAndRetryIfTargetNotFound(Callable<T> action) {
         long timeLimit = System.nanoTime() + RETRY_TIME_NS;
-        for (;;) {
+        for (; ; ) {
             try {
                 return action.call();
             } catch (Exception e) {

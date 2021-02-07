@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -169,8 +169,8 @@ public abstract class WatermarkCoalescer {
         public long observeWm(int queueIndex, long wmValue) {
             assert queueIndex == 0 : "queueIndex=" + queueIndex;
             if (queueWm.get() >= wmValue) {
-                throw new JetException("Watermarks not monotonically increasing on queue: " +
-                        "last one=" + queueWm + ", new one=" + wmValue);
+                throw new JetException("Watermarks not monotonically increasing on queue: "
+                        + "last one=" + queueWm + ", new one=" + wmValue);
             }
             if (wmValue != IDLE_MESSAGE.timestamp()) {
                 queueWm.set(wmValue);
@@ -230,8 +230,8 @@ public abstract class WatermarkCoalescer {
         @Override
         public long observeWm(int queueIndex, long wmValue) {
             if (queueWms[queueIndex] >= wmValue) {
-                throw new JetException("Watermarks not monotonically increasing on queue: " +
-                        "last one=" + queueWms[queueIndex] + ", new one=" + wmValue);
+                throw new JetException("Watermarks not monotonically increasing on queue: "
+                        + "last one=" + queueWms[queueIndex] + ", new one=" + wmValue);
             }
 
             if (wmValue == IDLE_MESSAGE.timestamp()) {

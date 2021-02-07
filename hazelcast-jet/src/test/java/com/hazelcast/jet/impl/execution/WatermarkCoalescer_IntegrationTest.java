@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,10 @@
 package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.collection.IList;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.core.AbstractProcessor;
-import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.DAGImpl;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
@@ -61,7 +62,7 @@ public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
     @Parameter
     public Mode mode;
 
-    private DAG dag = new DAG();
+    private DAGImpl dag = new DAGImpl();
     private JetInstance instance;
     private IList<Object> sinkList;
 
@@ -77,12 +78,13 @@ public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
 
     @Before
     public void before() {
-        instance = super.createJetMember();
-        sinkList = instance.getHazelcastInstance().getList("sinkList");
+        HazelcastInstance member = createMember();
+        instance = member.getJetInstance();
+        sinkList = member.getList("sinkList");
     }
 
-    private static DAG createDag(Mode mode, List<Object> input1, List<Object> input2) {
-        DAG dag = new DAG();
+    private static DAGImpl createDag(Mode mode, List<Object> input1, List<Object> input2) {
+        DAGImpl dag = new DAGImpl();
 
         Vertex mapWmToString = dag.newVertex("mapWmToString", mapWatermarksToString(false)).localParallelism(1);
         Vertex sink = dag.newVertex("sink", writeListP("sinkList")).localParallelism(1);
@@ -98,7 +100,7 @@ public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
 
             case TWO_QUEUES:
                 Vertex edge = dag.newVertex("edge", ListSource.supplier(input1, input2))
-                                 .localParallelism(2);
+                        .localParallelism(2);
                 dag.edge(between(edge, mapWmToString));
                 break;
 
@@ -171,10 +173,10 @@ public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
     /**
      * A processor that emits the given list of items.
      * The list can contain special items:<ul>
-     *     <li>{@link SerializableWm} - will be emitted as a normal Watermark
-     *     <li>{@link DoneItem#DONE_ITEM} - will cause the source to complete and ignore
-     *          the rest of items. If this item is not present, it will never complete.
-     *     <li>{@link Delay} - will cause the next item to be emitted after the delay
+     * <li>{@link SerializableWm} - will be emitted as a normal Watermark
+     * <li>{@link DoneItem#DONE_ITEM} - will cause the source to complete and ignore
+     * the rest of items. If this item is not present, it will never complete.
+     * <li>{@link Delay} - will cause the next item to be emitted after the delay
      * </ul>
      */
     public static class ListSource extends AbstractProcessor {
@@ -231,7 +233,7 @@ public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
          * return lists[0] from first processor, lists[1] from the second etc.
          * The number of lists and number of requested processors must match.
          */
-        public static ProcessorMetaSupplier supplier(List<Object> ... lists) {
+        public static ProcessorMetaSupplier supplier(List<Object>... lists) {
             for (int i = 0; i < lists.length; i++) {
                 lists[i] = replaceWatermarks(lists[i]);
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,11 +84,15 @@ public class LongLongAccumulator {
 
     @Override
     public boolean equals(Object o) {
-        return this == o ||
-                o != null
-                && this.getClass() == o.getClass()
-                && this.value1 == ((LongLongAccumulator) o).value1
-                && this.value2 == ((LongLongAccumulator) o).value2;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || this.getClass() != o.getClass()) {
+            return false;
+        }
+        LongLongAccumulator that = (LongLongAccumulator) o;
+        return this.value1 == that.value1
+                && this.value2 == that.value2;
     }
 
     @Override

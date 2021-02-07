@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.BinaryOperatorEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Observable;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
@@ -842,7 +841,7 @@ public final class Sinks {
     @Nonnull
     public static <T> Sink<T> reliableTopic(@Nonnull String reliableTopicName) {
         return SinkBuilder.<ITopic<T>>sinkBuilder("reliableTopicSink(" + reliableTopicName + "))",
-                ctx -> ctx.jetInstance().getReliableTopic(reliableTopicName))
+                ctx -> ctx.instance().getReliableTopic(reliableTopicName))
                 .<T>receiveFn(ITopic::publish)
                 .build();
     }
@@ -883,7 +882,8 @@ public final class Sinks {
      */
     @Nonnull
     public static <T> Sink<T> remoteReliableTopic(@Nonnull String reliableTopicName, @Nonnull ClientConfig clientConfig) {
-        String clientXml = asXmlString(clientConfig); //conversion needed for serializability
+        //conversion needed for serializability
+        String clientXml = asXmlString(clientConfig);
         return SinkBuilder.<ITopic<T>>sinkBuilder("reliableTopicSink(" + reliableTopicName + "))",
                 ctx -> newHazelcastClient(asClientConfig(clientXml)).getReliableTopic(reliableTopicName))
                 .<T>receiveFn(ITopic::publish)
@@ -1357,7 +1357,7 @@ public final class Sinks {
      * Returns a sink that publishes to the {@link Observable} with the
      * provided name. The records that are sent to the observable can be
      * read through first getting a handle to it through
-     * {@link JetInstance#getObservable(String)} and then subscribing to
+     * {@code JetInstance#getObservable(String)} and then subscribing to
      * the events using the methods on {@link Observable}.
      * <p>
      * The {@code Observable} should be destroyed after using it. For the full

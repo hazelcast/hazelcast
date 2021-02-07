@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import static java.util.Objects.requireNonNull;
 
 public class HzSerializableProcessorSuppliersTest extends SimpleTestInClusterSupport {
 
-    private final DAG dag = new DAG();
+    private final DAGImpl dag = new DAGImpl();
     private final URL url = requireNonNull(
             getClass().getResource("DataSerializableSuppliers.jar"));
     private final ClassLoader cl = new URLClassLoader(new URL[] {url});
@@ -67,6 +67,6 @@ public class HzSerializableProcessorSuppliersTest extends SimpleTestInClusterSup
     private void submitJob() {
         JobConfig config = new JobConfig();
         config.addJar(url);
-        instances()[1].newJob(dag, config).join();
+        instances()[1].getJetInstance().newJob(dag, config).join();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.Traversers;
-import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.DAGImpl;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
@@ -188,20 +188,20 @@ public class ProcessorTransformParallelismTest {
     }
 
     private static Object[] createParamSet(
-            FunctionEx<StreamStage<Integer>, StreamStage<Integer>> cooperative_defaultLP,
-            FunctionEx<StreamStage<Integer>, StreamStage<Integer>> cooperative_explicitLP,
-            FunctionEx<StreamStage<Integer>, StreamStage<Integer>> nonCooperative_defaultLP,
-            FunctionEx<StreamStage<Integer>, StreamStage<Integer>> nonCooperative_explicitLP,
+            FunctionEx<StreamStage<Integer>, StreamStage<Integer>> cooperativeDefaultLP,
+            FunctionEx<StreamStage<Integer>, StreamStage<Integer>> cooperativeExplicitLP,
+            FunctionEx<StreamStage<Integer>, StreamStage<Integer>> nonCooperativeDefaultLP,
+            FunctionEx<StreamStage<Integer>, StreamStage<Integer>> nonCooperativeExplicitLP,
             String transformName
     ) {
-        return new Object[]{cooperative_defaultLP, cooperative_explicitLP, nonCooperative_defaultLP,
-                nonCooperative_explicitLP, transformName};
+        return new Object[]{cooperativeDefaultLP, cooperativeExplicitLP, nonCooperativeDefaultLP,
+                nonCooperativeExplicitLP, transformName};
     }
 
     @Test
     public void when_cooperative_defaultLP_then_UsesProvidedLP() {
         // When
-        DAG dag = applyTransformAndGetDag(cooperative_defaultLP);
+        DAGImpl dag = applyTransformAndGetDag(cooperative_defaultLP);
 
         // Then
         Vertex tsVertex = dag.getVertex(transformName);
@@ -211,7 +211,7 @@ public class ProcessorTransformParallelismTest {
     @Test
     public void when_cooperative_explicitLP_then_UsesDefaultLP() {
         // When
-        DAG dag = applyTransformAndGetDag(cooperative_explicitLP);
+        DAGImpl dag = applyTransformAndGetDag(cooperative_explicitLP);
 
         // Then
         Vertex tsVertex = dag.getVertex(transformName);
@@ -221,7 +221,7 @@ public class ProcessorTransformParallelismTest {
     @Test
     public void when_nonCooperative_defaultLP_then_UsesProvidedLP() {
         // When
-        DAG dag = applyTransformAndGetDag(nonCooperative_defaultLP);
+        DAGImpl dag = applyTransformAndGetDag(nonCooperative_defaultLP);
 
         // Then
         Vertex tsVertex = dag.getVertex(transformName);
@@ -231,19 +231,19 @@ public class ProcessorTransformParallelismTest {
     @Test
     public void when_nonCooperative_explicitLP_then_UsesDefaultLP() {
         // When
-        DAG dag = applyTransformAndGetDag(nonCooperative_explicitLP);
+        DAGImpl dag = applyTransformAndGetDag(nonCooperative_explicitLP);
 
         // Then
         Vertex tsVertex = dag.getVertex(transformName);
         assertEquals(NON_COOPERATIVE_DEFAULT_LOCAL_PARALLELISM, tsVertex.determineLocalParallelism(DEFAULT_PARALLELISM));
     }
 
-    private DAG applyTransformAndGetDag(FunctionEx<StreamStage<Integer>, StreamStage<Integer>> transform) {
+    private DAGImpl applyTransformAndGetDag(FunctionEx<StreamStage<Integer>, StreamStage<Integer>> transform) {
         Pipeline p = Pipeline.create();
         StreamStage<Integer> source = p.readFrom(TestSources.items(1))
-                                       .addTimestamps(t -> 0, 0);
+                .addTimestamps(t -> 0, 0);
         StreamStage<Integer> applied = source.apply(transform);
         applied.writeTo(Sinks.noop());
-        return p.toDag();
+        return (DAGImpl) p.toDag();
     }
 }

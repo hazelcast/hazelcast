@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,7 +81,7 @@ public final class Util {
 
     /**
      * Returns a projection that converts the {@link EventJournalMapEvent} to a
-     * {@link java.util.Map.Entry} using the event's new value as a value.
+     * {@link Entry} using the event's new value as a value.
      *
      * @see Sources#mapJournal
      * @see Sources#remoteMapJournal
@@ -103,7 +103,7 @@ public final class Util {
 
     /**
      * Returns a projection that converts the {@link EventJournalCacheEvent} to a
-     * {@link java.util.Map.Entry} using the event's new value as a value.
+     * {@link Entry} using the event's new value as a value.
      *
      * @see Sources#cacheJournal
      * @see Sources#remoteCacheJournal

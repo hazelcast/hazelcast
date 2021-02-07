@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,13 @@
 
 package com.hazelcast.jet.impl.execution;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nio.Bits;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.AbstractProcessor;
-import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.DAGImpl;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.impl.SnapshotValidationRecord;
@@ -48,10 +48,10 @@ public class SnapshotLargeChunk_IntegrationTest extends JetTestSupport {
 
     @Test
     public void test_snapshotRestoreLargeChunk() {
-        JetInstance instance = createJetMember();
-        DAG dag = new DAG();
+        HazelcastInstance instance = createMember();
+        DAGImpl dag = new DAGImpl();
         dag.newVertex("src", LargeStateP::new).localParallelism(1);
-        Job job = instance.newJob(dag, new JobConfig()
+        Job job = instance.getJetInstance().newJob(dag, new JobConfig()
                 .setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE)
                 .setSnapshotIntervalMillis(DAYS.toMillis(1)));
 

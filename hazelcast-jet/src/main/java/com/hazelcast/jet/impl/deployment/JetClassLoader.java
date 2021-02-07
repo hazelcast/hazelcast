@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -156,8 +156,8 @@ public class JetClassLoader extends ClassLoader {
         // Rather than throwing an unexpected exception we instead print a warning.
         String jobName = this.jobName == null ? idToString(jobId) : "'" + this.jobName + "'";
         logger.warning("Classloader for job " + jobName + " tried to load '" + resource
-                + "' after the job was completed. The classloader used for jobs is disposed after " +
-                "job is completed");
+                + "' after the job was completed. The classloader used for jobs is disposed after "
+                + "job is completed");
         return true;
     }
 
@@ -217,9 +217,9 @@ public class JetClassLoader extends ClassLoader {
 
     @Override
     public String toString() {
-        return "JetClassLoader{" +
-                "jobName='" + jobName + '\'' +
-                ", jobId=" + idToString(jobId) +
-                '}';
+        return "JetClassLoader{"
+                + "jobName='" + jobName + '\''
+                + ", jobId=" + idToString(jobId)
+                + '}';
     }
 }

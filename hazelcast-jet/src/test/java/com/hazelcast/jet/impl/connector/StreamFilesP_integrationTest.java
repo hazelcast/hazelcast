@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,10 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.collection.IList;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Util;
-import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.DAGImpl;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -63,14 +64,15 @@ public class StreamFilesP_integrationTest extends JetTestSupport {
 
     @Before
     public void setup() throws Exception {
-        instance = createJetMember();
+        HazelcastInstance member = createMember();
+        instance = member.getJetInstance();
         directory = createTempDirectory();
-        list = instance.getList("writer");
+        list = member.getList("writer");
     }
 
     @Test
     public void when_appendingToPreexisting_then_pickupNewLines() throws Exception {
-        DAG dag = buildDag();
+        DAGImpl dag = buildDag();
 
         // this is a pre-existing file, should not be picked up
         File file = createNewFile();
@@ -92,7 +94,7 @@ public class StreamFilesP_integrationTest extends JetTestSupport {
 
     @Test
     public void when_appendingToPreexistingIncompleteLine_then_pickupCompleteLines() throws Exception {
-        DAG dag = buildDag();
+        DAGImpl dag = buildDag();
 
         // this is a pre-existing file, should not be picked up
         File file = createNewFile();
@@ -119,7 +121,7 @@ public class StreamFilesP_integrationTest extends JetTestSupport {
 
     @Test
     public void when_withCrlf_then_pickupCompleteLines() throws Exception {
-        DAG dag = buildDag();
+        DAGImpl dag = buildDag();
 
         // this is a pre-existing file, should not be picked up
         File file = createNewFile();
@@ -150,7 +152,7 @@ public class StreamFilesP_integrationTest extends JetTestSupport {
     @Test
     @Ignore
     public void when_newAndModified_then_pickupAddition() throws Exception {
-        DAG dag = buildDag();
+        DAGImpl dag = buildDag();
 
         Future<Void> jobFuture = instance.newJob(dag).getFuture();
         // wait for the processor to initialize
@@ -170,7 +172,7 @@ public class StreamFilesP_integrationTest extends JetTestSupport {
 
     @Test
     public void when_fileWithManyLines_then_emitCooperatively() throws Exception {
-        DAG dag = buildDag();
+        DAGImpl dag = buildDag();
 
         Future<Void> jobFuture = instance.newJob(dag).getFuture();
         // wait for the processor to initialize
@@ -197,7 +199,7 @@ public class StreamFilesP_integrationTest extends JetTestSupport {
         // Here, I will start the job and in two separate threads I'll write fixed number of lines
         // to two different log files, with few ms hiccups between each line.
         // At the end, I'll check, if all the contents matches.
-        DAG dag = buildDag();
+        DAGImpl dag = buildDag();
 
         Future<Void> jobFuture = instance.newJob(dag).getFuture();
         // wait for the processor to initialize
@@ -216,7 +218,7 @@ public class StreamFilesP_integrationTest extends JetTestSupport {
         assertTrueEventually(() -> assertEquals(2 * numLines, list.size()));
 
         // check the list
-        Set<Integer>[] expectedNumbers = new Set[] {
+        Set<Integer>[] expectedNumbers = new Set[]{
                 IntStream.range(0, numLines).boxed().collect(Collectors.toSet()),
                 IntStream.range(0, numLines).boxed().collect(Collectors.toSet())};
 
@@ -249,13 +251,13 @@ public class StreamFilesP_integrationTest extends JetTestSupport {
         @Override
         public void run() {
             try (FileOutputStream fos = new FileOutputStream(file);
-                    OutputStreamWriter osw = new OutputStreamWriter(fos, UTF_8);
-                    BufferedWriter bw = new BufferedWriter(osw)
+                 OutputStreamWriter osw = new OutputStreamWriter(fos, UTF_8);
+                 BufferedWriter bw = new BufferedWriter(osw)
             ) {
                 for (int i = 0; i < numLines; i++) {
-                    bw.write(prefix + ' ' + i +
-                            " Lorem ipsum dolor sit amet, consectetur adipiscing elit," +
-                            " sed do eiusmod tempor incididunt ut labore et dolore magna aliqua\n");
+                    bw.write(prefix + ' ' + i
+                            + " Lorem ipsum dolor sit amet, consectetur adipiscing elit,"
+                            + " sed do eiusmod tempor incididunt ut labore et dolore magna aliqua\n");
                     bw.flush();
                     osw.flush();
                     fos.flush();
@@ -269,10 +271,10 @@ public class StreamFilesP_integrationTest extends JetTestSupport {
         }
     }
 
-    private DAG buildDag() {
-        DAG dag = new DAG();
+    private DAGImpl buildDag() {
+        DAGImpl dag = new DAGImpl();
         Vertex reader = dag.newVertex("reader", streamFilesP(directory.getPath(), UTF_8, "*", false, Util::entry))
-                           .localParallelism(1);
+                .localParallelism(1);
         Vertex writer = dag.newVertex("writer", writeListP(list.getName())).localParallelism(1);
         dag.edge(between(reader, writer));
         return dag;
@@ -284,7 +286,7 @@ public class StreamFilesP_integrationTest extends JetTestSupport {
         return file;
     }
 
-    private void finishDirectory(Future<Void> jobFuture, File ... files) throws Exception {
+    private void finishDirectory(Future<Void> jobFuture, File... files) throws Exception {
         for (File file : files) {
             logger.info("deleting " + file + "...");
             assertTrueEventually(() -> assertTrue("Failed to delete " + file, file.delete()));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -230,12 +230,12 @@ public class MasterContext {
      * @param errorCallback           A callback that will be called after each
      *                                failure of each individual operation
      * @param retryOnTimeoutException if true, operations that threw {@link
-     *                                com.hazelcast.core.OperationTimeoutException}
+     *                                OperationTimeoutException}
      *                                will be retried
      */
     void invokeOnParticipants(
             Function<ExecutionPlan, Operation> operationCtor,
-            @Nullable Consumer<Collection<Map.Entry<MemberInfo, Object>>> completionCallback,
+            @Nullable Consumer<Collection<Entry<MemberInfo, Object>>> completionCallback,
             @Nullable Consumer<Throwable> errorCallback,
             boolean retryOnTimeoutException
     ) {
@@ -252,7 +252,7 @@ public class MasterContext {
     private void invokeOnParticipant(
             MemberInfo memberInfo,
             Supplier<Operation> operationSupplier,
-            @Nullable Consumer<Collection<Map.Entry<MemberInfo, Object>>> completionCallback,
+            @Nullable Consumer<Collection<Entry<MemberInfo, Object>>> completionCallback,
             @Nullable Consumer<Throwable> errorCallback,
             boolean retryOnTimeoutException,
             ConcurrentMap<MemberInfo, Object> collectedResponses,
@@ -276,8 +276,8 @@ public class MasterContext {
                 errorCallback.accept(throwable);
             }
             Object oldResponse = collectedResponses.put(memberInfo, response);
-            assert oldResponse == null :
-                    "Duplicate response for " + memberInfo.getAddress() + ". Old=" + oldResponse + ", new=" + response;
+            assert oldResponse == null : "Duplicate response for " + memberInfo.getAddress()
+                    + ". Old=" + oldResponse + ", new=" + response;
             if (remainingCount.decrementAndGet() == 0 && completionCallback != null) {
                 completionCallback.accept(collectedResponses.entrySet().stream()
                         .map(e -> e.getValue() == NULL_OBJECT ? entry(e.getKey(), null) : e)

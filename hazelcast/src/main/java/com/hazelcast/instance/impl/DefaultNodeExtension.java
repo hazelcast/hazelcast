@@ -32,6 +32,7 @@ import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.cp.internal.persistence.CPPersistenceService;
@@ -94,6 +95,7 @@ import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.internal.util.phonehome.PhoneHome;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.jet.JetInstance;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.MemberSocketInterceptor;
@@ -606,5 +608,10 @@ public class DefaultNodeExtension implements NodeExtension {
     @Override
     public AuditlogService getAuditlogService() {
         return NoOpAuditlogService.INSTANCE;
+    }
+
+    @Override
+    public JetInstance getJetInstance() {
+        throw new HazelcastException("Jet is not available");
     }
 }

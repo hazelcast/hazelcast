@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.core;
 
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.DummyStatefulP;
 import com.hazelcast.jet.datamodel.Tuple3;
@@ -37,27 +37,27 @@ public class JobRestartStressTestBase extends JetTestSupport {
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
-    private JetInstance instance1;
+    private HazelcastInstance instance1;
 
     @Before
     public void setup() {
-        JetConfig config = new JetConfig();
-        config.getInstanceConfig().setCooperativeThreadCount(4);
+        Config config = new Config();
+        config.getJetConfig().getInstanceConfig().setCooperativeThreadCount(4);
 
-        instance1 = createJetMember(config);
-        createJetMember(config);
+        instance1 = createMember(config);
+        createMember(config);
     }
 
     @SuppressWarnings("WeakerAccess") // has sub-classes in jet-enterprise
-    protected void stressTest(Function<Tuple3<JetInstance, DAG, Job>, Job> action) throws Exception {
+    protected void stressTest(Function<Tuple3<HazelcastInstance, DAGImpl, Job>, Job> action) throws Exception {
         JobRepository jobRepository = new JobRepository(instance1);
         TestProcessors.reset(2);
 
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         dag.newVertex("dummy-stateful-p", DummyStatefulP::new)
            .localParallelism(1);
 
-        Job[] job = {instance1.newJob(dag,
+        Job[] job = {instance1.getJetInstance().newJob(dag,
                 new JobConfig().setSnapshotIntervalMillis(10)
                                .setProcessingGuarantee(EXACTLY_ONCE))};
 

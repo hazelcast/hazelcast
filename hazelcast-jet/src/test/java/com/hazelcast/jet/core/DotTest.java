@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,18 +42,18 @@ public class DotTest {
 
     @Test
     public void when_dagToDotString() {
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex a = dag.newVertex("a", noopP())
-                      .localParallelism(1);
+                .localParallelism(1);
         Vertex b = dag.newVertex("b", noopP());
         Vertex c = dag.newVertex("c", noopP())
-                      .localParallelism(1);
+                .localParallelism(1);
         Vertex d = dag.newVertex("d", noopP())
-                      .localParallelism(1);
+                .localParallelism(1);
 
         dag.edge(from(a, 0).to(c, 0)
-                           .partitioned(wholeItem())
-                           .setConfig(new EdgeConfig().setQueueSize(128)));
+                .partitioned(wholeItem())
+                .setConfig(new EdgeConfig().setQueueSize(128)));
         dag.edge(from(a, 1).to(b, 0).broadcast().distributed());
 
         String actual = dag.toDotString();
@@ -75,31 +75,31 @@ public class DotTest {
         BatchStage<Entry> source = p.readFrom(Sources.map("source1"));
 
         source
-            .groupingKey(Entry::getKey)
-            .aggregate(AggregateOperations.counting())
-            .setName("aggregateToCount")
-            .writeTo(Sinks.logger());
+                .groupingKey(Entry::getKey)
+                .aggregate(AggregateOperations.counting())
+                .setName("aggregateToCount")
+                .writeTo(Sinks.logger());
 
         source
-            .groupingKey(Entry::getKey)
-            .aggregate(AggregateOperations.toSet())
-            .setName("aggregateToSet")
-            .writeTo(Sinks.logger());
+                .groupingKey(Entry::getKey)
+                .aggregate(AggregateOperations.toSet())
+                .setName("aggregateToSet")
+                .writeTo(Sinks.logger());
 
         source.filter(alwaysTrue())
-              .writeTo(Sinks.logger());
+                .writeTo(Sinks.logger());
 
         String actualPipeline = p.toDotString();
-        assertEquals(actualPipeline, "digraph Pipeline {\n" +
-                "\t\"mapSource(source1)\" -> \"aggregateToCount\";\n" +
-                "\t\"mapSource(source1)\" -> \"aggregateToSet\";\n" +
-                "\t\"mapSource(source1)\" -> \"filter\";\n" +
-                "\t\"aggregateToCount\" -> \"loggerSink\";\n" +
-                "\t\"aggregateToSet\" -> \"loggerSink-2\";\n" +
-                "\t\"filter\" -> \"loggerSink-3\";\n" +
-                "}");
+        assertEquals(actualPipeline, "digraph Pipeline {\n"
+                + "\t\"mapSource(source1)\" -> \"aggregateToCount\";\n"
+                + "\t\"mapSource(source1)\" -> \"aggregateToSet\";\n"
+                + "\t\"mapSource(source1)\" -> \"filter\";\n"
+                + "\t\"aggregateToCount\" -> \"loggerSink\";\n"
+                + "\t\"aggregateToSet\" -> \"loggerSink-2\";\n"
+                + "\t\"filter\" -> \"loggerSink-3\";\n"
+                + "}");
 
-        String actualDag = p.toDag().toDotString();
+        String actualDag = ((DAGImpl) p.toDag()).toDotString();
         System.out.println(actualDag);
         // contains multiple subgraphs, order isn't stable, we'll assert individual lines and the length
         assertTrue(actualDag.startsWith("digraph DAG {"));
@@ -109,16 +109,16 @@ public class DotTest {
         assertTrue(actualDag.contains("\"mapSource(source1)\" -> \"filter\" [taillabel=2, queueSize=1024];"));
         assertTrue(actualDag.contains("\"mapSource(source1)\" -> \"aggregateToSet" + FIRST_STAGE_VERTEX_NAME_SUFFIX
                 + "\" [label=\"partitioned\", taillabel=1, queueSize=1024];"));
-        assertTrue(regexContains(actualDag, "subgraph cluster_[01] \\{\n" +
-                "\t\t\"aggregateToCount" + FIRST_STAGE_VERTEX_NAME_SUFFIX
-                        + "\" -> \"aggregateToCount\" \\[label=\"distributed-partitioned\", queueSize=1024];\n" +
-                "\t}"));
+        assertTrue(regexContains(actualDag, "subgraph cluster_[01] \\{\n"
+                + "\t\t\"aggregateToCount" + FIRST_STAGE_VERTEX_NAME_SUFFIX
+                + "\" -> \"aggregateToCount\" \\[label=\"distributed-partitioned\", queueSize=1024];\n"
+                + "\t}"));
 
         assertTrue(regexContains(actualDag, "\"aggregateToCount\" -> \"loggerSink(-[23])?\" \\[queueSize=1024\\];"));
-        assertTrue(regexContains(actualDag, "subgraph cluster_[01] \\{\n" +
-                "\t\t\"aggregateToSet" + FIRST_STAGE_VERTEX_NAME_SUFFIX + "\" -> \"aggregateToSet\" "
-                        + "\\[label=\"distributed-partitioned\", queueSize=1024\\];\n" +
-                "\t}"));
+        assertTrue(regexContains(actualDag, "subgraph cluster_[01] \\{\n"
+                + "\t\t\"aggregateToSet" + FIRST_STAGE_VERTEX_NAME_SUFFIX + "\" -> \"aggregateToSet\" "
+                + "\\[label=\"distributed-partitioned\", queueSize=1024\\];\n"
+                + "\t}"));
         assertTrue(regexContains(actualDag, "\"aggregateToSet\" -> \"loggerSink(-[23])?\" \\[queueSize=1024\\];"));
         assertTrue(regexContains(actualDag, "\"filter\" -> \"loggerSink(-[23])?\" \\[queueSize=1024\\];"));
         assertTrue(actualDag.endsWith("\n}"));
@@ -133,26 +133,26 @@ public class DotTest {
         Pipeline p = Pipeline.create();
         // " in vertex name should be escaped
         p.readFrom(Sources.map("source1\""))
-         .groupingKey(Entry::getKey)
-         .aggregate(AggregateOperations.counting())
-         .setName("aggregateToCount")
-         .writeTo(Sinks.logger());
+                .groupingKey(Entry::getKey)
+                .aggregate(AggregateOperations.counting())
+                .setName("aggregateToCount")
+                .writeTo(Sinks.logger());
 
-        assertEquals("digraph Pipeline {\n" +
-                "\t\"mapSource(source1\\\")\" -> \"aggregateToCount\";\n" +
-                "\t\"aggregateToCount\" -> \"loggerSink\";\n" +
-                "}", p.toDotString());
-        assertEquals("digraph DAG {\n" +
-            "\t\"mapSource(source1\\\")\" [localParallelism=1];\n" +
-            "\t\"aggregateToCount-prepare\" [localParallelism=default];\n" +
-            "\t\"aggregateToCount\" [localParallelism=default];\n" +
-            "\t\"loggerSink\" [localParallelism=1];\n" +
-            "\t\"mapSource(source1\\\")\" -> \"aggregateToCount-prepare\" [label=\"partitioned\", queueSize=1024];\n" +
-            "\tsubgraph cluster_0 {\n" +
-            "\t\t\"aggregateToCount-prepare\" -> \"aggregateToCount\" " +
-                "[label=\"distributed-partitioned\", queueSize=1024];\n" +
-            "\t}\n" +
-            "\t\"aggregateToCount\" -> \"loggerSink\" [queueSize=1024];\n" +
-            "}", p.toDag().toDotString());
+        assertEquals("digraph Pipeline {\n"
+                + "\t\"mapSource(source1\\\")\" -> \"aggregateToCount\";\n"
+                + "\t\"aggregateToCount\" -> \"loggerSink\";\n"
+                + "}", p.toDotString());
+        assertEquals("digraph DAG {\n"
+                + "\t\"mapSource(source1\\\")\" [localParallelism=1];\n"
+                + "\t\"aggregateToCount-prepare\" [localParallelism=default];\n"
+                + "\t\"aggregateToCount\" [localParallelism=default];\n"
+                + "\t\"loggerSink\" [localParallelism=1];\n"
+                + "\t\"mapSource(source1\\\")\" -> \"aggregateToCount-prepare\" [label=\"partitioned\", queueSize=1024];\n"
+                + "\tsubgraph cluster_0 {\n"
+                + "\t\t\"aggregateToCount-prepare\" -> \"aggregateToCount\" "
+                + "[label=\"distributed-partitioned\", queueSize=1024];\n"
+                + "\t}\n"
+                + "\t\"aggregateToCount\" -> \"loggerSink\" [queueSize=1024];\n"
+                + "}", ((DAGImpl) p.toDag()).toDotString());
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,11 +66,11 @@ public class JmsSinkIntegrationTest extends SimpleTestInClusterSupport {
 
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.list(srcList.getName()))
-         .writeTo(Sinks.jmsQueue(destinationName, JmsSinkIntegrationTest::getConnectionFactory));
+                .writeTo(Sinks.jmsQueue(destinationName, JmsSinkIntegrationTest::getConnectionFactory));
 
         List<Object> messages = consumeMessages(getConnectionFactory(), destinationName, true, MESSAGE_COUNT);
 
-        instance().newJob(p);
+        jetInstance().newJob(p);
 
         assertEqualsEventually(messages::size, MESSAGE_COUNT);
         assertContainsAll(srcList, messages);
@@ -82,12 +82,12 @@ public class JmsSinkIntegrationTest extends SimpleTestInClusterSupport {
 
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.list(srcList.getName()))
-         .writeTo(Sinks.jmsTopic(destinationName, JmsSinkIntegrationTest::getConnectionFactory));
+                .writeTo(Sinks.jmsTopic(destinationName, JmsSinkIntegrationTest::getConnectionFactory));
 
         List<Object> messages = consumeMessages(getConnectionFactory(), destinationName, false, MESSAGE_COUNT);
         sleepSeconds(1);
 
-        instance().newJob(p);
+        jetInstance().newJob(p);
 
         assertEqualsEventually(messages::size, MESSAGE_COUNT);
         assertContainsAll(srcList, messages);
@@ -103,11 +103,11 @@ public class JmsSinkIntegrationTest extends SimpleTestInClusterSupport {
 
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.<String>list(srcList.getName()))
-         .writeTo(sink);
+                .writeTo(sink);
 
         List<Object> messages = consumeMessages(getConnectionFactory(), destinationName, true, MESSAGE_COUNT);
 
-        instance().newJob(p);
+        jetInstance().newJob(p);
 
         assertEqualsEventually(messages::size, MESSAGE_COUNT);
         assertContainsAll(srcList, messages);
@@ -125,11 +125,11 @@ public class JmsSinkIntegrationTest extends SimpleTestInClusterSupport {
 
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.<String>list(srcList.getName()))
-         .writeTo(sink);
+                .writeTo(sink);
 
         List<Object> messages = consumeMessages(getConnectionFactory(), destinationName, true, MESSAGE_COUNT);
 
-        instance().newJob(p);
+        jetInstance().newJob(p);
 
         assertEqualsEventually(messages::size, MESSAGE_COUNT);
         assertContainsAll(srcList, messages);
@@ -145,12 +145,12 @@ public class JmsSinkIntegrationTest extends SimpleTestInClusterSupport {
 
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.<String>list(srcList.getName()))
-         .writeTo(sink);
+                .writeTo(sink);
 
         List<Object> messages = consumeMessages(getConnectionFactory(), destinationName, false, MESSAGE_COUNT);
         sleepSeconds(1);
 
-        instance().newJob(p);
+        jetInstance().newJob(p);
 
         assertEqualsEventually(messages::size, MESSAGE_COUNT);
         assertContainsAll(srcList, messages);
@@ -167,12 +167,12 @@ public class JmsSinkIntegrationTest extends SimpleTestInClusterSupport {
 
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.<String>list(srcList.getName()))
-         .writeTo(sink);
+                .writeTo(sink);
 
         List<Object> messages = consumeMessages(getConnectionFactory(), destinationName, false, MESSAGE_COUNT);
         sleepSeconds(1);
 
-        instance().newJob(p);
+        jetInstance().newJob(p);
 
         assertEqualsEventually(messages::size, MESSAGE_COUNT);
         assertContainsAll(srcList, messages);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.pipeline;
 
-import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.Util;
@@ -29,14 +28,13 @@ import com.hazelcast.jet.pipeline.test.GeneratorFunction;
 import com.hazelcast.jet.pipeline.test.ParallelStreamP;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
-
 
 import javax.annotation.Nonnull;
 import java.io.Serializable;
@@ -60,13 +58,13 @@ public class OrderedProcessingMergingStagesTest extends JetTestSupport implement
     private static final int HIGH_LOCAL_PARALLELISM = 11;
     // Used to set the LP of the stage with the smaller value than upstream parallelism
     private static final int LOW_LOCAL_PARALLELISM = 2;
+    private static final TestHazelcastInstanceFactory FACTORY = new TestHazelcastInstanceFactory();
     private static Pipeline p;
     private static JetInstance jet;
 
-
     @BeforeClass
     public static void setupClass() {
-        jet = Jet.newJetInstance();
+        jet = FACTORY.newHazelcastInstance().getJetInstance();
     }
 
     @Before
@@ -76,7 +74,7 @@ public class OrderedProcessingMergingStagesTest extends JetTestSupport implement
 
     @AfterClass
     public static void cleanup() {
-        jet.shutdown();
+        FACTORY.terminateAll();
     }
 
 

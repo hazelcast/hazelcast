@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -110,7 +110,7 @@ public final class CustomClassLoadedObject {
         @Override
         // explicit cast to InputStream and intentionally omitting to close ObjectInputStream
         @SuppressFBWarnings({"BC_UNCONFIRMED_CAST", "OS_OPEN_STREAM"})
-        public CustomClassLoadedObject read(com.hazelcast.nio.ObjectDataInput in) throws IOException {
+        public CustomClassLoadedObject read(ObjectDataInput in) throws IOException {
             ClassLoader cl = Thread.currentThread().getContextClassLoader();
             boolean isJavaSerialized = in.readBoolean();
             Object object;

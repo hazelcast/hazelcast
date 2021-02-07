@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -169,8 +169,12 @@ public class TransactionPoolSnapshotUtility<TXN_ID extends TransactionId, RES ex
             return true;
         }
         activeTransactionUsed = false;
+
         // `flushed` is used to avoid double flushing when outbox.offerToSnapshot() fails
-        if (!flushed && !(flushed = transactionToCommit.flush())) {
+        if (!flushed) {
+            flushed = transactionToCommit.flush();
+        }
+        if (!flushed) {
             procContext().logger().fine("flush returned false");
             return false;
         }

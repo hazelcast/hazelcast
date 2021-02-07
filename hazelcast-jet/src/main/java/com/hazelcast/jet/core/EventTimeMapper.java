@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -209,8 +209,8 @@ public class EventTimeMapper<T> {
      * the expensive {@code System.nanoTime()} call.
      */
     public Traverser<Object> flatMapEvent(long now, @Nullable T event, int partitionIndex, long nativeEventTime) {
-        assert traverser.isEmpty() : "the traverser returned previously not yet drained: remove all " +
-                "items from the traverser before you call this method again.";
+        assert traverser.isEmpty() : "the traverser returned previously not yet drained: remove all "
+                + "items from the traverser before you call this method again.";
         if (event == null) {
             handleNoEventInternal(now, Long.MAX_VALUE);
             return traverser;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,13 +23,13 @@ import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.DAGImpl;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.core.metrics.JobMetrics;
-import com.hazelcast.jet.core.metrics.Measurement;
+import com.hazelcast.jet.core.metrics.JobMetricsImpl;
+import com.hazelcast.jet.core.metrics.MeasurementImpl;
 import com.hazelcast.jet.core.metrics.MetricNames;
 import com.hazelcast.jet.core.metrics.MetricTags;
 import com.hazelcast.jet.datamodel.Tuple2;
@@ -159,7 +159,7 @@ public class MasterJobContext {
     MasterJobContext(MasterContext masterContext, ILogger logger) {
         this.mc = masterContext;
         this.logger = logger;
-        this.defaultParallelism = mc.getJetService().getJetInstance().getConfig()
+        this.defaultParallelism = mc.getJetService().getConfig()
               .getInstanceConfig().getCooperativeThreadCount();
     }
 
@@ -192,11 +192,11 @@ public class MasterJobContext {
             try {
                 JobExecutionRecord jobExecRec = mc.jobExecutionRecord();
                 jobExecRec.markExecuted();
-                Tuple2<DAG, ClassLoader> dagAndClassloader = resolveDagAndCL(executionIdSupplier);
+                Tuple2<DAGImpl, ClassLoader> dagAndClassloader = resolveDagAndCL(executionIdSupplier);
                 if (dagAndClassloader == null) {
                     return;
                 }
-                DAG dag = dagAndClassloader.f0();
+                DAGImpl dag = dagAndClassloader.f0();
                 ClassLoader classLoader = dagAndClassloader.f1();
                 // must call this before rewriteDagWithSnapshotRestore()
                 String dotRepresentation = dag.toDotString(defaultParallelism);
@@ -233,7 +233,7 @@ public class MasterJobContext {
     }
 
     @Nullable
-    private Tuple2<DAG, ClassLoader> resolveDagAndCL(Supplier<Long> executionIdSupplier) {
+    private Tuple2<DAGImpl, ClassLoader> resolveDagAndCL(Supplier<Long> executionIdSupplier) {
         mc.lock();
         try {
             if (isCancelled()) {
@@ -265,7 +265,7 @@ public class MasterJobContext {
                 requestedTerminationMode = null;
             }
             ClassLoader classLoader = mc.getJetService().getClassLoader(mc.jobId());
-            DAG dag;
+            DAGImpl dag;
             try {
                 dag = deserializeWithCustomClassLoader(mc.nodeEngine().getSerializationService(),
                         classLoader, mc.jobRecord().getDag());
@@ -356,7 +356,7 @@ public class MasterJobContext {
         return result;
     }
 
-    private void rewriteDagWithSnapshotRestore(DAG dag, long snapshotId, String mapName, String snapshotName) {
+    private void rewriteDagWithSnapshotRestore(DAGImpl dag, long snapshotId, String mapName, String snapshotName) {
         IMap<Object, Object> snapshotMap = mc.nodeEngine().getHazelcastInstance().getMap(mapName);
         long resolvedSnapshotId = validateSnapshot(
                 snapshotId, snapshotMap, mc.jobIdString(), snapshotName);
@@ -419,7 +419,7 @@ public class MasterJobContext {
     }
 
     // Called as callback when all InitOperation invocations are done
-    private void onInitStepCompleted(Collection<Map.Entry<MemberInfo, Object>> responses) {
+    private void onInitStepCompleted(Collection<Entry<MemberInfo, Object>> responses) {
         mc.coordinationService().submitToCoordinatorThread(() -> {
             Throwable error = getResult("Init", responses);
             JobStatus status = mc.jobStatus();
@@ -445,7 +445,7 @@ public class MasterJobContext {
         }
 
         Function<ExecutionPlan, Operation> operationCtor = plan -> new StartExecutionOperation(mc.jobId(), executionId);
-        Consumer<Collection<Map.Entry<MemberInfo, Object>>> completionCallback = this::onExecuteStepCompleted;
+        Consumer<Collection<Entry<MemberInfo, Object>>> completionCallback = this::onExecuteStepCompleted;
 
         mc.setJobStatus(RUNNING);
 
@@ -467,7 +467,7 @@ public class MasterJobContext {
     }
 
     // Called as callback when all ExecuteOperation invocations are done
-    private void onExecuteStepCompleted(Collection<Map.Entry<MemberInfo, Object>> responses) {
+    private void onExecuteStepCompleted(Collection<Entry<MemberInfo, Object>> responses) {
         invokeCompleteExecution(getResult("Execution", responses));
     }
 
@@ -494,7 +494,7 @@ public class MasterJobContext {
      *     that the job will be restarted
      * </ul>
      */
-    private Throwable getResult(String opName, Collection<Map.Entry<MemberInfo, Object>> responses) {
+    private Throwable getResult(String opName, Collection<Entry<MemberInfo, Object>> responses) {
         if (isCancelled()) {
             logger.fine(mc.jobIdString() + " to be cancelled after " + opName);
             return new CancellationException();
@@ -560,10 +560,10 @@ public class MasterJobContext {
             Function<ExecutionPlan, Operation> operationCtor = plan ->
                     new CompleteExecutionOperation(mc.executionId(), savingMetricsEnabled, finalError);
             mc.invokeOnParticipants(operationCtor, responses -> {
-                if (responses.stream().map(Map.Entry::getValue).anyMatch(Throwable.class::isInstance)) {
+                if (responses.stream().map(Entry::getValue).anyMatch(Throwable.class::isInstance)) {
                     // log errors
-                    logger.severe(mc.jobIdString() + ": some CompleteExecutionOperation invocations failed, execution " +
-                            "resources might leak: " + responses);
+                    logger.severe(mc.jobIdString() + ": some CompleteExecutionOperation invocations failed, execution "
+                            + "resources might leak: " + responses);
                 } else {
                     setJobMetrics(toList(responses, e -> (RawJobMetrics) e.getValue()));
                 }
@@ -599,8 +599,8 @@ public class MasterJobContext {
                         responses -> {
                             if (responses.stream().map(Entry::getValue).anyMatch(Objects::nonNull)) {
                                 // log errors
-                                logger.severe(mc.jobIdString() + ": some TerminateExecutionOperation invocations " +
-                                        "failed, execution might remain stuck: " + responses);
+                                logger.severe(mc.jobIdString() + ": some TerminateExecutionOperation invocations "
+                                        + "failed, execution might remain stuck: " + responses);
                             }
                         }, null, true));
     }
@@ -640,16 +640,16 @@ public class MasterJobContext {
                     nonSynchronizedAction = () -> mc.writeJobExecutionRecord(false);
                 } else if (failure != null && !isCancelled() && mc.jobConfig().isSuspendOnFailure()) {
                     mc.setJobStatus(SUSPENDED);
-                    mc.jobExecutionRecord().setSuspended("Execution failure:\n" +
-                            ExceptionUtil.stackTraceToString(failure));
+                    mc.jobExecutionRecord()
+                            .setSuspended("Execution failure:\n" + ExceptionUtil.stackTraceToString(failure));
                     nonSynchronizedAction = () -> mc.writeJobExecutionRecord(false);
                 } else {
                     long completionTime = System.currentTimeMillis();
                     boolean isSuccess = logExecutionSummary(failure, completionTime);
                     mc.setJobStatus(isSuccess ? COMPLETED : FAILED);
                     if (failure instanceof LocalMemberResetException) {
-                        logger.fine("Cancelling job " + mc.jobIdString() + " locally: member (local or remote) reset. " +
-                                "We don't delete job metadata: job will restart on majority cluster");
+                        logger.fine("Cancelling job " + mc.jobIdString() + " locally: member (local or remote) reset. "
+                                + "We don't delete job metadata: job will restart on majority cluster");
                         setFinalResult(new CancellationException());
                     } else {
                         mc.coordinationService()
@@ -699,7 +699,7 @@ public class MasterJobContext {
         if (jobMetrics.stream().noneMatch(rjm -> rjm.getBlob() != null)) {
             sb.append("\n\tTo see additional job metrics enable JobConfig.storeMetricsAfterJobCompletion");
         } else {
-            JobMetrics jobMetrics = JobMetricsUtil.toJobMetrics(this.jobMetrics);
+            JobMetricsImpl jobMetrics = JobMetricsUtil.toJobMetrics(this.jobMetrics);
 
             Map<String, Long> receivedCounts = mergeByVertex(jobMetrics.get(MetricNames.RECEIVED_COUNT));
             Map<String, Long> emittedCounts = mergeByVertex(jobMetrics.get(MetricNames.EMITTED_COUNT));
@@ -718,10 +718,10 @@ public class MasterJobContext {
         return sb.toString();
     }
 
-    private static Map<String, Long> mergeByVertex(List<Measurement> measurements) {
+    private static Map<String, Long> mergeByVertex(List<MeasurementImpl> measurements) {
         return measurements.stream().collect(Collectors.toMap(
                 m -> m.tag(MetricTags.VERTEX),
-                Measurement::value,
+                MeasurementImpl::value,
                 Long::sum
         ));
     }
@@ -856,7 +856,7 @@ public class MasterJobContext {
     }
 
     private void completeWithMetrics(CompletableFuture<List<RawJobMetrics>> clientFuture,
-                                     Collection<Map.Entry<MemberInfo, Object>> metrics) {
+                                     Collection<Entry<MemberInfo, Object>> metrics) {
         if (metrics.stream().anyMatch(en -> en.getValue() instanceof ExecutionNotFoundException)) {
             // If any member threw ExecutionNotFoundException, we'll retry. This happens
             // when the job is starting or completing - master sees the job as
@@ -865,12 +865,12 @@ public class MasterJobContext {
             // we'll return last known metrics, or it will be running again, in
             // which case we'll get fresh metrics.
             logFinest(logger, "Rescheduling collectMetrics for %s, some members threw %s", mc.jobIdString(),
-                    GetLocalJobMetricsOperation.ExecutionNotFoundException.class.getSimpleName());
+                    ExecutionNotFoundException.class.getSimpleName());
             mc.nodeEngine().getExecutionService().schedule(() ->
                     collectMetrics(clientFuture), COLLECT_METRICS_RETRY_DELAY_MILLIS, MILLISECONDS);
             return;
         }
-        Throwable firstThrowable = (Throwable) metrics.stream().map(Map.Entry::getValue)
+        Throwable firstThrowable = (Throwable) metrics.stream().map(Entry::getValue)
                                                       .filter(Throwable.class::isInstance).findFirst().orElse(null);
         if (firstThrowable != null) {
             clientFuture.completeExceptionally(firstThrowable);

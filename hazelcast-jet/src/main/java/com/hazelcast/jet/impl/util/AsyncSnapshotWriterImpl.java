@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,7 +52,8 @@ public class AsyncSnapshotWriterImpl implements AsyncSnapshotWriter {
 
     public static final int DEFAULT_CHUNK_SIZE = 128 * 1024;
 
-    final int usableChunkCapacity; // this includes the serialization header for byte[], but not the terminator
+    // this includes the serialization header for byte[], but not the terminator
+    final int usableChunkCapacity;
     final byte[] serializedByteArrayHeader = new byte[3 * Bits.INT_SIZE_IN_BYTES];
     final byte[] valueTerminator;
     final AtomicInteger numConcurrentAsyncOps;
@@ -210,7 +211,8 @@ public class AsyncSnapshotWriterImpl implements AsyncSnapshotWriter {
         try {
             dst.write(bytes, HeapData.TYPE_OFFSET, bytes.length - HeapData.TYPE_OFFSET);
         } catch (IOException e) {
-            throw new RuntimeException(e); // should never happen
+            // should never happen
+            throw new RuntimeException(e);
         }
     }
 
@@ -308,7 +310,9 @@ public class AsyncSnapshotWriterImpl implements AsyncSnapshotWriter {
 
     @Override
     public void resetStats() {
-        totalKeys = totalChunks = totalPayloadBytes = 0;
+        totalKeys = 0;
+        totalChunks = 0;
+        totalPayloadBytes = 0;
     }
 
     @Override
@@ -362,12 +366,12 @@ public class AsyncSnapshotWriterImpl implements AsyncSnapshotWriter {
 
         @Override
         public String toString() {
-            return "SnapshotDataKey{" +
-                    "partitionKey=" + partitionKey +
-                    ", snapshotId=" + snapshotId +
-                    ", vertexName='" + vertexName + '\'' +
-                    ", sequence=" + sequence +
-                    '}';
+            return "SnapshotDataKey{"
+                    + "partitionKey=" + partitionKey
+                    + ", snapshotId=" + snapshotId
+                    + ", vertexName='" + vertexName + '\''
+                    + ", sequence=" + sequence
+                    + '}';
         }
 
         @Override
@@ -405,10 +409,10 @@ public class AsyncSnapshotWriterImpl implements AsyncSnapshotWriter {
                 return false;
             }
             SnapshotDataKey that = (SnapshotDataKey) o;
-            return partitionKey == that.partitionKey &&
-                    snapshotId == that.snapshotId &&
-                    sequence == that.sequence &&
-                    Objects.equals(vertexName, that.vertexName);
+            return partitionKey == that.partitionKey
+                    && snapshotId == that.snapshotId
+                    && sequence == that.sequence
+                    && Objects.equals(vertexName, that.vertexName);
         }
 
         @Override

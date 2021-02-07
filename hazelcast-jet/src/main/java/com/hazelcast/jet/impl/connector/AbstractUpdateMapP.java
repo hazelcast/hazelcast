@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.impl.spi.ClientPartitionService;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.serialization.Data;
@@ -46,6 +45,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.ToIntFunction;
+
+import static com.hazelcast.jet.impl.util.Util.getImpl;
 
 /**
  * @param <T> type of input items to this processor
@@ -165,7 +166,7 @@ public abstract class AbstractUpdateMapP<T, K, V> extends AsyncHazelcastWriterP 
         @SuppressWarnings("unchecked")
         SerializationContext(HazelcastInstance instance, IMap<K, ?> map) {
             if (ImdgUtil.isMemberInstance(instance)) {
-                NodeEngineImpl nodeEngine = ((HazelcastInstanceImpl) instance).node.nodeEngine;
+                NodeEngineImpl nodeEngine = getImpl(instance).node.nodeEngine;
                 IPartitionService partitionService = nodeEngine.getPartitionService();
                 partitionCount = partitionService.getPartitionCount();
                 partitionIdFn = partitionService::getPartitionId;
@@ -213,7 +214,7 @@ public abstract class AbstractUpdateMapP<T, K, V> extends AsyncHazelcastWriterP 
 
         private Map<Data, Object> keysToUpdate;
 
-        public ApplyValuesEntryProcessor() { //needed for (de)serialization
+        public ApplyValuesEntryProcessor() {
         }
 
         public ApplyValuesEntryProcessor(Map<Data, Object> keysToUpdate) {

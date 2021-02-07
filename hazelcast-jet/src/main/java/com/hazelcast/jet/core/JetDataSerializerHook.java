@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ import static com.hazelcast.jet.impl.JetFactoryIdHelper.JET_DS_FACTORY_ID;
 public final class JetDataSerializerHook implements DataSerializerHook {
 
     /**
-     * Serialization ID of the {@link DAG} class.
+     * Serialization ID of the {@link DAGImpl} class.
      */
     public static final int DAG = 0;
     /**
@@ -55,6 +55,9 @@ public final class JetDataSerializerHook implements DataSerializerHook {
      */
     public static final int APPLY_VALUE_ENTRY_PROCESSOR = 4;
 
+    /**
+     * Factory ID of Jet Identified Data Serializable objects.
+     */
     public static final int FACTORY_ID = FactoryIdHelper.getFactoryId(JET_DS_FACTORY, JET_DS_FACTORY_ID);
 
     @Override
@@ -72,15 +75,15 @@ public final class JetDataSerializerHook implements DataSerializerHook {
         public IdentifiedDataSerializable create(int typeId) {
             switch (typeId) {
                 case DAG:
-                    return new DAG();
+                    return new DAGImpl();
                 case EDGE:
                     return new Edge();
                 case VERTEX:
                     return new Vertex();
                 case APPLY_FN_ENTRY_PROCESSOR:
-                    return new ApplyFnEntryProcessor();
+                    return new ApplyFnEntryProcessor<>();
                 case APPLY_VALUE_ENTRY_PROCESSOR:
-                    return new ApplyValuesEntryProcessor();
+                    return new ApplyValuesEntryProcessor<>();
                 default:
                     throw new IllegalArgumentException("Unknown type id " + typeId);
             }

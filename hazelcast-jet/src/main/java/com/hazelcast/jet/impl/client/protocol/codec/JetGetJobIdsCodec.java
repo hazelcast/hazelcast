@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,7 +63,7 @@ public final class JetGetJobIdsCodec {
         return clientMessage;
     }
 
-    public static JetGetJobIdsCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         //empty initial frame
@@ -76,10 +76,10 @@ public final class JetGetJobIdsCodec {
 
         /**
          */
-        public java.util.List<java.lang.Long> response;
+        public java.util.List<Long> response;
     }
 
-    public static ClientMessage encodeResponse(java.util.Collection<java.lang.Long> response) {
+    public static ClientMessage encodeResponse(java.util.Collection<Long> response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
@@ -89,7 +89,7 @@ public final class JetGetJobIdsCodec {
         return clientMessage;
     }
 
-    public static JetGetJobIdsCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame

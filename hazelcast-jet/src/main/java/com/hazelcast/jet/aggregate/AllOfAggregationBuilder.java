@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,6 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
  * operations. To obtain it, call {@link AggregateOperations#allOfBuilder()}.
  *
  * @param <T> the type of the input items
- *
  * @since 3.0
  */
 public final class AllOfAggregationBuilder<T> {
@@ -43,7 +42,8 @@ public final class AllOfAggregationBuilder<T> {
     private final List<Tag> tags = new ArrayList<>();
     private final List<AggregateOperation1> operations = new ArrayList<>();
 
-    AllOfAggregationBuilder() { }
+    AllOfAggregationBuilder() {
+    }
 
     /**
      * Adds the supplied aggregate operation to the composite. Use the returned
@@ -76,8 +76,8 @@ public final class AllOfAggregationBuilder<T> {
      * it creates to the result type it emits as the actual result.
      *
      * @param exportFinishFn function that converts the {@link ItemsByTag} to
-     *     the target result type. It must be stateless and {@linkplain
-     *     Processor#isCooperative() cooperative}.
+     *                       the target result type. It must be stateless and {@linkplain
+     *                       Processor#isCooperative() cooperative}.
      */
     @Nonnull
     @SuppressWarnings({"unchecked", "ConstantConditions"})
@@ -88,7 +88,7 @@ public final class AllOfAggregationBuilder<T> {
         List<Tag> tags = this.tags;
         List<AggregateOperation1> operations = this.operations;
 
-        return (AggregateOperation1<T, Object[], R>) AggregateOperation
+        return (AggregateOperation1<T, Object[], R>) AggregateOperations
                 .withCreate(() -> {
                     Object[] acc = new Object[tags.size()];
                     Arrays.setAll(acc, i -> operations.get(i).createFn().get());
@@ -99,15 +99,15 @@ public final class AllOfAggregationBuilder<T> {
                         operations.get(i).accumulateFn().accept(acc[i], item);
                     }
                 })
-                .andCombine(operations.stream().anyMatch(o -> o.combineFn() == null) ? null :
-                        (acc1, acc2) -> {
+                .andCombine(operations.stream().anyMatch(o -> o.combineFn() == null) ? null
+                                : (acc1, acc2) -> {
                             for (int i = 0; i < acc1.length; i++) {
                                 operations.get(i).combineFn().accept(acc1[i], acc2[i]);
                             }
                         }
                 )
-                .andDeduct(operations.stream().anyMatch(o -> o.deductFn() == null) ? null :
-                        (acc1, acc2) -> {
+                .andDeduct(operations.stream().anyMatch(o -> o.deductFn() == null) ? null
+                                : (acc1, acc2) -> {
                             for (int i = 0; i < acc1.length; i++) {
                                 operations.get(i).deductFn().accept(acc1[i], acc2[i]);
                             }

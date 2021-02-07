@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.core;
 
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
@@ -46,14 +46,14 @@ public class ParallelStressTest extends JetTestSupport {
         There's no assert in this test. If the problem reproduces, the jobs won't complete and will
         get stuck.
          */
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         dag.newVertex("p", TestProcessors.ListSource.supplier(Arrays.asList(1, 2, 3)));
 
-        JetInstance instance = createJetMember();
+        HazelcastInstance instance = createMember();
         ExecutorService executor = Executors.newFixedThreadPool(8);
         List<Future<Job>> futures = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
-            futures.add(executor.submit(() -> instance.newJob(dag)));
+            futures.add(executor.submit(() -> instance.getJetInstance().newJob(dag)));
         }
         for (Future<Job> future : futures) {
             future.get().join();
@@ -69,14 +69,14 @@ public class ParallelStressTest extends JetTestSupport {
         There's no assert in this test. If the problem reproduces, the jobs won't get cancelled and will
         get stuck.
          */
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         dag.newVertex("p", TestProcessors.DummyStatefulP::new);
-        JetInstance instance = createJetMember();
+        HazelcastInstance instance = createMember();
         JobConfig jobConfig = new JobConfig();
         jobConfig.setSnapshotIntervalMillis(0).setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
         List<Job> jobs = new ArrayList<>();
         for (int i = 0; i < 30; i++) {
-            jobs.add(instance.newJob(dag, jobConfig));
+            jobs.add(instance.getJetInstance().newJob(dag, jobConfig));
         }
         sleepSeconds(3);
         for (Job job : jobs) {

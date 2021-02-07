@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,7 +64,7 @@ public final class JetGetJobSummaryListCodec {
         return clientMessage;
     }
 
-    public static JetGetJobSummaryListCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         //empty initial frame
@@ -90,7 +90,7 @@ public final class JetGetJobSummaryListCodec {
         return clientMessage;
     }
 
-    public static JetGetJobSummaryListCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame

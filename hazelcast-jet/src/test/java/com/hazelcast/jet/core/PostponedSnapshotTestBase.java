@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.core;
 
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
@@ -38,17 +38,17 @@ public class PostponedSnapshotTestBase extends JetTestSupport {
     @SuppressWarnings("WeakerAccess") // used by subclass in jet-enterprise
     protected static volatile AtomicIntegerArray latches;
 
-    protected JetInstance instance;
+    protected HazelcastInstance instance;
 
     @Before
     public void setup() {
-        instance = createJetMember();
+        instance = createMember();
         latches = new AtomicIntegerArray(2);
     }
 
     @SuppressWarnings("WeakerAccess") // used by subclass in jet-enterprise
     protected Job startJob(long snapshotInterval) {
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         Vertex highPrioritySource = dag.newVertex("highPrioritySource", () -> new SourceP(0)).localParallelism(1);
         Vertex lowPrioritySource = dag.newVertex("lowPrioritySource", () -> new SourceP(1)).localParallelism(1);
         Vertex sink = dag.newVertex("sink", writeLoggerP());
@@ -60,7 +60,7 @@ public class PostponedSnapshotTestBase extends JetTestSupport {
         config.setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
         config.setSnapshotIntervalMillis(snapshotInterval);
 
-        Job job = instance.newJob(dag, config);
+        Job job = instance.getJetInstance().newJob(dag, config);
         JobRepository jr = new JobRepository(instance);
 
         // check, that snapshot starts, but stays in ONGOING state

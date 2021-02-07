@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,12 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.client.map.helpers.AMapStore;
 import com.hazelcast.collection.IList;
+import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.JetTestSupport;
@@ -63,8 +64,8 @@ public class JmsSourceIntegration_NonSharedClusterTest extends JetTestSupport {
 
     @Test
     public void when_memberTerminated_then_transactionsRolledBack() throws Exception {
-        JetInstance instance1 = createJetMember();
-        JetInstance instance2 = createJetMember();
+        HazelcastInstance instance1 = createMember();
+        HazelcastInstance instance2 = createMember();
 
         // use higher number of messages so that each of the parallel processors gets some
         JmsTestUtil.sendMessages(getConnectionFactory(), "queue", true, MESSAGE_COUNT);
@@ -72,12 +73,12 @@ public class JmsSourceIntegration_NonSharedClusterTest extends JetTestSupport {
         Pipeline p = Pipeline.create();
         IList<String> sinkList = instance1.getList("sinkList");
         p.readFrom(Sources.jmsQueueBuilder(JmsSourceIntegration_NonSharedClusterTest::getConnectionFactory)
-                          .destinationName("queue")
-                          .build(msg -> ((TextMessage) msg).getText()))
-         .withoutTimestamps()
-         .writeTo(Sinks.list(sinkList));
+                .destinationName("queue")
+                .build(msg -> ((TextMessage) msg).getText()))
+                .withoutTimestamps()
+                .writeTo(Sinks.list(sinkList));
 
-        instance1.newJob(p, new JobConfig()
+        instance1.getJetInstance().newJob(p, new JobConfig()
                 .setProcessingGuarantee(EXACTLY_ONCE)
                 .setSnapshotIntervalMillis(DAYS.toMillis(1)));
 
@@ -90,7 +91,7 @@ public class JmsSourceIntegration_NonSharedClusterTest extends JetTestSupport {
         // twice, if this was wrong, the items in the non-rolled-back
         // transaction will be stalled and only emitted once, they will be
         // emitted after the default Artemis timeout of 5 minutes.
-        instance2.getHazelcastInstance().getLifecycleService().terminate();
+        instance2.getLifecycleService().terminate();
         assertTrueEventually(() -> assertEquals("items should be emitted twice", MESSAGE_COUNT * 2, sinkList.size()), 30);
     }
 
@@ -112,18 +113,18 @@ public class JmsSourceIntegration_NonSharedClusterTest extends JetTestSupport {
     private void when_snapshotFails(ProcessingGuarantee guarantee, boolean expectFailure) {
         storeFailed = false;
         // force snapshots to fail by adding a failing map store configuration for snapshot data maps
-        JetConfig config = new JetConfig();
+        Config config = new Config();
         MapConfig mapConfig = new MapConfig(JobRepository.SNAPSHOT_DATA_MAP_PREFIX + '*');
         MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
         mapStoreConfig.setEnabled(true);
         mapStoreConfig.setImplementation(new FailingMapStore());
-        config.getHazelcastConfig().addMapConfig(mapConfig);
+        config.addMapConfig(mapConfig);
 
-        JetInstance instance = createJetMember(config);
+        JetInstance instance = createMember(config).getJetInstance();
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.jmsQueue("queue", JmsSourceIntegration_NonSharedClusterTest::getConnectionFactory))
-         .withoutTimestamps()
-         .writeTo(Sinks.noop());
+                .withoutTimestamps()
+                .writeTo(Sinks.noop());
 
         Job job = instance.newJob(p, new JobConfig()
                 .setProcessingGuarantee(guarantee)

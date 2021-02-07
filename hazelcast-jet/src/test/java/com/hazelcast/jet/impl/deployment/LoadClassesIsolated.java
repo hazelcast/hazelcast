@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@
 package com.hazelcast.jet.impl.deployment;
 
 import com.hazelcast.jet.core.AbstractProcessor;
-import com.hazelcast.jet.core.Processor;
+
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
-import javax.annotation.Nonnull;
 
 import static org.junit.Assert.fail;
 
@@ -46,7 +46,7 @@ public class LoadClassesIsolated extends AbstractProcessor {
     }
 
     @Override
-    protected void init(@Nonnull Processor.Context context) {
+    protected void init(@Nonnull Context context) {
         checkLoadClass();
     }
 

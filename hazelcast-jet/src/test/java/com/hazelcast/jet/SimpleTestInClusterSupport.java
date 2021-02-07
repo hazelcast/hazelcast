@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,11 @@
 
 package com.hazelcast.jet;
 
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.jet.config.JetClientConfig;
-import com.hazelcast.jet.config.JetConfig;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -46,36 +48,32 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
 
     private static final ILogger SUPPORT_LOGGER = Logger.getLogger(SimpleTestInClusterSupport.class);
 
-    private static JetTestInstanceFactory factory;
-    private static JetConfig jetConfig;
-    private static JetInstance[] instances;
-    private static JetInstance client;
+    private static TestHazelcastFactory factory;
+    private static Config config;
+    private static HazelcastInstance[] instances;
+    private static HazelcastInstance client;
 
-    protected static void initialize(int memberCount, @Nullable JetConfig jetConfig) {
+    protected static void initialize(int memberCount, @Nullable Config config) {
         assert factory == null : "already initialized";
-        factory = new JetTestInstanceFactory();
-        instances = new JetInstance[memberCount];
-        if (jetConfig == null) {
-            jetConfig = new JetConfig();
+        factory = new TestHazelcastFactory();
+        if (config == null) {
+            config = new Config();
         }
-        SimpleTestInClusterSupport.jetConfig = jetConfig;
-        // create members
-        for (int i = 0; i < memberCount; i++) {
-            instances[i] = factory.newMember(jetConfig);
-        }
+        instances = factory.newInstances(config, memberCount);
+        SimpleTestInClusterSupport.config = config;
     }
 
     protected static void initializeWithClient(
             int memberCount,
-            @Nullable JetConfig config,
-            @Nullable JetClientConfig clientConfig
+            @Nullable Config config,
+            @Nullable ClientConfig clientConfig
     ) {
         initialize(memberCount, config);
 
         if (clientConfig == null) {
-            clientConfig = new JetClientConfig();
+            clientConfig = new ClientConfig();
         }
-        client = factory.newClient(clientConfig);
+        client = factory.newHazelcastClient(clientConfig);
     }
 
     @After
@@ -84,13 +82,13 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
             return;
         }
         // after each test ditch all jobs and objects
-        List<Job> jobs = instances[0].getJobs();
-        SUPPORT_LOGGER.info("Ditching " + jobs.size() + " jobs in SimpleTestInClusterSupport.@After: " +
-                jobs.stream().map(j -> idToString(j.getId())).collect(joining(", ", "[", "]")));
+        List<Job> jobs = instances[0].getJetInstance().getJobs();
+        SUPPORT_LOGGER.info("Ditching " + jobs.size() + " jobs in SimpleTestInClusterSupport.@After: "
+                + jobs.stream().map(j -> idToString(j.getId())).collect(joining(", ", "[", "]")));
         for (Job job : jobs) {
             ditchJob(job, instances());
         }
-        Collection<DistributedObject> objects = instances()[0].getHazelcastInstance().getDistributedObjects();
+        Collection<DistributedObject> objects = instances()[0].getDistributedObjects();
         SUPPORT_LOGGER.info("Destroying " + objects.size()
                 + " distributed objects in SimpleTestInClusterSupport.@After: "
                 + objects.stream().map(o -> o.getServiceName() + "/" + o.getName())
@@ -114,7 +112,7 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
     }
 
     @Nonnull
-    protected static JetTestInstanceFactory factory() {
+    protected static TestHazelcastFactory factory() {
         return factory;
     }
 
@@ -123,15 +121,23 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
      * passed).
      */
     @Nonnull
-    protected static JetConfig jetConfig() {
-        return jetConfig;
+    protected static Config jetConfig() {
+        return config;
+    }
+
+    /**
+     * Returns the first jet instance.
+     */
+    @Nonnull
+    protected static JetInstance jetInstance() {
+        return instances[0].getJetInstance();
     }
 
     /**
      * Returns the first instance.
      */
     @Nonnull
-    protected static JetInstance instance() {
+    protected static HazelcastInstance instance() {
         return instances[0];
     }
 
@@ -139,14 +145,22 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
      * Returns all instances (except for the client).
      */
     @Nonnull
-    protected static JetInstance[] instances() {
+    protected static HazelcastInstance[] instances() {
         return instances;
     }
 
     /**
      * Returns the client or null, if a client wasn't requested.
      */
-    protected static JetInstance client() {
+    protected static HazelcastInstance client() {
         return client;
     }
+
+    /**
+     * Returns the jet client or null, if a client wasn't requested.
+     */
+    protected static JetInstance jetClient() {
+        return client.getJetInstance();
+    }
+
 }

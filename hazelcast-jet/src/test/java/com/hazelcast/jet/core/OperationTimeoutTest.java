@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.core;
 
-import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.config.JetConfig;
+import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.junit.Before;
@@ -36,37 +36,36 @@ public class OperationTimeoutTest extends JetTestSupport {
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
-    private JetConfig config;
+    private Config config;
 
     @Before
     public void setup() {
-        config = new JetConfig();
-        config.getHazelcastConfig().getProperties().put(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(),
+        config = new Config().setProperty(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(),
                 Integer.toString(TIMEOUT_MILLIS));
     }
 
     @Test
     public void when_slowRunningOperationOnSingleNode_then_doesNotTimeout() throws Throwable {
         // Given
-        JetInstance instance = createJetMember(config);
-        DAG dag = new DAG();
+        HazelcastInstance instance = createMember(config);
+        DAGImpl dag = new DAGImpl();
         dag.newVertex("slow", SlowProcessor::new);
 
         // When
-        executeAndPeel(instance.newJob(dag));
+        executeAndPeel(instance.getJetInstance().newJob(dag));
     }
 
     @Test
     public void when_slowRunningOperationOnMultipleNodes_doesNotTimeout() throws Throwable {
         // Given
-        JetInstance instance = createJetMember(config);
-        createJetMember(config);
+        HazelcastInstance instance = createMember(config);
+        createMember(config);
 
-        DAG dag = new DAG();
+        DAGImpl dag = new DAGImpl();
         dag.newVertex("slow", SlowProcessor::new);
 
         // When
-        executeAndPeel(instance.newJob(dag));
+        executeAndPeel(instance.getJetInstance().newJob(dag));
     }
 
     private static class SlowProcessor extends AbstractProcessor {

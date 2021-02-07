@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -197,7 +197,8 @@ public final class TopologicalSorter<V> {
         // Field names identical to those used in the Wikipedia article:
         int index = -1;
         int lowlink = -1;
-        boolean onStack; // tells whether the vertex is currently on the Tarjan stack
+        // tells whether the vertex is currently on the Tarjan stack
+        boolean onStack;
 
         TarjanVertex(@Nonnull V v) {
             this.v = v;

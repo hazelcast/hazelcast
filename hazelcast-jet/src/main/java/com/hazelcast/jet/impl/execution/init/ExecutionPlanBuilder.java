@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,13 @@
 package com.hazelcast.jet.impl.execution.init;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.jet.config.EdgeConfig;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.internal.partition.IPartitionService;
-import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.DAGImpl;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
@@ -46,7 +46,6 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefix;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefixedLogger;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
-import static com.hazelcast.jet.impl.util.Util.getJetInstance;
 import static com.hazelcast.jet.impl.util.Util.toList;
 import static java.util.stream.Collectors.toList;
 
@@ -56,11 +55,11 @@ public final class ExecutionPlanBuilder {
     }
 
     public static Map<MemberInfo, ExecutionPlan> createExecutionPlans(
-            NodeEngine nodeEngine, MembersView membersView, DAG dag, long jobId, long executionId,
+            NodeEngine nodeEngine, MembersView membersView, DAGImpl dag, long jobId, long executionId,
             JobConfig jobConfig, long lastSnapshotId
     ) {
-        final JetInstance instance = getJetInstance(nodeEngine);
-        final int defaultParallelism = instance.getConfig().getInstanceConfig().getCooperativeThreadCount();
+        JetConfig jetConfig = nodeEngine.getConfig().getJetConfig();
+        final int defaultParallelism = jetConfig.getInstanceConfig().getCooperativeThreadCount();
         final Collection<MemberInfo> members = new HashSet<>(membersView.size());
         final Address[] partitionOwners = new Address[nodeEngine.getPartitionService().getPartitionCount()];
         initPartitionOwnersAndMembers(nodeEngine, membersView, members, partitionOwners);
@@ -68,7 +67,7 @@ public final class ExecutionPlanBuilder {
         final List<Address> addresses = toList(members, MemberInfo::getAddress);
         final int clusterSize = members.size();
         final boolean isJobDistributed = clusterSize > 1;
-        final EdgeConfig defaultEdgeConfig = instance.getConfig().getDefaultEdgeConfig();
+        final EdgeConfig defaultEdgeConfig = jetConfig.getDefaultEdgeConfig();
         final Map<MemberInfo, ExecutionPlan> plans = new HashMap<>();
         int memberIndex = 0;
         for (MemberInfo member : members) {
@@ -92,7 +91,7 @@ public final class ExecutionPlanBuilder {
             String prefix = prefix(jobConfig.getName(), jobId, vertex.getName(), "#PMS");
             ILogger logger = prefixedLogger(nodeEngine.getLogger(metaSupplier.getClass()), prefix);
             try {
-                metaSupplier.init(new MetaSupplierCtx(instance, jobId, executionId, jobConfig, logger,
+                metaSupplier.init(new MetaSupplierCtx(nodeEngine.getHazelcastInstance(), jobId, executionId, jobConfig, logger,
                         vertex.getName(), localParallelism, totalParallelism, clusterSize,
                         jobConfig.getProcessingGuarantee()));
             } catch (Exception e) {
@@ -112,7 +111,7 @@ public final class ExecutionPlanBuilder {
         return plans;
     }
 
-    private static Map<String, Integer> assignVertexIds(DAG dag) {
+    private static Map<String, Integer> assignVertexIds(DAGImpl dag) {
         Map<String, Integer> vertexIdMap = new LinkedHashMap<>();
         final int[] vertexId = {0};
         dag.forEach(v -> vertexIdMap.put(v.getName(), vertexId[0]++));
@@ -137,8 +136,8 @@ public final class ExecutionPlanBuilder {
         for (int partitionId = 0; partitionId < partitionOwners.length; partitionId++) {
             Address address = partitionService.getPartitionOwnerOrWait(partitionId);
 
-            MemberInfo member;
-            if ((member = membersView.getMember(address)) == null) {
+            MemberInfo member = membersView.getMember(address);
+            if (member == null) {
                 // Address in partition table doesn't exist in member list,
                 // it has just joined the cluster.
                 throw new TopologyChangedException("Topology changed, " + address + " is not in original member list");
