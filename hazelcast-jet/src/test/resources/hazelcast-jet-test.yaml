@@ -1,0 +1,14 @@
+hazelcast-jet:
+  instance:
+    cooperative-thread-count: 55
+    flow-control-period: 50
+    backup-count: 2
+    scale-up-delay-millis: 1234
+    lossless-restart-enabled: false
+  properties:
+    property1: value1
+    property2: value2
+  edge-defaults:
+    queue-size: 999
+    packet-size-limit: 997
+    receive-window-multiplier: 996
