@@ -17,14 +17,10 @@
 package com.hazelcast.client.map.impl.iterator;
 
 import com.hazelcast.client.impl.proxy.ClientMapProxy;
-import com.hazelcast.map.impl.iterator.MapIterator;
-import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nonnull;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 public class ClientMapIterable<K, V> implements Iterable<Map.Entry<K, V>> {
     private final ClientMapProxy<K, V> clientMapProxy;
@@ -42,13 +38,9 @@ public class ClientMapIterable<K, V> implements Iterable<Map.Entry<K, V>> {
         this.prefetchValues = prefetchValues;
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public Iterator<Map.Entry<K, V>> iterator() {
-        // create the partition iterators
-        List<Iterator<Map.Entry<K, V>>> clientPartitionIterators = IntStream.range(0, partitionCount).boxed()
-                .map(partitionId -> clientMapProxy.iterator(fetchSize, partitionId, prefetchValues))
-                .collect(Collectors.toList());
-        return new MapIterator<>(clientPartitionIterators);
+        return new ClientMapIterator(clientMapProxy, fetchSize, partitionCount, prefetchValues);
     }
 }

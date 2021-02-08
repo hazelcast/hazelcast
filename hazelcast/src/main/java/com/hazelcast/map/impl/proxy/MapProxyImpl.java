@@ -42,6 +42,7 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MergeEntryProcessor;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.iterator.MapIterable;
+import com.hazelcast.map.impl.iterator.MapIterator;
 import com.hazelcast.map.impl.iterator.MapPartitionIterable;
 import com.hazelcast.map.impl.iterator.MapQueryIterable;
 import com.hazelcast.map.impl.iterator.MapPartitionIterator;
@@ -108,7 +109,7 @@ import static java.util.Collections.emptyMap;
  * @param <K> the key type of map.
  * @param <V> the value type of map.
  */
-@SuppressWarnings("checkstyle:classfanoutcomplexity")
+@SuppressWarnings({"checkstyle:classfanoutcomplexity", "checkstyle:ClassDataAbstractionCoupling"})
 public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJournalReader<EventJournalMapEvent<K, V>> {
 
     public MapProxyImpl(String name, MapService mapService, NodeEngine nodeEngine, MapConfig mapConfig) {
@@ -996,6 +997,19 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     /**
+     * Returns an iterator for the map entries in the all of the
+     * partitions.
+     * calling {@code Map.Entry.getValue()} lazily.
+     * @return an iterator for the map entries
+     */
+    @Override
+    @Nonnull
+    public Iterator<Entry<K, V>> iterator() {
+        int partitionCount = partitionService.getPartitionCount();
+        return new MapIterator<>(this, partitionCount, false);
+    }
+
+    /**
      * Returns an iterable for iterating the result of the projection on entries
      * in the {@code partitionId} which satisfy the {@code predicate}.
      * <p>
@@ -1026,7 +1040,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
      * {@code false}, only keys will be sent and values will be fetched when
      * calling {@code Map.Entry.getValue()} lazily.
      * <p>
-     * Uses {@link MapProxyImpl#iterator(int, int, boolean)}.
+     * Uses {@link MapPartitionIterator}.
      *
      * @param fetchSize      the size of the batches which will be sent when iterating the data
      * @param partitionId    the partition ID which is being iterated
@@ -1067,7 +1081,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
      * {@code false}, only keys will be sent and values will be fetched when
      * calling {@code Map.Entry.getValue()} lazily.
      * <p>
-     * Uses {@link MapProxyImpl#iterator(int, int, boolean)}.
+     * Uses {@link MapIterator}.
      *
      * @param fetchSize      the size of the batches which will be sent when iterating the data
      * @param prefetchValues whether to send values along with keys (if true) or to fetch them lazily when iterating (if false)

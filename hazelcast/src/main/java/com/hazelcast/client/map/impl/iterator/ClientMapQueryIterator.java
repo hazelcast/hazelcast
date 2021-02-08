@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.iterator;
+package com.hazelcast.client.map.impl.iterator;
 
-import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.client.impl.proxy.ClientMapProxy;
+import com.hazelcast.map.impl.iterator.AbstractMapQueryIterator;
+import com.hazelcast.map.impl.iterator.MapQueryPartitionIterator;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 
@@ -26,29 +28,23 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- * Iterator for iterating the result of the projection on entries
- * in the whole cluster which satisfy the {@code predicate}. The values
- * are fetched in batches. The {@link Iterator#remove()} method is not
- * supported and will throw a {@link UnsupportedOperationException}.
- * It uses {@link MapQueryPartitionIterator} and the provided guarantees
- * are the same with it.
+ * Client-side iterator for iterating the result of the projection on
+ * entries in the whole cluster which satisfy the {@code predicate}. The
+ * values are fetched in batches. The {@link Iterator#remove()} method
+ * is not supported and will throw a {@link UnsupportedOperationException}.
+ * It uses {@link MapQueryPartitionIterator} and provides same guarantees
+ * with it.
  *
  * @see MapQueryPartitionIterator
  */
-public class MapQueryIterator<K, V, R> extends AbstractMapQueryIterator<R> {
-
-    public MapQueryIterator(MapProxyImpl<K, V> mapProxy, int fetchSize, int partitionCount,
-                            Projection<? super Map.Entry<K, V>, R> projection, Predicate<K, V> predicate) {
+public class ClientMapQueryIterator<K, V, R> extends AbstractMapQueryIterator<R> {
+    public ClientMapQueryIterator(ClientMapProxy<K, V> mapProxy, int fetchSize, int partitionCount,
+                                  Projection<? super Map.Entry<K, V>, R> projection, Predicate<K, V> predicate) {
         this.partitionIterators = IntStream.range(0, partitionCount).boxed()
                 .map(partitionId -> mapProxy.iterator(fetchSize, partitionId, projection, predicate))
                 .collect(Collectors.toList());
         this.size = partitionIterators.size();
         idx = 0;
         it = partitionIterators.get(idx);
-    }
-
-    public MapQueryIterator(MapProxyImpl<K, V> mapProxy, int partitionCount,
-                            Projection<? super Map.Entry<K, V>, R> projection, Predicate<K, V> predicate) {
-        this(mapProxy, DEFAULT_FETCH_SIZE, partitionCount, projection, predicate);
     }
 }

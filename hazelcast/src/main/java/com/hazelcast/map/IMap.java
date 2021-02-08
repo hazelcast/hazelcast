@@ -29,10 +29,12 @@ import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.spi.properties.ClusterProperty;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -246,7 +248,7 @@ import java.util.function.Function;
  * @param <V> value type
  * @see java.util.concurrent.ConcurrentMap
  */
-public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
+public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable {
 
     /**
      * {@inheritDoc}
@@ -3184,5 +3186,17 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
     default void replaceAll(@Nonnull BiFunction<? super K, ? super V, ? extends V> function) {
         ConcurrentMap.super.replaceAll(function);
     }
+
+    /**
+     * Returns an iterator over the entries of map. It iterates partitions
+     * in a sequential manner. It starts to iterate on partition 0 and it
+     * finishes the iteration with the last partition (n = 271 by default).
+     * The entries are fetched in batches for the constant heap utilization.
+     *
+     * @since 4.2
+     */
+    @NotNull
+    @Override
+    Iterator<Entry<K, V>> iterator();
 
 }

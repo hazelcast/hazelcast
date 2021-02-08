@@ -22,10 +22,7 @@ import com.hazelcast.query.Predicate;
 
 import javax.annotation.Nonnull;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 /**
  * Iterable that provides an iterator for iterating the result of the
@@ -36,9 +33,9 @@ import java.util.stream.IntStream;
  */
 public class MapQueryIterable<K, V, R> implements Iterable<R> {
     private final MapProxyImpl<K, V> mapProxy;
-    private final Predicate<K, V> predicate;
-    private final Projection<? super Map.Entry<K, V>, R> projection;
     private final int fetchSize;
+    private final Projection<? super Map.Entry<K, V>, R> projection;
+    private final Predicate<K, V> predicate;
     private final int partitionCount;
 
     public MapQueryIterable(MapProxyImpl<K, V> mapProxy,
@@ -54,10 +51,6 @@ public class MapQueryIterable<K, V, R> implements Iterable<R> {
     @Nonnull
     @Override
     public Iterator<R> iterator() {
-        // create the partition iterators
-        List<Iterator<R>> partitionIterators = IntStream.range(0, partitionCount).boxed()
-                .map(partitionId -> mapProxy.iterator(fetchSize, partitionId, projection, predicate))
-                .collect(Collectors.toList());
-        return new MapQueryIterator<>(partitionIterators);
+        return new MapQueryIterator<>(mapProxy, fetchSize, partitionCount, projection, predicate);
     }
 }

@@ -14,33 +14,37 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.iterator;
+package com.hazelcast.client.map.impl.iterator;
 
-import com.hazelcast.map.impl.proxy.MapProxyImpl;
+
+import com.hazelcast.client.impl.proxy.ClientMapProxy;
+import com.hazelcast.map.impl.iterator.AbstractMapIterator;
+import com.hazelcast.map.impl.iterator.MapPartitionIterator;
 
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- * Iterator for iterating map entries in the whole cluster. The values
+ * Client-side iterator for iterating map entries in the whole cluster. The values
  * are fetched in batches.
  * It uses {@link MapPartitionIterator} and provides the same guarantees
  * with this partition iterator.
  *
  * @see MapPartitionIterator
  */
-public class MapIterator<K, V> extends AbstractMapIterator<K, V> {
+public class ClientMapIterator<K, V> extends AbstractMapIterator<K, V> {
 
-    public MapIterator(MapProxyImpl<K, V> mapProxy, int fetchSize, int partitionCount, boolean prefetchValues) {
+    public ClientMapIterator(ClientMapProxy<K, V> clientMapProxy, int fetchSize, int partitionCount, boolean prefetchValues) {
         this.partitionIterators = IntStream.range(0, partitionCount).boxed()
-                .map(partitionId -> mapProxy.iterator(fetchSize, partitionId, prefetchValues))
+                .map(partitionId -> clientMapProxy.iterator(fetchSize, partitionId, prefetchValues))
                 .collect(Collectors.toList());
         this.size = partitionIterators.size();
         idx = 0;
         it = partitionIterators.get(idx);
     }
 
-    public MapIterator(MapProxyImpl<K, V> mapProxy, int partitionCount, boolean prefetchValues) {
-        this(mapProxy, DEFAULT_FETCH_SIZE, partitionCount, prefetchValues);
+    public ClientMapIterator(ClientMapProxy<K, V> clientMapProxy, int partitionCount, boolean prefetchValues) {
+        this(clientMapProxy, DEFAULT_FETCH_SIZE, partitionCount, prefetchValues);
     }
 }
+

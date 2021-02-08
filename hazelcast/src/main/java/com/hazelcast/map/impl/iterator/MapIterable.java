@@ -20,10 +20,8 @@ import com.hazelcast.map.impl.proxy.MapProxyImpl;
 
 import javax.annotation.Nonnull;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+
 
 /**
  * Iterable that provides an iterator for iterating map entries in the
@@ -51,10 +49,6 @@ public class MapIterable<K, V> implements Iterable<Map.Entry<K, V>> {
     @Nonnull
     @Override
     public Iterator<Map.Entry<K, V>> iterator() {
-        // create the partition iterators
-        List<Iterator<Map.Entry<K, V>>> partitionIterators = IntStream.range(0, partitionCount).boxed()
-                .map(partitionId -> mapProxy.iterator(fetchSize, partitionId, prefetchValues))
-                .collect(Collectors.toList());
-        return new MapIterator<>(partitionIterators);
+        return new MapIterator<>(mapProxy, partitionCount, fetchSize, prefetchValues);
     }
 }

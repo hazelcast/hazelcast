@@ -96,6 +96,7 @@ import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
 import com.hazelcast.client.map.impl.iterator.ClientMapIterable;
+import com.hazelcast.client.map.impl.iterator.ClientMapIterator;
 import com.hazelcast.client.map.impl.iterator.ClientMapPartitionIterable;
 import com.hazelcast.client.map.impl.iterator.ClientMapPartitionIterator;
 import com.hazelcast.client.map.impl.iterator.ClientMapQueryIterable;
@@ -2128,6 +2129,23 @@ public class ClientMapProxy<K, V> extends ClientProxy
         checkNotNull(remappingFunction, NULL_BIFUNCTION_IS_NOT_ALLOWED);
 
         return mergeLocally(key, value, remappingFunction);
+    }
+
+    /**
+     * Returns an iterator for the map entries in the all of the
+     * partitions. It iterates partitions in a sequential manner. It
+     * starts to iterate on partition 0 and it finishes the iteration
+     * with the last partition (n = 271 by default). The entries are
+     * fetched in batches for the constant heap utilization.
+     *
+     * @return an iterator for the map entries
+     */
+    @Override
+    @Nonnull
+    public Iterator<Entry<K, V>> iterator() {
+        ClientPartitionService partitionService = getContext().getPartitionService();
+        int partitionCount = partitionService.getPartitionCount();
+        return new ClientMapIterator<>(this, partitionCount, false);
     }
 
     private V mergeLocally(K key, V value, BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
