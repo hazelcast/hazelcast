@@ -63,7 +63,8 @@ public final class ColumnExpression<T> implements Expression<T>, IdentifiedDataS
     }
 
     @SuppressWarnings("unchecked")
-    @Override public T eval(Row row, ExpressionEvalContext context) {
+    @Override
+    public T eval(Row row, ExpressionEvalContext context) {
         Object res = row.get(index);
 
         if (res instanceof LazyTarget) {
@@ -74,7 +75,7 @@ public final class ColumnExpression<T> implements Expression<T>, IdentifiedDataS
     }
 
     private Object unwrapLazyValue(LazyTarget lazyValue, ExpressionEvalContext context) {
-        assert type == QueryDataType.OBJECT;
+        assert type.equals(QueryDataType.OBJECT);
 
         return lazyValue.deserialize(context.getSerializationService());
     }
