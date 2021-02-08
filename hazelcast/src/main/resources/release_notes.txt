@@ -1,5 +1,8 @@
 This document lists the new features, enhancements, fixed issues and, removed or deprecated features for Hazelcast IMDG 3.12.12 release. The numbers in the square brackets refer to the issues in Hazelcast's GitHub repositories.
 
+IMPORTANT: Starting with Hazelcast IMDG 3.12, the Hazelcast IMDG download package does not include
+the documentation; please see https://docs.hazelcast.com/home/index.html.
+
 ## Enhancements
 
 * Updated the version of Hazelcast Kubernetes plugin to 1.5.5. [#17927]
