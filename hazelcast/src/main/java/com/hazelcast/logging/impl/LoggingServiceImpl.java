@@ -122,7 +122,7 @@ public class LoggingServiceImpl implements LoggingService {
      * @throws IllegalArgumentException if the passed string can't be parsed into
      *                                  a known {@link Level}.
      */
-    public void setLevel(String level) {
+    public void setLevel(@Nonnull String level) {
         Level parsedLevel;
         try {
             parsedLevel = Level.parse(level.toUpperCase());

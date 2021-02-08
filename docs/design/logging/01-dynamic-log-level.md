@@ -130,6 +130,17 @@ public @Nullable Level getLevel();
   */
 public void setLevel(@Nonnull Level level);
 
+  /**
+   * Parses the given string level into {@link Level} and then sets the level
+   * using {@link #setLevel(Level)}.
+   *
+   * @param level the level to parse, see {@link Level#getName()} for available
+   *              level names.
+   * @throws IllegalArgumentException if the passed string can't be parsed into
+   *                                  a known {@link Level}.
+   */
+  public void setLevel(@Nonnull String level);
+
 /**
   * Resets the levels of all the loggers known to this logging service back
   * to the default reconfigured values. Basically, undoes all the changes done
