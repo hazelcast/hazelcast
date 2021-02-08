@@ -48,7 +48,7 @@ public class LoggingServiceMBean extends HazelcastMBean<LoggingServiceImpl> {
     @ManagedAnnotation(value = "setLevel", operation = true)
     @ManagedDescription("Set level")
     public void setLevel(String level) {
-        managedObject.setLevel(Level.parse(level));
+        managedObject.setLevel(level);
     }
 
     @ManagedAnnotation(value = "resetLevel", operation = true)

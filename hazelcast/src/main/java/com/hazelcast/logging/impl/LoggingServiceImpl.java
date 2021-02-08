@@ -114,9 +114,31 @@ public class LoggingServiceImpl implements LoggingService {
     }
 
     /**
+     * Parses the given string level into {@link Level} and then sets the level
+     * using {@link #setLevel(Level)}.
+     *
+     * @param level the level to parse, see {@link Level#getName()} for available
+     *              level names.
+     * @throws IllegalArgumentException if the passed string can't be parsed into
+     *                                  a known {@link Level}.
+     */
+    public void setLevel(String level) {
+        Level parsedLevel;
+        try {
+            parsedLevel = Level.parse(level.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(
+                    "Invalid level '" + level + "', known levels are: " + String.join(", ", Level.OFF.getName(),
+                            Level.SEVERE.getName(), Level.WARNING.getName(), Level.INFO.getName(), Level.CONFIG.getName(),
+                            Level.FINE.getName(), Level.FINER.getName(), Level.FINEST.getName()), e);
+        }
+        setLevel(parsedLevel);
+    }
+
+    /**
      * Resets the levels of all the loggers known to this logging service back
      * to the default reconfigured values. Basically, undoes all the changes done
-     * by the previous calls to {@link #setLevel}, if there were any.
+     * by the previous calls to {@link #setLevel(Level)}, if there were any.
      */
     public void resetLevel() {
         if (loggerFactory instanceof InternalLoggerFactory) {

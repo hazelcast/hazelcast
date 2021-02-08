@@ -34,7 +34,6 @@ import com.hazelcast.wan.impl.WanReplicationService;
 
 import java.io.UnsupportedEncodingException;
 import java.util.UUID;
-import java.util.logging.Level;
 
 import static com.hazelcast.cp.CPGroup.METADATA_CP_GROUP_NAME;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.RES_400;
@@ -574,16 +573,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
 
     private void handleLogLevel(HttpPostCommand command) throws UnsupportedEncodingException {
         String[] params = decodeParamsAndAuthenticate(command, 3);
-        String rawLevel = params[2];
-        Level level;
-        try {
-            level = Level.parse(rawLevel.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException(
-                    "Invalid level '" + rawLevel + "', known levels are: " + String.join(", ", Level.OFF.getName(),
-                            Level.SEVERE.getName(), Level.WARNING.getName(), Level.INFO.getName(), Level.CONFIG.getName(),
-                            Level.FINE.getName(), Level.FINER.getName(), Level.FINEST.getName()), e);
-        }
+        String level = params[2];
 
         LoggingServiceImpl loggingService = (LoggingServiceImpl) getNode().getLoggingService();
         loggingService.setLevel(level);
