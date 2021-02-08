@@ -131,7 +131,7 @@ public class RestLogLevelTest {
         jsonValue = Json.parse(response).asObject().get("logLevel");
         assertEquals(Level.FINE.getName(), jsonValue.asString());
 
-        response = communicator.resetLogLevel();
+        response = communicator.resetLogLevel(config.getClusterName(), getPassword());
         jsonValue = Json.parse(response).asObject().get("message");
         assertEquals("log level is reset", jsonValue.asString());
 

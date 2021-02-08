@@ -154,9 +154,14 @@ log.
 
 #### REST endpoint
 
-REST endpoint at `/hazelcast/rest/log-level` should be exposed to users. Users
+REST endpoint at `/hazelcast/rest/log-level` should be exposed to users; users
 should be able to: GET it to learn the current log level set, POST to it to set
-the log level to the value they want to and DELETE it to reset the log level.
+the log level to the value they want to. REST endpoint at
+`/hazelcast/rest/log-level/reset` should be exposed to users; users should be
+able to POST to it to reset the log level back.
+
+The endpoints should have a proper `RestEndpointGroup` assigned to control the
+access, mutating operations should be password protected.
 
 #### JMX
 

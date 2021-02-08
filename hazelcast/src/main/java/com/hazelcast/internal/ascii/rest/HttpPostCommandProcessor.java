@@ -112,8 +112,10 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 sendResponse = false;
             } else if (uri.startsWith(URI_LICENSE_INFO)) {
                 handleSetLicense(command);
+            } else if (uri.startsWith(URI_LOG_LEVEL_RESET)) {
+                handleLogLevelReset(command);
             } else if (uri.startsWith(URI_LOG_LEVEL)) {
-                handleLogLevel(command);
+                handleLogLevelSet(command);
             } else {
                 command.send404();
             }
@@ -571,13 +573,21 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         prepareResponse(cmd, response(SUCCESS));
     }
 
-    private void handleLogLevel(HttpPostCommand command) throws UnsupportedEncodingException {
+    private void handleLogLevelSet(HttpPostCommand command) throws UnsupportedEncodingException {
         String[] params = decodeParamsAndAuthenticate(command, 3);
         String level = params[2];
 
         LoggingServiceImpl loggingService = (LoggingServiceImpl) getNode().getLoggingService();
         loggingService.setLevel(level);
         prepareResponse(command, response(SUCCESS, "message", "log level is changed"));
+    }
+
+    private void handleLogLevelReset(HttpPostCommand command) throws UnsupportedEncodingException {
+        decodeParamsAndAuthenticate(command, 2);
+
+        LoggingServiceImpl loggingService = (LoggingServiceImpl) getNode().getLoggingService();
+        loggingService.resetLevel();
+        prepareResponse(command, response(SUCCESS, "message", "log level is reset"));
     }
 
 }

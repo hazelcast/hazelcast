@@ -109,8 +109,9 @@ public class HTTPCommunicator {
     public static final String URI_CP_MEMBERS_URL = "cp-subsystem/members";
     public static final String URI_LOCAL_CP_MEMBER_URL = URI_CP_MEMBERS_URL + "/local";
 
-    // Log Level: GET to get, POST to set, DELETE to reset
+    // Log Level
     public static final String URI_LOG_LEVEL = "log-level";
+    public static final String URI_LOG_LEVEL_RESET = "log-level/reset";
 
     private final String address;
     private final boolean sslEnabled;
@@ -628,9 +629,9 @@ public class HTTPCommunicator {
         return doPost(url, clusterName, clusterPassword, level.getName()).response;
     }
 
-    public String resetLogLevel() throws IOException {
-        String url = getUrl(URI_LOG_LEVEL);
-        return doDelete(url).response;
+    public String resetLogLevel(String clusterName, String clusterPassword) throws IOException {
+        String url = getUrl(URI_LOG_LEVEL_RESET);
+        return doPost(url, clusterName, clusterPassword).response;
     }
 
 }
