@@ -24,6 +24,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static org.junit.Assert.assertEquals;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class NearCacheConfigAccessorTest extends HazelcastTestSupport {
@@ -34,7 +36,22 @@ public class NearCacheConfigAccessorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testInitDefaultMaxSizeForOnHeapMaps_whenNull_thenDoNothing() {
-        NearCacheConfigAccessor.initDefaultMaxSizeForOnHeapMaps(null);
+    public void testNearCacheConfigEqual_BeforeAndAfterDefaultSizeIsAccesed() {
+        NearCacheConfig config1 = new NearCacheConfig();
+        NearCacheConfig config2 = new NearCacheConfig();
+        int size = NearCacheConfigAccessor.getDefaultMaxSizeForOnHeapMaps(config1);
+        assertEquals(MapConfig.DEFAULT_MAX_SIZE, size);
+        assertEquals(config1, config2);
+    }
+
+    @Test
+    public void testEvictionConfigCopy_whenDefaultSizeIsInitialized() {
+        NearCacheConfig config1 = new NearCacheConfig();
+        NearCacheConfigAccessor.getDefaultMaxSizeForOnHeapMaps(config1);
+
+        EvictionConfig evictionConfig = config1.getEvictionConfig();
+        EvictionConfig evictionConfig2 = new EvictionConfig(evictionConfig);
+
+        assertEquals(evictionConfig.getSize(), evictionConfig2.getSize());
     }
 }

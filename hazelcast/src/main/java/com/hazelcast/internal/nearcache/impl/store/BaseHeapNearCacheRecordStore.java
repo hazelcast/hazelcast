@@ -19,6 +19,7 @@ package com.hazelcast.internal.nearcache.impl.store;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.NearCacheConfigAccessor;
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.eviction.EvictionChecker;
@@ -64,7 +65,8 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
                                                              NearCacheConfig nearCacheConfig) {
         MaxSizePolicy maxSizePolicy = evictionConfig.getMaxSizePolicy();
         if (maxSizePolicy == MaxSizePolicy.ENTRY_COUNT) {
-            return new EntryCountNearCacheEvictionChecker(evictionConfig.getSize(), records);
+            int size = NearCacheConfigAccessor.getDefaultMaxSizeForOnHeapMaps(nearCacheConfig);
+            return new EntryCountNearCacheEvictionChecker(size, records);
         }
 
         throw new IllegalArgumentException(format("Invalid max-size policy (%s) for %s! Only %s is supported.",

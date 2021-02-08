@@ -28,14 +28,11 @@ public final class NearCacheConfigAccessor {
     private NearCacheConfigAccessor() {
     }
 
-    public static void initDefaultMaxSizeForOnHeapMaps(NearCacheConfig nearCacheConfig) {
-        if (nearCacheConfig == null) {
-            return;
-        }
-
+    public static int getDefaultMaxSizeForOnHeapMaps(NearCacheConfig nearCacheConfig) {
         EvictionConfig evictionConfig = nearCacheConfig.getEvictionConfig();
-        if (nearCacheConfig.getInMemoryFormat() != InMemoryFormat.NATIVE && !evictionConfig.sizeConfigured) {
-            evictionConfig.setSize(MapConfig.DEFAULT_MAX_SIZE);
+        if (!evictionConfig.sizeConfigured) {
+            return MapConfig.DEFAULT_MAX_SIZE;
         }
+        return evictionConfig.getSize();
     }
 }

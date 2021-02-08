@@ -65,7 +65,6 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.config.NearCacheConfigAccessor.initDefaultMaxSizeForOnHeapMaps;
 import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
 import static com.hazelcast.internal.config.DeclarativeConfigUtil.SYSPROP_MEMBER_CONFIG;
 import static com.hazelcast.internal.config.DeclarativeConfigUtil.validateSuffixInSystemProperty;
@@ -197,7 +196,7 @@ public class Config {
      * <p>
      * It tries to load Hazelcast configuration from a list of well-known locations,
      * and then applies overrides found in environment variables/system properties
-     *
+     * <p>
      * When no location contains Hazelcast configuration then it returns default.
      * <p>
      * Note that the same mechanism is used when calling {@link com.hazelcast.core.Hazelcast#newHazelcastInstance()}.
@@ -278,8 +277,8 @@ public class Config {
      * By default the {@link MatchingPointConfigPatternMatcher} is used.
      *
      * @param configPatternMatcher the pattern matcher
-     * @throws IllegalArgumentException if the pattern matcher is {@code null}
      * @return this configuration
+     * @throws IllegalArgumentException if the pattern matcher is {@code null}
      */
     public Config setConfigPatternMatcher(ConfigPatternMatcher configPatternMatcher) {
         if (configPatternMatcher == null) {
@@ -403,6 +402,7 @@ public class Config {
     /**
      * Sets the cluster name uniquely identifying the hazelcast cluster. This name is
      * used in different scenarios, such as identifying cluster for WAN publisher.
+     *
      * @param clusterName the new cluster name
      * @return this config instance
      * @throws IllegalArgumentException if name is {@code null}
@@ -461,7 +461,6 @@ public class Config {
         name = getBaseName(name);
         MapConfig config = lookupByPattern(configPatternMatcher, mapConfigs, name);
         if (config != null) {
-            initDefaultMaxSizeForOnHeapMaps(config.getNearCacheConfig());
             return new MapConfigReadOnly(config);
         }
         return new MapConfigReadOnly(getMapConfig("default"));
