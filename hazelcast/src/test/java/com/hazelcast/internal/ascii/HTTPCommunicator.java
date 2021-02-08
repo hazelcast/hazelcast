@@ -619,19 +619,19 @@ public class HTTPCommunicator {
         this.enableChunkedStreaming = true;
     }
 
-    public String getLogLevel() throws IOException {
+    public ConnectionResponse getLogLevel() throws IOException {
         String url = getUrl(URI_LOG_LEVEL);
-        return doGet(url).response;
+        return doGet(url);
     }
 
-    public String setLogLevel(String clusterName, String clusterPassword, Level level) throws IOException {
+    public ConnectionResponse setLogLevel(String clusterName, String clusterPassword, Level level) throws IOException {
         String url = getUrl(URI_LOG_LEVEL);
-        return doPost(url, clusterName, clusterPassword, level.getName()).response;
+        return doPost(url, clusterName, clusterPassword, level.getName());
     }
 
-    public String resetLogLevel(String clusterName, String clusterPassword) throws IOException {
+    public ConnectionResponse resetLogLevel(String clusterName, String clusterPassword) throws IOException {
         String url = getUrl(URI_LOG_LEVEL_RESET);
-        return doPost(url, clusterName, clusterPassword).response;
+        return doPost(url, clusterName, clusterPassword);
     }
 
 }

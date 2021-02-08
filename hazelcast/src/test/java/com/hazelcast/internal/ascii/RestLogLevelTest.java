@@ -24,6 +24,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestAwareInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -56,7 +57,7 @@ public class RestLogLevelTest {
     }
 
     protected Config createConfig() {
-        return new Config();
+        return HazelcastTestSupport.smallInstanceConfig();
     }
 
     protected Config createReadWriteConfig() {
@@ -119,24 +120,24 @@ public class RestLogLevelTest {
         HazelcastInstance instance = factory.newHazelcastInstance(config);
         HTTPCommunicator communicator = new HTTPCommunicator(instance);
 
-        String response = communicator.getLogLevel();
-        JsonValue jsonValue = Json.parse(response).asObject().get("logLevel");
+        HTTPCommunicator.ConnectionResponse response = communicator.getLogLevel();
+        JsonValue jsonValue = Json.parse(response.response).asObject().get("logLevel");
         assertTrue(jsonValue.isNull());
 
         response = communicator.setLogLevel(config.getClusterName(), getPassword(), Level.FINE);
-        jsonValue = Json.parse(response).asObject().get("message");
+        jsonValue = Json.parse(response.response).asObject().get("message");
         assertEquals("log level is changed", jsonValue.asString());
 
         response = communicator.getLogLevel();
-        jsonValue = Json.parse(response).asObject().get("logLevel");
+        jsonValue = Json.parse(response.response).asObject().get("logLevel");
         assertEquals(Level.FINE.getName(), jsonValue.asString());
 
         response = communicator.resetLogLevel(config.getClusterName(), getPassword());
-        jsonValue = Json.parse(response).asObject().get("message");
+        jsonValue = Json.parse(response.response).asObject().get("message");
         assertEquals("log level is reset", jsonValue.asString());
 
         response = communicator.getLogLevel();
-        jsonValue = Json.parse(response).asObject().get("logLevel");
+        jsonValue = Json.parse(response.response).asObject().get("logLevel");
         assertTrue(jsonValue.isNull());
     }
 
