@@ -41,6 +41,6 @@ public class ClientMapIterable<K, V> implements Iterable<Map.Entry<K, V>> {
     @Nonnull
     @Override
     public Iterator<Map.Entry<K, V>> iterator() {
-        return new ClientMapIterator(clientMapProxy, fetchSize, partitionCount, prefetchValues);
+        return new ClientMapIterator<>(clientMapProxy, fetchSize, partitionCount, prefetchValues);
     }
 }

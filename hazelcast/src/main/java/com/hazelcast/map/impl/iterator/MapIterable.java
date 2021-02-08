@@ -49,6 +49,6 @@ public class MapIterable<K, V> implements Iterable<Map.Entry<K, V>> {
     @Nonnull
     @Override
     public Iterator<Map.Entry<K, V>> iterator() {
-        return new MapIterator<>(mapProxy, partitionCount, fetchSize, prefetchValues);
+        return new MapIterator<>(mapProxy, fetchSize, partitionCount, prefetchValues);
     }
 }
