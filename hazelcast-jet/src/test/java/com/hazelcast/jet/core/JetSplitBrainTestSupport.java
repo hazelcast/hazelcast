@@ -170,7 +170,11 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
         assertSplitBrainCreated(instances, firstSubClusterSize, secondSubClusterSize);
     }
 
-    private void assertSplitBrainCreated(HazelcastInstance[] instances, int firstSubClusterSize, int secondSubClusterSize) {
+    private void assertSplitBrainCreated(
+            HazelcastInstance[] instances,
+            int firstSubClusterSize,
+            int secondSubClusterSize
+    ) {
         for (int isolatedIndex = 0; isolatedIndex < firstSubClusterSize; isolatedIndex++) {
             HazelcastInstance isolatedInstance = instances[isolatedIndex];
             assertClusterSizeEventually(firstSubClusterSize, isolatedInstance);

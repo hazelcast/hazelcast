@@ -218,7 +218,8 @@ public abstract class JmsSourceIntegrationTestBase extends SimpleTestInClusterSu
          .withoutTimestamps()
          .writeTo(Sinks.logger());
 
-        Job job = jetInstance().newJob(p, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE).setSnapshotIntervalMillis(10));
+        Job job = jetInstance().newJob(p,
+                new JobConfig().setProcessingGuarantee(EXACTLY_ONCE).setSnapshotIntervalMillis(10));
         assertJobStatusEventually(job, RUNNING);
         JobRepository jr = new JobRepository(instance());
         waitForFirstSnapshot(jr, job.getId(), 5, true);

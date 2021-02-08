@@ -110,7 +110,8 @@ public class WatermarkCoalescer_TerminalSnapshotTest extends JetTestSupport {
                             }
                         }).build());
 
-        Job job = instance.getJetInstance().newJob(p, new JobConfig().setProcessingGuarantee(ProcessingGuarantee.AT_LEAST_ONCE));
+        Job job = instance.getJetInstance().newJob(p,
+                new JobConfig().setProcessingGuarantee(ProcessingGuarantee.AT_LEAST_ONCE));
 
         List<Future> futures = new ArrayList<>();
         futures.add(spawn(() -> {

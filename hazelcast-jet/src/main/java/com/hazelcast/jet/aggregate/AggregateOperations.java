@@ -1864,6 +1864,9 @@ public final class AggregateOperations {
         return new AggregateOpAggregator<>(aggrOp);
     }
 
+    /**
+     * TODO: javadoc
+     */
     public static <A> AggregateOperationBuilder<A> withCreate(SupplierEx<A> createFn) {
         return new AggregateOperationBuilder<>(createFn);
     }

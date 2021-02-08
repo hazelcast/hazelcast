@@ -16,15 +16,24 @@
 
 package com.hazelcast.jet.pipeline;
 
+/**
+ * TODO: javadoc
+ */
 public final class JoinBuilders {
 
     private JoinBuilders() {
     }
 
+    /**
+     * TODO: javadoc
+     */
     public static <T> HashJoinBuilder<T> hashJoinBuilder(BatchStage<T> stage) {
         return new HashJoinBuilder<>(stage);
     }
 
+    /**
+     * TODO: javadoc
+     */
     public static <T> StreamHashJoinBuilder<T> streamHashJoinBuilder(StreamStage<T> stage) {
         return new StreamHashJoinBuilder<>(stage);
     }

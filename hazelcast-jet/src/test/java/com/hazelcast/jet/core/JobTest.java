@@ -493,7 +493,8 @@ public class JobTest extends SimpleTestInClusterSupport {
         String randomPrefix = randomName();
         try {
             for (int round = 0; round < 10; round++) {
-                DAGImpl dag = new DAGImpl().vertex(new Vertex("test" + round, new MockPS(NoOutputSourceP::new, NODE_COUNT * 2)));
+                DAGImpl dag = new DAGImpl()
+                        .vertex(new Vertex("test" + round, new MockPS(NoOutputSourceP::new, NODE_COUNT * 2)));
                 System.out.println("Starting round " + round);
                 JobConfig config = new JobConfig().setName(randomPrefix + round);
                 List<Future<Job>> futures = new ArrayList<>();
