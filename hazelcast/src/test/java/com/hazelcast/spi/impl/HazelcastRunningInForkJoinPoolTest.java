@@ -74,7 +74,7 @@ public class HazelcastRunningInForkJoinPoolTest extends HazelcastTestSupport {
     @Test
     public void no_deadlock_during_proxy_initialization() {
         int availableProcessors = Runtime.getRuntime().availableProcessors();
-        int count = 2 * availableProcessors;
+        int count = availableProcessors + 1;
         List<IMap<Object, Object>> maps = IntStream.range(0, count)
                 .boxed()
                 .parallel()
