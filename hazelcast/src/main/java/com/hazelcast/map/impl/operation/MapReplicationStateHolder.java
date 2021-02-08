@@ -18,6 +18,9 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.internal.cluster.Versions;
+import com.hazelcast.internal.monitor.LocalRecordStoreStats;
+import com.hazelcast.internal.monitor.impl.LocalRecordStoreStatsImpl;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -42,7 +45,6 @@ import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.MapIndexInfo;
-import com.hazelcast.spi.impl.NodeEngine;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -79,6 +81,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
     protected transient List<MapIndexInfo> mapIndexInfos;
 
     private MapReplicationOperation operation;
+    private Map<String, LocalRecordStoreStats> recordStoreStatsPerMapName;
 
     /**
      * This constructor exists solely for instantiation by {@code MapDataSerializerHook}. The object is not ready to use
@@ -172,7 +175,6 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
                     indexes.clearAll();
                 }
 
-                NodeEngine nodeEngine = mapContainer.getMapServiceContext().getNodeEngine();
                 long nowInMillis = Clock.currentTimeMillis();
                 for (int i = 0; i < keyRecordExpiry.size(); i += 3) {
                     Data dataKey = (Data) keyRecordExpiry.get(i);
@@ -194,6 +196,15 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
                     Indexes.markPartitionAsIndexed(partitionContainer.getPartitionId(), indexesSnapshot);
                 }
             }
+        }
+
+        for (Map.Entry<String, LocalRecordStoreStats> statsEntry : recordStoreStatsPerMapName.entrySet()) {
+            String mapName = statsEntry.getKey();
+            LocalRecordStoreStats stats = statsEntry.getValue();
+
+            RecordStore recordStore = operation.getRecordStore(mapName);
+            recordStore.setStats(stats);
+
         }
     }
 
@@ -251,6 +262,10 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
                     throw ExceptionUtil.rethrow(e);
                 }
             }, operation.getReplicaIndex() != 0, true);
+
+            if (out.getVersion().isGreaterOrEqual(Versions.V4_2)) {
+                recordStore.getStats().writeData(out);
+            }
         }
 
         out.writeInt(loaded.size());
@@ -274,6 +289,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
     public void readData(ObjectDataInput in) throws IOException {
         int size = in.readInt();
         data = createHashMap(size);
+        recordStoreStatsPerMapName = createHashMap(size);
 
         for (int i = 0; i < size; i++) {
             String name = in.readUTF();
@@ -287,6 +303,11 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
                 keyRecordExpiry.add(dataKey);
                 keyRecordExpiry.add(record);
                 keyRecordExpiry.add(expiryMetadata);
+            }
+            if (in.getVersion().isGreaterOrEqual(Versions.V4_2)) {
+                LocalRecordStoreStatsImpl stats = new LocalRecordStoreStatsImpl();
+                stats.readData(in);
+                recordStoreStatsPerMapName.put(name, stats);
             }
             data.put(name, keyRecordExpiry);
         }

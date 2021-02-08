@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import static com.hazelcast.internal.util.JVMUtil.REFERENCE_COST_IN_BYTES;
 
 /**
- * Used when {@link MapConfig#isStatisticsEnabled()} is {@code
+ * Used when {@link MapConfig#isPerEntryStatsEnabled()} ()} is {@code
  * false} and {@link MapConfig#getCacheDeserializedValues()} is
  * not {@link com.hazelcast.config.CacheDeserializedValues#NEVER}.
  *

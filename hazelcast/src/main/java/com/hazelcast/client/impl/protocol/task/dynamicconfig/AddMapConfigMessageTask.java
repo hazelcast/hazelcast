@@ -70,6 +70,7 @@ public class AddMapConfigMessageTask
         config.setAttributeConfigs(parameters.attributeConfigs);
         config.setReadBackupData(parameters.readBackupData);
         config.setStatisticsEnabled(parameters.statisticsEnabled);
+        config.setPerEntryStatsEnabled(parameters.perEntryStatsEnabled);
         config.setIndexConfigs(parameters.indexConfigs);
         if (parameters.mapStoreConfig != null) {
             config.setMapStoreConfig(parameters.mapStoreConfig.asMapStoreConfig(serializationService));

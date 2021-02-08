@@ -712,6 +712,19 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
+                                <xs:attribute name="per-entry-stats-enabled" use="optional" type="parameterized-boolean"
+                                              default="false">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                             Whether statistical information (hits, creation
+                                             time, last access time etc.) should be gathered
+                                             and stored. You have to enable this if you plan to
+                                             implement a custom eviction policy, out-of-the-box
+                                             eviction policies work regardless of this setting.
+                                             The method for retrieving the statistics is `getLocalMapStats()`.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
                                 <xs:attribute name="cache-deserialized-values" use="optional"
                                               type="parameterized-cache-deserialized">
                                     <xs:annotation>

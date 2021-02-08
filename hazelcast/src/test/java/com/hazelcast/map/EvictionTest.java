@@ -96,12 +96,16 @@ public class EvictionTest extends HazelcastTestSupport {
 
     @Parameterized.Parameter
     public boolean statisticsEnabled;
+    @Parameterized.Parameter
+    public boolean perEntryStatsEnabled;
 
-    @Parameterized.Parameters(name = "statisticsEnabled:{0}")
+    @Parameterized.Parameters(name = "statisticsEnabled:{0}, perEntryStatsEnabled:{1}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
-                {true},
-                {false},
+                {true, true},
+                {false, true},
+                {true, false},
+                {false, false},
         });
     }
 
@@ -224,6 +228,7 @@ public class EvictionTest extends HazelcastTestSupport {
         String mapName = randomMapName();
 
         Config config = getConfig();
+        config.getMapConfig("default").setPerEntryStatsEnabled(true);
         // "disable" the cleaner task
         config.setProperty(PROP_TASK_PERIOD_SECONDS, Integer.toString(MAX_VALUE));
 
@@ -816,7 +821,7 @@ public class EvictionTest extends HazelcastTestSupport {
         int waitSeconds = 2;
 
         MapConfig mapConfig = newMapConfig(mapName)
-                .setMaxIdleSeconds(30);
+                .setMaxIdleSeconds(30).setPerEntryStatsEnabled(true);
         Config config = getConfig()
                 .addMapConfig(mapConfig);
 
@@ -983,36 +988,28 @@ public class EvictionTest extends HazelcastTestSupport {
 
     @Test
     public void testOnExpiredKeys_getAll() {
-        IMap<Integer, Integer> map = getMapWithExpiredKeys();
+        IMap<Integer, Integer> map = getMapPopulatedWithExpirableKeys();
         Set<Integer> keys = Collections.singleton(1);
-        Map<Integer, Integer> all = map.getAll(keys);
-
-
-        assertTrueEventually(() -> assertEquals(0, all.size()));
+        assertTrueEventually(() -> assertEquals(0, map.getAll(keys).size()));
     }
 
     @Test
     public void testOnExpiredKeys_values() {
-        IMap<Integer, Integer> map = getMapWithExpiredKeys();
-        Collection<Integer> values = map.values();
-
-        assertEquals(0, values.size());
+        IMap<Integer, Integer> map = getMapPopulatedWithExpirableKeys();
+        assertTrueEventually(() -> assertEquals(0, map.values().size()));
     }
 
     @Test
     public void testOnExpiredKeys_keySet() {
-        IMap<Integer, Integer> map = getMapWithExpiredKeys();
-        Set<Integer> keySet = map.keySet();
-
-        assertEquals(0, keySet.size());
+        IMap<Integer, Integer> map = getMapPopulatedWithExpirableKeys();
+        assertTrueEventually(() -> assertEquals(0, map.keySet().size()));
     }
 
     @Test
     public void testOnExpiredKeys_entrySet() {
-        IMap<Integer, Integer> map = getMapWithExpiredKeys();
-        Set<Map.Entry<Integer, Integer>> entries = map.entrySet();
+        IMap<Integer, Integer> map = getMapPopulatedWithExpirableKeys();
+        assertTrueEventually(() -> assertEquals(0, map.entrySet().size()));
 
-        assertEquals(0, entries.size());
     }
 
     @Test
@@ -1026,12 +1023,11 @@ public class EvictionTest extends HazelcastTestSupport {
         assertTrue(expirationTime > now);
     }
 
-    private IMap<Integer, Integer> getMapWithExpiredKeys() {
+    private IMap<Integer, Integer> getMapPopulatedWithExpirableKeys() {
         IMap<Integer, Integer> map = createSimpleMap();
         map.put(1, 1, 100, TimeUnit.MILLISECONDS);
         map.put(2, 1, 100, TimeUnit.MILLISECONDS);
         map.put(3, 1, 100, TimeUnit.MILLISECONDS);
-        sleepAtLeastSeconds(2);
         return map;
     }
 
@@ -1335,7 +1331,8 @@ public class EvictionTest extends HazelcastTestSupport {
     protected Config getConfig() {
         Config config = smallInstanceConfig();
         config.getMapConfig("default")
-                .setStatisticsEnabled(statisticsEnabled);
+                .setStatisticsEnabled(statisticsEnabled)
+                .setPerEntryStatsEnabled(perEntryStatsEnabled);
         return config;
     }
 }

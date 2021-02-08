@@ -102,12 +102,16 @@ public class BasicMapTest extends HazelcastTestSupport {
 
     @Parameterized.Parameter
     public boolean statisticsEnabled;
+    @Parameterized.Parameter
+    public boolean perEntryStatsEnabled;
 
-    @Parameterized.Parameters(name = "statisticsEnabled:{0}")
+    @Parameterized.Parameters(name = "statisticsEnabled:{0}, perEntryStatsEnabled:{1}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
-                {true},
-                {false},
+                {true, true},
+                {false, true},
+                {true, false},
+                {false, false},
         });
     }
 
@@ -131,10 +135,19 @@ public class BasicMapTest extends HazelcastTestSupport {
 
     protected Config getConfig() {
         Config cfg = smallInstanceConfig();
-        cfg.getMapConfig("default").setStatisticsEnabled(statisticsEnabled);
+        cfg.getMapConfig("default")
+                .setStatisticsEnabled(statisticsEnabled)
+                .setPerEntryStatsEnabled(perEntryStatsEnabled);
+
         MapConfig mapConfig = new MapConfig("mapWithTTL*");
         mapConfig.setTimeToLiveSeconds(1);
         mapConfig.setStatisticsEnabled(statisticsEnabled);
+        mapConfig.setPerEntryStatsEnabled(perEntryStatsEnabled);
+
+        cfg.getMapConfig("testEntryView")
+        .setStatisticsEnabled(statisticsEnabled)
+        .setPerEntryStatsEnabled(perEntryStatsEnabled);
+
         cfg.addMapConfig(mapConfig);
         return cfg;
     }
@@ -796,8 +809,6 @@ public class BasicMapTest extends HazelcastTestSupport {
     public void testEntryView() {
         assumeThat(statisticsEnabled, is(true));
 
-        Config config = getConfig();
-        config.getMapConfig("default").setStatisticsEnabled(true);
         HazelcastInstance instance = getInstance();
 
         IMap<Integer, Integer> map = instance.getMap("testEntryView");

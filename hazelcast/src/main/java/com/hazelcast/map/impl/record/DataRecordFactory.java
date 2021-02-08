@@ -38,7 +38,7 @@ public class DataRecordFactory implements RecordFactory<Data> {
     @Override
     public Record<Data> newRecord(Object value) {
         MapConfig mapConfig = mapContainer.getMapConfig();
-        boolean statisticsEnabled = mapConfig.isStatisticsEnabled();
+        boolean perEntryStatsEnabled = mapConfig.isPerEntryStatsEnabled();
         CacheDeserializedValues cacheDeserializedValues = mapConfig.getCacheDeserializedValues();
         boolean hasEviction = mapContainer.getEvictor() != NULL_EVICTOR;
 
@@ -46,9 +46,9 @@ public class DataRecordFactory implements RecordFactory<Data> {
 
         switch (cacheDeserializedValues) {
             case NEVER:
-                return newSimpleRecord(valueData, mapConfig, statisticsEnabled, hasEviction);
+                return newSimpleRecord(valueData, mapConfig, perEntryStatsEnabled, hasEviction);
             default:
-                return newCachedSimpleRecord(valueData, mapConfig, statisticsEnabled, hasEviction);
+                return newCachedSimpleRecord(valueData, mapConfig, perEntryStatsEnabled, hasEviction);
         }
     }
 
@@ -58,8 +58,8 @@ public class DataRecordFactory implements RecordFactory<Data> {
     }
 
     private Record<Data> newCachedSimpleRecord(Data valueData, MapConfig mapConfig,
-                                               boolean statisticsEnabled, boolean hasEviction) {
-        if (statisticsEnabled || isClusterV41()) {
+                                               boolean perEntryStatsEnabled, boolean hasEviction) {
+        if (perEntryStatsEnabled || isClusterV41()) {
             return new CachedDataRecordWithStats(valueData);
         }
 
@@ -71,14 +71,20 @@ public class DataRecordFactory implements RecordFactory<Data> {
             if (mapConfig.getEvictionConfig().getEvictionPolicy() == EvictionPolicy.LFU) {
                 return new CachedSimpleRecordWithLFUEviction(valueData);
             }
+
+            if (mapConfig.getEvictionConfig().getEvictionPolicy() == EvictionPolicy.RANDOM) {
+                return new CachedSimpleRecord(valueData);
+            }
+
+            return new CachedDataRecordWithStats(valueData);
         }
 
         return new CachedSimpleRecord(valueData);
     }
 
     private Record<Data> newSimpleRecord(Data valueData, MapConfig mapConfig,
-                                         boolean statisticsEnabled, boolean hasEviction) {
-        if (statisticsEnabled || isClusterV41()) {
+                                         boolean perEntryStatsEnabled, boolean hasEviction) {
+        if (perEntryStatsEnabled || isClusterV41()) {
             return new DataRecordWithStats(valueData);
         }
 
@@ -90,8 +96,14 @@ public class DataRecordFactory implements RecordFactory<Data> {
             if (mapConfig.getEvictionConfig().getEvictionPolicy() == EvictionPolicy.LFU) {
                 return new SimpleRecordWithLFUEviction<>(valueData);
             }
+
+            if (mapConfig.getEvictionConfig().getEvictionPolicy() == EvictionPolicy.RANDOM) {
+                return new CachedSimpleRecord(valueData);
+            }
+
+            return new DataRecordWithStats(valueData);
         }
 
-        return new SimpleRecord<>(valueData);
+        return new CachedSimpleRecord(valueData);
     }
 }

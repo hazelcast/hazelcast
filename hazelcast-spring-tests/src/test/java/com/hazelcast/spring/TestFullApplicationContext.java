@@ -327,7 +327,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     @Test
     public void testMapConfig() {
         assertNotNull(config);
-        assertEquals(25, config.getMapConfigs().size());
+        assertEquals(26, config.getMapConfigs().size());
 
         MapConfig testMapConfig = config.getMapConfig("testMap");
         assertNotNull(testMapConfig);
@@ -1235,6 +1235,12 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         RecentlyActiveSplitBrainProtectionFunction splitBrainProtectionFunction =
                 (RecentlyActiveSplitBrainProtectionFunction) recentlyActiveSplitBrainProtectionConfig.getFunctionImplementation();
         assertEquals(5123, splitBrainProtectionFunction.getHeartbeatToleranceMillis());
+    }
+
+    @Test
+    public void testMapPerEntryStats() {
+        MapConfig mapConfig = config.getMapConfig("map-with-per-entry-stats-enabled");
+        assertTrue(mapConfig.isPerEntryStatsEnabled());
     }
 
     @Test

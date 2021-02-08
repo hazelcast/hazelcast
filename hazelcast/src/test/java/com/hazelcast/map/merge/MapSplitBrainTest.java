@@ -121,13 +121,15 @@ public class MapSplitBrainTest extends SplitBrainTestSupport {
                 .setMergePolicyConfig(mergePolicyConfig)
                 .setBackupCount(1)
                 .setAsyncBackupCount(0)
-                .setStatisticsEnabled(true);
+                .setStatisticsEnabled(true)
+                .setPerEntryStatsEnabled(true);
         config.getMapConfig(mapNameB)
                 .setInMemoryFormat(inMemoryFormat)
                 .setMergePolicyConfig(mergePolicyConfig)
                 .setBackupCount(1)
                 .setAsyncBackupCount(0)
-                .setStatisticsEnabled(true);
+                .setStatisticsEnabled(true)
+                .setPerEntryStatsEnabled(true);
         return config;
     }
 
