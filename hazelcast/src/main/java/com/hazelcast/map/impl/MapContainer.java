@@ -469,4 +469,17 @@ public class MapContainer {
             return ss.toData(input, partitioningStrategy);
         }
     }
+
+    public boolean isUseCachedDeserializedValuesEnabled(int partitionId) {
+        CacheDeserializedValues cacheDeserializedValues = getMapConfig().getCacheDeserializedValues();
+        switch (cacheDeserializedValues) {
+            case NEVER:
+                return false;
+            case ALWAYS:
+                return true;
+            default:
+                //if index exists then cached value is already set -> let's use it
+                return getIndexes(partitionId).haveAtLeastOneIndex();
+        }
+    }
 }

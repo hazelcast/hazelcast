@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.exec.scan;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.query.impl.getters.Extractors;
@@ -32,7 +33,11 @@ public final class MapScanExecUtils {
         return map.getExtractors();
     }
 
-    public static MapScanExecIterator createIterator(MapContainer map, PartitionIdSet parts) {
-        return new MapScanExecIterator(map, parts.iterator());
+    public static MapScanExecIterator createIterator(
+        MapContainer map,
+        PartitionIdSet parts,
+        InternalSerializationService serializationService
+    ) {
+        return new MapScanExecIterator(map, parts.iterator(), serializationService);
     }
 }

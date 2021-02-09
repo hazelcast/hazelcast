@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.query;
 
-import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.iteration.IterationPointer;
@@ -82,7 +81,7 @@ public class PartitionScanRunner {
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
         RecordStore<Record> recordStore = partitionContainer.getRecordStore(mapName);
         boolean nativeMemory = recordStore.getInMemoryFormat() == InMemoryFormat.NATIVE;
-        boolean useCachedValues = isUseCachedDeserializedValuesEnabled(mapContainer, partitionId);
+        boolean useCachedValues = mapContainer.isUseCachedDeserializedValuesEnabled(partitionId);
         Extractors extractors = mapServiceContext.getExtractors(mapName);
         Map.Entry<Integer, Map.Entry> nearestAnchorEntry =
                 pagingPredicate == null ? null : pagingPredicate.getNearestAnchorEntry();
@@ -164,18 +163,5 @@ public class PartitionScanRunner {
             }
         }
         return new QueryableEntriesSegment(resultList, pointers);
-    }
-
-    protected boolean isUseCachedDeserializedValuesEnabled(MapContainer mapContainer, int partitionId) {
-        CacheDeserializedValues cacheDeserializedValues = mapContainer.getMapConfig().getCacheDeserializedValues();
-        switch (cacheDeserializedValues) {
-            case NEVER:
-                return false;
-            case ALWAYS:
-                return true;
-            default:
-                //if index exists then cached value is already set -> let's use it
-                return mapContainer.getIndexes(partitionId).haveAtLeastOneIndex();
-        }
     }
 }

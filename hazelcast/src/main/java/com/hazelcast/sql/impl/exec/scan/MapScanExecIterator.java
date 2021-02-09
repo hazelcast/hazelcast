@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.exec.scan;
 
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.record.Record;
@@ -28,6 +29,8 @@ import com.hazelcast.sql.impl.SqlErrorCode;
 import java.util.Iterator;
 import java.util.Map;
 
+import static com.hazelcast.map.impl.record.Records.getValueOrCachedValue;
+
 /**
  * Iterator over map partitions.
  */
@@ -36,6 +39,7 @@ public class MapScanExecIterator implements KeyValueIterator {
 
     private final MapContainer map;
     private final Iterator<Integer> partsIterator;
+    private final InternalSerializationService serializationService;
     private final long now = Clock.currentTimeMillis();
 
     private RecordStore currentRecordStore;
@@ -46,11 +50,18 @@ public class MapScanExecIterator implements KeyValueIterator {
     private Data nextKey;
     private Object nextValue;
 
-    public MapScanExecIterator(MapContainer map, Iterator<Integer> partsIterator) {
+    private boolean useCachedValues;
+
+    public MapScanExecIterator(
+        MapContainer map,
+        Iterator<Integer> partsIterator,
+        InternalSerializationService serializationService
+    ) {
         this.map = map;
         this.partsIterator = partsIterator;
+        this.serializationService = serializationService;
 
-        advance0();
+        advance0(true);
     }
 
     @Override
@@ -59,7 +70,7 @@ public class MapScanExecIterator implements KeyValueIterator {
             currentKey = nextKey;
             currentValue = nextValue;
 
-            advance0();
+            advance0(false);
 
             return true;
         } else {
@@ -76,7 +87,7 @@ public class MapScanExecIterator implements KeyValueIterator {
      * Get the next key/value pair from the store.
      */
     @SuppressWarnings("unchecked")
-    private void advance0() {
+    private void advance0(boolean first) {
         while (true) {
             // Move to the next record store if needed.
             if (currentRecordStoreIterator == null) {
@@ -95,6 +106,10 @@ public class MapScanExecIterator implements KeyValueIterator {
                                 SqlErrorCode.PARTITION_DISTRIBUTION,
                                 "Partition is not owned by member: " + nextPart
                         ).markInvalidate();
+                    }
+
+                    if (first) {
+                        useCachedValues = map.isUseCachedDeserializedValuesEnabled(nextPart);
                     }
 
                     currentRecordStore = map.getMapServiceContext().getRecordStore(nextPart, map.getName());
@@ -121,10 +136,11 @@ public class MapScanExecIterator implements KeyValueIterator {
             while (currentRecordStoreIterator.hasNext()) {
                 Map.Entry<Data, Record<Object>> entry = currentRecordStoreIterator.next();
 
-                // TODO record-store has a forEach method for this, it may be used here.
                 if (!currentRecordStore.isExpired(entry.getKey(), now, false)) {
                     nextKey = entry.getKey();
-                    nextValue = entry.getValue().getValue();
+
+                    Record record = entry.getValue();
+                    nextValue = useCachedValues ? getValueOrCachedValue(record, serializationService) : record.getValue();
 
                     return;
                 }

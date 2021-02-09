@@ -52,8 +52,7 @@ public abstract class AbstractMapScanExec extends AbstractExec {
     protected final List<QueryDataType> fieldTypes;
     protected final List<Integer> projects;
     protected final Expression<Boolean> filter;
-
-    private final InternalSerializationService serializationService;
+    protected final InternalSerializationService serializationService;
 
     private int migrationStamp;
     private KeyValueIterator recordIterator;
