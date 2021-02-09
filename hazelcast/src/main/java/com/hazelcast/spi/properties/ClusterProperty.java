@@ -1503,6 +1503,16 @@ public final class ClusterProperty {
             = new HazelcastProperty("hazelcast.shutdownhook.policy", "TERMINATE");
 
     /**
+     * Since 4.2, there is no effect of setting this property.
+     * HD Memory is automatically aligned for hot restart
+     * starting from that version.
+     * @deprecated since 4.2
+     */
+    @Deprecated
+    public static final HazelcastProperty HOT_RESTART_FREE_NATIVE_MEMORY_PERCENTAGE
+            = new HazelcastProperty("hazelcast.hotrestart.free.native.memory.percentage", 15);
+
+    /**
      * Name of logging framework type to send logging events.
      */
     public static final HazelcastProperty LOGGING_TYPE
