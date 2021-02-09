@@ -25,6 +25,7 @@ import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.type.SqlTypeName;
+import org.apache.calcite.util.NlsString;
 
 import static org.apache.calcite.sql.type.SqlTypeName.CHAR_TYPES;
 
@@ -68,7 +69,11 @@ public final class LiteralUtils {
         }
 
         if (CHAR_TYPES.contains(typeName)) {
-            return new TypedLiteral(value.toString(), SqlTypeName.VARCHAR);
+            if (value instanceof NlsString) {
+                value = ((NlsString) value).getValue();
+            }
+            assert value instanceof String : value.getClass().getName();
+            return new TypedLiteral(value, SqlTypeName.VARCHAR);
         }
 
         return new TypedLiteral(value, typeName);

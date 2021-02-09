@@ -142,7 +142,6 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
         Object expectedResult,
         Object... params
     ) {
-        System.out.println(sql);
         List<SqlRow> rows = execute(member, sql, params);
         assertEquals(1, rows.size());
 
@@ -178,12 +177,10 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
         Object... params
     ) {
         try {
-            System.out.println(sql);
             execute(member, sql, params);
 
             fail("Must fail");
         } catch (HazelcastSqlException e) {
-            e.printStackTrace();
             assertTrue(expectedErrorMessage.length() != 0);
             assertNotNull(e.getMessage());
             assertTrue(

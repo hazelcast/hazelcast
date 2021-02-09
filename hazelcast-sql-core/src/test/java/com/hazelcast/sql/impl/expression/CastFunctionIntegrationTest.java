@@ -400,6 +400,7 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         checkValue0(sql(literal(Byte.MIN_VALUE), TINYINT), TINYINT, Byte.MIN_VALUE);
         checkValue0(sql(literal(Byte.MAX_VALUE), TINYINT), TINYINT, Byte.MAX_VALUE);
         checkFailure0(sql(literal(128), TINYINT), PARSING, "Numeric overflow while converting SMALLINT to TINYINT");
+        // test for https://github.com/hazelcast/hazelcast/issues/18155
         checkFailure0(sql("cast(128 as smallint)", TINYINT), PARSING, "Numeric overflow while converting SMALLINT to TINYINT");
 
         checkValue0(sql(literal(1), SMALLINT), SMALLINT, (short) 1);

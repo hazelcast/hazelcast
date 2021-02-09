@@ -23,6 +23,7 @@ import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.type.converter.BigDecimalConverter;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.type.SqlTypeName;
+import org.apache.calcite.util.Util;
 
 import java.math.BigDecimal;
 
@@ -54,8 +55,12 @@ public final class NumericLiteral extends Literal {
             }
         }
 
-        if (typeName == SqlTypeName.DOUBLE && value instanceof BigDecimal) {
-            value = ((BigDecimal) value).doubleValue();
+        if (value instanceof BigDecimal) {
+            if (typeName == SqlTypeName.DOUBLE) {
+                value = ((BigDecimal) value).doubleValue();
+            } else if (typeName == SqlTypeName.REAL) {
+                value = ((BigDecimal) value).floatValue();
+            }
         }
 
         return new NumericLiteral(
@@ -106,10 +111,6 @@ public final class NumericLiteral extends Literal {
         );
     }
 
-    private static boolean hasDecimalPlaces(BigDecimal value) {
-        return value.stripTrailingZeros().scale() > 0;
-    }
-
     @Override
     public RelDataType getType(HazelcastTypeFactory typeFactory) {
         switch (mode) {
@@ -124,6 +125,18 @@ public final class NumericLiteral extends Literal {
 
                 return typeFactory.createSqlType(SqlTypeName.DOUBLE);
         }
+    }
+
+    @Override
+    public String getStringValue() {
+        if (mode != Mode.FRACTIONAL_INEXACT) {
+            return value.toString();
+        }
+        return Util.toScientificNotation(BigDecimal.valueOf((double) value).stripTrailingZeros());
+    }
+
+    private static boolean hasDecimalPlaces(BigDecimal value) {
+        return value.scale() > 0;
     }
 
     private enum Mode {

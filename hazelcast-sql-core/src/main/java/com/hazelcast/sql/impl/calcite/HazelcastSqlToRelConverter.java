@@ -24,11 +24,13 @@ import com.hazelcast.sql.impl.calcite.validate.literal.LiteralUtils;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.impl.type.converter.BigDecimalConverter;
+import com.hazelcast.sql.impl.type.converter.Converter;
+import com.hazelcast.sql.impl.type.converter.Converters;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.prepare.Prepare;
 import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.runtime.CalciteContextException;
 import org.apache.calcite.runtime.Resources;
@@ -42,7 +44,6 @@ import org.apache.calcite.sql2rel.SqlRexConvertletTable;
 import org.apache.calcite.sql2rel.SqlToRelConverter;
 import org.apache.calcite.util.TimeString;
 
-import java.math.BigDecimal;
 import java.time.LocalTime;
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -116,7 +117,7 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
 
         Literal literal = LiteralUtils.literal(convertedOperand);
 
-        if (literal != null && literal.getTypeName() != NULL) {
+        if (literal != null && ((RexLiteral) convertedOperand).getTypeName() != NULL) {
             // There is a bug in RexSimplify that incorrectly converts numeric literals from one numeric type to another.
             // The problem is located in the RexToLixTranslator.translateLiteral. To perform a conversion, it delegates
             // to Primitive.number(Number) method, that does a conversion without checking for overflow. For example, the
@@ -155,8 +156,8 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
             // be "true". See CastFunctionIntegrationTest.testApproximateTypeSimplification - it will fail without this fix.
             if (fromType.getTypeFamily().isNumeric()) {
                 if (toType.getTypeFamily().isNumericApproximate()) {
-                    BigDecimal originalValue = ((SqlLiteral) operand).getValueAs(BigDecimal.class);
-                    Object convertedValue = toType.getConverter().convertToSelf(BigDecimalConverter.INSTANCE, originalValue);
+                    Converter converter = Converters.getConverter(literal.getValue().getClass());
+                    Object convertedValue = toType.getConverter().convertToSelf(converter, literal.getValue());
 
                     return getRexBuilder().makeLiteral(convertedValue, to, false);
                 }

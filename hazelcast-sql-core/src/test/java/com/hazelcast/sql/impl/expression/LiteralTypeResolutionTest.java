@@ -112,7 +112,7 @@ public class LiteralTypeResolutionTest {
         assertNotNull(literal0);
 
         assertEquals(expectedValue, literal0.getValue());
-        assertEquals(expectedStringValue0, literal0.getValue() != null ? literal0.getValue().toString() : null);
+        assertEquals(expectedStringValue0, literal0.getStringValue());
         assertEquals(expectedTypeName, literal0.getTypeName());
         assertEquals(expectedTypeName, literal0.getType(HazelcastTypeFactory.INSTANCE).getSqlTypeName());
         assertEquals(expectedNullable, literal0.getType(HazelcastTypeFactory.INSTANCE).isNullable());
@@ -127,9 +127,5 @@ public class LiteralTypeResolutionTest {
 
     private static SqlLiteral exactNumeric(Object value) {
         return SqlLiteral.createExactNumeric(value.toString(), ZERO);
-    }
-
-    private static SqlLiteral inexactNumeric(double value) {
-        return SqlLiteral.createApproxNumeric(Double.toString(value), ZERO);
     }
 }
