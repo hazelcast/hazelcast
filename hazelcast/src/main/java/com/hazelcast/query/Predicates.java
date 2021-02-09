@@ -31,10 +31,12 @@ import com.hazelcast.query.impl.predicates.NotPredicate;
 import com.hazelcast.query.impl.predicates.OrPredicate;
 import com.hazelcast.query.impl.predicates.PagingPredicateImpl;
 import com.hazelcast.query.impl.predicates.PartitionPredicateImpl;
+import com.hazelcast.query.impl.predicates.PartitionsPredicateImpl;
 import com.hazelcast.query.impl.predicates.RegexPredicate;
 import com.hazelcast.query.impl.predicates.SqlPredicate;
 import com.hazelcast.query.impl.predicates.TruePredicate;
 
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.Map;
@@ -577,4 +579,17 @@ public final class Predicates {
         return new PartitionPredicateImpl<>(partitionKey, target);
     }
 
+    /**
+     * Creates a new partitions predicate that restricts the execution of the target predicate to a subset of partitions.
+     *
+     * @param partitionKey the partition keys
+     * @param target       the target {@link Predicate}
+     * @param <K>          the type of keys the predicate operates on.
+     * @param <V>          the type of values the predicate operates on.
+     * @throws NullPointerException     if partition key or target predicate is {@code null}
+     */
+    public static <K, V> PartitionsPredicate<K, V> partitionsPredicate(Collection<? extends Object> partitionKeys,
+            Predicate<K, V> target) {
+        return new PartitionsPredicateImpl<>(partitionKeys, target);
+    }
 }
