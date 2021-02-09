@@ -97,7 +97,6 @@
         <maven.surefire.plugin.version>3.0.0-M3</maven.surefire.plugin.version>
         <maven.spotbugs.plugin.version>4.1.3</maven.spotbugs.plugin.version>
         <maven.checkstyle.plugin.version>3.1.0</maven.checkstyle.plugin.version>
-        <checkstyle.headerLocation>${maven.multiModuleProjectDirectory}/checkstyle/ClassHeaderApache.txt</checkstyle.headerLocation>
         <maven.sonar.plugin.version>3.6.0.1398</maven.sonar.plugin.version>
         <maven.jacoco.plugin.version>0.8.4</maven.jacoco.plugin.version>
         <maven.builder.helper.version>3.1.0</maven.builder.helper.version>
@@ -710,8 +709,8 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <configLocation>${maven.multiModuleProjectDirectory}/checkstyle/checkstyle.xml</configLocation>
-                    <suppressionsLocation>${maven.multiModuleProjectDirectory}/checkstyle/suppressions.xml</suppressionsLocation>
+                    <configLocation>${checkstyle.configLocation}</configLocation>
+                    <suppressionsLocation>${checkstyle.supressionsLocation}</suppressionsLocation>
                     <headerLocation>${checkstyle.headerLocation}</headerLocation>
                     <enableRSS>false</enableRSS>
                     <linkXRef>false</linkXRef>

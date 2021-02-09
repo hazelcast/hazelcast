@@ -32,6 +32,13 @@
         <version>4.5-SNAPSHOT</version>
     </parent>
 
+    <properties>
+        <!-- needed for CheckStyle -->
+        <checkstyle.headerLocation>${maven.multiModuleProjectDirectory}/checkstyle/ClassHeaderApache.txt</checkstyle.headerLocation>
+        <checkstyle.configLocation>${maven.multiModuleProjectDirectory}/checkstyle/checkstyle_jet.xml</checkstyle.configLocation>
+        <checkstyle.supressionsLocation>${maven.multiModuleProjectDirectory}/checkstyle/suppressions_jet.xml</checkstyle.supressionsLocation>
+    </properties>
+
     <build>
         <plugins>
             <plugin>

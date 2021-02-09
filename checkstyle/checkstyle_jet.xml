@@ -55,7 +55,7 @@
 
     <!-- Activation here is needed for IntelliJ CheckstyleIDEA plugin -->
     <module name="SuppressionFilter">
-        <property name="file" value="${main.basedir}/checkstyle/suppressions.xml"/>
+        <property name="file" value="${main.basedir}/checkstyle/suppressions_jet.xml"/>
     </module>
 
     <!-- Enable the suppression annotation @SuppressWarnings("checkstyle:lowercasecheckname"} -->
