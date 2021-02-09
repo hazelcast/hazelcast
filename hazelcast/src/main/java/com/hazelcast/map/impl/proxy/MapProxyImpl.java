@@ -79,6 +79,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -742,13 +743,28 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     @Nonnull
     @Override
     public Collection<V> values() {
-        return values(Predicates.alwaysTrue());
+        return valuesAsync().join();
     }
 
+    @Nonnull
+    @Override
+    public CompletableFuture<Collection<V>> valuesAsync() {
+        return valuesAsync(Predicates.alwaysTrue());
+    }
+
+    @Nonnull
     @Override
     @SuppressWarnings("unchecked")
     public Collection<V> values(@Nonnull Predicate predicate) {
-        return executePredicate(predicate, IterationType.VALUE, false, Target.ALL_NODES);
+        return valuesAsync(predicate).join();
+    }
+
+    @Nonnull
+    @Override
+    @SuppressWarnings("unchecked")
+    public CompletableFuture<Collection<V>> valuesAsync(@Nonnull Predicate predicate) {
+        return executePredicateAsync(predicate, IterationType.VALUE, false, Target.ALL_NODES)
+                .thenApply(set -> (Collection<V>) set);
     }
 
     /**
@@ -765,14 +781,23 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
      */
     @SuppressWarnings("unchecked")
     public Collection<V> values(@Nonnull Predicate predicate, PartitionIdSet partitions) {
-        return executePredicate(predicate, IterationType.VALUE, false, Target.createPartitionTarget(partitions));
+        return executePredicateAsync(predicate, IterationType.VALUE, false, Target.createPartitionTarget(partitions))
+                .join();
     }
 
     private Set executePredicate(Predicate predicate, IterationType iterationType, boolean uniqueResult, Target target) {
+        return executePredicateAsync(predicate, iterationType, uniqueResult, target).join();
+    }
+
+    private CompletableFuture<Set> executePredicateAsync(Predicate predicate, IterationType iterationType,
+                                                         boolean uniqueResult, Target target) {
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
-        QueryResult result = executeQueryInternal(predicate, iterationType, target);
-        incrementOtherOperationsStat();
-        return transformToSet(serializationService, result, predicate, iterationType, uniqueResult, false);
+        return executeQueryInternalAsync(predicate, iterationType, target)
+                .thenApply(result -> {
+                    incrementOtherOperationsStat();
+                    return transformToSet(serializationService, (QueryResult) result, predicate, iterationType,
+                            uniqueResult, false);
+                });
     }
 
     @Override

@@ -144,9 +144,6 @@ import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
 import com.hazelcast.spi.impl.UnmodifiableLazySet;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -163,6 +160,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import static com.hazelcast.internal.util.CollectionUtil.objectToDataCollection;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
@@ -1187,9 +1187,17 @@ public class ClientMapProxy<K, V> extends ClientProxy
     @Nonnull
     @Override
     public Collection<V> values() {
+        return valuesAsync().joinInternal();
+    }
+
+    @Nonnull
+    @Override
+    public InternalCompletableFuture<Collection<V>> valuesAsync() {
         ClientMessage request = MapValuesCodec.encodeRequest(name);
-        ClientMessage response = invoke(request);
-        return new UnmodifiableLazyList(MapValuesCodec.decodeResponse(response), getSerializationService());
+        ClientInvocationFuture futureResponse = invokeAsync(request);
+        return futureResponse.thenApply(
+                response -> new UnmodifiableLazyList(MapValuesCodec.decodeResponse(response), getSerializationService())
+        );
     }
 
     @Nonnull
@@ -1268,15 +1276,24 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
     @Override
     public Collection<V> values(@Nonnull Predicate predicate) {
+        return valuesAsync(predicate).joinInternal();
+    }
+
+    @Override
+    public InternalCompletableFuture<Collection<V>> valuesAsync(@Nonnull Predicate predicate) {
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         if (containsPagingPredicate(predicate)) {
-            return valuesForPagingPredicate(predicate);
+            return valuesForPagingPredicateAsync(predicate);
         }
 
         ClientMessage request = MapValuesWithPredicateCodec.encodeRequest(name, toData(predicate));
-        ClientMessage response = invokeWithPredicate(request, predicate);
-        List<Data> dataList = MapValuesWithPredicateCodec.decodeResponse(response);
-        return (Collection<V>) new UnmodifiableLazyList(dataList, getSerializationService());
+        ClientInvocationFuture futureResponse = invokeWithPredicateAsync(request, predicate);
+        return futureResponse.thenApply(
+                response -> {
+                    List<Data> dataList = MapValuesWithPredicateCodec.decodeResponse(response);
+                    return new UnmodifiableLazyList(dataList, getSerializationService());
+                }
+        );
     }
 
     private ClientMessage invokeWithPredicate(ClientMessage request, Predicate predicate) {
@@ -1286,6 +1303,17 @@ public class ClientMapProxy<K, V> extends ClientProxy
             response = invoke(request, partitionPredicate.getPartitionKey());
         } else {
             response = invoke(request);
+        }
+        return response;
+    }
+
+    private ClientInvocationFuture invokeWithPredicateAsync(ClientMessage request, Predicate predicate) {
+        ClientInvocationFuture response;
+        if (predicate instanceof PartitionPredicate) {
+            PartitionPredicate partitionPredicate = (PartitionPredicate) predicate;
+            response = invokeAsync(request, partitionPredicate.getPartitionKey());
+        } else {
+            response = invokeAsync(request);
         }
         return response;
     }
@@ -1307,6 +1335,27 @@ public class ClientMapProxy<K, V> extends ClientProxy
         pagingPredicate.setAnchorList(resultParameters.anchorDataList.asAnchorList(serializationService));
 
         return (Collection<V>) new UnmodifiableLazyList(resultParameters.response, serializationService);
+    }
+
+    @SuppressWarnings("unchecked")
+    private InternalCompletableFuture<Collection<V>> valuesForPagingPredicateAsync(Predicate predicate) {
+        PagingPredicateImpl pagingPredicate = unwrapPagingPredicate(predicate);
+        pagingPredicate.setIterationType(IterationType.VALUE);
+
+        PagingPredicateHolder pagingPredicateHolder = PagingPredicateHolder.of(predicate, getSerializationService());
+        ClientMessage request = MapValuesWithPagingPredicateCodec.encodeRequest(name, pagingPredicateHolder);
+
+        ClientInvocationFuture futureResponse = invokeWithPredicateAsync(request, predicate);
+
+        return futureResponse.thenApply(
+                response -> {
+                    MapValuesWithPagingPredicateCodec.ResponseParameters resultParameters = MapValuesWithPagingPredicateCodec
+                            .decodeResponse(response);
+                    SerializationService serializationService = getSerializationService();
+                    pagingPredicate.setAnchorList(resultParameters.anchorDataList.asAnchorList(serializationService));
+                    return new UnmodifiableLazyList(resultParameters.response, serializationService);
+                }
+        );
     }
 
     @Override

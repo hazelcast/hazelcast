@@ -20,16 +20,17 @@ import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientDestroyProxyCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
+import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
-
-import javax.annotation.Nonnull;
 import java.util.UUID;
 import java.util.concurrent.Future;
+
+import javax.annotation.Nonnull;
 
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
@@ -182,13 +183,22 @@ public abstract class ClientProxy implements DistributedObject {
         return invokeOnPartition(clientMessage, partitionId);
     }
 
+    protected ClientInvocationFuture invokeAsync(ClientMessage clientMessage, Object key) {
+        final int partitionId = getContext().getPartitionService().getPartitionId(key);
+        return invokeOnPartitionAsync(clientMessage, partitionId);
+    }
+
     protected <T> T invokeOnPartition(ClientMessage clientMessage, int partitionId) {
         try {
-            final Future future = new ClientInvocation(getClient(), clientMessage, getName(), partitionId).invoke();
+            final Future future = invokeOnPartitionAsync(clientMessage, partitionId);
             return (T) future.get();
         } catch (Exception e) {
             throw rethrow(e);
         }
+    }
+
+    protected ClientInvocationFuture invokeOnPartitionAsync(ClientMessage clientMessage, int partitionId) {
+        return new ClientInvocation(getClient(), clientMessage, getName(), partitionId).invoke();
     }
 
     protected <T> T invokeOnMember(ClientMessage clientMessage, UUID uuid) {
@@ -216,6 +226,10 @@ public abstract class ClientProxy implements DistributedObject {
         } catch (Exception e) {
             throw rethrow(e);
         }
+    }
+
+    protected ClientInvocationFuture invokeAsync(ClientMessage clientMessage) {
+        return new ClientInvocation(getClient(), clientMessage, getName()).invoke();
     }
 
     @Override

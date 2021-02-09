@@ -26,6 +26,8 @@ import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.serialization.impl.TestSerializationConstants;
+import com.hazelcast.internal.serialization.impl.portable.NamedPortable;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.LocalMapStats;
@@ -37,9 +39,7 @@ import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.internal.serialization.impl.portable.NamedPortable;
 import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.internal.serialization.impl.TestSerializationConstants;
 import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
@@ -50,12 +50,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
@@ -67,6 +61,11 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static java.util.Collections.emptyMap;
 import static org.junit.Assert.assertEquals;
@@ -536,12 +535,31 @@ public class ClientMapTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testAsyncValuesWithPredicate() throws Exception {
+        IMap<String, String> map = createMap();
+        fillMap(map);
+
+        Future<Collection<String>> futureValues = map.valuesAsync(Predicates.sql("this == value1")).toCompletableFuture();
+        assertEquals(1, futureValues.get().size());
+        assertEquals("value1", futureValues.get().iterator().next());
+    }
+
+    @Test
     public void testValues() {
         IMap<String, String> map = createMap();
         fillMap(map);
 
         Collection values = map.values();
         assertEquals(10, values.size());
+    }
+
+    @Test
+    public void testAsyncValues() throws Exception {
+        IMap<String, String> map = createMap();
+        fillMap(map);
+
+        Future<Collection<String>> futureValues = map.valuesAsync().toCompletableFuture();
+        assertEquals(10, futureValues.get().size());
     }
 
     @Test

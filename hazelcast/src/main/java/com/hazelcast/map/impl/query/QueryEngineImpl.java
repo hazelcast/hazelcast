@@ -39,6 +39,7 @@ import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -105,6 +106,7 @@ public class QueryEngineImpl implements QueryEngine {
         return executeAsync(query, target).join();
     }
 
+    @Override
     public CompletableFuture<Result> executeAsync(Query query, Target target) {
         Query adjustedQuery = adjustQuery(query);
         switch (target.mode()) {
@@ -126,7 +128,6 @@ public class QueryEngineImpl implements QueryEngine {
                 throw new IllegalArgumentException("Illegal target " + target);
         }
     }
-
     private Query adjustQuery(Query query) {
         IterationType retrievalIterationType = getRetrievalIterationType(query.getPredicate(), query.getIterationType());
         Query adjustedQuery = Query.of(query).iterationType(retrievalIterationType).build();
@@ -221,9 +222,9 @@ public class QueryEngineImpl implements QueryEngine {
     @SuppressWarnings("unchecked")
     // modifies partitionIds list! Optimization not to allocate an extra collection with collected partitionIds
     private CompletableFuture<Result> addResultsOfPredicate(List<CompletableFuture<Result>> futures, Result result,
-                                                            PartitionIdSet unfinishedPartitionIds, boolean rethrowAll) {
-
-        List<CompletableFuture<Result>> futuresWithHandle = futures.stream()
+                                                            PartitionIdSet unFinishedPartitionIds, boolean rethrowAll) {
+        //unFinishedPartitionIds keeps track of remaining partitions
+        CompletableFuture<Result>[] futuresWithHandle = futures.stream()
                 .map(future -> {
                             future = future.handle(
                                     (queryResult, t) -> {
@@ -239,10 +240,10 @@ public class QueryEngineImpl implements QueryEngine {
                             );
                             return future;
                         }
-                ).collect(Collectors.toList());
+                ).toArray(CompletableFuture[]::new);
 
-        return CompletableFuture.allOf(futuresWithHandle.toArray(new CompletableFuture[futuresWithHandle.size()]))
-                .thenApply(v -> futuresWithHandle.stream().map(future -> future.join()).collect(Collectors.toList()))
+        return CompletableFuture.allOf(futuresWithHandle)
+                .thenApply(v -> Arrays.stream(futuresWithHandle).map(future -> future.join()).collect(Collectors.toList()))
                 .thenApply(listOfQueryResults -> {
                     for (Result queryResult : listOfQueryResults) {
                         if (queryResult == null) {
@@ -250,13 +251,13 @@ public class QueryEngineImpl implements QueryEngine {
                         }
                         PartitionIdSet queriedPartitionIds = queryResult.getPartitionIds();
                         if (queriedPartitionIds != null) {
-                            if (!unfinishedPartitionIds.containsAll(queriedPartitionIds)) {
+                            if (!unFinishedPartitionIds.containsAll(queriedPartitionIds)) {
                                 // do not take into account results that contain partition IDs already removed from partitionIds
                                 // collection as this means that we will count results from a single partition twice
                                 // see also https://github.com/hazelcast/hazelcast/issues/6471
                                 continue;
                             }
-                            unfinishedPartitionIds.removeAll(queriedPartitionIds);
+                            unFinishedPartitionIds.removeAll(queriedPartitionIds);
                             result.combine(queryResult);
                         }
                     }

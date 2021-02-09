@@ -2342,6 +2342,27 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
     Collection<V> values();
 
     /**
+     * Returns a {@link CompletionStage} of an immutable collection clone of the values
+     * contained in this map.
+     * <p>
+     * <b>Warning:</b>
+     * <p>
+     * The collection is <b>NOT</b> backed by the map,
+     * so changes to the map are <b>NOT</b> reflected in the collection.
+     * <p>
+     * This method is always executed by a distributed query,
+     * so it may throw a {@link QueryResultSizeExceededException}
+     * if {@link ClusterProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
+     *
+     * @return a CompletionStage an immutable collection clone of the values contained
+     * in this map
+     * @throws QueryResultSizeExceededException if query result size limit is exceeded
+     * @see ClusterProperty#QUERY_RESULT_SIZE_LIMIT
+     */
+    @Nonnull
+    CompletionStage<Collection<V>> valuesAsync();
+
+    /**
      * Returns an immutable {@link Set} clone of the mappings contained in this map.
      * <p>
      * <b>Warning:</b>
@@ -2426,7 +2447,33 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      * @throws NullPointerException             if the predicate is {@code null}
      * @see ClusterProperty#QUERY_RESULT_SIZE_LIMIT
      */
+    @Nonnull
     Collection<V> values(@Nonnull Predicate<K, V> predicate);
+
+    /**
+     * Queries the map based on the specified predicate and returns a
+     * {@link CompletionStage} of an immutable collection of the values
+     * of matching entries.
+     * <p>
+     * Specified predicate runs on all members in parallel.
+     * <p>
+     * <b>Warning:</b>
+     * <p>
+     * The collection is <b>NOT</b> backed by the map,
+     * so changes to the map are <b>NOT</b> reflected in the collection.
+     * <p>
+     * This method is always executed by a distributed query,
+     * so it may throw a {@link QueryResultSizeExceededException}
+     * if {@link ClusterProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
+     *
+     * @param predicate specified query criteria
+     * @return a CompletionStage of the result value collection of the query
+     * @throws QueryResultSizeExceededException if query result size limit is exceeded
+     * @throws NullPointerException             if the predicate is {@code null}
+     * @see ClusterProperty#QUERY_RESULT_SIZE_LIMIT
+     */
+    @Nonnull
+    CompletionStage<Collection<V>> valuesAsync(@Nonnull Predicate<K, V> predicate);
 
     /**
      * Returns the locally owned immutable set of keys.

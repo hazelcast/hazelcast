@@ -18,19 +18,20 @@ package com.hazelcast.map;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.listener.EntryExpiredListener;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
+import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -69,6 +70,23 @@ public class AsyncTest extends HazelcastTestSupport {
         Future<String> f2 = map.putAsync(key, value2).toCompletableFuture();
         String f2Val = f2.get();
         assertEquals(value1, f2Val);
+    }
+
+    @Test
+    public void testValuesAsync() throws Exception {
+        IMap<String, String> map = instance.getMap(randomString());
+        map.put(key, value1);
+        Future<Collection<String>> futureValues = map.valuesAsync().toCompletableFuture();
+        assertEquals(1, futureValues.get().size());
+        assertEquals(value1, futureValues.get().iterator().next());
+    }
+
+    @Test
+    public void testValuesAsyncWithPredicate() throws Exception {
+        IMap<String, String> map = instance.getMap(randomString());
+        map.put(key, value1);
+        Future<Collection<String>> futureValues = map.valuesAsync(Predicates.alwaysFalse()).toCompletableFuture();
+        assertEquals(0, futureValues.get().size());
     }
 
     @Test

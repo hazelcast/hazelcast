@@ -205,4 +205,6 @@ public class MapValuesTest extends HazelcastTestSupport {
             return mapEntry.getValue().startsWith("good");
         }
     }
+
+    //valuesAsync tests can be found from com/hazelcast/map/AsyncTest.java
 }
