@@ -142,6 +142,13 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="per-entry-stats-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
+                <xs:annotation>
+                    <xs:documentation>
+                        False (default) if per entry stats gathering is disabled on the map, true otherwise.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="cache-deserialized-values" type="cache-deserialized-values" minOccurs="0" maxOccurs="1"
                         default="INDEX-ONLY">
                 <xs:annotation>

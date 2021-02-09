@@ -482,6 +482,8 @@
                 <hz:eviction max-size-policy="USED_NATIVE_MEMORY_PERCENTAGE"/>
             </hz:map>
 
+            <hz:map name="map-with-per-entry-stats-enabled" per-entry-stats-enabled="true"/>
+
             <hz:map name="mapWithPartitionLostListener">
                 <hz:partition-lost-listeners>
                     <hz:partition-lost-listener class-name="DummyMapPartitionLostListenerImpl"/>

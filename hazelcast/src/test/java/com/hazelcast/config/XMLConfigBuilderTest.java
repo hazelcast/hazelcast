@@ -913,6 +913,34 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    public void testMapConfig_statisticsEnable() {
+        String xml = HAZELCAST_START_TAG
+                + "<map name=\"mymap\">"
+                + "<statistics-enabled>false</statistics-enabled>"
+                + "</map>"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        MapConfig mapConfig = config.getMapConfig("mymap");
+
+        assertFalse(mapConfig.isStatisticsEnabled());
+    }
+
+    @Override
+    public void testMapConfig_perEntryStatsEnabled() {
+        String xml = HAZELCAST_START_TAG
+                + "<map name=\"mymap\">"
+                + "<per-entry-stats-enabled>true</per-entry-stats-enabled>"
+                + "</map>"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        MapConfig mapConfig = config.getMapConfig("mymap");
+
+        assertTrue(mapConfig.isPerEntryStatsEnabled());
+    }
+
+    @Override
     @Test
     public void testMapConfig_metadataPolicy_defaultValue() {
         String xml = HAZELCAST_START_TAG

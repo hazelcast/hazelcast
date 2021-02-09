@@ -911,6 +911,34 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    public void testMapConfig_statisticsEnable() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  map:\n"
+                + "    mymap:\n"
+                + "      statistics-enabled: false";
+
+        Config config = buildConfig(yaml);
+        MapConfig mapConfig = config.getMapConfig("mymap");
+
+        assertFalse(mapConfig.isStatisticsEnabled());
+    }
+
+    @Override
+    public void testMapConfig_perEntryStatsEnabled() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  map:\n"
+                + "    mymap:\n"
+                + "      per-entry-stats-enabled: true";
+
+        Config config = buildConfig(yaml);
+        MapConfig mapConfig = config.getMapConfig("mymap");
+
+        assertTrue(mapConfig.isStatisticsEnabled());
+    }
+
+    @Override
     @Test
     public void testMapConfig_metadataPolicy_defaultValue() {
         String yaml = ""

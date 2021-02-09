@@ -225,10 +225,19 @@
         <metadata-policy>CREATE_ON_UPDATE</metadata-policy>
 
         <!--
-            Whether statistical information (hits, creation time, last access time etc.) should be gathered and stored.
-            You can disable if you do not plan to use eviction on your entries.
+            Whether map level statistical information (total
+            hits, memory-cost etc.) should be gathered and stored.
         -->
-        <statistics-enabled>false</statistics-enabled>
+        <statistics-enabled>true</statistics-enabled>
+
+        <!--
+            Whether statistical information (hits, creation
+            time, last access time etc.) should be gathered
+            and stored. You have to enable this if you plan to
+            implement a custom eviction policy, out-of-the-box
+            eviction policies work regardless of this setting.
+        -->
+        <per-entry-stats-enabled>false</per-entry-stats-enabled>
 
         <cache-deserialized-values>ALWAYS</cache-deserialized-values>
         <!--

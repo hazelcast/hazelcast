@@ -22,6 +22,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.internal.monitor.LocalRecordStoreStats;
+import com.hazelcast.internal.monitor.impl.LocalRecordStoreStatsImpl;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.comparators.ValueComparator;
@@ -640,4 +641,8 @@ public interface RecordStore<R extends Record> {
     InMemoryFormat getInMemoryFormat();
 
     EvictionPolicy getEvictionPolicy();
+
+    LocalRecordStoreStatsImpl getStats();
+
+    void setStats(LocalRecordStoreStats stats);
 }

@@ -73,13 +73,15 @@ public class HazelcastRunningInForkJoinPoolTest extends HazelcastTestSupport {
      */
     @Test
     public void no_deadlock_during_proxy_initialization() {
-        List<IMap<Object, Object>> maps = IntStream.range(0, 100)
+        int availableProcessors = Runtime.getRuntime().availableProcessors();
+        int count = availableProcessors + 1;
+        List<IMap<Object, Object>> maps = IntStream.range(0, count)
                 .boxed()
                 .parallel()
                 // init proxy in parallel
                 .map(i -> hz.getMap(MAP_NAME))
                 .collect(Collectors.toList());
 
-        assertEquals(100, maps.size());
+        assertEquals(count, maps.size());
     }
 }

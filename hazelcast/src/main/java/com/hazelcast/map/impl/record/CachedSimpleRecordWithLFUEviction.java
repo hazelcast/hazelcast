@@ -23,7 +23,7 @@ import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.map.impl.record.RecordReaderWriter.SIMPLE_DATA_RECORD_WITH_LFU_EVICTION_READER_WRITER;
 
 /**
- * Used when {@link MapConfig#isStatisticsEnabled()} is {@code
+ * Used when {@link MapConfig#isPerEntryStatsEnabled()} is {@code
  * false}, {@link MapConfig#getCacheDeserializedValues()} is not
  * {@link com.hazelcast.config.CacheDeserializedValues#NEVER}
  * and eviction is configured.
