@@ -45,10 +45,12 @@ public class MapScanExecIterator implements KeyValueIterator {
     private RecordStore currentRecordStore;
     private Iterator<Map.Entry<Data, Record<Object>>> currentRecordStoreIterator;
 
-    private Data currentKey;
+    private Data currentKeyData;
     private Object currentValue;
-    private Data nextKey;
+    private Data currentValueData;
+    private Data nextKeyData;
     private Object nextValue;
+    private Data nextValueData;
 
     private boolean useCachedValues;
 
@@ -67,8 +69,9 @@ public class MapScanExecIterator implements KeyValueIterator {
     @Override
     public boolean tryAdvance() {
         if (!done()) {
-            currentKey = nextKey;
+            currentKeyData = nextKeyData;
             currentValue = nextValue;
+            currentValueData = nextValueData;
 
             advance0(false);
 
@@ -80,7 +83,7 @@ public class MapScanExecIterator implements KeyValueIterator {
 
     @Override
     public boolean done() {
-        return nextKey == null;
+        return nextKeyData == null;
     }
 
     /**
@@ -92,8 +95,9 @@ public class MapScanExecIterator implements KeyValueIterator {
             // Move to the next record store if needed.
             if (currentRecordStoreIterator == null) {
                 if (!partsIterator.hasNext()) {
-                    nextKey = null;
+                    nextKeyData = null;
                     nextValue = null;
+                    nextValueData = null;
 
                     return;
                 } else {
@@ -137,10 +141,20 @@ public class MapScanExecIterator implements KeyValueIterator {
                 Map.Entry<Data, Record<Object>> entry = currentRecordStoreIterator.next();
 
                 if (!currentRecordStore.isExpired(entry.getKey(), now, false)) {
-                    nextKey = entry.getKey();
+                    nextKeyData = entry.getKey();
 
                     Record record = entry.getValue();
+
                     nextValue = useCachedValues ? getValueOrCachedValue(record, serializationService) : record.getValue();
+
+                    if (nextValue instanceof Data) {
+                        nextValueData = (Data) nextValue;
+                        nextValue = null;
+                    } else {
+                        Object possiblyData = record.getValue();
+
+                        nextValueData = possiblyData instanceof Data ? (Data) possiblyData : null;
+                    }
 
                     return;
                 }
@@ -154,11 +168,21 @@ public class MapScanExecIterator implements KeyValueIterator {
 
     @Override
     public Object getKey() {
-        return currentKey;
+        return null;
+    }
+
+    @Override
+    public Data getKeyData() {
+        return currentKeyData;
     }
 
     @Override
     public Object getValue() {
         return currentValue;
+    }
+
+    @Override
+    public Data getValueData() {
+        return currentValueData;
     }
 }

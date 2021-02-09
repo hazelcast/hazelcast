@@ -85,12 +85,25 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
 
     @Override
     public Object getKey() {
+        // TODO: Implement
+        return null;
+    }
+
+    @Override
+    public Data getKeyData() {
         return currentKey;
     }
 
     @Override
     public Object getValue() {
-        return currentValue;
+        // TODO: Implement
+        return currentValue instanceof Data ? null : currentValue;
+    }
+
+    @Override
+    public Data getValueData() {
+        // TODO: Implement
+        return currentValue instanceof Data ? (Data) currentValue : null;
     }
 
     private void advance0() {

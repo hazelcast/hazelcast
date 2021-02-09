@@ -65,7 +65,11 @@ public class GenericQueryTargetTest extends SqlTestSupport {
 
     private void checkTarget(GenericQueryTarget target, TestObject originalObject, Object object) {
         // Set target.
-        target.setTarget(object);
+        if (object instanceof Data) {
+            target.setTarget(null, (Data) object);
+        } else {
+            target.setTarget(object, null);
+        }
 
         // Good top-level extractor.
         QueryExtractor targetExtractor = target.createExtractor(null, QueryDataType.OBJECT);
