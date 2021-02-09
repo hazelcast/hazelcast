@@ -129,6 +129,11 @@
         <vmHeapSettings>-Xms512m -Xmx2G</vmHeapSettings>
         <!-- Java 9+ module system args to be appended during surefire/failsafe executions. -->
         <javaModuleArgs/>
+
+        <!-- needed for CheckStyle -->
+        <checkstyle.configLocation>${main.basedir}/checkstyle/checkstyle.xml</checkstyle.configLocation>
+        <checkstyle.supressionsLocation>${main.basedir}/checkstyle/suppressions.xml</checkstyle.supressionsLocation>
+        <checkstyle.headerLocation>${main.basedir}/checkstyle/ClassHeader.txt</checkstyle.headerLocation>
     </properties>
     <licenses>
         <license>
@@ -843,9 +848,9 @@
                             </execution>
                         </executions>
                         <configuration>
-                            <configLocation>${main.basedir}/checkstyle/checkstyle.xml</configLocation>
-                            <suppressionsLocation>${main.basedir}/checkstyle/suppressions.xml</suppressionsLocation>
-                            <headerLocation>${main.basedir}/checkstyle/ClassHeader.txt</headerLocation>
+                            <configLocation>${checkstyle.configLocation}</configLocation>
+                            <suppressionsLocation>${checkstyle.supressionsLocation}</suppressionsLocation>
+                            <headerLocation>${checkstyle.headerLocation}</headerLocation>
                             <enableRSS>false</enableRSS>
                             <linkXRef>true</linkXRef>
                             <consoleOutput>true</consoleOutput>
