@@ -39,3 +39,6 @@ com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastTrimFunction
 com.hazelcast.sql.impl.calcite.opt.physical.ExpandConversionRule
 
 contain code originating from the Apache Calcite (https://github.com/apache/calcite)
+
+The class com.hazelcast.jet.kafka.impl.ResumeTransactionUtil contains
+code derived from the Apache Flink project.
