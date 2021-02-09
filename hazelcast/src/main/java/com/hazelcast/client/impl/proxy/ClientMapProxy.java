@@ -1739,14 +1739,16 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     /**
-     * TODO: Javadoc
+     * Returns an iterable that provides a client-side iterator for the
+     * result of the projection on entries in the {@code partitionId} which
+     * satisfy the {@code predicate}.
      *
      * @param fetchSize   the size of the batches which will be sent when iterating the data
      * @param partitionId the partition ID which is being iterated
      * @param projection  the projection to apply before returning the value. null value is not allowed
      * @param predicate   the predicate which the entries must match. null value is not allowed
-     * @param <R>
-     * @return
+     * @param <R>         the return type
+     * @return return an iterable for the projected entries of the specified partition
      */
     public <R> Iterable<R> iterable(
             int fetchSize,
@@ -1760,8 +1762,6 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     /**
-     * TODO: Javadoc
-     *
      * @param fetchSize      the size of the batches which will be sent when iterating the data
      * @param partitionId    the partition ID which is being iterated
      * @param prefetchValues whether to send values along with keys (if true) or to fetch them lazily when iterating (if false)
@@ -1772,12 +1772,14 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     /**
-     * TODO: Javadoc
-     * @param fetchSize
-     * @param projection
-     * @param predicate
-     * @param <R>
-     * @return
+     * Returns an iterable for iterating the result of the projection on entries
+     * in all of the partitions which satisfy the {@code predicate}.
+     *
+     * @param fetchSize  the size of the batches which will be sent when iterating the data
+     * @param projection the projection to apply before returning the value. null value is not allowed
+     * @param predicate  the predicate which the entries must match. null value is not allowed
+     * @param <R>        the return type
+     * @return an iterable for the projected entries
      */
     public <R> Iterable<R> iterable(int fetchSize,
                                     Projection<? super Map.Entry<K, V>, R> projection,
@@ -1789,10 +1791,15 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     /**
-     * TODO: Javadoc
-     * @param fetchSize
-     * @param prefetchValues
-     * @return
+     * Returns an iterable for iterating entries in the all of the partitions. If
+     * {@code prefetchValues} is {@code true}, values will be sent along with
+     * the keys and no additional data will be fetched when iterating. If
+     * {@code false}, only keys will be sent and values will be fetched when
+     * calling {@code Map.Entry.getValue()} lazily.
+     *
+     * @param fetchSize      the size of the batches which will be sent when iterating the data
+     * @param prefetchValues whether to send values along with keys (if true) or to fetch them lazily when iterating (if false)
+     * @return an iterable for the entries
      */
     public Iterable<Entry<K, V>> iterable(int fetchSize, boolean prefetchValues) {
         int partitionCount = getContext().getPartitionService().getPartitionCount();
@@ -2155,9 +2162,9 @@ public class ClientMapProxy<K, V> extends ClientProxy
      * lazily during the iteration.
      *
      * @param fetchSize – size for fetching keys in bulk. This size can
-     *                 be thought of as page size for iteration. But
-     *                 notice that at every fetch only keys are retrieved,
-     *                 not values. Values are retrieved on each iterate.
+     *                  be thought of as page size for iteration. But
+     *                  notice that at every fetch only keys are retrieved,
+     *                  not values. Values are retrieved on each iterate.
      * @return an iterator for the map entries
      */
     @Override
@@ -2184,7 +2191,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
                     return null;
                 }
             } else {
-                V result =  putIfAbsentInternal(UNSET, MILLISECONDS, null, null, keyAsData, toData(value));
+                V result = putIfAbsentInternal(UNSET, MILLISECONDS, null, null, keyAsData, toData(value));
                 if (result == null) {
                     return value;
                 }
