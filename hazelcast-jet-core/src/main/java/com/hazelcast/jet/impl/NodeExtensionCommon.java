@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ class NodeExtensionCommon {
             "\to---o o---o   o   o-o   |     o     o---o o---o   |          | o-o     |\n" +
             "\t|   | |   |  /    |     |     |     |   |     |   |      \\   | |       |\n" +
             "\to   o o   o o---o o---o o---o o---o o   o o---o   o       o--o o---o   o";
-    private static final String COPYRIGHT_LINE = "Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.";
+    private static final String COPYRIGHT_LINE = "Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.";
 
     private final Node node;
     private final ILogger logger;
