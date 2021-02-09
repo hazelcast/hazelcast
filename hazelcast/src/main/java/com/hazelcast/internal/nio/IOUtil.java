@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelOptions;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -51,12 +52,15 @@ import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.Random;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
@@ -74,8 +78,11 @@ import static java.lang.String.format;
 import static java.nio.file.FileVisitResult.CONTINUE;
 import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
 
-@SuppressWarnings({"WeakerAccess", "checkstyle:methodcount", "checkstyle:magicnumber", "checkstyle:classfanoutcomplexity"})
+@SuppressWarnings({ "WeakerAccess", "checkstyle:methodcount", "checkstyle:magicnumber", "checkstyle:classfanoutcomplexity",
+        "checkstyle:ClassDataAbstractionCoupling" })
 public final class IOUtil {
+
+    private static final ILogger LOGGER = Logger.getLogger(IOUtil.class);
 
     private IOUtil() {
     }
@@ -412,7 +419,7 @@ public final class IOUtil {
                 int count = inflater.inflate(buf);
                 bos.write(buf, 0, count);
             } catch (DataFormatException e) {
-                Logger.getLogger(IOUtil.class).finest("Decompression failed", e);
+                LOGGER.finest("Decompression failed", e);
             }
         }
         inflater.end();
@@ -431,7 +438,7 @@ public final class IOUtil {
         try {
             closeable.close();
         } catch (IOException e) {
-            Logger.getLogger(IOUtil.class).finest("closeResource failed", e);
+            LOGGER.finest("closeResource failed", e);
         }
     }
 
@@ -442,7 +449,7 @@ public final class IOUtil {
         try {
             conn.close(reason, null);
         } catch (Throwable e) {
-            Logger.getLogger(IOUtil.class).finest("closeResource failed", e);
+            LOGGER.finest("closeResource failed", e);
         }
     }
 
@@ -458,7 +465,7 @@ public final class IOUtil {
         try {
             serverSocket.close();
         } catch (IOException e) {
-            Logger.getLogger(IOUtil.class).finest("closeResource failed", e);
+            LOGGER.finest("closeResource failed", e);
         }
     }
 
@@ -474,7 +481,7 @@ public final class IOUtil {
         try {
             socket.close();
         } catch (IOException e) {
-            Logger.getLogger(IOUtil.class).finest("closeResource failed", e);
+            LOGGER.finest("closeResource failed", e);
         }
     }
 
@@ -559,6 +566,54 @@ public final class IOUtil {
             throw new HazelcastException(format("Failed to rename %s to %s even after deleting %s.",
                     fileNow, fileToBe, fileToBe));
         }
+    }
+
+    /**
+     * Move or rename a file to a target file. This move method contains a fallback (delete target + atomic move) for cases when
+     * the first try fails. It's a NIO-based alternative to the {@link #rename(File, File)} method.
+     *
+     * @param source path to the file to move
+     * @param target path to the target file
+     */
+    public static void move(Path source, Path target) throws IOException {
+        try {
+            Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            LOGGER.finest("File move failed. Fallbacking to delete&move.", e);
+            Files.deleteIfExists(target);
+            Files.move(source, target, StandardCopyOption.ATOMIC_MOVE);
+        }
+    }
+
+    /**
+     * Move or rename a file to a target file with retries within the given timeout.
+     * Retrying can be beneficial on some systems (e.g. Windows), where file locking may behave non-intuitively.
+     *
+     * @param source path to the file to move
+     * @param target path to the target file
+     */
+    public static void moveWithTimeout(Path source, Path target, Duration duration) {
+        long endTime = System.nanoTime() + duration.toNanos();
+        IOException lastException = null;
+        Random rnd = new Random();
+        do {
+            try {
+                move(source, target);
+            } catch (IOException e) {
+                lastException = e;
+                LOGGER.finest("File move failed", e);
+            }
+            if (!Files.exists(source)) {
+                return;
+            }
+            try {
+                //random delay up to half a second
+                Thread.sleep(rnd.nextInt(500));
+            } catch (InterruptedException e) {
+                ignore(e);
+            }
+        } while (System.nanoTime() - endTime < 0);
+        throw new HazelcastException("File move timed out.", lastException);
     }
 
     public static String toFileName(String name) {
