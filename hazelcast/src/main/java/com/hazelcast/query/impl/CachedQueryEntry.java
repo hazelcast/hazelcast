@@ -103,14 +103,27 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> {
         return keyData;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public V getValueIfPresent() {
-        return valueObject;
+        if (valueObject != null) {
+            return valueObject;
+        }
+
+        Object possiblyNotData = record.getValue();
+
+        return possiblyNotData instanceof Data ? null : (V) possiblyNotData;
     }
 
     @Override
     public Data getValueDataIfPresent() {
-        return valueData;
+        if (valueData != null) {
+            return valueData;
+        }
+
+        Object possiblyData = record.getValue();
+
+        return possiblyData instanceof Data ? (Data) possiblyData : null;
     }
 
     public Object getByPrioritizingDataValue() {

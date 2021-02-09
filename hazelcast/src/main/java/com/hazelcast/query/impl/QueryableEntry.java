@@ -46,7 +46,7 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
     protected InternalSerializationService serializationService;
     protected Extractors extractors;
 
-    private Record record;
+    protected Record record;
     private transient Metadata metadata;
 
     public Record getRecord() {
