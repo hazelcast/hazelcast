@@ -399,6 +399,8 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         checkValue0(sql(literal(1), TINYINT), TINYINT, (byte) 1);
         checkValue0(sql(literal(Byte.MIN_VALUE), TINYINT), TINYINT, Byte.MIN_VALUE);
         checkValue0(sql(literal(Byte.MAX_VALUE), TINYINT), TINYINT, Byte.MAX_VALUE);
+        checkFailure0(sql(literal(128), TINYINT), PARSING, "Numeric overflow while converting SMALLINT to TINYINT");
+        checkFailure0(sql("cast(128 as smallint)", TINYINT), PARSING, "Numeric overflow while converting SMALLINT to TINYINT");
 
         checkValue0(sql(literal(1), SMALLINT), SMALLINT, (short) 1);
         checkValue0(sql(literal(1), INTEGER), INTEGER, 1);
@@ -616,9 +618,9 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
     public void testBigint_literal() {
         put(1);
 
-        checkValue0(sql(literal(Long.MAX_VALUE), VARCHAR), VARCHAR, Long.MAX_VALUE + "");
+//        checkValue0(sql(literal(Long.MAX_VALUE), VARCHAR), VARCHAR, Long.MAX_VALUE + "");
 
-        checkFailure0(sql(literal(Long.MAX_VALUE), BOOLEAN), PARSING, castError(BIGINT, BOOLEAN));
+//        checkFailure0(sql(literal(Long.MAX_VALUE), BOOLEAN), PARSING, castError(BIGINT, BOOLEAN));
 
         checkFailure0(sql(literal(Long.MAX_VALUE), TINYINT), PARSING, "CAST function cannot convert literal 9223372036854775807 to type TINYINT: Numeric overflow while converting BIGINT to TINYINT");
         checkFailure0(sql(literal(Long.MAX_VALUE), SMALLINT), PARSING, "CAST function cannot convert literal 9223372036854775807 to type SMALLINT: Numeric overflow while converting BIGINT to SMALLINT");

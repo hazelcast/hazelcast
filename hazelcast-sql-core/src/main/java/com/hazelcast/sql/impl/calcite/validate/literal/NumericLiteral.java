@@ -18,13 +18,11 @@ package com.hazelcast.sql.impl.calcite.validate.literal;
 
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastIntegerType;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
-import com.hazelcast.sql.impl.type.converter.BigDecimalConverter;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
+import com.hazelcast.sql.impl.type.converter.Converter;
+import com.hazelcast.sql.impl.type.converter.Converters;
 import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.sql.SqlLiteral;
-import org.apache.calcite.sql.SqlNumericLiteral;
 import org.apache.calcite.sql.type.SqlTypeName;
-
-import java.math.BigDecimal;
 
 public final class NumericLiteral extends Literal {
 
@@ -32,82 +30,73 @@ public final class NumericLiteral extends Literal {
     private final int bitWidth;
 
     private NumericLiteral(
-        SqlLiteral original,
         Object value,
         SqlTypeName typeName,
         Mode mode,
         int bitWidth
     ) {
-        super(original, value, typeName);
+        super(value, typeName);
 
         this.mode = mode;
         this.bitWidth = bitWidth;
     }
 
-    public static NumericLiteral create(SqlNumericLiteral original) {
-        BigDecimal valueDecimal = (BigDecimal) original.getValue();
-
-        if (original.isExact()) {
-            if (original.getScale() == 0) {
-                // Dealing with integer type family
-                try {
-                    long value = BigDecimalConverter.INSTANCE.asBigint(valueDecimal);
-
-                    int bitWidth = HazelcastIntegerType.bitWidthOf(value);
-
-                    RelDataType type = HazelcastIntegerType.create(bitWidth, false);
-
-                    Object adjustedValue;
-
-                    switch (type.getSqlTypeName()) {
-                        case TINYINT:
-                            adjustedValue = (byte) value;
-                            break;
-
-                        case SMALLINT:
-                            adjustedValue = (short) value;
-                            break;
-
-                        case INTEGER:
-                            adjustedValue = (int) value;
-                            break;
-
-                        default:
-                            assert type.getSqlTypeName() == SqlTypeName.BIGINT;
-                            adjustedValue = value;
-                    }
-
-                    return new NumericLiteral(
-                        original,
-                        adjustedValue,
-                        type.getSqlTypeName(),
-                        Mode.INTEGER,
-                        bitWidth
-                    );
-                } catch (Exception ignore) {
-                    // Fallback to DECIMAL
-                }
+    public static Literal create(SqlTypeName typeName, Object value) {
+        Converter converter = Converters.getConverter(value.getClass());
+        if (HazelcastTypeUtils.isNumericIntegerType(typeName) || typeName == SqlTypeName.DECIMAL) {
+            // Dealing with integer type family
+            long longValue;
+            try {
+                longValue = converter.asBigint(value);
+            } catch (Exception ignore) {
+                // Numeric overflow for BIGINT - dealing with DECIMAL
+                return new NumericLiteral(
+                        converter.asDecimal(value),
+                        SqlTypeName.DECIMAL,
+                        Mode.FRACTIONAL_EXACT,
+                        0
+                );
             }
 
-            // Dealing with DECIMAL
-            return new NumericLiteral(
-                original,
-                valueDecimal,
-                SqlTypeName.DECIMAL,
-                Mode.FRACTIONAL_EXACT,
-                0
-            );
+            int bitWidth = HazelcastIntegerType.bitWidthOf(longValue);
 
-        } else {
-            // Dealing with DOUBLE
+            RelDataType type = HazelcastIntegerType.create(bitWidth, false);
+
+            Object adjustedValue;
+
+            switch (type.getSqlTypeName()) {
+                case TINYINT:
+                    adjustedValue = (byte) longValue;
+                    break;
+
+                case SMALLINT:
+                    adjustedValue = (short) longValue;
+                    break;
+
+                case INTEGER:
+                    adjustedValue = (int) longValue;
+                    break;
+
+                default:
+                    assert type.getSqlTypeName() == SqlTypeName.BIGINT;
+                    adjustedValue = longValue;
+            }
+
             return new NumericLiteral(
-                original,
-                valueDecimal.doubleValue(),
-                SqlTypeName.DOUBLE,
-                Mode.FRACTIONAL_INEXACT,
-                0
+                    adjustedValue,
+                    type.getSqlTypeName(),
+                    Mode.INTEGER,
+                    bitWidth
             );
         }
+
+        // Dealing with DOUBLE
+        return new NumericLiteral(
+            converter.asDouble(value),
+            SqlTypeName.DOUBLE,
+            Mode.FRACTIONAL_INEXACT,
+            0
+        );
     }
 
     @Override

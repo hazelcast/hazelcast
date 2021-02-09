@@ -18,7 +18,6 @@ package com.hazelcast.sql.impl.calcite.validate.literal;
 
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.type.SqlTypeName;
 
@@ -27,12 +26,10 @@ import org.apache.calcite.sql.type.SqlTypeName;
  */
 public abstract class Literal {
 
-    protected final SqlLiteral original;
     protected final Object value;
     protected final SqlTypeName typeName;
 
-    public Literal(SqlLiteral original, Object value, SqlTypeName typeName) {
-        this.original = original;
+    public Literal(Object value, SqlTypeName typeName) {
         this.value = value;
         this.typeName = typeName;
     }
@@ -42,7 +39,7 @@ public abstract class Literal {
     }
 
     public String getStringValue() {
-        return original.toValue();
+        return value != null ? value.toString() : null;
     }
 
     public SqlTypeName getTypeName() {

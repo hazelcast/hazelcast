@@ -86,8 +86,17 @@ public class LiteralTypeResolutionTest {
         checkLiteral(exactNumeric("1.1"), new BigDecimal("1.1"), "1.1", DECIMAL, false);
         checkLiteral(exactNumeric(Long.MAX_VALUE + "0"), new BigDecimal(Long.MAX_VALUE + "0"), Long.MAX_VALUE + "0", DECIMAL, false);
         checkLiteral(exactNumeric(Long.MIN_VALUE + "0"), new BigDecimal(Long.MIN_VALUE + "0"), Long.MIN_VALUE + "0", DECIMAL, false);
+    }
 
+    @Test
+    public void testApproxNumeric() {
         checkLiteral(SqlLiteral.createApproxNumeric("1.1E1", ZERO), 1.1E1, "1.1E1", DOUBLE, false);
+    }
+
+    @Test
+    public void testDecimal() {
+        BigDecimal maxPlusOne = BigDecimal.valueOf(Long.MAX_VALUE).add(BigDecimal.ONE);
+        checkLiteral(exactNumeric(maxPlusOne), maxPlusOne, maxPlusOne, DECIMAL, false);
     }
 
     private void checkLiteral(
@@ -103,7 +112,7 @@ public class LiteralTypeResolutionTest {
         assertNotNull(literal0);
 
         assertEquals(expectedValue, literal0.getValue());
-        assertEquals(expectedStringValue0, literal0.getStringValue());
+        assertEquals(expectedStringValue0, literal0.getValue() != null ? literal0.getValue().toString() : null);
         assertEquals(expectedTypeName, literal0.getTypeName());
         assertEquals(expectedTypeName, literal0.getType(HazelcastTypeFactory.INSTANCE).getSqlTypeName());
         assertEquals(expectedNullable, literal0.getType(HazelcastTypeFactory.INSTANCE).isNullable());
@@ -118,5 +127,9 @@ public class LiteralTypeResolutionTest {
 
     private static SqlLiteral exactNumeric(Object value) {
         return SqlLiteral.createExactNumeric(value.toString(), ZERO);
+    }
+
+    private static SqlLiteral inexactNumeric(double value) {
+        return SqlLiteral.createApproxNumeric(Double.toString(value), ZERO);
     }
 }
