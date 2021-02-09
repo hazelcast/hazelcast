@@ -2133,10 +2133,9 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
     /**
      * Returns an iterator for the map entries in the all of the
-     * partitions. It iterates partitions in a sequential manner. It
-     * starts to iterate on partition 0 and it finishes the iteration
-     * with the last partition (n = 271 by default). The entries are
-     * fetched in batches for the constant heap utilization.
+     * partitions. While fetching keys in batches, it retrieves
+     * the values of these entries by calling {@code Map.Entry.getValue()}
+     * lazily during the iteration.
      *
      * @return an iterator for the map entries
      */
@@ -2146,6 +2145,27 @@ public class ClientMapProxy<K, V> extends ClientProxy
         ClientPartitionService partitionService = getContext().getPartitionService();
         int partitionCount = partitionService.getPartitionCount();
         return new ClientMapIterator<>(this, partitionCount, false);
+    }
+
+
+    /**
+     * Returns an iterator for the map entries in the all of the
+     * partitions. While fetching keys in batches, it retrieves
+     * the values of these entries by calling {@code Map.Entry.getValue()}
+     * lazily during the iteration.
+     *
+     * @param fetchSize – size for fetching keys in bulk. This size can
+     *                 be thought of as page size for iteration. But
+     *                 notice that at every fetch only keys are retrieved,
+     *                 not values. Values are retrieved on each iterate.
+     * @return an iterator for the map entries
+     */
+    @Override
+    @Nonnull
+    public Iterator<Entry<K, V>> iterator(int fetchSize) {
+        ClientPartitionService partitionService = getContext().getPartitionService();
+        int partitionCount = partitionService.getPartitionCount();
+        return new ClientMapIterator<>(this, fetchSize, partitionCount, false);
     }
 
     private V mergeLocally(K key, V value, BiFunction<? super V, ? super V, ? extends V> remappingFunction) {

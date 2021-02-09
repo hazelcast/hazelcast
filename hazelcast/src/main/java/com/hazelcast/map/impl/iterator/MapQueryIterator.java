@@ -47,8 +47,4 @@ public class MapQueryIterator<K, V, R> extends AbstractMapQueryIterator<R> {
         it = queryPartitionIterators.get(idx);
     }
 
-    public MapQueryIterator(MapProxyImpl<K, V> mapProxy, int partitionCount,
-                            Projection<? super Map.Entry<K, V>, R> projection, Predicate<K, V> predicate) {
-        this(mapProxy, DEFAULT_FETCH_SIZE, partitionCount, projection, predicate);
-    }
 }
