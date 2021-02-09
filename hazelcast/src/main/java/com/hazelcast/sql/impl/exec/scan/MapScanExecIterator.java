@@ -89,7 +89,7 @@ public class MapScanExecIterator implements KeyValueIterator {
     /**
      * Get the next key/value pair from the store.
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "checkstyle:CyclomaticComplexity"})
     private void advance0(boolean first) {
         while (true) {
             // Move to the next record store if needed.
