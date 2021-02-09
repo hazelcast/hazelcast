@@ -29,7 +29,6 @@ import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.spi.properties.ClusterProperty;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -248,7 +247,7 @@ import java.util.function.Function;
  * @param <V> value type
  * @see java.util.concurrent.ConcurrentMap
  */
-public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable {
+public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable<Map.Entry<K, V>> {
 
     /**
      * {@inheritDoc}
@@ -3195,7 +3194,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      *
      * @since 4.2
      */
-    @NotNull
+    @Nonnull
     @Override
     Iterator<Entry<K, V>> iterator();
 
@@ -3212,7 +3211,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      *                 not values. Values are retrieved on each iterate.
      * @since 4.2
      */
-    @NotNull
+    @Nonnull
     Iterator<Entry<K, V>> iterator(int fetchSize);
 
 }
