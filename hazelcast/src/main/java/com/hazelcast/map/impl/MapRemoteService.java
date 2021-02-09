@@ -53,7 +53,7 @@ class MapRemoteService implements RemoteService {
         SplitBrainMergePolicyProvider mergePolicyProvider = nodeEngine.getSplitBrainMergePolicyProvider();
 
         checkMapConfig(mapConfig, config.getNativeMemoryConfig(), mergePolicyProvider,
-                mapServiceContext.getNodeEngine().getProperties());
+                mapServiceContext.getNodeEngine().getProperties(), nodeEngine.getLogger(MapConfig.class));
 
         if (mapConfig.isNearCacheEnabled()) {
             initDefaultMaxSizeForOnHeapMaps(mapConfig.getNearCacheConfig());
