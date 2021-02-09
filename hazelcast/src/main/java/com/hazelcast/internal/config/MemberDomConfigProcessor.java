@@ -2686,7 +2686,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         boolean enabled = getBooleanValue(getAttribute(node, "enabled"));
         RestEndpointGroup endpointGroup;
         try {
-            endpointGroup = RestEndpointGroup.valueOf(name);
+            endpointGroup = RestEndpointGroup.valueOf(name.toUpperCase());
         } catch (IllegalArgumentException e) {
             throw new InvalidConfigurationException("Wrong name attribute value was provided in endpoint-group element: " + name
                     + "\nAllowed values: " + Arrays.toString(RestEndpointGroup.values()));
