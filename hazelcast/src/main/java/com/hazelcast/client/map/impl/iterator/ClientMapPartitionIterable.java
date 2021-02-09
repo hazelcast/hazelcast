@@ -22,6 +22,15 @@ import javax.annotation.Nonnull;
 import java.util.Iterator;
 import java.util.Map;
 
+/**
+ * Client-side iterable that provides an iterator for iterating map
+ * entries in the specified partition.
+ * It returns {@link ClientMapPartitionIterator}.
+ *
+ * @param <K> the key type of map.
+ * @param <V> the value type of map.
+ * @see ClientMapPartitionIterator
+ */
 public class ClientMapPartitionIterable<K, V> implements Iterable<Map.Entry<K, V>> {
     private final ClientMapProxy<K, V> clientMapProxy;
     private final int fetchSize;

@@ -17,6 +17,7 @@
 package com.hazelcast.client.map.impl.iterator;
 
 import com.hazelcast.client.impl.proxy.ClientMapProxy;
+import com.hazelcast.map.impl.iterator.MapQueryIterator;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 import org.jetbrains.annotations.NotNull;
@@ -24,6 +25,13 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Iterator;
 import java.util.Map;
 
+/**
+ * Client-side iterable that provides an iterator for iterating the result
+ * of the projection on map entries in the whole cluster which satisfies the
+ * predicate. It returns {@link ClientMapQueryIterator}.
+ *
+ * @see MapQueryIterator
+ */
 public class ClientMapQueryIterable<K, V, R> implements Iterable<R> {
     private final ClientMapProxy<K, V> clientMapProxy;
     private final Predicate<K, V> predicate;

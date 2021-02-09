@@ -998,8 +998,10 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
     /**
      * Returns an iterator for the map entries in the all of the
-     * partitions.
-     * calling {@code Map.Entry.getValue()} lazily.
+     * partitions. While fetching keys in batches, it retrieves
+     * the values of these entries while iterating by calling
+     * {@code Map.Entry.getValue()} lazily.
+     *
      * @return an iterator for the map entries
      */
     @Override
@@ -1007,6 +1009,27 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     public Iterator<Entry<K, V>> iterator() {
         int partitionCount = partitionService.getPartitionCount();
         return new MapIterator<>(this, partitionCount, false);
+    }
+
+
+    /**
+     * Returns an iterator for the map entries in the all of the
+     * partitions. While fetching keys in batches, it retrieves
+     * the values of these entries while iterating by calling
+     * {@code Map.Entry.getValue()} lazily.
+     *
+     * @param fetchSize – size for fetching keys in bulk. This size can
+     *                 be thought of as page size for iteration. But
+     *                 notice that at every fetch only keys are retrieved,
+     *                 not values. Values are retrieved on each iterate.
+     * @return an iterator for the map entries
+     */
+    @Override
+    @Nonnull
+    public Iterator<Entry<K, V>> iterator(int fetchSize) {
+        int partitionCount = partitionService.getPartitionCount();
+
+        return new MapIterator<>(this, fetchSize, partitionCount, false);
     }
 
     /**

@@ -22,12 +22,13 @@ import javax.annotation.Nonnull;
 import java.util.Iterator;
 import java.util.Map;
 
-
 /**
  * Iterable that provides an iterator for iterating map entries in the
- * specified partition. It returns {@link MapIterator} and the
- * provided guarantees are the same with it.
- * @see MapQueryIterator
+ * whole cluster. It returns {@link MapIterator}.
+ *
+ * @param <K> the key type of map.
+ * @param <V> the value type of map.
+ * @see MapIterator
  */
 public class MapIterable<K, V> implements Iterable<Map.Entry<K, V>> {
 

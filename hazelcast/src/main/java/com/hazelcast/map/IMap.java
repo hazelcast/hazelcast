@@ -3191,12 +3191,28 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      * Returns an iterator over the entries of map. It iterates partitions
      * in a sequential manner. It starts to iterate on partition 0 and it
      * finishes the iteration with the last partition (n = 271 by default).
-     * The entries are fetched in batches for the constant heap utilization.
+     * The keys are fetched in batches for the constant heap utilization.
      *
      * @since 4.2
      */
     @NotNull
     @Override
     Iterator<Entry<K, V>> iterator();
+
+
+    /**
+     * Returns an iterator over the entries of map. It iterates partitions
+     * in a sequential manner. It starts to iterate on partition 0 and it
+     * finishes the iteration with the last partition (n = 271 by default).
+     * The keys are fetched in batches for the constant heap utilization.
+     *
+     * @param fetchSize – size for fetching keys in bulk. This size can
+     *                 be thought of as page size for iteration. But
+     *                 notice that at every fetch only keys are retrieved,
+     *                 not values. Values are retrieved on each iterate.
+     * @since 4.2
+     */
+    @NotNull
+    Iterator<Entry<K, V>> iterator(int fetchSize);
 
 }

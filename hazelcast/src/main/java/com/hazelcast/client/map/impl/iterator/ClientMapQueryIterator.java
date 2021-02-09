@@ -32,19 +32,22 @@ import java.util.stream.IntStream;
  * entries in the whole cluster which satisfy the {@code predicate}. The
  * values are fetched in batches. The {@link Iterator#remove()} method
  * is not supported and will throw a {@link UnsupportedOperationException}.
- * It uses {@link MapQueryPartitionIterator} and provides same guarantees
+ * It uses {@link ClientMapQueryPartitionIterator} and provides same guarantees
  * with it.
  *
+ * @param <K> the key type of map.
+ * @param <V> the value type of map.
+ * @param <R> the return type of iterator after the projection
  * @see MapQueryPartitionIterator
  */
 public class ClientMapQueryIterator<K, V, R> extends AbstractMapQueryIterator<R> {
     public ClientMapQueryIterator(ClientMapProxy<K, V> mapProxy, int fetchSize, int partitionCount,
                                   Projection<? super Map.Entry<K, V>, R> projection, Predicate<K, V> predicate) {
-        this.partitionIterators = IntStream.range(0, partitionCount).boxed()
+        this.queryPartitionIterators = IntStream.range(0, partitionCount).boxed()
                 .map(partitionId -> mapProxy.iterator(fetchSize, partitionId, projection, predicate))
                 .collect(Collectors.toList());
-        this.size = partitionIterators.size();
+        this.size = queryPartitionIterators.size();
         idx = 0;
-        it = partitionIterators.get(idx);
+        it = queryPartitionIterators.get(idx);
     }
 }

@@ -30,6 +30,8 @@ import java.util.stream.IntStream;
  * It uses {@link MapPartitionIterator} and provides the same guarantees
  * with this partition iterator.
  *
+ * @param <K> the key type of map.
+ * @param <V> the value type of map.
  * @see MapPartitionIterator
  */
 public class ClientMapIterator<K, V> extends AbstractMapIterator<K, V> {

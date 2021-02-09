@@ -21,16 +21,19 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 /**
- * Base class for iterating map entries in the whole cluster.
+ * Base class for iterating map entries in the whole cluster with
+ * a {@link com.hazelcast.query.Predicate} and a {@link com.hazelcast.projection.Projection}.
+ *
  *
  * @param <R> return type of the iterator
+ * @see AbstractMapQueryPartitionIterator
  */
 public class AbstractMapQueryIterator<R> implements Iterator<R> {
     protected static final int DEFAULT_FETCH_SIZE = 100;
     protected int size;
     protected Iterator<R> it;
     protected int idx;
-    protected List<Iterator<R>> partitionIterators;
+    protected List<Iterator<R>> queryPartitionIterators;
 
     @Override
     public R next() {
@@ -46,7 +49,7 @@ public class AbstractMapQueryIterator<R> implements Iterator<R> {
             if (idx == size - 1) {
                 return false;
             }
-            it = partitionIterators.get(++idx);
+            it = queryPartitionIterators.get(++idx);
         }
         return true;
     }

@@ -39,12 +39,12 @@ public class MapQueryIterator<K, V, R> extends AbstractMapQueryIterator<R> {
 
     public MapQueryIterator(MapProxyImpl<K, V> mapProxy, int fetchSize, int partitionCount,
                             Projection<? super Map.Entry<K, V>, R> projection, Predicate<K, V> predicate) {
-        this.partitionIterators = IntStream.range(0, partitionCount).boxed()
+        this.queryPartitionIterators = IntStream.range(0, partitionCount).boxed()
                 .map(partitionId -> mapProxy.iterator(fetchSize, partitionId, projection, predicate))
                 .collect(Collectors.toList());
-        this.size = partitionIterators.size();
+        this.size = queryPartitionIterators.size();
         idx = 0;
-        it = partitionIterators.get(idx);
+        it = queryPartitionIterators.get(idx);
     }
 
     public MapQueryIterator(MapProxyImpl<K, V> mapProxy, int partitionCount,
