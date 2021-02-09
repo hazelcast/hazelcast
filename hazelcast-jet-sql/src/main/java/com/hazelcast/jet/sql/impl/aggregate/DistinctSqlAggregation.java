@@ -18,75 +18,55 @@ package com.hazelcast.jet.sql.impl.aggregate;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.sql.impl.type.QueryDataType;
 
 import javax.annotation.concurrent.NotThreadSafe;
 import java.io.IOException;
-import java.util.Objects;
+import java.util.HashSet;
+import java.util.Set;
 
 @NotThreadSafe
-public class CountSqlAggregation extends SqlAggregation {
+class DistinctSqlAggregation implements SqlAggregation {
 
-    private long value;
+    private final Set<Object> values;
 
-    public CountSqlAggregation() {
-        super(-1, false, false);
-    }
+    private final SqlAggregation delegate;
 
-    public CountSqlAggregation(int index) {
-        super(index, true, false);
-    }
+    DistinctSqlAggregation(SqlAggregation delegate) {
+        this.values = new HashSet<>();
 
-    public CountSqlAggregation(int index, boolean distinct) {
-        super(index, true, distinct);
+        this.delegate = delegate;
     }
 
     @Override
-    public QueryDataType resultType() {
-        return QueryDataType.BIGINT;
-    }
+    public void accumulate(Object value) {
+        if (value != null && !values.add(value)) {
+            return;
+        }
 
-    @Override
-    protected void accumulate(Object value) {
-        this.value++;
+        delegate.accumulate(value);
     }
 
     @Override
     public void combine(SqlAggregation other0) {
-        CountSqlAggregation other = (CountSqlAggregation) other0;
+        DistinctSqlAggregation other = (DistinctSqlAggregation) other0;
 
-        value += other.value;
+        delegate.combine(other.delegate);
     }
 
     @Override
     public Object collect() {
-        return value;
+        return delegate.collect();
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeLong(value);
+        // this class is never serialized - we use it only in single-stage aggregations
+        throw new UnsupportedOperationException("Should not be called");
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        value = in.readLong();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        CountSqlAggregation that = (CountSqlAggregation) o;
-        return value == that.value;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(value);
+        // this class is never serialized - we use it only in single-stage aggregations
+        throw new UnsupportedOperationException("Should not be called");
     }
 }

@@ -19,35 +19,21 @@ package com.hazelcast.jet.sql.impl.aggregate;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.type.QueryDataType;
 
 import javax.annotation.concurrent.NotThreadSafe;
 import java.io.IOException;
-import java.util.Objects;
 
 @NotThreadSafe
-public class MinSqlAggregation extends SqlAggregation {
-
-    private QueryDataType operandType;
+public class MinSqlAggregation implements SqlAggregation {
 
     private Object value;
 
-    @SuppressWarnings("unused")
-    private MinSqlAggregation() {
-    }
-
-    public MinSqlAggregation(int index, QueryDataType operandType) {
-        super(index, true, false);
-        this.operandType = operandType;
-    }
-
     @Override
-    public QueryDataType resultType() {
-        return operandType;
-    }
+    public void accumulate(Object value) {
+        if (value == null) {
+            return;
+        }
 
-    @Override
-    protected void accumulate(Object value) {
         if (this.value == null || compare(this.value, value) > 0) {
             this.value = value;
         }
@@ -90,31 +76,11 @@ public class MinSqlAggregation extends SqlAggregation {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeObject(operandType);
         out.writeObject(value);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        operandType = in.readObject();
         value = in.readObject();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        MinSqlAggregation that = (MinSqlAggregation) o;
-        return Objects.equals(operandType, that.operandType) &&
-                Objects.equals(value, that.value);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(operandType, value);
     }
 }

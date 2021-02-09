@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.aggregate;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.sql.impl.type.QueryDataType;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import org.junit.Test;
@@ -31,7 +30,7 @@ public class MinSqlAggregationTest {
 
     @Test
     public void test_default() {
-        MinSqlAggregation aggregation = new MinSqlAggregation(0, QueryDataType.INT);
+        MinSqlAggregation aggregation = new MinSqlAggregation();
 
         assertThat(aggregation.collect()).isNull();
     }
@@ -51,9 +50,9 @@ public class MinSqlAggregationTest {
     @Test
     @Parameters(method = "values")
     public void test_accumulate(Object value1, Object value2, Object expected) {
-        MinSqlAggregation aggregation = new MinSqlAggregation(0, QueryDataType.INT);
-        aggregation.accumulate(new Object[]{value1});
-        aggregation.accumulate(new Object[]{value2});
+        MinSqlAggregation aggregation = new MinSqlAggregation();
+        aggregation.accumulate(value1);
+        aggregation.accumulate(value2);
 
         assertThat(aggregation.collect()).isEqualTo(expected);
     }
@@ -61,11 +60,11 @@ public class MinSqlAggregationTest {
     @Test
     @Parameters(method = "values")
     public void test_combine(Object value1, Object value2, Object expected) {
-        MinSqlAggregation left = new MinSqlAggregation(0, QueryDataType.INT);
-        left.accumulate(new Object[]{value1});
+        MinSqlAggregation left = new MinSqlAggregation();
+        left.accumulate(value1);
 
-        MinSqlAggregation right = new MinSqlAggregation(0, QueryDataType.INT);
-        right.accumulate(new Object[]{value2});
+        MinSqlAggregation right = new MinSqlAggregation();
+        right.accumulate(value2);
 
         left.combine(right);
 
@@ -75,12 +74,12 @@ public class MinSqlAggregationTest {
 
     @Test
     public void test_serialization() {
-        MinSqlAggregation original = new MinSqlAggregation(0, QueryDataType.INT);
-        original.accumulate(new Object[]{1});
+        MinSqlAggregation original = new MinSqlAggregation();
+        original.accumulate(1);
 
         InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
         MinSqlAggregation serialized = ss.toObject(ss.toData(original));
 
-        assertThat(serialized).isEqualTo(original);
+        assertThat(serialized).isEqualToComparingFieldByField(original);
     }
 }

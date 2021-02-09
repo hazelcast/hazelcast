@@ -20,7 +20,6 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.aggregate.ObjectArrayKey;
-import com.hazelcast.jet.sql.impl.aggregate.SqlAggregations;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
@@ -34,14 +33,14 @@ import java.util.List;
 public class AggregateAccumulateByKeyPhysicalRel extends SingleRel implements PhysicalRel {
 
     private final ImmutableBitSet groupSet;
-    private final AggregateOperation<SqlAggregations, Object[]> aggrOp;
+    private final AggregateOperation<?, Object[]> aggrOp;
 
     AggregateAccumulateByKeyPhysicalRel(
             RelOptCluster cluster,
             RelTraitSet traits,
             RelNode input,
             ImmutableBitSet groupSet,
-            AggregateOperation<SqlAggregations, Object[]> aggrOp
+            AggregateOperation<?, Object[]> aggrOp
     ) {
         super(cluster, traits, input);
 

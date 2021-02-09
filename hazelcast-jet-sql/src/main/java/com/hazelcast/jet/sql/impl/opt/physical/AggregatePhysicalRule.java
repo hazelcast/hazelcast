@@ -16,15 +16,15 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.aggregate.AggregateOperation;
-import com.hazelcast.jet.sql.impl.aggregate.AvgSqlAggregation;
-import com.hazelcast.jet.sql.impl.aggregate.CountSqlAggregation;
+import com.hazelcast.jet.sql.impl.aggregate.AvgSqlAggregations;
+import com.hazelcast.jet.sql.impl.aggregate.CountSqlAggregations;
 import com.hazelcast.jet.sql.impl.aggregate.MaxSqlAggregation;
 import com.hazelcast.jet.sql.impl.aggregate.MinSqlAggregation;
 import com.hazelcast.jet.sql.impl.aggregate.SqlAggregation;
-import com.hazelcast.jet.sql.impl.aggregate.SqlAggregations;
-import com.hazelcast.jet.sql.impl.aggregate.SumSqlAggregation;
+import com.hazelcast.jet.sql.impl.aggregate.SumSqlAggregations;
 import com.hazelcast.jet.sql.impl.aggregate.ValueSqlAggregation;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.AggregateLogicalRel;
@@ -77,7 +77,7 @@ final class AggregatePhysicalRule extends RelOptRule {
     }
 
     private static RelNode toAggregate(AggregateLogicalRel logicalAggregate, RelNode physicalInput) {
-        AggregateOperation<SqlAggregations, Object[]> aggrOp = aggregateOperation(
+        AggregateOperation<?, Object[]> aggrOp = aggregateOperation(
                 physicalInput.getRowType(),
                 logicalAggregate.getGroupSet(),
                 logicalAggregate.getAggCallList()
@@ -114,7 +114,7 @@ final class AggregatePhysicalRule extends RelOptRule {
     }
 
     private static RelNode toAggregateByKey(AggregateLogicalRel logicalAggregate, RelNode physicalInput) {
-        AggregateOperation<SqlAggregations, Object[]> aggrOp = aggregateOperation(
+        AggregateOperation<?, Object[]> aggrOp = aggregateOperation(
                 physicalInput.getRowType(),
                 logicalAggregate.getGroupSet(),
                 logicalAggregate.getAggCallList()
@@ -151,7 +151,7 @@ final class AggregatePhysicalRule extends RelOptRule {
         }
     }
 
-    private static AggregateOperation<SqlAggregations, Object[]> aggregateOperation(
+    private static AggregateOperation<?, Object[]> aggregateOperation(
             RelDataType inputType,
             ImmutableBitSet groupSet,
             List<AggregateCall> aggregateCalls
@@ -159,9 +159,11 @@ final class AggregatePhysicalRule extends RelOptRule {
         List<QueryDataType> operandTypes = OptUtils.schema(inputType).getTypes();
 
         List<SupplierEx<SqlAggregation>> aggregationProviders = new ArrayList<>();
+        List<FunctionEx<Object[], Object>> valueProviders = new ArrayList<>();
+
         for (Integer groupIndex : groupSet.toList()) {
-            QueryDataType operandType = operandTypes.get(groupIndex);
-            aggregationProviders.add(() -> new ValueSqlAggregation(groupIndex, operandType));
+            aggregationProviders.add(ValueSqlAggregation::new);
+            valueProviders.add(row -> row[groupIndex]);
         }
         for (AggregateCall aggregateCall : aggregateCalls) {
             boolean distinct = aggregateCall.isDistinct();
@@ -171,33 +173,38 @@ final class AggregatePhysicalRule extends RelOptRule {
                 case COUNT:
                     if (distinct) {
                         int countIndex = aggregateCallArguments.get(0);
-                        aggregationProviders.add(() -> new CountSqlAggregation(countIndex, true));
+                        aggregationProviders.add(() -> CountSqlAggregations.from(true, true));
+                        valueProviders.add(row -> row[countIndex]);
                     } else if (aggregateCallArguments.size() == 1) {
                         int countIndex = aggregateCallArguments.get(0);
-                        aggregationProviders.add(() -> new CountSqlAggregation(countIndex));
+                        aggregationProviders.add(() -> CountSqlAggregations.from(true, false));
+                        valueProviders.add(row -> row[countIndex]);
                     } else {
-                        aggregationProviders.add(CountSqlAggregation::new);
+                        aggregationProviders.add(() -> CountSqlAggregations.from(false, false));
+                        valueProviders.add(row -> null);
                     }
                     break;
                 case MIN:
                     int minIndex = aggregateCallArguments.get(0);
-                    QueryDataType minOperandType = operandTypes.get(minIndex);
-                    aggregationProviders.add(() -> new MinSqlAggregation(minIndex, minOperandType));
+                    aggregationProviders.add(MinSqlAggregation::new);
+                    valueProviders.add(row -> row[minIndex]);
                     break;
                 case MAX:
                     int maxIndex = aggregateCallArguments.get(0);
-                    QueryDataType maxOperandType = operandTypes.get(maxIndex);
-                    aggregationProviders.add(() -> new MaxSqlAggregation(maxIndex, maxOperandType));
+                    aggregationProviders.add(MaxSqlAggregation::new);
+                    valueProviders.add(row -> row[maxIndex]);
                     break;
                 case SUM:
                     int sumIndex = aggregateCallArguments.get(0);
                     QueryDataType sumOperandType = operandTypes.get(sumIndex);
-                    aggregationProviders.add(() -> new SumSqlAggregation(sumIndex, sumOperandType, distinct));
+                    aggregationProviders.add(() -> SumSqlAggregations.from(sumOperandType, distinct));
+                    valueProviders.add(row -> row[sumIndex]);
                     break;
                 case AVG:
                     int avgIndex = aggregateCallArguments.get(0);
                     QueryDataType avgOperandType = operandTypes.get(avgIndex);
-                    aggregationProviders.add(() -> new AvgSqlAggregation(avgIndex, avgOperandType, distinct));
+                    aggregationProviders.add(() -> AvgSqlAggregations.from(avgOperandType, distinct));
+                    valueProviders.add(row -> row[avgIndex]);
                     break;
                 default:
                     throw QueryException.error("Unsupported aggregation function: " + kind);
@@ -206,14 +213,30 @@ final class AggregatePhysicalRule extends RelOptRule {
 
         return AggregateOperation
                 .withCreate(() -> {
-                    SqlAggregation[] aggregations = new SqlAggregation[aggregationProviders.size()];
-                    for (int i = 0; i < aggregationProviders.size(); i++) {
-                        aggregations[i] = aggregationProviders.get(i).get();
+                    List<SqlAggregation> aggregations = new ArrayList<>(aggregationProviders.size());
+                    for (SupplierEx<SqlAggregation> aggregationProvider : aggregationProviders) {
+                        aggregations.add(aggregationProvider.get());
                     }
-                    return new SqlAggregations(aggregations);
+                    return aggregations;
                 })
-                .andAccumulate(SqlAggregations::accumulate)
-                .andCombine(SqlAggregations::combine)
-                .andExportFinish(SqlAggregations::collect);
+                .andAccumulate((List<SqlAggregation> aggregations, Object[] row) -> {
+                    for (int i = 0; i < aggregations.size(); i++) {
+                        aggregations.get(i).accumulate(valueProviders.get(i).apply(row));
+                    }
+                })
+                .andCombine((lefts, rights) -> {
+                    assert lefts.size() == rights.size();
+
+                    for (int i = 0; i < lefts.size(); i++) {
+                        lefts.get(i).combine(rights.get(i));
+                    }
+                })
+                .andExportFinish(aggregations -> {
+                    Object[] values = new Object[aggregations.size()];
+                    for (int i = 0; i < aggregations.size(); i++) {
+                        values[i] = aggregations.get(i).collect();
+                    }
+                    return values;
+                });
     }
 }

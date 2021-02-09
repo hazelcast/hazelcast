@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.aggregate;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.sql.impl.type.QueryDataType;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -27,27 +26,27 @@ public class ValueSqlAggregationTest {
 
     @Test
     public void test_default() {
-        ValueSqlAggregation aggregation = new ValueSqlAggregation(0, QueryDataType.OBJECT);
+        ValueSqlAggregation aggregation = new ValueSqlAggregation();
 
         assertThat(aggregation.collect()).isNull();
     }
 
     @Test
     public void test_accumulate() {
-        ValueSqlAggregation aggregation = new ValueSqlAggregation(1, QueryDataType.VARCHAR);
-        aggregation.accumulate(new Object[]{1, "v"});
-        aggregation.accumulate(new Object[]{2, "v"});
+        ValueSqlAggregation aggregation = new ValueSqlAggregation();
+        aggregation.accumulate("v");
+        aggregation.accumulate("v");
 
         assertThat(aggregation.collect()).isEqualTo("v");
     }
 
     @Test
     public void test_combine() {
-        ValueSqlAggregation left = new ValueSqlAggregation(0, QueryDataType.VARCHAR);
-        left.accumulate(new Object[]{null});
+        ValueSqlAggregation left = new ValueSqlAggregation();
+        left.accumulate(null);
 
-        ValueSqlAggregation right = new ValueSqlAggregation(0, QueryDataType.VARCHAR);
-        right.accumulate(new Object[]{"v"});
+        ValueSqlAggregation right = new ValueSqlAggregation();
+        right.accumulate("v");
 
         left.combine(right);
 
@@ -57,12 +56,12 @@ public class ValueSqlAggregationTest {
 
     @Test
     public void test_serialization() {
-        ValueSqlAggregation original = new ValueSqlAggregation(0, QueryDataType.VARCHAR);
-        original.accumulate(new Object[]{"v"});
+        ValueSqlAggregation original = new ValueSqlAggregation();
+        original.accumulate("v");
 
         InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
         ValueSqlAggregation serialized = ss.toObject(ss.toData(original));
 
-        assertThat(serialized).isEqualTo(original);
+        assertThat(serialized).isEqualToComparingFieldByField(original);
     }
 }

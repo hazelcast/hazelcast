@@ -26,47 +26,58 @@ public class CountSqlAggregationTest {
 
     @Test
     public void test_default() {
-        CountSqlAggregation aggregation = new CountSqlAggregation();
+        SqlAggregation aggregation = CountSqlAggregations.from(false, false);
 
         assertThat(aggregation.collect()).isEqualTo(0L);
     }
 
     @Test
     public void test_accumulate() {
-        CountSqlAggregation aggregation = new CountSqlAggregation();
-        aggregation.accumulate(new Object[]{null});
-        aggregation.accumulate(new Object[]{1});
+        SqlAggregation aggregation = CountSqlAggregations.from(false, false);
+        aggregation.accumulate(null);
+        aggregation.accumulate(1);
 
         assertThat(aggregation.collect()).isEqualTo(2L);
     }
 
     @Test
     public void test_accumulateIgnoreNulls() {
-        CountSqlAggregation aggregation = new CountSqlAggregation(0);
-        aggregation.accumulate(new Object[]{null});
-        aggregation.accumulate(new Object[]{1});
+        SqlAggregation aggregation = CountSqlAggregations.from(true, false);
+        aggregation.accumulate(null);
+        aggregation.accumulate(1);
 
         assertThat(aggregation.collect()).isEqualTo(1L);
     }
 
     @Test
     public void test_accumulateDistinct() {
-        CountSqlAggregation aggregation = new CountSqlAggregation(0, true);
-        aggregation.accumulate(new Object[]{null});
-        aggregation.accumulate(new Object[]{1});
-        aggregation.accumulate(new Object[]{1});
-        aggregation.accumulate(new Object[]{2});
+        SqlAggregation aggregation = CountSqlAggregations.from(false, true);
+        aggregation.accumulate(null);
+        aggregation.accumulate(1);
+        aggregation.accumulate(1);
+        aggregation.accumulate(2);
+
+        assertThat(aggregation.collect()).isEqualTo(3L);
+    }
+
+    @Test
+    public void test_accumulateIgnoreNullsAndDistinct() {
+        SqlAggregation aggregation = CountSqlAggregations.from(true, true);
+        aggregation.accumulate(null);
+        aggregation.accumulate(1);
+        aggregation.accumulate(1);
+        aggregation.accumulate(2);
 
         assertThat(aggregation.collect()).isEqualTo(2L);
     }
 
     @Test
     public void test_combine() {
-        CountSqlAggregation left = new CountSqlAggregation();
-        left.accumulate(new Object[0]);
+        SqlAggregation left = CountSqlAggregations.from(false, false);
+        left.accumulate(null);
 
-        CountSqlAggregation right = new CountSqlAggregation();
-        right.accumulate(new Object[0]);
+        SqlAggregation right = CountSqlAggregations.from(false, false);
+        right.accumulate(null);
 
         left.combine(right);
 
@@ -76,12 +87,12 @@ public class CountSqlAggregationTest {
 
     @Test
     public void test_serialization() {
-        CountSqlAggregation original = new CountSqlAggregation();
-        original.accumulate(new Object[0]);
+        SqlAggregation original = CountSqlAggregations.from(false, false);
+        original.accumulate(null);
 
         InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
-        CountSqlAggregation serialized = ss.toObject(ss.toData(original));
+        SqlAggregation serialized = ss.toObject(ss.toData(original));
 
-        assertThat(serialized).isEqualTo(original);
+        assertThat(serialized).isEqualToComparingFieldByField(original);
     }
 }
