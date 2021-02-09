@@ -23,17 +23,31 @@
     <description>SQL support for Hazelcast Jet</description>
     <url>http://www.hazelcast.com/</url>
 
+    <groupId>com.hazelcast.jet</groupId>
     <artifactId>hazelcast-jet-sql</artifactId>
 
     <parent>
-        <groupId>com.hazelcast.jet</groupId>
-        <artifactId>hazelcast-jet-root</artifactId>
+        <groupId>com.hazelcast</groupId>
+        <artifactId>hazelcast-root</artifactId>
         <version>5.0-SNAPSHOT</version>
     </parent>
 
     <properties>
         <confluent.version>4.1.4</confluent.version>
         <jaxb.version>2.3.1</jaxb.version>
+
+        <argLine> <!-- surefire parameters -->
+            -Xmx1G
+            -Xms1G
+            -XX:+AlwaysPreTouch
+            -Dhazelcast.phone.home.enabled=false
+            -Dhazelcast.logging.type=log4j2
+            -Dhazelcast.logging.details.enabled=true
+            -Dhazelcast.test.use.network=false
+            -Djava.net.preferIPv4Stack=true
+            -XX:+HeapDumpOnOutOfMemoryError
+            -XX:HeapDumpPath=${project.build.directory}
+        </argLine>
 
         <!-- needed for CheckStyle -->
         <checkstyle.headerLocation>${maven.multiModuleProjectDirectory}/checkstyle/ClassHeaderApache.txt</checkstyle.headerLocation>
@@ -55,14 +69,14 @@
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-core</artifactId>
-            <version>${project.parent.version}</version>
+            <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-sql-core</artifactId>
-            <version>${hazelcast.version}</version>
+            <version>${project.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.hazelcast</groupId>
@@ -106,7 +120,7 @@
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-kafka</artifactId>
-            <version>${project.parent.version}</version>
+            <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -124,6 +138,13 @@
             <scope>test</scope>
         </dependency>
 
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast</artifactId>
+            <scope>test</scope>
+            <version>${project.version}</version>
+            <classifier>tests</classifier>
+        </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-core</artifactId>
@@ -281,6 +302,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
+                <version>${maven.resources.plugin.version}</version>
                 <executions>
                     <execution>
                         <id>copy-fmpp-resources</id>
@@ -426,9 +448,24 @@
                 <artifactId>maven-jar-plugin</artifactId>
                 <executions>
                     <execution>
+                        <id>test-jar</id>
                         <goals>
                             <goal>test-jar</goal>
                         </goals>
+                    </execution>
+                    <execution>
+                        <id>javadoc-workaround</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                        <configuration>
+                            <classifier>javadoc</classifier>
+                            <classesDirectory>${project.basedir}/src/main/javadoc</classesDirectory>
+                            <excludes>
+                                <exclude>.*</exclude>
+                            </excludes>
+                        </configuration>
                     </execution>
                 </executions>
                 <configuration>
@@ -441,19 +478,47 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                    <runOrder>random</runOrder>
+                    <trimStackTrace>false</trimStackTrace>
+                    <argLine>
+                        ${argLine}
+                    </argLine>
+                </configuration>
                 <executions>
                     <execution>
-                        <phase>package</phase>
+                        <id>serial-tests</id>
                         <goals>
-                            <goal>jar</goal>
+                            <goal>test</goal>
                         </goals>
                         <configuration>
-                            <classifier>javadoc</classifier>
-                            <classesDirectory>${project.basedir}/src/main/javadoc</classesDirectory>
-                            <excludes>
-                                <exclude>.*</exclude>
-                            </excludes>
+                            <skip>${maven.test.skip}</skip>
+                            <forkCount>1</forkCount>
+                            <groups>com.hazelcast.jet.test.SerialTest</groups>
+                            <excludedGroups>
+                                com.hazelcast.test.annotation.SlowTest,com.hazelcast.test.annotation.NightlyTest
+                            </excludedGroups>
+                            <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>regular-tests</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration combine.self="override">
+                            <skip>${maven.test.skip}</skip>
+                            <forkCount>4</forkCount>
+                            <includes>
+                                <include>/com/hazelcast/jet/**/**.java</include>
+                            </includes>
+                            <groups/>
+                            <excludedGroups>
+                                com.hazelcast.jet.test.SerialTest,com.hazelcast.test.annotation.SlowTest,com.hazelcast.test.annotation.NightlyTest
+                            </excludedGroups>
+                            <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
                         </configuration>
                     </execution>
                 </executions>
@@ -481,7 +546,7 @@
                                         <artifactItem>
                                             <groupId>com.hazelcast</groupId>
                                             <artifactId>hazelcast-sql-core</artifactId>
-                                            <version>${hazelcast.version}</version>
+                                            <version>${project.version}</version>
                                             <classifier>tests</classifier>
                                             <overWrite>true</overWrite>
                                             <outputDirectory>${project.build.directory}/test-classes</outputDirectory>

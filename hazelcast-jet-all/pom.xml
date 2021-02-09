@@ -20,11 +20,12 @@
     <packaging>jar</packaging>
     <name>hazelcast-jet-all</name>
 
+    <groupId>com.hazelcast.jet</groupId>
     <artifactId>hazelcast-jet</artifactId>
 
     <parent>
-        <groupId>com.hazelcast.jet</groupId>
-        <artifactId>hazelcast-jet-root</artifactId>
+        <groupId>com.hazelcast</groupId>
+        <artifactId>hazelcast-root</artifactId>
         <version>5.0-SNAPSHOT</version>
     </parent>
 
@@ -36,6 +37,16 @@
     </properties>
 
     <build>
+        <!-- ignore the testjob module -->
+        <testResources>
+            <testResource>
+                <directory>src/test/resources</directory>
+                <excludes>
+                    <exclude>com/hazelcast/jet/server/testjob/**</exclude>
+                </excludes>
+            </testResource>
+        </testResources>
+
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -149,6 +160,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
+                <version>${maven.javadoc.plugin.version}</version>
                 <configuration>
                     <includeDependencySources>true</includeDependencySources>
                     <includeTransitiveDependencySources>true</includeTransitiveDependencySources>
@@ -219,6 +231,13 @@
 
         <!-- Test dependencies -->
         <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast</artifactId>
+            <scope>test</scope>
+            <version>${project.version}</version>
+            <classifier>tests</classifier>
+        </dependency>
+        <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-core</artifactId>
             <version>${project.parent.version}</version>
@@ -228,13 +247,6 @@
 
 
         <!-- Optional dependencies: required for building, optional at run time -->
-        <dependency>
-            <groupId>javax.cache</groupId>
-            <artifactId>cache-api</artifactId>
-            <version>${jsr107.api.version}</version>
-            <scope>provided</scope>
-            <optional>true</optional>
-        </dependency>
         <dependency>
             <groupId>javax.jms</groupId>
             <artifactId>javax.jms-api</artifactId>
