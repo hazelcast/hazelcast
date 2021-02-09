@@ -114,7 +114,7 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
         QueryDataType fromType = HazelcastTypeUtils.toHazelcastType(from.getSqlTypeName());
         QueryDataType toType = HazelcastTypeUtils.toHazelcastType(to.getSqlTypeName());
 
-        Literal literal = LiteralUtils.literal(operand);
+        Literal literal = LiteralUtils.literal(convertedOperand);
 
         if (literal != null && literal.getTypeName() != NULL) {
             // There is a bug in RexSimplify that incorrectly converts numeric literals from one numeric type to another.
@@ -232,6 +232,6 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
 
         CalciteContextException calciteContextError = validator.newValidationError(call, contextError);
 
-        throw QueryException.error(SqlErrorCode.PARSING, calciteContextError.getMessage(), calciteContextError);
+        throw QueryException.error(SqlErrorCode.PARSING, calciteContextError.getMessage(), e);
     }
 }

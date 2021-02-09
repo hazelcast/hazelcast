@@ -16,13 +16,15 @@
 
 package com.hazelcast.sql.impl.calcite.validate.literal;
 
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastIntegerType;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
-import com.hazelcast.sql.impl.type.converter.Converter;
-import com.hazelcast.sql.impl.type.converter.Converters;
+import com.hazelcast.sql.impl.type.converter.BigDecimalConverter;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.type.SqlTypeName;
+
+import java.math.BigDecimal;
 
 public final class NumericLiteral extends Literal {
 
@@ -42,61 +44,70 @@ public final class NumericLiteral extends Literal {
     }
 
     public static Literal create(SqlTypeName typeName, Object value) {
-        Converter converter = Converters.getConverter(value.getClass());
-        if (HazelcastTypeUtils.isNumericIntegerType(typeName) || typeName == SqlTypeName.DECIMAL) {
-            // Dealing with integer type family
-            long longValue;
-            try {
-                longValue = converter.asBigint(value);
-            } catch (Exception ignore) {
-                // Numeric overflow for BIGINT - dealing with DECIMAL
-                return new NumericLiteral(
-                        converter.asDecimal(value),
-                        SqlTypeName.DECIMAL,
-                        Mode.FRACTIONAL_EXACT,
-                        0
-                );
+        // Calcite always uses DECIMAL or DOUBLE for literals.
+        // If the DECIMAL is an integer that fits into a smaller integer type, replace the type.
+        if (value instanceof BigDecimal && !hasDecimalPlaces((BigDecimal) value)
+                && !HazelcastTypeUtils.isNumericInexactType(typeName)) {
+            Literal res = tryReduceInteger((BigDecimal) value);
+            if (res != null) {
+                return res;
             }
-
-            int bitWidth = HazelcastIntegerType.bitWidthOf(longValue);
-
-            RelDataType type = HazelcastIntegerType.create(bitWidth, false);
-
-            Object adjustedValue;
-
-            switch (type.getSqlTypeName()) {
-                case TINYINT:
-                    adjustedValue = (byte) longValue;
-                    break;
-
-                case SMALLINT:
-                    adjustedValue = (short) longValue;
-                    break;
-
-                case INTEGER:
-                    adjustedValue = (int) longValue;
-                    break;
-
-                default:
-                    assert type.getSqlTypeName() == SqlTypeName.BIGINT;
-                    adjustedValue = longValue;
-            }
-
-            return new NumericLiteral(
-                    adjustedValue,
-                    type.getSqlTypeName(),
-                    Mode.INTEGER,
-                    bitWidth
-            );
         }
 
-        // Dealing with DOUBLE
+        if (typeName == SqlTypeName.DOUBLE && value instanceof BigDecimal) {
+            value = ((BigDecimal) value).doubleValue();
+        }
+
         return new NumericLiteral(
-            converter.asDouble(value),
-            SqlTypeName.DOUBLE,
-            Mode.FRACTIONAL_INEXACT,
-            0
+                value,
+                typeName,
+                typeName == SqlTypeName.DOUBLE ? Mode.FRACTIONAL_INEXACT : Mode.FRACTIONAL_EXACT,
+                0
         );
+    }
+
+    private static Literal tryReduceInteger(BigDecimal value) {
+        // Dealing with integer type family
+        long longValue;
+        try {
+            longValue = BigDecimalConverter.INSTANCE.asBigint(value);
+        } catch (QueryException e) {
+            assert e.getMessage().contains("Numeric overflow");
+            return null;
+        }
+
+        int bitWidth = HazelcastIntegerType.bitWidthOf(longValue);
+        RelDataType type = HazelcastIntegerType.create(bitWidth, false);
+        Object adjustedValue;
+
+        switch (type.getSqlTypeName()) {
+            case TINYINT:
+                adjustedValue = (byte) longValue;
+                break;
+
+            case SMALLINT:
+                adjustedValue = (short) longValue;
+                break;
+
+            case INTEGER:
+                adjustedValue = (int) longValue;
+                break;
+
+            default:
+                assert type.getSqlTypeName() == SqlTypeName.BIGINT;
+                adjustedValue = longValue;
+        }
+
+        return new NumericLiteral(
+                adjustedValue,
+                type.getSqlTypeName(),
+                Mode.INTEGER,
+                bitWidth
+        );
+    }
+
+    private static boolean hasDecimalPlaces(BigDecimal value) {
+        return value.stripTrailingZeros().scale() > 0;
     }
 
     @Override

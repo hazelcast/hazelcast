@@ -618,9 +618,9 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
     public void testBigint_literal() {
         put(1);
 
-//        checkValue0(sql(literal(Long.MAX_VALUE), VARCHAR), VARCHAR, Long.MAX_VALUE + "");
+        checkValue0(sql(literal(Long.MAX_VALUE), VARCHAR), VARCHAR, Long.MAX_VALUE + "");
 
-//        checkFailure0(sql(literal(Long.MAX_VALUE), BOOLEAN), PARSING, castError(BIGINT, BOOLEAN));
+        checkFailure0(sql(literal(Long.MAX_VALUE), BOOLEAN), PARSING, castError(BIGINT, BOOLEAN));
 
         checkFailure0(sql(literal(Long.MAX_VALUE), TINYINT), PARSING, "CAST function cannot convert literal 9223372036854775807 to type TINYINT: Numeric overflow while converting BIGINT to TINYINT");
         checkFailure0(sql(literal(Long.MAX_VALUE), SMALLINT), PARSING, "CAST function cannot convert literal 9223372036854775807 to type SMALLINT: Numeric overflow while converting BIGINT to SMALLINT");
