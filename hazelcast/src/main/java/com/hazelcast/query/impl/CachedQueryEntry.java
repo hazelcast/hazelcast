@@ -73,6 +73,11 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> {
     }
 
     @Override
+    public Data getKeyData() {
+        return keyData;
+    }
+
+    @Override
     public V getValue() {
         if (valueObject == null) {
             valueObject = serializationService.toObject(valueData);
@@ -81,15 +86,30 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> {
     }
 
     @Override
-    public Data getKeyData() {
-        return keyData;
-    }
-
-    @Override
     public Data getValueData() {
         if (valueData == null) {
             valueData = serializationService.toData(valueObject);
         }
+        return valueData;
+    }
+
+    @Override
+    public K getKeyIfPresent() {
+        return keyObject != null ? keyObject : null;
+    }
+
+    @Override
+    public Data getKeyDataIfPresent() {
+        return keyData;
+    }
+
+    @Override
+    public V getValueIfPresent() {
+        return valueObject;
+    }
+
+    @Override
+    public Data getValueDataIfPresent() {
         return valueData;
     }
 
