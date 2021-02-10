@@ -1151,8 +1151,7 @@ abstract class MapProxySupport<K, V>
     }
 
     public UUID addLocalEntryListenerInternal(Object listener) {
-        EventFilter eventFilter = new QueryEventFilter(null, TruePredicate.INSTANCE, true);
-        return mapServiceContext.addLocalEventListener(listener, eventFilter, name);
+        return addLocalEntryListenerInternal(listener, TruePredicate.INSTANCE, null,true);
     }
 
     public UUID addLocalEntryListenerInternal(Object listener, Predicate predicate, Data key, boolean includeValue) {

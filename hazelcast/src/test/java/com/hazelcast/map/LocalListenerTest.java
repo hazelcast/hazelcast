@@ -53,8 +53,8 @@ public class LocalListenerTest extends HazelcastTestSupport {
         HazelcastInstance instance = createHazelcastInstance(config);
         IMap<String, String> map = instance.getMap(randomString());
 
-        TestLogger testLogger = new TestLogger();
-        injectLogger(instance, testLogger);
+        MapEventPublisherLogger mapEventPublisherLogger = new MapEventPublisherLogger();
+        injectLogger(instance, mapEventPublisherLogger);
 
         // this entry-removed-listener is not notifiable,
         // since we expect entry added events.
@@ -66,21 +66,24 @@ public class LocalListenerTest extends HazelcastTestSupport {
 
         // no exception we expect (we use assertTrueAllTheTime
         // since event is fired after put return)
-        assertTrueAllTheTime(() -> assertTrue(testLogger.logCollector.toString(),
-                testLogger.logCollector.isEmpty()), 5);
+        assertTrueAllTheTime(() -> assertTrue(mapEventPublisherLogger.logCollector.toString(),
+                mapEventPublisherLogger.logCollector.isEmpty()), 5);
 
     }
 
-    private void injectLogger(HazelcastInstance instance, TestLogger testLogger) throws IllegalAccessException {
+    private void injectLogger(HazelcastInstance instance,
+                              MapEventPublisherLogger mapEventPublisherLogger) throws IllegalAccessException {
         NodeEngineImpl nodeEngine1 = getNodeEngineImpl(instance);
         MapService mapService = nodeEngine1.getService(MapService.SERVICE_NAME);
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
-        setFieldValueReflectively(mapEventPublisher, "logger", testLogger);
+        setFieldValueReflectively(mapEventPublisher, "logger", mapEventPublisherLogger);
     }
 
-    private class TestLogger extends AbstractLogger {
-        private final CopyOnWriteArrayList logCollector = new CopyOnWriteArrayList<Throwable>();
+    private class MapEventPublisherLogger extends AbstractLogger {
+
+        private final CopyOnWriteArrayList logCollector
+                = new CopyOnWriteArrayList<Throwable>();
 
         @Override
         public void log(Level level, String message) {
