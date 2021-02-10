@@ -83,7 +83,7 @@ public class LocalListenerTest extends HazelcastTestSupport {
     private class MapEventPublisherLogger extends AbstractLogger {
 
         private final CopyOnWriteArrayList logCollector
-                = new CopyOnWriteArrayList<Throwable>();
+                = new CopyOnWriteArrayList<>();
 
         @Override
         public void log(Level level, String message) {
