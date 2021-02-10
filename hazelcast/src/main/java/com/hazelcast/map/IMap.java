@@ -3187,8 +3187,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
     }
 
     /**
-     * Returns an iterator over the entries of map. It iterates partitions
-     * in a sequential manner. It starts to iterate on partition 0 and it
+     * Returns an iterator over the entries of the map. It sequentially
+     * iterates partitions. It starts to iterate on partition 0 and it
      * finishes the iteration with the last partition (n = 271 by default).
      * The keys are fetched in batches for the constant heap utilization.
      *
@@ -3200,8 +3200,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
 
 
     /**
-     * Returns an iterator over the entries of map. It iterates partitions
-     * in a sequential manner. It starts to iterate on partition 0 and it
+     * Returns an iterator over the entries of the map. It sequentially
+     * iterates partitions. It starts to iterate on partition 0 and it
      * finishes the iteration with the last partition (n = 271 by default).
      * The keys are fetched in batches for the constant heap utilization.
      *
