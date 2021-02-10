@@ -30,17 +30,20 @@ public class QueryParseResult {
     private final QueryParameterMetadata parameterMetadata;
     private final SqlValidator validator;
     private final SqlBackend sqlBackend;
+    private final boolean isInfiniteRows;
 
     public QueryParseResult(
         SqlNode node,
         QueryParameterMetadata parameterMetadata,
         SqlValidator validator,
-        SqlBackend sqlBackend
+        SqlBackend sqlBackend,
+        boolean isInfiniteRows
     ) {
         this.node = node;
         this.parameterMetadata = parameterMetadata;
         this.validator = validator;
         this.sqlBackend = sqlBackend;
+        this.isInfiniteRows = isInfiniteRows;
     }
 
     public SqlNode getNode() {
@@ -57,5 +60,9 @@ public class QueryParseResult {
 
     public SqlBackend getSqlBackend() {
         return sqlBackend;
+    }
+
+    public boolean isInfiniteRows() {
+        return isInfiniteRows;
     }
 }
