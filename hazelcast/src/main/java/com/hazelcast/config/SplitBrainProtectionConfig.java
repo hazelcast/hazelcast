@@ -199,24 +199,24 @@ public class SplitBrainProtectionConfig implements IdentifiedDataSerializable, N
     @Override
     public void writeData(ObjectDataOutput out)
             throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeBoolean(enabled);
         out.writeInt(minimumClusterSize);
         writeNullableList(listenerConfigs, out);
-        out.writeUTF(protectOn.name());
-        out.writeUTF(functionClassName);
+        out.writeString(protectOn.name());
+        out.writeString(functionClassName);
         out.writeObject(functionImplementation);
     }
 
     @Override
     public void readData(ObjectDataInput in)
             throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         enabled = in.readBoolean();
         minimumClusterSize = in.readInt();
         listenerConfigs = readNullableList(in);
-        protectOn = SplitBrainProtectionOn.valueOf(in.readUTF());
-        functionClassName = in.readUTF();
+        protectOn = SplitBrainProtectionOn.valueOf(in.readString());
+        functionClassName = in.readString();
         functionImplementation = in.readObject();
     }
 

@@ -206,7 +206,7 @@ public class MembershipChangeSchedule implements IdentifiedDataSerializable {
             out.writeLong(commitIndex);
         }
         out.writeObject(member);
-        out.writeUTF(membershipChangeMode.name());
+        out.writeString(membershipChangeMode.name());
         out.writeInt(changes.size());
         for (CPGroupMembershipChange change : changes) {
             out.writeObject(change);
@@ -222,7 +222,7 @@ public class MembershipChangeSchedule implements IdentifiedDataSerializable {
             membershipChangeCommitIndices.add(commitIndex);
         }
         member = in.readObject();
-        membershipChangeMode = MembershipChangeMode.valueOf(in.readUTF());
+        membershipChangeMode = MembershipChangeMode.valueOf(in.readString());
         int groupCount = in.readInt();
         for (int i = 0; i < groupCount; i++) {
             CPGroupMembershipChange change = in.readObject();

@@ -111,7 +111,7 @@ public class EvictBatchBackupOperation extends MapOperation implements BackupOpe
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
 
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeInt(expiredKeys.size());
         for (ExpiredKey expiredKey : expiredKeys) {
             IOUtil.writeData(out, expiredKey.getKey());
@@ -124,7 +124,7 @@ public class EvictBatchBackupOperation extends MapOperation implements BackupOpe
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
 
-        name = in.readUTF();
+        name = in.readString();
         int size = in.readInt();
         expiredKeys = new LinkedList<>();
         for (int i = 0; i < size; i++) {

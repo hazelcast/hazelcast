@@ -55,7 +55,7 @@ public class MultiMapPutAllOperationFactory extends PartitionAwareOperationFacto
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeIntArray(partitions);
         for (MapEntries entry : mapEntries) {
             entry.writeData(out);
@@ -64,7 +64,7 @@ public class MultiMapPutAllOperationFactory extends PartitionAwareOperationFacto
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         partitions = in.readIntArray();
         mapEntries = new MapEntries[partitions.length];
         for (int i = 0; i < partitions.length; i++) {

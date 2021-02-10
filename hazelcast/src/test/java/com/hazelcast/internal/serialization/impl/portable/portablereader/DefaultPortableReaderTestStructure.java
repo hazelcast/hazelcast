@@ -220,7 +220,7 @@ public class DefaultPortableReaderTestStructure {
             writer.writeDouble("double_", double_);
             writer.writeBoolean("boolean_", boolean_);
             writer.writeChar("char_", char_);
-            writer.writeUTF("string_", string_);
+            writer.writeString("string_", string_);
             writer.writeDecimal("bigDecimal_", bigDecimal_);
             writer.writeTime("localTime_", localTime_);
             writer.writeDate("localDate_", localDate_);
@@ -235,7 +235,7 @@ public class DefaultPortableReaderTestStructure {
             writer.writeDoubleArray("doubles", doubles);
             writer.writeBooleanArray("booleans", booleans);
             writer.writeCharArray("chars", chars);
-            writer.writeUTFArray("strings", strings);
+            writer.writeStringArray("strings", strings);
             writer.writeDecimalArray("bigDecimals", bigDecimals);
             writer.writeTimeArray("localTimes", localTimes);
             writer.writeDateArray("localDates", localDates);
@@ -253,7 +253,7 @@ public class DefaultPortableReaderTestStructure {
             double_ = reader.readDouble("double_");
             boolean_ = reader.readBoolean("boolean_");
             char_ = reader.readChar("char_");
-            string_ = reader.readUTF("string_");
+            string_ = reader.readString("string_");
             bigDecimal_ = reader.readDecimal("bigDecimal_");
             localTime_ = reader.readTime("localTime_");
             localDate_ = reader.readDate("localDate_");
@@ -268,7 +268,7 @@ public class DefaultPortableReaderTestStructure {
             doubles = reader.readDoubleArray("doubles");
             booleans = reader.readBooleanArray("booleans");
             chars = reader.readCharArray("chars");
-            strings = reader.readUTFArray("strings");
+            strings = reader.readStringArray("strings");
             bigDecimals = reader.readDecimalArray("bigDecimals");
             localTimes = reader.readTimeArray("localTimes");
             localDates = reader.readDateArray("localDates");

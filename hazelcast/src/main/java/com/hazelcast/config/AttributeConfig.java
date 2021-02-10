@@ -156,14 +156,14 @@ public class AttributeConfig implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
-        out.writeUTF(extractorClassName);
+        out.writeString(name);
+        out.writeString(extractorClassName);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
-        extractorClassName = in.readUTF();
+        name = in.readString();
+        extractorClassName = in.readString();
     }
 
     @Override

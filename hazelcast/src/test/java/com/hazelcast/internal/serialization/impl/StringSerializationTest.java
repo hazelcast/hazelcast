@@ -133,14 +133,14 @@ public class StringSerializationTest {
     @Test
     public void testNullStringEncodeDecode2() throws Exception {
         BufferObjectDataOutput objectDataOutput = serializationService.createObjectDataOutput();
-        objectDataOutput.writeUTF(null);
+        objectDataOutput.writeString(null);
 
         byte[] bytes = objectDataOutput.toByteArray();
         objectDataOutput.close();
 
         BufferObjectDataInput objectDataInput = serializationService.createObjectDataInput(bytes);
 
-        String decodedStr = objectDataInput.readUTF();
+        String decodedStr = objectDataInput.readString();
         assertNull(decodedStr);
     }
 

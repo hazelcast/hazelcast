@@ -58,7 +58,7 @@ public class DeployClassesOperation extends Operation implements IdentifiedDataS
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeInt(classDefinitions.size());
         for (Map.Entry<String, byte[]> classDefinition : classDefinitions) {
-            out.writeUTF(classDefinition.getKey());
+            out.writeString(classDefinition.getKey());
             out.writeByteArray(classDefinition.getValue());
         }
     }
@@ -68,7 +68,7 @@ public class DeployClassesOperation extends Operation implements IdentifiedDataS
         int length = in.readInt();
         classDefinitions = new ArrayList<Map.Entry<String, byte[]>>(length);
         for (int i = 0; i < length; i++) {
-            String className = in.readUTF();
+            String className = in.readString();
             byte[] classDefinition = in.readByteArray();
             classDefinitions.add(new AbstractMap.SimpleEntry<String, byte[]>(className, classDefinition));
         }

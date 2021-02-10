@@ -245,11 +245,11 @@ public abstract class AbstractGenericRecordTest extends HazelcastTestSupport {
         createCluster();
         ClassDefinition namedPortableClassDefinition =
                 new ClassDefinitionBuilder(TestSerializationConstants.PORTABLE_FACTORY_ID, TestSerializationConstants.NAMED_PORTABLE)
-                        .addUTFField("name").addIntField("myint").build();
+                        .addStringField("name").addIntField("myint").build();
 
         ClassDefinition inConsistentNamedPortableClassDefinition =
                 new ClassDefinitionBuilder(TestSerializationConstants.PORTABLE_FACTORY_ID, TestSerializationConstants.NAMED_PORTABLE)
-                        .addUTFField("WrongName").addIntField("myint").build();
+                        .addStringField("WrongName").addIntField("myint").build();
 
 
         GenericRecord namedRecord = GenericRecordBuilder.portable(namedPortableClassDefinition)
@@ -293,7 +293,7 @@ public abstract class AbstractGenericRecordTest extends HazelcastTestSupport {
         InnerPortable inner = expectedPortable.p;
         ClassDefinition namedPortableClassDefinition =
                 new ClassDefinitionBuilder(TestSerializationConstants.PORTABLE_FACTORY_ID, TestSerializationConstants.NAMED_PORTABLE)
-                        .addUTFField("name").addIntField("myint").build();
+                        .addStringField("name").addIntField("myint").build();
         ClassDefinition innerPortableClassDefinition =
                 new ClassDefinitionBuilder(TestSerializationConstants.PORTABLE_FACTORY_ID, TestSerializationConstants.INNER_PORTABLE)
                         .addByteArrayField("b")
@@ -320,7 +320,7 @@ public abstract class AbstractGenericRecordTest extends HazelcastTestSupport {
                         .addLongField("l")
                         .addFloatField("f")
                         .addDoubleField("d")
-                        .addUTFField("str")
+                        .addStringField("str")
                         .addPortableField("p", innerPortableClassDefinition)
                         .addDecimalField("bigDecimal")
                         .addTimeField("localTime")

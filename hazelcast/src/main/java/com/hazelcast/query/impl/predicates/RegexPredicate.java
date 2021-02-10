@@ -62,13 +62,13 @@ public class RegexPredicate extends AbstractPredicate {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
-        out.writeUTF(regex);
+        out.writeString(regex);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
-        regex = in.readUTF();
+        regex = in.readString();
     }
 
     @Override

@@ -49,13 +49,13 @@ public class GetAllScheduledOnPartitionOperationFactory
     @Override
     public void writeData(ObjectDataOutput out)
             throws IOException {
-        out.writeUTF(schedulerName);
+        out.writeString(schedulerName);
     }
 
     @Override
     public void readData(ObjectDataInput in)
             throws IOException {
-        schedulerName = in.readUTF();
+        schedulerName = in.readString();
     }
 
     @Override

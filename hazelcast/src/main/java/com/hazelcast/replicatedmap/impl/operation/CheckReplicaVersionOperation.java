@@ -97,7 +97,7 @@ public class CheckReplicaVersionOperation extends AbstractSerializableOperation 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeInt(versions.size());
         for (Map.Entry<String, Long> entry : versions.entrySet()) {
-            out.writeUTF(entry.getKey());
+            out.writeString(entry.getKey());
             out.writeLong(entry.getValue());
         }
     }
@@ -107,7 +107,7 @@ public class CheckReplicaVersionOperation extends AbstractSerializableOperation 
         versions = new ConcurrentHashMap<>();
         int size = in.readInt();
         for (int i = 0; i < size; i++) {
-            String name = in.readUTF();
+            String name = in.readString();
             Long version = in.readLong();
             versions.put(name, version);
         }

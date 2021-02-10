@@ -163,7 +163,7 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
             Map<Data, CacheRecord> cacheMap = entry.getValue();
             int subCount = cacheMap.size();
             out.writeInt(subCount);
-            out.writeUTF(entry.getKey());
+            out.writeString(entry.getKey());
             for (Map.Entry<Data, CacheRecord> e : cacheMap.entrySet()) {
                 final Data key = e.getKey();
                 final CacheRecord record = e.getValue();
@@ -198,7 +198,7 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
         int count = in.readInt();
         for (int i = 0; i < count; i++) {
             int subCount = in.readInt();
-            String name = in.readUTF();
+            String name = in.readString();
             Map<Data, CacheRecord> m = createHashMap(subCount);
             data.put(name, m);
             // subCount + 1 because of the DefaultData written as the last entry

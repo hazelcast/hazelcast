@@ -42,7 +42,7 @@ class InvalidRawDataPortable2 extends RawDataPortable {
         final ObjectDataInput input = reader.getRawDataInput();
         k = input.readInt();
         l = reader.readLong("l");
-        s = input.readUTF();
+        s = input.readString();
         p = reader.readPortable("p");
         sds = input.readObject();
     }

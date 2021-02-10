@@ -45,13 +45,13 @@ public final class ContainsValueOperationFactory extends AbstractMapOperationFac
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         IOUtil.writeData(out, value);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         value = IOUtil.readData(in);
     }
 

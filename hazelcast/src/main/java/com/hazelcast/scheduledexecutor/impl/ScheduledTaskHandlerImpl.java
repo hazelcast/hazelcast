@@ -98,13 +98,13 @@ public final class ScheduledTaskHandlerImpl
     @Override
     public void writeData(ObjectDataOutput out)
             throws IOException {
-        out.writeUTF(toUrn());
+        out.writeString(toUrn());
     }
 
     @Override
     public void readData(ObjectDataInput in)
             throws IOException {
-        ScheduledTaskHandler handler = of(in.readUTF());
+        ScheduledTaskHandler handler = of(in.readString());
         this.uuid = handler.getUuid();
         this.partitionId = handler.getPartitionId();
         this.schedulerName = handler.getSchedulerName();

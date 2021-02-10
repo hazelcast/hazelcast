@@ -317,20 +317,20 @@ public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedCon
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(executor);
         out.writeInt(readBatchSize);
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeBoolean(statisticsEnabled);
         writeNullableList(listenerConfigs, out);
-        out.writeUTF(topicOverloadPolicy.name());
+        out.writeString(topicOverloadPolicy.name());
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         executor = in.readObject();
         readBatchSize = in.readInt();
-        name = in.readUTF();
+        name = in.readString();
         statisticsEnabled = in.readBoolean();
         listenerConfigs = readNullableList(in);
-        topicOverloadPolicy = TopicOverloadPolicy.valueOf(in.readUTF());
+        topicOverloadPolicy = TopicOverloadPolicy.valueOf(in.readString());
     }
 
     @Override

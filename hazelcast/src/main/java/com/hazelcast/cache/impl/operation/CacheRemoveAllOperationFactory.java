@@ -64,7 +64,7 @@ public class CacheRemoveAllOperationFactory implements OperationFactory, Identif
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeInt(completionId);
         out.writeInt(keys == null ? -1 : keys.size());
         if (keys != null) {
@@ -76,7 +76,7 @@ public class CacheRemoveAllOperationFactory implements OperationFactory, Identif
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         completionId = in.readInt();
         int size = in.readInt();
         if (size == -1) {

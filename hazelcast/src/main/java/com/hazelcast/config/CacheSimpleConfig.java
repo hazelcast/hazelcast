@@ -711,26 +711,26 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
-        out.writeUTF(keyType);
-        out.writeUTF(valueType);
+        out.writeString(name);
+        out.writeString(keyType);
+        out.writeString(valueType);
         out.writeBoolean(statisticsEnabled);
         out.writeBoolean(managementEnabled);
         out.writeBoolean(readThrough);
         out.writeBoolean(writeThrough);
         out.writeBoolean(disablePerEntryInvalidationEvents);
-        out.writeUTF(cacheLoaderFactory);
-        out.writeUTF(cacheWriterFactory);
-        out.writeUTF(cacheLoader);
-        out.writeUTF(cacheWriter);
+        out.writeString(cacheLoaderFactory);
+        out.writeString(cacheWriterFactory);
+        out.writeString(cacheLoader);
+        out.writeString(cacheWriter);
         out.writeObject(expiryPolicyFactoryConfig);
         writeNullableList(cacheEntryListeners, out);
         out.writeInt(asyncBackupCount);
         out.writeInt(backupCount);
-        out.writeUTF(inMemoryFormat.name());
+        out.writeString(inMemoryFormat.name());
         out.writeObject(evictionConfig);
         out.writeObject(wanReplicationRef);
-        out.writeUTF(splitBrainProtectionName);
+        out.writeString(splitBrainProtectionName);
         writeNullableList(partitionLostListenerConfigs, out);
         out.writeObject(mergePolicyConfig);
         out.writeObject(hotRestartConfig);
@@ -739,26 +739,26 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
-        keyType = in.readUTF();
-        valueType = in.readUTF();
+        name = in.readString();
+        keyType = in.readString();
+        valueType = in.readString();
         statisticsEnabled = in.readBoolean();
         managementEnabled = in.readBoolean();
         readThrough = in.readBoolean();
         writeThrough = in.readBoolean();
         disablePerEntryInvalidationEvents = in.readBoolean();
-        cacheLoaderFactory = in.readUTF();
-        cacheWriterFactory = in.readUTF();
-        cacheLoader = in.readUTF();
-        cacheWriter = in.readUTF();
+        cacheLoaderFactory = in.readString();
+        cacheWriterFactory = in.readString();
+        cacheLoader = in.readString();
+        cacheWriter = in.readString();
         expiryPolicyFactoryConfig = in.readObject();
         cacheEntryListeners = readNullableList(in);
         asyncBackupCount = in.readInt();
         backupCount = in.readInt();
-        inMemoryFormat = InMemoryFormat.valueOf(in.readUTF());
+        inMemoryFormat = InMemoryFormat.valueOf(in.readString());
         evictionConfig = in.readObject();
         wanReplicationRef = in.readObject();
-        splitBrainProtectionName = in.readUTF();
+        splitBrainProtectionName = in.readString();
         partitionLostListenerConfigs = readNullableList(in);
         mergePolicyConfig = in.readObject();
         hotRestartConfig = in.readObject();
@@ -949,13 +949,13 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
 
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeUTF(className);
+            out.writeString(className);
             out.writeObject(timedExpiryPolicyFactoryConfig);
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
-            className = in.readUTF();
+            className = in.readString();
             timedExpiryPolicyFactoryConfig = in.readObject();
         }
 
@@ -1030,13 +1030,13 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
 
             @Override
             public void writeData(ObjectDataOutput out) throws IOException {
-                out.writeUTF(expiryPolicyType.name());
+                out.writeString(expiryPolicyType.name());
                 out.writeObject(durationConfig);
             }
 
             @Override
             public void readData(ObjectDataInput in) throws IOException {
-                expiryPolicyType = ExpiryPolicyType.valueOf(in.readUTF());
+                expiryPolicyType = ExpiryPolicyType.valueOf(in.readString());
                 durationConfig = in.readObject();
             }
 
@@ -1162,13 +1162,13 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
             @Override
             public void writeData(ObjectDataOutput out) throws IOException {
                 out.writeLong(durationAmount);
-                out.writeUTF(timeUnit.name());
+                out.writeString(timeUnit.name());
             }
 
             @Override
             public void readData(ObjectDataInput in) throws IOException {
                 durationAmount = in.readLong();
-                timeUnit = TimeUnit.valueOf(in.readUTF());
+                timeUnit = TimeUnit.valueOf(in.readString());
             }
 
             @Override

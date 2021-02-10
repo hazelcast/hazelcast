@@ -66,13 +66,13 @@ public final class DoubleSumAggregator<I> extends AbstractAggregator<I, Number, 
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(attributePath);
+        out.writeString(attributePath);
         out.writeDouble(sum);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        this.attributePath = in.readUTF();
+        this.attributePath = in.readString();
         this.sum = in.readDouble();
     }
 

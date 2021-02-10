@@ -41,7 +41,7 @@ class InvalidRawDataPortable extends RawDataPortable {
         writer.writeLong("l", l);
         final ObjectDataOutput output = writer.getRawDataOutput();
         output.writeInt(k);
-        output.writeUTF(s);
+        output.writeString(s);
         writer.writeCharArray("c", c);
         output.writeObject(sds);
         writer.writePortable("p", p);

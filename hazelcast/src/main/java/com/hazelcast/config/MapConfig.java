@@ -913,7 +913,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeInt(backupCount);
         out.writeInt(asyncBackupCount);
         out.writeInt(timeToLiveSeconds);
@@ -922,9 +922,9 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
         out.writeObject(mapStoreConfig);
         out.writeObject(nearCacheConfig);
         out.writeBoolean(readBackupData);
-        out.writeUTF(cacheDeserializedValues.name());
+        out.writeString(cacheDeserializedValues.name());
         out.writeObject(mergePolicyConfig);
-        out.writeUTF(inMemoryFormat.name());
+        out.writeString(inMemoryFormat.name());
         out.writeObject(wanReplicationRef);
         writeNullableList(entryListenerConfigs, out);
         writeNullableList(partitionLostListenerConfigs, out);
@@ -933,7 +933,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
         writeNullableList(queryCacheConfigs, out);
         out.writeBoolean(statisticsEnabled);
         out.writeObject(partitioningStrategyConfig);
-        out.writeUTF(splitBrainProtectionName);
+        out.writeString(splitBrainProtectionName);
         out.writeObject(hotRestartConfig);
         out.writeObject(merkleTreeConfig);
         out.writeObject(eventJournalConfig);
@@ -946,7 +946,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         backupCount = in.readInt();
         asyncBackupCount = in.readInt();
         timeToLiveSeconds = in.readInt();
@@ -955,9 +955,9 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
         mapStoreConfig = in.readObject();
         nearCacheConfig = in.readObject();
         readBackupData = in.readBoolean();
-        cacheDeserializedValues = CacheDeserializedValues.valueOf(in.readUTF());
+        cacheDeserializedValues = CacheDeserializedValues.valueOf(in.readString());
         mergePolicyConfig = in.readObject();
-        inMemoryFormat = InMemoryFormat.valueOf(in.readUTF());
+        inMemoryFormat = InMemoryFormat.valueOf(in.readString());
         wanReplicationRef = in.readObject();
         entryListenerConfigs = readNullableList(in);
         partitionLostListenerConfigs = readNullableList(in);
@@ -966,7 +966,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
         queryCacheConfigs = readNullableList(in);
         statisticsEnabled = in.readBoolean();
         partitioningStrategyConfig = in.readObject();
-        splitBrainProtectionName = in.readUTF();
+        splitBrainProtectionName = in.readString();
         hotRestartConfig = in.readObject();
         merkleTreeConfig = in.readObject();
         eventJournalConfig = in.readObject();

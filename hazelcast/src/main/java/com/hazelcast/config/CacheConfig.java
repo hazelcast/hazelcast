@@ -485,13 +485,13 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
-        out.writeUTF(managerPrefix);
-        out.writeUTF(uriString);
+        out.writeString(name);
+        out.writeString(managerPrefix);
+        out.writeString(uriString);
         out.writeInt(backupCount);
         out.writeInt(asyncBackupCount);
 
-        out.writeUTF(inMemoryFormat.name());
+        out.writeString(inMemoryFormat.name());
         out.writeObject(evictionConfig);
 
         out.writeObject(wanReplicationRef);
@@ -508,7 +508,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         out.writeObject(hotRestartConfig);
         out.writeObject(eventJournalConfig);
 
-        out.writeUTF(splitBrainProtectionName);
+        out.writeString(splitBrainProtectionName);
 
         out.writeBoolean(hasListenerConfiguration());
         if (hasListenerConfiguration()) {
@@ -541,13 +541,13 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
-        managerPrefix = in.readUTF();
-        uriString = in.readUTF();
+        name = in.readString();
+        managerPrefix = in.readString();
+        uriString = in.readString();
         backupCount = in.readInt();
         asyncBackupCount = in.readInt();
 
-        String resultInMemoryFormat = in.readUTF();
+        String resultInMemoryFormat = in.readString();
         inMemoryFormat = InMemoryFormat.valueOf(resultInMemoryFormat);
         evictionConfig = in.readObject();
         wanReplicationRef = in.readObject();
@@ -564,7 +564,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         hotRestartConfig = in.readObject();
         eventJournalConfig = in.readObject();
 
-        splitBrainProtectionName = in.readUTF();
+        splitBrainProtectionName = in.readString();
 
         final boolean listNotEmpty = in.readBoolean();
         if (listNotEmpty) {

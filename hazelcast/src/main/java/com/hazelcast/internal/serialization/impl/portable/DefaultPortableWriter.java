@@ -94,7 +94,7 @@ public class DefaultPortableWriter implements PortableWriter {
     @Override
     public void writeString(@Nonnull String fieldName, @Nullable String value) throws IOException {
         setPosition(fieldName, FieldType.UTF);
-        out.writeUTF(value);
+        out.writeString(value);
     }
 
     @Override

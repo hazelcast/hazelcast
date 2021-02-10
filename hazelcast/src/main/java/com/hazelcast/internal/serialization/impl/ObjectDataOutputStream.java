@@ -234,7 +234,7 @@ public class ObjectDataOutputStream extends VersionedObjectDataOutput
         writeInt(len);
         if (len > 0) {
             for (String s : strings) {
-                writeUTF(s);
+                writeString(s);
             }
         }
     }

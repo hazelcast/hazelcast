@@ -79,13 +79,13 @@ public class LikePredicate extends AbstractPredicate {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
-        out.writeUTF(expression);
+        out.writeString(expression);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
-        expression = in.readUTF();
+        expression = in.readString();
     }
 
     protected int getFlags() {

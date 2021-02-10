@@ -155,8 +155,8 @@ public class CacheSimpleEntryListenerConfig implements IdentifiedDataSerializabl
     @Override
     public void writeData(ObjectDataOutput out)
             throws IOException {
-        out.writeUTF(cacheEntryEventFilterFactory);
-        out.writeUTF(cacheEntryListenerFactory);
+        out.writeString(cacheEntryEventFilterFactory);
+        out.writeString(cacheEntryListenerFactory);
         out.writeBoolean(oldValueRequired);
         out.writeBoolean(synchronous);
     }
@@ -164,8 +164,8 @@ public class CacheSimpleEntryListenerConfig implements IdentifiedDataSerializabl
     @Override
     public void readData(ObjectDataInput in)
             throws IOException {
-        cacheEntryEventFilterFactory = in.readUTF();
-        cacheEntryListenerFactory = in.readUTF();
+        cacheEntryEventFilterFactory = in.readString();
+        cacheEntryListenerFactory = in.readString();
         oldValueRequired = in.readBoolean();
         synchronous = in.readBoolean();
     }

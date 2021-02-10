@@ -162,7 +162,7 @@ public class DiscoveryConfig implements IdentifiedDataSerializable {
         out.writeObject(discoveryStrategyConfigs);
         out.writeObject(discoveryServiceProvider);
         out.writeObject(nodeFilter);
-        out.writeUTF(nodeFilterClass);
+        out.writeString(nodeFilterClass);
     }
 
     @Override
@@ -170,7 +170,7 @@ public class DiscoveryConfig implements IdentifiedDataSerializable {
         discoveryStrategyConfigs = in.readObject();
         discoveryServiceProvider = in.readObject();
         nodeFilter = in.readObject();
-        nodeFilterClass = in.readUTF();
+        nodeFilterClass = in.readString();
     }
 
     @Override

@@ -65,13 +65,13 @@ public class ResultReadyNotifyOperation<V>
     protected void writeInternal(ObjectDataOutput out)
             throws IOException {
         super.writeInternal(out);
-        out.writeUTF(handler.toUrn());
+        out.writeString(handler.toUrn());
     }
 
     @Override
     protected void readInternal(ObjectDataInput in)
             throws IOException {
         super.readInternal(in);
-        this.handler = ScheduledTaskHandler.of(in.readUTF());
+        this.handler = ScheduledTaskHandler.of(in.readString());
     }
 }

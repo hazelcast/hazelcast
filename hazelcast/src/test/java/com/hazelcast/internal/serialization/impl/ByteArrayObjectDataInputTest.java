@@ -563,11 +563,11 @@ public class ByteArrayObjectDataInputTest extends HazelcastTestSupport {
         in.init((byteOrder == BIG_ENDIAN ? bytesBE : bytesLE), 0);
 
         in.position(bytesLE.length - 4);
-        String[] theNullArray = in.readUTFArray();
+        String[] theNullArray = in.readStringArray();
         in.position(0);
-        String[] theZeroLenghtArray = in.readUTFArray();
+        String[] theZeroLenghtArray = in.readStringArray();
         in.position(4);
-        String[] bytes = in.readUTFArray();
+        String[] bytes = in.readStringArray();
 
         assertNull(theNullArray);
         assertArrayEquals(new String[0], theZeroLenghtArray);
