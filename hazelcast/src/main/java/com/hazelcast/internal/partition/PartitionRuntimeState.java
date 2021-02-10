@@ -77,20 +77,28 @@ public final class PartitionRuntimeState implements IdentifiedDataSerializable, 
         versions = new int[partitions.length];
         encodedPartitionTable = new int[partitions.length][MAX_REPLICA_COUNT];
 
+        StringBuilder builder = new StringBuilder();
+        builder.append("VERSION\t\tPARTITION TABLE:").append('\n');
         for (InternalPartition partition : partitions) {
             int[] indexes = encodedPartitionTable[partition.getPartitionId()];
-            versions[partition.getPartitionId()] = partition.version();
+            int version = partition.version();
+            builder.append(version).append("\t\t\t");
+            versions[partition.getPartitionId()] = version;
 
             for (int replicaIndex = 0; replicaIndex < MAX_REPLICA_COUNT; replicaIndex++) {
                 PartitionReplica replica = partition.getReplica(replicaIndex);
                 if (replica == null) {
+                    builder.append("[null]");
                     indexes[replicaIndex] = -1;
                 } else {
                     int index = replicaToIndexes.get(replica);
+                    builder.append("[").append(replica.address()).append("]");
                     indexes[replicaIndex] = index;
                 }
             }
+            builder.append('\n');
         }
+        System.out.println(builder.toString());
     }
 
     private static Map<PartitionReplica, Integer> createPartitionReplicaToIndexMap(InternalPartition[] partitions) {

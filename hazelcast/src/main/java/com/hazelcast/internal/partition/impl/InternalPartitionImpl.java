@@ -22,6 +22,9 @@ import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionReplicaInterceptor;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.util.Arrays;
+import java.util.stream.Collectors;
+
 import static java.util.Arrays.copyOf;
 
 public class InternalPartitionImpl extends AbstractInternalPartition implements InternalPartition {
@@ -31,7 +34,6 @@ public class InternalPartitionImpl extends AbstractInternalPartition implements 
                     + " Writing to `replicas` is done under InternalPartitionServiceImpl.lock,"
                     + " so there's no need to guard `replicas` field or to use a CAS.")
     private volatile PartitionReplica[] replicas = new PartitionReplica[MAX_REPLICA_COUNT];
-    private final int partitionId;
     private final PartitionReplicaInterceptor interceptor;
     private volatile int version;
     private volatile PartitionReplica localReplica;
@@ -39,7 +41,6 @@ public class InternalPartitionImpl extends AbstractInternalPartition implements 
 
     InternalPartitionImpl(int partitionId, PartitionReplica localReplica, PartitionReplicaInterceptor interceptor) {
         super(partitionId);
-        this.partitionId = partitionId;
         this.localReplica = localReplica;
         this.interceptor = interceptor;
     }
@@ -155,6 +156,9 @@ public class InternalPartitionImpl extends AbstractInternalPartition implements 
             return;
         }
         version++;
+        if (version > 3) {
+            System.out.println(this);
+        }
         if (interceptor != null) {
             interceptor.replicaChanged(partitionId, replicaIndex, oldReplica, newReplica);
         }
