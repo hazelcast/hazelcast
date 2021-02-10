@@ -22,22 +22,22 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastTestSupport;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.After;
+import org.junit.Before;
 
 @SuppressWarnings("WeakerAccess")
 public abstract class AbstractClientMapTest extends HazelcastTestSupport {
 
-    protected static TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    protected TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
-    protected static HazelcastInstance client;
+    protected HazelcastInstance client;
 
-    protected static HazelcastInstance member1;
-    protected static HazelcastInstance member2;
+    protected HazelcastInstance member1;
+    protected HazelcastInstance member2;
 
-    @BeforeClass
-    public static final void startHazelcastInstances() {
-        Config config = regularInstanceConfig();
+    @Before
+    public final void startHazelcastInstances() {
+        Config config = getConfig();
         MapConfig mapConfig = new MapConfig("mapWithTTL");
         mapConfig.setTimeToLiveSeconds(1);
         config.addMapConfig(mapConfig);
@@ -53,12 +53,12 @@ public abstract class AbstractClientMapTest extends HazelcastTestSupport {
         client = hazelcastFactory.newHazelcastClient(clientConfig);
     }
 
-    @AfterClass
-    public static final void stopHazelcastInstances() {
+    @After
+    public final void stopHazelcastInstances() {
         hazelcastFactory.terminateAll();
     }
 
-    protected static ClientConfig getClientConfig() {
+    protected ClientConfig getClientConfig() {
         return new ClientConfig();
     }
 }

@@ -16,6 +16,7 @@
 
 package com.hazelcast.logging;
 
+import com.hazelcast.logging.impl.InternalLogger;
 import org.apache.log4j.Logger;
 import org.apache.log4j.spi.LoggingEvent;
 
@@ -30,7 +31,7 @@ public class Log4jFactory extends LoggerFactorySupport implements LoggerFactory 
         return new Log4jLogger(l);
     }
 
-    static class Log4jLogger extends AbstractLogger {
+    static class Log4jLogger extends AbstractLogger implements InternalLogger {
 
         private final Logger logger;
         private final Level level;
@@ -39,6 +40,11 @@ public class Log4jFactory extends LoggerFactorySupport implements LoggerFactory 
             this.logger = logger;
             org.apache.log4j.Level log4jLevel = logger.getLevel();
             this.level = toStandardLevel(log4jLevel);
+        }
+
+        @Override
+        public void setLevel(Level level) {
+            logger.setLevel(toLog4jLevel(level));
         }
 
         @Override

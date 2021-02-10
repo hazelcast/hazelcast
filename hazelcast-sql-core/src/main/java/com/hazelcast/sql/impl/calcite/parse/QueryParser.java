@@ -92,10 +92,10 @@ public class QueryParser {
 
         Config config = createConfig(sqlBackend.parserFactory());
         SqlParser parser = SqlParser.create(sql, config);
+        SqlNode topNode = parser.parseStmt();
 
         HazelcastSqlValidator validator = (HazelcastSqlValidator) sqlBackend.validator(catalogReader, typeFactory, conformance);
-
-        SqlNode node = validator.validate(parser.parseStmt());
+        SqlNode node = validator.validate(topNode);
 
         SqlVisitor<Void> visitor = sqlBackend.unsupportedOperationVisitor(catalogReader);
         node.accept(visitor);
@@ -104,7 +104,8 @@ public class QueryParser {
             node,
             new QueryParameterMetadata(validator.getParameterConverters(node)),
             validator,
-            sqlBackend
+            sqlBackend,
+            validator.isInfiniteRows()
         );
     }
 
