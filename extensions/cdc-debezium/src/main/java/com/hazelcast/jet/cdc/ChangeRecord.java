@@ -66,7 +66,7 @@ public interface ChangeRecord {
      * INSERT} events in both cases (a notable example is MySQL).
      *
      * @throws ParsingException if the timestamp field isn't present or
-     *                          is unparsable
+     *                          is unparseable
      */
     long timestamp() throws ParsingException;
 
@@ -108,7 +108,7 @@ public interface ChangeRecord {
      *
      * @return name of the source database for the current record
      * @throws ParsingException if the database name field isn't present
-     *                          or is unparsable
+     *                          or is unparseable
      */
     @Nonnull
     String database() throws ParsingException;
@@ -120,7 +120,7 @@ public interface ChangeRecord {
      *
      * @return name of the source schema for the current record
      * @throws ParsingException if the schema name field isn't present
-     *                          or is unparsable
+     *                          or is unparseable
      */
     @Nonnull
     String schema() throws ParsingException, UnsupportedOperationException;
@@ -130,7 +130,7 @@ public interface ChangeRecord {
      *
      * @return name of the source table for the current record
      * @throws ParsingException if the table name field isn't present or
-     *                          is unparsable
+     *                          is unparseable
      */
     @Nonnull
     String table() throws ParsingException;

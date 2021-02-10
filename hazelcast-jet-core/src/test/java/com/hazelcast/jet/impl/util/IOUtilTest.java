@@ -22,6 +22,7 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
@@ -31,13 +32,21 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import static com.hazelcast.jet.impl.util.IOUtil.packDirectoryIntoZip;
 import static com.hazelcast.jet.impl.util.IOUtil.unzip;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 public class IOUtilTest extends JetTestSupport {
+
+    @Rule
+    public TestName testName = new TestName();
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -93,5 +102,53 @@ public class IOUtilTest extends JetTestSupport {
                     .map(path::relativize)
                     .filter(p -> !p.toString().isEmpty())
                     .collect(Collectors.toSet());
+    }
+
+    @Test
+    public void when_zipSlipVulnerability_then_zipEntryIgnored_absolutePath() throws Exception {
+        when_zipSlipVulnerability_then_zipEntryIgnored(
+                (targetDir, nonTargetDir) -> nonTargetDir.resolve("file.txt").resolve("file.txt"));
+    }
+
+    @Test
+    public void when_zipSlipVulnerability_then_zipEntryIgnored_relativePath() throws Exception {
+        when_zipSlipVulnerability_then_zipEntryIgnored(
+                (targetDir, nonTargetDir) -> targetDir.relativize(nonTargetDir).resolve("file.txt"));
+    }
+
+    @Test
+    public void when_zipSlipVulnerability_then_zipEntryIgnored_goingUpALot() throws Exception {
+        when_zipSlipVulnerability_then_zipEntryIgnored(
+                (targetDir, nonTargetDir) -> Paths.get("..", "..", "..", "..", "..", "..", "..", "..", "file.txt"));
+    }
+
+    /**
+     * @param entryFunction maps from (targetDir, nonTargetDir) to an entry path
+     */
+    private void when_zipSlipVulnerability_then_zipEntryIgnored(BiFunction<Path, Path, Path> entryFunction)
+            throws Exception {
+        Path tmpTargetDir = Files.createTempDirectory(testName.getMethodName());
+        Path tmpNonTargetDir = Files.createTempDirectory(testName.getMethodName());
+        try {
+            byte[] zipFile;
+            String entryName = entryFunction.apply(tmpTargetDir, tmpNonTargetDir).toString();
+            try (
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream(32 * 1024);
+                    ZipOutputStream zos = new ZipOutputStream(baos)
+            ) {
+                zos.putNextEntry(new ZipEntry(entryName));
+                zos.write("foo".getBytes());
+                zos.closeEntry();
+                zos.close();
+                zipFile = baos.toByteArray();
+            }
+
+            assertThatThrownBy(() -> unzip(new ByteArrayInputStream(zipFile), tmpTargetDir))
+                    .hasMessage("Entry with an illegal path: " + entryName);
+            assertEquals(0, Files.list(tmpNonTargetDir).count());
+        } finally {
+            com.hazelcast.internal.nio.IOUtil.delete(tmpTargetDir);
+            com.hazelcast.internal.nio.IOUtil.delete(tmpNonTargetDir);
+        }
     }
 }

@@ -63,7 +63,7 @@ public final class IOUtil {
                     }
                     String relativePath = baseDir.relativize(p).toString();
                     boolean directory = Files.isDirectory(p);
-                    // slash has been added instead of File.seperator since ZipEntry.isDirectory is checking against it.
+                    // slash has been added instead of File.separator since ZipEntry.isDirectory is checking against it.
                     relativePath = directory ? relativePath + "/" : relativePath;
                     zipOut.putNextEntry(new ZipEntry(relativePath));
                     if (!directory) {
@@ -118,9 +118,15 @@ public final class IOUtil {
     }
 
     public static void unzip(InputStream is, Path targetDir) throws IOException {
+        targetDir = targetDir.toAbsolutePath();
         try (ZipInputStream zipIn = new ZipInputStream(is)) {
             for (ZipEntry ze; (ze = zipIn.getNextEntry()) != null; ) {
-                Path resolvedPath = targetDir.resolve(ze.getName());
+                Path resolvedPath = targetDir.resolve(ze.getName()).normalize();
+                if (!resolvedPath.startsWith(targetDir)) {
+                    // see: https://snyk.io/research/zip-slip-vulnerability
+                    throw new RuntimeException("Entry with an illegal path: "
+                            + ze.getName());
+                }
                 if (ze.isDirectory()) {
                     Files.createDirectories(resolvedPath);
                 } else {
