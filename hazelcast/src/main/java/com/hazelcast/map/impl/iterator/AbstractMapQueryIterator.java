@@ -29,11 +29,17 @@ import java.util.NoSuchElementException;
  * @see AbstractMapQueryPartitionIterator
  */
 public class AbstractMapQueryIterator<R> implements Iterator<R> {
-    protected static final int DEFAULT_FETCH_SIZE = 100;
-    protected int size;
-    protected Iterator<R> it;
-    protected int idx;
-    protected List<Iterator<R>> queryPartitionIterators;
+
+    private final List<Iterator<R>> queryPartitionIterators;
+    private Iterator<R> it;
+    private int idx;
+    private final int size;
+
+    public AbstractMapQueryIterator(List<Iterator<R>> queryPartitionIterators) {
+        this.queryPartitionIterators = queryPartitionIterators;
+        this.size = queryPartitionIterators.size();
+        it = queryPartitionIterators.get(idx);
+    }
 
     @Override
     public R next() {

@@ -27,11 +27,19 @@ import java.util.NoSuchElementException;
  * @param <V> the value type
  */
 public abstract class AbstractMapIterator<K, V> implements Iterator<Map.Entry<K, V>> {
+
     protected static final int DEFAULT_FETCH_SIZE = 100;
-    protected int size;
-    protected Iterator<Map.Entry<K, V>> it;
-    protected int idx;
-    protected List<Iterator<Map.Entry<K, V>>> partitionIterators;
+    private final int size;
+    private final List<Iterator<Map.Entry<K, V>>> partitionIterators;
+
+    private Iterator<Map.Entry<K, V>> it;
+    private int idx;
+
+    public AbstractMapIterator(List<Iterator<Map.Entry<K, V>>> partitionIterators) {
+        this.partitionIterators = partitionIterators;
+        this.size = partitionIterators.size();
+        it = partitionIterators.get(idx);
+    }
 
     @Override
     public Map.Entry<K, V> next() {

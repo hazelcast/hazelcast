@@ -32,12 +32,9 @@ import java.util.stream.IntStream;
 public class MapIterator<K, V> extends AbstractMapIterator<K, V> {
 
     public MapIterator(MapProxyImpl<K, V> mapProxy, int fetchSize, int partitionCount, boolean prefetchValues) {
-        this.partitionIterators = IntStream.range(0, partitionCount).boxed()
+        super(IntStream.range(0, partitionCount).boxed()
                 .map(partitionId -> mapProxy.iterator(fetchSize, partitionId, prefetchValues))
-                .collect(Collectors.toList());
-        this.size = partitionIterators.size();
-        idx = 0;
-        it = partitionIterators.get(idx);
+                .collect(Collectors.toList()));
     }
 
     public MapIterator(MapProxyImpl<K, V> mapProxy, int partitionCount, boolean prefetchValues) {

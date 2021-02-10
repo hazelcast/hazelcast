@@ -37,12 +37,9 @@ import java.util.stream.IntStream;
 public class ClientMapIterator<K, V> extends AbstractMapIterator<K, V> {
 
     public ClientMapIterator(ClientMapProxy<K, V> clientMapProxy, int fetchSize, int partitionCount, boolean prefetchValues) {
-        this.partitionIterators = IntStream.range(0, partitionCount).boxed()
+        super(IntStream.range(0, partitionCount).boxed()
                 .map(partitionId -> clientMapProxy.iterator(fetchSize, partitionId, prefetchValues))
-                .collect(Collectors.toList());
-        this.size = partitionIterators.size();
-        idx = 0;
-        it = partitionIterators.get(idx);
+                .collect(Collectors.toList()));
     }
 
     public ClientMapIterator(ClientMapProxy<K, V> clientMapProxy, int partitionCount, boolean prefetchValues) {
