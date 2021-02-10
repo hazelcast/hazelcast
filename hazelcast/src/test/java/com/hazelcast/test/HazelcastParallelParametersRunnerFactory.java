@@ -16,8 +16,6 @@
 
 package com.hazelcast.test;
 
-import org.junit.runner.Runner;
-import org.junit.runners.model.InitializationError;
 import org.junit.runners.parameterized.ParametersRunnerFactory;
 
 /**
@@ -26,11 +24,6 @@ import org.junit.runners.parameterized.ParametersRunnerFactory;
  * <p>
  * See {@link com.hazelcast.test package documentation} for runners overview.
  */
-public class HazelcastParallelParametersRunnerFactory extends HazelcastParametersRunnerFactory {
+public class HazelcastParallelParametersRunnerFactory extends HazelcastSerialParametersRunnerFactory {
 
-    @Override
-    protected Runner getClassRunner(Class<?> testClass, Object[] parameters, String testName)
-            throws InitializationError {
-        return new HazelcastParallelClassRunner(testClass, parameters, testName);
-    }
 }
