@@ -1739,16 +1739,16 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     /**
-     * Returns an iterable that provides a client-side iterator for the
+     * Returns an iterable that provides a client-side iterable for the
      * result of the projection on entries in the {@code partitionId} which
      * satisfy the {@code predicate}.
      *
      * @param fetchSize   the size of the batches which will be sent when iterating the data
      * @param partitionId the partition ID which is being iterated
-     * @param projection  the projection to apply before returning the value. null value is not allowed
-     * @param predicate   the predicate which the entries must match. null value is not allowed
+     * @param projection  the projection to apply before returning the value. A null value is not allowed
+     * @param predicate   the predicate which the entries must match. A null value is not allowed
      * @param <R>         the return type
-     * @return return an iterable for the projected entries of the specified partition
+     * @return an iterable for the projected entries of the specified partition
      */
     public <R> Iterable<R> iterable(
             int fetchSize,
@@ -1762,10 +1762,17 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     /**
+     * Returns an iterable that provides a client-side iterable for the
+     * entries in the {@code partitionId}.
+     * If {@code prefetchValues} is {@code true}, values will be sent along with
+     * the keys and no additional data will be fetched when iterating. If
+     * {@code false}, only keys will be sent and values will be fetched when
+     * calling {@code Map.Entry.getValue()} lazily.
+     *
      * @param fetchSize      the size of the batches which will be sent when iterating the data
      * @param partitionId    the partition ID which is being iterated
      * @param prefetchValues whether to send values along with keys (if true) or to fetch them lazily when iterating (if false)
-     * @return
+     * @return an iterable of the specified partition
      */
     public Iterable<Entry<K, V>> iterable(int fetchSize, int partitionId, boolean prefetchValues) {
         return new ClientMapPartitionIterable<>(this, fetchSize, partitionId, prefetchValues);
