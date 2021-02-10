@@ -38,6 +38,7 @@ public abstract class AbstractMapIterator<K, V> implements Iterator<Map.Entry<K,
     public AbstractMapIterator(List<Iterator<Map.Entry<K, V>>> partitionIterators) {
         this.partitionIterators = partitionIterators;
         this.size = partitionIterators.size();
+        idx = 0;
         it = partitionIterators.get(idx);
     }
 

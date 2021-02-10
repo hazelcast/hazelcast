@@ -38,6 +38,7 @@ public class AbstractMapQueryIterator<R> implements Iterator<R> {
     public AbstractMapQueryIterator(List<Iterator<R>> queryPartitionIterators) {
         this.queryPartitionIterators = queryPartitionIterators;
         this.size = queryPartitionIterators.size();
+        idx = 0;
         it = queryPartitionIterators.get(idx);
     }
 
