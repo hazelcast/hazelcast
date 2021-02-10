@@ -118,17 +118,23 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
         Literal literal = LiteralUtils.literal(convertedOperand);
 
         if (literal != null && ((RexLiteral) convertedOperand).getTypeName() != NULL) {
-            // There is a bug in RexSimplify that incorrectly converts numeric literals from one numeric type to another.
-            // The problem is located in the RexToLixTranslator.translateLiteral. To perform a conversion, it delegates
-            // to Primitive.number(Number) method, that does a conversion without checking for overflow. For example, the
-            // expression [32767 AS TINYINT] is converted to -1, which is obviously incorrect.
+            // There is a bug in RexBuilder.makeCast(). If the operand is a literal, it can directly return a literal with the
+            // desired target type instead of an actual cast, but when doing that it doesn't check for numeric overflow.
+            // For example if this method is converting [128 AS TINYINT] is converted to -1, which is obviously incorrect.
+            // It should have failed.
             // To workaround the problem, we perform the conversion using our converters manually. If the conversion fails,
-            // we throw an error (it would have been thrown at runtime anyway), thus preventing Apache Calcite from entering
-            // the problematic simplification routine.
+            // we throw an error (it would have been thrown if the conversion was performed at runtime anyway), before
+            // delegating to RexBuilder.makeCast().
             // Since this workaround moves conversion errors to the parsing phase, we conduct the conversion check for all
             // types to ensure that we throw consistent error messages for all literal-related conversions errors.
             try {
-                toType.getConverter().convertToSelf(fromType.getConverter(), literal.getValue());
+                // The literal's type might be different from the operand type for example here:
+                //     CAST(CAST(42 AS SMALLINT) AS TINYINT)
+                // The operand of the outer cast is validated as a SMALLINT, however the operand, thanks to the
+                // simplification in RexBuilder.makeCast(), is converted to a literal [42:SMALLINT]. And LiteralUtils converts
+                // this operand to [42:TINYINT] - we have to use the literal's type instead of the validated operand type.
+                QueryDataType actualFromType = HazelcastTypeUtils.toHazelcastType(literal.getTypeName());
+                toType.getConverter().convertToSelf(actualFromType.getConverter(), literal.getValue());
             } catch (Exception e) {
                 throw literalConversionException(validator, call, literal, toType, e);
             }
