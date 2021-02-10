@@ -16,7 +16,10 @@
 
 package com.hazelcast.map.impl.iterator;
 
+import com.hazelcast.internal.util.ConstructorFunction;
+
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -29,17 +32,18 @@ import java.util.NoSuchElementException;
 public abstract class AbstractMapIterator<K, V> implements Iterator<Map.Entry<K, V>> {
 
     protected static final int DEFAULT_FETCH_SIZE = 100;
-    private final int size;
-    private final List<Iterator<Map.Entry<K, V>>> partitionIterators;
-
+    private final int partitionCount;
+    private final List<Iterator<Map.Entry<K, V>>> partitionIterators = new LinkedList<>();
+    private final ConstructorFunction<Integer, Iterator<Map.Entry<K, V>>> createPartitionIterator;
     private Iterator<Map.Entry<K, V>> it;
     private int idx;
 
-    public AbstractMapIterator(List<Iterator<Map.Entry<K, V>>> partitionIterators) {
-        this.partitionIterators = partitionIterators;
-        this.size = partitionIterators.size();
+    public AbstractMapIterator(ConstructorFunction<Integer, Iterator<Map.Entry<K, V>>> createPartitionIterator,
+                               int partitionCount) {
+        this.createPartitionIterator = createPartitionIterator;
+        this.partitionCount = partitionCount;
         idx = 0;
-        it = partitionIterators.get(idx);
+        it = getOrCreatePartitionIterator(idx);
     }
 
     @Override
@@ -53,10 +57,10 @@ public abstract class AbstractMapIterator<K, V> implements Iterator<Map.Entry<K,
     @Override
     public boolean hasNext() {
         while (!it.hasNext()) {
-            if (idx == size - 1) {
+            if (idx == partitionCount - 1) {
                 return false;
             }
-            it = partitionIterators.get(++idx);
+            it = getOrCreatePartitionIterator(++idx);
         }
         return true;
     }
@@ -71,9 +75,19 @@ public abstract class AbstractMapIterator<K, V> implements Iterator<Map.Entry<K,
                 if (idx == 0) {
                     throw new IllegalStateException("Iterator.next() must be called before remove()!");
                 }
-                it = partitionIterators.get(--idx);
+                it = getOrCreatePartitionIterator(--idx);
             }
         }
     }
-}
 
+    private Iterator<Map.Entry<K, V>> getOrCreatePartitionIterator(int idx) {
+        Iterator<Map.Entry<K, V>> iterator;
+        if (idx >= partitionIterators.size()) {
+            iterator = createPartitionIterator.createNew(idx);
+            partitionIterators.add(iterator);
+        } else {
+            iterator = partitionIterators.get(idx);
+        }
+        return iterator;
+    }
+}

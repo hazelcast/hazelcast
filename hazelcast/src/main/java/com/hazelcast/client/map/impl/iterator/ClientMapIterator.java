@@ -21,9 +21,6 @@ import com.hazelcast.client.impl.proxy.ClientMapProxy;
 import com.hazelcast.map.impl.iterator.AbstractMapIterator;
 import com.hazelcast.map.impl.iterator.MapPartitionIterator;
 
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
 /**
  * Client-side iterator for iterating map entries in the whole cluster. The values
  * are fetched in batches.
@@ -37,9 +34,7 @@ import java.util.stream.IntStream;
 public class ClientMapIterator<K, V> extends AbstractMapIterator<K, V> {
 
     public ClientMapIterator(ClientMapProxy<K, V> clientMapProxy, int fetchSize, int partitionCount, boolean prefetchValues) {
-        super(IntStream.range(0, partitionCount).boxed()
-                .map(partitionId -> clientMapProxy.iterator(fetchSize, partitionId, prefetchValues))
-                .collect(Collectors.toList()));
+        super(partitionId -> clientMapProxy.iterator(fetchSize, partitionId, prefetchValues), partitionCount);
     }
 
     public ClientMapIterator(ClientMapProxy<K, V> clientMapProxy, int partitionCount, boolean prefetchValues) {

@@ -16,8 +16,9 @@
 
 package com.hazelcast.map.impl.iterator;
 
+import com.hazelcast.internal.util.ConstructorFunction;
+
 import java.util.Iterator;
-import java.util.List;
 import java.util.NoSuchElementException;
 
 /**
@@ -30,16 +31,16 @@ import java.util.NoSuchElementException;
  */
 public class AbstractMapQueryIterator<R> implements Iterator<R> {
 
-    private final List<Iterator<R>> queryPartitionIterators;
+    private final ConstructorFunction<Integer, Iterator<R>> createPartitionIterator;
+    private final int partitionCount;
     private Iterator<R> it;
     private int idx;
-    private final int size;
 
-    public AbstractMapQueryIterator(List<Iterator<R>> queryPartitionIterators) {
-        this.queryPartitionIterators = queryPartitionIterators;
-        this.size = queryPartitionIterators.size();
+    public AbstractMapQueryIterator(ConstructorFunction<Integer, Iterator<R>> createPartitionIterator, int partitionCount) {
+        this.createPartitionIterator = createPartitionIterator;
+        this.partitionCount = partitionCount;
         idx = 0;
-        it = queryPartitionIterators.get(idx);
+        it = createPartitionIterator.createNew(idx);
     }
 
     @Override
@@ -53,10 +54,10 @@ public class AbstractMapQueryIterator<R> implements Iterator<R> {
     @Override
     public boolean hasNext() {
         while (!it.hasNext()) {
-            if (idx == size - 1) {
+            if (idx == partitionCount - 1) {
                 return false;
             }
-            it = queryPartitionIterators.get(++idx);
+            it = createPartitionIterator.createNew(++idx);
         }
         return true;
     }

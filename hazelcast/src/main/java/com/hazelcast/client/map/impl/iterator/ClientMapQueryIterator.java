@@ -24,8 +24,6 @@ import com.hazelcast.query.Predicate;
 
 import java.util.Iterator;
 import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 /**
  * Client-side iterator for iterating the result of the projection on
@@ -43,8 +41,6 @@ import java.util.stream.IntStream;
 public class ClientMapQueryIterator<K, V, R> extends AbstractMapQueryIterator<R> {
     public ClientMapQueryIterator(ClientMapProxy<K, V> mapProxy, int fetchSize, int partitionCount,
                                   Projection<? super Map.Entry<K, V>, R> projection, Predicate<K, V> predicate) {
-        super(IntStream.range(0, partitionCount).boxed()
-                .map(partitionId -> mapProxy.iterator(fetchSize, partitionId, projection, predicate))
-                .collect(Collectors.toList()));
+        super(partitionId -> mapProxy.iterator(fetchSize, partitionId, projection, predicate), partitionCount);
     }
 }
