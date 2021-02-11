@@ -104,9 +104,9 @@ public class MapIterableTest extends HazelcastTestSupport {
 
         Iterator<Map.Entry<Object, Object>> iterator = proxy.iterable(10, prefetchValues).iterator();
         iterator.next();
-        iterator.next();
         iterator.remove();
         assertEquals(1, proxy.size());
+        iterator.next();
         iterator.remove();
         assertEquals(0, proxy.size());
     }
