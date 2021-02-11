@@ -21,11 +21,13 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.runner.RunWith;
 
 import static java.util.Collections.singletonList;
 
 @RunWith(HazelcastSerialClassRunner.class)
+@Ignore
 public class DeploymentTest extends AbstractDeploymentTest {
 
     @BeforeClass

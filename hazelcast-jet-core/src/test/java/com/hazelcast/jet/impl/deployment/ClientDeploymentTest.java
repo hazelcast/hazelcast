@@ -21,6 +21,7 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.rules.Timeout;
 import org.junit.runner.RunWith;
@@ -28,6 +29,7 @@ import org.junit.runner.RunWith;
 import static java.util.Collections.singletonList;
 
 @RunWith(HazelcastSerialClassRunner.class)
+@Ignore
 public class ClientDeploymentTest extends AbstractDeploymentTest {
 
     @Rule

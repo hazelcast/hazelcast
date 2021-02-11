@@ -21,11 +21,13 @@ import com.hazelcast.jet.config.JetClientConfig;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.net.URL;
 import java.net.URLClassLoader;
 
+@Ignore
 public class ClientDeployment_StandaloneClusterTest extends JetTestSupport {
 
     @Test
