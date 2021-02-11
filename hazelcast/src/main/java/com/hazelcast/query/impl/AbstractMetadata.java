@@ -16,9 +16,20 @@
 
 package com.hazelcast.query.impl;
 
+/**
+ * Abstraction of metadata that is stored either on-heap or off-heap.
+ */
 public interface AbstractMetadata {
 
+    /**
+     * Gets the key part of the metadata
+     * @return the metadata's key
+     */
     Object getKeyMetadata();
 
+    /**
+     * Gets the value part of the metadata
+     * @return the metadata's value
+     */
     Object getValueMetadata();
 }

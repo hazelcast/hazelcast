@@ -34,12 +34,12 @@ public class Metadata implements AbstractMetadata {
     }
 
     public void setKeyMetadata(Object metadata) {
-        assert metadata instanceof Serializable;
+        assert metadata == null || metadata instanceof Serializable;
         this.keyMeta = metadata;
     }
 
     public void setValueMetadata(Object metadata) {
-        assert metadata instanceof Serializable;
+        assert metadata == null || metadata instanceof Serializable;
         this.valueMeta = metadata;
     }
 
