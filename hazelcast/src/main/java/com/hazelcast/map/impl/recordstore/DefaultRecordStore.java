@@ -99,6 +99,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
      */
     protected final Collection<Future> loadingFutures = new ConcurrentLinkedQueue<>();
 
+    /**
+     * A reference to the Metadata store.
+     */
     protected final AbstractMetadataStore metadataStore;
 
     /**

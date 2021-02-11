@@ -23,6 +23,9 @@ import com.hazelcast.query.impl.Metadata;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+/**
+ * On-heap Metadata Store. Uses CHM to store the key/metadata pairs.
+ */
 public class MetadataStore implements AbstractMetadataStore {
 
     private final ConcurrentMap<Data, AbstractMetadata> store;

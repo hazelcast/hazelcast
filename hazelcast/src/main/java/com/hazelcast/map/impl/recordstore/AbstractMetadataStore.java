@@ -19,17 +19,47 @@ package com.hazelcast.map.impl.recordstore;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.impl.AbstractMetadata;
 
+/**
+ * Abstraction of Metadata Store.
+ */
 public interface AbstractMetadataStore {
 
+    /**
+     * @param key the key in the store
+     * @return the metadata associated with the key, {@code null} if there is no the key in the store
+     */
     AbstractMetadata get(Data key);
 
+    /**
+     * Puts the key/metadata pair into the store. Replaces the old metadata value
+     * associated with the key if it exists.
+     * @param key the key in the store
+     * @param metadata the metadata
+     */
     void set(Data key, AbstractMetadata metadata);
 
+    /**
+     * Sets the new metadata key of the metadata associated with the key
+     * @param key the key
+     * @param metadataKey the matadata key
+     */
     void setKey(Data key, Object metadataKey);
 
+    /**
+     * Sets the new metadata value of the metadata associated with the key
+     * @param key the key
+     * @param metadataValue the metadata value
+     */
     void setValue(Data key, Object metadataValue);
 
+    /**
+     * Removes the key/metadata pair from the store
+     * @param key the key
+     */
     void remove(Data key);
 
+    /**
+     * Clears the store removing all key/metadata pairs.
+     */
     void clear();
 }
