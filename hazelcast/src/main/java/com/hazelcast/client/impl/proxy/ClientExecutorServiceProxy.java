@@ -34,6 +34,7 @@ import com.hazelcast.core.MultiExecutionCallback;
 import com.hazelcast.executor.LocalExecutorStats;
 import com.hazelcast.executor.impl.ExecutionCallbackAdapter;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
@@ -54,7 +55,6 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.internal.util.ConcurrencyUtil.DEFAULT_ASYNC_EXECUTOR;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
@@ -458,7 +458,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
                         if (t instanceof RejectedExecutionException) {
                             callback.onFailure(t);
                         }
-                    }, DEFAULT_ASYNC_EXECUTOR);
+                    }, ConcurrencyUtil.getDefaultAsyncExecutor());
         }
         return delegatingFuture;
     }
@@ -489,7 +489,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
                         if (t instanceof RejectedExecutionException) {
                             callback.onFailure(t);
                         }
-                    }, DEFAULT_ASYNC_EXECUTOR);
+                    }, ConcurrencyUtil.getDefaultAsyncExecutor());
         }
     }
 
@@ -520,7 +520,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
                         if (t instanceof RejectedExecutionException) {
                             callback.onFailure(t);
                         }
-                    }, DEFAULT_ASYNC_EXECUTOR);
+                    }, ConcurrencyUtil.getDefaultAsyncExecutor());
         }
     }
 
@@ -530,11 +530,11 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
     }
 
     private <T> Future<T> delegatingFuture(ClientInvocationFuture f,
-                                            UUID uuid,
-                                            Member member,
-                                            T defaultValue) {
-            return new IExecutorDelegatingFuture<>(f, getContext(), uuid, defaultValue,
-                    ExecutorServiceSubmitToMemberCodec::decodeResponse, name, member);
+                                           UUID uuid,
+                                           Member member,
+                                           T defaultValue) {
+        return new IExecutorDelegatingFuture<>(f, getContext(), uuid, defaultValue,
+                ExecutorServiceSubmitToMemberCodec::decodeResponse, name, member);
     }
 
     private @Nonnull
