@@ -293,7 +293,12 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleMap(Node parentNode) throws Exception {
         for (Node mapNode : childElements(parentNode)) {
-            MapConfig mapConfig = config.getMapConfig(mapNode.getNodeName());
+            String name = mapNode.getNodeName();
+            MapConfig mapConfig = config.getMapConfigs().get(name);
+            if (mapConfig == null) {
+                mapConfig = new MapConfig(name);
+                config.addMapConfig(mapConfig);
+            }
             handleMapNode(mapNode, mapConfig);
         }
     }

@@ -1682,7 +1682,11 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     protected void handleMap(Node parentNode) throws Exception {
         String name = getAttribute(parentNode, "name");
-        MapConfig mapConfig = config.getMapConfig(name);
+        MapConfig mapConfig = config.getMapConfigs().get(name);
+        if (mapConfig == null) {
+            mapConfig = new MapConfig(name);
+            config.addMapConfig(mapConfig);
+        }
         handleMapNode(parentNode, mapConfig);
     }
 
