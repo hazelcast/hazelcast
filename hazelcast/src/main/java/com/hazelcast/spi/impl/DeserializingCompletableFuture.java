@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.ConcurrencyUtil;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -30,8 +31,6 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
-
-import static com.hazelcast.internal.util.ConcurrencyUtil.DEFAULT_ASYNC_EXECUTOR;
 
 /**
  * Decorates {@link InternalCompletableFuture} to supply:
@@ -60,7 +59,7 @@ public class DeserializingCompletableFuture<V> extends InternalCompletableFuture
     private final boolean deserialize;
 
     public DeserializingCompletableFuture() {
-        this(null, DEFAULT_ASYNC_EXECUTOR, false);
+        this(null, ConcurrencyUtil.getDefaultAsyncExecutor(), false);
     }
 
     public DeserializingCompletableFuture(Executor defaultAsyncExecutor) {
@@ -68,7 +67,7 @@ public class DeserializingCompletableFuture<V> extends InternalCompletableFuture
     }
 
     public DeserializingCompletableFuture(SerializationService serializationService, boolean deserialize) {
-        this(serializationService, DEFAULT_ASYNC_EXECUTOR, deserialize);
+        this(serializationService, ConcurrencyUtil.getDefaultAsyncExecutor(), deserialize);
     }
 
     public DeserializingCompletableFuture(SerializationService serializationService, Executor defaultAsyncExecutor,
