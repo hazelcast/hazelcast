@@ -51,7 +51,7 @@ public class QueryEventFilterTest {
         //given
         Data key1 = serializationService.toData("key1");
         Predicate predicate = Predicates.alwaysTrue();
-        QueryEventFilter filter = new QueryEventFilter(true, key1, predicate);
+        QueryEventFilter filter = new QueryEventFilter(key1, predicate, true);
 
         //when
         Data key2 = serializationService.toData("key2");
@@ -67,7 +67,7 @@ public class QueryEventFilterTest {
         //given
         Data key1 = serializationService.toData("key1");
         Predicate predicate = Predicates.alwaysTrue();
-        QueryEventFilter filter = new QueryEventFilter(true, key1, predicate);
+        QueryEventFilter filter = new QueryEventFilter(key1, predicate, true);
 
         //when
         Data key2 = serializationService.toData("key1");
@@ -82,7 +82,7 @@ public class QueryEventFilterTest {
     public void testEval_givenFilterDoesNotContainKey_whenPredicateIsMatching_thenReturnTrue() {
         //given
         Predicate predicate = Predicates.alwaysTrue();
-        QueryEventFilter filter = new QueryEventFilter(true, null, predicate);
+        QueryEventFilter filter = new QueryEventFilter(null, predicate, true);
 
         //when
         Data key2 = serializationService.toData("key");
@@ -97,7 +97,7 @@ public class QueryEventFilterTest {
     public void testEval_givenFilterDoesNotContainKey_whenPredicateIsNotMatching_thenReturnFalse() {
         //given
         Predicate predicate = Predicates.alwaysFalse();
-        QueryEventFilter filter = new QueryEventFilter(true, null, predicate);
+        QueryEventFilter filter = new QueryEventFilter(null, predicate, true);
 
         //when
         Data key2 = serializationService.toData("key");
@@ -111,7 +111,7 @@ public class QueryEventFilterTest {
     @Test
     public void testEquals_givenSameInstance_thenReturnTrue() {
         Data key = serializationService.toData("key");
-        QueryEventFilter filter1 = new QueryEventFilter(true, key, Predicates.alwaysTrue());
+        QueryEventFilter filter1 = new QueryEventFilter(key, Predicates.alwaysTrue(), true);
         QueryEventFilter filter2 = filter1;
 
         assertTrue(filter1.equals(filter2));
@@ -120,7 +120,7 @@ public class QueryEventFilterTest {
     @Test
     public void testEquals_givenOtherIsNull_thenReturnFalse() {
         Data key = serializationService.toData("key");
-        QueryEventFilter filter1 = new QueryEventFilter(true, key, Predicates.alwaysTrue());
+        QueryEventFilter filter1 = new QueryEventFilter(key, Predicates.alwaysTrue(), true);
         QueryEventFilter filter2 = null;
 
         assertFalse(filter1.equals(filter2));
@@ -129,7 +129,7 @@ public class QueryEventFilterTest {
     @Test
     public void testEquals_givenOtherIsDifferentClass_thenReturnFalse() {
         Data key = serializationService.toData("key");
-        QueryEventFilter filter1 = new QueryEventFilter(true, key, Predicates.alwaysTrue());
+        QueryEventFilter filter1 = new QueryEventFilter(key, Predicates.alwaysTrue(), true);
         Object filter2 = new Object();
 
         assertFalse(filter1.equals(filter2));
@@ -138,9 +138,9 @@ public class QueryEventFilterTest {
     @Test
     public void testEquals_givenIncludeValueIsTrue_whenOtherHasIncludeValueFalse_thenReturnFalse() {
         Data key = serializationService.toData("key");
-        QueryEventFilter filter1 = new QueryEventFilter(true, key, Predicates.alwaysTrue());
+        QueryEventFilter filter1 = new QueryEventFilter(key, Predicates.alwaysTrue(), true);
 
-        QueryEventFilter filter2 = new QueryEventFilter(false, key, Predicates.alwaysTrue());
+        QueryEventFilter filter2 = new QueryEventFilter(key, Predicates.alwaysTrue(), false);
 
         assertFalse(filter1.equals(filter2));
     }
@@ -148,19 +148,19 @@ public class QueryEventFilterTest {
     @Test
     public void testEquals_givenIncludeValueIsFalse_whenOtherHasIncludeValueTrue_thenReturnFalse() {
         Data key = serializationService.toData("key");
-        QueryEventFilter filter1 = new QueryEventFilter(false, key, Predicates.alwaysTrue());
+        QueryEventFilter filter1 = new QueryEventFilter(key, Predicates.alwaysTrue(), false);
 
-        QueryEventFilter filter2 = new QueryEventFilter(true, key, Predicates.alwaysTrue());
+        QueryEventFilter filter2 = new QueryEventFilter(key, Predicates.alwaysTrue(), true);
 
         assertFalse(filter1.equals(filter2));
     }
 
     @Test
     public void testEquals_givenKeyIsNull_whenOtherHasKeyNonNull_thenReturnFalse() {
-        QueryEventFilter filter1 = new QueryEventFilter(true, null, Predicates.alwaysTrue());
+        QueryEventFilter filter1 = new QueryEventFilter(null, Predicates.alwaysTrue(), true);
 
         Data key = serializationService.toData("key");
-        QueryEventFilter filter2 = new QueryEventFilter(true, key, Predicates.alwaysTrue());
+        QueryEventFilter filter2 = new QueryEventFilter(key, Predicates.alwaysTrue(), true);
 
         assertFalse(filter1.equals(filter2));
     }
@@ -168,34 +168,34 @@ public class QueryEventFilterTest {
     @Test
     public void testEquals_givenKeyIsNonNull_whenOtherHasNonEqualsKey_thenReturnFalse() {
         Data key1 = serializationService.toData("key1");
-        QueryEventFilter filter1 = new QueryEventFilter(true, key1, Predicates.alwaysTrue());
+        QueryEventFilter filter1 = new QueryEventFilter(key1, Predicates.alwaysTrue(), true);
 
         Data key2 = serializationService.toData("key2");
-        QueryEventFilter filter2 = new QueryEventFilter(true, key2, Predicates.alwaysTrue());
+        QueryEventFilter filter2 = new QueryEventFilter(key2, Predicates.alwaysTrue(), true);
 
         assertFalse(filter1.equals(filter2));
     }
 
     @Test
     public void testEquals_givenKeyIsNull_whenOtherHasKeyNull_thenReturnTrue() {
-        QueryEventFilter filter1 = new QueryEventFilter(true, null, Predicates.alwaysTrue());
-        QueryEventFilter filter2 = new QueryEventFilter(true, null, Predicates.alwaysTrue());
+        QueryEventFilter filter1 = new QueryEventFilter(null, Predicates.alwaysTrue(), true);
+        QueryEventFilter filter2 = new QueryEventFilter(null, Predicates.alwaysTrue(), true);
 
         assertTrue(filter1.equals(filter2));
     }
 
     @Test
     public void testEquals_whenPredicatesAreNotEquals_thenReturnFalse() {
-        QueryEventFilter filter1 = new QueryEventFilter(true, null, Predicates.alwaysTrue());
-        QueryEventFilter filter2 = new QueryEventFilter(true, null, Predicates.alwaysFalse());
+        QueryEventFilter filter1 = new QueryEventFilter(null, Predicates.alwaysTrue(), true);
+        QueryEventFilter filter2 = new QueryEventFilter(null, Predicates.alwaysFalse(), true);
 
         assertFalse(filter1.equals(filter2));
     }
 
     @Test
     public void testEquals_whenPredicatesAreEquals_thenReturnTrue() {
-        QueryEventFilter filter1 = new QueryEventFilter(true, null, Predicates.alwaysTrue());
-        QueryEventFilter filter2 = new QueryEventFilter(true, null, Predicates.alwaysFalse());
+        QueryEventFilter filter1 = new QueryEventFilter(null, Predicates.alwaysTrue(), true);
+        QueryEventFilter filter2 = new QueryEventFilter(null, Predicates.alwaysFalse(), true);
 
         assertFalse(filter1.equals(filter2));
     }

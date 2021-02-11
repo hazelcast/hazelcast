@@ -84,7 +84,6 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
-import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.ArrayList;
@@ -675,12 +674,6 @@ class MapServiceContextImpl implements MapServiceContext {
     @Override
     public String generateInterceptorId(String mapName, MapInterceptor interceptor) {
         return interceptor.getClass().getName() + interceptor.hashCode();
-    }
-
-    @Override
-    public UUID addLocalEventListener(Object listener, String mapName) {
-        EventRegistration registration = addListenerInternal(listener, TrueEventFilter.INSTANCE, mapName, true);
-        return registration.getId();
     }
 
     @Override

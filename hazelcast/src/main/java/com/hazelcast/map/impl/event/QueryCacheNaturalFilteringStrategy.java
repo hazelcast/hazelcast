@@ -117,8 +117,8 @@ public class QueryCacheNaturalFilteringStrategy extends AbstractFilteringStrateg
             }
         }
 
-        if (originalFilterEventTypeMatches && filter instanceof TrueEventFilter) {
-            return eventType.getType();
+        if (filter instanceof TrueEventFilter) {
+            return originalFilterEventTypeMatches ? eventType.getType() : FILTER_DOES_NOT_MATCH;
         }
 
         if (filter instanceof QueryEventFilter) {
