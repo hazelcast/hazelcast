@@ -26,6 +26,7 @@ import java.util.NoSuchElementException;
 
 /**
  * Base class for iterating map entries in the whole cluster.
+ *
  * @param <K> the key type
  * @param <V> the value type
  */
@@ -33,7 +34,7 @@ public abstract class AbstractMapIterator<K, V> implements Iterator<Map.Entry<K,
 
     protected static final int DEFAULT_FETCH_SIZE = 100;
     private final int partitionCount;
-    private final List<Iterator<Map.Entry<K, V>>> partitionIterators = new LinkedList<>();
+    private Iterator<Map.Entry<K, V>> lastReadIterator;
     private final ConstructorFunction<Integer, Iterator<Map.Entry<K, V>>> createPartitionIterator;
     private Iterator<Map.Entry<K, V>> it;
     private int idx;
@@ -43,12 +44,15 @@ public abstract class AbstractMapIterator<K, V> implements Iterator<Map.Entry<K,
         this.createPartitionIterator = createPartitionIterator;
         this.partitionCount = partitionCount;
         idx = 0;
-        it = getOrCreatePartitionIterator(idx);
+        it = createPartitionIterator.createNew(idx);
     }
 
     @Override
     public Map.Entry<K, V> next() {
         if (hasNext()) {
+            if (it != lastReadIterator) {
+                lastReadIterator = it;
+            }
             return it.next();
         }
         throw new NoSuchElementException();
@@ -60,34 +64,17 @@ public abstract class AbstractMapIterator<K, V> implements Iterator<Map.Entry<K,
             if (idx == partitionCount - 1) {
                 return false;
             }
-            it = getOrCreatePartitionIterator(++idx);
+            it = createPartitionIterator.createNew(++idx);
         }
         return true;
     }
 
     @Override
     public void remove() {
-        while (idx >= 0) {
-            try {
-                it.remove();
-                break;
-            } catch (IllegalStateException e) {
-                if (idx == 0) {
-                    throw new IllegalStateException("Iterator.next() must be called before remove()!");
-                }
-                it = getOrCreatePartitionIterator(--idx);
-            }
-        }
-    }
-
-    private Iterator<Map.Entry<K, V>> getOrCreatePartitionIterator(int idx) {
-        Iterator<Map.Entry<K, V>> iterator;
-        if (idx >= partitionIterators.size()) {
-            iterator = createPartitionIterator.createNew(idx);
-            partitionIterators.add(iterator);
+        if (lastReadIterator != null) {
+            lastReadIterator.remove();
         } else {
-            iterator = partitionIterators.get(idx);
+            throw new IllegalStateException("Iterator.next() must be called before remove()!");
         }
-        return iterator;
     }
 }
