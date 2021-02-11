@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql.impl.exec.scan;
 
+import com.hazelcast.internal.serialization.Data;
+
 /**
  * Iterator over key/value pairs.
  */
@@ -36,13 +38,8 @@ public interface KeyValueIterator {
      */
     boolean done();
 
-    /**
-     * @return current key
-     */
     Object getKey();
-
-    /**
-     * @return current value
-     */
+    Data getKeyData();
     Object getValue();
+    Data getValueData();
 }

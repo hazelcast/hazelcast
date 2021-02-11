@@ -73,6 +73,11 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> {
     }
 
     @Override
+    public Data getKeyData() {
+        return keyData;
+    }
+
+    @Override
     public V getValue() {
         if (valueObject == null) {
             valueObject = serializationService.toObject(valueData);
@@ -81,16 +86,44 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> {
     }
 
     @Override
-    public Data getKeyData() {
-        return keyData;
-    }
-
-    @Override
     public Data getValueData() {
         if (valueData == null) {
             valueData = serializationService.toData(valueObject);
         }
         return valueData;
+    }
+
+    @Override
+    public K getKeyIfPresent() {
+        return keyObject != null ? keyObject : null;
+    }
+
+    @Override
+    public Data getKeyDataIfPresent() {
+        return keyData;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public V getValueIfPresent() {
+        if (valueObject != null) {
+            return valueObject;
+        }
+
+        Object possiblyNotData = record.getValue();
+
+        return possiblyNotData instanceof Data ? null : (V) possiblyNotData;
+    }
+
+    @Override
+    public Data getValueDataIfPresent() {
+        if (valueData != null) {
+            return valueData;
+        }
+
+        Object possiblyData = record.getValue();
+
+        return possiblyData instanceof Data ? (Data) possiblyData : null;
     }
 
     public Object getByPrioritizingDataValue() {

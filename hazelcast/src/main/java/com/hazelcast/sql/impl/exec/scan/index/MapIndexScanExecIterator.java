@@ -37,10 +37,15 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
 
     private final Iterator<QueryableEntry> iterator;
 
-    private Data currentKey;
+    private Object currentKey;
+    private Data currentKeyData;
     private Object currentValue;
-    private Data nextKey;
+    private Data currentValueData;
+
+    private Object nextKey;
+    private Data nextKeyData;
     private Object nextValue;
+    private Data nextValueData;
 
     public MapIndexScanExecIterator(
         String mapName,
@@ -68,7 +73,9 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
     public boolean tryAdvance() {
         if (!done()) {
             currentKey = nextKey;
+            currentKeyData = nextKeyData;
             currentValue = nextValue;
+            currentValueData = nextValueData;
 
             advance0();
 
@@ -80,7 +87,7 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
 
     @Override
     public boolean done() {
-        return nextKey == null;
+        return nextKeyData == null;
     }
 
     @Override
@@ -89,19 +96,33 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
     }
 
     @Override
+    public Data getKeyData() {
+        return currentKeyData;
+    }
+
+    @Override
     public Object getValue() {
         return currentValue;
+    }
+
+    @Override
+    public Data getValueData() {
+        return currentValueData;
     }
 
     private void advance0() {
         if (iterator.hasNext()) {
             QueryableEntry<?, ?> entry = iterator.next();
 
-            nextKey = entry.getKeyData();
-            nextValue = entry.getValue();
+            nextKey = entry.getKeyIfPresent();
+            nextKeyData = entry.getKeyDataIfPresent();
+            nextValue = entry.getValueIfPresent();
+            nextValueData = entry.getValueDataIfPresent();
         } else {
             nextKey = null;
+            nextKeyData = null;
             nextValue = null;
+            nextValueData = null;
         }
     }
 

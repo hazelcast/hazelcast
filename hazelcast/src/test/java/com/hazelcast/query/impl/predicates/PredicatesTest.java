@@ -365,6 +365,25 @@ public class PredicatesTest extends HazelcastTestSupport {
             return null;
         }
 
+        @Override
+        public Object getKeyIfPresent() {
+            throw new UnsupportedOperationException("Should not be called.");
+        }
+
+        @Override
+        public Data getKeyDataIfPresent() {
+            throw new UnsupportedOperationException("Should not be called.");
+        }
+
+        @Override
+        public Object getValueIfPresent() {
+            throw new UnsupportedOperationException("Should not be called.");
+        }
+
+        @Override
+        public Data getValueDataIfPresent() {
+            throw new UnsupportedOperationException("Should not be called.");
+        }
     }
 
     private Entry createEntry(final Object key, final Object value) {

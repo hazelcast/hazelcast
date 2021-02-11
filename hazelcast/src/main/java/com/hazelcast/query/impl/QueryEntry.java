@@ -16,8 +16,8 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.query.impl.getters.Extractors;
 
 /**
@@ -70,18 +70,50 @@ public class QueryEntry extends QueryableEntry {
     }
 
     @Override
-    public Object getValue() {
-        return serializationService.toObject(value);
-    }
-
-    @Override
     public Data getKeyData() {
         return key;
     }
 
     @Override
+    public Object getValue() {
+        return serializationService.toObject(value);
+    }
+
+    @Override
     public Data getValueData() {
         return serializationService.toData(value);
+    }
+
+    @Override
+    public Object getKeyIfPresent() {
+        return null;
+    }
+
+    @Override
+    public Data getKeyDataIfPresent() {
+        return key;
+    }
+
+    @Override
+    public Object getValueIfPresent() {
+        if (!(value instanceof Data)) {
+            return value;
+        }
+
+        Object possiblyNotData = record.getValue();
+
+        return possiblyNotData instanceof Data ? null : possiblyNotData;
+    }
+
+    @Override
+    public Data getValueDataIfPresent() {
+        if (value instanceof Data) {
+            return (Data) value;
+        }
+
+        Object possiblyData = record.getValue();
+
+        return possiblyData instanceof Data ? (Data) possiblyData : null;
     }
 
     @Override

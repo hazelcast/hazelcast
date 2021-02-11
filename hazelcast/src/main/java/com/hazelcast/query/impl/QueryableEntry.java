@@ -46,7 +46,7 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
     protected InternalSerializationService serializationService;
     protected Extractors extractors;
 
-    private Record record;
+    protected Record record;
     private transient Metadata metadata;
 
     public Record getRecord() {
@@ -62,13 +62,15 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
         return extractAttributeValue(attributeName);
     }
 
-    public abstract V getValue();
-
     public abstract K getKey();
-
     public abstract Data getKeyData();
-
+    public abstract V getValue();
     public abstract Data getValueData();
+
+    public abstract K getKeyIfPresent();
+    public abstract Data getKeyDataIfPresent();
+    public abstract V getValueIfPresent();
+    public abstract Data getValueDataIfPresent();
 
     protected abstract Object getTargetObject(boolean key);
 
