@@ -3792,4 +3792,22 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "      type: tcp\n";
         return new InMemoryYamlConfig(yaml);
     }
+
+    @Override
+    protected Config buildMapWildcardConfig() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  map:\n"
+                + "    map*:\n"
+                + "      attributes:\n"
+                + "        name:\n"
+                + "          extractor-class-name: usercodedeployment.CapitalizingFirstNameExtractor\n"
+                + "    mapBackup2*:\n"
+                + "      backup-count: 2\n"
+                + "      attributes:\n"
+                + "        name:\n"
+                + "          extractor-class-name: usercodedeployment.CapitalizingFirstNameExtractor\n";
+
+        return new InMemoryYamlConfig(yaml);
+    }
 }

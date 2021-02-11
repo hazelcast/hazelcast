@@ -3792,4 +3792,23 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(10, sqlConfig.getExecutorPoolSize());
         assertEquals(30L, sqlConfig.getStatementTimeoutMillis());
     }
+
+    @Override
+    protected Config buildMapWildcardConfig() {
+        String xml = HAZELCAST_START_TAG
+                + "<map name=\"map*\">\n"
+                + "  <attributes>\n"
+                + "    <attribute extractor-class-name=\"usercodedeployment.CapitalizingFirstNameExtractor\">name</attribute>\n"
+                + "  </attributes>\n"
+                + "</map>\n"
+                + "<map name=\"mapBackup2*\">\n"
+                + "  <backup-count>2</backup-count>"
+                + "  <attributes>\n"
+                + "    <attribute extractor-class-name=\"usercodedeployment.CapitalizingFirstNameExtractor\">name</attribute>\n"
+                + "  </attributes>\n"
+                + "</map>\n"
+                + HAZELCAST_END_TAG;
+
+        return new InMemoryXmlConfig(xml);
+    }
 }

@@ -621,6 +621,22 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     @Test(expected = InvalidConfigurationException.class)
     public abstract void testPersistentMemoryDirectoryConfiguration_SystemMemoryModeThrows();
 
+    @Test
+    public void testMapWildcardConfig() {
+        Config config = buildMapWildcardConfig();
+
+        MapConfig map1 = config.getMapConfig("mapA");
+        assertEquals(1, map1.getBackupCount());
+        assertEquals(1, map1.getAttributeConfigs().size());
+
+        MapConfig mapWith2Backups = config.getMapConfig("mapBackup2A");
+        assertEquals(2, mapWith2Backups.getBackupCount());
+        assertEquals(1, map1.getAttributeConfigs().size());
+    }
+
     protected abstract Config buildAuditlogConfig();
+
+    /** Build a config with overlapping wildcard configs map* & mapBackup2* */
+    protected abstract Config buildMapWildcardConfig();
 
 }
