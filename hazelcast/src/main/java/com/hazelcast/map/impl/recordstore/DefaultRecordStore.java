@@ -98,6 +98,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
      * @see #loadAllFromStore(List, boolean)
      */
     protected final Collection<Future> loadingFutures = new ConcurrentLinkedQueue<>();
+
+    protected final AbstractMetadataStore metadataStore;
+
     /**
      * The record store may be created with or without triggering the load.
      * This flag guards that the loading on create is invoked not more than
@@ -111,8 +114,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
      * key loading.
      */
     private boolean loadedOnPreMigration;
-
-    protected final AbstractMetadataStore metadataStore;
 
     private final IPartitionService partitionService;
     private final InterceptorRegistry interceptorRegistry;
