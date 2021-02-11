@@ -3567,7 +3567,7 @@
 
     <xs:complexType name="user-code-deployment">
         <xs:all>
-            <xs:element name="class-cache-mode" default="ETERNAL">
+            <xs:element name="class-cache-mode" minOccurs="0" maxOccurs="1" default="ETERNAL">
                 <xs:annotation>
                     <xs:documentation>
                         Controls caching of user classes loaded from remote members.
@@ -3585,7 +3585,7 @@
                     </xs:restriction>
                 </xs:simpleType>
             </xs:element>
-            <xs:element name="provider-mode" default="LOCAL_AND_CACHED_CLASSES">
+            <xs:element name="provider-mode" minOccurs="0" maxOccurs="1" default="LOCAL_AND_CACHED_CLASSES">
                 <xs:annotation>
                     <xs:documentation>
                         Controls how to react on receiving a classloading request from a remote member

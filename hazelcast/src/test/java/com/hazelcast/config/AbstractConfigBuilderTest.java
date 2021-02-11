@@ -360,6 +360,9 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testUserCodeDeployment();
 
     @Test
+    public abstract void testEmptyUserCodeDeployment();
+
+    @Test
     public abstract void testCRDTReplicationConfig();
 
     @Test
