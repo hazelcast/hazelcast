@@ -81,7 +81,7 @@ public class PartitionScanRunner {
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
         RecordStore<Record> recordStore = partitionContainer.getRecordStore(mapName);
         boolean nativeMemory = recordStore.getInMemoryFormat() == InMemoryFormat.NATIVE;
-        boolean useCachedValues = mapContainer.isUseCachedDeserializedValuesEnabled(partitionId);
+        boolean useCachedValues = isUseCachedDeserializedValuesEnabled(mapContainer, partitionId);
         Extractors extractors = mapServiceContext.getExtractors(mapName);
         Map.Entry<Integer, Map.Entry> nearestAnchorEntry =
                 pagingPredicate == null ? null : pagingPredicate.getNearestAnchorEntry();
@@ -163,5 +163,9 @@ public class PartitionScanRunner {
             }
         }
         return new QueryableEntriesSegment(resultList, pointers);
+    }
+
+    protected boolean isUseCachedDeserializedValuesEnabled(MapContainer mapContainer, int partitionId) {
+        return mapContainer.isUseCachedDeserializedValuesEnabled(partitionId);
     }
 }
