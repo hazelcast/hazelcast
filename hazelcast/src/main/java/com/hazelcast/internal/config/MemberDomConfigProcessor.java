@@ -532,8 +532,10 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     protected void handleSplitBrainProtection(Node node) {
         String name = getAttribute(node, "name");
-        SplitBrainProtectionConfig splitBrainProtectionConfig = config.getSplitBrainProtectionConfig(name);
-        splitBrainProtectionConfig.setName(name);
+        SplitBrainProtectionConfig splitBrainProtectionConfig = ConfigUtils.getByNameOrNew(
+                config.getSplitBrainProtectionConfigs(),
+                name,
+                SplitBrainProtectionConfig.class);
         handleSplitBrainProtectionNode(node, splitBrainProtectionConfig, name);
     }
 
@@ -989,21 +991,29 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     protected void handleExecutor(Node node) throws Exception {
         String name = getTextContent(getNamedItemNode(node, "name"));
-        ExecutorConfig executorConfig = config.getExecutorConfig(name);
+        ExecutorConfig executorConfig = ConfigUtils.getByNameOrNew(config.getExecutorConfigs(),
+                name,
+                ExecutorConfig.class);
 
         handleViaReflection(node, config, executorConfig);
     }
 
     protected void handleDurableExecutor(Node node) throws Exception {
         String name = getTextContent(getNamedItemNode(node, "name"));
-        DurableExecutorConfig durableExecutorConfig = config.getDurableExecutorConfig(name);
+        DurableExecutorConfig durableExecutorConfig = ConfigUtils.getByNameOrNew(
+                config.getDurableExecutorConfigs(),
+                name,
+                DurableExecutorConfig.class);
 
         handleViaReflection(node, config, durableExecutorConfig);
     }
 
     protected void handleScheduledExecutor(Node node) {
         String name = getTextContent(getNamedItemNode(node, "name"));
-        ScheduledExecutorConfig scheduledExecutorConfig = config.getScheduledExecutorConfig(name);
+        ScheduledExecutorConfig scheduledExecutorConfig = ConfigUtils.getByNameOrNew(
+                config.getScheduledExecutorConfigs(),
+                name,
+                ScheduledExecutorConfig.class);
 
         handleScheduledExecutorNode(node, scheduledExecutorConfig);
     }
@@ -1034,8 +1044,10 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleCardinalityEstimator(Node node) {
-        CardinalityEstimatorConfig cardinalityEstimatorConfig = config.getCardinalityEstimatorConfig(
-                getTextContent(getNamedItemNode(node, "name")));
+        CardinalityEstimatorConfig cardinalityEstimatorConfig =
+                ConfigUtils.getByNameOrNew(config.getCardinalityEstimatorConfigs(),
+                                            getTextContent(getNamedItemNode(node, "name")),
+                                            CardinalityEstimatorConfig.class);
 
         handleCardinalityEstimatorNode(node, cardinalityEstimatorConfig);
     }
@@ -1061,13 +1073,19 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     protected void handlePNCounter(Node node) throws Exception {
         String name = getAttribute(node, "name");
-        PNCounterConfig pnCounterConfig = config.getPNCounterConfig(name);
+        PNCounterConfig pnCounterConfig = ConfigUtils.getByNameOrNew(
+                config.getPNCounterConfigs(),
+                name,
+                PNCounterConfig.class);
         handleViaReflection(node, config, pnCounterConfig);
     }
 
     protected void handleFlakeIdGenerator(Node node) {
         String name = getAttribute(node, "name");
-        FlakeIdGeneratorConfig generatorConfig = config.getFlakeIdGeneratorConfig(name);
+        FlakeIdGeneratorConfig generatorConfig = ConfigUtils.getByNameOrNew(
+                config.getFlakeIdGeneratorConfigs(),
+                name,
+                FlakeIdGeneratorConfig.class);
         handleFlakeIdGeneratorNode(node, generatorConfig);
     }
 
@@ -1503,7 +1521,10 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     protected void handleQueue(Node node) {
         String name = getTextContent(getNamedItemNode(node, "name"));
-        QueueConfig qConfig = config.getQueueConfig(name);
+        QueueConfig qConfig = ConfigUtils.getByNameOrNew(
+                config.getQueueConfigs(),
+                name,
+                QueueConfig.class);
         handleQueueNode(node, qConfig);
     }
 
@@ -1550,7 +1571,10 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     protected void handleList(Node node) {
         String name = getTextContent(getNamedItemNode(node, "name"));
-        ListConfig lConfig = config.getListConfig(name);
+        ListConfig lConfig = ConfigUtils.getByNameOrNew(
+                config.getListConfigs(),
+                name,
+                ListConfig.class);
         handleListNode(node, lConfig);
     }
 
@@ -1580,7 +1604,9 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     protected void handleSet(Node node) {
         String name = getTextContent(getNamedItemNode(node, "name"));
-        SetConfig sConfig = config.getSetConfig(name);
+        SetConfig sConfig = ConfigUtils.getByNameOrNew(config.getSetConfigs(),
+                name,
+                SetConfig.class);
         handleSetNode(node, sConfig);
     }
 
@@ -1609,7 +1635,10 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     protected void handleMultiMap(Node node) {
         String name = getTextContent(getNamedItemNode(node, "name"));
-        MultiMapConfig multiMapConfig = config.getMultiMapConfig(name);
+        MultiMapConfig multiMapConfig = ConfigUtils.getByNameOrNew(
+                config.getMultiMapConfigs(),
+                name,
+                MultiMapConfig.class);
         handleMultiMapNode(node, multiMapConfig);
     }
 
@@ -1655,7 +1684,10 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     protected void handleReplicatedMap(Node node) {
         String name = getTextContent(getNamedItemNode(node, "name"));
-        final ReplicatedMapConfig replicatedMapConfig = config.getReplicatedMapConfig(name);
+        final ReplicatedMapConfig replicatedMapConfig = ConfigUtils.getByNameOrNew(
+                config.getReplicatedMapConfigs(),
+                name,
+                ReplicatedMapConfig.class);
         handleReplicatedMapNode(node, replicatedMapConfig);
     }
 
@@ -1682,11 +1714,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     protected void handleMap(Node parentNode) throws Exception {
         String name = getAttribute(parentNode, "name");
-        MapConfig mapConfig = config.getMapConfigs().get(name);
-        if (mapConfig == null) {
-            mapConfig = new MapConfig(name);
-            config.addMapConfig(mapConfig);
-        }
+        MapConfig mapConfig = ConfigUtils.getByNameOrNew(config.getMapConfigs(), name, MapConfig.class);
         handleMapNode(parentNode, mapConfig);
     }
 
@@ -1804,7 +1832,11 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleCache(Node node) throws Exception {
-        handleCacheNode(node, config.getCacheConfig(getAttribute(node, "name")));
+        CacheSimpleConfig cacheConfig =
+                ConfigUtils.getByNameOrNew(config.getCacheConfigs(),
+                        getAttribute(node, "name"),
+                        CacheSimpleConfig.class);
+        handleCacheNode(node, cacheConfig);
     }
 
     void handleCacheNode(Node node, CacheSimpleConfig cacheConfig) throws Exception {
@@ -2421,7 +2453,10 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     protected void handleRingbuffer(Node node) {
         String name = getTextContent(getNamedItemNode(node, "name"));
-        handleRingBufferNode(node, config.getRingbufferConfig(name));
+        handleRingBufferNode(node, ConfigUtils.getByNameOrNew(
+                config.getRingbufferConfigs(),
+                name,
+                RingbufferConfig.class));
     }
 
     void handleRingBufferNode(Node node, RingbufferConfig rbConfig) {
