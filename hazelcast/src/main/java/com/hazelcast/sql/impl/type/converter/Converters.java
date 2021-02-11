@@ -162,7 +162,7 @@ public final class Converters {
             Converter oldConverter = map.put(converter.getId(), converter);
 
             if (oldConverter != null) {
-                throw new HazelcastException("Two converters has the same ID [id=" + converter.getId()
+                throw new HazelcastException("Two converters have the same ID [id=" + converter.getId()
                     + ", converter1=" + oldConverter.getClass().getSimpleName()
                     + ", converter2=" + converter.getClass().getSimpleName() + ']');
             }

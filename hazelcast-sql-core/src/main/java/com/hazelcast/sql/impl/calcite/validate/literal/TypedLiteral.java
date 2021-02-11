@@ -18,12 +18,11 @@ package com.hazelcast.sql.impl.calcite.validate.literal;
 
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.type.SqlTypeName;
 
 public class TypedLiteral extends Literal {
-    public TypedLiteral(SqlLiteral original, Object value, SqlTypeName typeName) {
-        super(original, value, typeName);
+    public TypedLiteral(Object value, SqlTypeName typeName) {
+        super(value, typeName);
     }
 
     @Override

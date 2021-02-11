@@ -86,8 +86,17 @@ public class LiteralTypeResolutionTest {
         checkLiteral(exactNumeric("1.1"), new BigDecimal("1.1"), "1.1", DECIMAL, false);
         checkLiteral(exactNumeric(Long.MAX_VALUE + "0"), new BigDecimal(Long.MAX_VALUE + "0"), Long.MAX_VALUE + "0", DECIMAL, false);
         checkLiteral(exactNumeric(Long.MIN_VALUE + "0"), new BigDecimal(Long.MIN_VALUE + "0"), Long.MIN_VALUE + "0", DECIMAL, false);
+    }
 
+    @Test
+    public void testApproxNumeric() {
         checkLiteral(SqlLiteral.createApproxNumeric("1.1E1", ZERO), 1.1E1, "1.1E1", DOUBLE, false);
+    }
+
+    @Test
+    public void testDecimal() {
+        BigDecimal maxPlusOne = BigDecimal.valueOf(Long.MAX_VALUE).add(BigDecimal.ONE);
+        checkLiteral(exactNumeric(maxPlusOne), maxPlusOne, maxPlusOne, DECIMAL, false);
     }
 
     private void checkLiteral(
