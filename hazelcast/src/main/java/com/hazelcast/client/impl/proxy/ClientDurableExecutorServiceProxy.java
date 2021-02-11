@@ -221,7 +221,7 @@ public final class ClientDurableExecutorServiceProxy extends ClientProxy impleme
             ClientMessage response = invokeOnPartition(request, partitionId);
             sequence = DurableExecutorSubmitToPartitionCodec.decodeResponse(response);
         } catch (Throwable t) {
-            return completedExceptionally(t, ConcurrencyUtil.DEFAULT_ASYNC_EXECUTOR);
+            return completedExceptionally(t, ConcurrencyUtil.getDefaultAsyncExecutor());
         }
         ClientMessage clientMessage = DurableExecutorRetrieveResultCodec.encodeRequest(name, sequence);
         ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, getName(), partitionId).invoke();
