@@ -19,6 +19,7 @@ package com.hazelcast.internal.serialization.impl;
 import com.hazelcast.nio.ObjectDataInput;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -35,8 +36,9 @@ public class CopyOnWriteArrayListStreamSerializer<E> extends AbstractCollectionS
     public CopyOnWriteArrayList<E> read(ObjectDataInput in) throws IOException {
         int size = in.readInt();
 
-        CopyOnWriteArrayList<E> collection = new CopyOnWriteArrayList<>();
+        ArrayList<E> collection = new ArrayList<>(size);
+        deserializeEntriesInto(in, size, collection);
 
-        return deserializeEntries(in, size, collection);
+        return new CopyOnWriteArrayList<>(collection);
     }
 }
