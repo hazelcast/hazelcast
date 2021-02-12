@@ -535,7 +535,7 @@ public class MapIndexScanExecTest extends SqlTestSupport {
         Map<Integer, Integer> entries = new HashMap<>();
 
         for (int i = 0; i < entryCount; i++) {
-            entries.put(i ,i);
+            entries.put(i, i);
         }
 
         member.getMap(MAP_NAME).putAll(entries);
