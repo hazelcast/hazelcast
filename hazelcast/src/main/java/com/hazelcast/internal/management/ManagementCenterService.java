@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.management;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.console.ConsoleApp;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
@@ -34,6 +35,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -67,6 +69,8 @@ public class ManagementCenterService {
     private volatile String lastMCConfigETag;
     private volatile long lastTMSUpdateNanos;
     private volatile long lastMCEventsPollNanos = System.nanoTime();
+    
+    private ConcurrentMap<Address, Long> lastAccessTimestamps;
 
     public ManagementCenterService(HazelcastInstanceImpl instance) {
         this.instance = instance;
@@ -161,7 +165,7 @@ public class ManagementCenterService {
      * @return polled events
      */
     @Nonnull
-    public List<Event> pollMCEvents() {
+    public List<Event> pollMCEvents(Address mcRemoteAddr) {
         List<Event> polled = new ArrayList<>();
         mcEvents.drainTo(polled);
         lastMCEventsPollNanos = System.nanoTime();

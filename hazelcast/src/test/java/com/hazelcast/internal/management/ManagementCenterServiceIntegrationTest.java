@@ -17,6 +17,7 @@
 package com.hazelcast.internal.management;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
@@ -33,6 +34,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.net.UnknownHostException;
 import java.util.List;
 
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
@@ -46,6 +48,16 @@ import static org.junit.Assert.assertSame;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ManagementCenterServiceIntegrationTest extends HazelcastTestSupport {
+    
+    private static final Address MC_REMOTE_ADDR;
+
+    static {
+        try {
+            MC_REMOTE_ADDR = new Address("localhost", 5703);
+        } catch (UnknownHostException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     private static final String CLUSTER_NAME = "mc-service-tests";
 
@@ -105,14 +117,14 @@ public class ManagementCenterServiceIntegrationTest extends HazelcastTestSupport
 
     @Test
     public void testMCEvents_storesEvents_recentPoll() {
-        mcs.pollMCEvents();
+        mcs.pollMCEvents(MC_REMOTE_ADDR);
 
         TestEvent expectedEvent = new TestEvent();
         mcs.log(expectedEvent);
         mcs.log(new TestEvent());
         mcs.log(new TestEvent());
 
-        List<Event> actualEvents = mcs.pollMCEvents();
+        List<Event> actualEvents = mcs.pollMCEvents(MC_REMOTE_ADDR);
         assertEquals(3, actualEvents.size());
         assertEquals(expectedEvent, actualEvents.get(0));
     }
@@ -122,20 +134,20 @@ public class ManagementCenterServiceIntegrationTest extends HazelcastTestSupport
         mcs.log(new TestEvent());
         mcs.log(new TestEvent());
 
-        assertEquals(2, mcs.pollMCEvents().size());
+        assertEquals(2, mcs.pollMCEvents(MC_REMOTE_ADDR).size());
     }
 
     @Test
     public void testMCEvents_clearsEventQueue_noRecentPoll() {
-        mcs.pollMCEvents();
+        mcs.pollMCEvents(MC_REMOTE_ADDR);
         mcs.log(new TestEvent());
         mcs.log(new TestEvent());
 
         mcs.onMCEventWindowExceeded();
-        assertEquals(0, mcs.pollMCEvents().size());
+        assertEquals(0, mcs.pollMCEvents(MC_REMOTE_ADDR).size());
 
         mcs.log(new TestEvent());
-        assertEquals(1, mcs.pollMCEvents().size());
+        assertEquals(1, mcs.pollMCEvents(MC_REMOTE_ADDR).size());
     }
 
     private static class TestEvent implements Event {
