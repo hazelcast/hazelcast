@@ -21,6 +21,9 @@ import com.google.common.collect.Multimap;
 import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.SerializableByConvention;
+import com.hazelcast.json.internal.JsonSchemaNameValue;
+import com.hazelcast.json.internal.JsonSchemaStructNode;
+import com.hazelcast.json.internal.JsonSchemaTerminalNode;
 import com.hazelcast.map.impl.wan.WanMapEntryView;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
@@ -368,6 +371,9 @@ public class DataSerializableConventionsTest {
         whiteList.add(CompositeEqualPredicate.class);
         whiteList.add(EvaluatePredicate.class);
         whiteList.add(Converter.class);
+        whiteList.add(JsonSchemaStructNode.class);
+        whiteList.add(JsonSchemaTerminalNode.class);
+        whiteList.add(JsonSchemaNameValue.class);
         try {
             // these can't be accessed through the meta class since they are private
             whiteList.add(Class.forName("com.hazelcast.query.impl.predicates.CompositeIndexVisitor$Output"));
