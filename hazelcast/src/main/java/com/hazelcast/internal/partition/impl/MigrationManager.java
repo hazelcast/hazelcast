@@ -716,7 +716,6 @@ public class MigrationManager {
 
     /** Mutates the partition state and applies the migration. */
     static void applyMigration(InternalPartitionImpl partition, MigrationInfo migrationInfo) {
-        System.out.println(Arrays.stream(new Exception().getStackTrace()).map(Object::toString).collect(Collectors.joining("\n")));
         final PartitionReplica[] members = partition.getReplicasCopy();
         if (migrationInfo.getSourceCurrentReplicaIndex() > -1) {
             members[migrationInfo.getSourceCurrentReplicaIndex()] = null;
