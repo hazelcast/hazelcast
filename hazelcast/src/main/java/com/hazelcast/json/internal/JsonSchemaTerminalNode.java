@@ -16,6 +16,12 @@
 
 package com.hazelcast.json.internal;
 
+import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+
+import java.io.IOException;
+
 /**
  * Represents the description of a Json terminal value. These are null,
  * true, false, number or string.
@@ -23,6 +29,10 @@ package com.hazelcast.json.internal;
 public class JsonSchemaTerminalNode extends JsonSchemaNode {
 
     private int valueStartLocation;
+
+    public JsonSchemaTerminalNode() {
+        // No-op.
+    }
 
     public JsonSchemaTerminalNode(JsonSchemaStructNode parent) {
         super(parent);
@@ -80,7 +90,27 @@ public class JsonSchemaTerminalNode extends JsonSchemaNode {
     @Override
     public String toString() {
         return "JsonSchemaTerminalNode{"
-                + "valueStartLocation=" + valueStartLocation
-                + '}';
+            + "valueStartLocation=" + valueStartLocation
+            + '}';
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeInt(valueStartLocation);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        valueStartLocation = in.readInt();
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return MapDataSerializerHook.JSON_SCHEMA_TERMINAL_NODE;
     }
 }

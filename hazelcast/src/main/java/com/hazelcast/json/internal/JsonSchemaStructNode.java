@@ -16,6 +16,11 @@
 
 package com.hazelcast.json.internal;
 
+import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,7 +29,11 @@ import java.util.List;
  */
 public class JsonSchemaStructNode extends JsonSchemaNode {
 
-    private final List<JsonSchemaNameValue> inners = new ArrayList<JsonSchemaNameValue>();
+    private List<JsonSchemaNameValue> inners = new ArrayList<>();
+
+    public JsonSchemaStructNode() {
+        // No-op.
+    }
 
     public JsonSchemaStructNode(JsonSchemaStructNode parent) {
         super(parent);
@@ -89,7 +98,38 @@ public class JsonSchemaStructNode extends JsonSchemaNode {
     @Override
     public String toString() {
         return "JsonSchemaStructNode{"
-                + "inners=" + inners
-                + '}';
+            + "inners=" + inners
+            + '}';
     }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeInt(inners.size());
+        for (JsonSchemaNameValue nameValue : inners) {
+            out.writeObject(nameValue);
+        }
+        // Don't serialize parent node from superclass to avoid cyclic dependency
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        int innersSize = in.readInt();
+        inners = new ArrayList<>(innersSize);
+        for (int i = 0; i < innersSize; ++i) {
+            JsonSchemaNameValue nameValue = in.readObject();
+            nameValue.getValue().setParent(this);
+            inners.add(nameValue);
+        }
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return MapDataSerializerHook.JSON_SCHEMA_STRUCT_NODE;
+    }
+
 }

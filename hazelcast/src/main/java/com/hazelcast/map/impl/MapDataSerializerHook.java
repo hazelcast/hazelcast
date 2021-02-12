@@ -25,6 +25,9 @@ import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.json.internal.JsonSchemaNameValue;
+import com.hazelcast.json.internal.JsonSchemaStructNode;
+import com.hazelcast.json.internal.JsonSchemaTerminalNode;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
 import com.hazelcast.map.impl.journal.DeserializingEventJournalMapEvent;
@@ -316,8 +319,11 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int MERGE_MAP_OPERATION_PROCESSOR = 152;
     public static final int MAP_ENTRY_REPLACING_PROCESSOR = 153;
     public static final int LOCAL_RECORD_STORE_STATS = 154;
+    public static final int JSON_SCHEMA_NAME_VALUE = 155;
+    public static final int JSON_SCHEMA_TERMINAL_NODE = 156;
+    public static final int JSON_SCHEMA_STRUCT_NODE = 157;
 
-    private static final int LEN = LOCAL_RECORD_STORE_STATS + 1;
+    private static final int LEN = JSON_SCHEMA_STRUCT_NODE + 1;
 
     @Override
     public int getFactoryId() {
@@ -479,6 +485,9 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[MERGE_MAP_OPERATION_PROCESSOR] = arg -> new MergeEntryProcessor<>();
         constructors[MAP_ENTRY_REPLACING_PROCESSOR] = arg -> new MapEntryReplacingEntryProcessor<>();
         constructors[LOCAL_RECORD_STORE_STATS] = arg -> new LocalRecordStoreStatsImpl();
+        constructors[JSON_SCHEMA_NAME_VALUE] = arg -> new JsonSchemaNameValue();
+        constructors[JSON_SCHEMA_TERMINAL_NODE] = arg -> new JsonSchemaTerminalNode();
+        constructors[JSON_SCHEMA_STRUCT_NODE] = arg -> new JsonSchemaStructNode();
 
         return new ArrayDataSerializableFactory(constructors);
     }
