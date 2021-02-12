@@ -110,6 +110,10 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> {
             return valueObject;
         }
 
+        if (record == null) {
+            return null;
+        }
+
         Object possiblyNotData = record.getValue();
 
         return possiblyNotData instanceof Data ? null : (V) possiblyNotData;
@@ -119,6 +123,10 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> {
     public Data getValueDataIfPresent() {
         if (valueData != null) {
             return valueData;
+        }
+
+        if (record == null) {
+            return null;
         }
 
         Object possiblyData = record.getValue();
