@@ -1841,21 +1841,21 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="salt" type="xs:string" default="thesalt">
+            <xs:element name="salt" type="xs:string" minOccurs="0" default="thesalt">
                 <xs:annotation>
                     <xs:documentation>
                         Salt value to use when generating the secret key.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="password" type="xs:string">
+            <xs:element name="password" type="xs:string" minOccurs="0" default="thepassword">
                 <xs:annotation>
                     <xs:documentation>
                         Pass phrase to use when generating the secret key.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="iteration-count" type="xs:int" default="19">
+            <xs:element name="iteration-count" type="xs:int" minOccurs="0" default="19">
                 <xs:annotation>
                     <xs:documentation>
                         Iteration count to use when generating the secret key.
@@ -3922,7 +3922,7 @@
 
     <xs:complexType name="hot-restart">
         <xs:all>
-            <xs:element name="fsync" type="xs:boolean" default="false">
+            <xs:element name="fsync" type="xs:boolean" minOccurs="0" default="false">
                 <xs:annotation>
                     <xs:documentation>
                         If set to true, when each update operation on this structure completes,
@@ -4537,7 +4537,7 @@
 
     <xs:complexType name="cp-subsystem">
         <xs:all>
-            <xs:element name="cp-member-count" type="xs:unsignedInt" default="0">
+            <xs:element name="cp-member-count" type="xs:unsignedInt" minOccurs="0" default="0">
                 <xs:annotation>
                     <xs:documentation>
                         Number of CP members to initialize CP Subsystem. It is 0 by default,
@@ -4806,7 +4806,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="jdk-compatible" type="xs:boolean" default="false">
+            <xs:element name="jdk-compatible" type="xs:boolean" minOccurs="0" default="false">
                 <xs:annotation>
                     <xs:documentation>
                         Enables / disables JDK compatibility of CP ISemaphore.
@@ -4848,7 +4848,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="lock-acquire-limit" type="xs:nonNegativeInteger" default="0">
+            <xs:element name="lock-acquire-limit" type="xs:nonNegativeInteger" minOccurs="0" default="0">
                 <xs:annotation>
                     <xs:documentation>
                         Maximum number of reentrant lock acquires. Once a caller acquires

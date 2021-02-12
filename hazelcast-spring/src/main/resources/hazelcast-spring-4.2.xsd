@@ -2281,9 +2281,9 @@
         <xs:sequence/>
         <xs:attribute name="enabled" type="xs:string" default="false"/>
         <xs:attribute name="algorithm" type="xs:string"/>
-        <xs:attribute name="salt" type="xs:string"/>
-        <xs:attribute name="password" type="xs:string"/>
-        <xs:attribute name="iteration-count" type="xs:string"/>
+        <xs:attribute name="salt" type="xs:string" default="thesalt"/>
+        <xs:attribute name="password" type="xs:string" default="thepassword"/>
+        <xs:attribute name="iteration-count" type="xs:string" default="19"/>
     </xs:complexType>
 
     <xs:complexType name="member-address-provider">
@@ -4643,7 +4643,7 @@
 
     <xs:complexType name="cp-subsystem">
         <xs:all>
-            <xs:element name="cp-member-count" type="xs:unsignedInt" default="0">
+            <xs:element name="cp-member-count" type="xs:unsignedInt" minOccurs="0" default="0">
                 <xs:annotation>
                     <xs:documentation>
                         Number of CP members to initialize CP Subsystem. It is 0 by default,
@@ -4913,7 +4913,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="jdk-compatible" type="xs:boolean" default="false">
+            <xs:element name="jdk-compatible" type="xs:boolean" minOccurs="0" default="false">
                 <xs:annotation>
                     <xs:documentation>
                         Enables / disables JDK compatibility of CP ISemaphore.
@@ -4955,7 +4955,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="lock-acquire-limit" type="xs:nonNegativeInteger" default="0">
+            <xs:element name="lock-acquire-limit" type="xs:nonNegativeInteger" minOccurs="0" default="0">
                 <xs:annotation>
                     <xs:documentation>
                         Maximum number of reentrant lock acquires. Once a caller acquires
