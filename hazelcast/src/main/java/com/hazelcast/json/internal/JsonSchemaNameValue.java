@@ -16,7 +16,12 @@
 
 package com.hazelcast.json.internal;
 
-import java.io.Serializable;
+import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
+import java.io.IOException;
 
 /**
  * A node that describes either a name-value pair in a Json object or
@@ -24,10 +29,14 @@ import java.io.Serializable;
  * always return -1 whereas for name-value pairs, it represents the
  * location of name of the attribute for object attributes.
  */
-public class JsonSchemaNameValue implements Serializable {
+public class JsonSchemaNameValue implements IdentifiedDataSerializable {
 
-    private final int nameStart;
-    private final JsonSchemaNode value;
+    private int nameStart;
+    private JsonSchemaNode value;
+
+    public JsonSchemaNameValue() {
+        // No-op.
+    }
 
     public JsonSchemaNameValue(int nameStart, JsonSchemaNode value) {
         this.nameStart = nameStart;
@@ -40,15 +49,14 @@ public class JsonSchemaNameValue implements Serializable {
      * to the underlying data format. It could be byte offset for Data
      * or char offset for String
      *
-     * @return  the location of the name relative to the beginning of the object
-     *          -1 for array items
+     * @return the location of the name relative to the beginning of the object
+     * -1 for array items
      */
     public int getNameStart() {
         return nameStart;
     }
 
     /**
-     *
      * @return true if this represents an array item
      */
     public boolean isArrayItem() {
@@ -56,7 +64,6 @@ public class JsonSchemaNameValue implements Serializable {
     }
 
     /**
-     *
      * @return true if this represents an object attribute
      */
     public boolean isObjectItem() {
@@ -65,6 +72,7 @@ public class JsonSchemaNameValue implements Serializable {
 
     /**
      * Returns the description of the value stored in here
+     *
      * @return
      */
     public JsonSchemaNode getValue() {
@@ -98,8 +106,30 @@ public class JsonSchemaNameValue implements Serializable {
     @Override
     public String toString() {
         return "JsonSchemaNameValue{"
-                + "nameStart=" + nameStart
-                + ", value=" + value
-                + '}';
+            + "nameStart=" + nameStart
+            + ", value=" + value
+            + '}';
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeInt(nameStart);
+        out.writeObject(value);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        nameStart = in.readInt();
+        value = in.readObject();
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return MapDataSerializerHook.JSON_SCHEMA_NAME_VALUE;
     }
 }
