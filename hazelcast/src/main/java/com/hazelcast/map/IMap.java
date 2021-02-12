@@ -3192,6 +3192,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      * finishes the iteration with the last partition (n = 271 by default).
      * The keys are fetched in batches for the constant heap utilization.
      *
+     * @return an iterator for the map entries
      * @since 4.2
      */
     @Nonnull
@@ -3205,10 +3206,11 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      * finishes the iteration with the last partition (n = 271 by default).
      * The keys are fetched in batches for the constant heap utilization.
      *
-     * @param fetchSize – size for fetching keys in bulk. This size can
-     *                 be thought of as page size for iteration. But
-     *                 notice that at every fetch only keys are retrieved,
-     *                 not values. Values are retrieved on each iterate.
+     * @param fetchSize size for fetching keys in bulk. This size can
+     *                  be thought of as page size for iteration. But
+     *                  notice that at every fetch only keys are retrieved,
+     *                  not values. Values are retrieved on each iterate.
+     * @return an iterator for the map entries
      * @since 4.2
      */
     @Nonnull

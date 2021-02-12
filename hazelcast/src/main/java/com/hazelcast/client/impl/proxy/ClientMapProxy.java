@@ -1668,6 +1668,37 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     /**
+     * {@inheritDoc}
+     *
+     * @return an iterator for the map entries
+     */
+    @Override
+    @Nonnull
+    public Iterator<Entry<K, V>> iterator() {
+        ClientPartitionService partitionService = getContext().getPartitionService();
+        int partitionCount = partitionService.getPartitionCount();
+        return new ClientMapIterator<>(this, partitionCount, false);
+    }
+
+
+    /**
+     * {@inheritDoc}
+     *
+     * @param fetchSize size for fetching keys in bulk. This size can
+     *                  be thought of as page size for iteration. But
+     *                  notice that at every fetch only keys are retrieved,
+     *                  not values. Values are retrieved on each iterate.
+     * @return an iterator for the map entries
+     */
+    @Override
+    @Nonnull
+    public Iterator<Entry<K, V>> iterator(int fetchSize) {
+        ClientPartitionService partitionService = getContext().getPartitionService();
+        int partitionCount = partitionService.getPartitionCount();
+        return new ClientMapIterator<>(this, fetchSize, partitionCount, false);
+    }
+
+    /**
      * Returns an iterator for iterating entries in the {@code partitionId}. If {@code prefetchValues} is
      * {@code true}, all values will be sent along with the keys and no additional data will be fetched when
      * iterating. If {@code false}, the values will be fetched when iterating the entries.
@@ -2149,43 +2180,6 @@ public class ClientMapProxy<K, V> extends ClientProxy
         checkNotNull(remappingFunction, NULL_BIFUNCTION_IS_NOT_ALLOWED);
 
         return mergeLocally(key, value, remappingFunction);
-    }
-
-    /**
-     * Returns an iterator for the map entries in the all of the
-     * partitions. While fetching keys in batches, it retrieves
-     * the values of these entries by calling {@code Map.Entry.getValue()}
-     * lazily during the iteration.
-     *
-     * @return an iterator for the map entries
-     */
-    @Override
-    @Nonnull
-    public Iterator<Entry<K, V>> iterator() {
-        ClientPartitionService partitionService = getContext().getPartitionService();
-        int partitionCount = partitionService.getPartitionCount();
-        return new ClientMapIterator<>(this, partitionCount, false);
-    }
-
-
-    /**
-     * Returns an iterator for the map entries in the all of the
-     * partitions. While fetching keys in batches, it retrieves
-     * the values of these entries by calling {@code Map.Entry.getValue()}
-     * lazily during the iteration.
-     *
-     * @param fetchSize – size for fetching keys in bulk. This size can
-     *                  be thought of as page size for iteration. But
-     *                  notice that at every fetch only keys are retrieved,
-     *                  not values. Values are retrieved on each iterate.
-     * @return an iterator for the map entries
-     */
-    @Override
-    @Nonnull
-    public Iterator<Entry<K, V>> iterator(int fetchSize) {
-        ClientPartitionService partitionService = getContext().getPartitionService();
-        int partitionCount = partitionService.getPartitionCount();
-        return new ClientMapIterator<>(this, fetchSize, partitionCount, false);
     }
 
     private V mergeLocally(K key, V value, BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
