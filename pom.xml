@@ -852,7 +852,7 @@
                             <suppressionsLocation>${checkstyle.supressionsLocation}</suppressionsLocation>
                             <headerLocation>${checkstyle.headerLocation}</headerLocation>
                             <enableRSS>false</enableRSS>
-                            <linkXRef>true</linkXRef>
+                            <linkXRef>false</linkXRef>
                             <consoleOutput>true</consoleOutput>
                             <failsOnError>true</failsOnError>
                             <failOnViolation>true</failOnViolation>
