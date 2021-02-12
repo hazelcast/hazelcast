@@ -147,9 +147,14 @@ public final class Measurement implements IdentifiedDataSerializable {
 
     @Override
     public boolean equals(Object obj) {
-        final Measurement that;
-        return this == obj || obj instanceof Measurement
-                && this.timestamp == (that = (Measurement) obj).timestamp
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof Measurement)) {
+            return false;
+        }
+        final Measurement that = (Measurement) obj;
+        return this.timestamp == that.timestamp
                 && this.value == that.value
                 && Objects.equals(this.tags, that.tags);
     }

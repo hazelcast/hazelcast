@@ -190,7 +190,8 @@ public final class Traversers {
                 return trav.next();
             }
             try {
-                return (traverser = supplierOfTraverser.get()).next();
+                traverser = supplierOfTraverser.get();
+                return traverser.next();
             } finally {
                 supplierOfTraverser = null;
             }

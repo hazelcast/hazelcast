@@ -100,10 +100,14 @@ public final class Tuple5<E0, E1, E2, E3, E4> {
     @Override
     @SuppressWarnings("rawtypes")
     public boolean equals(Object obj) {
-        final Tuple5 that;
-        return this == obj
-                || obj instanceof Tuple5
-                && Objects.equals(this.f0, (that = (Tuple5) obj).f0)
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof Tuple5)) {
+            return false;
+        }
+        final Tuple5 that = (Tuple5) obj;
+        return Objects.equals(this.f0, that.f0)
                 && Objects.equals(this.f1, that.f1)
                 && Objects.equals(this.f2, that.f2)
                 && Objects.equals(this.f3, that.f3)
