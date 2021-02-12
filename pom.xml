@@ -95,9 +95,9 @@
         <hamcrest.version>2.2</hamcrest.version>
         <mockito.version>3.6.0</mockito.version>
         <powermock.version>2.0.7</powermock.version>
-        <bytebuddy.version>1.10.18</bytebuddy.version>
+        <bytebuddy.version>1.10.20</bytebuddy.version>
         <reflections.version>0.9.10</reflections.version>
-        <jmh.version>1.21</jmh.version>
+        <jmh.version>1.27</jmh.version>
         <commons-lang3.version>3.11</commons-lang3.version>
         <felix.utils.version>1.11.6</felix.utils.version>
         <findbugs.annotations.version>3.0.1u2</findbugs.annotations.version>
