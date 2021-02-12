@@ -46,10 +46,12 @@ Thank you for your valuable contributions!
 3. Fixes
 
 [core] Jet now doesn't close System.out during JVM shutdown (#2649)
+[core] Fixed queue size display in `DAG.toDotString()` when default is changed (#2887).
 
 4. Breaking Changes
 
 [jdbc] Added `batchLimit` parameter to `SinkProcessors.writeJdbcP()` method.
+[core] Added `defaultQueueSize` parameter to `DAG.toDotString(int)` method.
 
 <<< END TEMPLATE FOR THE NEXT VERSION
 
