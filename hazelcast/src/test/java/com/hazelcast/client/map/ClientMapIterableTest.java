@@ -75,7 +75,7 @@ public class ClientMapIterableTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_HasNext_Returns_False_On_EmptyMap() throws Exception {
+    public void test_HasNext_Returns_False_On_EmptyMap() {
         ClientMapProxy<Integer, Integer> map = getMapProxy();
 
         Iterator<Map.Entry<Integer, Integer>> iterator = map.iterable(10, prefetchValues).iterator();
@@ -83,7 +83,7 @@ public class ClientMapIterableTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_HasNext_Returns_True_On_NonEmptyMap() throws Exception {
+    public void test_HasNext_Returns_True_On_NonEmptyMap() {
         ClientMapProxy<String, String> map = getMapProxy();
 
         String key = generateKeyForPartition(server, 1);
@@ -95,7 +95,7 @@ public class ClientMapIterableTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_Next_Returns_Value_On_NonEmptyMap() throws Exception {
+    public void test_Next_Returns_Value_On_NonEmptyMap() {
         ClientMapProxy<String, String> map = getMapProxy();
 
         String key = generateKeyForPartition(server, 1);
@@ -108,7 +108,7 @@ public class ClientMapIterableTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_Next_Returns_Values_When_FetchSizeExceeds_On_NonEmptyMap() throws Exception {
+    public void test_Next_Returns_Values_When_FetchSizeExceeds_On_NonEmptyMap() {
         ClientMapProxy<String, String> map = getMapProxy();
         String value = randomString();
         int count = 1000;
