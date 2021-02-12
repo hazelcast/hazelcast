@@ -1692,6 +1692,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
      * @param partitionId the partition ID which is being iterated
      * @return the iterator for the projected entries
      */
+    @Nonnull
     public Iterator<Entry<K, V>> iterator(int fetchSize, int partitionId, boolean prefetchValues) {
         return new ClientMapPartitionIterator<>(this, getContext(), fetchSize, partitionId, prefetchValues);
     }
@@ -1728,9 +1729,10 @@ public class ClientMapProxy<K, V> extends ClientProxy
      * @throws IllegalArgumentException      if the predicate is of type {@link PagingPredicate}
      * @since 3.9
      */
+    @Nonnull
     public <R> Iterator<R> iterator(int fetchSize, int partitionId,
-                                    Projection<? super Map.Entry<K, V>, R> projection,
-                                    Predicate<K, V> predicate) {
+                                    @Nonnull Projection<? super Map.Entry<K, V>, R> projection,
+                                    @Nonnull Predicate<K, V> predicate) {
         checkNotNull(projection, NULL_PROJECTION_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         checkNotPagingPredicate(predicate, "iterator");
@@ -1750,11 +1752,12 @@ public class ClientMapProxy<K, V> extends ClientProxy
      * @param <R>         the return type
      * @return an iterable for the projected entries of the specified partition
      */
+    @Nonnull
     public <R> Iterable<R> iterable(
             int fetchSize,
             int partitionId,
-            Projection<? super Map.Entry<K, V>, R> projection,
-            Predicate<K, V> predicate
+            @Nonnull Projection<? super Map.Entry<K, V>, R> projection,
+            @Nonnull Predicate<K, V> predicate
     ) {
         checkNotNull(projection, NULL_PROJECTION_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
@@ -1774,6 +1777,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
      * @param prefetchValues whether to send values along with keys (if true) or to fetch them lazily when iterating (if false)
      * @return an iterable of the specified partition
      */
+    @Nonnull
     public Iterable<Entry<K, V>> iterable(int fetchSize, int partitionId, boolean prefetchValues) {
         return new ClientMapPartitionIterable<>(this, fetchSize, partitionId, prefetchValues);
     }
@@ -1788,9 +1792,10 @@ public class ClientMapProxy<K, V> extends ClientProxy
      * @param <R>        the return type
      * @return an iterable for the projected entries
      */
+    @Nonnull
     public <R> Iterable<R> iterable(int fetchSize,
-                                    Projection<? super Map.Entry<K, V>, R> projection,
-                                    Predicate<K, V> predicate) {
+                                    @Nonnull Projection<? super Map.Entry<K, V>, R> projection,
+                                    @Nonnull Predicate<K, V> predicate) {
         checkNotNull(projection, NULL_PROJECTION_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         int partitionCount = getContext().getPartitionService().getPartitionCount();
@@ -1808,6 +1813,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
      * @param prefetchValues whether to send values along with keys (if true) or to fetch them lazily when iterating (if false)
      * @return an iterable for the entries
      */
+    @Nonnull
     public Iterable<Entry<K, V>> iterable(int fetchSize, boolean prefetchValues) {
         int partitionCount = getContext().getPartitionService().getPartitionCount();
         return new ClientMapIterable<>(this, fetchSize, partitionCount, prefetchValues);

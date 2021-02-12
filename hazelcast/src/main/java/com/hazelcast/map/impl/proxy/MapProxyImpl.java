@@ -939,6 +939,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
      *                       to fetch them lazily when iterating (if {@code false})
      * @return an iterator for the entries in the partition
      */
+    @Nonnull
     public Iterator<Entry<K, V>> iterator(int fetchSize, int partitionId, boolean prefetchValues) {
         return new MapPartitionIterator<>(this, fetchSize, partitionId, prefetchValues);
     }
@@ -979,11 +980,12 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
      * @throws IllegalArgumentException if the predicate is of type {@link PagingPredicate}
      * @since 3.9
      */
+    @Nonnull
     public <R> Iterator<R> iterator(
             int fetchSize,
             int partitionId,
-            Projection<? super Map.Entry<K, V>, R> projection,
-            Predicate<K, V> predicate
+            @Nonnull Projection<? super Map.Entry<K, V>, R> projection,
+            @Nonnull Predicate<K, V> predicate
     ) {
         if (predicate instanceof PagingPredicate) {
             throw new IllegalArgumentException("Paging predicate is not allowed when iterating map by query");
@@ -1044,11 +1046,12 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
      * @param <R>         the return type
      * @return an iterable {@link MapQueryPartitionIterable} for the projected entries
      */
+    @Nonnull
     public <R> Iterable<R> iterable(
             int fetchSize,
             int partitionId,
-            Projection<? super Map.Entry<K, V>, R> projection,
-            Predicate<K, V> predicate
+            @Nonnull Projection<? super Map.Entry<K, V>, R> projection,
+            @Nonnull Predicate<K, V> predicate
     ) {
         checkNotNull(projection, NULL_PROJECTION_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
@@ -1067,6 +1070,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
      * @param prefetchValues whether to send values along with keys (if true) or to fetch them lazily when iterating (if false)
      * @return an iterable for the entries in the partition
      */
+    @Nonnull
     public Iterable<Entry<K, V>> iterable(int fetchSize, int partitionId, boolean prefetchValues) {
         return new MapPartitionIterable<>(this, fetchSize, partitionId, prefetchValues);
     }
@@ -1081,10 +1085,11 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
      * @param <R>        the return type
      * @return an iterable for the projected entries
      */
+    @Nonnull
     public <R> Iterable<R> iterable(
             int fetchSize,
-            Projection<? super Map.Entry<K, V>, R> projection,
-            Predicate<K, V> predicate
+            @Nonnull Projection<? super Map.Entry<K, V>, R> projection,
+            @Nonnull Predicate<K, V> predicate
     ) {
         checkNotNull(projection, NULL_PROJECTION_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
@@ -1103,6 +1108,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
      * @param prefetchValues whether to send values along with keys (if true) or to fetch them lazily when iterating (if false)
      * @return an iterable for the map entries
      */
+    @Nonnull
     public Iterable<Entry<K, V>> iterable(int fetchSize, boolean prefetchValues) {
         int partitionCount = partitionService.getPartitionCount();
         return new MapIterable<>(this, fetchSize, partitionCount, prefetchValues);
