@@ -176,11 +176,6 @@ public class MapContainer {
             ThreadUtil.assertRunningOnPartitionThread();
         }
 
-        if (!partitionService.isPartitionOwner(partitionId)) {
-            // throw entry out if it is not owned by this local node.
-            return false;
-        }
-
         RecordStore recordStore = mapServiceContext.getExistingRecordStore(partitionId, name);
         return recordStore != null && !recordStore.expireOrAccess(keyData);
     }
