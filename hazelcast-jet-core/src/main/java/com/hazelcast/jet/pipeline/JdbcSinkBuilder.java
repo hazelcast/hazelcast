@@ -25,6 +25,8 @@ import javax.annotation.Nonnull;
 import javax.sql.CommonDataSource;
 import java.sql.PreparedStatement;
 
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
+
 /**
  * See {@link Sinks#jdbcBuilder()}.
  *
@@ -33,10 +35,21 @@ import java.sql.PreparedStatement;
  * @since 4.1
  */
 public class JdbcSinkBuilder<T> {
+    /**
+     * The default setting for whether exactly-once is allowed for the sink.
+     */
+    public static final boolean DEFAULT_EXACTLY_ONCE = true;
+
+    /**
+     * The default batch size limit to use for the sink if batching is supported.
+     */
+    public static final int DEFAULT_BATCH_LIMIT = 50;
+
     private String updateQuery;
     private BiConsumerEx<PreparedStatement, T> bindFn;
     private SupplierEx<? extends CommonDataSource> dataSourceSupplier;
-    private boolean exactlyOnce = true;
+    private boolean exactlyOnce = DEFAULT_EXACTLY_ONCE;
+    private int batchLimit = DEFAULT_BATCH_LIMIT;
 
     JdbcSinkBuilder() {
     }
@@ -135,6 +148,8 @@ public class JdbcSinkBuilder<T> {
      * <p>
      * Set exactly-once to false if you want your job to run in exactly-once,
      * but want to reduce the guarantee just for the sink.
+     * <p>
+     * The default is exactly-once set to {@value DEFAULT_EXACTLY_ONCE}.
      *
      * @param enabled whether exactly-once is allowed for the sink
      * @return this instance for fluent API
@@ -142,6 +157,23 @@ public class JdbcSinkBuilder<T> {
     @Nonnull
     public JdbcSinkBuilder<T> exactlyOnce(boolean enabled) {
         this.exactlyOnce = enabled;
+        return this;
+    }
+
+    /**
+     * Sets the batch size limit for the sink. If the JDBC driver supports
+     * batched updates, this defines the upper bound to the batch size.
+     * <p>
+     * The default batch size limit is {@value DEFAULT_BATCH_LIMIT}.
+     *
+     * @param batchLimit the batch size limit for the sink
+     * @return this instance for fluent API
+     * @since 4.5
+     */
+    @Nonnull
+    public JdbcSinkBuilder<T> batchLimit(int batchLimit) {
+        checkPositive(batchLimit, "batch size limit must be positive");
+        this.batchLimit = batchLimit;
         return this;
     }
 
@@ -154,6 +186,7 @@ public class JdbcSinkBuilder<T> {
             throw new IllegalStateException("Neither jdbcUrl() nor dataSourceSupplier() set");
         }
         return Sinks.fromProcessor("jdbcSink",
-                SinkProcessors.writeJdbcP(updateQuery, dataSourceSupplier, bindFn, exactlyOnce));
+                SinkProcessors.writeJdbcP(updateQuery, dataSourceSupplier, bindFn,
+                        exactlyOnce, batchLimit));
     }
 }

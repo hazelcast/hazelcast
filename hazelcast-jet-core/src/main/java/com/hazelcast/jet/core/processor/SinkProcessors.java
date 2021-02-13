@@ -49,6 +49,7 @@ import java.util.Map;
 
 import static com.hazelcast.function.FunctionEx.identity;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 
@@ -367,18 +368,26 @@ public final class SinkProcessors {
 
     /**
      * Returns a supplier of processors for {@link Sinks#jdbcBuilder()}.
+     * <p>
+     * <b>Notes</b>
+     * <p>
+     * Until Jet 4.4, the batch size limit for the supplied processors used to
+     * be hard-coded to 50. Since Jet 4.5, this limit is now configurable and
+     * must be explicitly set using the {@code batchLimit} parameter.
      */
     @Nonnull
     public static <T> ProcessorMetaSupplier writeJdbcP(
             @Nonnull String updateQuery,
             @Nonnull SupplierEx<? extends CommonDataSource> dataSourceSupplier,
             @Nonnull BiConsumerEx<? super PreparedStatement, ? super T> bindFn,
-            boolean exactlyOnce
+            boolean exactlyOnce,
+            int batchLimit
     ) {
         checkNotNull(updateQuery, "updateQuery");
         checkNotNull(dataSourceSupplier, "dataSourceSupplier");
         checkNotNull(bindFn, "bindFn");
-        return WriteJdbcP.metaSupplier(updateQuery, dataSourceSupplier, bindFn, exactlyOnce);
+        checkPositive(batchLimit, "batchLimit");
+        return WriteJdbcP.metaSupplier(updateQuery, dataSourceSupplier, bindFn, exactlyOnce, batchLimit);
     }
 
     /**

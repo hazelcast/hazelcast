@@ -41,12 +41,15 @@ Thank you for your valuable contributions!
 
 [extensions] Ensure naming conventions for sources/sinks (#2685)
 [pipeline-api] Improved the pickAny aggregate operation by supporting the deduct primitive (#2917)
+[jdbc] Make the batch size limit configurable in the JDBC sink processor (#2888).
 
 3. Fixes
 
 [core] Jet now doesn't close System.out during JVM shutdown (#2649)
 
 4. Breaking Changes
+
+[jdbc] Added `batchLimit` parameter to `SinkProcessors.writeJdbcP()` method.
 
 <<< END TEMPLATE FOR THE NEXT VERSION
 

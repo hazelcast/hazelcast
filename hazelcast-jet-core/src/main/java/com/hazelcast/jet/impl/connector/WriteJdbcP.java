@@ -46,6 +46,7 @@ import java.util.Collection;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
@@ -58,11 +59,11 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
 
     private static final IdleStrategy IDLER =
             new BackoffIdleStrategy(0, 0, SECONDS.toNanos(1), SECONDS.toNanos(3));
-    private static final int BATCH_LIMIT = 50;
 
     private final CommonDataSource dataSource;
     private final BiConsumerEx<? super PreparedStatement, ? super T> bindFn;
     private final String updateQuery;
+    private final int batchLimit;
 
     private ILogger logger;
     private XAConnection xaConnection;
@@ -76,12 +77,14 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
             @Nonnull String updateQuery,
             @Nonnull CommonDataSource dataSource,
             @Nonnull BiConsumerEx<? super PreparedStatement, ? super T> bindFn,
-            boolean exactlyOnce
+            boolean exactlyOnce,
+            int batchLimit
     ) {
         super(exactlyOnce ? EXACTLY_ONCE : AT_LEAST_ONCE);
         this.updateQuery = updateQuery;
         this.dataSource = dataSource;
         this.bindFn = bindFn;
+        this.batchLimit = batchLimit;
     }
 
     /**
@@ -91,10 +94,12 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
             @Nonnull String updateQuery,
             @Nonnull SupplierEx<? extends CommonDataSource> dataSourceSupplier,
             @Nonnull BiConsumerEx<? super PreparedStatement, ? super T> bindFn,
-            boolean exactlyOnce
+            boolean exactlyOnce,
+            int batchLimit
     ) {
         checkSerializable(dataSourceSupplier, "newConnectionFn");
         checkSerializable(bindFn, "bindFn");
+        checkPositive(batchLimit, "batchLimit");
 
         return ProcessorMetaSupplier.preferLocalParallelismOne(
                 new ProcessorSupplier() {
@@ -108,7 +113,8 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
                     @Nonnull @Override
                     public Collection<? extends Processor> get(int count) {
                         return IntStream.range(0, count)
-                                        .mapToObj(i -> new WriteJdbcP<>(updateQuery, dataSource, bindFn, exactlyOnce))
+                                        .mapToObj(i -> new WriteJdbcP<>(updateQuery, dataSource, bindFn,
+                                                               exactlyOnce, batchLimit))
                                         .collect(Collectors.toList());
                     }
                 });
@@ -219,7 +225,7 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
             return;
         }
         statement.addBatch();
-        if (++batchCount == BATCH_LIMIT) {
+        if (++batchCount == batchLimit) {
             executeBatch();
         }
     }
