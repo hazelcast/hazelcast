@@ -493,7 +493,9 @@ public class Node {
         if (logger.isFinestEnabled()) {
             logger.finest("We are being asked to shutdown when state = " + state);
         }
-
+        if (nodeExtension != null) {
+            nodeExtension.beforeShutdown();
+        }
         if (!setShuttingDown()) {
             waitIfAlreadyShuttingDown();
             return;
@@ -572,10 +574,6 @@ public class Node {
 
     @SuppressWarnings("checkstyle:npathcomplexity")
     private void shutdownServices(boolean terminate) {
-        if (nodeExtension != null) {
-            nodeExtension.beforeShutdown();
-        }
-
         if (textCommandService != null) {
             textCommandService.stop();
         }

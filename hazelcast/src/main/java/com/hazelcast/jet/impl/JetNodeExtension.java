@@ -64,6 +64,11 @@ public class JetNodeExtension extends DefaultNodeExtension implements JetPacketC
     }
 
     @Override
+    public void beforeShutdown() {
+        extCommon.beforeShutdown();
+    }
+
+    @Override
     public JetInstance getJetInstance() {
         return extCommon.getJetInstance();
     }
