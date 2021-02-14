@@ -17,7 +17,9 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.client.map.helpers.AMapStore;
+import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
@@ -144,7 +146,8 @@ public class ManualRestartTest extends JetTestSupport {
         mapConfig.getMapStoreConfig()
                  .setClassName(FailingMapStore.class.getName())
                  .setEnabled(true);
-        instances[0].getHazelcastInstance().getConfig().addMapConfig(mapConfig);
+        Config config = instances[0].getHazelcastInstance().getConfig();
+        ((DynamicConfigurationAwareConfig)config).getStaticConfig().addMapConfig(mapConfig);
         FailingMapStore.fail = false;
         FailingMapStore.failed = false;
 
@@ -206,6 +209,7 @@ public class ManualRestartTest extends JetTestSupport {
 
         @Override
         public void store(Object o, Object o2) {
+            System.err.println("o : " + o + ", o2: " + o2);
             if (fail) {
                 failed = true;
                 throw new RuntimeException();

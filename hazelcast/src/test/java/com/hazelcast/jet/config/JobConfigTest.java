@@ -103,8 +103,8 @@ public class JobConfigTest extends JetTestSupport {
         config.getJetConfig().getInstanceConfig().setLosslessRestartEnabled(true);
 
         // Then
-        exception.expect(IllegalStateException.class);
-        exception.expectMessage("Hot Restart requires Hazelcast Enterprise Edition");
+        exception.expect(UnsupportedOperationException.class);
+        exception.expectMessage("Lossless Restart is not available in the open-source version of Hazelcast Jet");
         createJetMember(config);
     }
 

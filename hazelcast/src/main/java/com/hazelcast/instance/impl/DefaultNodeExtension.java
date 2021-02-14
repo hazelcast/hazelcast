@@ -385,7 +385,7 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
-    public void beforeShutdown() {
+    public void beforeShutdown(boolean terminate) {
     }
 
     @Override

@@ -491,7 +491,7 @@ public class TopologyChangeTest extends JetTestSupport {
         assertJobStatusEventually(job, RUNNING);
 
         // When a participant shuts down during execution
-        instances[2].getHazelcastInstance().getLifecycleService().shutdown();
+        instances[2].getHazelcastInstance().getLifecycleService().terminate();
 
         // Then, the job restarts and successfully completes
         job.join();

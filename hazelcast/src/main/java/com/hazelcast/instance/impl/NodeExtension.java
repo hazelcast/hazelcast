@@ -88,7 +88,7 @@ public interface NodeExtension {
     /**
      * Called before <tt>Node.shutdown()</tt>
      */
-    void beforeShutdown();
+    void beforeShutdown(boolean terminate);
 
     /**
      * Shutdowns <tt>NodeExtension</tt>. Called on <tt>Node.shutdown()</tt>

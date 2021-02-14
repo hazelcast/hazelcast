@@ -105,8 +105,8 @@ public class SamplingNodeExtension implements NodeExtension {
     }
 
     @Override
-    public void beforeShutdown() {
-        nodeExtension.beforeShutdown();
+    public void beforeShutdown(boolean terminate) {
+        nodeExtension.beforeShutdown(terminate);
     }
 
     @Override

@@ -64,8 +64,8 @@ public class JetNodeExtension extends DefaultNodeExtension implements JetPacketC
     }
 
     @Override
-    public void beforeShutdown() {
-        extCommon.beforeShutdown();
+    public void beforeShutdown(boolean terminate) {
+        extCommon.beforeShutdown(terminate);
     }
 
     @Override

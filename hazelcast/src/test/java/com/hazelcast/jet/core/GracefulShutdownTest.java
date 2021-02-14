@@ -19,9 +19,9 @@ package com.hazelcast.jet.core;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.function.SupplierEx;
+import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.jet.core.processor.SinkProcessors;
@@ -171,7 +171,8 @@ public class GracefulShutdownTest extends JetTestSupport {
         mapConfig.getMapStoreConfig()
                  .setClassName(BlockingMapStore.class.getName())
                  .setEnabled(true);
-        instances[0].getHazelcastInstance().getConfig().addMapConfig(mapConfig);
+        Config config = instances[0].getHazelcastInstance().getConfig();
+        ((DynamicConfigurationAwareConfig)config).getStaticConfig().addMapConfig(mapConfig);
         BlockingMapStore.shouldBlock = false;
         BlockingMapStore.wasBlocked = false;
 
