@@ -27,6 +27,7 @@ import io.grpc.ManagedChannel;
 import io.grpc.stub.StreamObserver;
 
 import javax.annotation.Nonnull;
+import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 
 public final class UnaryService<T, R> implements GrpcService<T, R> {
@@ -45,8 +46,9 @@ public final class UnaryService<T, R> implements GrpcService<T, R> {
         this.channel = channel;
         callFn = callStubFn.apply(channel);
 
-        HazelcastProperties properties = new HazelcastProperties(context.jetInstance().getConfig().getProperties());
-        shutdownTimeout = properties.getSeconds(GrpcProperties.SHUTDOWN_TIMEOUT);
+        Properties properties = context.jetInstance().getHazelcastInstance().getConfig().getProperties();
+        HazelcastProperties hzProperties = new HazelcastProperties(properties);
+        shutdownTimeout = hzProperties.getSeconds(GrpcProperties.SHUTDOWN_TIMEOUT);
     }
 
     @Override @Nonnull

@@ -16,10 +16,10 @@
 
 package com.hazelcast.jet.elastic;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestInstanceFactory;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
@@ -56,7 +56,7 @@ public class LocalElasticSourcesTest extends CommonElasticSourcesTest {
     @Override
     protected JetInstance createJetInstance() {
         // This starts very quickly, no need to cache the instance
-        return factory.newMember(new JetConfig());
+        return factory.newMember(new Config());
     }
 
     @Test

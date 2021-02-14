@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.elastic;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestInstanceFactory;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.elastic.ElasticSinkBuilderTest.ClientHolder;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sink;
@@ -55,7 +55,7 @@ public class LocalElasticSinkTest extends CommonElasticSinksTest {
     @Override
     protected JetInstance createJetInstance() {
         // This starts very quickly, no need to cache the instance
-        return factory.newMember(new JetConfig());
+        return factory.newMember(new Config());
     }
 
     @Test

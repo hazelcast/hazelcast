@@ -30,6 +30,7 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import javax.annotation.Nonnull;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 
 public class WriteCdcP<K, V> extends AbstractUpdateMapP<ChangeRecord, K, V> {
@@ -75,8 +76,9 @@ public class WriteCdcP<K, V> extends AbstractUpdateMapP<ChangeRecord, K, V> {
     public void init(@Nonnull Outbox outbox, @Nonnull Context context) {
         super.init(outbox, context);
 
-        HazelcastProperties properties = new HazelcastProperties(context.jetInstance().getConfig().getProperties());
-        long expirationMs = properties.getMillis(CdcSinks.SEQUENCE_CACHE_EXPIRATION_SECONDS);
+        Properties properties = context.jetInstance().getHazelcastInstance().getConfig().getProperties();
+        HazelcastProperties hzProperties = new HazelcastProperties(properties);
+        long expirationMs = hzProperties.getMillis(CdcSinks.SEQUENCE_CACHE_EXPIRATION_SECONDS);
         sequences = new LinkedHashMap<K, Sequence>(INITIAL_CAPACITY, LOAD_FACTOR, true) {
             @Override
             protected boolean removeEldestEntry(Map.Entry<K, Sequence> eldest) {

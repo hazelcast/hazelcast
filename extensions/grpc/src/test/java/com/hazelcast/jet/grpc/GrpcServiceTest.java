@@ -17,7 +17,6 @@
 package com.hazelcast.jet.grpc;
 
 import com.hazelcast.jet.SimpleTestInClusterSupport;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.grpc.greeter.GreeterGrpc;
 import com.hazelcast.jet.grpc.greeter.GreeterOuterClass.HelloReply;
 import com.hazelcast.jet.grpc.greeter.GreeterOuterClass.HelloReplyList;
@@ -61,7 +60,7 @@ public class GrpcServiceTest extends SimpleTestInClusterSupport {
 
     @BeforeClass
     public static void setup() {
-        initialize(2, new JetConfig());
+        initialize(2, null);
     }
 
     @After

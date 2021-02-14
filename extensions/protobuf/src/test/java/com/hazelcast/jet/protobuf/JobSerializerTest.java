@@ -16,12 +16,12 @@
 
 package com.hazelcast.jet.protobuf;
 
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.proxy.ClientListProxy;
+import com.hazelcast.config.Config;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
-import com.hazelcast.jet.config.JetClientConfig;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
@@ -53,9 +53,9 @@ public class JobSerializerTest extends SimpleTestInClusterSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        JetConfig config = new JetConfig();
+        Config config = new Config();
 
-        JetClientConfig clientConfig = new JetClientConfig();
+        ClientConfig clientConfig = new ClientConfig();
         clientConfig.getSerializationConfig()
                     .addSerializerConfig(
                             new SerializerConfig().setTypeClass(Person.class).setClass(PersonSerializer.class)

@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.elastic;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestInstanceFactory;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.impl.util.Util;
 import org.junit.AfterClass;
 
@@ -34,7 +34,7 @@ public class LocalClusterElasticSinksTest extends CommonElasticSinksTest {
     // Cluster startup takes >1s, reusing the cluster between tests
     private static Supplier<JetInstance> jet = Util.memoize(() -> {
         JetTestInstanceFactory factory = new JetTestInstanceFactory();
-        instances = factory.newMembers(new JetConfig(), 3);
+        instances = factory.newMembers(new Config(), 3);
         return instances[0];
     });
 

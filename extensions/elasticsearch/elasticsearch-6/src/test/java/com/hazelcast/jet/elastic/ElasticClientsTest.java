@@ -17,9 +17,9 @@
 package com.hazelcast.jet.elastic;
 
 import com.google.common.collect.ImmutableMap;
+import com.hazelcast.config.Config;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestInstanceFactory;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import org.elasticsearch.search.SearchHit;
@@ -40,7 +40,7 @@ public class ElasticClientsTest extends BaseElasticTest {
 
     @Override
     protected JetInstance createJetInstance() {
-        return factory.newMember(new JetConfig());
+        return factory.newMember(new Config());
     }
 
     @Test

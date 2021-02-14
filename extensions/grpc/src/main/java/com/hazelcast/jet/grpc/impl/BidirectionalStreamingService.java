@@ -27,6 +27,7 @@ import io.grpc.ManagedChannel;
 import io.grpc.stub.StreamObserver;
 
 import javax.annotation.Nonnull;
+import java.util.Properties;
 import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -57,9 +58,10 @@ public final class BidirectionalStreamingService<T, R> implements GrpcService<T,
         this.channel = channel;
         sink = callStubFn.apply(channel).apply(new OutputMessageObserver());
 
-        HazelcastProperties properties = new HazelcastProperties(context.jetInstance().getConfig().getProperties());
-        destroyTimeout = properties.getSeconds(GrpcProperties.DESTROY_TIMEOUT);
-        shutdownTimeout = properties.getSeconds(GrpcProperties.SHUTDOWN_TIMEOUT);
+        Properties properties = context.jetInstance().getHazelcastInstance().getConfig().getProperties();
+        HazelcastProperties hzProperties = new HazelcastProperties(properties);
+        destroyTimeout = hzProperties.getSeconds(GrpcProperties.DESTROY_TIMEOUT);
+        shutdownTimeout = hzProperties.getSeconds(GrpcProperties.SHUTDOWN_TIMEOUT);
     }
 
     @Nonnull @Override
