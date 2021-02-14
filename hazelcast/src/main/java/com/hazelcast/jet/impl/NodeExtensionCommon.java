@@ -20,6 +20,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.instance.JetBuildInfo;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Packet;
+import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.impl.operation.PrepareForPassiveClusterOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -126,5 +127,9 @@ class NodeExtensionCommon {
         }
 
         return extensionServices;
+    }
+
+    JetInstance getJetInstance() {
+        return jetService.getJetInstance();
     }
 }

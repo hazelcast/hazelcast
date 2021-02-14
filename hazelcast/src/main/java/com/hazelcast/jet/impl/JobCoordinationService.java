@@ -100,7 +100,6 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
-import static com.hazelcast.jet.impl.util.Util.getJetInstance;
 import static java.util.Collections.emptyList;
 import static java.util.Comparator.comparing;
 import static java.util.concurrent.TimeUnit.HOURS;
@@ -190,7 +189,7 @@ public class JobCoordinationService {
         submitToCoordinatorThread(() -> {
             MasterContext masterContext;
             try {
-                JobConfig config = nodeEngine.getSerializationService().toObject(serializedConfig);
+                JobConfig jobConfig = nodeEngine.getSerializationService().toObject(serializedConfig);
                 assertIsMaster("Cannot submit job " + idToString(jobId) + " to non-master node");
                 checkOperationalState();
 
@@ -204,14 +203,12 @@ public class JobCoordinationService {
                     return;
                 }
 
-                int quorumSize = config.isSplitBrainProtectionEnabled() ? getQuorumSize() : 0;
-                Object jobDefinition = deserializeJobDefinition(jobId, config, serializedJobDefinition);
+                int quorumSize = jobConfig.isSplitBrainProtectionEnabled() ? getQuorumSize() : 0;
+                Object jobDefinition = deserializeJobDefinition(jobId, jobConfig, serializedJobDefinition);
                 DAG dag;
                 Data serializedDag;
                 if (jobDefinition instanceof PipelineImpl) {
-                    int coopThreadCount = getJetInstance(nodeEngine).getConfig()
-                                                                    .getInstanceConfig()
-                                                                    .getCooperativeThreadCount();
+                    int coopThreadCount = config.getInstanceConfig().getCooperativeThreadCount();
                     dag = ((PipelineImpl) jobDefinition).toDag(new Context() {
                         @Override public int defaultLocalParallelism() {
                             return coopThreadCount;
@@ -223,7 +220,7 @@ public class JobCoordinationService {
                     serializedDag = serializedJobDefinition;
                 }
                 Set<String> ownedObservables = ownedObservables(dag);
-                JobRecord jobRecord = new JobRecord(jobId, serializedDag, dagToJson(dag), config, ownedObservables);
+                JobRecord jobRecord = new JobRecord(jobId, serializedDag, dagToJson(dag), jobConfig, ownedObservables);
                 JobExecutionRecord jobExecutionRecord = new JobExecutionRecord(jobId, quorumSize);
                 masterContext = createMasterContext(jobRecord, jobExecutionRecord);
 
@@ -231,7 +228,7 @@ public class JobCoordinationService {
                 synchronized (lock) {
                     assertIsMaster("Cannot submit job " + idToString(jobId) + " to non-master node");
                     checkOperationalState();
-                    hasDuplicateJobName = config.getName() != null && hasActiveJobWithName(config.getName());
+                    hasDuplicateJobName = jobConfig.getName() != null && hasActiveJobWithName(jobConfig.getName());
                     if (!hasDuplicateJobName) {
                         // just try to initiate the coordination
                         MasterContext prev = masterContexts.putIfAbsent(jobId, masterContext);
@@ -244,7 +241,7 @@ public class JobCoordinationService {
 
                 if (hasDuplicateJobName) {
                     jobRepository.deleteJob(jobId);
-                    throw new JobAlreadyExistsException("Another active job with equal name (" + config.getName()
+                    throw new JobAlreadyExistsException("Another active job with equal name (" + jobConfig.getName()
                             + ") exists: " + idToString(jobId));
                 }
 
@@ -877,7 +874,7 @@ public class JobCoordinationService {
     }
 
     private String dagToJson(DAG dag) {
-        int coopThreadCount = getJetInstance(nodeEngine).getConfig().getInstanceConfig().getCooperativeThreadCount();
+        int coopThreadCount = config.getInstanceConfig().getCooperativeThreadCount();
         return dag.toJson(coopThreadCount).toString();
     }
 
