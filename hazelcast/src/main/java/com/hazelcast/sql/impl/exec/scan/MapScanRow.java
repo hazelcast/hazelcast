@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.exec.scan;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.sql.impl.extract.QueryExtractor;
@@ -36,7 +37,11 @@ public final class MapScanRow implements Row {
     private final QueryTarget valueTarget;
     private final QueryExtractor[] fieldExtractors;
 
-    private MapScanRow(QueryTarget keyTarget, QueryTarget valueTarget, QueryExtractor[] fieldExtractors) {
+    private MapScanRow(
+        QueryTarget keyTarget,
+        QueryTarget valueTarget,
+        QueryExtractor[] fieldExtractors
+    ) {
         this.keyTarget = keyTarget;
         this.valueTarget = valueTarget;
         this.fieldExtractors = fieldExtractors;
@@ -68,12 +73,14 @@ public final class MapScanRow implements Row {
     /**
      * Set current key and value.
      *
-     * @param rawKey Key (object or data).
-     * @param rawValue Value (objecct or data).
+     * @param rawKey key, might be null
+     * @param rawKeyData key data, might be null
+     * @param rawValue value as object, might be null
+     * @param rawValueData value as data, might be null
      */
-    public void setKeyValue(Object rawKey, Object rawValue) {
-        keyTarget.setTarget(rawKey);
-        valueTarget.setTarget(rawValue);
+    public void setKeyValue(Object rawKey, Data rawKeyData, Object rawValue, Data rawValueData) {
+        keyTarget.setTarget(rawKey, rawKeyData);
+        valueTarget.setTarget(rawValue, rawValueData);
     }
 
     @SuppressWarnings("unchecked")

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,11 @@
 
 package com.hazelcast.topic.impl;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.monitor.impl.LocalTopicStatsImpl;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.version.Version;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
@@ -45,14 +43,13 @@ public class TotalOrderedTopicProxy<E> extends TopicProxy<E> {
 
     public TotalOrderedTopicProxy(String name, NodeEngine nodeEngine, TopicService service) {
         super(name, nodeEngine, service);
-        this.partitionId = nodeEngine.getPartitionService()
-                .getPartitionId(getNameAsPartitionAwareData());
+        this.partitionId = nodeEngine.getPartitionService().getPartitionId(getNameAsPartitionAwareData());
         this.operationService = nodeEngine.getOperationService();
         this.topicStats = service.getLocalTopicStats(name);
     }
 
     @Override
-    public void publish(@Nonnull  E message) {
+    public void publish(@Nonnull E message) {
         checkNotNull(message, NULL_MESSAGE_IS_NOT_ALLOWED);
         Operation operation = new PublishOperation(getName(), toData(message)).setPartitionId(partitionId);
         InternalCompletableFuture f = invokeOnPartition(operation);
@@ -75,8 +72,6 @@ public class TotalOrderedTopicProxy<E> extends TopicProxy<E> {
     public InternalCompletableFuture<Void> publishAllAsync(@Nonnull Collection<? extends E> messages) {
         checkNotNull(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
         checkNoNullInside(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
-        // RU_COMPAT_4_0
-        checkClusterVersion(Versions.V4_1);
 
         Operation op = new PublishAllOperation(getName(), toDataArray(messages));
         return publishInternalAsync(op);
@@ -87,17 +82,6 @@ public class TotalOrderedTopicProxy<E> extends TopicProxy<E> {
             return operationService.invokeOnPartition(OperationService.SERVICE_NAME, operation, partitionId);
         } catch (Throwable t) {
             throw rethrow(t);
-        }
-    }
-
-    private void checkClusterVersion(Version version) {
-        // RU_COMPAT_4_0
-        Version clusterVersion = getNodeEngine().getClusterService().getClusterVersion();
-        if (!clusterVersion.isGreaterOrEqual(version)) {
-            throw new UnsupportedOperationException(
-                    String.format(
-                            "Publish all is not available on cluster version %s. Please upgrade the cluster version to %s.",
-                            clusterVersion, version));
         }
     }
 }

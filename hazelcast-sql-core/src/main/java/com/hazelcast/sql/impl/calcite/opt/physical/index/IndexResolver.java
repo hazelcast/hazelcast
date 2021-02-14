@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.query.impl.ComparableIdentifiedDataSerializable;
 import com.hazelcast.query.impl.TypeConverters;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.sql.impl.calcite.SqlToQueryType;
 import com.hazelcast.sql.impl.calcite.opt.OptUtils;
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTrait;
 import com.hazelcast.sql.impl.calcite.opt.logical.MapScanLogicalRel;
@@ -29,6 +28,7 @@ import com.hazelcast.sql.impl.calcite.opt.physical.MapIndexScanPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.RexToExpressionVisitor;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastRelOptTable;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.exec.scan.index.IndexEqualsFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilterValue;
@@ -44,6 +44,10 @@ import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.RelTraitSet;
+import org.apache.calcite.rel.RelCollation;
+import org.apache.calcite.rel.RelCollationTraitDef;
+import org.apache.calcite.rel.RelCollations;
+import org.apache.calcite.rel.RelFieldCollation;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexBuilder;
@@ -62,15 +66,23 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
+import static com.hazelcast.config.IndexType.HASH;
+import static com.hazelcast.config.IndexType.SORTED;
 import static com.hazelcast.query.impl.CompositeValue.NEGATIVE_INFINITY;
 import static com.hazelcast.query.impl.CompositeValue.POSITIVE_INFINITY;
+import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
 import static java.util.Collections.singletonList;
+import static org.apache.calcite.rel.RelFieldCollation.Direction;
+import static org.apache.calcite.rel.RelFieldCollation.Direction.ASCENDING;
+import static org.apache.calcite.rel.RelFieldCollation.Direction.DESCENDING;
 
 /**
  * Helper class to resolve indexes.
  */
-@SuppressWarnings("rawtypes")
+@SuppressWarnings({"rawtypes", "checkstyle:MethodCount"})
 public final class IndexResolver {
     private IndexResolver() {
         // No-op.
@@ -81,23 +93,23 @@ public final class IndexResolver {
      * <p>
      * Analyzes the filter of the input scan operator, and produces zero, one or more {@link MapIndexScanPhysicalRel}
      * operators.
+     * <p>
+     * First, the full index scans are created and the covered (prefix-based) scans are excluded.
+     * Second, the lookups are created and if lookup's collation is equal to the full scan's collation,
+     * the latter one is excluded.
      *
-     * @param scan scan operator to be analyzed
+     * @param scan         scan operator to be analyzed
      * @param distribution distribution that will be passed to created index scan rels
-     * @param indexes indexes available on the map being scanned
+     * @param indexes      indexes available on the map being scanned
      * @return zero, one or more index scan rels
      */
-    public static List<RelNode> createIndexScans(
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity", "checkstyle:MethodLength"})
+    public static Collection<RelNode> createIndexScans(
         MapScanLogicalRel scan,
         DistributionTrait distribution,
         List<MapTableIndex> indexes
     ) {
-        // If there is no filter, no index can help speed up the query, return.
         RexNode filter = scan.getTableUnwrapped().getFilter();
-
-        if (filter == null) {
-            return Collections.emptyList();
-        }
 
         // Filter out unsupported indexes. Only SORTED and HASH indexes are supported.
         List<MapTableIndex> supportedIndexes = new ArrayList<>(indexes.size());
@@ -114,6 +126,32 @@ public final class IndexResolver {
         // Early return if there are no indexes to consider.
         if (supportedIndexes.isEmpty()) {
             return Collections.emptyList();
+        }
+
+        List<RelNode> fullScanRels = new ArrayList<>(supportedIndexes.size());
+
+        // There is no filter, still generate index scans for
+        // possible ORDER BY clause on the upper level
+        for (MapTableIndex index : supportedIndexes) {
+
+            if (index.getType() == SORTED) {
+                // Only for SORTED index create full index scans that might be potentially
+                // utilized by sorting operator.
+                List<Boolean> ascs = buildFieldDirections(index, true);
+                RelNode relAscending = createFullIndexScan(scan, distribution, index, ascs, true);
+
+                if (relAscending != null) {
+                    fullScanRels.add(relAscending);
+                    RelNode relDescending = replaceCollationDirection(relAscending, DESCENDING);
+                    fullScanRels.add(relDescending);
+                }
+            }
+        }
+
+        Map<RelCollation, RelNode> fullScanRelsMap = excludeCoveredCollations(fullScanRels);
+        if (filter == null) {
+            // Exclude prefix-based covered index scans
+            return fullScanRelsMap.values();
         }
 
         // Convert expression into CNF. Examples:
@@ -136,18 +174,96 @@ public final class IndexResolver {
         }
 
         List<RelNode> rels = new ArrayList<>(supportedIndexes.size());
-
         for (MapTableIndex index : supportedIndexes) {
             // Create index scan based on candidates, if possible. Candidates could be merged into more complex
             // filters whenever possible.
-            RelNode rel = createIndexScan(scan, distribution, index, conjunctions, candidates);
+            List<Boolean> ascs = buildFieldDirections(index, true);
+            RelNode relAscending = createIndexScan(scan, distribution, index, conjunctions, candidates, ascs);
 
-            if (rel != null) {
-                rels.add(rel);
+            if (relAscending != null) {
+                RelCollation relAscCollation = getCollation(relAscending);
+                // Exclude a full scan that has the same collation
+                fullScanRelsMap.remove(relAscCollation);
+
+                rels.add(relAscending);
+
+                if (relAscCollation.getFieldCollations().size() > 0) {
+                    RelNode relDescending = replaceCollationDirection(relAscending, DESCENDING);
+                    rels.add(relDescending);
+
+                    RelCollation relDescCollation = getCollation(relDescending);
+                    // Exclude a full scan that has the same collation
+                    fullScanRelsMap.remove(relDescCollation);
+                }
             }
         }
 
+        rels.addAll(fullScanRelsMap.values());
         return rels;
+    }
+
+    private static RelCollation getCollation(RelNode rel) {
+        return rel.getTraitSet().getTrait(RelCollationTraitDef.INSTANCE);
+    }
+
+    /**
+     * Replaces a direction in the collation trait of the rel
+     *
+     * @param rel       the rel
+     * @param direction the collation
+     * @return the rel with changed collation
+     */
+    private static RelNode replaceCollationDirection(RelNode rel, Direction direction) {
+        RelCollation collation = rel.getTraitSet().getTrait(RelCollationTraitDef.INSTANCE);
+
+        List<RelFieldCollation> newFields = new ArrayList<>(collation.getFieldCollations().size());
+        for (RelFieldCollation fieldCollation : collation.getFieldCollations()) {
+            RelFieldCollation newFieldCollation = new RelFieldCollation(fieldCollation.getFieldIndex(), direction);
+            newFields.add(newFieldCollation);
+        }
+
+        RelCollation newCollation = RelCollations.of(newFields);
+        RelTraitSet traitSet = rel.getTraitSet();
+        traitSet = OptUtils.traitPlus(traitSet, newCollation);
+
+        return rel.copy(traitSet, rel.getInputs());
+    }
+
+    /**
+     * Filters out index scans which collation is covered (prefix based) by another index scan in the rels.
+     *
+     * @param rels the list of index scans
+     * @return a filtered out map of collation to rel
+     */
+    @SuppressWarnings("checkstyle:NPathComplexity")
+    private static Map<RelCollation, RelNode> excludeCoveredCollations(List<RelNode> rels) {
+        // Order the index scans based on their collation
+        TreeMap<RelCollation, RelNode> relsTreeMap = new TreeMap<>(RelCollationComparator.INSTANCE);
+
+        // Put the rels into the ordered TreeMap
+        for (RelNode rel : rels) {
+            relsTreeMap.put(rel.getTraitSet().getTrait(RelCollationTraitDef.INSTANCE), rel);
+        }
+
+        Map<RelCollation, RelNode> resultMap = new HashMap<>();
+        Map.Entry<RelCollation, RelNode> prevEntry = null;
+        // Go through the ordered collations and exclude covered ones
+        for (Map.Entry<RelCollation, RelNode> entry : relsTreeMap.descendingMap().entrySet()) {
+            RelCollation collation = entry.getKey();
+            RelNode relNode = entry.getValue();
+
+            if (prevEntry == null) {
+                resultMap.put(collation, relNode);
+                prevEntry = entry;
+            } else {
+                RelCollation prevCollation = prevEntry.getKey();
+                if (!prevCollation.satisfies(collation)) {
+                    prevEntry = entry;
+                    resultMap.put(collation, relNode);
+                }
+            }
+        }
+        return resultMap;
     }
 
     /**
@@ -165,7 +281,7 @@ public final class IndexResolver {
      * Creates a map from the scan column ordinal to expressions that could be potentially used by indexes created over
      * this column.
      *
-     * @param expressions                   CNF nodes
+     * @param expressions             CNF nodes
      * @param allIndexedFieldOrdinals ordinals of all columns that have some indexes. Helps to filter out candidates that
      *                                definitely cannot be used earlier.
      */
@@ -301,9 +417,9 @@ public final class IndexResolver {
      * - IS NOT TRUE -> IN(EQUALS(FALSE), EQUALS(NULL))
      * - IS NOT FALSE -> IN(EQUALS(TRUE), EQUALS(NULL))
      *
-     * @param exp original expression, e.g. {col IS TRUE}
-     * @param operand  operand, e.g. {col}; CAST must be unwrapped before the method is invoked
-     * @param kind expression type
+     * @param exp     original expression, e.g. {col IS TRUE}
+     * @param operand operand, e.g. {col}; CAST must be unwrapped before the method is invoked
+     * @param kind    expression type
      * @return candidate or {@code null}
      */
     private static IndexComponentCandidate prepareSingleColumnCandidateBooleanIsTrueFalse(
@@ -373,7 +489,7 @@ public final class IndexResolver {
      * <p>
      * Returns the filter EQUALS(null) with "allowNulls-true".
      *
-     * @param exp original expression, e.g. {col IS NULL}
+     * @param exp     original expression, e.g. {col IS NULL}
      * @param operand operand, e.g. {col}; CAST must be unwrapped before the method is invoked
      * @return candidate or {@code null}
      */
@@ -385,7 +501,7 @@ public final class IndexResolver {
 
         int columnIndex = ((RexInputRef) operand).getIndex();
 
-        QueryDataType type = SqlToQueryType.map(operand.getType().getSqlTypeName());
+        QueryDataType type = HazelcastTypeUtils.toHazelcastType(operand.getType().getSqlTypeName());
 
         // Create a value with "allowNulls=true"
         IndexFilterValue filterValue = new IndexFilterValue(
@@ -405,10 +521,10 @@ public final class IndexResolver {
     /**
      * Try creating a candidate filter for comparison operator.
      *
-     * @param exp the original expression
-     * @param kind expression kine (=, >, <, >=, <=)
-     * @param operand1 the first operand (CAST must be unwrapped before the method is invoked)
-     * @param operand2 the second operand (CAST must be unwrapped before the method is invoked)
+     * @param exp               the original expression
+     * @param kind              expression kine (=, >, <, >=, <=)
+     * @param operand1          the first operand (CAST must be unwrapped before the method is invoked)
+     * @param operand2          the second operand (CAST must be unwrapped before the method is invoked)
      * @param parameterMetadata parameter metadata for expressions like {a>?}
      * @return candidate or {@code null}
      */
@@ -512,8 +628,8 @@ public final class IndexResolver {
      * We support only equality conditions on the same columns. Ranges and conditions on different columns (aka "index joins")
      * are not supported.
      *
-     * @param exp the OR expression
-     * @param nodes components of the OR expression
+     * @param exp               the OR expression
+     * @param nodes             components of the OR expression
      * @param parameterMetadata parameter metadata
      * @return candidate or {code null}
      */
@@ -570,11 +686,12 @@ public final class IndexResolver {
     /**
      * Create index scan for the given index if possible.
      *
-     * @param scan the original map scan
+     * @param scan         the original map scan
      * @param distribution the original map distribution
-     * @param index index to be considered
+     * @param index        index to be considered
      * @param conjunctions CNF components of the original map filter
-     * @param candidates resolved candidates
+     * @param candidates   resolved candidates
+     * @param ascs         a list of index field collations
      * @return index scan or {@code null}.
      */
     public static RelNode createIndexScan(
@@ -582,7 +699,8 @@ public final class IndexResolver {
         DistributionTrait distribution,
         MapTableIndex index,
         List<RexNode> conjunctions,
-        Map<Integer, List<IndexComponentCandidate>> candidates
+        Map<Integer, List<IndexComponentCandidate>> candidates,
+        List<Boolean> ascs
     ) {
         List<IndexComponentFilter> filters = new ArrayList<>(index.getFieldOrdinals().size());
 
@@ -632,7 +750,7 @@ public final class IndexResolver {
         }
 
         // Now as filters are determined, construct the physical entity.
-        return createIndexScan(scan, distribution, index, conjunctions, filters);
+        return createIndexScan(scan, distribution, index, conjunctions, filters, ascs);
     }
 
     private static MapIndexScanPhysicalRel createIndexScan(
@@ -640,7 +758,8 @@ public final class IndexResolver {
         DistributionTrait distribution,
         MapTableIndex index,
         List<RexNode> conjunctions,
-        List<IndexComponentFilter> filterDescriptors
+        List<IndexComponentFilter> filterDescriptors,
+        List<Boolean> ascs
     ) {
         // Collect filters and relevant expressions
         List<IndexFilter> filters = new ArrayList<>(filterDescriptors.size());
@@ -664,6 +783,10 @@ public final class IndexResolver {
 
         // Prepare traits
         RelTraitSet traitSet = OptUtils.toPhysicalConvention(scan.getTraitSet(), distribution);
+
+        // Make a collation trait
+        RelCollation relCollation = buildCollationTrait(scan, index, ascs);
+        traitSet = OptUtils.traitPlus(traitSet, relCollation);
 
         // Prepare table
         HazelcastRelOptTable originalRelTable = (HazelcastRelOptTable) scan.getTable();
@@ -696,11 +819,111 @@ public final class IndexResolver {
     }
 
     /**
+     * Builds a collation with collation fields re-mapped according with the table projects
+     *
+     * @param scan  the logical map scan
+     * @param index the index
+     * @param ascs  the collation of index fields
+     * @return the new collation trait
+     */
+    private static RelCollation buildCollationTrait(MapScanLogicalRel scan,
+                                                    MapTableIndex index,
+                                                    List<Boolean> ascs) {
+        if (index.getType() != SORTED) {
+            return RelCollations.of(Collections.emptyList());
+        }
+        List<RelFieldCollation> fields = new ArrayList<>(index.getFieldOrdinals().size());
+        HazelcastTable table = scan.getTableUnwrapped();
+
+        for (int i = 0; i < index.getFieldOrdinals().size(); ++i) {
+            Integer indexFieldOrdinal = index.getFieldOrdinals().get(i);
+
+            int remappedIndexFieldOrdinal = table.getProjects().indexOf(indexFieldOrdinal);
+            if (remappedIndexFieldOrdinal == -1) {
+                // The field is not used in the query
+                break;
+            }
+            Direction direction = ascs.get(i) ? ASCENDING : DESCENDING;
+            RelFieldCollation fieldCollation = new RelFieldCollation(remappedIndexFieldOrdinal, direction);
+            fields.add(fieldCollation);
+        }
+
+        return RelCollations.of(fields);
+    }
+
+    /**
+     * Builds a list of all ascending or all descending field directions for the index fields
+     *
+     * @param allAscending whether all fields are ascending
+     * @return the list of field directions
+     */
+    private static List<Boolean> buildFieldDirections(MapTableIndex index, boolean allAscending) {
+        List<Boolean> ascs = new ArrayList<>(index.getFieldOrdinals().size());
+
+        for (int i = 0; i < index.getFieldOrdinals().size(); ++i) {
+            Boolean asc = allAscending ? TRUE : FALSE;
+            ascs.add(asc);
+        }
+        return ascs;
+    }
+
+    /**
+     * Creates an index scan without any filter.
+     *
+     * @param scan              the original scan operator
+     * @param distribution      the original distribution
+     * @param index             available indexes
+     * @param ascs              the collation of index fields
+     * @param nonEmptyCollation whether to filter out full index scan with no collation
+     * @return index scan or {@code null}
+     */
+    private static RelNode createFullIndexScan(
+        MapScanLogicalRel scan,
+        DistributionTrait distribution,
+        MapTableIndex index,
+        List<Boolean> ascs,
+        boolean nonEmptyCollation
+    ) {
+        assert isIndexSupported(index);
+
+        RexNode scanFilter = scan.getTableUnwrapped().getFilter();
+
+        RelTraitSet traitSet = OptUtils.toPhysicalConvention(scan.getTraitSet(), distribution);
+
+        RelCollation relCollation = buildCollationTrait(scan, index, ascs);
+        if (nonEmptyCollation && relCollation.getFieldCollations().size() == 0) {
+            // Don't make a full scan with empty collation
+            return null;
+        }
+        traitSet = OptUtils.traitPlus(traitSet, relCollation);
+
+        HazelcastRelOptTable originalRelTable = (HazelcastRelOptTable) scan.getTable();
+        HazelcastTable originalHazelcastTable = OptUtils.getHazelcastTable(scan);
+
+        RelOptTable newRelTable = OptUtils.createRelTable(
+            originalRelTable,
+            originalHazelcastTable.withFilter(null),
+            scan.getCluster().getTypeFactory()
+        );
+
+        return new MapIndexScanPhysicalRel(
+            scan.getCluster(),
+            traitSet,
+            newRelTable,
+            index,
+            null,
+            Collections.emptyList(),
+            null,
+            scanFilter
+        );
+    }
+
+    /**
      * Create an index scan without any filter. Used by HD maps only.
      *
-     * @param scan the original scan operator
+     * @param scan         the original scan operator
      * @param distribution the original distribution
-     * @param indexes available indexes
+     * @param indexes      available indexes
      * @return index scan or {@code null}
      */
     public static RelNode createFullIndexScan(
@@ -722,36 +945,15 @@ public final class IndexResolver {
             return null;
         }
 
-        RexNode scanFilter = scan.getTableUnwrapped().getFilter();
-
-        RelTraitSet traitSet = OptUtils.toPhysicalConvention(scan.getTraitSet(), distribution);
-
-        HazelcastRelOptTable originalRelTable = (HazelcastRelOptTable) scan.getTable();
-        HazelcastTable originalHazelcastTable = OptUtils.getHazelcastTable(scan);
-
-        RelOptTable newRelTable = OptUtils.createRelTable(
-            originalRelTable,
-            originalHazelcastTable.withFilter(null),
-            scan.getCluster().getTypeFactory()
-        );
-
-        return new MapIndexScanPhysicalRel(
-            scan.getCluster(),
-            traitSet,
-            newRelTable,
-            firstIndex,
-            null,
-            Collections.emptyList(),
-            null,
-            scanFilter
-        );
+        List<Boolean> ascs = buildFieldDirections(firstIndex, true);
+        return createFullIndexScan(scan, distribution, firstIndex, ascs, false);
     }
 
     /**
      * This method selects the best expression to be used as index filter from the list of candidates.
      *
-     * @param type type of the index (SORTED, HASH)
-     * @param candidates candidates that might be used as a filter
+     * @param type          type of the index (SORTED, HASH)
+     * @param candidates    candidates that might be used as a filter
      * @param converterType expected converter type for the given component of the index
      * @return filter for the index component or {@code null} if no candidate could be applied
      */
@@ -784,7 +986,7 @@ public final class IndexResolver {
         }
 
         // Last, look for ranges
-        if (type == IndexType.SORTED) {
+        if (type == SORTED) {
             IndexFilterValue from = null;
             boolean fromInclusive = false;
             IndexFilterValue to = null;
@@ -823,8 +1025,8 @@ public final class IndexResolver {
     /**
      * Composes the final filter from the list of single-column filters.
      *
-     * @param filters single-column filters
-     * @param indexType type of the index
+     * @param filters              single-column filters
+     * @param indexType            type of the index
      * @param indexComponentsCount number of components in the index
      * @return final filter or {@code null} if the filter could not be built for the given index type
      */
@@ -837,7 +1039,7 @@ public final class IndexResolver {
 
             IndexFilter res = filters.get(0);
 
-            assert !(res instanceof IndexRangeFilter) || indexType == IndexType.SORTED;
+            assert !(res instanceof IndexRangeFilter) || indexType == SORTED;
 
             return res;
         } else {
@@ -852,7 +1054,7 @@ public final class IndexResolver {
             } else {
                 assert lastFilter instanceof IndexRangeFilter;
 
-                assert indexType == IndexType.SORTED;
+                assert indexType == SORTED;
 
                 return composeRangeFilter(filters, (IndexRangeFilter) lastFilter, indexComponentsCount);
             }
@@ -900,7 +1102,7 @@ public final class IndexResolver {
             return new IndexEqualsFilter(new IndexFilterValue(components, allowNulls));
         } else {
             // Otherwise convert it to a range request
-            if (indexType == IndexType.HASH) {
+            if (indexType == HASH) {
                 return null;
             }
 
@@ -927,8 +1129,8 @@ public final class IndexResolver {
      * Consider the expression {@code {a=1 AND b IN (2,3)}}. After the conversion, the composite filter will be
      * {@code {a,b} IN {{1, 2}, {1, 3}}}.
      *
-     * @param filters per-column filters
-     * @param lastFilter the last IN filter
+     * @param filters              per-column filters
+     * @param lastFilter           the last IN filter
      * @param indexComponentsCount the number of index components
      * @return composite IN filter
      */
@@ -969,8 +1171,8 @@ public final class IndexResolver {
      * If the index is defined as {@code {a, b, c}}, then the resulting filter would be
      * {@code {a=1, b>2, c>NEGATIVE_INFINITY AND a=1, b<3, c<POSITIVE_INFINITY}}.
      *
-     * @param filters all per-column filters
-     * @param lastFilter the last filter (range)
+     * @param filters         all per-column filters
+     * @param lastFilter      the last filter (range)
      * @param componentsCount number of components in the filter
      * @return range filter
      */
@@ -1035,7 +1237,7 @@ public final class IndexResolver {
      * The operation is performed for all filters except for the last one, because treatment of the last filter might differ
      * depending on the total number of components in the index.
      *
-     * @param filters column filters
+     * @param filters    column filters
      * @param components expressions that would form the final filter
      * @param allowNulls allow-null collection relevant to components
      */
@@ -1071,8 +1273,8 @@ public final class IndexResolver {
      * The combination of ranges also depends on the inclusion. For example, {@code {a>1}} yields {@code NEGATIVE_INFINITY}
      * for {@code b} on the left side, while {@code {a>=1}} yields {@code POSITIVE_INFINITY}.
      *
-     * @param fromComponents expressions for the "from" part
-     * @param toComponents expressions for the "to" part
+     * @param fromComponents  expressions for the "from" part
+     * @param toComponents    expressions for the "to" part
      * @param componentsCount the number of components in the index
      */
     private static void addInfiniteRanges(
@@ -1137,7 +1339,7 @@ public final class IndexResolver {
      * @return {@code true} if the index could be used, {@code false} otherwise
      */
     private static boolean isIndexSupported(MapTableIndex index) {
-        return index.getType() == IndexType.SORTED || index.getType() == IndexType.HASH;
+        return index.getType() == SORTED || index.getType() == HASH;
     }
 
     /**
@@ -1191,8 +1393,8 @@ public final class IndexResolver {
                     return from;
                 }
 
-                QueryDataTypeFamily fromFamily = SqlToQueryType.map(fromType.getSqlTypeName()).getTypeFamily();
-                QueryDataTypeFamily toFamily = SqlToQueryType.map(toType.getSqlTypeName()).getTypeFamily();
+                QueryDataTypeFamily fromFamily = HazelcastTypeUtils.toHazelcastType(fromType.getSqlTypeName()).getTypeFamily();
+                QueryDataTypeFamily toFamily = HazelcastTypeUtils.toHazelcastType(toType.getSqlTypeName()).getTypeFamily();
 
                 if (QueryDataTypeUtils.isNumeric(fromFamily) && QueryDataTypeUtils.isNumeric(toFamily)) {
                     // Converting between numeric types

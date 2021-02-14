@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.ServiceNotFoundException;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.sql.SqlExpectedResultType;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.SqlStatement;
@@ -55,6 +56,10 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 
+import static com.hazelcast.sql.SqlExpectedResultType.ANY;
+import static com.hazelcast.sql.SqlExpectedResultType.ROWS;
+import static com.hazelcast.sql.SqlExpectedResultType.UPDATE_COUNT;
+
 /**
  * Base SQL service implementation that bridges optimizer implementation, public and private APIs.
  */
@@ -76,8 +81,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
     private final NodeServiceProviderImpl nodeServiceProvider;
     private final PlanCache planCache = new PlanCache(PLAN_CACHE_SIZE);
 
-    private final int executorPoolSize;
-    private final int operationPoolSize;
+    private final int poolSize;
     private final long queryTimeout;
 
     private JetSqlCoreBackend jetSqlCoreBackend;
@@ -92,24 +96,17 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
 
         SqlConfig config = nodeEngine.getConfig().getSqlConfig();
 
-        int executorPoolSize = config.getExecutorPoolSize();
-        int operationPoolSize = config.getOperationPoolSize();
+        int poolSize = config.getExecutorPoolSize();
         long queryTimeout = config.getStatementTimeoutMillis();
 
-        if (executorPoolSize == SqlConfig.DEFAULT_EXECUTOR_POOL_SIZE) {
-            executorPoolSize = Runtime.getRuntime().availableProcessors();
+        if (poolSize == SqlConfig.DEFAULT_EXECUTOR_POOL_SIZE) {
+            poolSize = Runtime.getRuntime().availableProcessors();
         }
 
-        if (operationPoolSize == SqlConfig.DEFAULT_OPERATION_POOL_SIZE) {
-            operationPoolSize = Runtime.getRuntime().availableProcessors();
-        }
-
-        assert executorPoolSize > 0;
-        assert operationPoolSize > 0;
+        assert poolSize > 0;
         assert queryTimeout >= 0L;
 
-        this.executorPoolSize = executorPoolSize;
-        this.operationPoolSize = operationPoolSize;
+        this.poolSize = poolSize;
         this.queryTimeout = queryTimeout;
     }
 
@@ -137,8 +134,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
             instanceName,
             nodeServiceProvider,
             serializationService,
-            operationPoolSize,
-            executorPoolSize,
+            poolSize,
             OUTBOX_BATCH_SIZE,
             STATE_CHECK_FREQUENCY,
             planCacheChecker
@@ -174,8 +170,18 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         this.internalService = internalService;
     }
 
+    /**
+     * For testing only.
+     */
     public SqlOptimizer getOptimizer() {
         return optimizer;
+    }
+
+    /**
+     * For testing only.
+     */
+    public void setOptimizer(SqlOptimizer optimizer) {
+        this.optimizer = optimizer;
     }
 
     public PlanCache getPlanCache() {
@@ -189,6 +195,10 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
     }
 
     public SqlResult execute(@Nonnull SqlStatement statement, SqlSecurityContext securityContext) {
+        return execute(statement, securityContext, null);
+    }
+
+    public SqlResult execute(@Nonnull SqlStatement statement, SqlSecurityContext securityContext, QueryId queryId) {
         Preconditions.checkNotNull(statement, "Query cannot be null");
 
         try {
@@ -202,11 +212,18 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
                 timeout = queryTimeout;
             }
 
+            if (queryId == null) {
+                queryId = QueryId.create(nodeServiceProvider.getLocalMemberId());
+            }
+
             return query0(
+                queryId,
+                statement.getSchema(),
                 statement.getSql(),
                 statement.getParameters(),
                 timeout,
                 statement.getCursorBufferSize(),
+                statement.getExpectedResultType(),
                 securityContext
             );
         } catch (AccessControlException e) {
@@ -221,7 +238,16 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         internalService.onPacket(packet);
     }
 
-    private SqlResult query0(String sql, List<Object> params, long timeout, int pageSize, SqlSecurityContext securityContext) {
+    private SqlResult query0(
+        QueryId queryId,
+        String schema,
+        String sql,
+        List<Object> params,
+        long timeout,
+        int pageSize,
+        SqlExpectedResultType expectedResultType,
+        SqlSecurityContext securityContext
+    ) {
         // Validate and normalize
         if (sql == null || sql.isEmpty()) {
             throw QueryException.error("SQL statement cannot be empty.");
@@ -238,26 +264,26 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         }
 
         // Prepare and execute
-        SqlPlan plan = prepare(sql);
+        SqlPlan plan = prepare(schema, sql, expectedResultType);
 
         if (securityContext.isSecurityEnabled()) {
             plan.checkPermissions(securityContext);
         }
 
-        return execute(plan, params0, timeout, pageSize);
+        return execute(queryId, plan, params0, timeout, pageSize);
     }
 
-    private SqlPlan prepare(String sql) {
-        List<List<String>> searchPaths = QueryUtils.prepareSearchPaths(Collections.emptyList(), tableResolvers);
+    private SqlPlan prepare(String schema, String sql, SqlExpectedResultType expectedResultType) {
+        List<List<String>> searchPaths = prepareSearchPaths(schema);
 
         PlanCacheKey planKey = new PlanCacheKey(searchPaths, sql);
 
         SqlPlan plan = planCache.get(planKey);
 
         if (plan == null) {
-            SqlCatalog schema = new SqlCatalog(tableResolvers);
+            SqlCatalog catalog = new SqlCatalog(tableResolvers);
 
-            plan = optimizer.prepare(new OptimizationTask(sql, searchPaths, schema));
+            plan = optimizer.prepare(new OptimizationTask(sql, searchPaths, catalog));
 
             if (plan instanceof CacheablePlan) {
                 CacheablePlan plan0 = (CacheablePlan) plan;
@@ -266,25 +292,55 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
             }
         }
 
+        checkReturnType(plan, expectedResultType);
+
         return plan;
     }
 
-    private SqlResult execute(SqlPlan plan, List<Object> params, long timeout, int pageSize) {
-        if (plan instanceof Plan) {
-            return executeImdg((Plan) plan, params, timeout, pageSize);
-        } else {
-            return executeJet(plan, params, timeout, pageSize);
+    private void checkReturnType(SqlPlan plan, SqlExpectedResultType expectedResultType) {
+        if (expectedResultType == ANY) {
+            return;
+        }
+
+        boolean producesRows = plan.producesRows();
+
+        if (producesRows && expectedResultType == UPDATE_COUNT) {
+            throw QueryException.error("The statement doesn't produce update count");
+        }
+
+        if (!producesRows && expectedResultType == ROWS) {
+            throw QueryException.error("The statement doesn't produce rows");
         }
     }
 
-    private SqlResult executeImdg(Plan plan, List<Object> params, long timeout, int pageSize) {
-        QueryState state = internalService.execute(plan, params, timeout, pageSize, planCache);
+    private List<List<String>> prepareSearchPaths(String schema) {
+        List<List<String>> currentSearchPaths;
 
-        return SqlResultImpl.createRowsResult(state);
+        if (schema == null || schema.isEmpty()) {
+            currentSearchPaths = Collections.emptyList();
+        } else {
+            currentSearchPaths = Collections.singletonList(Collections.singletonList(schema));
+        }
+
+        return QueryUtils.prepareSearchPaths(currentSearchPaths, tableResolvers);
     }
 
-    private SqlResult executeJet(SqlPlan plan, List<Object> params, long timeout, int pageSize) {
-        return jetSqlCoreBackend.execute(plan, params, timeout, pageSize);
+    private SqlResult execute(QueryId queryId, SqlPlan plan, List<Object> params, long timeout, int pageSize) {
+        if (plan instanceof Plan) {
+            return executeImdg(queryId, (Plan) plan, params, timeout, pageSize);
+        } else {
+            return executeJet(queryId, plan, params, timeout, pageSize);
+        }
+    }
+
+    private SqlResult executeImdg(QueryId queryId, Plan plan, List<Object> params, long timeout, int pageSize) {
+        QueryState state = internalService.execute(queryId, plan, params, timeout, pageSize, planCache);
+
+        return SqlResultImpl.createRowsResult(state, (InternalSerializationService) nodeEngine.getSerializationService());
+    }
+
+    private SqlResult executeJet(QueryId queryId, SqlPlan plan, List<Object> params, long timeout, int pageSize) {
+        return jetSqlCoreBackend.execute(queryId, plan, params, timeout, pageSize);
     }
 
     /**

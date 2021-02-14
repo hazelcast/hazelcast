@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,12 @@
 package com.hazelcast.sql.impl.expression.math;
 
 import com.hazelcast.sql.SqlColumnType;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.SqlRow;
-import com.hazelcast.sql.impl.expression.SqlExpressionIntegrationTestSupport;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
+import com.hazelcast.sql.impl.expression.ExpressionTestSupport;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.support.expressions.ExpressionValue;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -35,13 +38,24 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
+import static com.hazelcast.sql.SqlColumnType.BIGINT;
+import static com.hazelcast.sql.SqlColumnType.BOOLEAN;
+import static com.hazelcast.sql.SqlColumnType.DATE;
+import static com.hazelcast.sql.SqlColumnType.DECIMAL;
+import static com.hazelcast.sql.SqlColumnType.DOUBLE;
+import static com.hazelcast.sql.SqlColumnType.OBJECT;
+import static com.hazelcast.sql.SqlColumnType.REAL;
+import static com.hazelcast.sql.SqlColumnType.TIME;
+import static com.hazelcast.sql.SqlColumnType.TIMESTAMP;
+import static com.hazelcast.sql.SqlColumnType.TIMESTAMP_WITH_TIME_ZONE;
+import static com.hazelcast.sql.SqlColumnType.VARCHAR;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class RandFunctionIntegrationTest extends SqlExpressionIntegrationTestSupport {
+public class RandFunctionIntegrationTest extends ExpressionTestSupport {
     @Test
     public void testNoArg() {
         put(0);
@@ -79,28 +93,24 @@ public class RandFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
         checkColumn((short) 1, 1L);
         checkColumn(1, 1L);
         checkColumn(1L, 1L);
-        checkColumn(1f, 1L);
-        checkColumn(1d, 1L);
-        checkColumn(BigInteger.ONE, 1L);
-        checkColumn(BigDecimal.ONE, 1L);
-
-        checkColumn("1", 1L);
-        checkColumn('1', 1L);
 
         put(new ExpressionValue.IntegerVal());
         double nullRes1 = checkValue("field1", SKIP_VALUE_CHECK);
         double nullRes2 = checkValue("field1", SKIP_VALUE_CHECK);
         assertNotEquals(nullRes1, nullRes2);
 
-        checkColumnFailure("bad", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
-        checkColumnFailure('b', SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
-
-        checkColumnFailure(true, SqlErrorCode.PARSING, "Cannot apply 'RAND' to arguments of type 'RAND(<BOOLEAN>)'");
-        checkColumnFailure(LOCAL_DATE_VAL, SqlErrorCode.PARSING, "Cannot apply 'RAND' to arguments of type 'RAND(<DATE>)'");
-        checkColumnFailure(LOCAL_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply 'RAND' to arguments of type 'RAND(<TIME>)'");
-        checkColumnFailure(LOCAL_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply 'RAND' to arguments of type 'RAND(<TIMESTAMP>)'");
-        checkColumnFailure(OFFSET_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply 'RAND' to arguments of type 'RAND(<TIMESTAMP_WITH_TIME_ZONE>)'");
-        checkColumnFailure(new ExpressionValue.ObjectVal(), SqlErrorCode.PARSING, "Cannot apply 'RAND' to arguments of type 'RAND(<OBJECT>)'");
+        checkColumnFailure("1", SqlErrorCode.PARSING, signatureError(VARCHAR));
+        checkColumnFailure('1', SqlErrorCode.PARSING, signatureError(VARCHAR));
+        checkColumnFailure(true, SqlErrorCode.PARSING, signatureError(BOOLEAN));
+        checkColumnFailure(1f, SqlErrorCode.PARSING, signatureError(REAL));
+        checkColumnFailure(1d, SqlErrorCode.PARSING, signatureError(DOUBLE));
+        checkColumnFailure(BigInteger.ONE, SqlErrorCode.PARSING, signatureError(DECIMAL));
+        checkColumnFailure(BigDecimal.ONE, SqlErrorCode.PARSING, signatureError(DECIMAL));
+        checkColumnFailure(LOCAL_DATE_VAL, SqlErrorCode.PARSING, signatureError(DATE));
+        checkColumnFailure(LOCAL_TIME_VAL, SqlErrorCode.PARSING, signatureError(TIME));
+        checkColumnFailure(LOCAL_DATE_TIME_VAL, SqlErrorCode.PARSING, signatureError(TIMESTAMP));
+        checkColumnFailure(OFFSET_DATE_TIME_VAL, SqlErrorCode.PARSING, signatureError(TIMESTAMP_WITH_TIME_ZONE));
+        checkColumnFailure(OBJECT_VAL, SqlErrorCode.PARSING, signatureError(OBJECT));
     }
 
     private void checkColumn(Object value, long expectedSeed) {
@@ -119,33 +129,26 @@ public class RandFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
     public void testParameter() {
         put(0);
 
+        double nullRes1 = checkValue("?", SKIP_VALUE_CHECK, new Object[] { null });
+        double nullRes2 = checkValue("?", SKIP_VALUE_CHECK, new Object[] { null });
+        assertNotEquals(nullRes1, nullRes2);
+
         checkParameter((byte) 1, 1L);
         checkParameter((short) 1, 1L);
         checkParameter(1, 1L);
         checkParameter(1L, 1L);
 
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to BIGINT", BigInteger.ONE);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to BIGINT", BigDecimal.ONE);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from REAL to BIGINT", 0.0f);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DOUBLE to BIGINT", 0.0d);
-
-        checkParameter("1", 1L);
-        checkParameter('1', 1L);
-
-        double nullRes1 = checkValue("?", SKIP_VALUE_CHECK, new Object[] { null });
-        double nullRes2 = checkValue("?", SKIP_VALUE_CHECK, new Object[] { null });
-        assertNotEquals(nullRes1, nullRes2);
-
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from BOOLEAN to BIGINT", true);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to BIGINT", "bad");
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to BIGINT", 'b');
-
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DATE to BIGINT", LOCAL_DATE_VAL);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIME to BIGINT", LOCAL_TIME_VAL);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP to BIGINT", LOCAL_DATE_TIME_VAL);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP_WITH_TIME_ZONE to BIGINT", OFFSET_DATE_TIME_VAL);
-
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from OBJECT to BIGINT", new ExpressionValue.ObjectVal());
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, BIGINT, VARCHAR), "foo");
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, BIGINT, BOOLEAN), true);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, BIGINT, DECIMAL), BigInteger.ZERO);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, BIGINT, DECIMAL), BigDecimal.ZERO);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, BIGINT, REAL), 0.0f);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, BIGINT, DOUBLE), 0.0d);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, BIGINT, DATE), LOCAL_DATE_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, BIGINT, TIME), LOCAL_TIME_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, BIGINT, TIMESTAMP), LOCAL_DATE_TIME_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, BIGINT, TIMESTAMP_WITH_TIME_ZONE), OFFSET_DATE_TIME_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, BIGINT, OBJECT), OBJECT_VAL);
     }
 
     private void checkParameter(Object param, long expectedSeed) {
@@ -156,34 +159,48 @@ public class RandFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
     public void testLiteral() {
         put(0);
 
-        checkNumericLiteral(0, 0L);
-        checkNumericLiteral(Long.MAX_VALUE, Long.MAX_VALUE);
-        checkNumericLiteral("1.1", 1L);
+        checkValue(0, new Random(0).nextDouble());
+        checkValue(Long.MAX_VALUE, new Random(Long.MAX_VALUE).nextDouble());
 
         double nullRes1 = checkValue("null", SKIP_VALUE_CHECK);
         double nullRes2 = checkValue("null", SKIP_VALUE_CHECK);
         assertNotEquals(nullRes1, nullRes2);
 
-        checkFailure("'bad'", SqlErrorCode.PARSING, "Literal ''bad'' can not be parsed to type 'DECIMAL'");
-        checkFailure("true", SqlErrorCode.PARSING, "Cannot apply 'RAND' to arguments of type 'RAND(<BOOLEAN>)'");
+        checkFailure("'foo'", SqlErrorCode.PARSING, signatureError(VARCHAR));
+        checkFailure("true", SqlErrorCode.PARSING, signatureError(BOOLEAN));
+        checkFailure("1.1", SqlErrorCode.PARSING, signatureError(DECIMAL));
+        checkFailure("1.1E1", SqlErrorCode.PARSING, signatureError(DOUBLE));
     }
 
-    private void checkNumericLiteral(Object literal, long expectedSeed) {
-        String literalString = literal.toString();
-
-        checkValue(literalString, new Random(expectedSeed).nextDouble());
-        checkValue("'" +  literalString + "'", new Random(expectedSeed).nextDouble());
+    private static String signatureError(SqlColumnType type) {
+        return signatureErrorFunction("RAND", type);
     }
 
     private Double checkValue(Object operand, Object expectedValue, Object... params) {
         String sql = "SELECT RAND(" + operand + ") FROM map";
 
-        return (Double) checkValueInternal(sql, SqlColumnType.DOUBLE, expectedValue, params);
+        return (Double) checkValue0(sql, SqlColumnType.DOUBLE, expectedValue, params);
     }
 
     private void checkFailure(Object operand, int expectedErrorCode, String expectedErrorMessage, Object... params) {
         String sql = "SELECT RAND(" + operand + ") FROM map";
 
-        checkFailureInternal(sql, expectedErrorCode, expectedErrorMessage, params);
+        checkFailure0(sql, expectedErrorCode, expectedErrorMessage, params);
+    }
+
+    @Test
+    public void testEquals() {
+        RandFunction function = RandFunction.create(ConstantExpression.create(1, QueryDataType.INT));
+
+        checkEquals(function, RandFunction.create(ConstantExpression.create(1, QueryDataType.INT)), true);
+        checkEquals(function, RandFunction.create(ConstantExpression.create(2, QueryDataType.INT)), false);
+    }
+
+    @Test
+    public void testSerialization() {
+        RandFunction original = RandFunction.create(ConstantExpression.create(1, QueryDataType.INT));
+        RandFunction restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_RAND);
+
+        checkEquals(original, restored, true);
     }
 }

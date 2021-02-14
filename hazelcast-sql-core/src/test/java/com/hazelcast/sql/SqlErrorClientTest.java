@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,9 @@
 package com.hazelcast.sql;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.SqlExecute_reservedCodec;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -37,6 +40,7 @@ import org.junit.runners.Parameterized;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -209,6 +213,10 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
 
             instance1.shutdown();
 
+            for (SqlRow ignore : result) {
+                // No-op.
+            }
+
             result.close();
 
             fail("Should fail");
@@ -238,7 +246,8 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
 
         // Create dangling cursor
         client.getSql().execute("SELECT * FROM " + MAP_NAME);
-        assertEquals(1, cursorRegistry.getCursorCount());
+
+        assertTrueEventually(() -> assertEquals(1, cursorRegistry.getCursorCount()));
 
         // Ensure that the cursor is cleared on client shutdown
         client.shutdown();
@@ -312,12 +321,22 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
         client = newClient();
 
         try {
-            ((SqlClientService) client.getSql()).missing();
+            ClientMessage message = SqlExecute_reservedCodec.encodeRequest(
+                "SELECT * FROM table",
+                Collections.emptyList(),
+                100L,
+                100
+            );
+
+            SqlClientService clientService = ((SqlClientService) client.getSql());
+
+            Connection connection = clientService.getRandomConnection();
+            clientService.invokeOnConnection(connection, message);
 
             fail("Must fail");
         } catch (Exception e) {
             assertTrue(e.getMessage().contains("Cannot process SQL client operation due to version mismatch "
-                + "(please ensure that a client and a member have the same version)"));
+                + "(please ensure that the client and the member have the same version)"));
         }
     }
 

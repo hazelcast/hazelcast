@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -135,6 +135,7 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
         assertEquals(ByteOrder.BIG_ENDIAN, serializationConfig.getByteOrder());
         assertTrue(serializationConfig.isCheckClassDefErrors());
         assertFalse(serializationConfig.isAllowUnsafe());
+        assertFalse(serializationConfig.isAllowOverrideDefaultSerializers());
         assertFalse(serializationConfig.isEnableCompression());
         assertTrue(serializationConfig.isEnableSharedObject());
         assertTrue(serializationConfig.isUseNativeByteOrder());
@@ -296,11 +297,11 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
     public void testExponentialConnectionRetryConfig_defaults() {
         ClientConnectionStrategyConfig connectionStrategyConfig = defaultClientConfig.getConnectionStrategyConfig();
         ConnectionRetryConfig exponentialRetryConfig = connectionStrategyConfig.getConnectionRetryConfig();
-        assertEquals(20000, exponentialRetryConfig.getClusterConnectTimeoutMillis());
+        assertEquals(-1, exponentialRetryConfig.getClusterConnectTimeoutMillis());
         assertEquals(0, exponentialRetryConfig.getJitter(), 0);
         assertEquals(1000, exponentialRetryConfig.getInitialBackoffMillis());
         assertEquals(30000, exponentialRetryConfig.getMaxBackoffMillis());
-        assertEquals(1, exponentialRetryConfig.getMultiplier(), 0);
+        assertEquals(1.05, exponentialRetryConfig.getMultiplier(), 0);
     }
 
     @Test

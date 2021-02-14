@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.worker;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.sql.impl.exec.Exec;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.state.QueryStateCallback;
@@ -30,17 +31,20 @@ public final class QueryFragmentContext implements ExpressionEvalContext {
     private final List<Object> arguments;
     private final QueryFragmentScheduleCallback scheduleCallback;
     private final QueryStateCallback stateCallback;
+    private final InternalSerializationService serializationService;
 
     public QueryFragmentContext(
         List<Object> arguments,
         QueryFragmentScheduleCallback scheduleCallback,
-        QueryStateCallback stateCallback
+        QueryStateCallback stateCallback,
+        InternalSerializationService serializationService
     ) {
         assert arguments != null;
 
         this.arguments = arguments;
         this.scheduleCallback = scheduleCallback;
         this.stateCallback = stateCallback;
+        this.serializationService = serializationService;
     }
 
     @Override
@@ -48,6 +52,11 @@ public final class QueryFragmentContext implements ExpressionEvalContext {
         assert index >= 0 && index < arguments.size();
 
         return arguments.get(index);
+    }
+
+    @Override
+    public InternalSerializationService getSerializationService() {
+        return serializationService;
     }
 
     /**

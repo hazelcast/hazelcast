@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,12 @@
 package com.hazelcast.sql.impl.expression.predicate;
 
 import com.hazelcast.sql.SqlColumnType;
-import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.SqlRow;
-import com.hazelcast.sql.impl.expression.SqlExpressionIntegrationTestSupport;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
+import com.hazelcast.sql.impl.SqlErrorCode;
+import com.hazelcast.sql.impl.expression.ColumnExpression;
+import com.hazelcast.sql.impl.expression.ExpressionTestSupport;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.support.expressions.ExpressionType;
 import com.hazelcast.sql.support.expressions.ExpressionValue;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -43,7 +46,6 @@ import static com.hazelcast.sql.support.expressions.ExpressionTypes.BIG_DECIMAL;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.BIG_INTEGER;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.BOOLEAN;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.BYTE;
-import static com.hazelcast.sql.support.expressions.ExpressionTypes.CHARACTER;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.DOUBLE;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.FLOAT;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.INTEGER;
@@ -53,6 +55,7 @@ import static com.hazelcast.sql.support.expressions.ExpressionTypes.LOCAL_TIME;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.LONG;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.OBJECT;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.OFFSET_DATE_TIME;
+import static com.hazelcast.sql.support.expressions.ExpressionTypes.SHORT;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.STRING;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -62,117 +65,18 @@ import static org.junit.Assert.assertTrue;
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class IsTrueFalsePredicateIntegrationTest extends SqlExpressionIntegrationTestSupport {
+public class IsTrueFalsePredicateIntegrationTest extends ExpressionTestSupport {
     @Test
-    public void testLiteral() {
-        put(ExpressionValue.create(ExpressionValue.createClass(INTEGER), 0, 1));
-
-        // TRUE literal
-        checkLiteral("TRUE", "IS TRUE", true);
-        checkLiteral("true", "IS TRUE", true);
-        checkLiteral("'TRUE'", "IS TRUE", true);
-        checkLiteral("'true'", "IS TRUE", true);
-
-        checkLiteral("TRUE", "IS FALSE", false);
-
-        checkLiteral("true", "IS FALSE", false);
-        checkLiteral("'TRUE'", "IS FALSE", false);
-        checkLiteral("'true'", "IS FALSE", false);
-
-        checkLiteral("TRUE", "IS NOT TRUE", false);
-        checkLiteral("true", "IS NOT TRUE", false);
-        checkLiteral("'TRUE'", "IS NOT TRUE", false);
-        checkLiteral("'true'", "IS NOT TRUE", false);
-
-        checkLiteral("TRUE", "IS NOT FALSE", true);
-        checkLiteral("true", "IS NOT FALSE", true);
-        checkLiteral("'TRUE'", "IS NOT FALSE", true);
-        checkLiteral("'true'", "IS NOT FALSE", true);
-
-        // False literal
-        checkLiteral("FALSE", "IS TRUE", false);
-        checkLiteral("false", "IS TRUE", false);
-        checkLiteral("'FALSE'", "IS TRUE", false);
-        checkLiteral("'false'", "IS TRUE", false);
-
-        checkLiteral("FALSE", "IS FALSE", true);
-        checkLiteral("false", "IS FALSE", true);
-        checkLiteral("'FALSE'", "IS FALSE", true);
-        checkLiteral("'false'", "IS FALSE", true);
-
-        checkLiteral("FALSE", "IS NOT TRUE", true);
-        checkLiteral("false", "IS NOT TRUE", true);
-        checkLiteral("'FALSE'", "IS NOT TRUE", true);
-        checkLiteral("'false'", "IS NOT TRUE", true);
-
-        checkLiteral("FALSE", "IS NOT FALSE", false);
-        checkLiteral("false", "IS NOT FALSE", false);
-        checkLiteral("'FALSE'", "IS NOT FALSE", false);
-        checkLiteral("'false'", "IS NOT FALSE", false);
-
-        // NULL literal
-        checkLiteral("NULL", "IS TRUE", false);
-        checkLiteral("null", "IS TRUE", false);
-
-        checkLiteral("NULL", "IS FALSE", false);
-        checkLiteral("null", "IS FALSE", false);
-
-        checkLiteral("NULL", "IS NOT TRUE", true);
-        checkLiteral("null", "IS NOT TRUE", true);
-
-        checkLiteral("NULL", "IS NOT FALSE", true);
-        checkLiteral("null", "IS NOT FALSE", true);
-
-        // Bad literal
-        checkBadLiteral("IS TRUE");
-        checkBadLiteral("IS FALSE");
-        checkBadLiteral("IS NOT TRUE");
-        checkBadLiteral("IS NOT FALSE");
-    }
-
-    private void checkLiteral(String literal, String function, boolean expectedResult) {
-        String expression = literal + " " + function;
-        String sql = "SELECT " + expression + " FROM map WHERE " + expression;
-
-        List<SqlRow> rows = execute(member, sql);
-
-        if (expectedResult) {
-            assertEquals(1, rows.size());
-
-            SqlRow row = rows.get(0);
-
-            assertEquals(SqlColumnType.BOOLEAN, row.getMetadata().getColumn(0).getType());
-            assertTrue(row.getObject(0));
-        } else {
-            assertEquals(0, rows.size());
-        }
-    }
-
-    private void checkBadLiteral(String function) {
-        checkFailureInternal("SELECT * FROM map WHERE 'bad' " + function, SqlErrorCode.PARSING, "Literal ''bad'' can not be parsed to type 'BOOLEAN'");
-        checkFailureInternal("SELECT 'bad' " + function + " FROM map", SqlErrorCode.PARSING, "Literal ''bad'' can not be parsed to type 'BOOLEAN'");
-    }
-
-    @Test
-    public void testColumn_boolean() {
-        checkColumn(BOOLEAN, true, false);
-    }
-
-    @Test
-    public void testColumn_string() {
-        checkColumn(STRING, "true", "false");
-    }
-
-    private void checkColumn(ExpressionType<?> type, Object trueValue, Object falseValue) {
-        Class<? extends ExpressionValue> clazz = ExpressionValue.createClass(type);
+    public void testColumn() {
+        Class<? extends ExpressionValue> clazz = ExpressionValue.createClass(BOOLEAN);
 
         int keyTrue = 0;
         int keyFalse = 1;
         int keyNull = 2;
 
         Map<Integer, Object> entries = new HashMap<>();
-        entries.put(keyTrue, ExpressionValue.create(clazz, keyTrue, trueValue));
-        entries.put(keyFalse, ExpressionValue.create(clazz, keyFalse, falseValue));
+        entries.put(keyTrue, ExpressionValue.create(clazz, keyTrue, true));
+        entries.put(keyFalse, ExpressionValue.create(clazz, keyFalse, false));
         entries.put(keyNull, ExpressionValue.create(clazz, keyNull, null));
         putAll(entries);
 
@@ -180,6 +84,21 @@ public class IsTrueFalsePredicateIntegrationTest extends SqlExpressionIntegratio
         checkColumn("IS FALSE", set(keyFalse));
         checkColumn("IS NOT TRUE", set(keyFalse, keyNull));
         checkColumn("IS NOT FALSE", set(keyTrue, keyNull));
+
+        checkUnsupportedColumn(STRING, SqlColumnType.VARCHAR);
+        checkUnsupportedColumn(BYTE, SqlColumnType.TINYINT);
+        checkUnsupportedColumn(SHORT, SqlColumnType.SMALLINT);
+        checkUnsupportedColumn(INTEGER, SqlColumnType.INTEGER);
+        checkUnsupportedColumn(LONG, SqlColumnType.BIGINT);
+        checkUnsupportedColumn(BIG_INTEGER, SqlColumnType.DECIMAL);
+        checkUnsupportedColumn(BIG_DECIMAL, SqlColumnType.DECIMAL);
+        checkUnsupportedColumn(FLOAT, SqlColumnType.REAL);
+        checkUnsupportedColumn(DOUBLE, SqlColumnType.DOUBLE);
+        checkUnsupportedColumn(LOCAL_DATE, SqlColumnType.DATE);
+        checkUnsupportedColumn(LOCAL_TIME, SqlColumnType.TIME);
+        checkUnsupportedColumn(LOCAL_DATE_TIME, SqlColumnType.TIMESTAMP);
+        checkUnsupportedColumn(OFFSET_DATE_TIME, SqlColumnType.TIMESTAMP_WITH_TIME_ZONE);
+        checkUnsupportedColumn(OBJECT, SqlColumnType.OBJECT);
     }
 
     private void checkColumn(String function, Set<Integer> expectedKeys) {
@@ -201,76 +120,117 @@ public class IsTrueFalsePredicateIntegrationTest extends SqlExpressionIntegratio
         }
     }
 
-    @Test
-    public void testColumnBad_string() {
-        checkColumnBad(STRING, "bad", "VARCHAR");
+    private void checkUnsupportedColumn(ExpressionType<?> type, SqlColumnType expectedType) {
+        checkUnsupportedColumn(type, "IS TRUE", expectedType);
+        checkUnsupportedColumn(type, "IS FALSE", expectedType);
+        checkUnsupportedColumn(type, "IS NOT FALSE", expectedType);
+        checkUnsupportedColumn(type, "IS NOT TRUE", expectedType);
     }
 
-    @Test
-    public void testColumnBad_character() {
-        checkColumnBad(CHARACTER, 'a', "VARCHAR");
-    }
-
-    private void checkColumnBad(ExpressionType<?> type, Object value, Object expectedFromType) {
-        put(ExpressionValue.create(ExpressionValue.createClass(type), 1, value));
-
-        checkColumnBad("IS TRUE", expectedFromType);
-        checkColumnBad("IS FALSE", expectedFromType);
-        checkColumnBad("IS NOT TRUE", expectedFromType);
-        checkColumnBad("IS NOT FALSE", expectedFromType);
-    }
-
-    private void checkColumnBad(String function, Object expectedFromType) {
-        checkFailureInternal(
-            "SELECT key FROM map WHERE field1 " + function,
-            SqlErrorCode.DATA_EXCEPTION,
-            "Cannot convert " + expectedFromType + " to BOOLEAN"
-        );
-    }
-
-    @Test
-    public void testColumn_unsupported() {
-        checkUnsupportedColumn(BYTE, "TINYINT");
-        checkUnsupportedColumn(INTEGER, "INTEGER");
-        checkUnsupportedColumn(LONG, "BIGINT");
-        checkUnsupportedColumn(BIG_INTEGER, "DECIMAL(38, 38)");
-        checkUnsupportedColumn(BIG_DECIMAL, "DECIMAL(38, 38)");
-        checkUnsupportedColumn(FLOAT, "REAL");
-        checkUnsupportedColumn(DOUBLE, "DOUBLE");
-        checkUnsupportedColumn(OBJECT, "OBJECT");
-        checkUnsupportedColumn(LOCAL_DATE, "DATE");
-        checkUnsupportedColumn(LOCAL_TIME, "TIME");
-        checkUnsupportedColumn(LOCAL_DATE_TIME, "TIMESTAMP");
-        checkUnsupportedColumn(OFFSET_DATE_TIME, "TIMESTAMP_WITH_TIME_ZONE");
-    }
-
-    private void checkUnsupportedColumn(ExpressionType<?> type, String expectedTypeNameInErrorMessage) {
-        checkUnsupportedColumn(type, "IS TRUE", expectedTypeNameInErrorMessage);
-        checkUnsupportedColumn(type, "IS FALSE", expectedTypeNameInErrorMessage);
-        checkUnsupportedColumn(type, "IS NOT FALSE", expectedTypeNameInErrorMessage);
-        checkUnsupportedColumn(type, "IS NOT TRUE", expectedTypeNameInErrorMessage);
-    }
-
-    private void checkUnsupportedColumn(ExpressionType<?> type, String function, String expectedTypeNameInErrorMessage) {
-        String expectedErrorMessage = "Cannot apply '" + function + "' to arguments of type '<"
-            + expectedTypeNameInErrorMessage + "> " + function + "'. Supported form(s): '<BOOLEAN> " + function + "'";
+    private void checkUnsupportedColumn(ExpressionType<?> type, String function, SqlColumnType expectedType) {
+        String expectedErrorMessage = signatureErrorOperator(function, expectedType);
 
         int key = 0;
         put(key, ExpressionValue.create(ExpressionValue.createClass(type), key, type.valueFrom()));
 
         // Function in the condition
-        checkFailureInternal(
+        checkFailure0(
             "SELECT key FROM map WHERE field1 " + function,
             SqlErrorCode.PARSING,
             expectedErrorMessage
         );
 
         // Function in the column
-        checkFailureInternal(
+        checkFailure0(
             "SELECT field1 " + function + " FROM map",
             SqlErrorCode.PARSING,
             expectedErrorMessage
         );
+    }
+
+    @Test
+    public void testLiteral() {
+        put(ExpressionValue.create(ExpressionValue.createClass(INTEGER), 0, 1));
+
+        // TRUE literal
+        checkLiteral("TRUE", "IS TRUE", true);
+        checkLiteral("true", "IS TRUE", true);
+
+        checkLiteral("TRUE", "IS FALSE", false);
+        checkLiteral("true", "IS FALSE", false);
+
+        checkLiteral("TRUE", "IS NOT TRUE", false);
+        checkLiteral("true", "IS NOT TRUE", false);
+
+        checkLiteral("TRUE", "IS NOT FALSE", true);
+        checkLiteral("true", "IS NOT FALSE", true);
+
+        // False literal
+        checkLiteral("FALSE", "IS TRUE", false);
+        checkLiteral("false", "IS TRUE", false);
+
+        checkLiteral("FALSE", "IS FALSE", true);
+        checkLiteral("false", "IS FALSE", true);
+
+        checkLiteral("FALSE", "IS NOT TRUE", true);
+        checkLiteral("false", "IS NOT TRUE", true);
+
+        checkLiteral("FALSE", "IS NOT FALSE", false);
+        checkLiteral("false", "IS NOT FALSE", false);
+
+        // NULL literal
+        checkLiteral("NULL", "IS TRUE", false);
+        checkLiteral("null", "IS TRUE", false);
+
+        checkLiteral("NULL", "IS FALSE", false);
+        checkLiteral("null", "IS FALSE", false);
+
+        checkLiteral("NULL", "IS NOT TRUE", true);
+        checkLiteral("null", "IS NOT TRUE", true);
+
+        checkLiteral("NULL", "IS NOT FALSE", true);
+        checkLiteral("null", "IS NOT FALSE", true);
+
+        // Bad literals
+        checkLiteralFailure("1", SqlColumnType.TINYINT);
+        checkLiteralFailure("1.1", SqlColumnType.DECIMAL);
+        checkLiteralFailure("1e1", SqlColumnType.DOUBLE);
+        checkLiteralFailure("'true'", SqlColumnType.VARCHAR);
+        checkLiteralFailure("'false'", SqlColumnType.VARCHAR);
+        checkLiteralFailure("'null'", SqlColumnType.VARCHAR);
+        checkLiteralFailure("'string'", SqlColumnType.VARCHAR);
+    }
+
+    private void checkLiteral(String literal, String function, boolean expectedResult) {
+        String expression = literal + " " + function;
+        String sql = "SELECT " + expression + " FROM map WHERE " + expression;
+
+        List<SqlRow> rows = execute(member, sql);
+
+        if (expectedResult) {
+            assertEquals(1, rows.size());
+
+            SqlRow row = rows.get(0);
+
+            assertEquals(SqlColumnType.BOOLEAN, row.getMetadata().getColumn(0).getType());
+            assertTrue(row.getObject(0));
+        } else {
+            assertEquals(0, rows.size());
+        }
+    }
+
+    private void checkLiteralFailure(String literal, SqlColumnType expectedType) {
+        checkLiteralFailure(literal, "IS TRUE", expectedType);
+        checkLiteralFailure(literal, "IS FALSE", expectedType);
+        checkLiteralFailure(literal, "IS NOT TRUE", expectedType);
+        checkLiteralFailure(literal, "IS NOT FALSE", expectedType);
+    }
+
+    private void checkLiteralFailure(String literal, String function, SqlColumnType expectedType) {
+        String expression = literal + " " + function;
+        String sql = "SELECT " + expression + " FROM map WHERE " + expression;
+
+        checkFailure0(sql, SqlErrorCode.PARSING, signatureErrorOperator(function, expectedType));
     }
 
     @Test
@@ -280,57 +240,52 @@ public class IsTrueFalsePredicateIntegrationTest extends SqlExpressionIntegratio
 
         assertEquals(set(key), keys("SELECT key FROM map WHERE ? IS TRUE", true));
         assertEquals(set(), keys("SELECT key FROM map WHERE ? IS TRUE", false));
-        assertEquals(set(key), keys("SELECT key FROM map WHERE ? IS TRUE", "true"));
-        assertEquals(set(), keys("SELECT key FROM map WHERE ? IS TRUE", "false"));
         assertEquals(set(), keys("SELECT key FROM map WHERE ? IS TRUE", new Object[] { null }));
 
         assertEquals(set(), keys("SELECT key FROM map WHERE ? IS FALSE", true));
         assertEquals(set(key), keys("SELECT key FROM map WHERE ? IS FALSE", false));
-        assertEquals(set(), keys("SELECT key FROM map WHERE ? IS FALSE", "true"));
-        assertEquals(set(key), keys("SELECT key FROM map WHERE ? IS FALSE", "false"));
         assertEquals(set(), keys("SELECT key FROM map WHERE ? IS FALSE", new Object[] { null }));
 
         assertEquals(set(), keys("SELECT key FROM map WHERE ? IS NOT TRUE", true));
         assertEquals(set(key), keys("SELECT key FROM map WHERE ? IS NOT TRUE", false));
-        assertEquals(set(), keys("SELECT key FROM map WHERE ? IS NOT TRUE", "true"));
-        assertEquals(set(key), keys("SELECT key FROM map WHERE ? IS NOT TRUE", "false"));
         assertEquals(set(key), keys("SELECT key FROM map WHERE ? IS NOT TRUE", new Object[] { null }));
 
         assertEquals(set(key), keys("SELECT key FROM map WHERE ? IS NOT FALSE", true));
         assertEquals(set(), keys("SELECT key FROM map WHERE ? IS NOT FALSE", false));
-        assertEquals(set(key), keys("SELECT key FROM map WHERE ? IS NOT FALSE", "true"));
-        assertEquals(set(), keys("SELECT key FROM map WHERE ? IS NOT FALSE", "false"));
         assertEquals(set(key), keys("SELECT key FROM map WHERE ? IS NOT FALSE", new Object[] { null }));
 
-        checkUnsupportedParameter((byte) 1, "TINYINT");
-        checkUnsupportedParameter((short) 1, "SMALLINT");
-        checkUnsupportedParameter(1, "INTEGER");
-        checkUnsupportedParameter((long) 1, "BIGINT");
-        checkUnsupportedParameter(BigInteger.ONE, "DECIMAL");
-        checkUnsupportedParameter(BigDecimal.ONE, "DECIMAL");
-        checkUnsupportedParameter(1f, "REAL");
-        checkUnsupportedParameter(1d, "DOUBLE");
-
-        checkUnsupportedParameter(LOCAL_DATE_VAL, "DATE");
-        checkUnsupportedParameter(LOCAL_TIME_VAL, "TIME");
-        checkUnsupportedParameter(LOCAL_DATE_TIME_VAL, "TIMESTAMP");
-        checkUnsupportedParameter(OFFSET_DATE_TIME_VAL, "TIMESTAMP_WITH_TIME_ZONE");
+        checkUnsupportedParameter("true", SqlColumnType.VARCHAR);
+        checkUnsupportedParameter((byte) 1, SqlColumnType.TINYINT);
+        checkUnsupportedParameter((short) 1, SqlColumnType.SMALLINT);
+        checkUnsupportedParameter(1, SqlColumnType.INTEGER);
+        checkUnsupportedParameter((long) 1, SqlColumnType.BIGINT);
+        checkUnsupportedParameter(BigInteger.ONE, SqlColumnType.DECIMAL);
+        checkUnsupportedParameter(BigDecimal.ONE, SqlColumnType.DECIMAL);
+        checkUnsupportedParameter(1f, SqlColumnType.REAL);
+        checkUnsupportedParameter(1d, SqlColumnType.DOUBLE);
+        checkUnsupportedParameter(LOCAL_DATE_VAL, SqlColumnType.DATE);
+        checkUnsupportedParameter(LOCAL_TIME_VAL, SqlColumnType.TIME);
+        checkUnsupportedParameter(LOCAL_DATE_TIME_VAL, SqlColumnType.TIMESTAMP);
+        checkUnsupportedParameter(OFFSET_DATE_TIME_VAL, SqlColumnType.TIMESTAMP_WITH_TIME_ZONE);
+        checkUnsupportedParameter(OBJECT_VAL, SqlColumnType.OBJECT);
     }
 
-    private void checkUnsupportedParameter(Object param, String expectedTypeInErrorMessage) {
-        checkUnsupportedParameter("IS TRUE", param, expectedTypeInErrorMessage);
-        checkUnsupportedParameter("IS FALSE", param, expectedTypeInErrorMessage);
-        checkUnsupportedParameter("IS NOT TRUE", param, expectedTypeInErrorMessage);
-        checkUnsupportedParameter("IS NOT FALSE", param, expectedTypeInErrorMessage);
+    private void checkUnsupportedParameter(Object param, SqlColumnType paramType) {
+        checkUnsupportedParameter("IS TRUE", param, paramType);
+        checkUnsupportedParameter("IS FALSE", param, paramType);
+        checkUnsupportedParameter("IS NOT TRUE", param, paramType);
+        checkUnsupportedParameter("IS NOT FALSE", param, paramType);
     }
 
-    private void checkUnsupportedParameter(String function, Object param, String expectedTypeInErrorMessage) {
+    private void checkUnsupportedParameter(String function, Object param, SqlColumnType paramType) {
         String sql = "SELECT * FROM map WHERE ? " + function;
 
-        checkFailureInternal(
+        String expectedErrorMessage = parameterError(0, SqlColumnType.BOOLEAN, paramType);
+
+        checkFailure0(
             sql,
             SqlErrorCode.DATA_EXCEPTION,
-            "Cannot implicitly convert parameter at position 0 from " + expectedTypeInErrorMessage + " to BOOLEAN",
+            expectedErrorMessage,
             param
         );
     }
@@ -365,5 +320,73 @@ public class IsTrueFalsePredicateIntegrationTest extends SqlExpressionIntegratio
         }
 
         return res;
+    }
+
+    @Test
+    public void testEquality_isTrue() {
+        ColumnExpression<?> column1 = ColumnExpression.create(0, QueryDataType.BOOLEAN);
+        ColumnExpression<?> column2 = ColumnExpression.create(1, QueryDataType.BOOLEAN);
+
+        checkEquals(IsTruePredicate.create(column1), IsTruePredicate.create(column1), true);
+        checkEquals(IsTruePredicate.create(column1), IsTruePredicate.create(column2), false);
+    }
+
+    @Test
+    public void testSerialization_isTrue() {
+        IsTruePredicate original = IsTruePredicate.create(ColumnExpression.create(0, QueryDataType.BOOLEAN));
+        IsTruePredicate restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_IS_TRUE);
+
+        checkEquals(original, restored, true);
+    }
+
+    @Test
+    public void testEquality_isFalse() {
+        ColumnExpression<?> column1 = ColumnExpression.create(0, QueryDataType.BOOLEAN);
+        ColumnExpression<?> column2 = ColumnExpression.create(1, QueryDataType.BOOLEAN);
+
+        checkEquals(IsFalsePredicate.create(column1), IsFalsePredicate.create(column1), true);
+        checkEquals(IsFalsePredicate.create(column1), IsFalsePredicate.create(column2), false);
+    }
+
+    @Test
+    public void testSerialization_isFalse() {
+        IsFalsePredicate original = IsFalsePredicate.create(ColumnExpression.create(0, QueryDataType.BOOLEAN));
+        IsFalsePredicate restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_IS_FALSE);
+
+        checkEquals(original, restored, true);
+    }
+
+    @Test
+    public void testEquality_isNotTrue() {
+        ColumnExpression<?> column1 = ColumnExpression.create(0, QueryDataType.BOOLEAN);
+        ColumnExpression<?> column2 = ColumnExpression.create(1, QueryDataType.BOOLEAN);
+
+        checkEquals(IsNotTruePredicate.create(column1), IsNotTruePredicate.create(column1), true);
+        checkEquals(IsNotTruePredicate.create(column1), IsNotTruePredicate.create(column2), false);
+    }
+
+    @Test
+    public void testSerialization_isNotTrue() {
+        IsNotTruePredicate original = IsNotTruePredicate.create(ColumnExpression.create(0, QueryDataType.BOOLEAN));
+        IsNotTruePredicate restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_IS_NOT_TRUE);
+
+        checkEquals(original, restored, true);
+    }
+
+    @Test
+    public void testEquality_isNotFalse() {
+        ColumnExpression<?> column1 = ColumnExpression.create(0, QueryDataType.BOOLEAN);
+        ColumnExpression<?> column2 = ColumnExpression.create(1, QueryDataType.BOOLEAN);
+
+        checkEquals(IsNotFalsePredicate.create(column1), IsNotFalsePredicate.create(column1), true);
+        checkEquals(IsNotFalsePredicate.create(column1), IsNotFalsePredicate.create(column2), false);
+    }
+
+    @Test
+    public void testSerialization_isNotFalse() {
+        IsNotFalsePredicate original = IsNotFalsePredicate.create(ColumnExpression.create(0, QueryDataType.BOOLEAN));
+        IsNotFalsePredicate restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_IS_NOT_FALSE);
+
+        checkEquals(original, restored, true);
     }
 }

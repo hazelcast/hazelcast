@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.calcite.opt.cost;
 
 import com.hazelcast.config.IndexType;
-import com.hazelcast.sql.impl.calcite.SqlToQueryType;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataTypeField;
 
@@ -107,7 +107,7 @@ public final class CostUtils {
         int res = 0;
 
         for (RelDataTypeField field : rel.getRowType().getFieldList()) {
-            res += SqlToQueryType.map(field.getType().getSqlTypeName()).getTypeFamily().getEstimatedSize();
+            res += HazelcastTypeUtils.toHazelcastType(field.getType().getSqlTypeName()).getTypeFamily().getEstimatedSize();
         }
 
         return res;

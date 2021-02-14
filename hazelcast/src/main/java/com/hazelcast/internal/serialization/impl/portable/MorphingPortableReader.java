@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,14 @@ import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.Portable;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
 
 import static com.hazelcast.nio.serialization.FieldType.BOOLEAN;
 import static com.hazelcast.nio.serialization.FieldType.BOOLEAN_ARRAY;
@@ -30,6 +37,10 @@ import static com.hazelcast.nio.serialization.FieldType.BYTE;
 import static com.hazelcast.nio.serialization.FieldType.BYTE_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.CHAR;
 import static com.hazelcast.nio.serialization.FieldType.CHAR_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.DATE;
+import static com.hazelcast.nio.serialization.FieldType.DATE_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.DECIMAL;
+import static com.hazelcast.nio.serialization.FieldType.DECIMAL_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.DOUBLE;
 import static com.hazelcast.nio.serialization.FieldType.DOUBLE_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.FLOAT;
@@ -42,6 +53,12 @@ import static com.hazelcast.nio.serialization.FieldType.PORTABLE;
 import static com.hazelcast.nio.serialization.FieldType.PORTABLE_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.SHORT;
 import static com.hazelcast.nio.serialization.FieldType.SHORT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.TIME;
+import static com.hazelcast.nio.serialization.FieldType.TIMESTAMP;
+import static com.hazelcast.nio.serialization.FieldType.TIMESTAMP_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.TIMESTAMP_WITH_TIMEZONE;
+import static com.hazelcast.nio.serialization.FieldType.TIMESTAMP_WITH_TIMEZONE_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.TIME_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.UTF;
 import static com.hazelcast.nio.serialization.FieldType.UTF_ARRAY;
 
@@ -58,7 +75,7 @@ public class MorphingPortableReader extends DefaultPortableReader {
     }
 
     @Override
-    public int readInt(String fieldName) throws IOException {
+    public int readInt(@Nonnull String fieldName) throws IOException {
         FieldDefinition fd = cd.getField(fieldName);
         if (fd == null) {
             return 0;
@@ -78,7 +95,7 @@ public class MorphingPortableReader extends DefaultPortableReader {
     }
 
     @Override
-    public long readLong(String fieldName) throws IOException {
+    public long readLong(@Nonnull String fieldName) throws IOException {
         FieldDefinition fd = cd.getField(fieldName);
         if (fd == null) {
             return 0L;
@@ -100,17 +117,19 @@ public class MorphingPortableReader extends DefaultPortableReader {
     }
 
     @Override
-    public String readUTF(String fieldName) throws IOException {
-        FieldDefinition fd = cd.getField(fieldName);
-        if (fd == null) {
-            return null;
-        }
-        validateTypeCompatibility(fd, UTF);
-        return super.readUTF(fieldName);
+    @Nullable
+    public String readUTF(@Nonnull String fieldName) throws IOException {
+        return readString(fieldName);
     }
 
     @Override
-    public boolean readBoolean(String fieldName) throws IOException {
+    @Nullable
+    public String readString(@Nonnull String fieldName) throws IOException {
+        return readIncompatibleField(fieldName, UTF, super::readString);
+    }
+
+    @Override
+    public boolean readBoolean(@Nonnull String fieldName) throws IOException {
         FieldDefinition fd = cd.getField(fieldName);
         if (fd == null) {
             return false;
@@ -120,7 +139,7 @@ public class MorphingPortableReader extends DefaultPortableReader {
     }
 
     @Override
-    public byte readByte(String fieldName) throws IOException {
+    public byte readByte(@Nonnull String fieldName) throws IOException {
         FieldDefinition fd = cd.getField(fieldName);
         if (fd == null) {
             return 0;
@@ -130,7 +149,7 @@ public class MorphingPortableReader extends DefaultPortableReader {
     }
 
     @Override
-    public char readChar(String fieldName) throws IOException {
+    public char readChar(@Nonnull String fieldName) throws IOException {
         FieldDefinition fd = cd.getField(fieldName);
         if (fd == null) {
             return 0;
@@ -140,7 +159,7 @@ public class MorphingPortableReader extends DefaultPortableReader {
     }
 
     @Override
-    public double readDouble(String fieldName) throws IOException {
+    public double readDouble(@Nonnull String fieldName) throws IOException {
         FieldDefinition fd = cd.getField(fieldName);
         if (fd == null) {
             return 0d;
@@ -166,7 +185,7 @@ public class MorphingPortableReader extends DefaultPortableReader {
     }
 
     @Override
-    public float readFloat(String fieldName) throws IOException {
+    public float readFloat(@Nonnull String fieldName) throws IOException {
         FieldDefinition fd = cd.getField(fieldName);
         if (fd == null) {
             return 0f;
@@ -188,7 +207,7 @@ public class MorphingPortableReader extends DefaultPortableReader {
     }
 
     @Override
-    public short readShort(String fieldName) throws IOException {
+    public short readShort(@Nonnull String fieldName) throws IOException {
         FieldDefinition fd = cd.getField(fieldName);
         if (fd == null) {
             return 0;
@@ -204,113 +223,145 @@ public class MorphingPortableReader extends DefaultPortableReader {
     }
 
     @Override
-    public byte[] readByteArray(String fieldName) throws IOException {
-        FieldDefinition fd = cd.getField(fieldName);
-        if (fd == null) {
-            return null;
-        }
-        validateTypeCompatibility(fd, BYTE_ARRAY);
-        return super.readByteArray(fieldName);
+    @Nullable
+    public BigDecimal readDecimal(@Nonnull String fieldName) throws IOException {
+        return readIncompatibleField(fieldName, DECIMAL, super::readDecimal);
     }
 
     @Override
-    public boolean[] readBooleanArray(String fieldName) throws IOException {
-        FieldDefinition fd = cd.getField(fieldName);
-        if (fd == null) {
-            return null;
-        }
-        validateTypeCompatibility(fd, BOOLEAN_ARRAY);
-        return super.readBooleanArray(fieldName);
+    @Nullable
+    public LocalTime readTime(@Nonnull String fieldName) throws IOException {
+        return readIncompatibleField(fieldName, TIME, super::readTime);
     }
 
     @Override
-    public char[] readCharArray(String fieldName) throws IOException {
-        FieldDefinition fd = cd.getField(fieldName);
-        if (fd == null) {
-            return null;
-        }
-        validateTypeCompatibility(fd, CHAR_ARRAY);
-        return super.readCharArray(fieldName);
+    @Nullable
+    public LocalDate readDate(@Nonnull String fieldName) throws IOException {
+        return readIncompatibleField(fieldName, DATE, super::readDate);
     }
 
     @Override
-    public int[] readIntArray(String fieldName) throws IOException {
-        FieldDefinition fd = cd.getField(fieldName);
-        if (fd == null) {
-            return null;
-        }
-        validateTypeCompatibility(fd, INT_ARRAY);
-        return super.readIntArray(fieldName);
+    @Nullable
+    public LocalDateTime readTimestamp(@Nonnull String fieldName) throws IOException {
+        return readIncompatibleField(fieldName, TIMESTAMP, super::readTimestamp);
     }
 
     @Override
-    public long[] readLongArray(String fieldName) throws IOException {
-        FieldDefinition fd = cd.getField(fieldName);
-        if (fd == null) {
-            return null;
-        }
-        validateTypeCompatibility(fd, LONG_ARRAY);
-        return super.readLongArray(fieldName);
+    @Nullable
+    public OffsetDateTime readTimestampWithTimezone(@Nonnull String fieldName) throws IOException {
+        return readIncompatibleField(fieldName, TIMESTAMP_WITH_TIMEZONE, super::readTimestampWithTimezone);
     }
 
     @Override
-    public double[] readDoubleArray(String fieldName) throws IOException {
-        FieldDefinition fd = cd.getField(fieldName);
-        if (fd == null) {
-            return null;
-        }
-        validateTypeCompatibility(fd, DOUBLE_ARRAY);
-        return super.readDoubleArray(fieldName);
+    @Nullable
+    public byte[] readByteArray(@Nonnull String fieldName) throws IOException {
+        return readIncompatibleField(fieldName, BYTE_ARRAY, super::readByteArray);
     }
 
     @Override
-    public float[] readFloatArray(String fieldName) throws IOException {
-        FieldDefinition fd = cd.getField(fieldName);
-        if (fd == null) {
-            return null;
-        }
-        validateTypeCompatibility(fd, FLOAT_ARRAY);
-        return super.readFloatArray(fieldName);
+    @Nullable
+    public boolean[] readBooleanArray(@Nonnull String fieldName) throws IOException {
+        return readIncompatibleField(fieldName, BOOLEAN_ARRAY, super::readBooleanArray);
     }
 
     @Override
-    public short[] readShortArray(String fieldName) throws IOException {
-        FieldDefinition fd = cd.getField(fieldName);
-        if (fd == null) {
-            return null;
-        }
-        validateTypeCompatibility(fd, SHORT_ARRAY);
-        return super.readShortArray(fieldName);
+    @Nullable
+    public char[] readCharArray(@Nonnull String fieldName) throws IOException {
+        return readIncompatibleField(fieldName, CHAR_ARRAY, super::readCharArray);
     }
 
     @Override
-    public String[] readUTFArray(String fieldName) throws IOException {
-        FieldDefinition fd = cd.getField(fieldName);
-        if (fd == null) {
-            return null;
-        }
-        validateTypeCompatibility(fd, UTF_ARRAY);
-        return super.readUTFArray(fieldName);
+    @Nullable
+    public int[] readIntArray(@Nonnull String fieldName) throws IOException {
+        return readIncompatibleField(fieldName, INT_ARRAY, super::readIntArray);
     }
 
     @Override
-    public Portable readPortable(String fieldName) throws IOException {
-        FieldDefinition fd = cd.getField(fieldName);
-        if (fd == null) {
-            return null;
-        }
-        validateTypeCompatibility(fd, PORTABLE);
-        return super.readPortable(fieldName);
+    @Nullable
+    public long[] readLongArray(@Nonnull String fieldName) throws IOException {
+        return readIncompatibleField(fieldName, LONG_ARRAY, super::readLongArray);
     }
 
     @Override
-    public Portable[] readPortableArray(String fieldName) throws IOException {
+    @Nullable
+    public double[] readDoubleArray(@Nonnull String fieldName) throws IOException {
+        return readIncompatibleField(fieldName, DOUBLE_ARRAY, super::readDoubleArray);
+    }
+
+    @Override
+    @Nullable
+    public float[] readFloatArray(@Nonnull String fieldName) throws IOException {
+        return readIncompatibleField(fieldName, FLOAT_ARRAY, super::readFloatArray);
+    }
+
+    @Override
+    @Nullable
+    public short[] readShortArray(@Nonnull String fieldName) throws IOException {
+        return readIncompatibleField(fieldName, SHORT_ARRAY, super::readShortArray);
+    }
+
+    @Override
+    @Nullable
+    public String[] readUTFArray(@Nonnull String fieldName) throws IOException {
+        return readStringArray(fieldName);
+    }
+
+    @Override
+    @Nullable
+    public String[] readStringArray(@Nonnull String fieldName) throws IOException {
+        return readIncompatibleField(fieldName, UTF_ARRAY, super::readStringArray);
+    }
+
+    @Override
+    @Nullable
+    public Portable readPortable(@Nonnull String fieldName) throws IOException {
+        return readIncompatibleField(fieldName, PORTABLE, super::readPortable);
+    }
+
+    @Override
+    @Nullable
+    public Portable[] readPortableArray(@Nonnull String fieldName) throws IOException {
+        return readIncompatibleField(fieldName, PORTABLE_ARRAY, super::readPortableArray);
+    }
+
+    @Override
+    @Nullable
+    public BigDecimal[] readDecimalArray(@Nonnull String fieldName) throws IOException {
+        return readIncompatibleField(fieldName, DECIMAL_ARRAY, super::readDecimalArray);
+    }
+
+    @Override
+    @Nullable
+    public LocalTime[] readTimeArray(@Nonnull String fieldName) throws IOException {
+        return readIncompatibleField(fieldName, TIME_ARRAY, super::readTimeArray);
+    }
+
+    @Override
+    @Nullable
+    public LocalDate[] readDateArray(@Nonnull String fieldName) throws IOException {
+        return readIncompatibleField(fieldName, DATE_ARRAY, super::readDateArray);
+    }
+
+    @Override
+    @Nullable
+    public LocalDateTime[] readTimestampArray(@Nonnull String fieldName) throws IOException {
+        return readIncompatibleField(fieldName, TIMESTAMP_ARRAY, super::readTimestampArray);
+    }
+
+    @Override
+    @Nullable
+    public OffsetDateTime[] readTimestampWithTimezoneArray(@Nonnull String fieldName) throws IOException {
+        return readIncompatibleField(fieldName, TIMESTAMP_WITH_TIMEZONE_ARRAY, super::readTimestampWithTimezoneArray);
+    }
+
+    private <T> T readIncompatibleField(@Nonnull String fieldName, FieldType fieldType,
+                                        Reader<String, T> reader) throws IOException {
         FieldDefinition fd = cd.getField(fieldName);
         if (fd == null) {
             return null;
         }
-        validateTypeCompatibility(fd, PORTABLE_ARRAY);
-        return super.readPortableArray(fieldName);
+        validateTypeCompatibility(fd, fieldType);
+        return reader.read(fieldName);
     }
 
     private void validateTypeCompatibility(FieldDefinition fd, FieldType expectedType) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,13 @@ package com.hazelcast.sql.impl.expression.predicate;
 
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.SqlErrorCode;
-import com.hazelcast.sql.impl.expression.SqlExpressionIntegrationTestSupport;
+import com.hazelcast.sql.impl.expression.ExpressionTestSupport;
+import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue;
+import com.hazelcast.sql.support.expressions.ExpressionType;
 import com.hazelcast.sql.support.expressions.ExpressionTypes;
+import com.hazelcast.sql.support.expressions.ExpressionValue;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -29,24 +33,30 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Collection;
-
-import static com.hazelcast.sql.support.expressions.ExpressionBiValue.createBiClass;
-import static com.hazelcast.sql.support.expressions.ExpressionBiValue.createBiValue;
 
 @SuppressWarnings("rawtypes")
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ComparisonPredicateIntegrationTest extends SqlExpressionIntegrationTestSupport {
+public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
 
     private static final int RES_EQ = 0;
     private static final int RES_LT = -1;
     private static final int RES_GT = 1;
     private static final Integer RES_NULL = null;
+    private static final ZoneId DEFAULT_TIME_ZONE = ZoneId.systemDefault();
 
     @Parameterized.Parameter
     public Mode mode;
@@ -63,549 +73,600 @@ public class ComparisonPredicateIntegrationTest extends SqlExpressionIntegration
         });
     }
 
+    protected static final Object[] NUMERICS_QUICK = new Object[] {
+        Byte.MIN_VALUE, Byte.MAX_VALUE,
+        Short.MIN_VALUE, Short.MAX_VALUE,
+        Integer.MIN_VALUE, Integer.MAX_VALUE,
+        Long.MIN_VALUE, Long.MAX_VALUE,
+        BigDecimal.ONE.negate(), BigDecimal.ONE,
+        Float.MIN_VALUE, Float.MAX_VALUE,
+        Double.MIN_VALUE, Double.MAX_VALUE,
+    };
+
+    protected static final Object[] NUMERICS_SLOW = new Object[] {
+        Byte.MIN_VALUE, (byte) -1, (byte) 0, (byte) 1, Byte.MAX_VALUE,
+        Short.MIN_VALUE, (short) -1, (short) 0, (short) 1, Short.MAX_VALUE,
+        Integer.MIN_VALUE, -1, 0, 1, Integer.MAX_VALUE,
+        Long.MIN_VALUE, -1L, 0L, 1L, Long.MAX_VALUE,
+        BigInteger.ONE.negate(), BigInteger.ZERO, BigInteger.ONE,
+        BigDecimal.ONE.negate(), BigDecimal.ZERO, BigDecimal.ONE,
+        Float.MIN_VALUE, -1f, 0f, 1f, Float.MAX_VALUE,
+        Double.MIN_VALUE, -1d, 0d, 1d, Double.MAX_VALUE,
+    };
+
+    private static final Literal LITERAL_BOOLEAN = new Literal("true", SqlColumnType.BOOLEAN);
+    private static final Literal LITERAL_VARCHAR = new Literal("'true'", SqlColumnType.VARCHAR);
+    private static final Literal LITERAL_TINYINT = new Literal("1", SqlColumnType.TINYINT);
+    private static final Literal LITERAL_DECIMAL = new Literal("1.1", SqlColumnType.DECIMAL);
+    private static final Literal LITERAL_DOUBLE = new Literal("1.1E1", SqlColumnType.DOUBLE);
+
     @Test
-    public void test_column_column() {
-        // TINYINT/TINYINT
-        Class<? extends ExpressionBiValue> clazz = createBiClass(ExpressionTypes.BYTE, ExpressionTypes.BYTE);
-        checkColumnColumn(clazz, (byte) 0, (byte) 0, RES_EQ);
-        checkColumnColumn(clazz, (byte) 0, Byte.MAX_VALUE, RES_LT);
-        checkColumnColumn(clazz, (byte) 0, Byte.MIN_VALUE, RES_GT);
-        checkColumnColumn(clazz, (byte) 0, null, RES_NULL);
-
-        // TINYINT/SMALLINT
-        clazz = createBiClass(ExpressionTypes.BYTE, ExpressionTypes.SHORT);
-        checkColumnColumn(clazz, (byte) 0, (short) 0, RES_EQ);
-        checkColumnColumn(clazz, (byte) 0, Short.MAX_VALUE, RES_LT);
-        checkColumnColumn(clazz, (byte) 0, Short.MIN_VALUE, RES_GT);
-
-        // TINYINT/INTEGER
-        clazz = createBiClass(ExpressionTypes.BYTE, ExpressionTypes.INTEGER);
-        checkColumnColumn(clazz, (byte) 0, 0, RES_EQ);
-        checkColumnColumn(clazz, (byte) 0, Integer.MAX_VALUE, RES_LT);
-        checkColumnColumn(clazz, (byte) 0, Integer.MIN_VALUE, RES_GT);
-
-        // TINYINT/BIGINT
-        clazz = createBiClass(ExpressionTypes.BYTE, ExpressionTypes.LONG);
-        checkColumnColumn(clazz, (byte) 0, 0L, RES_EQ);
-        checkColumnColumn(clazz, (byte) 0, Long.MAX_VALUE, RES_LT);
-        checkColumnColumn(clazz, (byte) 0, Long.MIN_VALUE, RES_GT);
-
-        // TINYINT/DECIMAL
-        clazz = createBiClass(ExpressionTypes.BYTE, ExpressionTypes.BIG_INTEGER);
-        checkColumnColumn(clazz, (byte) 0, BigInteger.ZERO, RES_EQ);
-        checkColumnColumn(clazz, (byte) 0, BigInteger.ONE, RES_LT);
-        checkColumnColumn(clazz, (byte) 0, BigInteger.ONE.negate(), RES_GT);
-
-        clazz = createBiClass(ExpressionTypes.BYTE, ExpressionTypes.BIG_DECIMAL);
-        checkColumnColumn(clazz, (byte) 0, BigDecimal.ZERO, RES_EQ);
-        checkColumnColumn(clazz, (byte) 0, BigDecimal.ONE, RES_LT);
-        checkColumnColumn(clazz, (byte) 0, BigDecimal.ONE.negate(), RES_GT);
-
-        // TINYINT/REAL
-        clazz = createBiClass(ExpressionTypes.BYTE, ExpressionTypes.FLOAT);
-        checkColumnColumn(clazz, (byte) 0, 0f, RES_EQ);
-        checkColumnColumn(clazz, (byte) 0, 1f, RES_LT);
-        checkColumnColumn(clazz, (byte) 0, -1f, RES_GT);
-
-        // TINYINT/DOUBLE
-        clazz = createBiClass(ExpressionTypes.BYTE, ExpressionTypes.DOUBLE);
-        checkColumnColumn(clazz, (byte) 0, 0d, RES_EQ);
-        checkColumnColumn(clazz, (byte) 0, 1d, RES_LT);
-        checkColumnColumn(clazz, (byte) 0, -1d, RES_GT);
-
-        // TINYINT/VARCHAR
-        clazz = createBiClass(ExpressionTypes.BYTE, ExpressionTypes.CHARACTER);
-        checkColumnColumn(clazz, (byte) 0, '1', RES_LT);
-
-        clazz = createBiClass(ExpressionTypes.BYTE, ExpressionTypes.STRING);
-        checkColumnColumn(clazz, (byte) 0, "1", RES_LT);
-        checkColumnColumnFailure(clazz, (byte) 0, "bad", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to BIGINT");
-
-        // TINYINT/OBJECT
-        clazz = createBiClass(ExpressionTypes.BYTE, ExpressionTypes.OBJECT);
-        checkColumnColumnFailure(clazz, (byte) 0, 1, SqlErrorCode.PARSING, "to arguments of type '<OBJECT>");
-
-        // SMALLINT/SMALLINT
-        clazz = createBiClass(ExpressionTypes.SHORT, ExpressionTypes.SHORT);
-        checkColumnColumn(clazz, (short) 0, (short) 0, RES_EQ);
-        checkColumnColumn(clazz, (short) 0, Short.MAX_VALUE, RES_LT);
-        checkColumnColumn(clazz, (short) 0, Short.MIN_VALUE, RES_GT);
-
-        // SMALLINT/INTEGER
-        clazz = createBiClass(ExpressionTypes.SHORT, ExpressionTypes.INTEGER);
-        checkColumnColumn(clazz, (short) 0, 0, RES_EQ);
-        checkColumnColumn(clazz, (short) 0, Integer.MAX_VALUE, RES_LT);
-        checkColumnColumn(clazz, (short) 0, Integer.MIN_VALUE, RES_GT);
-
-        // SMALLINT/BIGINT
-        clazz = createBiClass(ExpressionTypes.SHORT, ExpressionTypes.LONG);
-        checkColumnColumn(clazz, (short) 0, 0L, RES_EQ);
-        checkColumnColumn(clazz, (short) 0, Long.MAX_VALUE, RES_LT);
-        checkColumnColumn(clazz, (short) 0, Long.MIN_VALUE, RES_GT);
-
-        // SMALLINT/DECIMAL
-        clazz = createBiClass(ExpressionTypes.SHORT, ExpressionTypes.BIG_INTEGER);
-        checkColumnColumn(clazz, (short) 0, BigInteger.ZERO, RES_EQ);
-        checkColumnColumn(clazz, (short) 0, BigInteger.ONE, RES_LT);
-        checkColumnColumn(clazz, (short) 0, BigInteger.ONE.negate(), RES_GT);
-
-        clazz = createBiClass(ExpressionTypes.SHORT, ExpressionTypes.BIG_DECIMAL);
-        checkColumnColumn(clazz, (short) 0, BigDecimal.ZERO, RES_EQ);
-        checkColumnColumn(clazz, (short) 0, BigDecimal.ONE, RES_LT);
-        checkColumnColumn(clazz, (short) 0, BigDecimal.ONE.negate(), RES_GT);
-
-        // SMALLINT/REAL
-        clazz = createBiClass(ExpressionTypes.SHORT, ExpressionTypes.FLOAT);
-        checkColumnColumn(clazz, (short) 0, 0f, RES_EQ);
-        checkColumnColumn(clazz, (short) 0, 1f, RES_LT);
-        checkColumnColumn(clazz, (short) 0, -1f, RES_GT);
-
-        // SMALLINT/DOUBLE
-        clazz = createBiClass(ExpressionTypes.SHORT, ExpressionTypes.DOUBLE);
-        checkColumnColumn(clazz, (short) 0, 0d, RES_EQ);
-        checkColumnColumn(clazz, (short) 0, 1d, RES_LT);
-        checkColumnColumn(clazz, (short) 0, -1d, RES_GT);
-
-        // SMALLINT/VARCHAR
-        clazz = createBiClass(ExpressionTypes.SHORT, ExpressionTypes.CHARACTER);
-        checkColumnColumn(clazz, (short) 0, '1', RES_LT);
-
-        clazz = createBiClass(ExpressionTypes.SHORT, ExpressionTypes.STRING);
-        checkColumnColumn(clazz, (short) 0, "1", RES_LT);
-        checkColumnColumnFailure(clazz, (short) 0, "bad", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to BIGINT");
-
-        // SMALLINT/OBJECT
-        clazz = createBiClass(ExpressionTypes.SHORT, ExpressionTypes.OBJECT);
-        checkColumnColumnFailure(clazz, (short) 0, 1, SqlErrorCode.PARSING, "to arguments of type '<OBJECT>");
-
-        // INTEGER/INTEGER
-        clazz = createBiClass(ExpressionTypes.INTEGER, ExpressionTypes.INTEGER);
-        checkColumnColumn(clazz, 0, 0, RES_EQ);
-        checkColumnColumn(clazz, 0, Integer.MAX_VALUE, RES_LT);
-        checkColumnColumn(clazz, 0, Integer.MIN_VALUE, RES_GT);
-
-        // INTEGER/BIGINT
-        clazz = createBiClass(ExpressionTypes.INTEGER, ExpressionTypes.LONG);
-        checkColumnColumn(clazz, 0, 0L, RES_EQ);
-        checkColumnColumn(clazz, 0, Long.MAX_VALUE, RES_LT);
-        checkColumnColumn(clazz, 0, Long.MIN_VALUE, RES_GT);
-
-        // INTEGER/DECIMAL
-        clazz = createBiClass(ExpressionTypes.INTEGER, ExpressionTypes.BIG_INTEGER);
-        checkColumnColumn(clazz, 0, BigInteger.ZERO, RES_EQ);
-        checkColumnColumn(clazz, 0, BigInteger.ONE, RES_LT);
-        checkColumnColumn(clazz, 0, BigInteger.ONE.negate(), RES_GT);
-
-        clazz = createBiClass(ExpressionTypes.INTEGER, ExpressionTypes.BIG_DECIMAL);
-        checkColumnColumn(clazz, 0, BigDecimal.ZERO, RES_EQ);
-        checkColumnColumn(clazz, 0, BigDecimal.ONE, RES_LT);
-        checkColumnColumn(clazz, 0, BigDecimal.ONE.negate(), RES_GT);
-
-        // INTEGER/REAL
-        clazz = createBiClass(ExpressionTypes.INTEGER, ExpressionTypes.FLOAT);
-        checkColumnColumn(clazz, 0, 0f, RES_EQ);
-        checkColumnColumn(clazz, 0, 1f, RES_LT);
-        checkColumnColumn(clazz, 0, -1f, RES_GT);
-
-        // INTEGER/DOUBLE
-        clazz = createBiClass(ExpressionTypes.INTEGER, ExpressionTypes.DOUBLE);
-        checkColumnColumn(clazz, 0, 0d, RES_EQ);
-        checkColumnColumn(clazz, 0, 1d, RES_LT);
-        checkColumnColumn(clazz, 0, -1d, RES_GT);
-
-        // INTEGER/VARCHAR
-        clazz = createBiClass(ExpressionTypes.INTEGER, ExpressionTypes.CHARACTER);
-        checkColumnColumn(clazz, 0, '1', RES_LT);
-
-        clazz = createBiClass(ExpressionTypes.INTEGER, ExpressionTypes.STRING);
-        checkColumnColumn(clazz, 0, "1", RES_LT);
-        checkColumnColumnFailure(clazz, 0, "bad", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to BIGINT");
-
-        // INTEGER/OBJECT
-        clazz = createBiClass(ExpressionTypes.INTEGER, ExpressionTypes.OBJECT);
-        checkColumnColumnFailure(clazz, 0, 1, SqlErrorCode.PARSING, "to arguments of type '<OBJECT>");
-
-        // BIGINT/BIGINT
-        clazz = createBiClass(ExpressionTypes.LONG, ExpressionTypes.LONG);
-        checkColumnColumn(clazz, 0L, 0L, RES_EQ);
-        checkColumnColumn(clazz, 0L, Long.MAX_VALUE, RES_LT);
-        checkColumnColumn(clazz, 0L, Long.MIN_VALUE, RES_GT);
-
-        // BIGINT/DECIMAL
-        clazz = createBiClass(ExpressionTypes.LONG, ExpressionTypes.BIG_INTEGER);
-        checkColumnColumn(clazz, 0L, BigInteger.ZERO, RES_EQ);
-        checkColumnColumn(clazz, 0L, BigInteger.ONE, RES_LT);
-        checkColumnColumn(clazz, 0L, BigInteger.ONE.negate(), RES_GT);
-
-        clazz = createBiClass(ExpressionTypes.LONG, ExpressionTypes.BIG_DECIMAL);
-        checkColumnColumn(clazz, 0L, BigDecimal.ZERO, RES_EQ);
-        checkColumnColumn(clazz, 0L, BigDecimal.ONE, RES_LT);
-        checkColumnColumn(clazz, 0L, BigDecimal.ONE.negate(), RES_GT);
-
-        // BIGINT/REAL
-        clazz = createBiClass(ExpressionTypes.LONG, ExpressionTypes.FLOAT);
-        checkColumnColumn(clazz, 0L, 0f, RES_EQ);
-        checkColumnColumn(clazz, 0L, 1f, RES_LT);
-        checkColumnColumn(clazz, 0L, -1f, RES_GT);
-
-        // BIGINT/DOUBLE
-        clazz = createBiClass(ExpressionTypes.LONG, ExpressionTypes.DOUBLE);
-        checkColumnColumn(clazz, 0L, 0d, RES_EQ);
-        checkColumnColumn(clazz, 0L, 1d, RES_LT);
-        checkColumnColumn(clazz, 0L, -1d, RES_GT);
-
-        // BIGINT/VARCHAR
-        clazz = createBiClass(ExpressionTypes.LONG, ExpressionTypes.CHARACTER);
-        checkColumnColumn(clazz, 0L, '1', RES_LT);
-
-        clazz = createBiClass(ExpressionTypes.LONG, ExpressionTypes.STRING);
-        checkColumnColumn(clazz, 0L, "1", RES_LT);
-        checkColumnColumnFailure(clazz, 0L, "bad", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to BIGINT");
-
-        // BIGINT/OBJECT
-        clazz = createBiClass(ExpressionTypes.LONG, ExpressionTypes.OBJECT);
-        checkColumnColumnFailure(clazz, 0L, 1, SqlErrorCode.PARSING, "to arguments of type '<OBJECT>");
-
-        // DECIMAL(BigInteger)/DECIMAL
-        clazz = createBiClass(ExpressionTypes.BIG_INTEGER, ExpressionTypes.BIG_INTEGER);
-        checkColumnColumn(clazz, BigInteger.ZERO, BigInteger.ZERO, RES_EQ);
-        checkColumnColumn(clazz, BigInteger.ZERO, BigInteger.ONE, RES_LT);
-        checkColumnColumn(clazz, BigInteger.ZERO, BigInteger.ONE.negate(), RES_GT);
-
-        clazz = createBiClass(ExpressionTypes.BIG_INTEGER, ExpressionTypes.BIG_DECIMAL);
-        checkColumnColumn(clazz, BigInteger.ZERO, BigDecimal.ZERO, RES_EQ);
-        checkColumnColumn(clazz, BigInteger.ZERO, BigDecimal.ONE, RES_LT);
-        checkColumnColumn(clazz, BigInteger.ZERO, BigDecimal.ONE.negate(), RES_GT);
-
-        // DECIMAL(BigInteger)/REAL
-        clazz = createBiClass(ExpressionTypes.BIG_INTEGER, ExpressionTypes.FLOAT);
-        checkColumnColumn(clazz, BigInteger.ZERO, 0f, RES_EQ);
-        checkColumnColumn(clazz, BigInteger.ZERO, 1f, RES_LT);
-        checkColumnColumn(clazz, BigInteger.ZERO, -1f, RES_GT);
-
-        // DECIMAL(BigInteger)/DOUBLE
-        clazz = createBiClass(ExpressionTypes.BIG_INTEGER, ExpressionTypes.DOUBLE);
-        checkColumnColumn(clazz, BigInteger.ZERO, 0d, RES_EQ);
-        checkColumnColumn(clazz, BigInteger.ZERO, 1d, RES_LT);
-        checkColumnColumn(clazz, BigInteger.ZERO, -1d, RES_GT);
-
-        // DECIMAL(BigInteger)/VARCHAR
-        clazz = createBiClass(ExpressionTypes.BIG_INTEGER, ExpressionTypes.CHARACTER);
-        checkColumnColumn(clazz, BigInteger.ZERO, '1', RES_LT);
-
-        clazz = createBiClass(ExpressionTypes.BIG_INTEGER, ExpressionTypes.STRING);
-        checkColumnColumn(clazz, BigInteger.ZERO, "1", RES_LT);
-        checkColumnColumnFailure(clazz, BigInteger.ZERO, "bad", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
-
-        // DECIMAL(BigInteger)/OBJECT
-        clazz = createBiClass(ExpressionTypes.BIG_INTEGER, ExpressionTypes.OBJECT);
-        checkColumnColumnFailure(clazz, BigInteger.ZERO, 1, SqlErrorCode.PARSING, "to arguments of type '<OBJECT>");
-
-        // BIGINT(BigDecimal)/DECIMAL
-        clazz = createBiClass(ExpressionTypes.BIG_DECIMAL, ExpressionTypes.BIG_DECIMAL);
-        checkColumnColumn(clazz, BigDecimal.ZERO, BigDecimal.ZERO, RES_EQ);
-        checkColumnColumn(clazz, new BigDecimal("0"), new BigDecimal("0.0"), RES_EQ);
-        checkColumnColumn(clazz, BigDecimal.ZERO, BigDecimal.ONE, RES_LT);
-        checkColumnColumn(clazz, BigDecimal.ZERO, BigDecimal.ONE.negate(), RES_GT);
-
-        // DECIMAL(BigDecimal)/REAL
-        clazz = createBiClass(ExpressionTypes.BIG_DECIMAL, ExpressionTypes.FLOAT);
-        checkColumnColumn(clazz, BigDecimal.ZERO, 0f, RES_EQ);
-        checkColumnColumn(clazz, BigDecimal.ZERO, 1f, RES_LT);
-        checkColumnColumn(clazz, BigDecimal.ZERO, -1f, RES_GT);
-
-        // DECIMAL(BigDecimal)/DOUBLE
-        clazz = createBiClass(ExpressionTypes.BIG_DECIMAL, ExpressionTypes.DOUBLE);
-        checkColumnColumn(clazz, BigDecimal.ZERO, 0d, RES_EQ);
-        checkColumnColumn(clazz, BigDecimal.ZERO, 1d, RES_LT);
-        checkColumnColumn(clazz, BigDecimal.ZERO, -1d, RES_GT);
-
-        // DECIMAL(BigDecimal)/VARCHAR
-        clazz = createBiClass(ExpressionTypes.BIG_DECIMAL, ExpressionTypes.CHARACTER);
-        checkColumnColumn(clazz, BigDecimal.ZERO, '1', RES_LT);
-
-        clazz = createBiClass(ExpressionTypes.BIG_DECIMAL, ExpressionTypes.STRING);
-        checkColumnColumn(clazz, BigDecimal.ZERO, "1", RES_LT);
-        checkColumnColumnFailure(clazz, BigDecimal.ZERO, "bad", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
-
-        // DECIMAL(BigDecimal)/OBJECT
-        clazz = createBiClass(ExpressionTypes.BIG_DECIMAL, ExpressionTypes.OBJECT);
-        checkColumnColumnFailure(clazz, BigDecimal.ZERO, 1, SqlErrorCode.PARSING, "to arguments of type '<OBJECT>");
-
-        // REAL/REAL
-        clazz = createBiClass(ExpressionTypes.FLOAT, ExpressionTypes.FLOAT);
-        checkColumnColumn(clazz, 0f, 0f, RES_EQ);
-        checkColumnColumn(clazz, 0f, 1f, RES_LT);
-        checkColumnColumn(clazz, 0f, -1f, RES_GT);
-
-        // REAL/DOUBLE
-        clazz = createBiClass(ExpressionTypes.FLOAT, ExpressionTypes.DOUBLE);
-        checkColumnColumn(clazz, 0f, 0d, RES_EQ);
-        checkColumnColumn(clazz, 0f, 1d, RES_LT);
-        checkColumnColumn(clazz, 0f, -1d, RES_GT);
-
-        // REAL/VARCHAR
-        clazz = createBiClass(ExpressionTypes.FLOAT, ExpressionTypes.CHARACTER);
-        checkColumnColumn(clazz, 0f, '1', RES_LT);
-
-        clazz = createBiClass(ExpressionTypes.FLOAT, ExpressionTypes.STRING);
-        checkColumnColumn(clazz, 0f, "1", RES_LT);
-        checkColumnColumnFailure(clazz, 0f, "bad", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to REAL");
-
-        // REAL/OBJECT
-        clazz = createBiClass(ExpressionTypes.FLOAT, ExpressionTypes.OBJECT);
-        checkColumnColumnFailure(clazz, 0f, 1, SqlErrorCode.PARSING, "to arguments of type '<OBJECT>");
-
-        // DOUBLE/DOUBLE
-        clazz = createBiClass(ExpressionTypes.DOUBLE, ExpressionTypes.DOUBLE);
-        checkColumnColumn(clazz, 0d, 0d, RES_EQ);
-        checkColumnColumn(clazz, 0d, 1d, RES_LT);
-        checkColumnColumn(clazz, 0d, -1d, RES_GT);
-
-        // DOUBLE/VARCHAR
-        clazz = createBiClass(ExpressionTypes.DOUBLE, ExpressionTypes.CHARACTER);
-        checkColumnColumn(clazz, 0d, '1', RES_LT);
-
-        clazz = createBiClass(ExpressionTypes.DOUBLE, ExpressionTypes.STRING);
-        checkColumnColumn(clazz, 0d, "1", RES_LT);
-        checkColumnColumnFailure(clazz, 0d, "bad", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DOUBLE");
-
-        // DOUBLE/OBJECT
-        clazz = createBiClass(ExpressionTypes.DOUBLE, ExpressionTypes.OBJECT);
-        checkColumnColumnFailure(clazz, 0d, 1, SqlErrorCode.PARSING, "to arguments of type '<OBJECT>");
-
-        // VARCHAR(char)/VARCHAR
-        clazz = createBiClass(ExpressionTypes.CHARACTER, ExpressionTypes.CHARACTER);
-        checkColumnColumn(clazz, 'b', 'a', RES_GT);
-        checkColumnColumn(clazz, 'b', 'b', RES_EQ);
-        checkColumnColumn(clazz, 'b', 'c', RES_LT);
-
-        clazz = createBiClass(ExpressionTypes.CHARACTER, ExpressionTypes.STRING);
-        checkColumnColumn(clazz, 'b', "a", RES_GT);
-
-        // VARCHAR(char)/OBJECT
-        clazz = createBiClass(ExpressionTypes.CHARACTER, ExpressionTypes.OBJECT);
-        checkColumnColumnFailure(clazz, '0', 1, SqlErrorCode.PARSING, "to arguments of type '<OBJECT>");
-
-        // VARCHAR(char)/VARCHAR
-        clazz = createBiClass(ExpressionTypes.STRING, ExpressionTypes.STRING);
-        checkColumnColumn(clazz, "abc", "ab", RES_GT);
-        checkColumnColumn(clazz, "abc", "abc", RES_EQ);
-        checkColumnColumn(clazz, "abc", "abcd", RES_LT);
-
-        // VARCHAR(char)/OBJECT
-        clazz = createBiClass(ExpressionTypes.STRING, ExpressionTypes.OBJECT);
-        checkColumnColumnFailure(clazz, "abc", 1, SqlErrorCode.PARSING, "to arguments of type '<OBJECT>");
-
-        // OBJECT/OBJECT
-        clazz = createBiClass(ExpressionTypes.OBJECT, ExpressionTypes.OBJECT);
-        checkColumnColumnFailure(clazz, 1, 2, SqlErrorCode.PARSING, "to arguments of type '<OBJECT>");
-
-        // Handle special case for temporal types
-        clazz = createBiClass(ExpressionTypes.INTEGER, ExpressionTypes.LOCAL_DATE);
-        checkColumnColumnFailure(clazz, 0, LOCAL_DATE_VAL, SqlErrorCode.PARSING, "Cannot apply comparison operation to DATE");
-
-        clazz = createBiClass(ExpressionTypes.INTEGER, ExpressionTypes.LOCAL_TIME);
-        checkColumnColumnFailure(clazz, 0, LOCAL_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply comparison operation to TIME");
-
-        clazz = createBiClass(ExpressionTypes.INTEGER, ExpressionTypes.LOCAL_DATE_TIME);
-        checkColumnColumnFailure(clazz, 0, LOCAL_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply comparison operation to TIMESTAMP");
-
-        clazz = createBiClass(ExpressionTypes.INTEGER, ExpressionTypes.OFFSET_DATE_TIME);
-        checkColumnColumnFailure(clazz, 0, OFFSET_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply comparison operation to TIMESTAMP_WITH_TIME_ZONE");
-
-        clazz = createBiClass(ExpressionTypes.LOCAL_DATE, ExpressionTypes.OFFSET_DATE_TIME);
-        checkColumnColumnFailure(clazz, LOCAL_DATE_VAL, OFFSET_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply comparison operation to DATE");
+    public void testString() {
+        // Column/column
+        putCheckCommute(stringValue2("a", "a"), "field1", "field2", RES_EQ);
+        putCheckCommute(stringValue2("a", "b"), "field1", "field2", RES_LT);
+        putCheckCommute(stringValue2("a", null), "field1", "field2", RES_NULL);
+        putCheckCommute(stringValue2(null, null), "field1", "field2", RES_NULL);
+        checkUnsupportedColumnColumn(ExpressionTypes.STRING, ExpressionTypes.allExcept(ExpressionTypes.STRING, ExpressionTypes.CHARACTER));
+
+        // Column/literal
+        putCheckCommute(stringValue1("a"), "field1", "'a'", RES_EQ);
+        putCheckCommute(stringValue1("a"), "field1", "'b'", RES_LT);
+        putCheckCommute(stringValue1("a"), "field1", "null", RES_NULL);
+        putCheckCommute(stringValue1(null), "field1", "'a'", RES_NULL);
+        putCheckCommute(stringValue1(null), "field1", "null", RES_NULL);
+        checkUnsupportedColumnLiteral('a', SqlColumnType.VARCHAR, LITERAL_BOOLEAN, LITERAL_TINYINT, LITERAL_DECIMAL, LITERAL_DOUBLE);
+
+        // Column/parameter
+        putCheckCommute(stringValue1("a"), "field1", "?", RES_EQ, "a");
+        putCheckCommute(stringValue1("a"), "field1", "?", RES_LT, "b");
+        putCheckCommute(stringValue1("a"), "field1", "?", RES_NULL, (String) null);
+        putCheckCommute(stringValue1(null), "field1", "?", RES_NULL, "a");
+        putCheckCommute(stringValue1(null), "field1", "?", RES_NULL, (String) null);
+        checkUnsupportedColumnParameter("a", SqlColumnType.VARCHAR, 0, ExpressionTypes.allExcept(ExpressionTypes.STRING, ExpressionTypes.CHARACTER));
+
+        // Literal/literal
+        checkCommute("'a'", "'a'", RES_EQ);
+        checkCommute("'a'", "'b'", RES_LT);
+        checkCommute("'a'", "null", RES_NULL);
+        checkFailure("null", "null", SqlErrorCode.PARSING, signatureErrorOperator(mode.token(), SqlColumnType.NULL, SqlColumnType.NULL));
+        checkUnsupportedLiteralLiteral("'a'", SqlColumnType.VARCHAR, LITERAL_BOOLEAN, LITERAL_TINYINT, LITERAL_DECIMAL, LITERAL_DOUBLE);
+
+        // Literal/parameter
+        checkCommute("'a'", "?", RES_EQ, "a");
+        checkCommute("'a'", "?", RES_LT, "b");
+        checkCommute("'a'", "?", RES_NULL, (String) null);
+        checkCommute("'a'", "?", RES_NULL, (String) null);
+        checkFailure("null", "?", SqlErrorCode.PARSING, signatureErrorOperator(mode.token(), SqlColumnType.NULL, SqlColumnType.NULL), true);
     }
 
     @Test
-    public void test_column_parameter() {
-        checkColumnParameter(0, 0, RES_EQ);
-        checkColumnParameter(0, Integer.MAX_VALUE, RES_LT);
-        checkColumnParameter(0, Integer.MIN_VALUE, RES_GT);
+    public void testBoolean() {
+        // Column/column
+        putCheckCommute(booleanValue2(true, true), "field1", "field2", RES_EQ);
+        putCheckCommute(booleanValue2(true, false), "field1", "field2", RES_GT);
+        putCheckCommute(booleanValue2(true, null), "field1", "field2", RES_NULL);
+        putCheckCommute(booleanValue2(false, false), "field1", "field2", RES_EQ);
+        putCheckCommute(booleanValue2(false, null), "field1", "field2", RES_NULL);
+        putCheckCommute(booleanValue2(null, null), "field1", "field2", RES_NULL);
+        checkUnsupportedColumnColumn(ExpressionTypes.BOOLEAN, ExpressionTypes.allExcept(ExpressionTypes.BOOLEAN));
 
-        checkColumnParameter(0, null, RES_NULL);
+        // Column/literal
+        putCheckCommute(booleanValue1(true), "field1", "true", RES_EQ);
+        putCheckCommute(booleanValue1(true), "field1", "false", RES_GT);
+        putCheckCommute(booleanValue1(true), "field1", "null", RES_NULL);
+        putCheckCommute(booleanValue1(false), "field1", "true", RES_LT);
+        putCheckCommute(booleanValue1(false), "field1", "false", RES_EQ);
+        putCheckCommute(booleanValue1(false), "field1", "null", RES_NULL);
+        putCheckCommute(booleanValue1(null), "field1", "true", RES_NULL);
+        putCheckCommute(booleanValue1(null), "field1", "false", RES_NULL);
+        putCheckCommute(booleanValue1(null), "field1", "null", RES_NULL);
+        checkUnsupportedColumnLiteral(true, SqlColumnType.BOOLEAN, LITERAL_VARCHAR, LITERAL_TINYINT, LITERAL_DECIMAL, LITERAL_DOUBLE);
 
-        checkColumnParameterFailure(1, new BigDecimal("1.1"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to BIGINT");
+        // Column/parameter
+        putCheckCommute(booleanValue1(true), "field1", "?", RES_EQ, true);
+        putCheckCommute(booleanValue1(true), "field1", "?", RES_GT, false);
+        putCheckCommute(booleanValue1(true), "field1", "?", RES_NULL, (Boolean) null);
+        putCheckCommute(booleanValue1(false), "field1", "?", RES_LT, true);
+        putCheckCommute(booleanValue1(false), "field1", "?", RES_EQ, false);
+        putCheckCommute(booleanValue1(false), "field1", "?", RES_NULL, (Boolean) null);
+        putCheckCommute(booleanValue1(null), "field1", "?", RES_NULL, true);
+        putCheckCommute(booleanValue1(null), "field1", "?", RES_NULL, false);
+        putCheckCommute(booleanValue1(null), "field1", "?", RES_NULL, (Boolean) null);
+        checkUnsupportedColumnParameter(true, SqlColumnType.BOOLEAN, 0, ExpressionTypes.allExcept(ExpressionTypes.BOOLEAN));
+
+        // Literal/literal
+        checkCommute("true", "true", RES_EQ);
+        checkCommute("true", "false", RES_GT);
+        checkCommute("true", "null", RES_NULL);
+        checkCommute("false", "false", RES_EQ);
+        checkCommute("false", "null", RES_NULL);
+        checkFailure("null", "null", SqlErrorCode.PARSING, signatureErrorOperator(mode.token(), SqlColumnType.NULL, SqlColumnType.NULL));
+        checkUnsupportedLiteralLiteral("true", SqlColumnType.BOOLEAN, LITERAL_VARCHAR, LITERAL_TINYINT, LITERAL_DECIMAL, LITERAL_DOUBLE);
+
+        // Literal/parameter
+        checkCommute("true", "?", RES_EQ, true);
+        checkCommute("true", "?", RES_GT, false);
+        checkCommute("true", "?", RES_NULL, (Boolean) null);
+        checkCommute("false", "?", RES_LT, true);
+        checkCommute("false", "?", RES_EQ, false);
+        checkCommute("false", "?", RES_NULL, (Boolean) null);
+        checkFailure("null", "?", SqlErrorCode.PARSING, signatureErrorOperator(mode.token(), SqlColumnType.NULL, SqlColumnType.NULL), true);
     }
 
     @Test
-    public void test_column_literal() {
-        checkColumnLiteral(1, "1", RES_EQ);
+    public void testNumeric() {
+        Object[] values = getNumericValues();
 
-        checkColumnLiteral(1, "1.1", RES_LT);
-        checkColumnLiteral(1, "0.9", RES_GT);
+        for (int i = 0; i < values.length; i++) {
+            for (int j = i; j < values.length; j++) {
+                checkNumeric(values[i], values[j]);
+            }
+        }
 
-        checkColumnLiteral(1, "1.1E0", RES_LT);
-        checkColumnLiteral(1, "0.9E0", RES_GT);
+        for (ExpressionType type : ExpressionTypes.numeric()) {
+            // Column/column
+            checkUnsupportedColumnColumn(type, ExpressionTypes.allExcept(ExpressionTypes.numeric()));
 
-        checkColumnLiteral(1, "null", RES_NULL);
+            // Column/literal
+            SqlColumnType columnType = type.getFieldConverterType().getTypeFamily().getPublicType();
+            checkUnsupportedColumnLiteral(type.valueFrom(), columnType, LITERAL_VARCHAR, LITERAL_BOOLEAN);
 
-        checkColumnLiteralFailure(1, "true", SqlErrorCode.PARSING, "Literal 'TRUE' can not be parsed to type 'INTEGER'");
-        checkColumnLiteralFailure(1, "false", SqlErrorCode.PARSING, "Literal 'FALSE' can not be parsed to type 'INTEGER'");
-
-        checkColumnLiteralFailure(1, "'bad'", SqlErrorCode.PARSING, "Literal ''bad'' can not be parsed to type 'DECIMAL'");
+            // Column/parameter
+            if (type.getFieldConverterType().getTypeFamily().getPrecedence() >= QueryDataType.BIGINT.getTypeFamily().getPrecedence()) {
+                checkUnsupportedColumnParameter(type.valueFrom(), columnType, 0, ExpressionTypes.allExcept(ExpressionTypes.numeric()));
+            }
+        }
     }
 
     @Test
-    public void test_parameter_parameter() {
+    public void testParameterParameter() {
         put(1);
-
-        checkFailure("?", "?", SqlErrorCode.PARSING, "Illegal use of dynamic parameter");
+        checkFailure("?", "?", SqlErrorCode.PARSING, signatureErrorOperator(mode.token(), SqlColumnType.NULL, SqlColumnType.NULL), true, true);
     }
 
     @Test
-    public void test_parameter_literal() {
-        put(1);
-
-        // Exact numeric literal
-        check("?", "1", RES_NULL, new Object[] { null });
-
-        check("?", "1", RES_LT, (byte) 0);
-        check("?", "1", RES_EQ, (byte) 1);
-        check("?", "1", RES_GT, (byte) 2);
-
-        check("?", "1", RES_LT, (short) 0);
-        check("?", "1", RES_EQ, (short) 1);
-        check("?", "1", RES_GT, (short) 2);
-
-        check("?", "1", RES_LT, 0);
-        check("?", "1", RES_EQ, 1);
-        check("?", "1", RES_GT, 2);
-
-        check("?", "1", RES_LT, 0L);
-        check("?", "1", RES_EQ, 1L);
-        check("?", "1", RES_GT, 2L);
-
-        checkFailure("?", "1", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to BIGINT", new BigInteger("1"));
-        checkFailure("?", "1", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to BIGINT", new BigDecimal("1"));
-
-        // Inexact numeric literal
-        check("?", "1E0", RES_NULL, new Object[] { null });
-
-        check("?", "1E0", RES_LT, (byte) 0);
-        check("?", "1E0", RES_EQ, (byte) 1);
-        check("?", "1E0", RES_GT, (byte) 2);
-
-        check("?", "1E0", RES_LT, (short) 0);
-        check("?", "1E0", RES_EQ, (short) 1);
-        check("?", "1E0", RES_GT, (short) 2);
-
-        check("?", "1E0", RES_LT, 0);
-        check("?", "1E0", RES_EQ, 1);
-        check("?", "1E0", RES_GT, 2);
-
-        check("?", "1E0", RES_LT, 0L);
-        check("?", "1E0", RES_EQ, 1L);
-        check("?", "1E0", RES_GT, 2L);
-
-        check("?", "1E0", RES_LT, new BigInteger("0"));
-        check("?", "1E0", RES_EQ, new BigInteger("1"));
-        check("?", "1E0", RES_GT, new BigInteger("2"));
-
-        check("?", "1E0", RES_LT, new BigDecimal("0"));
-        check("?", "1E0", RES_EQ, new BigDecimal("1"));
-        check("?", "1E0", RES_GT, new BigDecimal("2"));
-
-        // String literal
-        check("?", "'abc'", RES_NULL, new Object[] { null });
-
-        check("?", "'abc'", RES_LT, "ab");
-        check("?", "'abc'", RES_EQ, "abc");
-        check("?", "'abc'", RES_GT, "abcd");
-
-        checkFailure("?", "'abc'", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from INTEGER to VARCHAR", 1);
-        checkFailure("?", "'1'", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from INTEGER to VARCHAR", 1);
-
-        // Boolean literal
-        check("?", "true", RES_NULL, new Object[] { null });
-
-        check("?", "true", RES_LT, false);
-        check("?", "true", RES_EQ, true);
-
-        checkFailure("?", "true", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from INTEGER to BOOLEAN", 1);
-
-        // Null literal
-        checkFailure("?", "null", SqlErrorCode.PARSING, "Illegal use of dynamic parameter", 1);
+    public void testUnsupported() {
+        // Column/column
+        checkUnsupportedColumnColumn(
+                ExpressionTypes.LOCAL_DATE, ExpressionTypes.allExcept(
+                        ExpressionTypes.LOCAL_DATE,
+                        ExpressionTypes.LOCAL_DATE_TIME,
+                        ExpressionTypes.OFFSET_DATE_TIME));
+        checkUnsupportedColumnColumn(
+                ExpressionTypes.LOCAL_TIME, ExpressionTypes.allExcept(
+                        ExpressionTypes.LOCAL_TIME,
+                        ExpressionTypes.LOCAL_DATE_TIME,
+                        ExpressionTypes.OFFSET_DATE_TIME));
+        checkUnsupportedColumnColumn(
+                ExpressionTypes.LOCAL_DATE_TIME, ExpressionTypes.allExcept(
+                        ExpressionTypes.LOCAL_DATE,
+                        ExpressionTypes.LOCAL_TIME,
+                        ExpressionTypes.LOCAL_DATE_TIME,
+                        ExpressionTypes.OFFSET_DATE_TIME));
+        checkUnsupportedColumnColumn(
+                ExpressionTypes.OFFSET_DATE_TIME, ExpressionTypes.allExcept(
+                        ExpressionTypes.LOCAL_DATE,
+                        ExpressionTypes.LOCAL_TIME,
+                        ExpressionTypes.LOCAL_DATE_TIME,
+                        ExpressionTypes.OFFSET_DATE_TIME));
+        checkUnsupportedColumnColumn(ExpressionTypes.OBJECT, ExpressionTypes.allExcept(ExpressionTypes.OBJECT));
     }
 
     @Test
-    public void test_literal_literal() {
-        put(1);
+    public void testComparable_to_Comparable() {
+        putBiValue(new ComparableImpl(1), new ComparableImpl(1), ExpressionTypes.OBJECT, ExpressionTypes.OBJECT);
+        check("field1", "field2", new ComparableImpl(1).compareTo(new ComparableImpl(1)));
 
-        check("1", "0", RES_GT);
-        check("1", "1", RES_EQ);
-        check("1", "2", RES_LT);
-        check("1", "2E0", RES_LT);
-        check("1", "'2'", RES_LT);
-        checkFailure("1", "'bad'", SqlErrorCode.PARSING, "Literal ''bad'' can not be parsed to type 'DECIMAL'");
-        checkFailure("1", "true", SqlErrorCode.PARSING, "Literal 'TRUE' can not be parsed to type 'TINYINT'");
-        check("1", "null", RES_NULL);
+        putBiValue(new ComparableImpl(1), new ComparableImpl(2), ExpressionTypes.OBJECT, ExpressionTypes.OBJECT);
+        check("field1", "field2", new ComparableImpl(1).compareTo(new ComparableImpl(2)));
 
-        check("1E0", "0E0", RES_GT);
-        check("1E0", "1E0", RES_EQ);
-        check("1E0", "2E0", RES_LT);
-        check("1E0", "'2'", RES_LT);
-        checkFailure("1E0", "'bad'", SqlErrorCode.PARSING, "Literal ''bad'' can not be parsed to type 'DECIMAL'");
-        checkFailure("1E0", "true", SqlErrorCode.PARSING, "Literal 'TRUE' can not be parsed to type 'DOUBLE'");
-        check("1E0", "null", RES_NULL);
-
-        check("'1'", "'2'", RES_LT);
-        check("'abc'", "'def'", RES_LT);
-        checkFailure("'abc'", "true", SqlErrorCode.PARSING, "Literal ''abc'' can not be parsed to type 'BOOLEAN'");
-        check("'abc'", "null", RES_NULL);
-
-        check("true", "false", RES_GT);
-        check("true", "null", RES_NULL);
-
-        check("null", "null", RES_NULL);
+        putBiValue(new ComparableImpl(2), new ComparableImpl(1), ExpressionTypes.OBJECT, ExpressionTypes.OBJECT);
+        check("field1", "field2", new ComparableImpl(2).compareTo(new ComparableImpl(1)));
     }
 
-    private void checkColumnColumn(
-        Class<? extends ExpressionBiValue> clazz,
-        Comparable operand1,
-        Comparable operand2,
-        Integer expectedRes
+    @Test
+    public void testComparable_and_NonComparable() {
+        putBiValue(new ComparableImpl(1), new NonComparable(), ExpressionTypes.OBJECT, ExpressionTypes.OBJECT);
+        checkFailure(
+                "field1", "field2", SqlErrorCode.GENERIC,
+                "Cannot compare two OBJECT values, because "
+                        + "left operand has " + ComparableImpl.class + " type and "
+                        + "right operand has " + NonComparable.class + " type");
+
+        putBiValue(new NonComparable(), new ComparableImpl(1), ExpressionTypes.OBJECT, ExpressionTypes.OBJECT);
+        checkFailure(
+                "field1", "field2", SqlErrorCode.GENERIC,
+                "Cannot compare two OBJECT values, because "
+                        + "left operand has " + NonComparable.class + " type and "
+                        + "right operand has " + ComparableImpl.class + " type");
+    }
+
+    @Test
+    public void testDifferentClassThatImplementsComparableInterface() {
+        putBiValue(new ComparableImpl(1), new ComparableImpl2(1), ExpressionTypes.OBJECT, ExpressionTypes.OBJECT);
+
+        checkFailure(
+                "field1", "field2", SqlErrorCode.GENERIC,
+                "Cannot compare two OBJECT values, because "
+                        + "left operand has " + ComparableImpl.class + " type and "
+                        + "right operand has " + ComparableImpl2.class + " type");
+    }
+
+    @Test
+    public void testNonComparableObjects() {
+        putBiValue(new NonComparable(), new NonComparable(), ExpressionTypes.OBJECT, ExpressionTypes.OBJECT);
+
+        checkFailure(
+                "field1", "field2", SqlErrorCode.GENERIC,
+                "Cannot compare OBJECT value because " + NonComparable.class + " doesn't implement Comparable interface");
+    }
+
+    @Test
+    public void testCompare_LocalDate_with_LocalDate() {
+        putBiValue(
+            LocalDate.of(2020, 12, 30),
+            LocalDate.of(2020, 12, 30),
+            ExpressionTypes.LOCAL_DATE, ExpressionTypes.LOCAL_DATE
+        );
+
+        check("field1", "field2", LocalDate.of(2020, 12, 30).compareTo(LocalDate.of(2020, 12, 30)));
+    }
+
+    @Test
+    public void testCompare_LocalDate_with_String() {
+        put(ExpressionValue.create(ExpressionValue.createClass(ExpressionTypes.LOCAL_DATE), LocalDate.of(2020, 12, 30)));
+
+        check("field1", "'2020-12-30'", LocalDate.of(2020, 12, 30).compareTo(LocalDate.of(2020, 12, 30)));
+        check("'2020-12-30'", "field1", LocalDate.of(2020, 12, 30).compareTo(LocalDate.of(2020, 12, 30)));
+    }
+
+    @Test
+    public void testCompare_LocalTime_with_LocalTime() {
+        putBiValue(
+            LocalTime.of(14, 2, 0),
+            LocalTime.of(14, 2, 0),
+            ExpressionTypes.LOCAL_TIME, ExpressionTypes.LOCAL_TIME
+        );
+
+        check("field1", "field2", LocalTime.of(14, 2, 0).compareTo(LocalTime.of(14, 2, 0)));
+    }
+
+    @Test
+    public void testCompare_LocalTime_with_String() {
+        put(ExpressionValue.create(ExpressionValue.createClass(ExpressionTypes.LOCAL_TIME), LocalTime.of(14, 2, 0)));
+
+        check("field1", "'14:02:00'", LocalTime.of(14, 2, 0).compareTo(LocalTime.of(14, 2, 0)));
+        check("'14:02:00'", "field1", LocalTime.of(14, 2, 0).compareTo(LocalTime.of(14, 2, 0)));
+    }
+
+    @Test
+    public void testCompare_LocalDateTime_with_LocalDateTime() {
+        putBiValue(
+            LocalDateTime.of(2020, 12, 30, 14, 2, 0),
+            LocalDateTime.of(2020, 12, 30, 14, 2, 0),
+            ExpressionTypes.LOCAL_DATE_TIME, ExpressionTypes.LOCAL_DATE_TIME
+        );
+
+        check("field1", "field2", LocalDateTime.of(2020, 12, 30, 14, 2, 0).compareTo(LocalDateTime.of(2020, 12, 30, 14, 2, 0)));
+    }
+
+    @Test
+    public void testCompare_LocalDateTime_with_String() {
+        put(ExpressionValue.create(ExpressionValue.createClass(ExpressionTypes.LOCAL_DATE_TIME), LocalDateTime.of(2020, 12, 30, 14, 2, 0)));
+
+        check("field1", "'2020-12-30T14:02'", LocalDateTime.of(2020, 12, 30, 14, 2, 0).compareTo(LocalDateTime.of(2020, 12, 30, 14, 2, 0)));
+        check("'2020-12-30T14:02'", "field1", LocalDateTime.of(2020, 12, 30, 14, 2, 0).compareTo(LocalDateTime.of(2020, 12, 30, 14, 2, 0)));
+    }
+
+
+    @Test
+    public void testCompare_LocalDateTime_with_LocalDate() {
+        putBiValue(
+            LocalDateTime.of(2020, 12, 30, 14, 2, 0),
+            LocalDate.of(2020, 12, 30),
+            ExpressionTypes.LOCAL_DATE_TIME, ExpressionTypes.LOCAL_DATE
+        );
+
+        check("field1", "field2", LocalDateTime.of(2020, 12, 30, 14, 2, 0).compareTo(LocalDate.of(2020, 12, 30).atStartOfDay()));
+
+        putBiValue(
+            LocalDate.of(2020, 12, 30),
+            LocalDateTime.of(2020, 12, 30, 14, 2, 0),
+            ExpressionTypes.LOCAL_DATE, ExpressionTypes.LOCAL_DATE_TIME
+        );
+
+        check("field1", "field2", LocalDate.of(2020, 12, 30).atStartOfDay().compareTo(LocalDateTime.of(2020, 12, 30, 14, 2, 0)));
+    }
+
+    @Test
+    public void testCompare_LocalDateTime_with_LocalTime() {
+        putBiValue(
+                LocalDateTime.of(2020, 12, 30, 14, 2, 0),
+                LocalTime.of(14, 2, 0),
+                ExpressionTypes.LOCAL_DATE_TIME, ExpressionTypes.LOCAL_TIME
+        );
+
+        check("cast (field1 as TIME)", "field2", LocalDateTime.of(2020, 12, 30, 14, 2, 0).toLocalTime().compareTo(LocalTime.of(14, 2, 0)));
+        check("field1", "field2", LocalDateTime.of(2020, 12, 30, 14, 2, 0).compareTo(LocalDateTime.of(LocalDate.now(), LocalTime.of(14, 2, 0))));
+
+        putBiValue(
+                LocalTime.of(14, 2, 0),
+                LocalDateTime.of(2020, 12, 30, 14, 2, 0),
+                ExpressionTypes.LOCAL_TIME, ExpressionTypes.LOCAL_DATE_TIME
+        );
+
+        check("field1", "cast (field2 as TIME)", LocalTime.of(14, 2, 0).compareTo(LocalDateTime.of(2020, 12, 30, 14, 2, 0).toLocalTime()));
+        check("field1", "field2", LocalDateTime.of(LocalDate.now(), LocalTime.of(14, 2, 0)).compareTo(LocalDateTime.of(2020, 12, 30, 14, 2, 0)));
+    }
+
+    @Test
+    public void testCompare_LocalDateTimeWithTZ_with_LocalDateTimeWithTZ() {
+        putBiValue(
+            OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC),
+            OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC),
+            ExpressionTypes.OFFSET_DATE_TIME, ExpressionTypes.OFFSET_DATE_TIME
+        );
+
+        check("field1", "field2",
+                OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC)
+                        .compareTo(OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC)));
+    }
+
+    @Test
+    public void testCompare_LocalDateTimeWithTZ_with_String() {
+        put(ExpressionValue.create(ExpressionValue.createClass(
+                ExpressionTypes.OFFSET_DATE_TIME), OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC)));
+
+        check("field1", "'2020-12-30T14:02Z'",
+                OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC)
+                        .compareTo(OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC)));
+        check("'2020-12-30T14:02Z'", "field1",
+                OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC)
+                        .compareTo(OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC)));
+    }
+
+    @Test
+    public void testCompare_LocalDateTimeWithTZ_with_LocalDateTime() {
+        putBiValue(
+                OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC),
+                LocalDateTime.of(2020, 12, 30, 14, 2, 0), ExpressionTypes.OFFSET_DATE_TIME, ExpressionTypes.LOCAL_DATE_TIME
+        );
+
+        check("field1", "field2",
+                OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC)
+                        .compareTo(ZonedDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), DEFAULT_TIME_ZONE).toOffsetDateTime()));
+
+        putBiValue(
+                LocalDateTime.of(2020, 12, 30, 14, 2, 0),
+                OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC),
+                ExpressionTypes.LOCAL_DATE_TIME, ExpressionTypes.OFFSET_DATE_TIME
+        );
+
+        check("field1", "field2",
+                ZonedDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), DEFAULT_TIME_ZONE).toOffsetDateTime()
+                        .compareTo(OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC)));
+    }
+
+    @Test
+    public void testCompare_LocalDateTimeWithTZ_with_LocalDate() {
+        putBiValue(
+                OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC),
+                LocalDate.of(2020, 12, 30), ExpressionTypes.OFFSET_DATE_TIME, ExpressionTypes.LOCAL_DATE
+        );
+
+        check("field1", "field2",
+                OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC)
+                        .compareTo(ZonedDateTime.of(LocalDate.of(2020, 12, 30).atStartOfDay(), DEFAULT_TIME_ZONE).toOffsetDateTime()));
+
+        putBiValue(
+                LocalDate.of(2020, 12, 30),
+                OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC),
+                ExpressionTypes.LOCAL_DATE, ExpressionTypes.OFFSET_DATE_TIME
+        );
+
+        check("field1", "field2",
+                ZonedDateTime.of(LocalDate.of(2020, 12, 30).atStartOfDay(), DEFAULT_TIME_ZONE).toOffsetDateTime()
+                        .compareTo(OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC)));
+    }
+
+    @Test
+    public void testCompare_LocalDateTimeWithTZ_with_LocalTime() {
+        putBiValue(
+                OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC),
+                LocalTime.of(14, 2, 0), ExpressionTypes.OFFSET_DATE_TIME, ExpressionTypes.LOCAL_TIME
+        );
+
+        check("cast (field1 as TIME)", "field2",
+                OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC).toLocalTime()
+                        .compareTo(LocalTime.of(14, 2, 0)));
+        check("field1", "field2",
+                OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC)
+                        .compareTo(OffsetDateTime.of(LocalDateTime.of(LocalDate.now(), LocalTime.of(14, 2, 0)), ZoneOffset.UTC)));
+
+        putBiValue(
+                LocalTime.of(14, 2, 0),
+                OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC),
+                ExpressionTypes.LOCAL_TIME, ExpressionTypes.OFFSET_DATE_TIME
+        );
+
+        check("field1", "cast (field2 as TIME)",
+                LocalTime.of(14, 2, 0).compareTo(
+                        OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC).toLocalTime()));
+        check("field1", "field2",
+                OffsetDateTime.of(LocalDateTime.of(LocalDate.now(), LocalTime.of(14, 2, 0)), ZoneOffset.UTC)
+                        .compareTo(OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC)));
+    }
+
+    private void putBiValue(Object field1, Object field2, ExpressionType<?> type1, ExpressionType<?> type2) {
+        ExpressionBiValue value = ExpressionBiValue.createBiValue(
+                ExpressionBiValue.createBiClass(type1, type2),
+                field1,
+                field2
+        );
+
+        put(value);
+    }
+
+    protected Object[] getNumericValues() {
+        return NUMERICS_QUICK;
+    }
+
+    private void checkNumeric(Object value1, Object value2) {
+        int res = compareNumeric(value1, value2);
+
+        if (res == RES_EQ && (value1 instanceof Float || value1 instanceof Double || value2 instanceof Float || value2 instanceof Double)) {
+            return;
+        }
+
+        ExpressionType<?> valueType1 = ExpressionTypes.resolve(value1);
+        ExpressionType<?> valueType2 = ExpressionTypes.resolve(value2);
+
+        Class<? extends ExpressionValue> class1 = ExpressionValue.createClass(valueType1);
+        Class<? extends ExpressionValue> class2 = ExpressionValue.createClass(valueType2);
+        Class<? extends ExpressionBiValue> biClass = ExpressionBiValue.createBiClass(valueType1, valueType2);
+
+        String literal1 = value1.toString();
+        String literal2 = value2.toString();
+
+        QueryDataType type1 = QueryDataTypeUtils.resolveTypeForClass(value1.getClass());
+        QueryDataType type2 = QueryDataTypeUtils.resolveTypeForClass(value2.getClass());
+
+        SqlColumnType publicType1 = type1.getTypeFamily().getPublicType();
+        SqlColumnType publicType2 = type2.getTypeFamily().getPublicType();
+
+        int precedence1 = type1.getTypeFamily().getPrecedence();
+        int precedence2 = type2.getTypeFamily().getPrecedence();
+
+        // Column/column
+        putCheckCommute(ExpressionBiValue.createBiValue(biClass, value1, value2), "field1", "field2", res);
+        putCheckCommute(ExpressionBiValue.createBiValue(biClass, value1, null), "field1", "field2", RES_NULL);
+        putCheckCommute(ExpressionBiValue.createBiValue(biClass, null, value2), "field1", "field2", RES_NULL);
+
+        // Column/literal
+        putCheckCommute(ExpressionValue.create(class1, value1), "field1", literal2, res);
+        putCheckCommute(ExpressionValue.create(class2, value2), literal1, "field1", res);
+
+        // Column/parameter
+        if (precedence1 >= precedence2) {
+            putCheckCommute(ExpressionValue.create(class1, value1), "field1", "?", res, value2);
+        } else if (precedence1 >= QueryDataType.BIGINT.getTypeFamily().getPrecedence()) {
+            putAndCheckFailure(ExpressionValue.create(class1, value1), sql(mode.token(), "field1", "?"), SqlErrorCode.DATA_EXCEPTION, parameterError(0, publicType1, publicType2), value2);
+        }
+
+        if (precedence2 >= precedence1) {
+            putCheckCommute(ExpressionValue.create(class2, value2), "?", "field1", res, value1);
+        } else if (precedence2 >= QueryDataType.BIGINT.getTypeFamily().getPrecedence()) {
+            putAndCheckFailure(ExpressionValue.create(class2, value2), sql(mode.token(), "?", "field1"), SqlErrorCode.DATA_EXCEPTION, parameterError(0, publicType2, publicType1), value1);
+        }
+
+        // Literal/literal
+        checkCommute(literal1, literal2, res);
+    }
+
+    private static Integer compareNumeric(Object value1, Object value2) {
+        if (value1 == null || value2 == null) {
+            return RES_NULL;
+        }
+
+        BigDecimal decimal1 = new BigDecimal(value1.toString());
+        BigDecimal decimal2 = new BigDecimal(value2.toString());
+
+        return decimal1.compareTo(decimal2);
+    }
+
+    private void checkUnsupportedColumnColumn(ExpressionType<?> type, ExpressionType<?>... excludeTypes) {
+        for (ExpressionType<?> expressionType : excludeTypes) {
+            ExpressionBiValue value = ExpressionBiValue.createBiValue(
+                ExpressionBiValue.createBiClass(type, expressionType),
+                null,
+                null
+            );
+
+            put(value);
+
+            String sql = sql(mode.token(), "field1", "field2");
+
+            String errorMessage = signatureErrorOperator(
+                mode.token(),
+                type.getFieldConverterType().getTypeFamily().getPublicType(),
+                expressionType.getFieldConverterType().getTypeFamily().getPublicType()
+            );
+
+            checkFailure0(sql, SqlErrorCode.PARSING, errorMessage);
+        }
+    }
+
+    private void checkUnsupportedColumnLiteral(Object columnValue, SqlColumnType columnType, Literal... literals) {
+        for (Literal literal : literals) {
+            put(columnValue);
+
+            String sql = sql(mode.token(), "this", literal.value);
+
+            String errorMessage = signatureErrorOperator(
+                mode.token(),
+                columnType,
+                literal.type
+            );
+
+            checkFailure0(sql, SqlErrorCode.PARSING, errorMessage);
+        }
+    }
+
+    private void checkUnsupportedColumnParameter(Object columnValue, SqlColumnType columnType, int paramPos, ExpressionType<?>... parameterTypes) {
+        for (ExpressionType<?> parameterType : parameterTypes) {
+            put(columnValue);
+
+            String sql = sql(mode.token(), "this", "?");
+
+            String errorMessage = parameterError(
+                paramPos,
+                columnType,
+                parameterType.getFieldConverterType().getTypeFamily().getPublicType()
+            );
+
+            checkFailure0(sql, SqlErrorCode.DATA_EXCEPTION, errorMessage, parameterType.valueFrom());
+        }
+    }
+
+    private void checkUnsupportedLiteralLiteral(String literalValue, SqlColumnType literalType, Literal... literals) {
+        for (Literal literal : literals) {
+            put(1);
+
+            String sql = sql(mode.token(), literalValue, literal.value);
+
+            String errorMessage = signatureErrorOperator(
+                mode.token(),
+                literalType,
+                literal.type
+            );
+
+            checkFailure0(sql, SqlErrorCode.PARSING, errorMessage);
+        }
+    }
+
+    private void putCheckCommute(Object value, String operand1, String operand2, Integer expectedResult, Object... params) {
+        put(value);
+
+        checkCommute(operand1, operand2, expectedResult, params);
+    }
+
+    private void checkCommute(String operand1, String operand2, Integer expectedResult, Object... params) {
+        check(operand1, operand2, expectedResult, params);
+        check(operand2, operand1, inverse(expectedResult), params);
+    }
+
+    private void check(
+        String operand1,
+        String operand2,
+        Integer expectedRes,
+        Object... params
     ) {
-        put(createBiValue(clazz, operand1, operand2));
+        Boolean expectedValue = compare(expectedRes);
 
-        check("field1", "field2", expectedRes);
-    }
+        String sql = sql(mode.token(), operand1, operand2);
 
-    private void checkColumnColumnFailure(
-        Class<? extends ExpressionBiValue> clazz,
-        Comparable operand1,
-        Comparable operand2,
-        int expectedErrorCode,
-        String expectedErrorMessage
-    ) {
-        put(createBiValue(clazz, operand1, operand2));
-
-        checkFailure("field1", "field2", expectedErrorCode, expectedErrorMessage);
-    }
-
-    private void checkColumnParameter(Object value, Object param, Integer expectedRes) {
-        put(value);
-
-        check("this", "?", expectedRes, param);
-    }
-
-    private void checkColumnParameterFailure(Object value, Object param, int expectedErrorCode, String expectedErrorMessage) {
-        put(value);
-
-        checkFailure("this", "?", expectedErrorCode, expectedErrorMessage, param);
-    }
-
-    private void checkColumnLiteral(Object value, String literal, Integer expectedRes) {
-        put(value);
-
-        check("this", literal, expectedRes);
-    }
-
-    private void checkColumnLiteralFailure(Object value, String literal, int expectedErrorCode, String expectedErrorMessage) {
-        put(value);
-
-        checkFailure("this", literal, expectedErrorCode, expectedErrorMessage);
+        checkValue0(sql, SqlColumnType.BOOLEAN, expectedValue, params);
     }
 
     private void checkFailure(
@@ -615,39 +676,32 @@ public class ComparisonPredicateIntegrationTest extends SqlExpressionIntegration
         String expectedErrorMessage,
         Object... params
     ) {
-        for (String token : mode.tokens) {
-            String sql = sql(token, operand1, operand2);
+        String sql = sql(mode.token(), operand1, operand2);
 
-            checkFailureInternal(sql, expectedErrorCode, expectedErrorMessage, params);
-        }
-    }
-
-    private void check(
-        String operand1,
-        String operand2,
-        Integer expectedRes,
-        Object... params
-    ) {
-        // Test direct
-        Boolean expectedValue = compare(expectedRes);
-
-        for (String token : mode.tokens) {
-            String sql = sql(token, operand1, operand2);
-
-            checkValueInternal(sql, SqlColumnType.BOOLEAN, expectedValue, params);
-
-            Mode inverseMode = mode.inverse();
-
-            for (String inverseToken : inverseMode.tokens) {
-                String inverseSql = sql(inverseToken, operand2, operand1);
-
-                checkValueInternal(inverseSql, SqlColumnType.BOOLEAN, expectedValue, params);
-            }
-        }
+        checkFailure0(sql, expectedErrorCode, expectedErrorMessage, params);
     }
 
     private String sql(String token, String operand1, String operand2) {
         return "SELECT " + operand1 + " " + token + " " + operand2 + " FROM map";
+    }
+
+    private static Integer inverse(Integer result) {
+        if (result == null) {
+            return null;
+        }
+
+        switch (result) {
+            case RES_GT:
+                return RES_LT;
+
+            case RES_LT:
+                return RES_GT;
+
+            default:
+                assert result == RES_EQ;
+
+                return RES_EQ;
+        }
     }
 
     public Boolean compare(Integer res) {
@@ -680,35 +734,59 @@ public class ComparisonPredicateIntegrationTest extends SqlExpressionIntegration
 
     private enum Mode {
         EQ("="),
-        NEQ("!=", "<>"),
+        NEQ("<>"),
         LT("<"),
         LTE("<="),
         GT(">"),
         GTE(">=");
 
-        private final String[] tokens;
+        private final String token;
 
-        Mode(String... tokens) {
-            this.tokens = tokens;
+        Mode(String token) {
+            this.token = token;
         }
 
-        Mode inverse() {
-            switch (this) {
-                case LT:
-                    return GT;
-
-                case LTE:
-                    return GTE;
-
-                case GT:
-                    return LT;
-
-                case GTE:
-                    return LTE;
-
-                default:
-                    return this;
-            }
+        private String token() {
+            return token;
         }
+    }
+
+    private static class Literal {
+        private final String value;
+        private final SqlColumnType type;
+
+        private Literal(String value, SqlColumnType type) {
+            this.value = value;
+            this.type = type;
+        }
+    }
+
+    static class ComparableImpl implements Comparable<ComparableImpl>, Serializable {
+        int innerField;
+
+        ComparableImpl(int innerField) {
+            this.innerField = innerField;
+        }
+
+        @Override
+        public int compareTo(ComparableImpl that) {
+            return Integer.compare(this.innerField, that.innerField);
+        }
+    }
+
+    static class ComparableImpl2 implements Comparable<ComparableImpl2>, Serializable {
+        int innerField;
+
+        ComparableImpl2(int innerField) {
+            this.innerField = innerField;
+        }
+
+        @Override
+        public int compareTo(ComparableImpl2 that) {
+            return Integer.compare(this.innerField, that.innerField);
+        }
+    }
+
+    static class NonComparable implements Serializable {
     }
 }

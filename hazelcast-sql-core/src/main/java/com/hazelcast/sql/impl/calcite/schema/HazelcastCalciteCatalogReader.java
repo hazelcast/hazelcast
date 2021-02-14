@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.schema;
 
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import org.apache.calcite.config.CalciteConnectionConfig;
 import org.apache.calcite.jdbc.CalciteSchema;
 import org.apache.calcite.prepare.CalciteCatalogReader;
@@ -68,9 +68,9 @@ public class HazelcastCalciteCatalogReader extends CalciteCatalogReader {
 
     @Override
     public RelDataType getNamedType(SqlIdentifier typeName) {
-        if (HazelcastTypeSystem.isObject(typeName)) {
+        if (HazelcastTypeUtils.isObjectIdentifier(typeName)) {
             return typeFactory.createSqlType(SqlTypeName.ANY);
-        } else if (HazelcastTypeSystem.isTimestampWithTimeZone(typeName)) {
+        } else if (HazelcastTypeUtils.isTimestampWithTimeZoneIdentifier(typeName)) {
             return typeFactory.createSqlType(SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE);
         }
 

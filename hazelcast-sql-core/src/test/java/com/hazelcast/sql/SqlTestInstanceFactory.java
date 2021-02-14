@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,6 +47,7 @@ public abstract class SqlTestInstanceFactory {
 
     public abstract HazelcastInstance newHazelcastInstance();
     public abstract HazelcastInstance newHazelcastInstance(Config config);
+    public abstract HazelcastInstance newHazelcastClient();
     public abstract HazelcastInstance newHazelcastClient(ClientConfig clientConfig);
     public abstract void shutdownAll();
 
@@ -65,6 +66,11 @@ public abstract class SqlTestInstanceFactory {
         @Override
         public HazelcastInstance newHazelcastInstance(Config config) {
             return factory.newHazelcastInstance(config);
+        }
+
+        @Override
+        public HazelcastInstance newHazelcastClient() {
+            return factory.newHazelcastClient();
         }
 
         @Override
@@ -114,6 +120,11 @@ public abstract class SqlTestInstanceFactory {
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
+        }
+
+        @Override
+        public HazelcastInstance newHazelcastClient() {
+            return newHazelcastClient(null);
         }
 
         @Override

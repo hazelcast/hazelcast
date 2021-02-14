@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,13 +44,10 @@ import com.hazelcast.wan.impl.CallerProvenance;
 
 import javax.annotation.Nonnull;
 
-import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTimes;
-
 /**
  * Contains record store common parts.
  */
 abstract class AbstractRecordStore implements RecordStore<Record> {
-
     protected final int partitionId;
     protected final String name;
     protected final LockStore lockStore;
@@ -63,6 +60,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     protected final MapDataStore<Data, Object> mapDataStore;
     protected final SerializationService serializationService;
     protected final CompositeMutationObserver<Record> mutationObserver;
+    protected final MetadataStore metadataStore = new MetadataStore();
     protected final LocalRecordStoreStatsImpl stats = new LocalRecordStoreStatsImpl();
 
     protected Storage<Data, Record> storage;
@@ -90,6 +88,11 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         addMutationObservers();
     }
 
+    @Override
+    public MetadataStore getMetadataStore() {
+        return metadataStore;
+    }
+
     // Overridden in EE.
     protected void addMutationObservers() {
         // Add observer for event journal
@@ -101,18 +104,13 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
 
         // Add observer for json metadata
         if (mapContainer.getMapConfig().getMetadataPolicy() == MetadataPolicy.CREATE_ON_UPDATE) {
-            addJsonMetadataMutationObserver();
+            mutationObserver.add(new JsonMetadataMutationObserver(serializationService,
+                    JsonMetadataInitializer.INSTANCE, metadataStore));
         }
 
         // Add observer for indexing
         indexingObserver = new IndexingMutationObserver<>(this, serializationService);
         mutationObserver.add(indexingObserver);
-    }
-
-    // Overridden in EE.
-    protected void addJsonMetadataMutationObserver() {
-        mutationObserver.add(new JsonMetadataMutationObserver(serializationService,
-                JsonMetadataInitializer.INSTANCE));
     }
 
     public IndexingMutationObserver<Record> getIndexingObserver() {
@@ -146,18 +144,17 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     }
 
     @Override
-    public Record createRecord(Data key, Object value, long ttlMillis, long maxIdle, long now) {
+    public Record createRecord(Object value, long ttlMillis, long maxIdle, long now) {
         Record record = recordFactory.newRecord(value);
         record.setCreationTime(now);
         record.setLastUpdateTime(now);
 
-        setExpirationTimes(record, ttlMillis, maxIdle, mapContainer.getMapConfig());
         updateStatsOnPut(false, now);
         return record;
     }
 
     @Override
-    public Record createRecord(Data key, Record fromRecord, long nowInMillis) {
+    public Record createRecord(Record fromRecord, long nowInMillis) {
         Record newRecord = recordFactory.newRecord(fromRecord == null ? null : fromRecord.getValue());
         if (fromRecord != null) {
             Records.copyMetadataFrom(fromRecord, newRecord);
@@ -167,7 +164,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     }
 
     public Storage createStorage(RecordFactory recordFactory, InMemoryFormat memoryFormat) {
-        return new StorageImpl(memoryFormat, serializationService);
+        return new StorageImpl(memoryFormat, getExpirySystem(), serializationService);
     }
 
     @Override
@@ -248,8 +245,22 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         stats.increaseHits(hits);
     }
 
+    protected void updateStatsOnRemove(long now) {
+        stats.setLastUpdateTime(now);
+    }
+
     protected void updateStatsOnGet(long now) {
         stats.setLastAccessTime(now);
         stats.increaseHits();
+    }
+
+    @Override
+    public LocalRecordStoreStatsImpl getStats() {
+        return stats;
+    }
+
+    @Override
+    public void setStats(LocalRecordStoreStats stats) {
+        this.stats.copyFrom(stats);
     }
 }

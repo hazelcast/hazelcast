@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,49 +16,43 @@
 
 package com.hazelcast.sql.impl;
 
-import com.hazelcast.internal.json.TestUtil.RunnableEx;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.state.QueryState;
 import org.junit.Test;
 
-import static com.hazelcast.test.HazelcastTestSupport.assertInstanceOf;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
-public class SqlResultImplTest {
-
+public class SqlResultImplTest extends SqlTestSupport {
     @Test
     public void test_rowsResult() {
         QueryId queryId = new QueryId(1, 2, 3, 4);
-        SqlRowMetadata metadata = new SqlRowMetadata(singletonList(new SqlColumnMetadata("n", SqlColumnType.INTEGER)));
+        SqlRowMetadata metadata = new SqlRowMetadata(singletonList(new SqlColumnMetadata("n", SqlColumnType.INTEGER, true)));
         QueryState queryState = QueryState.createInitiatorState(queryId, null, null, 0, null, null, metadata,
                 null, System::currentTimeMillis);
-        SqlResultImpl r = SqlResultImpl.createRowsResult(queryState);
+        SqlResultImpl r = SqlResultImpl.createRowsResult(queryState, new DefaultSerializationServiceBuilder().build());
 
         assertEquals(-1, r.updateCount());
         assertEquals(metadata, r.getRowMetadata());
         assertEquals(queryId, r.getQueryId());
     }
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     @Test
     public void test_updateCountResult() {
         SqlResultImpl r = SqlResultImpl.createUpdateCountResult(10);
         assertEquals(10, r.updateCount());
-        assertThrows(IllegalStateException.class, "This result contains only update count", () -> r.iterator());
-        assertThrows(IllegalStateException.class, "This result contains only update count", () -> r.getRowMetadata());
+
+        assertIllegalStateException("This result contains only update count", r::iterator);
+        assertIllegalStateException("This result contains only update count", r::getRowMetadata);
         r.close();
     }
 
-    private void assertThrows(Class<? extends Throwable> expectedClass, String expectedMessage, RunnableEx action) {
-        try {
-            action.run();
-            fail("action didn't fail");
-        } catch (Throwable e) {
-            assertInstanceOf(expectedClass, e);
-            assertEquals(expectedMessage, e.getMessage());
-        }
+    private void assertIllegalStateException(String expectedMessage, Runnable action) {
+        IllegalStateException err = assertThrows(IllegalStateException.class, action);
+        assertEquals(expectedMessage, err.getMessage());
     }
 }

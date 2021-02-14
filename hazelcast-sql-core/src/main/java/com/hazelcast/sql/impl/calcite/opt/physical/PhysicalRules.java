@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 package com.hazelcast.sql.impl.calcite.opt.physical;
 
-import org.apache.calcite.plan.volcano.AbstractConverter;
-import org.apache.calcite.rel.core.RelFactories;
 import org.apache.calcite.tools.RuleSet;
 import org.apache.calcite.tools.RuleSets;
 
@@ -36,8 +34,8 @@ public final class PhysicalRules {
             ProjectPhysicalRule.INSTANCE,
             MapScanPhysicalRule.INSTANCE,
             ValuesPhysicalRule.INSTANCE,
-
-            new AbstractConverter.ExpandConversionRule(RelFactories.LOGICAL_BUILDER)
+            SortPhysicalRule.INSTANCE,
+            ExpandConversionRule.INSTANCE
         );
     }
 }

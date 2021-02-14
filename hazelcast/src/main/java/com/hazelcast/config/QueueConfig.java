@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package com.hazelcast.config;
 
 import com.hazelcast.collection.IQueue;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.nio.ObjectDataInput;
@@ -92,7 +91,7 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Ver
         this.emptyQueueTtl = config.emptyQueueTtl;
         this.statisticsEnabled = config.statisticsEnabled;
         this.splitBrainProtectionName = config.splitBrainProtectionName;
-        this.mergePolicyConfig = config.mergePolicyConfig;
+        this.mergePolicyConfig = new MergePolicyConfig(config.mergePolicyConfig);
         this.queueStoreConfig = config.queueStoreConfig != null ? new QueueStoreConfig(config.queueStoreConfig) : null;
         this.listenerConfigs = new ArrayList<>(config.getItemListenerConfigs());
         this.priorityComparatorClassName = config.priorityComparatorClassName;
@@ -410,11 +409,7 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Ver
         out.writeBoolean(statisticsEnabled);
         out.writeUTF(splitBrainProtectionName);
         out.writeObject(mergePolicyConfig);
-
-        // RU_COMPAT_4_0
-        if (out.getVersion().isGreaterOrEqual(Versions.V4_1)) {
-            out.writeUTF(priorityComparatorClassName);
-        }
+        out.writeUTF(priorityComparatorClassName);
     }
 
     @Override
@@ -429,11 +424,7 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Ver
         statisticsEnabled = in.readBoolean();
         splitBrainProtectionName = in.readUTF();
         mergePolicyConfig = in.readObject();
-
-        // RU_COMPAT_4_0
-        if (in.getVersion().isGreaterOrEqual(Versions.V4_1)) {
-            priorityComparatorClassName = in.readUTF();
-        }
+        priorityComparatorClassName = in.readUTF();
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,25 @@
 package com.hazelcast.internal.monitor.impl;
 
 import com.hazelcast.internal.monitor.LocalRecordStoreStats;
+import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-public class LocalRecordStoreStatsImpl implements LocalRecordStoreStats {
+import java.io.IOException;
+
+public class LocalRecordStoreStatsImpl
+        implements LocalRecordStoreStats, IdentifiedDataSerializable {
+
     private long hits;
     private long lastAccess;
     private long lastUpdate;
+
+    public void copyFrom(LocalRecordStoreStats stats) {
+        this.hits = stats.getHits();
+        this.lastAccess = stats.getLastAccessTime();
+        this.lastUpdate = stats.getLastUpdateTime();
+    }
 
     @Override
     public long getHits() {
@@ -67,5 +81,29 @@ public class LocalRecordStoreStatsImpl implements LocalRecordStoreStats {
         this.hits = 0;
         this.lastAccess = 0;
         this.lastUpdate = 0;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeLong(hits);
+        out.writeLong(lastAccess);
+        out.writeLong(lastUpdate);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        hits = in.readLong();
+        lastAccess = in.readLong();
+        lastUpdate = in.readLong();
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return MapDataSerializerHook.LOCAL_RECORD_STORE_STATS;
     }
 }

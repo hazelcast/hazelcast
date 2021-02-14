@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.calcite.opt.physical.visitor;
 
 import com.hazelcast.sql.impl.plan.node.EmptyPlanNode;
+import com.hazelcast.sql.impl.plan.node.FetchPlanNode;
 import com.hazelcast.sql.impl.plan.node.FilterPlanNode;
 import com.hazelcast.sql.impl.plan.node.MapIndexScanPlanNode;
 import com.hazelcast.sql.impl.plan.node.MapScanPlanNode;
@@ -26,7 +27,8 @@ import com.hazelcast.sql.impl.plan.node.ProjectPlanNode;
 import com.hazelcast.sql.impl.plan.node.RootPlanNode;
 import com.hazelcast.sql.impl.plan.node.io.EdgeAwarePlanNode;
 import com.hazelcast.sql.impl.plan.node.io.ReceivePlanNode;
-import com.hazelcast.sql.impl.plan.node.io.RootSendPlanNode;
+import com.hazelcast.sql.impl.plan.node.io.ReceiveSortMergePlanNode;
+import com.hazelcast.sql.impl.plan.node.io.SendPlanNode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -60,7 +62,7 @@ public class EdgeCollectorPlanNodeVisitor implements PlanNodeVisitor {
     }
 
     @Override
-    public void onRootSendNode(RootSendPlanNode node) {
+    public void onSendNode(SendPlanNode node) {
         onNode(node);
     }
 
@@ -71,6 +73,16 @@ public class EdgeCollectorPlanNodeVisitor implements PlanNodeVisitor {
 
     @Override
     public void onMapIndexScanNode(MapIndexScanPlanNode node) {
+        onNode(node);
+    }
+
+    @Override
+    public void onReceiveSortMergeNode(ReceiveSortMergePlanNode node) {
+        onNode(node);
+    }
+
+    @Override
+    public void onFetchNode(FetchPlanNode node) {
         onNode(node);
     }
 

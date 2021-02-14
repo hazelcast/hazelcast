@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.exec.scan.index;
 
+import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.MapContainer;
@@ -32,6 +33,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
+import static com.hazelcast.config.IndexType.SORTED;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 
@@ -56,7 +58,7 @@ public class IndexFilterIteratorTestSupport extends IndexFilterTestSupport {
         return mapContainer.getIndexes().getIndex(INDEX_NAME);
     }
 
-    protected static <T> void checkIterator(Iterator<QueryableEntry> iterator, T... expectedKeys) {
+    protected static <T> void checkIterator(IndexType indexType, boolean expectedDescending, Iterator<QueryableEntry> iterator, T... expectedKeys) {
         Set<T> expected;
 
         if (expectedKeys != null) {
@@ -69,12 +71,26 @@ public class IndexFilterIteratorTestSupport extends IndexFilterTestSupport {
 
         Set<T> actual = new HashSet<>();
 
+        Object prevValue = null;
         while (iterator.hasNext()) {
-            Object key = iterator.next().getKey();
+            QueryableEntry entry = iterator.next();
+            Object key = entry.getKey();
+            Object value = entry.getValue();
 
             if (key instanceof Data) {
                 key = getSerializationService().toObject(key);
             }
+
+            if (value instanceof Data) {
+                value = getSerializationService().toObject(value);
+            }
+
+            if (indexType == SORTED && prevValue != null) {
+                int cmp = ((Value) prevValue).compareTo((Value) value, expectedDescending);
+                assertTrue("Wrong collation, prevValue " + prevValue + ", value " + value + ", expectedDescending " + expectedDescending,
+                    cmp <= 0);
+            }
+            prevValue = value;
 
             assertTrue("Duplicate key: " + key, actual.add((T) key));
         }
@@ -94,6 +110,35 @@ public class IndexFilterIteratorTestSupport extends IndexFilterTestSupport {
         public Value(Integer value1, Integer value2) {
             this.value1 = value1;
             this.value2 = value2;
+        }
+
+        public int compareTo(Value o, boolean descending) {
+            // NULLs are less than any other value
+            if (value1 == null) {
+                return o.value1 == null ? 0 : (descending ? 1 : -1);
+            }
+            if (o.value1 == null) {
+                return descending ? -1 : 1;
+            }
+            int cmp1 = descending ? Integer.compare(o.value1, value1) : Integer.compare(value1, o.value1);
+            if (cmp1 == 0) {
+
+                if (value2 == null) {
+                    return o.value2 == null ? 0 : (descending ? 1 : -1);
+                }
+
+                if (o.value2 == null) {
+                    return descending ? -1 : 1;
+                }
+
+                return descending ? Integer.compare(o.value2, value2) : Integer.compare(value2, o.value2);
+            }
+            return cmp1;
+        }
+
+        @Override
+        public String toString() {
+            return "[" + value1 + ", " + value2 + "]";
         }
     }
 }

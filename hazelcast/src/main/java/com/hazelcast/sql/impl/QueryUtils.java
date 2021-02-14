@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,10 +22,8 @@ import com.hazelcast.partition.Partition;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnMetadata;
-import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.version.MemberVersion;
 
 import javax.annotation.Nullable;
@@ -45,8 +43,8 @@ public final class QueryUtils {
     public static final String CATALOG = "hazelcast";
     public static final String SCHEMA_NAME_PARTITIONED = "partitioned";
 
-    public static final String WORKER_TYPE_OPERATION = "query-operation-thread";
     public static final String WORKER_TYPE_FRAGMENT = "query-fragment-thread";
+    public static final String WORKER_TYPE_SYSTEM = "query-system-thread";
     public static final String WORKER_TYPE_STATE_CHECKER = "query-state-checker";
 
     private QueryUtils() {
@@ -61,7 +59,7 @@ public final class QueryUtils {
         return instanceName + "-" + workerType + "-" + index;
     }
 
-    public static HazelcastSqlException toPublicException(Exception e, UUID localMemberId) {
+    public static HazelcastSqlException toPublicException(Throwable e, UUID localMemberId) {
         if (e instanceof HazelcastSqlException) {
             return (HazelcastSqlException) e;
         }
@@ -87,87 +85,8 @@ public final class QueryUtils {
      * @param columnType Internal type.
      * @return Public type.
      */
-    @SuppressWarnings("checkstyle:CyclomaticComplexity")
-    public static SqlColumnMetadata getColumnMetadata(String columnName, QueryDataType columnType) {
-        SqlColumnType type;
-
-        switch (columnType.getTypeFamily()) {
-            case VARCHAR:
-                type = SqlColumnType.VARCHAR;
-
-                break;
-
-            case BOOLEAN:
-                type = SqlColumnType.BOOLEAN;
-
-                break;
-
-            case TINYINT:
-                type = SqlColumnType.TINYINT;
-
-                break;
-
-            case SMALLINT:
-                type = SqlColumnType.SMALLINT;
-
-                break;
-
-            case INTEGER:
-                type = SqlColumnType.INTEGER;
-
-                break;
-
-            case BIGINT:
-                type = SqlColumnType.BIGINT;
-
-                break;
-
-            case DECIMAL:
-                type = SqlColumnType.DECIMAL;
-
-                break;
-
-            case REAL:
-                type = SqlColumnType.REAL;
-
-                break;
-
-            case DOUBLE:
-                type = SqlColumnType.DOUBLE;
-
-                break;
-
-            case TIME:
-                type = SqlColumnType.TIME;
-
-                break;
-
-            case DATE:
-                type = SqlColumnType.DATE;
-
-                break;
-
-            case TIMESTAMP:
-                type = SqlColumnType.TIMESTAMP;
-
-                break;
-
-            case TIMESTAMP_WITH_TIME_ZONE:
-                type = SqlColumnType.TIMESTAMP_WITH_TIME_ZONE;
-
-                break;
-
-            case NULL:
-                type = SqlColumnType.NULL;
-                break;
-
-            default:
-                assert columnType.getTypeFamily() == QueryDataTypeFamily.OBJECT;
-
-                type = SqlColumnType.OBJECT;
-        }
-
-        return new SqlColumnMetadata(columnName, type);
+    public static SqlColumnMetadata getColumnMetadata(String columnName, QueryDataType columnType, boolean columnIsNullable) {
+        return new SqlColumnMetadata(columnName, columnType.getTypeFamily().getPublicType(), columnIsNullable);
     }
 
     /**

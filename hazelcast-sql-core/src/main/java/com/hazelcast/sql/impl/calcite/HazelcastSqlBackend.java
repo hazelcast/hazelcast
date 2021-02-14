@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,6 @@ import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.plan.cache.PlanCacheKey;
-import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable.ViewExpander;
 import org.apache.calcite.plan.RelTraitSet;
@@ -106,10 +105,7 @@ public class HazelcastSqlBackend implements SqlBackend {
     public SqlPlan createPlan(OptimizationTask task, QueryParseResult parseResult, OptimizerContext context) {
         QueryConvertResult convertResult = context.convert(parseResult);
 
-        QueryDataType[] mappedParameterRowType = SqlToQueryType.mapRowType(parseResult.getParameterRowType());
-        QueryParameterMetadata parameterMetadata = new QueryParameterMetadata(mappedParameterRowType);
-
-        PhysicalRel physicalRel = optimize(context, convertResult.getRel(), parameterMetadata);
+        PhysicalRel physicalRel = optimize(context, convertResult.getRel(), parseResult.getParameterMetadata());
 
         String sql = task.getSql();
         // Assign IDs to nodes.
@@ -126,7 +122,7 @@ public class HazelcastSqlBackend implements SqlBackend {
             relIdMap,
             new PlanCacheKey(task.getSearchPaths(), sql),
             convertResult.getFieldNames(),
-            parameterMetadata
+            parseResult.getParameterMetadata()
         );
 
         physicalRel.visit(visitor);

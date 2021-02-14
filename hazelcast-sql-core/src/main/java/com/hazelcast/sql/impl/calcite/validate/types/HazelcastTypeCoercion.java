@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,23 @@
 
 package com.hazelcast.sql.impl.calcite.validate.types;
 
-import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
+import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlCallBinding;
+import org.apache.calcite.sql.SqlDataTypeSpec;
+import org.apache.calcite.sql.SqlFunction;
+import org.apache.calcite.sql.SqlInsert;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.SqlNodeList;
+import org.apache.calcite.sql.SqlSelect;
+import org.apache.calcite.sql.SqlUpdate;
 import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.type.SqlTypeFamily;
@@ -34,30 +41,8 @@ import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.sql.validate.implicit.TypeCoercionImpl;
 
 import java.util.List;
+import java.util.function.Consumer;
 
-import static com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil.isLiteral;
-import static com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil.isParameter;
-import static com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil.numericValue;
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.isChar;
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.isFloatingPoint;
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.isInteger;
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.isNumeric;
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.isTemporal;
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.narrowestTypeFor;
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.typeName;
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.withHigherPrecedence;
-import static org.apache.calcite.sql.SqlKind.BETWEEN;
-import static org.apache.calcite.sql.SqlKind.BINARY_ARITHMETIC;
-import static org.apache.calcite.sql.SqlKind.BINARY_COMPARISON;
-import static org.apache.calcite.sql.SqlKind.BINARY_EQUALITY;
-import static org.apache.calcite.sql.SqlKind.MINUS_PREFIX;
-import static org.apache.calcite.sql.SqlKind.PLUS_PREFIX;
-import static org.apache.calcite.sql.type.SqlTypeName.ANY;
-import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;
-import static org.apache.calcite.sql.type.SqlTypeName.BOOLEAN;
-import static org.apache.calcite.sql.type.SqlTypeName.CHAR_TYPES;
-import static org.apache.calcite.sql.type.SqlTypeName.DECIMAL;
-import static org.apache.calcite.sql.type.SqlTypeName.DOUBLE;
 import static org.apache.calcite.sql.type.SqlTypeName.NULL;
 
 /**
@@ -65,312 +50,255 @@ import static org.apache.calcite.sql.type.SqlTypeName.NULL;
  * and assigning more precise types comparing to the standard Calcite coercion.
  */
 public final class HazelcastTypeCoercion extends TypeCoercionImpl {
-
-    private static final HazelcastTypeFactory TYPE_FACTORY = HazelcastTypeFactory.INSTANCE;
-
     public HazelcastTypeCoercion(HazelcastSqlValidator validator) {
-        super(TYPE_FACTORY, validator);
+        super(HazelcastTypeFactory.INSTANCE, validator);
+    }
+
+    @Override
+    public boolean coerceOperandType(SqlValidatorScope scope, SqlCall call, int index, RelDataType targetType) {
+        SqlNode operand = call.getOperandList().get(index);
+        return coerceNode(scope, operand, targetType, cast -> call.setOperand(index, cast));
+    }
+
+    private boolean coerceNode(
+            SqlValidatorScope scope,
+            SqlNode node,
+            RelDataType targetType,
+            Consumer<SqlNode> replaceFn
+    ) {
+        // Just update the inferred type if casting is not needed
+        if (!requiresCast(scope, node, targetType)) {
+            updateInferredType(node, targetType);
+
+            return false;
+        }
+
+        SqlDataTypeSpec targetTypeSpec;
+
+        if (targetType instanceof HazelcastIntegerType) {
+            targetTypeSpec = new SqlDataTypeSpec(
+                    new HazelcastIntegerTypeNameSpec((HazelcastIntegerType) targetType),
+                    SqlParserPos.ZERO
+            );
+        } else {
+            targetTypeSpec = SqlTypeUtil.convertTypeToSpec(targetType);
+        }
+
+        SqlNode cast = HazelcastSqlOperatorTable.CAST.createCall(SqlParserPos.ZERO, node, targetTypeSpec);
+
+        replaceFn.accept(cast);
+
+        validator.deriveType(scope, cast);
+
+        return true;
+    }
+
+    @Override
+    protected boolean coerceColumnType(SqlValidatorScope scope, SqlNodeList nodeList, int index, RelDataType targetType) {
+        throw new UnsupportedOperationException("Should not be called");
+    }
+
+    private boolean requiresCast(SqlValidatorScope scope, SqlNode node, RelDataType to) {
+        RelDataType from = validator.deriveType(scope, node);
+
+        if (from.getSqlTypeName() == NULL || SqlUtil.isNullLiteral(node, false) || node.getKind() == SqlKind.DYNAMIC_PARAM) {
+            // Never cast NULLs or dynamic params, just assign types to them
+            return false;
+        }
+
+        // CAST is only required between different types.
+        return from.getSqlTypeName() != to.getSqlTypeName();
     }
 
     @Override
     public boolean binaryArithmeticCoercion(SqlCallBinding binding) {
-        SqlKind kind = binding.getOperator().getKind();
-        if (!kind.belongsTo(BINARY_ARITHMETIC) && kind != PLUS_PREFIX && kind != MINUS_PREFIX) {
-            return super.binaryArithmeticCoercion(binding);
-        }
-
-        // Infer types.
-
-        RelDataType[] types = inferTypes(binding.getScope(), binding.operands(), true);
-        if (types == null) {
-            return false;
-        }
-
-        // Do the coercion.
-
-        boolean coerced = false;
-        for (int i = 0; i < types.length - 1; ++i) {
-            boolean operandCoerced = coerceOperandType(binding.getScope(), binding.getCall(), i, types[i]);
-            coerced |= operandCoerced;
-        }
-
-        return coerced;
+        throw new UnsupportedOperationException("Should not be called");
     }
 
     @Override
     public boolean binaryComparisonCoercion(SqlCallBinding binding) {
-        SqlKind kind = binding.getOperator().getKind();
-        if (!kind.belongsTo(BINARY_EQUALITY) && !kind.belongsTo(BINARY_COMPARISON) && kind != BETWEEN) {
-            return super.binaryComparisonCoercion(binding);
+        throw new UnsupportedOperationException("Should not be called");
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * We change the contract of the superclass' return type. According to the
+     * superclass contract we're supposed to return true iff we successfully
+     * added a CAST. This method returns true if the expression can now be
+     * assigned to {@code targetType}, either because a CAST was added, or
+     * because it already was assignable (e.g. the type was same). This is
+     * needed for {@link #querySourceCoercion} method, which calls this method.
+     *
+     * @return True, if the source column can now be assigned to {@code
+     *      targetType}
+     */
+    @Override
+    public boolean rowTypeCoercion(SqlValidatorScope scope, SqlNode query, int columnIndex, RelDataType targetType) {
+        switch (query.getKind()) {
+            case SELECT:
+                SqlSelect selectNode = (SqlSelect) query;
+                SqlValidatorScope scope1 = validator.getSelectScope(selectNode);
+                if (!rowTypeElementCoercion(scope1, selectNode.getSelectList().get(columnIndex), targetType,
+                        newNode -> selectNode.getSelectList().set(columnIndex, newNode))) {
+                    return false;
+                }
+                updateInferredColumnType(scope1, query, columnIndex, targetType);
+                return true;
+            case VALUES:
+                for (SqlNode rowConstructor : ((SqlCall) query).getOperandList()) {
+                    if (!rowTypeElementCoercion(scope, ((SqlCall) rowConstructor).operand(columnIndex), targetType,
+                            newNode -> ((SqlCall) rowConstructor).setOperand(columnIndex, newNode))) {
+                        return false;
+                    }
+                }
+                updateInferredColumnType(scope, query, columnIndex, targetType);
+                return true;
+            default:
+                throw new UnsupportedOperationException("unexpected: " + query.getKind());
+        }
+    }
+
+    private boolean rowTypeElementCoercion(
+            SqlValidatorScope scope,
+            SqlNode rowElement,
+            RelDataType targetType,
+            Consumer<SqlNode> replaceFn
+    ) {
+        RelDataType sourceType = validator.deriveType(scope, rowElement);
+
+        QueryDataType sourceHzType = HazelcastTypeUtils.toHazelcastType(sourceType.getSqlTypeName());
+        QueryDataType targetHzType = HazelcastTypeUtils.toHazelcastType(targetType.getSqlTypeName());
+
+        if (sourceHzType.getTypeFamily() == targetHzType.getTypeFamily()) {
+            // Types are in the same family, do nothing.
+            return true;
         }
 
-        // Infer types.
+        boolean valid = sourceAndTargetAreNumeric(targetHzType, sourceHzType)
+                || sourceAndTargetAreTemporalAndSourceCanBeConvertedToTarget(targetHzType, sourceHzType)
+                || targetIsTemporalAndSourceIsVarcharLiteral(targetHzType, sourceHzType, rowElement);
 
-        RelDataType[] types = inferTypes(binding.getScope(), binding.operands(), false);
-        if (types == null) {
+        if (!valid) {
+            // Types cannot be converted to each other, fail to coerce
             return false;
         }
 
-        // Disallow comparisons for temporal types
-        for (int i = 0; i < types.length - 1; ++i) {
-            RelDataType type = types[i];
-
-            if (HazelcastTypeSystem.isTemporal(type)) {
-                throw QueryException.error(
-                    SqlErrorCode.PARSING, "Cannot apply comparison operation to " + type.getFullTypeString()
-                );
-            }
-        }
-
-        // Do the coercion.
-        RelDataType commonType = types[types.length - 1];
-
-        boolean coerced = false;
-        for (int i = 0; i < types.length - 1; ++i) {
-            RelDataType type = types[i];
-            type = TYPE_FACTORY.createTypeWithNullability(commonType, type.isNullable());
-            boolean operandCoerced = coerceOperandType(binding.getScope(), binding.getCall(), i, type);
-            coerced |= operandCoerced;
-
-            // If the operand was coerced to integer type, reassign its CAST type
-            // back to the common type: '0':VARCHAR -> CAST('0' AS INT(31)):INT(0)
-            // -> CAST('0' AS INT(31)):INT(31).
-            if (operandCoerced && isInteger(type)) {
-                updateInferredType(binding.operand(i), type);
-            }
-        }
-
-        return coerced;
-    }
-
-    @Override
-    public RelDataType implicitCast(RelDataType in, SqlTypeFamily expected) {
-        // enables implicit conversion from CHAR to BOOLEAN
-        if (CHAR_TYPES.contains(typeName(in)) && expected == SqlTypeFamily.BOOLEAN) {
-            return TYPE_FACTORY.createSqlType(BOOLEAN, in.isNullable());
-        }
-
-        return super.implicitCast(in, expected);
-    }
-
-    @Override
-    protected void updateInferredType(SqlNode node, RelDataType type) {
-        ((HazelcastSqlValidator) validator).setKnownNodeType(node, type);
-        super.updateInferredType(node, type);
-    }
-
-    @Override
-    protected boolean coerceOperandType(SqlValidatorScope scope, SqlCall call, int index, RelDataType to) {
-        SqlNode operand = call.getOperandList().get(index);
-
-        // just update the inferred type if casting is not needed
-        if (!needToCast(scope, operand, to)) {
-            updateInferredType(operand, to);
-            return false;
-        }
-
-        SqlNode cast = makeCast(operand, to);
-        call.setOperand(index, cast);
-        // derive the type of the newly created CAST immediately
-        validator.deriveType(scope, cast);
+        // Types are in the same group, cast source to target.
+        coerceNode(scope, rowElement, targetType, replaceFn);
         return true;
     }
 
-    @SuppressWarnings("checkstyle:NPathComplexity")
+    private static boolean sourceAndTargetAreNumeric(QueryDataType highHZType, QueryDataType lowHZType) {
+        return (highHZType.getTypeFamily().isNumeric() && lowHZType.getTypeFamily().isNumeric());
+    }
+
+    private static boolean sourceAndTargetAreTemporalAndSourceCanBeConvertedToTarget(QueryDataType targetHzType,
+                                                                                     QueryDataType sourceHzType) {
+        return targetHzType.getTypeFamily().isTemporal()
+                && sourceHzType.getTypeFamily().isTemporal()
+                && sourceHzType.getConverter().canConvertTo(targetHzType.getTypeFamily());
+    }
+
+    private static boolean targetIsTemporalAndSourceIsVarcharLiteral(QueryDataType targetHzType,
+                                                                     QueryDataType sourceHzType, SqlNode sourceNode) {
+        return targetHzType.getTypeFamily().isTemporal()
+                && sourceHzType.getTypeFamily() == QueryDataTypeFamily.VARCHAR
+                && sourceNode instanceof SqlLiteral;
+    }
+
     @Override
-    protected boolean needToCast(SqlValidatorScope scope, SqlNode node, RelDataType to) {
-        RelDataType from = validator.deriveType(scope, node);
-
-        if (typeName(from) == typeName(to)) {
-            // already of the same type
-            return false;
-        }
-
-        if (typeName(from) == NULL || SqlUtil.isNullLiteral(node, false)) {
-            // never cast NULLs, just assign types to them
-            return false;
-        }
-
-        if (typeName(to) == ANY) {
-            // all types can be implicitly interpreted as ANY
-            return false;
-        }
-
-        if (isParameter(node)) {
-            // never cast parameters, just assign types to them
-            return false;
-        }
-
-        if (isLiteral(node) && !(isTemporal(from) || isTemporal(to) || isChar(from) || isChar(to))) {
-            // never cast literals, let Calcite decide on temporal and char ones
-            return false;
-        }
-
-        return super.needToCast(scope, node, to);
+    public boolean caseWhenCoercion(SqlCallBinding callBinding) {
+        throw new UnsupportedOperationException("Should not be called");
     }
 
-    private static SqlNode makeCast(SqlNode node, RelDataType type) {
-        return HazelcastSqlOperatorTable.CAST.createCall(SqlParserPos.ZERO, node, SqlTypeUtil.convertTypeToSpec(type));
+    @Override
+    public boolean inOperationCoercion(SqlCallBinding binding) {
+        throw new UnsupportedOperationException("Should not be called");
     }
 
-    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:MethodLength", "checkstyle:NPathComplexity",
-            "checkstyle:NestedIfDepth"})
-    private RelDataType[] inferTypes(SqlValidatorScope scope, List<SqlNode> operands, boolean assumeNumeric) {
-        // Infer common type from columns and sub-expressions.
+    @Override
+    public boolean builtinFunctionCoercion(
+        SqlCallBinding binding,
+        List<RelDataType> operandTypes,
+        List<SqlTypeFamily> expectedFamilies
+    ) {
+        throw new UnsupportedOperationException("Should not be called");
+    }
 
-        RelDataType commonType = null;
-        boolean seenParameters = false;
-        boolean seenChar = false;
+    @Override
+    public boolean userDefinedFunctionCoercion(SqlValidatorScope scope, SqlCall call, SqlFunction function) {
+        throw new UnsupportedOperationException("Should not be called");
+    }
 
-        for (SqlNode operand : operands) {
-            RelDataType operandType = validator.deriveType(scope, operand);
-            if (isLiteral(operand)) {
-                continue;
+    /**
+     * {@inheritDoc}
+     *
+     * We change the contract of the superclass' return type. According to the
+     * superclass contract we're supposed to return true iff any coercion
+     * happened. This method returns true if the {@code sourceRowType} was
+     * changed so that it can now be assigned to the {@code targetRowType},
+     * either because a CAST was added, or because it already was assignable
+     * (e.g. the type was same), and this must hold for all record fields. The
+     * Calcite code that calls this method assumes this.
+     *
+     * @return True, if the {@code sourceRowType} can now be assigned to {@code
+     *      targetRowType}
+     */
+    @Override
+    public boolean querySourceCoercion(
+        SqlValidatorScope scope,
+        RelDataType sourceRowType,
+        RelDataType targetRowType,
+        SqlNode query
+    ) {
+        // the code below copied from superclass implementation, but uses our `canCast` method
+        final List<RelDataTypeField> sourceFields = sourceRowType.getFieldList();
+        final List<RelDataTypeField> targetFields = targetRowType.getFieldList();
+        final int sourceCount = sourceFields.size();
+        for (int i = 0; i < sourceCount; i++) {
+            RelDataType sourceType = sourceFields.get(i).getType();
+            RelDataType targetType = targetFields.get(i).getType();
+            if (!SqlTypeUtil.equalSansNullability(validator.getTypeFactory(), sourceType, targetType)
+                    && !HazelcastTypeUtils.canCast(sourceType, targetType)) {
+                // Return early if types are not equal and can not do type coercion.
+                return false;
             }
-
-            if (isParameter(operand)) {
-                seenParameters = true;
-            } else {
-                commonType = commonType == null ? operandType : withHigherPrecedence(operandType, commonType);
-                seenChar |= isChar(operandType);
-            }
         }
-
-        // Continue common type inference on numeric literals.
-
-        for (SqlNode operand : operands) {
-            RelDataType operandType = validator.deriveType(scope, operand);
-            if (!isLiteral(operand) || !isNumeric(operandType)) {
-                continue;
-            }
-            SqlLiteral literal = (SqlLiteral) operand;
-
-            if (literal.getValue() == null) {
-                operandType = TYPE_FACTORY.createSqlType(NULL);
-            } else {
-                Number numeric = numericValue(literal);
-                assert numeric != null;
-                operandType = narrowestTypeFor(numeric, commonType == null ? null : typeName(commonType));
-            }
-
-            commonType = commonType == null ? operandType : withHigherPrecedence(operandType, commonType);
+        boolean canAssign = true;
+        for (int i = 0; i < sourceFields.size() && canAssign; i++) {
+            RelDataType targetType = targetFields.get(i).getType();
+            canAssign = coerceSourceRowType(scope, query, i, targetType);
         }
+        return canAssign;
+    }
 
-        // Continue common type inference on non-numeric literals.
-
-        for (SqlNode operand : operands) {
-            RelDataType operandType = validator.deriveType(scope, operand);
-            if (!isLiteral(operand) || isNumeric(operandType)) {
-                continue;
-            }
-            SqlLiteral literal = (SqlLiteral) operand;
-
-            if (literal.getValue() == null) {
-                operandType = TYPE_FACTORY.createSqlType(NULL);
-            } else if (isChar(operandType) && (commonType != null && isNumeric(commonType) || assumeNumeric)) {
-                // Infer proper numeric type for char literals.
-
-                Number numeric = numericValue(operand);
-                assert numeric != null;
-                operandType = narrowestTypeFor(numeric, commonType == null ? null : typeName(commonType));
-            }
-
-            commonType = commonType == null ? operandType : withHigherPrecedence(operandType, commonType);
-        }
-
-        // seen only parameters
-        if (commonType == null) {
-            assert seenParameters;
-            return null;
-        }
-
-        // can't infer parameter types if seen only NULLs
-        if (typeName(commonType) == NULL && seenParameters) {
-            return null;
-        }
-
-        // fallback to DOUBLE from CHAR, if numeric types assumed
-        if (isChar(commonType) && assumeNumeric) {
-            commonType = TYPE_FACTORY.createSqlType(DOUBLE);
-        }
-
-        // widen integer common type: ? + 1 -> BIGINT instead of TINYINT
-        if ((seenParameters || seenChar) && isInteger(commonType)) {
-            commonType = TYPE_FACTORY.createSqlType(BIGINT);
-        }
-
-        // Assign final types to everything based on the inferred common type.
-
-        RelDataType[] types = new RelDataType[operands.size() + 1];
-        boolean nullable = false;
-        for (int i = 0; i < operands.size(); ++i) {
-            SqlNode operand = operands.get(i);
-            RelDataType operandType = validator.deriveType(scope, operand);
-
-            if (isParameter(operand)) {
-                // Just assign the common type to parameters.
-
-                types[i] = TYPE_FACTORY.createTypeWithNullability(commonType, true);
-                nullable = true;
-            } else if (isLiteral(operand)) {
-                SqlLiteral literal = (SqlLiteral) operand;
-
-                if (literal.getValue() == null) {
-                    // Just assign the common type to NULLs.
-
-                    types[i] = TYPE_FACTORY.createTypeWithNullability(commonType, true);
-                    nullable = true;
-                } else if (isNumeric(operandType) || (isChar(operandType) && isNumeric(commonType))) {
-                    // Assign final numeric types to numeric and char literals.
-
-                    RelDataType literalType;
-                    Number numeric = numericValue(operand);
-                    assert numeric != null;
-                    if (typeName(commonType) == DECIMAL) {
-                        // always enforce DECIMAL interpretation if common type is DECIMAL
-                        literalType = TYPE_FACTORY.createSqlType(DECIMAL);
-                    } else {
-                        literalType = narrowestTypeFor(numeric, typeName(commonType));
-                        if (assumeNumeric && isFloatingPoint(commonType)) {
-                            // directly use floating-point representation in numeric contexts
-                            literalType = withHigherPrecedence(literalType, commonType);
-                            literalType = TYPE_FACTORY.createTypeWithNullability(literalType, false);
-                        }
-                    }
-                    types[i] = literalType;
-                } else if (isChar(operandType) && !isChar(commonType) && typeName(commonType) != ANY) {
-                    // If common type is non-numeric, just assign it to char literals.
-
-                    types[i] = TYPE_FACTORY.createTypeWithNullability(commonType, false);
+    // copied from TypeCoercionImpl
+    private boolean coerceSourceRowType(
+            SqlValidatorScope sourceScope,
+            SqlNode query,
+            int columnIndex,
+            RelDataType targetType) {
+        switch (query.getKind()) {
+            case INSERT:
+                SqlInsert insert = (SqlInsert) query;
+                return coerceSourceRowType(sourceScope,
+                        insert.getSource(),
+                        columnIndex,
+                        targetType);
+            case UPDATE:
+                SqlUpdate update = (SqlUpdate) query;
+                if (update.getSourceExpressionList() != null) {
+                    final SqlNodeList sourceExpressionList = update.getSourceExpressionList();
+                    return coerceColumnType(sourceScope, sourceExpressionList, columnIndex, targetType);
                 } else {
-                    // All other literal types keep their original type.
-
-                    types[i] = operandType;
-                    nullable |= typeName(operandType) == NULL;
+                    return coerceSourceRowType(sourceScope,
+                            update.getSourceSelect(),
+                            columnIndex,
+                            targetType);
                 }
-            } else {
-                // Columns and sub-expressions.
-
-                RelDataType type;
-                if (isNumeric(operandType) && typeName(commonType) == DECIMAL) {
-                    // always enforce cast to DECIMAL if common type is DECIMAL
-                    type = commonType;
-                } else if (isChar(operandType) && typeName(commonType) != ANY) {
-                    // cast char to common type
-                    type = commonType;
-                } else {
-                    // otherwise keep original type
-                    type = operandType;
-                }
-                types[i] = TYPE_FACTORY.createTypeWithNullability(type, operandType.isNullable());
-                nullable |= operandType.isNullable();
-            }
+            default:
+                return rowTypeCoercion(sourceScope, query, columnIndex, targetType);
         }
-
-        commonType = TYPE_FACTORY.createTypeWithNullability(commonType, nullable);
-        types[types.length - 1] = commonType;
-
-        return types;
     }
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.record;
 
 import com.hazelcast.config.CacheDeserializedValues;
-import com.hazelcast.config.MapConfig;
+import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -31,16 +31,13 @@ public class ObjectRecordFactoryTest extends AbstractRecordFactoryTest<Object> {
     @Override
     void newRecordFactory(boolean isStatisticsEnabled,
                           CacheDeserializedValues cacheDeserializedValues) {
-        MapConfig mapConfig = new MapConfig()
-                .setStatisticsEnabled(isStatisticsEnabled)
-                .setCacheDeserializedValues(cacheDeserializedValues);
-
-        factory = new ObjectRecordFactory(mapConfig, serializationService);
+        MapContainer mapContainer = createMapContainer(isStatisticsEnabled, cacheDeserializedValues);
+        factory = new ObjectRecordFactory(mapContainer, serializationService);
     }
 
     @Override
     Class<?> getRecordClass() {
-        return ObjectRecord.class;
+        return SimpleRecord.class;
     }
 
     @Override
@@ -50,7 +47,7 @@ public class ObjectRecordFactoryTest extends AbstractRecordFactoryTest<Object> {
 
     @Override
     Class<?> getCachedRecordClass() {
-        return ObjectRecord.class;
+        return SimpleRecord.class;
     }
 
     @Override

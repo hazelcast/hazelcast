@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -174,6 +174,10 @@ public final class ReflectionHelper {
         } catch (Throwable e) {
             throw new QueryException(e);
         }
+    }
+
+    public static Getter createGetter(Object obj, String attribute) {
+        return createGetter(obj, attribute, true);
     }
 
     public static Object extractValue(Object object, String attributeName, boolean failOnMissingAttribute) throws Exception {

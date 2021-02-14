@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hazelcast.internal.serialization.impl.SerializationConstants;
 import com.hazelcast.nio.ObjectDataInput;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
@@ -36,8 +37,9 @@ public class CopyOnWriteArraySetStreamSerializer<E> extends AbstractCollectionSt
     public CopyOnWriteArraySet<E> read(ObjectDataInput in) throws IOException {
         int size = in.readInt();
 
-        CopyOnWriteArraySet<E> collection = new CopyOnWriteArraySet<>();
+        ArrayList<E> collection = new ArrayList<>(size);
+        deserializeEntriesInto(in, size, collection);
 
-        return deserializeEntries(in, size, collection);
+        return new CopyOnWriteArraySet<>(collection);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,17 +18,16 @@ package com.hazelcast.sql.impl.calcite;
 
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastIntegerType;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
+import com.hazelcast.sql.impl.type.converter.Converter;
+import com.hazelcast.sql.impl.type.converter.Converters;
 import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexNode;
-
-import java.math.BigDecimal;
+import org.apache.calcite.sql.type.SqlTypeName;
 
 import static org.apache.calcite.sql.type.SqlTypeName.ANY;
-import static org.apache.calcite.sql.type.SqlTypeName.DECIMAL;
-import static org.apache.calcite.sql.type.SqlTypeName.DOUBLE;
-import static org.apache.calcite.sql.type.SqlTypeName.REAL;
 
 /**
  * Custom Hazelcast expression builder.
@@ -37,29 +36,32 @@ import static org.apache.calcite.sql.type.SqlTypeName.REAL;
  * of the default Calcite expression builder.
  */
 public final class HazelcastRexBuilder extends RexBuilder {
-
-    public HazelcastRexBuilder(RelDataTypeFactory typeFactory) {
+    public HazelcastRexBuilder(HazelcastTypeFactory typeFactory) {
         super(typeFactory);
-        assert typeFactory instanceof HazelcastTypeFactory;
     }
 
     @Override
     public RexNode makeLiteral(Object value, RelDataType type, boolean allowCast) {
-        // XXX: Calcite evaluates casts like CAST(0 AS ANY) statically and
-        // assigns imprecise types: BIGINT for any integer value and DOUBLE for
-        // any floating-point value. The code below fixes that.
+        // Make sure that numeric literals get a correct return type during the conversion.
+        // Without this code, Apache Calcite may assign incorrect types to some literals during conversion.
+        // For example, new BigDecimal(Long.MAX_VALUE + "1") will receive the BIGINT type.
+        // To see the problem in action, you may comment out this code and run CastFunctionIntegrationTest.
+        // Some conversions will fail due to precision loss.
 
         if (type.getSqlTypeName() == ANY && value instanceof Number) {
-            if (value instanceof Byte || value instanceof Short || value instanceof Integer || value instanceof Long) {
-                Number number = (Number) value;
-                int bitWidth = HazelcastIntegerType.bitWidthOf(number.longValue());
-                type = HazelcastIntegerType.of(bitWidth, false);
-            } else if (value instanceof Float) {
-                type = HazelcastTypeFactory.INSTANCE.createSqlType(REAL);
-            } else if (value instanceof Double) {
-                type = HazelcastTypeFactory.INSTANCE.createSqlType(DOUBLE);
-            } else if (value instanceof BigDecimal) {
-                type = HazelcastTypeFactory.INSTANCE.createSqlType(DECIMAL);
+            Converter converter = Converters.getConverter(value.getClass());
+
+            if (converter != null) {
+                QueryDataTypeFamily typeFamily = converter.getTypeFamily();
+
+                if (typeFamily.isNumericInteger()) {
+                    int bitWidth = HazelcastIntegerType.bitWidthOf(((Number) value).longValue());
+                    type = HazelcastIntegerType.create(bitWidth, false);
+                } else {
+                    SqlTypeName typeName = HazelcastTypeUtils.toCalciteType(typeFamily);
+
+                    type = HazelcastTypeFactory.INSTANCE.createSqlType(typeName);
+                }
             }
         }
 

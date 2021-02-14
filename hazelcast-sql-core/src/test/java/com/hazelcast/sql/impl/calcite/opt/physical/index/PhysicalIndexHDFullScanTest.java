@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,6 +89,7 @@ public class PhysicalIndexHDFullScanTest extends IndexOptimizerTestSupport {
 
     @Test
     public void test_sorted() {
+
         createSchema(IndexType.SORTED);
         checkIndexFullScan(IndexType.SORTED);
 
@@ -111,16 +112,16 @@ public class PhysicalIndexHDFullScanTest extends IndexOptimizerTestSupport {
         checkIndexFullScan(IndexType.HASH);
 
         createSchema(IndexType.HASH, IndexType.SORTED);
-        checkIndexFullScan(IndexType.HASH);
+        checkIndexFullScan(IndexType.SORTED);
 
         createSchema(IndexType.HASH, IndexType.BITMAP);
         checkIndexFullScan(IndexType.HASH);
 
         createSchema(IndexType.HASH, IndexType.SORTED, IndexType.BITMAP);
-        checkIndexFullScan(IndexType.HASH);
+        checkIndexFullScan(IndexType.SORTED);
 
         createSchema(IndexType.HASH, IndexType.BITMAP, IndexType.SORTED);
-        checkIndexFullScan(IndexType.HASH);
+        checkIndexFullScan(IndexType.SORTED);
     }
 
     @Test
@@ -138,7 +139,7 @@ public class PhysicalIndexHDFullScanTest extends IndexOptimizerTestSupport {
         checkIndexFullScan(IndexType.SORTED);
 
         createSchema(IndexType.BITMAP, IndexType.HASH, IndexType.SORTED);
-        checkIndexFullScan(IndexType.HASH);
+        checkIndexFullScan(IndexType.SORTED);
     }
 
     private void checkIndexFullScan(IndexType expectedIndexType) {

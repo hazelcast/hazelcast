@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -127,8 +127,8 @@ public class MetricsCompressor {
 
     // temporary buffer to avoid DeflaterOutputStream's extra byte[] allocations
     // when writing primitive fields
-    private DataOutputStream tmpDos;
-    private MorePublicByteArrayOutputStream tmpBaos = new MorePublicByteArrayOutputStream(INITIAL_BUFFER_SIZE_DESCRIPTION);
+    private final DataOutputStream tmpDos;
+    private final MorePublicByteArrayOutputStream tmpBaos = new MorePublicByteArrayOutputStream(INITIAL_BUFFER_SIZE_DESCRIPTION);
 
     private int count;
     private MetricDescriptor lastDescriptor;
@@ -303,7 +303,6 @@ public class MetricsCompressor {
     public int count() {
         return count;
     }
-
 
     private void reset(int estimatedBytesDictionary, int estimatedBytesMetrics) {
         dictionaryCompressor = new Deflater();

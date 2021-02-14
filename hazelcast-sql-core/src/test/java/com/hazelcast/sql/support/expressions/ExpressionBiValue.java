@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql.support.expressions;
 
+import com.hazelcast.internal.util.BiTuple;
+
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -23,6 +25,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.util.concurrent.ConcurrentHashMap;
 
 @SuppressWarnings({"unused", "unchecked", "checkstyle:MultipleVariableDeclarations"})
 public abstract class ExpressionBiValue extends ExpressionValue {
@@ -30,7 +33,13 @@ public abstract class ExpressionBiValue extends ExpressionValue {
         return createBiClass(type1.typeName(), type2.typeName());
     }
 
+    private static final ConcurrentHashMap<BiTuple<String, String>, Class<? extends ExpressionBiValue>> BI_CLASS_CACHE = new ConcurrentHashMap<>();
+
     public static Class<? extends ExpressionBiValue> createBiClass(String type1, String type2) {
+        return BI_CLASS_CACHE.computeIfAbsent(BiTuple.of(type1, type2), (k) -> createBiClass0(type1, type2));
+    }
+
+    public static Class<? extends ExpressionBiValue> createBiClass0(String type1, String type2) {
         try {
             String className = ExpressionBiValue.class.getName() + "$" + type1 + type2 + "Val";
 
@@ -39,6 +48,18 @@ public abstract class ExpressionBiValue extends ExpressionValue {
             throw new RuntimeException("Cannot create " + ExpressionBiValue.class.getSimpleName() + " for types \""
                 + type1 + "\" and \"" + type2 + "\"", e);
         }
+    }
+
+    public static <T extends ExpressionBiValue> T createBiValue(
+        Object field1,
+        Object field2
+    ) {
+        ExpressionType<?> type1 = ExpressionTypes.resolve(field1);
+        ExpressionType<?> type2 = ExpressionTypes.resolve(field2);
+
+        Class<? extends ExpressionBiValue> clazz = createBiClass(type1.typeName(), type2.typeName());
+
+        return createBiValue(clazz, field1, field2);
     }
 
     @SuppressWarnings("unchecked")

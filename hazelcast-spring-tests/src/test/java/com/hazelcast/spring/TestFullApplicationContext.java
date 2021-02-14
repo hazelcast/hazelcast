@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -327,7 +327,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     @Test
     public void testMapConfig() {
         assertNotNull(config);
-        assertEquals(25, config.getMapConfigs().size());
+        assertEquals(26, config.getMapConfigs().size());
 
         MapConfig testMapConfig = config.getMapConfig("testMap");
         assertNotNull(testMapConfig);
@@ -1099,6 +1099,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     @Test
     public void testSerializationConfig() {
         SerializationConfig serializationConfig = config.getSerializationConfig();
+        assertTrue(serializationConfig.isAllowOverrideDefaultSerializers());
         assertEquals(ByteOrder.BIG_ENDIAN, serializationConfig.getByteOrder());
         assertFalse(serializationConfig.isCheckClassDefErrors());
         assertEquals(13, serializationConfig.getPortableVersion());
@@ -1234,6 +1235,12 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         RecentlyActiveSplitBrainProtectionFunction splitBrainProtectionFunction =
                 (RecentlyActiveSplitBrainProtectionFunction) recentlyActiveSplitBrainProtectionConfig.getFunctionImplementation();
         assertEquals(5123, splitBrainProtectionFunction.getHeartbeatToleranceMillis());
+    }
+
+    @Test
+    public void testMapPerEntryStats() {
+        MapConfig mapConfig = config.getMapConfig("map-with-per-entry-stats-enabled");
+        assertTrue(mapConfig.isPerEntryStatsEnabled());
     }
 
     @Test
@@ -1473,7 +1480,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     public void testSqlConfig() {
         SqlConfig sqlConfig = config.getSqlConfig();
         assertEquals(10, sqlConfig.getExecutorPoolSize());
-        assertEquals(20, sqlConfig.getOperationPoolSize());
         assertEquals(30L, sqlConfig.getStatementTimeoutMillis());
     }
 }

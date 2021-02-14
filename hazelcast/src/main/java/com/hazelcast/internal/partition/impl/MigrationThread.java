@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -87,22 +87,13 @@ class MigrationThread extends Thread implements Runnable {
      * @throws InterruptedException if the sleep was interrupted
      */
     private void doRun() throws InterruptedException {
-        boolean migrateTask = false;
         while (migrationManager.areMigrationTasksAllowed()) {
             MigrationRunnable runnable = queue.poll(1, TimeUnit.SECONDS);
             if (runnable == null) {
                 break;
             }
 
-            //RU_COMPAT_4_0
-            migrateTask |= runnable instanceof MigrationManager.MigrateTask;
-
             processTask(runnable);
-
-            //RU_COMPAT_4_0
-            if (migrateTask && partitionMigrationInterval > 0) {
-                Thread.sleep(partitionMigrationInterval);
-            }
         }
     }
 

@@ -151,20 +151,6 @@ both sides of the binary comparison operators are coerced to the same
 type respecting type precedence and conversion rules defined in [Type
 System design document](01-type-system.md). Another example is the
 binary arithmetic operators coercing their operands to a common type.
-The coercion can be customized by providing a custom `TypeCoercion` (see
-`HazelcastTypeCoercion`). A potential flaw in the type system conversion
-rules was identified: the mentioned Type System design document defines
-strings (`VARCHAR` type) as implicitly convertible to any other type,
-that potentially hides bugs in queries including performance ones.
-
-Another flaw was identified in the coercion for built-in and
-user-defined functions provided by Calcite: currently, Calcite performs
-questionable implicit conversions like casting `INT` to `VARCHAR` for
-functions accepting `VARCHAR` (see
-`TypeCoercion.builtinFunctionCoercion/userDefinedFunctionCoercion`).
-Apparently, the behaviour can be aligned with our type conversion rules
-by tuning `AbstractTypeCoercion.canImplicitTypeCast` and/or
-`AbstractTypeCoercion.implicitCast`.
 
 Each operator validates that it has a proper number of operands of
 proper types. The validation process can be customized by overriding
@@ -174,12 +160,7 @@ operator. For instance, `HazelcastSqlCastFunction` overrides
 `checkOperandTypes` to make sure the casting behaviour is exactly the
 same as defined by Type System conversion rules. Calcite provides a
 collection of `SqlOperandTypeChecker` strategies in `OperandTypes`
-class, we extend that collection with `HazelcastOperandTypes`: `notAny`
-strategy checks that none of the operands is of `OBJECT` type to report
-an error if an operator can't be applied to `OBJECT`s (SQL `OBJECT`
-type is represented internally as Calcite's `ANY` type); `notAllNull`
-checks that at least one of the operands has a type other than `NULL` to
-report an error if it's impossible to infer a type for `NULL` literals.
+class. For every operator we provide our own type checking strategy.
 
 As an end result, for semantically valid ASTs, the validation process
 produces a potentially transformed AST where every node has a known
@@ -251,21 +232,11 @@ and the implementations themselves are located at
 `org.apache.calcite.sql.fun` package.
 
 If the pre-existing implementation satisfies the requirements, create
-its runtime counterpart based on `Expression` interface. Add the
-translation support to `RexToExpressionVisitor` and make sure the
-corresponding operator or function is listed as allowed in
-`UnsupportedOperationVisitor`. Add tests based on `ExpressionTestBase`
-and `SqlExpressionIntegrationTestSupport`.
-
+its runtime counterpart based on `Expression` interface.
 If the pre-existing implementation requires some modifications of its
 behavior, try to modify it using parametrization or inheritance, resort
-to copying if that's impossible. Add a reference to the new modified
-implementation in `HazelcastSqlOperatorTable` to make it visible to
-`HazelcastOperatorTableVisitor`.
-
-If there is no pre-existing implementation provided by Calcite, create
-it from scratch. Add a reference to it in `HazelcastSqlOperatorTable`,
-list it as allowed in `UnsupportedOperationVisitor`, create runtime
-counterpart based on `Expression`, add translation support to
-`RexToExpressionVisitor`, add tests based on `ExpressionTestBase`and
-`SqlExpressionIntegrationTestSupport`.
+to copying if that's impossible. If there is no pre-existing implementation
+provided by Calcite, create it from scratch. 
+Add the translation support to `RexToExpressionVisitor` and make sure the
+corresponding operator or function is listed as allowed in
+`UnsupportedOperationVisitor`. Add tests based on `ExpressionTestSupport`.

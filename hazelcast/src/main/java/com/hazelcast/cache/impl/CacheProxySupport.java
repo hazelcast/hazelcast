@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -322,7 +322,7 @@ abstract class CacheProxySupport<K, V>
         return invoke(operation, keyData, withCompletionEvent);
     }
 
-   protected  <T> InvocationFuture<T> replaceAsyncInternal(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy,
+    protected  <T> InvocationFuture<T> replaceAsyncInternal(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy,
                                                           boolean hasOldValue, boolean isGet, boolean withCompletionEvent) {
         ensureOpen();
         if (hasOldValue) {
@@ -345,7 +345,7 @@ abstract class CacheProxySupport<K, V>
         return invoke(operation, keyData, withCompletionEvent);
     }
 
-   protected <T> InvocationFuture<T> putAsyncInternal(K key, V value, ExpiryPolicy expiryPolicy,
+    protected <T> InvocationFuture<T> putAsyncInternal(K key, V value, ExpiryPolicy expiryPolicy,
                                                       boolean isGet, boolean withCompletionEvent) {
         ensureOpen();
         validateNotNull(key, value);

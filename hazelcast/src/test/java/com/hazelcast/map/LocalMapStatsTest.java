@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,6 +69,23 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
         }
         LocalMapStats localMapStats = getMapStats();
         assertEquals(100, localMapStats.getHits());
+    }
+
+    @Test
+    public void testHits_can_still_be_seen_when_all_entries_are_removed_due_to_the_expiry() {
+        IMap<Integer, Integer> map = getMap();
+        for (int i = 0; i < 10; i++) {
+            map.set(i, i);
+            map.get(i);
+        }
+
+        // set ttl to entries (this also increases hits)
+        for (int i = 0; i < 10; i++) {
+            map.set(i, i, 1, TimeUnit.SECONDS);
+        }
+
+        assertSizeEventually(0, map);
+        assertEquals(20, getMapStats().getHits());
     }
 
     @Test

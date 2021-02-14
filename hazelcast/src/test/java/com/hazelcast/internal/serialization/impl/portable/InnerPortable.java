@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,11 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.util.Arrays;
 
 public class InnerPortable implements Portable {
@@ -34,11 +39,18 @@ public class InnerPortable implements Portable {
     public float[] ff;
     public double[] dd;
     public NamedPortable[] nn;
+    public BigDecimal[] bigDecimals;
+    public LocalTime[] localTimes;
+    public LocalDate[] localDates;
+    public LocalDateTime[] localDateTimes;
+    public OffsetDateTime[] offsetDateTimes;
 
     InnerPortable() {
     }
 
-    public InnerPortable(byte[] bb, char[] cc, short[] ss, int[] ii, long[] ll, float[] ff, double[] dd, NamedPortable[] nn) {
+    public InnerPortable(byte[] bb, char[] cc, short[] ss, int[] ii, long[] ll, float[] ff, double[] dd, NamedPortable[] nn,
+                         BigDecimal[] bigDecimals, LocalTime[] localTimes, LocalDate[] localDates,
+                         LocalDateTime[] localDateTimes, OffsetDateTime[] offsetDateTimes) {
         this.bb = bb;
         this.cc = cc;
         this.ss = ss;
@@ -47,6 +59,11 @@ public class InnerPortable implements Portable {
         this.ff = ff;
         this.dd = dd;
         this.nn = nn;
+        this.bigDecimals = bigDecimals;
+        this.localTimes = localTimes;
+        this.localDates = localDates;
+        this.localDateTimes = localDateTimes;
+        this.offsetDateTimes = offsetDateTimes;
     }
 
     @Override
@@ -64,6 +81,11 @@ public class InnerPortable implements Portable {
         writer.writeFloatArray("f", ff);
         writer.writeDoubleArray("d", dd);
         writer.writePortableArray("nn", nn);
+        writer.writeDecimalArray("bigDecimals", bigDecimals);
+        writer.writeTimeArray("localTimes", localTimes);
+        writer.writeDateArray("localDates", localDates);
+        writer.writeTimestampArray("localDateTimes", localDateTimes);
+        writer.writeTimestampWithTimezoneArray("offsetDateTimes", offsetDateTimes);
     }
 
     @Override
@@ -78,6 +100,11 @@ public class InnerPortable implements Portable {
         Portable[] pp = reader.readPortableArray("nn");
         nn = new NamedPortable[pp.length];
         System.arraycopy(pp, 0, nn, 0, nn.length);
+        bigDecimals = reader.readDecimalArray("bigDecimals");
+        localTimes = reader.readTimeArray("localTimes");
+        localDates = reader.readDateArray("localDates");
+        localDateTimes = reader.readTimestampArray("localDateTimes");
+        offsetDateTimes = reader.readTimestampWithTimezoneArray("offsetDateTimes");
     }
 
     @Override
@@ -88,46 +115,37 @@ public class InnerPortable implements Portable {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-
         InnerPortable that = (InnerPortable) o;
-        if (!Arrays.equals(bb, that.bb)) {
-            return false;
-        }
-        if (!Arrays.equals(cc, that.cc)) {
-            return false;
-        }
-        if (!Arrays.equals(dd, that.dd)) {
-            return false;
-        }
-        if (!Arrays.equals(ff, that.ff)) {
-            return false;
-        }
-        if (!Arrays.equals(ii, that.ii)) {
-            return false;
-        }
-        if (!Arrays.equals(ll, that.ll)) {
-            return false;
-        }
-        if (!Arrays.equals(nn, that.nn)) {
-            return false;
-        }
-        if (!Arrays.equals(ss, that.ss)) {
-            return false;
-        }
-
-        return true;
+        return Arrays.equals(bb, that.bb)
+                && Arrays.equals(cc, that.cc)
+                && Arrays.equals(ss, that.ss)
+                && Arrays.equals(ii, that.ii)
+                && Arrays.equals(ll, that.ll)
+                && Arrays.equals(ff, that.ff)
+                && Arrays.equals(dd, that.dd)
+                && Arrays.equals(nn, that.nn)
+                && Arrays.equals(bigDecimals, that.bigDecimals)
+                && Arrays.equals(localTimes, that.localTimes)
+                && Arrays.equals(localDates, that.localDates)
+                && Arrays.equals(localDateTimes, that.localDateTimes)
+                && Arrays.equals(offsetDateTimes, that.offsetDateTimes);
     }
 
     @Override
     public int hashCode() {
-        int result = bb != null ? Arrays.hashCode(bb) : 0;
-        result = 31 * result + (cc != null ? Arrays.hashCode(cc) : 0);
-        result = 31 * result + (ss != null ? Arrays.hashCode(ss) : 0);
-        result = 31 * result + (ii != null ? Arrays.hashCode(ii) : 0);
-        result = 31 * result + (ll != null ? Arrays.hashCode(ll) : 0);
-        result = 31 * result + (ff != null ? Arrays.hashCode(ff) : 0);
-        result = 31 * result + (dd != null ? Arrays.hashCode(dd) : 0);
-        result = 31 * result + (nn != null ? Arrays.hashCode(nn) : 0);
+        int result = Arrays.hashCode(bb);
+        result = 31 * result + Arrays.hashCode(cc);
+        result = 31 * result + Arrays.hashCode(ss);
+        result = 31 * result + Arrays.hashCode(ii);
+        result = 31 * result + Arrays.hashCode(ll);
+        result = 31 * result + Arrays.hashCode(ff);
+        result = 31 * result + Arrays.hashCode(dd);
+        result = 31 * result + Arrays.hashCode(nn);
+        result = 31 * result + Arrays.hashCode(bigDecimals);
+        result = 31 * result + Arrays.hashCode(localTimes);
+        result = 31 * result + Arrays.hashCode(localDates);
+        result = 31 * result + Arrays.hashCode(localDateTimes);
+        result = 31 * result + Arrays.hashCode(offsetDateTimes);
         return result;
     }
 
@@ -148,6 +166,11 @@ public class InnerPortable implements Portable {
         sb.append(", ff=").append(Arrays.toString(ff));
         sb.append(", dd=").append(Arrays.toString(dd));
         sb.append(", nn=").append(Arrays.toString(nn));
+        sb.append(", bigDecimals=").append(Arrays.toString(bigDecimals));
+        sb.append(", localTimes=").append(Arrays.toString(localTimes));
+        sb.append(", localDates=").append(Arrays.toString(localDates));
+        sb.append(", localDateTimes=").append(Arrays.toString(localDateTimes));
+        sb.append(", offsetDateTimes=").append(Arrays.toString(offsetDateTimes));
         sb.append('}');
         return sb.toString();
     }

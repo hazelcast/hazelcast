@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,29 +17,35 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
+import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
+import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadataImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
 
 import java.io.IOException;
 
 public class PutBackupOperation
-        extends MapOperation implements BackupOperation {
+        extends MapOperation implements BackupOperation, Versioned {
 
     protected Record<Data> record;
     protected Data dataKey;
-    private Data dataValue;
+    protected Data dataValue;
+    protected ExpiryMetadata expiryMetadata;
 
     public PutBackupOperation(String name, Data dataKey,
-                              Record<Data> record, Data dataValue) {
+                              Record<Data> record, Data dataValue,
+                              ExpiryMetadata expiryMetadata) {
         super(name);
         this.dataKey = dataKey;
         this.record = record;
         this.dataValue = dataValue;
+        this.expiryMetadata = expiryMetadata;
     }
 
     public PutBackupOperation() {
@@ -48,7 +54,8 @@ public class PutBackupOperation
     @Override
     protected void runInternal() {
         // TODO performance: we can put this record directly into record-store if memory format is BINARY
-        Record currentRecord = recordStore.putBackup(dataKey, record, isPutTransient(), getCallerProvenance());
+        Record currentRecord = recordStore.putBackup(dataKey, record,
+                expiryMetadata, isPutTransient(), getCallerProvenance());
         Records.copyMetadataFrom(record, currentRecord);
     }
 
@@ -79,7 +86,7 @@ public class PutBackupOperation
         super.writeInternal(out);
 
         IOUtil.writeData(out, dataKey);
-        Records.writeRecord(out, record, dataValue);
+        Records.writeRecord(out, record, dataValue, expiryMetadata);
     }
 
     @Override
@@ -87,6 +94,7 @@ public class PutBackupOperation
         super.readInternal(in);
 
         dataKey = IOUtil.readData(in);
-        record = Records.readRecord(in);
+        expiryMetadata = new ExpiryMetadataImpl();
+        record = Records.readRecord(in, expiryMetadata);
     }
 }

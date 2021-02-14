@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,8 @@ import java.util.Iterator;
 import java.util.List;
 
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.INT_SIZE_IN_BYTES;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeInteger;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeInteger;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeInt;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeInt;
 
 public final class ListIntegerCodec {
 
@@ -37,7 +37,7 @@ public final class ListIntegerCodec {
         ClientMessage.Frame frame = new ClientMessage.Frame(new byte[itemCount * INT_SIZE_IN_BYTES]);
         Iterator<Integer> iterator = collection.iterator();
         for (int i = 0; i < itemCount; i++) {
-            encodeInteger(frame.content, i * INT_SIZE_IN_BYTES, iterator.next());
+            encodeInt(frame.content, i * INT_SIZE_IN_BYTES, iterator.next());
         }
         clientMessage.add(frame);
     }
@@ -50,7 +50,7 @@ public final class ListIntegerCodec {
         int itemCount = frame.content.length / INT_SIZE_IN_BYTES;
         List<Integer> result = new ArrayList<>(itemCount);
         for (int i = 0; i < itemCount; i++) {
-            result.add(decodeInteger(frame.content, i * INT_SIZE_IN_BYTES));
+            result.add(decodeInt(frame.content, i * INT_SIZE_IN_BYTES));
         }
         return result;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,12 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.util.concurrent.ConcurrentHashMap;
 
 @SuppressWarnings({"unused", "unchecked, checkstyle:MultipleVariableDeclarations"})
 public abstract class ExpressionValue implements Serializable {
+
+    private static final ConcurrentHashMap<String, Class<? extends ExpressionValue>> CLASS_CACHE = new ConcurrentHashMap<>();
 
     public int key;
 
@@ -34,6 +37,10 @@ public abstract class ExpressionValue implements Serializable {
     }
 
     public static Class<? extends ExpressionValue> createClass(String type) {
+        return CLASS_CACHE.computeIfAbsent(type, (k) -> createClass0(type));
+    }
+
+    public static Class<? extends ExpressionValue> createClass0(String type) {
         try {
             String className = ExpressionValue.class.getName() + "$" + type + "Val";
 
@@ -50,6 +57,10 @@ public abstract class ExpressionValue implements Serializable {
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException("Failed to create an instance of " + clazz.getSimpleName());
         }
+    }
+
+    public static <T extends ExpressionValue> T create(Class<? extends ExpressionValue> clazz, Object field) {
+        return create(clazz, 0, field);
     }
 
     public static <T extends ExpressionValue> T create(Class<? extends ExpressionValue> clazz, int key, Object field) {
@@ -107,5 +118,28 @@ public abstract class ExpressionValue implements Serializable {
     public static class LocalTimeVal extends ExpressionValue implements Serializable { public LocalTime field1; }
     public static class LocalDateTimeVal extends ExpressionValue implements Serializable { public LocalDateTime field1; }
     public static class OffsetDateTimeVal extends ExpressionValue implements Serializable { public OffsetDateTime field1; }
-    public static class ObjectVal extends ExpressionValue implements Serializable { public Object field1; }
+
+    public static class ObjectVal extends ExpressionValue implements Serializable {
+        public Object field1;
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            ObjectVal objectVal = (ObjectVal) o;
+
+            return field1 != null ? field1.equals(objectVal.field1) : objectVal.field1 == null;
+        }
+
+        @Override
+        public int hashCode() {
+            return field1 != null ? field1.hashCode() : 0;
+        }
+    }
 }

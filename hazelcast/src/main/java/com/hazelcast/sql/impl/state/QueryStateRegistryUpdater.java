@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,12 +37,19 @@ import static com.hazelcast.sql.impl.QueryUtils.WORKER_TYPE_STATE_CHECKER;
  */
 public class QueryStateRegistryUpdater {
 
+    private static final long DEFAULT_ORPHANED_QUERY_STATE_CHECK_FREQUENCY = 30_000L;
+
     private final NodeServiceProvider nodeServiceProvider;
     private final QueryStateRegistry stateRegistry;
     private final QueryClientStateRegistry clientStateRegistry;
     private final QueryOperationHandler operationHandler;
     private final PlanCacheChecker planCacheChecker;
-    private final long stateCheckFrequency;
+
+    /** "volatile" instead of "final" only to allow for value change from unit tests. */
+    private volatile long stateCheckFrequency;
+
+    /** "volatile" instead of "final" only to allow for value change from unit tests. */
+    private volatile long orphanedQueryStateCheckFrequency = DEFAULT_ORPHANED_QUERY_STATE_CHECK_FREQUENCY;
 
     /** Worker performing periodic state check. */
     private final Worker worker;
@@ -78,6 +85,22 @@ public class QueryStateRegistryUpdater {
         worker.stop();
     }
 
+    /**
+     * For testing only.
+     */
+    public void setStateCheckFrequency(long stateCheckFrequency) {
+        this.stateCheckFrequency = stateCheckFrequency;
+
+        worker.thread.interrupt();
+    }
+
+    /**
+     * For testing only.
+     */
+    public void setOrphanedQueryStateCheckFrequency(long orphanedQueryStateCheckFrequency) {
+        this.orphanedQueryStateCheckFrequency = orphanedQueryStateCheckFrequency;
+    }
+
     private final class Worker implements Runnable {
 
         private final Object startMux = new Object();
@@ -110,13 +133,20 @@ public class QueryStateRegistryUpdater {
         @Override
         public void run() {
             while (!stopped) {
+                long currentStateCheckFrequency = stateCheckFrequency;
+
                 try {
-                    Thread.sleep(stateCheckFrequency);
+                    Thread.sleep(currentStateCheckFrequency);
 
                     checkMemberState();
                     checkClientState();
                     checkPlans();
                 } catch (InterruptedException e) {
+                    if (currentStateCheckFrequency != stateCheckFrequency) {
+                        // Interrupted due to frequency change.
+                        continue;
+                    }
+
                     Thread.currentThread().interrupt();
 
                     break;
@@ -140,8 +170,8 @@ public class QueryStateRegistryUpdater {
                     continue;
                 }
 
-                // 3. Check whether the query is not initialized for too long. If yes, trigger check process.
-                if (state.requestQueryCheck(stateCheckFrequency)) {
+                // 3. Check whether the query is not initialized for too long. If yes, trigger the check process.
+                if (state.requestQueryCheck(stateCheckFrequency, orphanedQueryStateCheckFrequency)) {
                     QueryId queryId = state.getQueryId();
 
                     checkMap.computeIfAbsent(queryId.getMemberId(), (key) -> new ArrayList<>(1)).add(queryId);

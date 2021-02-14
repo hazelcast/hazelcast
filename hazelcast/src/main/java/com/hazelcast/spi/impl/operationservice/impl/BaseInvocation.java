@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -95,7 +95,7 @@ public abstract class BaseInvocation {
             this.pendingResponse = response;
 
             if (backupsAcksReceived != expectedBackups) {
-                // we are done since not all backups have completed. Therefor we should not notify the future
+                // we are done since not all backups have completed. Therefore we should not notify the future
                 return;
             }
         }

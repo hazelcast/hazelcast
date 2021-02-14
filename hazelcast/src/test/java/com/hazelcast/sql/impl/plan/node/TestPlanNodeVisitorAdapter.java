@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,8 @@
 package com.hazelcast.sql.impl.plan.node;
 
 import com.hazelcast.sql.impl.plan.node.io.ReceivePlanNode;
-import com.hazelcast.sql.impl.plan.node.io.RootSendPlanNode;
+import com.hazelcast.sql.impl.plan.node.io.ReceiveSortMergePlanNode;
+import com.hazelcast.sql.impl.plan.node.io.SendPlanNode;
 
 public abstract class TestPlanNodeVisitorAdapter implements PlanNodeVisitor {
     @Override
@@ -31,7 +32,7 @@ public abstract class TestPlanNodeVisitorAdapter implements PlanNodeVisitor {
     }
 
     @Override
-    public void onRootSendNode(RootSendPlanNode node) {
+    public void onSendNode(SendPlanNode node) {
         // No-op.
     }
 
@@ -64,4 +65,15 @@ public abstract class TestPlanNodeVisitorAdapter implements PlanNodeVisitor {
     public void onOtherNode(PlanNode node) {
         // No-op.
     }
+
+    @Override
+    public void onReceiveSortMergeNode(ReceiveSortMergePlanNode node) {
+        // No-op.
+    }
+
+    @Override
+    public void onFetchNode(FetchPlanNode node) {
+        // No-op.
+    }
 }
+

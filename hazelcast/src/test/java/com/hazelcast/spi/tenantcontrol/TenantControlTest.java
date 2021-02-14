@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -143,8 +143,8 @@ public class TenantControlTest extends TenantControlTestSupport {
         assertEquals(4, setTenantCount.get());
         assertEquals(4, closeTenantCount.get());
         assertEquals(1, registerTenantCount.get());
-        assertEquals(1, unregisterTenantCount.get());
-        assertEquals(3, clearedThreadInfoCount.get());
+        assertEqualsEventually(1, unregisterTenantCount);
+        assertEqualsEventually(3, clearedThreadInfoCount);
     }
 
     @Test
@@ -177,7 +177,7 @@ public class TenantControlTest extends TenantControlTestSupport {
         // operation does not need tenant context
         assertEquals(1, setTenantCount.get());
         assertEquals(1, registerTenantCount.get());
-        assertEquals(1, unregisterTenantCount.get());
+        assertEqualsEventually(1, unregisterTenantCount);
     }
 
     @Test
@@ -194,7 +194,7 @@ public class TenantControlTest extends TenantControlTestSupport {
         // set tenant is called twice for add, once for remove and clear
         assertEquals(4, setTenantCount.get());
         assertEquals(1, registerTenantCount.get());
-        assertEquals(1, unregisterTenantCount.get());
+        assertEqualsEventually(1, unregisterTenantCount);
     }
 
     @Test
@@ -211,7 +211,7 @@ public class TenantControlTest extends TenantControlTestSupport {
         // set tenant is called twice for add, once for remove and clear
         assertEquals(4, setTenantCount.get());
         assertEquals(1, registerTenantCount.get());
-        assertEquals(1, unregisterTenantCount.get());
+        assertEqualsEventually(1, unregisterTenantCount);
     }
 
     @Test
@@ -228,7 +228,7 @@ public class TenantControlTest extends TenantControlTestSupport {
         // set tenant is called twice for add, once for remove and clear
         assertEquals(4, setTenantCount.get());
         assertEquals(1, registerTenantCount.get());
-        assertEquals(1, unregisterTenantCount.get());
+        assertEqualsEventually(1, unregisterTenantCount);
     }
 
     private void assertCacheTenantControlCreated(HazelcastInstance instance) {

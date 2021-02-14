@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -153,11 +153,10 @@ public class PhysicalIndexDataTypeTest extends IndexOptimizerTestSupport {
 
     @Test
     public void test_tinyint() {
-        checkNumericBasic("f_tinyint", 2, "index_tinyint", TINYINT);
-
-        checkIndexForCondition("CAST(f_tinyint AS SMALLINT)=1", "index_tinyint", "=(CAST($2):SMALLINT(7), 1)");
-        checkIndexForCondition("CAST(f_tinyint AS INT)=1", "index_tinyint", "=(CAST($2):INTEGER(7), 1)");
-        checkIndexForCondition("CAST(f_tinyint AS BIGINT)=1", "index_tinyint", "=(CAST($2):BIGINT(7), 1)");
+        checkIndexForCondition("f_tinyint=1", "index_tinyint", "=($2, 1:TINYINT(1))");
+        checkIndexForCondition("CAST(f_tinyint AS SMALLINT)=1", "index_tinyint", "=(CAST($2):SMALLINT(15), 1)");
+        checkIndexForCondition("CAST(f_tinyint AS INT)=1", "index_tinyint", "=(CAST($2):INTEGER(31), 1)");
+        checkIndexForCondition("CAST(f_tinyint AS BIGINT)=1", "index_tinyint", "=(CAST($2):BIGINT(63), 1)");
         checkIndexForCondition("CAST(f_tinyint AS DECIMAL)=1", "index_tinyint", "=(CAST($2):DECIMAL(38, 38), 1)");
         checkIndexForCondition("CAST(f_tinyint AS REAL)=1", "index_tinyint", "=(CAST($2):REAL, 1E0)");
         checkIndexForCondition("CAST(f_tinyint AS DOUBLE)=1", "index_tinyint", "=(CAST($2):DOUBLE, 1E0)");
@@ -171,8 +170,8 @@ public class PhysicalIndexDataTypeTest extends IndexOptimizerTestSupport {
         checkNumericBasic("f_smallint", 3, "index_smallint", SMALLINT);
 
         checkNoIndexForCondition("CAST(f_smallint AS TINYINT)=1");
-        checkIndexForCondition("CAST(f_smallint AS INT)=1", "index_smallint", "=(CAST($3):INTEGER(15), 1)");
-        checkIndexForCondition("CAST(f_smallint AS BIGINT)=1", "index_smallint", "=(CAST($3):BIGINT(15), 1)");
+        checkIndexForCondition("CAST(f_smallint AS INT)=1", "index_smallint", "=(CAST($3):INTEGER(31), 1)");
+        checkIndexForCondition("CAST(f_smallint AS BIGINT)=1", "index_smallint", "=(CAST($3):BIGINT(63), 1)");
         checkIndexForCondition("CAST(f_smallint AS DECIMAL)=1", "index_smallint", "=(CAST($3):DECIMAL(38, 38), 1)");
         checkIndexForCondition("CAST(f_smallint AS REAL)=1", "index_smallint", "=(CAST($3):REAL, 1E0)");
         checkIndexForCondition("CAST(f_smallint AS DOUBLE)=1", "index_smallint", "=(CAST($3):DOUBLE, 1E0)");
@@ -187,7 +186,7 @@ public class PhysicalIndexDataTypeTest extends IndexOptimizerTestSupport {
 
         checkNoIndexForCondition("CAST(f_int AS TINYINT)=1");
         checkNoIndexForCondition("CAST(f_int AS SMALLINT)=1");
-        checkIndexForCondition("CAST(f_int AS BIGINT)=1", "index_int", "=(CAST($4):BIGINT(31), 1)");
+        checkIndexForCondition("CAST(f_int AS BIGINT)=1", "index_int", "=(CAST($4):BIGINT(63), 1)");
         checkIndexForCondition("CAST(f_int AS DECIMAL)=1", "index_int", "=(CAST($4):DECIMAL(38, 38), 1)");
         checkIndexForCondition("CAST(f_int AS REAL)=1", "index_int", "=(CAST($4):REAL, 1E0)");
         checkIndexForCondition("CAST(f_int AS DOUBLE)=1", "index_int", "=(CAST($4):DOUBLE, 1E0)");
@@ -266,8 +265,8 @@ public class PhysicalIndexDataTypeTest extends IndexOptimizerTestSupport {
     }
 
     private void checkNumericBasic(String columnName, int columnIndex, String indexName, QueryDataType type) {
-        String literal1 = type == REAL || type == DOUBLE ? "1E0" : "1";
-        String literal2 = type == REAL || type == DOUBLE ? "3E0" : "3";
+        String literal1 = "1" + (type.getTypeFamily().isNumericApproximate() ? "E0" : "");
+        String literal2 = "3" + (type.getTypeFamily().isNumericApproximate() ? "E0" : "");
 
         // Equality
         checkIndexForConditionNumeric("{col}=1", columnName, "=(${col}, " + literal1 + ")", Integer.toString(columnIndex), indexName);

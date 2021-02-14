@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -103,7 +103,14 @@ public class JetSqlTest extends SqlTestSupport {
 
         given(jetSqlCoreBackend.tableResolvers()).willReturn(singletonList(tableResolver));
         given(jetSqlCoreBackend.sqlBackend()).willReturn(sqlBackend);
-        given(jetSqlCoreBackend.execute(any(SqlPlan.class), anyList(), anyLong(), anyInt())).willReturn(sqlResult);
+
+        given(jetSqlCoreBackend.execute(
+            any(QueryId.class),
+            any(SqlPlan.class),
+            anyList(),
+            anyLong(),
+            anyInt())
+        ).willReturn(sqlResult);
 
         System.setProperty(SqlServiceImpl.OPTIMIZER_CLASS_PROPERTY_NAME, TestSqlOptimizer.class.getName());
         HazelcastInstance member = newHazelcastInstance(new Config(), randomName(), nodeContext(jetSqlCoreBackend));

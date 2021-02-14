@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,15 @@
 
 package com.hazelcast.map.impl.tx;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.operation.PutBackupOperation;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
+import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -36,15 +37,15 @@ public class TxnSetBackupOperation extends PutBackupOperation {
     }
 
     public TxnSetBackupOperation(String name, Data dataKey, Record<Data> record,
-                                 Data dataValue, UUID transactionId) {
-        super(name, dataKey, record, dataValue);
+                                 Data dataValue, ExpiryMetadata expiryMetadata, UUID transactionId) {
+        super(name, dataKey, record, dataValue, expiryMetadata);
         this.transactionId = transactionId;
     }
 
     @Override
     protected void runInternal() {
-        Record currentRecord = recordStore.putBackupTxn(dataKey, record, isPutTransient(),
-                getCallerProvenance(), transactionId);
+        Record currentRecord = recordStore.putBackupTxn(dataKey, record,
+                expiryMetadata, isPutTransient(), getCallerProvenance(), transactionId);
         Records.copyMetadataFrom(record, currentRecord);
         recordStore.forceUnlock(dataKey);
     }

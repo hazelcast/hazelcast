@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,9 +43,7 @@ public final class FilterPhysicalRule extends RelOptRule {
         FilterLogicalRel filter = call.rel(0);
         RelNode input = filter.getInput();
 
-        RelNode convertedInput = OptUtils.toPhysicalInput(input);
-
-        Collection<RelNode> transformedInputs = getInputTransforms(convertedInput);
+        Collection<RelNode> transformedInputs = OptUtils.getPhysicalRelsFromSubset(input);
 
         for (RelNode transformedInput : transformedInputs) {
             FilterPhysicalRel newFilter = new FilterPhysicalRel(
@@ -57,9 +55,5 @@ public final class FilterPhysicalRule extends RelOptRule {
 
             call.transformTo(newFilter);
         }
-    }
-
-    private Collection<RelNode> getInputTransforms(RelNode convertedInput) {
-        return OptUtils.getPhysicalRelsFromSubset(convertedInput);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,11 @@
 package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.core.EntryView;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.SampleableConcurrentHashMap;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 
 
 /**
@@ -42,12 +43,16 @@ public class LazyEvictableEntryView<R extends Record>
     private Object value;
     private R record;
 
+    private ExpiryMetadata expiryMetadata;
     private SerializationService serializationService;
 
-    public LazyEvictableEntryView(Data dataKey, R record, SerializationService serializationService) {
+    public LazyEvictableEntryView(Data dataKey, R record,
+                                  ExpiryMetadata expiryMetadata,
+                                  SerializationService serializationService) {
         super(dataKey, record);
         this.dataKey = dataKey;
         this.record = record;
+        this.expiryMetadata = expiryMetadata;
         this.serializationService = serializationService;
     }
 
@@ -83,7 +88,7 @@ public class LazyEvictableEntryView<R extends Record>
 
     @Override
     public long getExpirationTime() {
-        return record.getExpirationTime();
+        return expiryMetadata.getExpirationTime();
     }
 
     @Override
@@ -113,12 +118,12 @@ public class LazyEvictableEntryView<R extends Record>
 
     @Override
     public long getTtl() {
-        return record.getTtl();
+        return expiryMetadata.getTtl();
     }
 
     @Override
     public long getMaxIdle() {
-        return record.getMaxIdle();
+        return expiryMetadata.getMaxIdle();
     }
 
     public Record getRecord() {

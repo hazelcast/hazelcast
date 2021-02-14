@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,6 +74,31 @@ public class DistributionTrait implements RelTrait {
 
         // Otherwise compare two distributions.
         return this.equals(targetTrait);
+    }
+
+    /**
+     * Checks whether the result set of the node having this trait is guaranteed to exist on all members that will execute a
+     * fragment with this node.
+     *
+     * @return {@code true} if the full result set exists on all participants of the fragment hosting this node.
+     */
+    public boolean isFullResultSetOnAllParticipants() {
+        if (traitDef.getMemberCount() == 1) {
+            // If the plan is created for a single member, then the condition is true by definition.
+            return true;
+        }
+
+        if (type == ROOT) {
+            // Root fragment is always executed on a single member.
+            return true;
+        }
+
+        if (type == REPLICATED) {
+            // Replicated distribution assumes that the whole result set is available on all members.
+            return true;
+        }
+
+        return false;
     }
 
     @Override

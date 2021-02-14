@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,6 +51,7 @@ public class SerializationConfig {
     private boolean allowUnsafe;
     private final Set<ClassDefinition> classDefinitions;
     private JavaSerializationFilterConfig javaSerializationFilterConfig;
+    private boolean allowOverrideDefaultSerializers;
 
     public SerializationConfig() {
         dataSerializableFactoryClasses = new HashMap<>();
@@ -455,6 +456,46 @@ public class SerializationConfig {
     }
 
     /**
+     * @return {@code true} if default serializers may be overridden by custom serializers
+     *
+     * @since 4.2
+     */
+    public boolean isAllowOverrideDefaultSerializers() {
+        return allowOverrideDefaultSerializers;
+    }
+
+    /**
+     * This configuration should be used cautiously.
+     * <p>
+     * Default serializers are used heavily by the hazelcast internally.
+     * If any of the instance in the same cluster overrides a default serializer,
+     * all the members and clients in the same cluster must override it with the same serializer.
+     * </p>
+     *
+     * <p>
+     * This configuration is introduced specifically to support the following case:
+     * <ul>
+     *   <li>There was a custom configuration by the user for a type</li>
+     *   <li>Hazelcast decided to add a default serializer for the same type in a future release</li>
+     * </ul>
+     * </p>
+     *
+     * To be able to support Rolling Upgrade from an old version to the new version, one needs to make sure
+     * of the backward compatibility of the serialization. As a solution, the user will set this property
+     * on the new version so that new instances will be able to override new default serializers
+     * with their existing custom serializers.
+     *
+     * @param allowOverrideDefaultSerializers value to set
+     * @return configured {@link com.hazelcast.config.SerializerConfig} for chaining
+     *
+     * @since 4.2
+     */
+    public SerializationConfig setAllowOverrideDefaultSerializers(final boolean allowOverrideDefaultSerializers) {
+        this.allowOverrideDefaultSerializers = allowOverrideDefaultSerializers;
+        return this;
+    }
+
+    /**
      * @return the javaSerializationFilterConfig
      */
     public JavaSerializationFilterConfig getJavaSerializationFilterConfig() {
@@ -486,6 +527,7 @@ public class SerializationConfig {
                 + ", byteOrder=" + byteOrder
                 + ", useNativeByteOrder=" + useNativeByteOrder
                 + ", javaSerializationFilterConfig=" + javaSerializationFilterConfig
+                + ", allowOverrideDefaultSerializers=" + allowOverrideDefaultSerializers
                 + '}';
     }
 
@@ -507,6 +549,7 @@ public class SerializationConfig {
             && enableCompression == that.enableCompression
             && enableSharedObject == that.enableSharedObject
             && allowUnsafe == that.allowUnsafe
+            && allowOverrideDefaultSerializers == that.allowOverrideDefaultSerializers
             && dataSerializableFactoryClasses.equals(that.dataSerializableFactoryClasses)
             && dataSerializableFactories.equals(that.dataSerializableFactories)
             && portableFactoryClasses.equals(that.portableFactoryClasses)
@@ -522,6 +565,7 @@ public class SerializationConfig {
     public int hashCode() {
         return Objects.hash(portableVersion, dataSerializableFactoryClasses, dataSerializableFactories, portableFactoryClasses,
             portableFactories, globalSerializerConfig, serializerConfigs, checkClassDefErrors, useNativeByteOrder, byteOrder,
-            enableCompression, enableSharedObject, allowUnsafe, classDefinitions, javaSerializationFilterConfig);
+            enableCompression, enableSharedObject, allowUnsafe, allowOverrideDefaultSerializers,
+            classDefinitions, javaSerializationFilterConfig);
     }
 }

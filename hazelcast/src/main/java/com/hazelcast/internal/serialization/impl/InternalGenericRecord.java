@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,14 @@ package com.hazelcast.internal.serialization.impl;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+
 /**
  * Additionally to GenericRecord, this one has more methods to be used in Query.
  *
@@ -36,7 +44,8 @@ public interface InternalGenericRecord extends GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    Boolean readBooleanFromArray(String fieldName, int index);
+    @Nullable
+    Boolean getBooleanFromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
@@ -44,7 +53,8 @@ public interface InternalGenericRecord extends GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    Byte readByteFromArray(String fieldName, int index);
+    @Nullable
+    Byte getByteFromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
@@ -52,7 +62,8 @@ public interface InternalGenericRecord extends GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    Character readCharFromArray(String fieldName, int index);
+    @Nullable
+    Character getCharFromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
@@ -60,7 +71,8 @@ public interface InternalGenericRecord extends GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    Double readDoubleFromArray(String fieldName, int index);
+    @Nullable
+    Double getDoubleFromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
@@ -68,7 +80,8 @@ public interface InternalGenericRecord extends GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    Float readFloatFromArray(String fieldName, int index);
+    @Nullable
+    Float getFloatFromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
@@ -76,7 +89,8 @@ public interface InternalGenericRecord extends GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    Integer readIntFromArray(String fieldName, int index);
+    @Nullable
+    Integer getIntFromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
@@ -84,7 +98,8 @@ public interface InternalGenericRecord extends GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    Long readLongFromArray(String fieldName, int index);
+    @Nullable
+    Long getLongFromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
@@ -92,7 +107,8 @@ public interface InternalGenericRecord extends GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    Short readShortFromArray(String fieldName, int index);
+    @Nullable
+    Short getShortFromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
@@ -100,7 +116,8 @@ public interface InternalGenericRecord extends GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    String readUTFFromArray(String fieldName, int index);
+    @Nullable
+    String getStringFromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
@@ -108,10 +125,11 @@ public interface InternalGenericRecord extends GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    GenericRecord readGenericRecordFromArray(String fieldName, int index);
+    @Nullable
+    GenericRecord getGenericRecordFromArray(@Nonnull String fieldName, int index);
 
     /**
-     * Reads same value {@link InternalGenericRecord#readGenericRecord(String)} }, but in deserialized form.
+     * Reads same value {@link InternalGenericRecord#getGenericRecord(String)} }, but in deserialized form.
      * This is used in query system when the object is leaf of the query.
      *
      * @param fieldName the name of the field
@@ -120,10 +138,11 @@ public interface InternalGenericRecord extends GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    Object readObjectFromArray(String fieldName, int index);
+    @Nullable
+    Object getObjectFromArray(@Nonnull String fieldName, int index);
 
     /**
-     * Reads same value {@link GenericRecord#readGenericRecordArray(String)}, but in deserialized form.
+     * Reads same value {@link GenericRecord#getGenericRecordArray(String)}, but in deserialized form.
      * This is used in query system when the object is leaf of the query.
      *
      * @param fieldName the name of the field
@@ -131,10 +150,11 @@ public interface InternalGenericRecord extends GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    Object[] readObjectArray(String fieldName);
+    @Nullable
+    Object[] getObjectArray(@Nonnull String fieldName);
 
     /**
-     * Reads same value {@link GenericRecord#readGenericRecord(String)} }, but in deserialized form.
+     * Reads same value {@link GenericRecord#getGenericRecord(String)} }, but in deserialized form.
      * This is used in query system when the object is leaf of the query.
      *
      * @param fieldName the name of the field
@@ -142,5 +162,51 @@ public interface InternalGenericRecord extends GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    Object readObject(String fieldName);
+    @Nullable
+    Object getObject(@Nonnull String fieldName);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    BigDecimal getDecimalFromArray(@Nonnull String fieldName, int index);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    LocalTime getTimeFromArray(@Nonnull String fieldName, int index);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    LocalDate getDateFromArray(@Nonnull String fieldName, int index);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    LocalDateTime getTimestampFromArray(@Nonnull String fieldName, int index);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    OffsetDateTime getTimestampWithTimezoneFromArray(@Nonnull String fieldName, int index);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 
+import javax.annotation.Nonnull;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
@@ -109,9 +110,7 @@ public final class ConfigUtils {
         T defConfig = configs.get("default");
         try {
             if (defConfig == null) {
-                Constructor constructor = clazz.getDeclaredConstructor();
-                constructor.setAccessible(true);
-                defConfig = (T) constructor.newInstance();
+                defConfig = (T) constructReflectively(clazz);
                 nameSetter.accept(defConfig, "default");
                 configs.put("default", defConfig);
             }
@@ -127,6 +126,41 @@ public final class ConfigUtils {
             assert false;
             return null;
         }
+    }
+
+    /**
+     * If {@code configs} contains an exact match for {@code name}, returns
+     * the matching config. Otherwise creates a new config with the given
+     * name, adds it to {@code configs} and returns it.
+     */
+    public static <T extends NamedConfig> T getByNameOrNew(Map<String, T> configs, String name,
+                                      Class<T> clazz) {
+        T config = configs.get(name);
+        if (config != null) {
+            return config;
+        } else {
+            try {
+                config = constructReflectively(clazz);
+                config.setName(name);
+                configs.put(name, config);
+                return config;
+            } catch (NoSuchMethodException | InstantiationException
+                    | IllegalAccessException | InvocationTargetException e) {
+                LOGGER.severe("Could not create class " + clazz.getName());
+                assert false;
+                return null;
+            }
+        }
+    }
+
+    @Nonnull
+    private static <T> T constructReflectively(Class<T> clazz)
+            throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
+        T config;
+        Constructor constructor = clazz.getDeclaredConstructor();
+        constructor.setAccessible(true);
+        config = (T) constructor.newInstance();
+        return config;
     }
 
     public static InvalidConfigurationException createAmbiguousConfigurationException(

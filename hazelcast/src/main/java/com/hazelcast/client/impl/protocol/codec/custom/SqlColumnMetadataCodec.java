@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,10 +24,11 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("e29e7254a66c13d25be785036d86c581")
+@Generated("0d1d865b836f39c00c83a82158b83d77")
 public final class SqlColumnMetadataCodec {
     private static final int TYPE_FIELD_OFFSET = 0;
-    private static final int INITIAL_FRAME_SIZE = TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int NULLABLE_FIELD_OFFSET = TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int INITIAL_FRAME_SIZE = NULLABLE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
     private SqlColumnMetadataCodec() {
     }
@@ -37,6 +38,7 @@ public final class SqlColumnMetadataCodec {
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, sqlColumnMetadata.getType());
+        encodeBoolean(initialFrame.content, NULLABLE_FIELD_OFFSET, sqlColumnMetadata.isNullable());
         clientMessage.add(initialFrame);
 
         StringCodec.encode(clientMessage, sqlColumnMetadata.getName());
@@ -50,11 +52,17 @@ public final class SqlColumnMetadataCodec {
 
         ClientMessage.Frame initialFrame = iterator.next();
         int type = decodeInt(initialFrame.content, TYPE_FIELD_OFFSET);
+        boolean isNullableExists = false;
+        boolean nullable = false;
+        if (initialFrame.content.length >= NULLABLE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES) {
+            nullable = decodeBoolean(initialFrame.content, NULLABLE_FIELD_OFFSET);
+            isNullableExists = true;
+        }
 
         java.lang.String name = StringCodec.decode(iterator);
 
         fastForwardToEndFrame(iterator);
 
-        return CustomTypeFactory.createSqlColumnMetadata(name, type);
+        return CustomTypeFactory.createSqlColumnMetadata(name, type, isNullableExists, nullable);
     }
 }

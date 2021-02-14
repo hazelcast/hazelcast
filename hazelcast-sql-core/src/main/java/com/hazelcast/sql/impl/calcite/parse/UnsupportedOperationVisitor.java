@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package com.hazelcast.sql.impl.calcite.parse;
 
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
 import org.apache.calcite.runtime.CalciteContextException;
@@ -47,6 +46,9 @@ import org.apache.calcite.sql.validate.SqlValidatorTable;
 
 import java.util.HashSet;
 import java.util.Set;
+
+import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils.isObjectIdentifier;
+import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils.isTimestampWithTimeZoneIdentifier;
 
 /**
  * Visitor that throws exceptions for unsupported SQL features.
@@ -79,6 +81,7 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
         SUPPORTED_KINDS.add(SqlKind.MINUS);
         SUPPORTED_KINDS.add(SqlKind.TIMES);
         SUPPORTED_KINDS.add(SqlKind.DIVIDE);
+        SUPPORTED_KINDS.add(SqlKind.MOD);
         SUPPORTED_KINDS.add(SqlKind.MINUS_PREFIX);
         SUPPORTED_KINDS.add(SqlKind.PLUS_PREFIX);
 
@@ -142,9 +145,16 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.LTRIM);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.RTRIM);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.BTRIM);
+
+        // Sorting
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.DESC);
+
     }
 
     private final SqlValidatorCatalogReader catalogReader;
+
+    // The top level select is used to filter out nested selects with FETCH/OFFSET
+    private SqlSelect topLevelSelect;
 
     public UnsupportedOperationVisitor(
             SqlValidatorCatalogReader catalogReader
@@ -193,7 +203,7 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
         if (type.getTypeNameSpec() instanceof SqlUserDefinedTypeNameSpec) {
             SqlIdentifier typeName = type.getTypeName();
 
-            if (HazelcastTypeSystem.isObject(typeName) || HazelcastTypeSystem.isTimestampWithTimeZone(typeName)) {
+            if (isObjectIdentifier(typeName) || isTimestampWithTimeZoneIdentifier(typeName)) {
                 return null;
             }
         }
@@ -216,6 +226,7 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
             case DATE:
             case TIME:
             case TIMESTAMP:
+            case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
             case NULL:
                 return null;
 
@@ -287,7 +298,7 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
                 processSelect((SqlSelect) call);
 
                 return;
-
+            case DESCENDING:
             case OTHER:
             case OTHER_FUNCTION:
                 processOther(call);
@@ -299,20 +310,18 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
     }
 
     private void processSelect(SqlSelect select) {
-        if (select.hasOrderBy()) {
-            throw unsupported(select.getOrderList(), SqlKind.ORDER_BY);
-        }
-
         if (select.getGroup() != null && select.getGroup().size() > 0) {
             throw unsupported(select.getGroup(), "GROUP BY");
         }
 
-        if (select.getFetch() != null) {
-            throw unsupported(select.getFetch(), "LIMIT");
-        }
+        if (topLevelSelect == null) {
+            topLevelSelect = select;
+        } else {
+            // Check for nested fetch offset
+            if (select.getFetch() != null || select.getOffset() != null) {
+                throw error(select, "FETCH/OFFSET is only supported for the top-level SELECT");
+            }
 
-        if (select.getOffset() != null) {
-            throw unsupported(select.getOffset(), "OFFSET");
         }
     }
 
@@ -331,16 +340,16 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
         return unsupported(call, name.replace("$", "").replace('_', ' '));
     }
 
-    private CalciteContextException unsupported(SqlNode node, SqlKind kind) {
-        return unsupported(node, kind.sql.replace('_', ' '));
-    }
-
-    private CalciteContextException unsupported(SqlNode node, String name) {
+    private static CalciteContextException unsupported(SqlNode node, String name) {
         return error(node, RESOURCE.notSupported(name));
     }
 
-    private CalciteContextException error(SqlNode node, Resources.ExInst<SqlValidatorException> err) {
+    private static CalciteContextException error(SqlNode node, Resources.ExInst<SqlValidatorException> err) {
         return SqlUtil.newContextException(node.getParserPosition(), err);
+    }
+
+    public static CalciteContextException error(SqlNode node, String name) {
+        return error(node, RESOURCE.custom(name));
     }
 
     public interface Resource {

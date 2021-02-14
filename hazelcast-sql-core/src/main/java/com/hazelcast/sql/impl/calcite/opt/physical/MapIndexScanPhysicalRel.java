@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,12 +27,21 @@ import org.apache.calcite.plan.RelOptCost;
 import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
+import org.apache.calcite.rel.RelCollation;
+import org.apache.calcite.rel.RelCollationTraitDef;
+import org.apache.calcite.rel.RelFieldCollation;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.metadata.RelMdUtil;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rex.RexNode;
 
+import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
+import static org.apache.calcite.rel.RelFieldCollation.Direction;
+
+
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -81,6 +90,19 @@ public class MapIndexScanPhysicalRel extends AbstractMapScanRel implements Physi
         return remainderExp;
     }
 
+    public List<Boolean> getAscs() {
+        RelCollation collation = getTraitSet().getTrait(RelCollationTraitDef.INSTANCE);
+        assert collation != null;
+        int size = collation.getFieldCollations().size();
+
+        List<Boolean> ascs = new ArrayList<>(size);
+        for (RelFieldCollation fieldCollation : collation.getFieldCollations()) {
+            Boolean asc = fieldCollation.getDirection() == Direction.ASCENDING ? TRUE : FALSE;
+            ascs.add(asc);
+        }
+        return ascs;
+    }
+
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
         return new MapIndexScanPhysicalRel(
@@ -103,9 +125,9 @@ public class MapIndexScanPhysicalRel extends AbstractMapScanRel implements Physi
     @Override
     public RelWriter explainTerms(RelWriter pw) {
         return super.explainTerms(pw)
-           .item("index", index.getName())
-           .item("indexExp", indexExp)
-           .item("remainderExp", remainderExp);
+            .item("index", index.getName())
+            .item("indexExp", indexExp)
+            .item("remainderExp", remainderExp);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,4 +24,10 @@ public class CheckAllDependenciesIT extends CheckDependenciesIT {
     protected boolean isMatching(String urlString) {
         return urlString.contains("hazelcast-all-") && urlString.contains("target");
     }
+
+    @Override
+    protected String getBundleName() {
+        return "Hazelcast(All)";
+    }
+
 }

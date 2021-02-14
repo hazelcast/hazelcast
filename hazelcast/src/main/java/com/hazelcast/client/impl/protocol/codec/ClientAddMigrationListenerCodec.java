@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,9 +35,9 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Adds a Migration listener to the cluster.
+ * Adds a migration listener to the cluster.
  */
-@Generated("c1de358a5eeb994a93d1c9d264dcca29")
+@Generated("80b81dadb307fb9aed0f33182e0d3d84")
 public final class ClientAddMigrationListenerCodec {
     //hex: 0x001100
     public static final int REQUEST_MESSAGE_TYPE = 4352;
@@ -77,8 +77,8 @@ public final class ClientAddMigrationListenerCodec {
     }
 
     /**
-     * if true only node that has the migration sends the request, if false
-     * sends all partition lost events.
+     * If set to true, the server adds the listener only to itself, otherwise
+     * the listener is added for all members in the cluster.
      */
     public static boolean decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,17 +18,16 @@ package com.hazelcast.sql.impl.calcite.parse;
 
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.calcite.SqlBackend;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.prepare.Prepare.CatalogReader;
-import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.runtime.CalciteException;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.util.SqlVisitor;
 import org.apache.calcite.sql.validate.SqlConformance;
-import org.apache.calcite.sql.validate.SqlValidator;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -37,6 +36,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.BDDMockito.given;
@@ -63,16 +63,13 @@ public class QueryParserTest {
     private SqlBackend jetSqlBackend;
 
     @Mock
-    private SqlValidator sqlValidator;
+    private HazelcastSqlValidator sqlValidator;
 
     @Mock
-    private SqlValidator jetSqlValidator;
+    private HazelcastSqlValidator jetSqlValidator;
 
     @Mock
     private SqlNode validatedNode;
-
-    @Mock
-    private RelDataType parameterRowType;
 
     @Mock
     private SqlVisitor<Void> unsupportedOperatorVisitor;
@@ -88,10 +85,20 @@ public class QueryParserTest {
     }
 
     @Test
+    public void unsupportedKeywordTest() {
+        try {
+            QueryParseResult result = parser.parse("show tables");
+            fail("\"show tables\" did not throw parsing exception");
+        } catch (Exception e) {
+            String message = e.getMessage();
+            assertEquals("Encountered \"show\" at line 1, column 1.", message);
+        }
+    }
+
+    @Test
     public void when_imdgCanHandleSql() {
         // given
         given(sqlValidator.validate(isA(SqlNode.class))).willReturn(validatedNode);
-        given(sqlValidator.getParameterRowType(validatedNode)).willReturn(parameterRowType);
         given(sqlBackend.unsupportedOperationVisitor(catalogReader)).willReturn(unsupportedOperatorVisitor);
 
         // when
@@ -99,7 +106,6 @@ public class QueryParserTest {
 
         // then
         assertEquals(validatedNode, result.getNode());
-        assertEquals(parameterRowType, result.getParameterRowType());
         assertEquals(sqlBackend, result.getSqlBackend());
         assertEquals(sqlValidator, result.getValidator());
 
@@ -124,7 +130,6 @@ public class QueryParserTest {
         given(sqlValidator.validate(isA(SqlNode.class))).willThrow(new CalciteException("expected test exception", null));
 
         given(jetSqlValidator.validate(isA(SqlNode.class))).willReturn(validatedNode);
-        given(jetSqlValidator.getParameterRowType(validatedNode)).willReturn(parameterRowType);
         given(jetSqlBackend.unsupportedOperationVisitor(catalogReader)).willReturn(unsupportedOperatorVisitor);
 
         // when
@@ -132,7 +137,6 @@ public class QueryParserTest {
 
         // then
         assertEquals(validatedNode, result.getNode());
-        assertEquals(parameterRowType, result.getParameterRowType());
         assertEquals(jetSqlBackend, result.getSqlBackend());
         assertEquals(jetSqlValidator, result.getValidator());
 

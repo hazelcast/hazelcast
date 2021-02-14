@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,9 +35,9 @@ public class OutboundOperationHandler {
     private final InternalSerializationService serializationService;
     private final Node node;
 
-    public OutboundOperationHandler(Node node, Address thisAddress, InternalSerializationService serializationService) {
+    public OutboundOperationHandler(Node node, InternalSerializationService serializationService) {
         this.node = node;
-        this.thisAddress = thisAddress;
+        this.thisAddress = node.getThisAddress();
         this.serializationService = serializationService;
     }
 

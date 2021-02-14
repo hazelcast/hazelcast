@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,6 +82,24 @@ public class ParserOperationsTest {
     }
 
     @Test
+    public void testOrderBy() {
+        checkSuccess("SELECT a, b FROM t ORDER BY a");
+        checkSuccess("SELECT a, b FROM t ORDER BY a ASC");
+        checkSuccess("SELECT a, b FROM t ORDER BY a DESC");
+        checkSuccess("SELECT a, b FROM t ORDER BY a DESC, b ASC");
+        checkSuccess("SELECT a, b FROM t ORDER BY a DESC OFFSET 10 ROWS FETCH FIRST 20 ROWS ONLY");
+        checkSuccess("SELECT a, b FROM t ORDER BY a DESC FETCH FIRST 20 ROWS ONLY");
+        checkSuccess("SELECT a, b FROM t ORDER BY a DESC OFFSET 10 ROWS");
+    }
+
+    @Test
+    public void testOffsetFetchOnly() {
+        checkSuccess("SELECT a, b FROM t OFFSET 10 ROWS FETCH FIRST 20 ROWS ONLY");
+        checkSuccess("SELECT a, b FROM t FETCH FIRST 20 ROWS ONLY");
+        checkSuccess("SELECT a, b FROM t OFFSET 10 ROWS");
+    }
+
+    @Test
     public void testUnsupportedSelectScalar() {
         checkFailure(
             "SELECT (SELECT a FROM t) FROM t",
@@ -98,10 +116,15 @@ public class ParserOperationsTest {
     }
 
     @Test
-    public void testUnsupportedOrderBy() {
+    public void testUnsupportedNullsFirstLast() {
         checkFailure(
-            "SELECT a FROM t ORDER BY a",
-            "ORDER BY is not supported"
+            "SELECT a, b FROM t ORDER BY a DESC NULLS FIRST",
+            "Function 'NULLS FIRST' does not exist"
+        );
+
+        checkFailure(
+            "SELECT a, b FROM t ORDER BY a DESC NULLS LAST",
+            "Function 'NULLS LAST' does not exist"
         );
     }
 
@@ -114,26 +137,10 @@ public class ParserOperationsTest {
     }
 
     @Test
-    public void testUnsupportedLimit() {
-        checkFailure(
-              "SELECT a FROM t LIMIT 1",
-              "LIMIT is not supported"
-        );
-    }
-
-    @Test
-    public void testUnsupportedOffset() {
-        checkFailure(
-              "SELECT a FROM t OFFSET 1",
-              "OFFSET is not supported"
-        );
-    }
-
-    @Test
     public void testUnsupportedAggregate() {
         checkFailure(
             "SELECT SUM(a) FROM t",
-            "SUM is not supported"
+            "Function 'SUM' does not exist"
         );
     }
 
@@ -152,7 +159,7 @@ public class ParserOperationsTest {
 
     @Test
     public void testUnsupportedFunction() {
-        checkFailure("select atan2(0, 0) from t", "ATAN2 is not supported");
+        checkFailure("select atan2(0, 0) from t", "Function 'atan2' does not exist");
     }
 
     private static void checkSuccess(String sql) {

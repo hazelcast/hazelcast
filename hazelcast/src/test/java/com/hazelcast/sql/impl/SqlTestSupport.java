@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -151,7 +151,12 @@ public class SqlTestSupport extends HazelcastTestSupport {
             }
         };
 
-        return new QueryFragmentContext(args, new LoggingQueryFragmentScheduleCallback(), stateCallback);
+        return new QueryFragmentContext(
+            args,
+            new LoggingQueryFragmentScheduleCallback(),
+            stateCallback,
+            new DefaultSerializationServiceBuilder().build()
+        );
     }
 
     /**
@@ -216,6 +221,10 @@ public class SqlTestSupport extends HazelcastTestSupport {
             query.setParameters(Arrays.asList(params));
         }
 
+        return executeStatement(member, query);
+    }
+
+    public static List<SqlRow> executeStatement(HazelcastInstance member, SqlStatement query) {
         List<SqlRow> rows = new ArrayList<>();
 
         try (SqlResult result = member.getSql().execute(query)) {
@@ -229,16 +238,6 @@ public class SqlTestSupport extends HazelcastTestSupport {
 
     public static void clearPlanCache(HazelcastInstance member) {
         ((SqlServiceImpl) member.getSql()).getPlanCache().clear();
-    }
-
-    public static int getLocalPartition(HazelcastInstance member) {
-        PartitionIdSet partitions = getLocalPartitions(member);
-
-        if (partitions.isEmpty()) {
-            throw new RuntimeException("Member does nave local partitions");
-        }
-
-        return partitions.iterator().next();
     }
 
     public static PartitionIdSet getLocalPartitions(HazelcastInstance member) {
@@ -319,7 +318,7 @@ public class SqlTestSupport extends HazelcastTestSupport {
         }
 
         if (res.size() < count) {
-            throw new RuntimeException("Failed to get the necesasry number of key: " + res.size());
+            throw new RuntimeException("Failed to get the necessary number of keys: " + res.size());
         }
 
         return res;
@@ -334,12 +333,14 @@ public class SqlTestSupport extends HazelcastTestSupport {
             PlanNode fragment = result0.getPlan().getFragment(i);
 
             fragment.visit(new TestPlanNodeVisitorAdapter() {
+
                 @Override
                 public void onMapIndexScanNode(MapIndexScanPlanNode node) {
                     nodeRef.compareAndSet(null, node);
 
                     super.onMapIndexScanNode(node);
                 }
+
             });
         }
 

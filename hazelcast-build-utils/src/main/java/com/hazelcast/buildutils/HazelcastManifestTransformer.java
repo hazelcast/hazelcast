@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,14 +66,9 @@ public class HazelcastManifestTransformer extends ManifestResourceTransformer {
     private static final Name AUTOMATIC_MODULE_NAME = new Name("Automatic-Module-Name");
 
     // configuration
-    @SuppressFBWarnings(value = "UWF_UNWRITTEN_FIELD", justification = "Filled by Maven")
-    String mainClass;
-
-    @SuppressFBWarnings(value = "UWF_UNWRITTEN_FIELD", justification = "Filled by Maven")
-    Map<String, Attributes> manifestEntries;
-
-    @SuppressFBWarnings(value = "UWF_UNWRITTEN_FIELD", justification = "Filled by Maven")
-    Map<String, String> overrideInstructions;
+    private String mainClass;
+    private Map<String, Object> manifestEntries;
+    private Map<String, String> overrideInstructions;
 
     private final Map<String, PackageDefinition> importedPackages = new HashMap<>();
     private final Map<String, PackageDefinition> exportedPackages = new HashMap<>();
@@ -81,6 +76,22 @@ public class HazelcastManifestTransformer extends ManifestResourceTransformer {
     private final List<InstructionDefinition> exportOverrideInstructions = new ArrayList<>();
 
     private Manifest shadedManifest;
+
+    @Override
+    public void setMainClass(String mainClass) {
+        this.mainClass = mainClass;
+        super.setMainClass(mainClass);
+    }
+
+    @Override
+    public void setManifestEntries(Map<String, Object> manifestEntries) {
+        this.manifestEntries = manifestEntries;
+        super.setManifestEntries(manifestEntries);
+    }
+
+    public void setOverrideInstructions(Map<String, String> overrideInstructions) {
+        this.overrideInstructions = overrideInstructions;
+    }
 
     @Override
     public boolean canTransformResource(String resource) {
@@ -193,7 +204,7 @@ public class HazelcastManifestTransformer extends ManifestResourceTransformer {
         }
 
         if (manifestEntries != null) {
-            for (Map.Entry<String, Attributes> entry : manifestEntries.entrySet()) {
+            for (Map.Entry<String, Object> entry : manifestEntries.entrySet()) {
                 attributes.put(new Attributes.Name(entry.getKey()), entry.getValue());
             }
         }

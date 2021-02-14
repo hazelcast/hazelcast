@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,8 +31,6 @@ import com.hazelcast.sql.impl.security.SqlSecurityContext;
 
 import java.security.AccessControlException;
 import java.security.Permission;
-import java.util.Collection;
-import java.util.List;
 
 /**
  * SQL query execute task.
@@ -46,44 +44,20 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
     protected Object call() throws Exception {
         SqlSecurityContext sqlSecurityContext = prepareSecurityContext();
 
-        try {
-            SqlStatement query = new SqlStatement(parameters.sql);
+        SqlStatement query = new SqlStatement(parameters.sql);
 
-            for (Data param : parameters.parameters) {
-                query.addParameter(serializationService.toObject(param));
-            }
-
-            query.setTimeoutMillis(parameters.timeoutMillis);
-            query.setCursorBufferSize(parameters.cursorBufferSize);
-
-            SqlServiceImpl sqlService = nodeEngine.getSqlService();
-
-            AbstractSqlResult result = (AbstractSqlResult) sqlService.execute(query, sqlSecurityContext);
-
-            if (result.updateCount() >= 0) {
-                return SqlExecuteResponse.updateCountResponse(result.updateCount());
-            } else {
-                SqlPage page = sqlService.getInternalService().getClientStateRegistry().registerAndFetch(
-                    endpoint.getUuid(),
-                    result,
-                    parameters.cursorBufferSize,
-                    serializationService
-                );
-
-                return SqlExecuteResponse.rowsResponse(
-                    result.getQueryId(),
-                    result.getRowMetadata().getColumns(),
-                    page.getRows(),
-                    page.isLast()
-                );
-            }
-        } catch (AccessControlException e) {
-            throw e;
-        } catch (Exception e) {
-            SqlError error = SqlClientUtils.exceptionToClientError(e, nodeEngine.getLocalMember().getUuid());
-
-            return SqlExecuteResponse.errorResponse(error);
+        for (Data param : parameters.parameters) {
+            query.addParameter(serializationService.toObject(param));
         }
+
+        query.setSchema(parameters.schema);
+        query.setTimeoutMillis(parameters.timeoutMillis);
+        query.setCursorBufferSize(parameters.cursorBufferSize);
+        query.setExpectedResultType(SqlClientUtils.expectedResultTypeToEnum(parameters.expectedResultType));
+
+        SqlServiceImpl sqlService = nodeEngine.getSqlService();
+
+        return sqlService.execute(query, sqlSecurityContext, parameters.queryId);
     }
 
     @Override
@@ -91,21 +65,47 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
         return SqlExecuteCodec.decodeRequest(clientMessage);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        SqlExecuteResponse response0 = (SqlExecuteResponse) response;
+        AbstractSqlResult result = (AbstractSqlResult) response;
 
-        List<List<Data>> rowPage = response0.getRowPage();
-        Collection<Collection<Data>> rowPage0 = (Collection<Collection<Data>>) (Object) rowPage;
+        if (result.updateCount() >= 0) {
+            return SqlExecuteCodec.encodeResponse(null, null, result.updateCount(), null);
+        } else {
+            SqlServiceImpl sqlService = nodeEngine.getSqlService();
+
+            SqlPage page = sqlService.getInternalService().getClientStateRegistry().registerAndFetch(
+                endpoint.getUuid(),
+                result,
+                parameters.cursorBufferSize,
+                serializationService
+            );
+
+            return SqlExecuteCodec.encodeResponse(
+                result.getRowMetadata().getColumns(),
+                page,
+                -1,
+                null
+            );
+        }
+    }
+
+    protected ClientMessage encodeException(Throwable throwable) {
+        nodeEngine.getSqlService().getInternalService().getClientStateRegistry().closeOnError(parameters.queryId);
+
+        if (throwable instanceof AccessControlException) {
+            return super.encodeException(throwable);
+        }
+        if (!(throwable instanceof Exception)) {
+            return super.encodeException(throwable);
+        }
+        SqlError error = SqlClientUtils.exceptionToClientError((Exception) throwable, nodeEngine.getLocalMember().getUuid());
 
         return SqlExecuteCodec.encodeResponse(
-            response0.getQueryId(),
-            response0.getRowMetadata(),
-            rowPage0,
-            response0.isRowPageLast(),
-            response0.getUpdateCount(),
-            response0.getError()
+            null,
+            null,
+            -1,
+            error
         );
     }
 
@@ -130,7 +130,9 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
             parameters.sql,
             parameters.parameters,
             parameters.timeoutMillis,
-            parameters.cursorBufferSize
+            parameters.cursorBufferSize,
+            parameters.schema,
+            parameters.queryId
         } ;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,14 @@
 package com.hazelcast.spi.impl.operationservice;
 
 /**
- *  Indicates that {@link Operation} carries the distributed data structure name that is going to work on.
+ *  Indicates that the {@link Operation} carries the distributed data
+ *  structure name that it is going to work on.
  */
 public interface NamedOperation {
 
     /**
-     * Returns the name of the distributed data structure.
-     * @return String name of the distributed data structure.
+     * Returns the name of the distributed data structure which this operation
+     * operates on.
      */
     String getName();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.expression.math;
 
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.SqlErrorCode;
-import com.hazelcast.sql.impl.expression.SqlExpressionIntegrationTestSupport;
+import com.hazelcast.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue.ByteIntegerVal;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue.IntegerIntegerVal;
@@ -41,6 +41,18 @@ import org.junit.runner.RunWith;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
+import static com.hazelcast.sql.SqlColumnType.BIGINT;
+import static com.hazelcast.sql.SqlColumnType.BOOLEAN;
+import static com.hazelcast.sql.SqlColumnType.DATE;
+import static com.hazelcast.sql.SqlColumnType.DECIMAL;
+import static com.hazelcast.sql.SqlColumnType.DOUBLE;
+import static com.hazelcast.sql.SqlColumnType.INTEGER;
+import static com.hazelcast.sql.SqlColumnType.OBJECT;
+import static com.hazelcast.sql.SqlColumnType.REAL;
+import static com.hazelcast.sql.SqlColumnType.TIME;
+import static com.hazelcast.sql.SqlColumnType.TIMESTAMP;
+import static com.hazelcast.sql.SqlColumnType.TIMESTAMP_WITH_TIME_ZONE;
+import static com.hazelcast.sql.SqlColumnType.VARCHAR;
 import static com.hazelcast.sql.support.expressions.ExpressionBiValue.BigDecimalIntegerVal;
 import static com.hazelcast.sql.support.expressions.ExpressionBiValue.BigIntegerIntegerVal;
 import static com.hazelcast.sql.support.expressions.ExpressionBiValue.DoubleIntegerVal;
@@ -51,13 +63,7 @@ import static com.hazelcast.sql.support.expressions.ExpressionValue.FloatVal;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class TruncateFunctionIntegrationTest extends SqlExpressionIntegrationTestSupport {
-    @Test
-    public void testLengthOverflow() {
-        put(new ExpressionBiValue.IntegerLongVal().fields(1, Long.MAX_VALUE));
-        checkFailure_2("field1", "field2", SqlErrorCode.DATA_EXCEPTION, "Cannot convert the second operand of TRUNCATE function to INT");
-    }
-
+public class TruncateFunctionIntegrationTest extends ExpressionTestSupport {
     @Test
     public void test_byte() {
         checkColumn_1(new ByteVal().field1((byte) 127), SqlColumnType.TINYINT, (byte) 127);
@@ -204,17 +210,15 @@ public class TruncateFunctionIntegrationTest extends SqlExpressionIntegrationTes
         check_1("?", SqlColumnType.DECIMAL, new BigDecimal("10"), 10L);
         check_1("?", SqlColumnType.DECIMAL, new BigDecimal("10"), new BigInteger("10"));
         check_1("?", SqlColumnType.DECIMAL, new BigDecimal("10"), new BigDecimal("10.5"));
-        checkFailure_1("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from REAL to DECIMAL", 10.5f);
-        checkFailure_1("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DOUBLE to DECIMAL", 10.5d);
-        check_1("?", SqlColumnType.DECIMAL, new BigDecimal("10"), "10.5");
-        checkFailure_1("?", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL", "bad");
-        checkFailure_1("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DOUBLE to DECIMAL", 10.5d);
-        checkFailure_1("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DATE to DECIMAL", LOCAL_DATE_VAL);
-        checkFailure_1("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIME to DECIMAL", LOCAL_TIME_VAL);
-        checkFailure_1("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP to DECIMAL", LOCAL_DATE_TIME_VAL);
-        checkFailure_1("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP_WITH_TIME_ZONE to DECIMAL", OFFSET_DATE_TIME_VAL);
-        checkFailure_1("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from OBJECT to DECIMAL", new ExpressionValue.ObjectVal());
-        checkFailure_1("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from BOOLEAN to DECIMAL", true);
+        checkFailure_1("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, DECIMAL, REAL), 9.5f);
+        checkFailure_1("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, DECIMAL, DOUBLE), 9.5d);
+        checkFailure_1("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, DECIMAL, VARCHAR), "9.5d");
+        checkFailure_1("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, DECIMAL, DATE), LOCAL_DATE_VAL);
+        checkFailure_1("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, DECIMAL, TIME), LOCAL_TIME_VAL);
+        checkFailure_1("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, DECIMAL, TIMESTAMP), LOCAL_DATE_TIME_VAL);
+        checkFailure_1("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, DECIMAL, TIMESTAMP_WITH_TIME_ZONE), OFFSET_DATE_TIME_VAL);
+        checkFailure_1("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, DECIMAL, OBJECT), OBJECT_VAL);
+        checkFailure_1("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, DECIMAL, BOOLEAN), true);
 
         // Two operands, first operand
         check_2("?", "0", SqlColumnType.DECIMAL, new BigDecimal("10"), (byte) 10);
@@ -223,32 +227,30 @@ public class TruncateFunctionIntegrationTest extends SqlExpressionIntegrationTes
         check_2("?", "0", SqlColumnType.DECIMAL, new BigDecimal("10"), 10L);
         check_2("?", "0", SqlColumnType.DECIMAL, new BigDecimal("10"), new BigInteger("10"));
         check_2("?", "0", SqlColumnType.DECIMAL, new BigDecimal("10"), new BigDecimal("10.5"));
-        checkFailure_2("?", "0", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from REAL to DECIMAL", 10.5f);
-        checkFailure_2("?", "0", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DOUBLE to DECIMAL", 10.5d);
-        check_2("?", "0", SqlColumnType.DECIMAL, new BigDecimal("10"), "10.5");
-        checkFailure_2("?", "0", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL", "bad");
-        checkFailure_2("?", "0", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DATE to DECIMAL", LOCAL_DATE_VAL);
-        checkFailure_2("?", "0", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIME to DECIMAL", LOCAL_TIME_VAL);
-        checkFailure_2("?", "0", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP to DECIMAL", LOCAL_DATE_TIME_VAL);
-        checkFailure_2("?", "0", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP_WITH_TIME_ZONE to DECIMAL", OFFSET_DATE_TIME_VAL);
-        checkFailure_2("?", "0", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from OBJECT to DECIMAL", new ExpressionValue.ObjectVal());
-        checkFailure_2("?", "0", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from BOOLEAN to DECIMAL", true);
+        checkFailure_2("?", "0", SqlErrorCode.DATA_EXCEPTION, parameterError(0, DECIMAL, REAL), 9.5f);
+        checkFailure_2("?", "0", SqlErrorCode.DATA_EXCEPTION, parameterError(0, DECIMAL, DOUBLE), 9.5d);
+        checkFailure_2("?", "0", SqlErrorCode.DATA_EXCEPTION, parameterError(0, DECIMAL, VARCHAR), "9.5");
+        checkFailure_2("?", "0", SqlErrorCode.DATA_EXCEPTION, parameterError(0, DECIMAL, DATE), LOCAL_DATE_VAL);
+        checkFailure_2("?", "0", SqlErrorCode.DATA_EXCEPTION, parameterError(0, DECIMAL, TIME), LOCAL_TIME_VAL);
+        checkFailure_2("?", "0", SqlErrorCode.DATA_EXCEPTION, parameterError(0, DECIMAL, TIMESTAMP), LOCAL_DATE_TIME_VAL);
+        checkFailure_2("?", "0", SqlErrorCode.DATA_EXCEPTION, parameterError(0, DECIMAL, TIMESTAMP_WITH_TIME_ZONE), OFFSET_DATE_TIME_VAL);
+        checkFailure_2("?", "0", SqlErrorCode.DATA_EXCEPTION, parameterError(0, DECIMAL, OBJECT), OBJECT_VAL);
+        checkFailure_2("?", "0", SqlErrorCode.DATA_EXCEPTION, parameterError(0, DECIMAL, BOOLEAN), true);
 
         // Two operands, second operand
         check_2("15", "?", SqlColumnType.TINYINT, (byte) 10, (byte) -1);
         check_2("15", "?", SqlColumnType.TINYINT, (byte) 10, (short) -1);
         check_2("15", "?", SqlColumnType.TINYINT, (byte) 10, -1);
-        checkFailure_2("15", "?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from BIGINT to INTEGER", 1L);
-        checkFailure_2("15", "?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to INTEGER", BigInteger.ONE.negate());
-        checkFailure_2("15", "?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to INTEGER", BigDecimal.ONE.negate());
-        check_2("15", "?", SqlColumnType.TINYINT, (byte) 10, "-1");
-        checkFailure_2("15", "?", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to INT", "bad");
-        checkFailure_2("15", "?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DATE to INTEGER", LOCAL_DATE_VAL);
-        checkFailure_2("15", "?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIME to INTEGER", LOCAL_TIME_VAL);
-        checkFailure_2("15", "?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP to INTEGER", LOCAL_DATE_TIME_VAL);
-        checkFailure_2("15", "?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP_WITH_TIME_ZONE to INTEGER", OFFSET_DATE_TIME_VAL);
-        checkFailure_2("15", "?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from OBJECT to INTEGER", new ExpressionValue.ObjectVal());
-        checkFailure_2("15", "?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from BOOLEAN to INTEGER", true);
+        checkFailure_2("15", "?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, INTEGER, BIGINT), -1L);
+        checkFailure_2("15", "?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, INTEGER, DECIMAL), BigInteger.ONE.negate());
+        checkFailure_2("15", "?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, INTEGER, DECIMAL), BigDecimal.ONE.negate());
+        checkFailure_2("15", "?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, INTEGER, VARCHAR), "-1");
+        checkFailure_2("15", "?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, INTEGER, DATE), LOCAL_DATE_VAL);
+        checkFailure_2("15", "?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, INTEGER, TIME), LOCAL_TIME_VAL);
+        checkFailure_2("15", "?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, INTEGER, TIMESTAMP), LOCAL_DATE_TIME_VAL);
+        checkFailure_2("15", "?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, INTEGER, TIMESTAMP_WITH_TIME_ZONE), OFFSET_DATE_TIME_VAL);
+        checkFailure_2("15", "?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, INTEGER, OBJECT), OBJECT_VAL);
+        checkFailure_2("15", "?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, INTEGER, BOOLEAN), true);
 
         // Two operands, both
         check_2("?", "?", SqlColumnType.DECIMAL, new BigDecimal("10"), 15, -1);
@@ -256,21 +258,21 @@ public class TruncateFunctionIntegrationTest extends SqlExpressionIntegrationTes
 
     @Test
     public void test_boolean() {
-        checkColumnFailure_2(new ExpressionBiValue.BooleanIntegerVal().fields(true, 127), SqlErrorCode.PARSING, "Cannot apply 'TRUNCATE' to arguments of type 'TRUNCATE(<BOOLEAN>, <INTEGER>)'");
-        checkColumnFailure_2(new ExpressionBiValue.IntegerBooleanVal().fields(127, true), SqlErrorCode.PARSING, "Cannot apply 'TRUNCATE' to arguments of type 'TRUNCATE(<INTEGER>, <BOOLEAN>)'");
+        checkColumnFailure_2(new ExpressionBiValue.BooleanIntegerVal().fields(true, 127), SqlErrorCode.PARSING, signatureErorr(BOOLEAN, INTEGER));
+        checkColumnFailure_2(new ExpressionBiValue.IntegerBooleanVal().fields(127, true), SqlErrorCode.PARSING, signatureErorr(INTEGER, BOOLEAN));
     }
 
     @Test
     public void test_temporal() {
-        checkColumnFailure_2(new ExpressionBiValue.IntegerLocalDateVal().fields(127, LOCAL_DATE_VAL), SqlErrorCode.PARSING, "Cannot apply 'TRUNCATE' to arguments of type 'TRUNCATE(<INTEGER>, <DATE>)'");
-        checkColumnFailure_2(new ExpressionBiValue.IntegerLocalTimeVal().fields(127, LOCAL_TIME_VAL), SqlErrorCode.PARSING, "Cannot apply 'TRUNCATE' to arguments of type 'TRUNCATE(<INTEGER>, <TIME>)'");
-        checkColumnFailure_2(new ExpressionBiValue.IntegerLocalDateTimeVal().fields(127, LOCAL_DATE_TIME_VAL), SqlErrorCode.PARSING, "Cannot apply 'TRUNCATE' to arguments of type 'TRUNCATE(<INTEGER>, <TIMESTAMP>)'");
-        checkColumnFailure_2(new ExpressionBiValue.IntegerOffsetDateTimeVal().fields(127, OFFSET_DATE_TIME_VAL), SqlErrorCode.PARSING, "Cannot apply 'TRUNCATE' to arguments of type 'TRUNCATE(<INTEGER>, <TIMESTAMP_WITH_TIME_ZONE>)'");
+        checkColumnFailure_2(new ExpressionBiValue.IntegerLocalDateVal().fields(127, LOCAL_DATE_VAL), SqlErrorCode.PARSING, signatureErorr(INTEGER, DATE));
+        checkColumnFailure_2(new ExpressionBiValue.IntegerLocalTimeVal().fields(127, LOCAL_TIME_VAL), SqlErrorCode.PARSING, signatureErorr(INTEGER, TIME));
+        checkColumnFailure_2(new ExpressionBiValue.IntegerLocalDateTimeVal().fields(127, LOCAL_DATE_TIME_VAL), SqlErrorCode.PARSING, signatureErorr(INTEGER, TIMESTAMP));
+        checkColumnFailure_2(new ExpressionBiValue.IntegerOffsetDateTimeVal().fields(127, OFFSET_DATE_TIME_VAL), SqlErrorCode.PARSING, signatureErorr(INTEGER, TIMESTAMP_WITH_TIME_ZONE));
     }
 
     @Test
     public void test_object() {
-        checkColumnFailure_2(new IntegerObjectVal().fields(127, "bad"), SqlErrorCode.PARSING, "Cannot apply 'TRUNCATE' to arguments of type 'TRUNCATE(<INTEGER>, <OBJECT>)'");
+        checkColumnFailure_2(new IntegerObjectVal().fields(127, "bad"), SqlErrorCode.PARSING, signatureErorr(INTEGER, OBJECT));
     }
 
     @Test
@@ -293,18 +295,15 @@ public class TruncateFunctionIntegrationTest extends SqlExpressionIntegrationTes
         // First operand
         put(new IntegerVal().field1(-1));
         check_2("15", "field1", SqlColumnType.TINYINT, (byte) 10);
-        check_2("'15'", "field1", SqlColumnType.DECIMAL, new BigDecimal("10"));
         check_2("15.1", "field1", SqlColumnType.DECIMAL, new BigDecimal("10"));
-        check_2("'15.1'", "field1", SqlColumnType.DECIMAL, new BigDecimal("10"));
-        checkFailure_2("'bad'", "field1", SqlErrorCode.PARSING, "Literal ''bad'' can not be parsed to type 'DECIMAL'");
-        checkFailure_2("true", "field1", SqlErrorCode.PARSING, "Cannot apply 'TRUNCATE' to arguments of type 'TRUNCATE(<BOOLEAN>, <INTEGER>)'");
+        checkFailure_2("'15'", "field1", SqlErrorCode.PARSING, signatureErorr(VARCHAR, INTEGER));
+        checkFailure_2("true", "field1", SqlErrorCode.PARSING, signatureErorr(BOOLEAN, INTEGER));
 
         // Second operand
         put(new IntegerVal().field1(15));
         check_2("field1", "-1", SqlColumnType.INTEGER, 10);
-        check_2("field1", "'-1'", SqlColumnType.INTEGER, 10);
-        checkFailure_2("field1", "'bad'", SqlErrorCode.PARSING, "Literal ''bad'' can not be parsed to type 'DECIMAL'");
-        checkFailure_2("field1", "true", SqlErrorCode.PARSING, "Cannot apply 'TRUNCATE' to arguments of type 'TRUNCATE(<INTEGER>, <BOOLEAN>)'");
+        checkFailure_2("field1", "'-1'", SqlErrorCode.PARSING, signatureErorr(INTEGER, VARCHAR));
+        checkFailure_2("field1", "true", SqlErrorCode.PARSING, signatureErorr(INTEGER, BOOLEAN));
     }
 
     private void checkColumn_1(ExpressionValue value, SqlColumnType expectedType, Object expectedValue) {
@@ -324,27 +323,31 @@ public class TruncateFunctionIntegrationTest extends SqlExpressionIntegrationTes
 
         String sql = sql("field1", "field2");
 
-        checkFailureInternal(sql, expectedErrorCode, expectedErrorMessage);
+        checkFailure0(sql, expectedErrorCode, expectedErrorMessage);
     }
 
     private void checkFailure_1(Object operand, int expectedErrorCode, String expectedErrorMessage, Object... params) {
         String sql = sql(operand);
 
-        checkFailureInternal(sql, expectedErrorCode, expectedErrorMessage, params);
+        checkFailure0(sql, expectedErrorCode, expectedErrorMessage, params);
     }
 
     private void checkFailure_2(Object operand1, Object operand2, int expectedErrorCode, String expectedErrorMessage, Object... params) {
         String sql = sql(operand1, operand2);
 
-        checkFailureInternal(sql, expectedErrorCode, expectedErrorMessage, params);
+        checkFailure0(sql, expectedErrorCode, expectedErrorMessage, params);
     }
 
     private void check_1(Object operand, SqlColumnType expectedType, Object expectedValue, Object... params) {
-        checkValueInternal(sql(operand), expectedType, expectedValue, params);
+        checkValue0(sql(operand), expectedType, expectedValue, params);
     }
 
     private void check_2(Object operand1, Object operand2, SqlColumnType expectedType, Object expectedValue, Object... params) {
-        checkValueInternal(sql(operand1, operand2), expectedType, expectedValue, params);
+        checkValue0(sql(operand1, operand2), expectedType, expectedValue, params);
+    }
+
+    private String signatureErorr(SqlColumnType... columnTypes) {
+        return signatureErrorFunction("TRUNCATE", columnTypes);
     }
 
     private static String sql(Object operand1, Object... operand2) {

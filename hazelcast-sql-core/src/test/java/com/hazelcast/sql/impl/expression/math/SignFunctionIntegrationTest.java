@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,11 @@
 package com.hazelcast.sql.impl.expression.math;
 
 import com.hazelcast.sql.SqlColumnType;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlErrorCode;
-import com.hazelcast.sql.impl.expression.SqlExpressionIntegrationTestSupport;
-import com.hazelcast.sql.support.expressions.ExpressionValue;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
+import com.hazelcast.sql.impl.expression.ExpressionTestSupport;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -30,9 +32,21 @@ import org.junit.runner.RunWith;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
+import static com.hazelcast.sql.SqlColumnType.BIGINT;
+import static com.hazelcast.sql.SqlColumnType.BOOLEAN;
+import static com.hazelcast.sql.SqlColumnType.DATE;
+import static com.hazelcast.sql.SqlColumnType.DECIMAL;
+import static com.hazelcast.sql.SqlColumnType.DOUBLE;
+import static com.hazelcast.sql.SqlColumnType.OBJECT;
+import static com.hazelcast.sql.SqlColumnType.REAL;
+import static com.hazelcast.sql.SqlColumnType.TIME;
+import static com.hazelcast.sql.SqlColumnType.TIMESTAMP;
+import static com.hazelcast.sql.SqlColumnType.TIMESTAMP_WITH_TIME_ZONE;
+import static com.hazelcast.sql.SqlColumnType.VARCHAR;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class SignFunctionIntegrationTest extends SqlExpressionIntegrationTestSupport {
+public class SignFunctionIntegrationTest extends ExpressionTestSupport {
     @Test
     public void testColumn() {
         checkColumn((byte) 0, SqlColumnType.TINYINT, (byte) 0);
@@ -81,19 +95,13 @@ public class SignFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
         checkColumn(Double.NEGATIVE_INFINITY, SqlColumnType.DOUBLE, -1d);
         checkColumn(Double.NaN, SqlColumnType.DOUBLE, Double.NaN);
 
-        checkColumn("0", SqlColumnType.DECIMAL, BigDecimal.ZERO);
-        checkColumn("1.1", SqlColumnType.DECIMAL, new BigDecimal("1"));
-        checkColumn("-1.1", SqlColumnType.DECIMAL, new BigDecimal("-1"));
-        checkColumnFailure("a", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
-        checkColumnFailure('a', SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
-
-        checkColumnFailure(true, SqlErrorCode.PARSING, "Cannot apply 'SIGN' to arguments of type 'SIGN(<BOOLEAN>)'");
-        checkColumnFailure(LOCAL_DATE_VAL, SqlErrorCode.PARSING, "Cannot apply 'SIGN' to arguments of type 'SIGN(<DATE>)'");
-        checkColumnFailure(LOCAL_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply 'SIGN' to arguments of type 'SIGN(<TIME>)'");
-        checkColumnFailure(LOCAL_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply 'SIGN' to arguments of type 'SIGN(<TIMESTAMP>)'");
-        checkColumnFailure(OFFSET_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply 'SIGN' to arguments of type 'SIGN(<TIMESTAMP_WITH_TIME_ZONE>)'");
-
-        checkColumnFailure(new ExpressionValue.ObjectVal(), SqlErrorCode.PARSING, "Cannot apply 'SIGN' to arguments of type 'SIGN(<OBJECT>)'");
+        checkColumnFailure("0", SqlErrorCode.PARSING, signatureError(VARCHAR));
+        checkColumnFailure(true, SqlErrorCode.PARSING, signatureError(BOOLEAN));
+        checkColumnFailure(LOCAL_DATE_VAL, SqlErrorCode.PARSING, signatureError(DATE));
+        checkColumnFailure(LOCAL_TIME_VAL, SqlErrorCode.PARSING, signatureError(TIME));
+        checkColumnFailure(LOCAL_DATE_TIME_VAL, SqlErrorCode.PARSING, signatureError(TIMESTAMP));
+        checkColumnFailure(OFFSET_DATE_TIME_VAL, SqlErrorCode.PARSING, signatureError(TIMESTAMP_WITH_TIME_ZONE));
+        checkColumnFailure(OBJECT_VAL, SqlErrorCode.PARSING, signatureError(OBJECT));
     }
 
     private void checkColumn(Object value, SqlColumnType expectedType, Object expectedResult) {
@@ -112,128 +120,111 @@ public class SignFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
     public void testParameter() {
         put(0);
 
-        BigDecimal zero = BigDecimal.ZERO;
-        BigDecimal positive = BigDecimal.ONE;
-        BigDecimal negative = BigDecimal.ONE.negate();
+        long zero = 0L;
+        long positive = 1L;
+        long negative = -1L;
 
         checkParameter((byte) 0, zero);
         checkParameter((byte) 1, positive);
         checkParameter((byte) -1, negative);
         checkParameter(Byte.MAX_VALUE, positive);
         checkParameter(Byte.MIN_VALUE, negative);
-        checkParameter(Byte.toString(Byte.MAX_VALUE), positive);
-        checkParameter(Byte.toString(Byte.MIN_VALUE), negative);
 
         checkParameter((short) 0, zero);
         checkParameter((short) 1, positive);
         checkParameter((short) -1, negative);
         checkParameter(Short.MAX_VALUE, positive);
         checkParameter(Short.MIN_VALUE, negative);
-        checkParameter(Short.toString(Short.MAX_VALUE), positive);
-        checkParameter(Short.toString(Short.MIN_VALUE), negative);
 
         checkParameter(0, zero);
         checkParameter(1, positive);
         checkParameter(-1, negative);
         checkParameter(Integer.MAX_VALUE, positive);
         checkParameter(Integer.MIN_VALUE, negative);
-        checkParameter(Integer.toString(Integer.MAX_VALUE), positive);
-        checkParameter(Integer.toString(Integer.MIN_VALUE), negative);
 
         checkParameter(0L, zero);
         checkParameter(1L, positive);
         checkParameter(-1L, negative);
         checkParameter(Long.MAX_VALUE, positive);
         checkParameter(Long.MIN_VALUE, negative);
-        checkParameter(Long.toString(Long.MAX_VALUE), positive);
-        checkParameter(Long.toString(Long.MIN_VALUE), negative);
 
-        checkParameter(BigInteger.ZERO, zero);
-        checkParameter(BigInteger.ONE, positive);
-        checkParameter(BigInteger.ONE.negate(), negative);
-
-        checkParameter(BigDecimal.ZERO, zero);
-        checkParameter(BigDecimal.ONE, positive);
-        checkParameter(BigDecimal.ONE.negate(), negative);
-        checkParameter(new BigDecimal("1.1"), positive);
-        checkParameter(new BigDecimal("-1.1"), negative);
-        checkParameter("1.1", positive);
-        checkParameter("-1.1", negative);
-
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from REAL to DECIMAL", 0.0f);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DOUBLE to DECIMAL", 0.0d);
-
-        checkParameter('0', zero);
-        checkParameter('1', positive);
-
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from BOOLEAN to DECIMAL", true);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to DECIMAL", "bad");
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to DECIMAL", 'b');
-
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DATE to DECIMAL", LOCAL_DATE_VAL);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIME to DECIMAL", LOCAL_TIME_VAL);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP to DECIMAL", LOCAL_DATE_TIME_VAL);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP_WITH_TIME_ZONE to DECIMAL", OFFSET_DATE_TIME_VAL);
-
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from OBJECT to DECIMAL", new ExpressionValue.ObjectVal());
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, BIGINT, VARCHAR), "foo");
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, BIGINT, BOOLEAN), true);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, BIGINT, DECIMAL), BigInteger.ZERO);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, BIGINT, DECIMAL), BigDecimal.ZERO);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, BIGINT, REAL), 0.0f);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, BIGINT, DOUBLE), 0.0d);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, BIGINT, DATE), LOCAL_DATE_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, BIGINT, TIME), LOCAL_TIME_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, BIGINT, TIMESTAMP), LOCAL_DATE_TIME_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, BIGINT, TIMESTAMP_WITH_TIME_ZONE), OFFSET_DATE_TIME_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, BIGINT, OBJECT), OBJECT_VAL);
     }
 
     private void checkParameter(Object parameterValue, Object expectedValue) {
-        checkValue("?", SqlColumnType.DECIMAL, expectedValue, parameterValue);
+        checkValue("?", SqlColumnType.BIGINT, expectedValue, parameterValue);
     }
 
     @Test
     public void testLiteral() {
         put(0);
 
-        checkExactLiteral(0, SqlColumnType.TINYINT, (byte) 0);
-        checkExactLiteral(1, SqlColumnType.TINYINT, (byte) 1);
-        checkExactLiteral(-1, SqlColumnType.TINYINT, (byte) -1);
-        checkExactLiteral(Byte.MAX_VALUE, SqlColumnType.TINYINT, (byte) 1);
-        checkExactLiteral(Byte.MIN_VALUE, SqlColumnType.TINYINT, (byte) -1);
-        checkExactLiteral(Short.MAX_VALUE, SqlColumnType.SMALLINT, (short) 1);
-        checkExactLiteral(Short.MIN_VALUE, SqlColumnType.SMALLINT, (short) -1);
-        checkExactLiteral(Integer.MAX_VALUE, SqlColumnType.INTEGER, 1);
-        checkExactLiteral(Integer.MIN_VALUE, SqlColumnType.INTEGER, -1);
-        checkExactLiteral(Long.MAX_VALUE, SqlColumnType.BIGINT, 1L);
-        checkExactLiteral(Long.MIN_VALUE, SqlColumnType.BIGINT, -1L);
+        checkValue("null", SqlColumnType.BIGINT, null);
 
-        checkValue("null", SqlColumnType.DECIMAL, null);
-        checkExactLiteral("1.1", SqlColumnType.DECIMAL, new BigDecimal("1"));
-        checkExactLiteral("0.0", SqlColumnType.DECIMAL, new BigDecimal("0"));
-        checkExactLiteral("-1.1", SqlColumnType.DECIMAL, new BigDecimal("-1"));
+        checkValue(0, SqlColumnType.TINYINT, (byte) 0);
+        checkValue(1, SqlColumnType.TINYINT, (byte) 1);
+        checkValue(-1, SqlColumnType.TINYINT, (byte) -1);
+        checkValue(Byte.MAX_VALUE, SqlColumnType.TINYINT, (byte) 1);
+        checkValue(Byte.MIN_VALUE, SqlColumnType.TINYINT, (byte) -1);
+        checkValue(Short.MAX_VALUE, SqlColumnType.SMALLINT, (short) 1);
+        checkValue(Short.MIN_VALUE, SqlColumnType.SMALLINT, (short) -1);
+        checkValue(Integer.MAX_VALUE, SqlColumnType.INTEGER, 1);
+        checkValue(Integer.MIN_VALUE, SqlColumnType.INTEGER, -1);
+        checkValue(Long.MAX_VALUE, SqlColumnType.BIGINT, 1L);
+        checkValue(Long.MIN_VALUE, SqlColumnType.BIGINT, -1L);
 
-        checkInexactLiteral("1.1E0", SqlColumnType.DOUBLE, 1.0d);
-        checkInexactLiteral("0.0E0", SqlColumnType.DOUBLE, 0d);
-        checkInexactLiteral("-1.1E0", SqlColumnType.DOUBLE, -1.0d);
+        checkValue("1.1", SqlColumnType.DECIMAL, new BigDecimal("1"));
+        checkValue("0.0", SqlColumnType.DECIMAL, new BigDecimal("0"));
+        checkValue("-1.1", SqlColumnType.DECIMAL, new BigDecimal("-1"));
 
-        checkFailure("'a'", SqlErrorCode.PARSING, "Literal ''a'' can not be parsed to type 'DECIMAL'");
-        checkFailure("true", SqlErrorCode.PARSING, "Cannot apply 'SIGN' to arguments of type 'SIGN(<BOOLEAN>)'");
-        checkFailure("false", SqlErrorCode.PARSING, "Cannot apply 'SIGN' to arguments of type 'SIGN(<BOOLEAN>)'");
+        checkValue("1.1E0", SqlColumnType.DOUBLE, 1.0d);
+        checkValue("0.0E0", SqlColumnType.DOUBLE, 0d);
+        checkValue("-1.1E0", SqlColumnType.DOUBLE, -1.0d);
+
+        checkFailure("'\fooa'", SqlErrorCode.PARSING, signatureError(VARCHAR));
+        checkFailure("true", SqlErrorCode.PARSING, signatureError(BOOLEAN));
     }
 
-    private void checkExactLiteral(Object literal, SqlColumnType expectedType, Object expectedValue) {
-        String literalString = literal.toString();
-
-        checkValue(literalString, expectedType, expectedValue);
-        checkValue("'" + literalString + "'", SqlColumnType.DECIMAL, new BigDecimal(expectedValue.toString()));
-    }
-
-    private void checkInexactLiteral(Object literal, SqlColumnType expectedType, double expectedValue) {
-        String literalString = literal.toString();
-
-        checkValue(literalString, expectedType, expectedValue);
+    private static String signatureError(SqlColumnType type) {
+        return signatureErrorFunction("SIGN", type);
     }
 
     private void checkValue(Object operand, SqlColumnType expectedType, Object expectedValue, Object... params) {
         String sql = "SELECT SIGN(" + operand + ") FROM map";
 
-        checkValueInternal(sql, expectedType, expectedValue, params);
+        checkValue0(sql, expectedType, expectedValue, params);
     }
 
     private void checkFailure(Object operand, int expectedErrorCode, String expectedErrorMessage, Object... params) {
         String sql = "SELECT SIGN(" + operand + ") FROM map";
 
-        checkFailureInternal(sql, expectedErrorCode, expectedErrorMessage, params);
+        checkFailure0(sql, expectedErrorCode, expectedErrorMessage, params);
+    }
+
+    @Test
+    public void testEquals() {
+        SignFunction<?> function = SignFunction.create(ConstantExpression.create(1, QueryDataType.INT), QueryDataType.INT);
+
+        checkEquals(function, SignFunction.create(ConstantExpression.create(1, QueryDataType.INT), QueryDataType.INT), true);
+        checkEquals(function, SignFunction.create(ConstantExpression.create(2, QueryDataType.INT), QueryDataType.INT), false);
+        checkEquals(function, SignFunction.create(ConstantExpression.create(1, QueryDataType.BIGINT), QueryDataType.BIGINT), false);
+    }
+
+    @Test
+    public void testSerialization() {
+        SignFunction<?> original = SignFunction.create(ConstantExpression.create(1, QueryDataType.INT), QueryDataType.INT);
+        SignFunction<?> restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_SIGN);
+
+        checkEquals(original, restored, true);
     }
 }

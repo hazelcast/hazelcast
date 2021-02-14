@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -97,10 +97,10 @@ public final class DivideFunction<T> extends BiExpressionWithType<T> implements 
                 case DECIMAL:
                     return ((BigDecimal) left).divide((BigDecimal) right, DECIMAL_MATH_CONTEXT);
                 default:
-                    throw new IllegalArgumentException("unexpected result family: " + family);
+                    throw new IllegalArgumentException("Unexpected result family: " + family);
             }
         } catch (ArithmeticException e) {
-            throw QueryException.error(SqlErrorCode.DATA_EXCEPTION, "division by zero");
+            throw QueryException.error(SqlErrorCode.DATA_EXCEPTION, "Division by zero", e);
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,6 +73,9 @@ public class DynamicMapConfigTest extends HazelcastTestSupport {
 
         boolean beforeUpdate = isRecordStoreExpirable(map) && isEvictionEnabled(map);
         updateMapConfig(mapName, node);
+        // trigger recordStore expiry system, only added/updated
+        // entries after config update will be affected.
+        map.put(1, 1);
         boolean afterUpdate = isRecordStoreExpirable(map) && isEvictionEnabled(map);
 
         assertFalse("Before MapConfig update, RecordStore should not be expirable and evictable", beforeUpdate);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl;
 
 import com.hazelcast.sql.impl.operation.QueryOperation;
-import com.hazelcast.sql.impl.operation.QueryOperationChannel;
 import com.hazelcast.sql.impl.operation.QueryOperationHandler;
 
 import java.util.UUID;
@@ -38,26 +37,5 @@ public final class FaultyQueryOperationHandler implements QueryOperationHandler 
     @Override
     public void execute(QueryOperation operation) {
         // No-op.
-    }
-
-    @Override
-    public QueryOperationChannel createChannel(UUID sourceMemberId, UUID memberId) {
-        return new Channel(sourceMemberId, memberId);
-    }
-
-    private class Channel implements QueryOperationChannel {
-
-        private final UUID sourceMemberId;
-        private final UUID memberId;
-
-        private Channel(UUID sourceMemberId, UUID memberId) {
-            this.sourceMemberId = sourceMemberId;
-            this.memberId = memberId;
-        }
-
-        @Override
-        public boolean submit(QueryOperation operation) {
-            return FaultyQueryOperationHandler.this.submit(sourceMemberId, memberId, operation);
-        }
     }
 }

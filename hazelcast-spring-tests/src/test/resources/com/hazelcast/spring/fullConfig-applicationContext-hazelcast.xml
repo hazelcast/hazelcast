@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -482,6 +482,8 @@
                 <hz:eviction max-size-policy="USED_NATIVE_MEMORY_PERCENTAGE"/>
             </hz:map>
 
+            <hz:map name="map-with-per-entry-stats-enabled" per-entry-stats-enabled="true"/>
+
             <hz:map name="mapWithPartitionLostListener">
                 <hz:partition-lost-listeners>
                     <hz:partition-lost-listener class-name="DummyMapPartitionLostListenerImpl"/>
@@ -569,6 +571,7 @@
             </hz:listeners>
 
             <hz:serialization allow-unsafe="false"
+                              allow-override-default-serializers="true"
                               byte-order="BIG_ENDIAN"
                               check-class-def-errors="false"
                               enable-compression="false"
@@ -1001,7 +1004,6 @@
 
             <hz:sql>
                 <hz:executor-pool-size>10</hz:executor-pool-size>
-                <hz:operation-pool-size>20</hz:operation-pool-size>
                 <hz:statement-timeout-millis>30</hz:statement-timeout-millis>
             </hz:sql>
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,6 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 
@@ -65,9 +64,9 @@ public class HazelcastManifestTransformerTest {
 
         transformer = new HazelcastManifestTransformer();
 
-        transformer.mainClass = "com.hazelcast.core.server.HazelcastMemberStarter";
-        transformer.manifestEntries = new HashMap<String, Attributes>();
-        transformer.overrideInstructions = new HashMap<String, String>();
+        transformer.setMainClass("com.hazelcast.core.server.HazelcastMemberStarter");
+        transformer.setManifestEntries(new HashMap<String, Object>());
+        transformer.setOverrideInstructions(new HashMap<String, String>());
     }
 
     @After

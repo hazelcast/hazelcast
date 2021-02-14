@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,20 +47,19 @@ public class ExpressionMathTest {
     @Test
     public void testLongDivideExactly() {
         assertEquals(3L, ExpressionMath.divideExact(10L, 3L));
-        assertThrows(QueryException.class, () -> ExpressionMath.divideExact(10L, 0L));
+        assertThrows(ArithmeticException.class, () -> ExpressionMath.divideExact(10L, 0L));
         assertThrows(QueryException.class, () -> ExpressionMath.divideExact(Long.MIN_VALUE, -1L));
     }
 
     @Test
     public void testDoubleDivideExactly() {
         assertEquals(10.0 / 3.0, ExpressionMath.divideExact(10.0, 3.0), 0.0);
-        assertThrows(QueryException.class, () -> ExpressionMath.divideExact(10.0, 0.0));
+        assertThrows(ArithmeticException.class, () -> ExpressionMath.divideExact(10.0, 0.0));
     }
 
     @Test
     public void testFloatDivideExactly() {
         assertEquals(10.0F / 3.0F, ExpressionMath.divideExact(10.0F, 3.0F), 0.0F);
-        assertThrows(QueryException.class, () -> ExpressionMath.divideExact(10.0F, 0.0F));
+        assertThrows(ArithmeticException.class, () -> ExpressionMath.divideExact(10.0F, 0.0F));
     }
-
 }

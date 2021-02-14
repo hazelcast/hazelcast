@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,7 +62,7 @@ public class QueuePriorityWithDuplicateCheckTest extends HazelcastTestSupport {
         String mapName = randomName();
 
         config.getQueueConfig(queueName)
-              .setPriorityComparatorClassName("com.hazelcast.collection.impl.queue.model.PriorityElementComparator");
+                .setPriorityComparatorClassName("com.hazelcast.collection.impl.queue.model.PriorityElementComparator");
         HazelcastInstance hz = createHazelcastInstance(config);
         queue = new PriorityElementTaskQueueImpl(hz.getQueue(queueName), hz.getMap(mapName));
         threadPool = Executors.newCachedThreadPool();

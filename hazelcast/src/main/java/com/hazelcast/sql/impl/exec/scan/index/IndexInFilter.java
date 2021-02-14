@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,10 +30,12 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
+import java.util.NavigableMap;
+import java.util.TreeMap;
+
+import static com.hazelcast.query.impl.AbstractIndex.NULL;
 
 /**
  * Filter that is composed of several equality filters.
@@ -70,8 +72,19 @@ public class IndexInFilter implements IndexFilter, IdentifiedDataSerializable {
     }
 
     @Override
-    public Iterator<QueryableEntry> getEntries(InternalIndex index, ExpressionEvalContext evalContext) {
-        Map<Comparable, IndexFilter> canonicalFilters = new HashMap<>();
+    public Iterator<QueryableEntry> getEntries(InternalIndex index, boolean descending, ExpressionEvalContext evalContext) {
+
+        // Sort the filter Comparables, NULLs are less than any other value
+        NavigableMap<Comparable, IndexFilter> canonicalFilters = new TreeMap<>((o1, o2) -> {
+            if (o1 == NULL) {
+                return o2 == NULL ? 0 : (descending ? 1 : -1);
+            }
+
+            if (o2 == NULL) {
+                return descending ? -1 : 1;
+            }
+            return descending ? o2.compareTo(o1) : o1.compareTo(o2);
+        });
 
         for (IndexFilter filter : filters) {
             Comparable filterComparable = filter.getComparable(evalContext);
@@ -93,7 +106,8 @@ public class IndexInFilter implements IndexFilter, IdentifiedDataSerializable {
             return Collections.emptyIterator();
         }
 
-        return new LazyIterator(index, evalContext, canonicalFilters.values());
+        Collection<IndexFilter> filters = canonicalFilters.values();
+        return new LazyIterator(index, descending, evalContext, filters);
     }
 
     @Override
@@ -155,10 +169,13 @@ public class IndexInFilter implements IndexFilter, IdentifiedDataSerializable {
         private final InternalIndex index;
         private final ExpressionEvalContext evalContext;
         private final Iterator<IndexFilter> filterIterator;
+        private final boolean descending;
 
-        private LazyIterator(InternalIndex index, ExpressionEvalContext evalContext, Collection<IndexFilter> filters) {
+        private LazyIterator(InternalIndex index, boolean descending, ExpressionEvalContext evalContext,
+                             Collection<IndexFilter> filters) {
             this.index = index;
             this.evalContext = evalContext;
+            this.descending = descending;
 
             filterIterator = filters.iterator();
         }
@@ -168,7 +185,7 @@ public class IndexInFilter implements IndexFilter, IdentifiedDataSerializable {
             while (filterIterator.hasNext()) {
                 IndexFilter filter = filterIterator.next();
 
-                Iterator<QueryableEntry> iterator = filter.getEntries(index, evalContext);
+                Iterator<QueryableEntry> iterator = filter.getEntries(index, descending, evalContext);
 
                 if (iterator.hasNext()) {
                     return iterator;

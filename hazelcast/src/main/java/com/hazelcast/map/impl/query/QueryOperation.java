@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -263,7 +263,7 @@ public class QueryOperation extends AbstractNamedOperation implements ReadonlyOp
                 Result result
                         = queryRunner.runPartitionIndexOrPartitionScanQueryOnGivenOwnedPartition(query, partitionId);
                 future.addResult(partitionId, result);
-            } catch (Exception ex) {
+            } catch (Throwable ex) {
                 future.completeExceptionally(ex);
             }
         }
@@ -285,7 +285,7 @@ public class QueryOperation extends AbstractNamedOperation implements ReadonlyOp
                     Result combinedResult = queryRunner.populateEmptyResult(query, Collections.emptyList());
                     populateResult(response, combinedResult);
                     QueryOperation.this.sendResponse(combinedResult);
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     QueryOperation.this.sendResponse(e);
                     throw rethrow(e);
                 }

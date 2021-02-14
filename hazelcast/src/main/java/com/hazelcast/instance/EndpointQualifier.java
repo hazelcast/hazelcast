@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -134,6 +134,16 @@ public final class EndpointQualifier
                 + "type='" + type
                 + (!isSingleType(type) ? ("', id='" + identifier) : "")
                 + '\'' + '}';
+    }
+
+    /**
+     * @return resolved endpoint qualifier when it is passed from the user via configuration
+     */
+    public static EndpointQualifier resolveForConfig(ProtocolType protocolType, String identifier) {
+        if (ProtocolType.CLIENT.equals(protocolType)) {
+            return CLIENT;
+        }
+        return resolve(protocolType, identifier);
     }
 
     public static EndpointQualifier resolve(ProtocolType protocolType, String identifier) {
