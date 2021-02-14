@@ -1,0 +1,244 @@
+/*
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.hazelcast.map;
+
+import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.NoSuchElementException;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
+public class MapIteratorTest extends HazelcastTestSupport {
+
+    @Test(expected = NoSuchElementException.class)
+    public void test_next_Throws_Exception_On_EmptyMap() {
+        HazelcastInstance instance = createHazelcastInstance();
+        MapProxyImpl<Object, Object> proxy = (MapProxyImpl<Object, Object>) instance.getMap(randomMapName());
+
+        Iterator<Map.Entry<Object, Object>> iterator = proxy.iterator();
+        iterator.next();
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void test_remove_Throws_Exception_When_Called_Without_Next() {
+        HazelcastInstance instance = createHazelcastInstance();
+        MapProxyImpl<Object, Object> proxy = (MapProxyImpl<Object, Object>) instance.getMap(randomMapName());
+
+        Iterator<Map.Entry<Object, Object>> iterator = proxy.iterator();
+        iterator.remove();
+    }
+
+    @Test
+    public void test_Remove() {
+        HazelcastInstance instance = createHazelcastInstance();
+        MapProxyImpl<Object, Object> proxy = (MapProxyImpl<Object, Object>) instance.getMap(randomMapName());
+
+        String key = generateKeyForPartition(instance, 1);
+        String value = randomString();
+        proxy.put(key, value);
+
+        Iterator<Map.Entry<Object, Object>> iterator = proxy.iterator();
+        iterator.next();
+        iterator.remove();
+        assertEquals(0, proxy.size());
+    }
+
+    @Test
+    public void test_remove_withMultiplePartitions() {
+        HazelcastInstance instance = createHazelcastInstance();
+        String mapName = randomMapName();
+        MapProxyImpl<Object, Object> proxy = (MapProxyImpl<Object, Object>) instance.getMap(mapName);
+
+        String key = generateKeyForPartition(instance, 1);
+        String value = randomString();
+        proxy.put(key, value);
+
+        String key2 = generateKeyForPartition(instance, 2);
+        String value2 = randomString();
+        proxy.put(key2, value2);
+
+        Iterator<Map.Entry<Object, Object>> iterator = proxy.iterator();
+        iterator.next();
+        iterator.remove();
+        assertEquals(1, proxy.size());
+        iterator.next();
+        iterator.remove();
+        assertEquals(0, proxy.size());
+    }
+
+    @Test
+    public void test_HasNext_Returns_False_On_EmptyMap() {
+        HazelcastInstance instance = createHazelcastInstance();
+        MapProxyImpl<Object, Object> proxy = (MapProxyImpl<Object, Object>) instance.getMap(randomMapName());
+
+        Iterator<Map.Entry<Object, Object>> iterator = proxy.iterator();
+        assertFalse(iterator.hasNext());
+    }
+
+    @Test
+    public void test_HasNext_Returns_True_On_NonEmptyMap() {
+        HazelcastInstance instance = createHazelcastInstance();
+        MapProxyImpl<Object, Object> proxy = (MapProxyImpl<Object, Object>) instance.getMap(randomMapName());
+
+        String key = generateKeyForPartition(instance, 1);
+        String value = randomString();
+        proxy.put(key, value);
+
+        Iterator<Map.Entry<Object, Object>> iterator = proxy.iterator();
+        assertTrue(iterator.hasNext());
+    }
+
+    @Test
+    public void test_Next_Returns_Value_On_NonEmptyMap() {
+        HazelcastInstance instance = createHazelcastInstance();
+        MapProxyImpl<String, String> proxy = (MapProxyImpl<String, String>) instance.<String, String>getMap(randomMapName());
+
+        String key = generateKeyForPartition(instance, 1);
+        String value = randomString();
+        proxy.put(key, value);
+
+        Iterator<Map.Entry<String, String>> iterator = proxy.iterator();
+        Map.Entry<String, String> entry = iterator.next();
+        assertEquals(value, entry.getValue());
+    }
+
+    @Test
+    public void test_Next_Returns_Value_On_NonEmptyMap_and_HasNext_Returns_False_when_Item_Consumed() {
+        HazelcastInstance instance = createHazelcastInstance();
+        MapProxyImpl<String, String> proxy = (MapProxyImpl<String, String>) instance.<String, String>getMap(randomMapName());
+
+        String key = generateKeyForPartition(instance, 1);
+        String value = randomString();
+        proxy.put(key, value);
+
+        Iterator<Map.Entry<String, String>> iterator = proxy.iterator();
+        Map.Entry<String, String> entry = iterator.next();
+        assertEquals(value, entry.getValue());
+        boolean hasNext = iterator.hasNext();
+        assertFalse(hasNext);
+    }
+
+    @Test
+    public void test_Next_Returns_Values_When_FetchSizeExceeds_On_NonEmptyMap() {
+        HazelcastInstance instance = createHazelcastInstance();
+        MapProxyImpl<String, String> proxy = (MapProxyImpl<String, String>) instance.<String, String>getMap(randomMapName());
+
+        String value = randomString();
+        for (int i = 0; i < 100; i++) {
+            String key = generateKeyForPartition(instance, 1);
+            proxy.put(key, value);
+        }
+        Iterator<Map.Entry<String, String>> iterator = proxy.iterator();
+        for (int i = 0; i < 100; i++) {
+            Map.Entry<String, String> entry = iterator.next();
+            assertEquals(value, entry.getValue());
+        }
+    }
+
+    @Test
+    public void test_DoesNotReturn_DuplicateEntry_When_Rehashing_Happens() {
+        HazelcastInstance instance = createHazelcastInstance();
+        MapProxyImpl<String, String> proxy = (MapProxyImpl<String, String>) instance.<String, String>getMap(randomMapName());
+        HashSet<String> readKeys = new HashSet<>();
+
+        String value = "initialValue";
+        putValuesToPartition(instance, proxy, value, 1, 100);
+        Iterator<Map.Entry<String, String>> iterator = proxy.iterator();
+        assertUniques(readKeys, iterator, 50);
+        // force rehashing
+        putValuesToPartition(instance, proxy, randomString(), 1, 150);
+        assertUniques(readKeys, iterator);
+    }
+
+    @Test
+    public void test_DoesNotReturn_DuplicateEntry_When_Migration_Happens() {
+        Config config = getConfig();
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "2");
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
+        MapProxyImpl<String, String> proxy = (MapProxyImpl<String, String>) instance.<String, String>getMap(randomMapName());
+
+        HashSet<String> readKeysP1 = new HashSet<>();
+        HashSet<String> readKeysP2 = new HashSet<>();
+
+        String value = "value";
+        putValuesToPartition(instance, proxy, value, 0, 100);
+        putValuesToPartition(instance, proxy, value, 1, 100);
+
+        Iterator<Map.Entry<String, String>> iteratorP1 = proxy.iterator();
+        Iterator<Map.Entry<String, String>> iteratorP2 = proxy.iterator();
+        assertUniques(readKeysP1, iteratorP1, 50);
+        assertUniques(readKeysP2, iteratorP2, 50);
+        // force migration
+        factory.newHazelcastInstance(config);
+        // force rehashing
+        putValuesToPartition(instance, proxy, randomString(), 0, 150);
+        putValuesToPartition(instance, proxy, randomString(), 1, 150);
+        assertUniques(readKeysP1, iteratorP1);
+        assertUniques(readKeysP2, iteratorP2);
+    }
+
+    private void assertUniques(HashSet<String> readKeys, Iterator<Map.Entry<String, String>> iterator) {
+        while (iterator.hasNext()) {
+            Map.Entry<String, String> entry = iterator.next();
+            boolean unique = readKeys.add(entry.getKey());
+            assertTrue(unique);
+        }
+    }
+
+    private void assertUniques(HashSet<String> readKeys,
+                               Iterator<Map.Entry<String, String>> iterator,
+                               int numberOfItemsToRead) {
+        int count = 0;
+        while (iterator.hasNext() && count++ < numberOfItemsToRead) {
+            Map.Entry<String, String> entry = iterator.next();
+            boolean unique = readKeys.add(entry.getKey());
+            assertTrue(unique);
+        }
+    }
+
+    private void putValuesToPartition(HazelcastInstance instance, MapProxyImpl<String, String> proxy, String value,
+                                      int partitionId, int count) {
+        for (int i = 0; i < count; i++) {
+            String key = generateKeyForPartition(instance, partitionId);
+            proxy.put(key, value);
+        }
+    }
+}
