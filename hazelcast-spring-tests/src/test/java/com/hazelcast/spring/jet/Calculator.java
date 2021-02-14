@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.spring;
+package com.hazelcast.spring.jet;
 
 public interface Calculator {
 

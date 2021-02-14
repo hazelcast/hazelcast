@@ -26,8 +26,8 @@ public class JetNamespaceHandler extends NamespaceHandlerSupport {
 
     @Override
     public void init() {
-        registerBeanDefinitionParser("instance", new JetInstanceBeanDefinitionParser());
-        registerBeanDefinitionParser("client", new JetClientBeanDefinitionParser());
+//        registerBeanDefinitionParser("instance", new JetInstanceBeanDefinitionParser());
+//        registerBeanDefinitionParser("client", new JetClientBeanDefinitionParser());
         registerBeanDefinitionParser("hazelcast", new JetHazelcastBeanDefinitionParser());
         registerBeanDefinitionParser("map", new HazelcastTypeBeanDefinitionParser("map"));
         registerBeanDefinitionParser("list", new HazelcastTypeBeanDefinitionParser("list"));

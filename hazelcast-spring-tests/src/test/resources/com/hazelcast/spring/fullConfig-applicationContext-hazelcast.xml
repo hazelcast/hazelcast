@@ -1008,6 +1008,21 @@
                 <hz:statement-timeout-millis>30</hz:statement-timeout-millis>
             </hz:sql>
 
+            <hz:jet>
+                <hz:instance>
+                    <hz:cooperative-thread-count>4</hz:cooperative-thread-count>
+                    <hz:backup-count>2</hz:backup-count>
+                    <hz:flow-control-period>200</hz:flow-control-period>
+                    <hz:scale-up-delay-millis>20000</hz:scale-up-delay-millis>
+                    <hz:lossless-restart-enabled>false</hz:lossless-restart-enabled>
+                </hz:instance>
+                <hz:edge-defaults>
+                    <hz:queue-size>2048</hz:queue-size>
+                    <hz:packet-size-limit>15000</hz:packet-size-limit>
+                    <hz:receive-window-multiplier>4</hz:receive-window-multiplier>
+                </hz:edge-defaults>
+            </hz:jet>
+
             <hz:auditlog enabled="false" factory-class-name="com.acme.AuditlogToSyslogFactory">
                 <hz:properties>
                     <hz:property name="host">syslogserver.acme.com</hz:property>
@@ -1042,6 +1057,7 @@
     <hz:ringbuffer id="testRingbuffer" instance-ref="instance" name="testRingbuffer"/>
     <hz:reliableTopic id="testReliableTopic" instance-ref="instance" name="testReliableTopic"/>
     <hz:PNCounter id="pnCounter" instance-ref="instance" name="pnCounter"/>
+    <hz:jet id="jetInstance" instance-ref="instance"/>
 
     <bean id="dummyMapStore" class="com.hazelcast.spring.DummyStore"/>
     <bean id="dummyMapStoreFactory" class="com.hazelcast.spring.DummyStoreFactory"/>

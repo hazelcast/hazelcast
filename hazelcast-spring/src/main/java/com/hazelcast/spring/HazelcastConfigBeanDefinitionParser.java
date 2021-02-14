@@ -141,6 +141,9 @@ import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.internal.util.StringUtil;
+import com.hazelcast.jet.config.EdgeConfig;
+import com.hazelcast.jet.config.InstanceConfig;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import java.io.File;
 import java.util.ArrayList;
@@ -338,6 +341,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         handleSql(node);
                     } else if ("auditlog".equals(nodeName)) {
                         handleAuditlog(node);
+                    } else if ("jet".equals(nodeName)) {
+                        handleJet(node);
                     }
                 }
             }
@@ -2113,6 +2118,25 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 }
             }
             configBuilder.addPropertyValue("auditlogConfig", builder.getBeanDefinition());
+        }
+
+        private void handleJet(Node node) {
+            BeanDefinitionBuilder jetConfigBuilder = createBeanBuilder(JetConfig.class);
+            for (Node child : childElements(node)) {
+                String nodeName = cleanNodeName(child);
+                if ("instance".equals(nodeName)) {
+                    BeanDefinitionBuilder instanceConfigBuilder = createBeanBuilder(InstanceConfig.class);
+                    fillValues(child, instanceConfigBuilder);
+                    jetConfigBuilder.addPropertyValue("instanceConfig",
+                            instanceConfigBuilder.getBeanDefinition());
+                } else if ("edge-defaults".equals(nodeName)) {
+                    BeanDefinitionBuilder edgeConfigBuilder = createBeanBuilder(EdgeConfig.class);
+                    fillValues(child, edgeConfigBuilder);
+                    jetConfigBuilder.addPropertyValue("defaultEdgeConfig",
+                            edgeConfigBuilder.getBeanDefinition());
+                }
+            }
+            configBuilder.addPropertyValue("jetConfig", jetConfigBuilder.getBeanDefinition());
         }
     }
 }

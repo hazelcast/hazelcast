@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.spring;
+package com.hazelcast.spring.jet;
 
-import com.hazelcast.jet.Jet;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.test.SimpleEvent;
 import com.hazelcast.jet.pipeline.test.TestSources;
+import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -33,7 +34,7 @@ import java.util.concurrent.CompletionException;
 
 import static com.hazelcast.jet.pipeline.test.AssertionSinks.assertAnyOrder;
 import static com.hazelcast.jet.pipeline.test.AssertionSinks.assertCollectedEventually;
-import static com.hazelcast.jet.spring.JetSpringServiceFactories.bean;
+import static com.hazelcast.spring.jet.JetSpringServiceFactories.bean;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -41,16 +42,16 @@ import static org.junit.Assert.fail;
 
 
 @RunWith(CustomSpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = {"application-context-service.xml"})
+@ContextConfiguration(locations = {"application-context-jet-service.xml"})
 public class SpringServiceFactoriesTest {
 
-    @Resource(name = "jet-instance")
+    @Resource(name = "jet")
     private JetInstance jetInstance;
 
     @BeforeClass
     @AfterClass
     public static void start() {
-        Jet.shutdownAll();
+        Hazelcast.shutdownAll();
     }
 
     @Test

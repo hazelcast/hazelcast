@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.spring;
+package com.hazelcast.spring.jet;
 
 import com.hazelcast.jet.pipeline.ServiceFactory;
 import com.hazelcast.spring.context.SpringAware;
