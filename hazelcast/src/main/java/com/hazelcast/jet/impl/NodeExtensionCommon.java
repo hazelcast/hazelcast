@@ -17,13 +17,17 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.instance.JetBuildInfo;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.impl.operation.PrepareForPassiveClusterOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.sql.impl.JetSqlCoreBackend;
 
 import javax.annotation.Nonnull;
@@ -32,6 +36,10 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.cluster.ClusterState.PASSIVE;
+import static com.hazelcast.jet.core.JetProperties.JOB_RESULTS_TTL_SECONDS;
+import static com.hazelcast.jet.impl.JobRepository.INTERNAL_JET_OBJECTS_PREFIX;
+import static com.hazelcast.jet.impl.JobRepository.JOB_METRICS_MAP_NAME;
+import static com.hazelcast.jet.impl.JobRepository.JOB_RESULTS_MAP_NAME;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
 class NodeExtensionCommon {
@@ -52,6 +60,37 @@ class NodeExtensionCommon {
         this.node = node;
         this.logger = node.getLogger(getClass().getName());
         this.jetService = new JetService(node);
+    }
+
+    void beforeStart() {
+        Config config = node.config.getStaticConfig();
+        JetConfig jetConfig = config.getJetConfig();
+
+        MapConfig internalMapConfig = new MapConfig(INTERNAL_JET_OBJECTS_PREFIX + '*')
+                .setBackupCount(jetConfig.getInstanceConfig().getBackupCount())
+                // we query creationTime of resources maps
+                .setStatisticsEnabled(true);
+
+        internalMapConfig.getMergePolicyConfig().setPolicy(DiscardMergePolicy.class.getName());
+
+        MapConfig resultsMapConfig = new MapConfig(internalMapConfig)
+                .setName(JOB_RESULTS_MAP_NAME)
+                .setTimeToLiveSeconds(node.getProperties().getSeconds(JOB_RESULTS_TTL_SECONDS));
+
+        MapConfig metricsMapConfig = new MapConfig(internalMapConfig)
+                .setName(JOB_METRICS_MAP_NAME)
+                .setTimeToLiveSeconds(node.getProperties().getSeconds(JOB_RESULTS_TTL_SECONDS));
+
+        config.addMapConfig(internalMapConfig)
+                .addMapConfig(resultsMapConfig)
+                .addMapConfig(metricsMapConfig);
+        // TODO we should move this to enterprise node extension
+        if (jetConfig.getInstanceConfig().isLosslessRestartEnabled() &&
+                !config.getHotRestartPersistenceConfig().isEnabled()) {
+            logger.warning("Lossless Restart is enabled but Hot Restart is disabled. Auto-enabling Hot Restart. " +
+                    "The following path will be used: " + config.getHotRestartPersistenceConfig().getBaseDir());
+            config.getHotRestartPersistenceConfig().setEnabled(true);
+        }
     }
 
     void afterStart() {

@@ -41,6 +41,7 @@ public class JetNodeExtension extends DefaultNodeExtension implements JetPacketC
             throw new UnsupportedOperationException("Lossless Restart is not available in the open-source version of " +
                     "Hazelcast Jet");
         }
+        extCommon.beforeStart();
         super.beforeStart();
     }
 
