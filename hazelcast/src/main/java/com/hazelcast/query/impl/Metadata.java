@@ -16,6 +16,8 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.nio.serialization.DataSerializable;
+
 import java.io.Serializable;
 
 /**
@@ -34,12 +36,10 @@ public class Metadata implements AbstractMetadata {
     }
 
     public void setKeyMetadata(Object metadata) {
-        assert metadata == null || metadata instanceof Serializable;
         this.keyMeta = metadata;
     }
 
     public void setValueMetadata(Object metadata) {
-        assert metadata == null || metadata instanceof Serializable;
         this.valueMeta = metadata;
     }
 
