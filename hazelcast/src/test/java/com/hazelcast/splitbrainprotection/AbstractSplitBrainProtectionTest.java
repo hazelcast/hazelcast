@@ -40,6 +40,8 @@ import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.map.IMap;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.replicatedmap.ReplicatedMap;
@@ -47,6 +49,7 @@ import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.TestLoggingUtils;
 
 import static com.hazelcast.splitbrainprotection.PartitionedCluster.SPLIT_BRAIN_PROTECTION_ID;
 import static com.hazelcast.splitbrainprotection.SplitBrainProtectionOn.READ;
@@ -80,9 +83,18 @@ public abstract class AbstractSplitBrainProtectionTest extends HazelcastTestSupp
     protected static final String SCHEDULED_EXEC_NAME = "splitBrainProtection-scheduled-exec-" + randomString();
     protected static final String SET_NAME = "splitBrainProtection-set-" + randomString();
     protected static final String PN_COUNTER_NAME = "splitBrainProtection-pn-counter-" + randomString();
+    private static final ILogger LOGGER;
 
     protected static PartitionedCluster cluster;
     protected static TestHazelcastInstanceFactory factory;
+
+    // Initializes logging. Normally doing this once should be fine. But for some reason
+    // Java can't get the system property properly. So I initialize here second time aside
+    // from AbstractHazelcastClassRunner#initialize()
+    static {
+        TestLoggingUtils.initializeLogging();
+        LOGGER = Logger.getLogger(AbstractSplitBrainProtectionTest.class);
+    }
 
     protected static void initTestEnvironment(Config config,
                                               TestHazelcastInstanceFactory factory) {
@@ -99,14 +111,16 @@ public abstract class AbstractSplitBrainProtectionTest extends HazelcastTestSupp
         cluster = null;
     }
 
-    protected static CacheSimpleConfig newCacheConfig(SplitBrainProtectionOn splitBrainProtectionOn, String splitBrainProtectionName) {
+    protected static CacheSimpleConfig newCacheConfig(SplitBrainProtectionOn splitBrainProtectionOn,
+                                                      String splitBrainProtectionName) {
         CacheSimpleConfig config = new CacheSimpleConfig();
         config.setName(CACHE_NAME + splitBrainProtectionOn.name());
         config.setSplitBrainProtectionName(splitBrainProtectionName);
         return config;
     }
 
-    protected static CardinalityEstimatorConfig newEstimatorConfig(SplitBrainProtectionOn splitBrainProtectionOn, String splitBrainProtectionName) {
+    protected static CardinalityEstimatorConfig newEstimatorConfig(SplitBrainProtectionOn splitBrainProtectionOn,
+                                                                   String splitBrainProtectionName) {
         CardinalityEstimatorConfig config = new CardinalityEstimatorConfig(ESTIMATOR_NAME + splitBrainProtectionOn.name());
         config.setSplitBrainProtectionName(splitBrainProtectionName);
         return config;
@@ -138,7 +152,8 @@ public abstract class AbstractSplitBrainProtectionTest extends HazelcastTestSupp
         return config;
     }
 
-    protected static MultiMapConfig newMultiMapConfig(SplitBrainProtectionOn splitBrainProtectionOn, String splitBrainProtectionName) {
+    protected static MultiMapConfig newMultiMapConfig(SplitBrainProtectionOn splitBrainProtectionOn,
+                                                      String splitBrainProtectionName) {
         MultiMapConfig config = new MultiMapConfig(MULTI_MAP_NAME + splitBrainProtectionOn.name());
         config.setSplitBrainProtectionName(splitBrainProtectionName);
         return config;
@@ -168,7 +183,8 @@ public abstract class AbstractSplitBrainProtectionTest extends HazelcastTestSupp
 
     protected static ScheduledExecutorConfig newScheduledExecConfig(SplitBrainProtectionOn splitBrainProtectionOn,
                                                                     String splitBrainProtectionName, String postfix) {
-        ScheduledExecutorConfig config = new ScheduledExecutorConfig(SCHEDULED_EXEC_NAME + splitBrainProtectionOn.name() + postfix);
+        ScheduledExecutorConfig config =
+                new ScheduledExecutorConfig(SCHEDULED_EXEC_NAME + splitBrainProtectionOn.name() + postfix);
         config.setSplitBrainProtectionName(splitBrainProtectionName);
         return config;
     }
@@ -179,7 +195,8 @@ public abstract class AbstractSplitBrainProtectionTest extends HazelcastTestSupp
         return config;
     }
 
-    protected static PNCounterConfig newPNCounterConfig(SplitBrainProtectionOn splitBrainProtectionOn, String splitBrainProtectionName) {
+    protected static PNCounterConfig newPNCounterConfig(SplitBrainProtectionOn splitBrainProtectionOn,
+                                                        String splitBrainProtectionName) {
         PNCounterConfig config = new PNCounterConfig(PN_COUNTER_NAME + splitBrainProtectionOn.name());
         config.setSplitBrainProtectionName(splitBrainProtectionName);
         return config;
@@ -216,15 +233,37 @@ public abstract class AbstractSplitBrainProtectionTest extends HazelcastTestSupp
             for (String postfix : asList("", "shutdown", "shutdownNow")) {
                 config.addDurableExecutorConfig(newDurableExecConfig(splitBrainProtectionOn, splitBrainProtectionName, postfix));
                 config.addExecutorConfig(newExecConfig(splitBrainProtectionOn, splitBrainProtectionName, postfix));
-                config.addScheduledExecutorConfig(newScheduledExecConfig(splitBrainProtectionOn, splitBrainProtectionName, postfix));
+                config.addScheduledExecutorConfig(
+                        newScheduledExecConfig(splitBrainProtectionOn, splitBrainProtectionName, postfix));
             }
             config.addSetConfig(newSetConfig(splitBrainProtectionOn, splitBrainProtectionName));
             config.addPNCounterConfig(newPNCounterConfig(splitBrainProtectionOn, splitBrainProtectionName));
         }
-
         cluster.createFiveMemberCluster(config);
+        for (SplitBrainProtectionOn splitBrainProtectionOn : types) {
+            LOGGER.info("Queue size before data initialization for "
+                    + splitBrainProtectionOn
+                    + " is: "
+                    + cluster.instance[0].getQueue(QUEUE_NAME + splitBrainProtectionOn.name()).size());
+        }
         initData(types);
+        for (SplitBrainProtectionOn splitBrainProtectionOn : types) {
+            LOGGER.info("Queue size after data initialization for "
+                    + splitBrainProtectionOn
+                    + " is: "
+                    + cluster.instance[0].getQueue(QUEUE_NAME + splitBrainProtectionOn.name()).size());
+        }
         cluster.splitFiveMembersThreeAndTwo(splitBrainProtectionNames);
+        for (SplitBrainProtectionOn splitBrainProtectionOn : types) {
+            for (int k = 0; k < 3; k++) {
+                LOGGER.info("Queue size after data initialization for instance "
+                        + k
+                        + " for type "
+                        + splitBrainProtectionOn
+                        + " is: "
+                        + cluster.instance[k].getQueue(QUEUE_NAME + splitBrainProtectionOn.name()).size());
+            }
+        }
     }
 
     private static void initData(SplitBrainProtectionOn[] types) {
