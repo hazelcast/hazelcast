@@ -169,6 +169,15 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testMapStoreInitialModeEager();
 
     @Test
+    public abstract void testMapStoreEnabled();
+
+    @Test
+    public abstract void testMapStoreEnabledIfNotDisabled();
+
+    @Test
+    public abstract void testMapStoreDisabled();
+
+    @Test
     public abstract void testMapStoreWriteBatchSize();
 
     @Test
