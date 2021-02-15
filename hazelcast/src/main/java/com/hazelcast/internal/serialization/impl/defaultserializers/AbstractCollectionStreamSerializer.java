@@ -40,10 +40,15 @@ abstract class AbstractCollectionStreamSerializer<CollectionType extends Collect
 
     CollectionType deserializeEntries(ObjectDataInput in, int size, CollectionType collection)
             throws IOException {
+        deserializeEntriesInto(in, size, collection);
+        return collection;
+    }
+
+    void deserializeEntriesInto(ObjectDataInput in, int size, Collection<?> collection)
+            throws IOException {
         for (int i = 0; i < size; i++) {
             collection.add(in.readObject());
         }
-        return collection;
     }
 
     @Override
