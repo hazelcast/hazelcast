@@ -30,6 +30,7 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.sql.impl.ResultIterator.HasNextResult.DONE;
 import static com.hazelcast.sql.impl.ResultIterator.HasNextResult.TIMEOUT;
 import static com.hazelcast.sql.impl.ResultIterator.HasNextResult.YES;
@@ -139,7 +140,7 @@ public class JetQueryResultProducer implements QueryResultProducer {
                     // finish the rows first
                     return rows.isEmpty();
                 }
-                throw new RuntimeException("The Jet SQL job failed: " + exception.getMessage(), exception);
+                throw sneakyThrow(exception);
             }
             return false;
         }
