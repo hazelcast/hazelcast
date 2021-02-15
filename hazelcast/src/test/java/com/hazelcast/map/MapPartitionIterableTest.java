@@ -20,7 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -28,7 +28,11 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -38,16 +42,25 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class MapIteratorTest extends HazelcastTestSupport {
+public class MapPartitionIterableTest extends HazelcastTestSupport {
+
+    @Parameter
+    public boolean prefetchValues;
+
+    @Parameters(name = "prefetchValues:{0}")
+    public static Iterable<Object[]> parameters() {
+        return Arrays.asList(new Object[]{Boolean.TRUE}, new Object[]{Boolean.FALSE});
+    }
 
     @Test(expected = NoSuchElementException.class)
-    public void test_next_Throws_Exception_On_EmptyMap() {
+    public void test_next_Throws_Exception_On_EmptyPartition() {
         HazelcastInstance instance = createHazelcastInstance();
         MapProxyImpl<Object, Object> proxy = (MapProxyImpl<Object, Object>) instance.getMap(randomMapName());
 
-        Iterator<Map.Entry<Object, Object>> iterator = proxy.iterator();
+        Iterator<Map.Entry<Object, Object>> iterator = proxy.iterable(10, 1, prefetchValues).iterator();
         iterator.next();
     }
 
@@ -56,7 +69,7 @@ public class MapIteratorTest extends HazelcastTestSupport {
         HazelcastInstance instance = createHazelcastInstance();
         MapProxyImpl<Object, Object> proxy = (MapProxyImpl<Object, Object>) instance.getMap(randomMapName());
 
-        Iterator<Map.Entry<Object, Object>> iterator = proxy.iterator();
+        Iterator<Map.Entry<Object, Object>> iterator = proxy.iterable(10, 1, prefetchValues).iterator();
         iterator.remove();
     }
 
@@ -69,46 +82,23 @@ public class MapIteratorTest extends HazelcastTestSupport {
         String value = randomString();
         proxy.put(key, value);
 
-        Iterator<Map.Entry<Object, Object>> iterator = proxy.iterator();
+        Iterator<Map.Entry<Object, Object>> iterator = proxy.iterable(10, 1, prefetchValues).iterator();
         iterator.next();
         iterator.remove();
         assertEquals(0, proxy.size());
     }
 
     @Test
-    public void test_remove_withMultiplePartitions() {
-        HazelcastInstance instance = createHazelcastInstance();
-        String mapName = randomMapName();
-        MapProxyImpl<Object, Object> proxy = (MapProxyImpl<Object, Object>) instance.getMap(mapName);
-
-        String key = generateKeyForPartition(instance, 1);
-        String value = randomString();
-        proxy.put(key, value);
-
-        String key2 = generateKeyForPartition(instance, 2);
-        String value2 = randomString();
-        proxy.put(key2, value2);
-
-        Iterator<Map.Entry<Object, Object>> iterator = proxy.iterator();
-        iterator.next();
-        iterator.remove();
-        assertEquals(1, proxy.size());
-        iterator.next();
-        iterator.remove();
-        assertEquals(0, proxy.size());
-    }
-
-    @Test
-    public void test_HasNext_Returns_False_On_EmptyMap() {
+    public void test_HasNext_Returns_False_On_EmptyPartition() {
         HazelcastInstance instance = createHazelcastInstance();
         MapProxyImpl<Object, Object> proxy = (MapProxyImpl<Object, Object>) instance.getMap(randomMapName());
 
-        Iterator<Map.Entry<Object, Object>> iterator = proxy.iterator();
+        Iterator<Map.Entry<Object, Object>> iterator = proxy.iterable(10, 1, prefetchValues).iterator();
         assertFalse(iterator.hasNext());
     }
 
     @Test
-    public void test_HasNext_Returns_True_On_NonEmptyMap() {
+    public void test_HasNext_Returns_True_On_NonEmptyPartition() {
         HazelcastInstance instance = createHazelcastInstance();
         MapProxyImpl<Object, Object> proxy = (MapProxyImpl<Object, Object>) instance.getMap(randomMapName());
 
@@ -116,12 +106,12 @@ public class MapIteratorTest extends HazelcastTestSupport {
         String value = randomString();
         proxy.put(key, value);
 
-        Iterator<Map.Entry<Object, Object>> iterator = proxy.iterator();
+        Iterator<Map.Entry<Object, Object>> iterator = proxy.iterable(10, 1, prefetchValues).iterator();
         assertTrue(iterator.hasNext());
     }
 
     @Test
-    public void test_Next_Returns_Value_On_NonEmptyMap() {
+    public void test_Next_Returns_Value_On_NonEmptyPartition() {
         HazelcastInstance instance = createHazelcastInstance();
         MapProxyImpl<String, String> proxy = (MapProxyImpl<String, String>) instance.<String, String>getMap(randomMapName());
 
@@ -129,13 +119,13 @@ public class MapIteratorTest extends HazelcastTestSupport {
         String value = randomString();
         proxy.put(key, value);
 
-        Iterator<Map.Entry<String, String>> iterator = proxy.iterator();
+        Iterator<Map.Entry<String, String>> iterator = proxy.iterable(10, 1, prefetchValues).iterator();
         Map.Entry<String, String> entry = iterator.next();
         assertEquals(value, entry.getValue());
     }
 
     @Test
-    public void test_Next_Returns_Value_On_NonEmptyMap_and_HasNext_Returns_False_when_Item_Consumed() {
+    public void test_Next_Returns_Value_On_NonEmptyPartition_and_HasNext_Returns_False_when_Item_Consumed() {
         HazelcastInstance instance = createHazelcastInstance();
         MapProxyImpl<String, String> proxy = (MapProxyImpl<String, String>) instance.<String, String>getMap(randomMapName());
 
@@ -143,7 +133,7 @@ public class MapIteratorTest extends HazelcastTestSupport {
         String value = randomString();
         proxy.put(key, value);
 
-        Iterator<Map.Entry<String, String>> iterator = proxy.iterator();
+        Iterator<Map.Entry<String, String>> iterator = proxy.iterable(10, 1, prefetchValues).iterator();
         Map.Entry<String, String> entry = iterator.next();
         assertEquals(value, entry.getValue());
         boolean hasNext = iterator.hasNext();
@@ -151,7 +141,7 @@ public class MapIteratorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_Next_Returns_Values_When_FetchSizeExceeds_On_NonEmptyMap() {
+    public void test_Next_Returns_Values_When_FetchSizeExceeds_On_NonEmptyPartition() {
         HazelcastInstance instance = createHazelcastInstance();
         MapProxyImpl<String, String> proxy = (MapProxyImpl<String, String>) instance.<String, String>getMap(randomMapName());
 
@@ -160,7 +150,7 @@ public class MapIteratorTest extends HazelcastTestSupport {
             String key = generateKeyForPartition(instance, 1);
             proxy.put(key, value);
         }
-        Iterator<Map.Entry<String, String>> iterator = proxy.iterator();
+        Iterator<Map.Entry<String, String>> iterator = proxy.iterable(10, 1, prefetchValues).iterator();
         for (int i = 0; i < 100; i++) {
             Map.Entry<String, String> entry = iterator.next();
             assertEquals(value, entry.getValue());
@@ -175,7 +165,7 @@ public class MapIteratorTest extends HazelcastTestSupport {
 
         String value = "initialValue";
         putValuesToPartition(instance, proxy, value, 1, 100);
-        Iterator<Map.Entry<String, String>> iterator = proxy.iterator();
+        Iterator<Map.Entry<String, String>> iterator = proxy.iterable(10, 1, prefetchValues).iterator();
         assertUniques(readKeys, iterator, 50);
         // force rehashing
         putValuesToPartition(instance, proxy, randomString(), 1, 150);
@@ -197,8 +187,8 @@ public class MapIteratorTest extends HazelcastTestSupport {
         putValuesToPartition(instance, proxy, value, 0, 100);
         putValuesToPartition(instance, proxy, value, 1, 100);
 
-        Iterator<Map.Entry<String, String>> iteratorP1 = proxy.iterator();
-        Iterator<Map.Entry<String, String>> iteratorP2 = proxy.iterator();
+        Iterator<Map.Entry<String, String>> iteratorP1 = proxy.iterable(10, 0, prefetchValues).iterator();
+        Iterator<Map.Entry<String, String>> iteratorP2 = proxy.iterable(10, 1, prefetchValues).iterator();
         assertUniques(readKeysP1, iteratorP1, 50);
         assertUniques(readKeysP2, iteratorP2, 50);
         // force migration
