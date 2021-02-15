@@ -634,6 +634,15 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test(expected = InvalidConfigurationException.class)
+    public void shouldHandleRestApiConfigInvalidEntry() throws Exception {
+        Config config = new Config();
+
+        withEnvironmentVariable("HZ_NETWORK_RESTAPI_ENABLED", "true")
+          .and("HZ_NETWORK_RESTAPI_ENDPOINTGROUPS_FOO_ENABLED", "true")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
     public void shouldDisallowConflictingEntries() throws Exception {
         withEnvironmentVariable("HZ_CLUSTERNAME", "test")
           .execute(

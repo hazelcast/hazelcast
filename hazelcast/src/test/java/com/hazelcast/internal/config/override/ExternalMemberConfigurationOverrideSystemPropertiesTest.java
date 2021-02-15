@@ -17,6 +17,7 @@
 package com.hazelcast.internal.config.override;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -63,6 +64,17 @@ public class ExternalMemberConfigurationOverrideSystemPropertiesTest extends Haz
           },
           entry("hz.network.rest-api.enabled", "true"),
           entry("hz.network.rest-api.endpoint-groups.DATA.enabled", "true"),
+          entry("hz.network.rest-api.endpoint-groups.hot_restart.enabled", "true"));
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void shouldHandleRestApiConfigFromSysPropertiesInvalidEntry() {
+        runWithSystemProperties(() -> {
+              Config config = new Config();
+              new ExternalConfigurationOverride().overwriteMemberConfig(config);
+          },
+          entry("hz.network.rest-api.enabled", "true"),
+          entry("hz.network.rest-api.endpoint-groups.fooo.enabled", "true"),
           entry("hz.network.rest-api.endpoint-groups.HOT_RESTART.enabled", "true"));
     }
 }
