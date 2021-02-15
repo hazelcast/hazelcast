@@ -95,6 +95,10 @@ public class PartitionReplicaStateChecker {
             return MIGRATION_LOCAL;
         }
 
+        if (partitionStateManager.hasMigratingPartitions()) {
+            return MIGRATION_LOCAL;
+        }
+
         if (!partitionService.isLocalMemberMaster() && hasOnGoingMigrationMaster(Level.OFF)) {
             return MIGRATION_ON_MASTER;
         }
