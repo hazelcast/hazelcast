@@ -26,9 +26,12 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
+import static com.hazelcast.config.RestEndpointGroup.DATA;
+import static com.hazelcast.config.RestEndpointGroup.HOT_RESTART;
 import static com.hazelcast.internal.config.override.ExternalConfigTestUtils.runWithSystemProperty;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -68,5 +71,28 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
                   new ExternalConfigurationOverride().overwriteMemberConfig(config);
               })
           );
+    }
+
+    @Test
+    public void shouldHandleRestApiConfig() throws Exception {
+        Config config = new Config();
+
+        withEnvironmentVariable("HZ_NETWORK_RESTAPI_ENABLED", "true")
+          .and("HZ_NETWORK_RESTAPI_ENDPOINTGROUPS_DATA_ENABLED", "true")
+          .and("HZ_NETWORK_RESTAPI_ENDPOINTGROUPS_HOTRESTART_ENABLED", "true")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertTrue(config.getNetworkConfig().getRestApiConfig().isEnabled());
+        assertTrue(config.getNetworkConfig().getRestApiConfig().getEnabledGroups().contains(DATA));
+        assertTrue(config.getNetworkConfig().getRestApiConfig().getEnabledGroups().contains(HOT_RESTART));
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void shouldHandleRestApiConfigInvalidEntry() throws Exception {
+        Config config = new Config();
+
+        withEnvironmentVariable("HZ_NETWORK_RESTAPI_ENABLED", "true")
+          .and("HZ_NETWORK_RESTAPI_ENDPOINTGROUPS_FOO_ENABLED", "true")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
     }
 }
