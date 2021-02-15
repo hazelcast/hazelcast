@@ -62,4 +62,9 @@ public interface AbstractMetadataStore {
      * Clears the store removing all key/metadata pairs.
      */
     void clear();
+
+    /**
+     * Destroys the data structures associated with the store.
+     */
+    void destroy();
 }
