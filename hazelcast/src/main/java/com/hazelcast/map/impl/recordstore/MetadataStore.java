@@ -91,4 +91,9 @@ public class MetadataStore implements AbstractMetadataStore {
     public void clear() {
         store.clear();
     }
+
+    @Override
+    public void destroy() {
+        // no-op
+    }
 }

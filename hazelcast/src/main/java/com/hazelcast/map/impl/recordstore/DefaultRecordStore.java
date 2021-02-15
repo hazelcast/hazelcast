@@ -1405,6 +1405,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     private void destroyStorageImmediate(boolean isDuringShutdown, boolean internal) {
         mutationObserver.onDestroy(isDuringShutdown, internal);
         expirySystem.destroy();
+        getMetadataStore().destroy();
         // Destroy storage in the end
         storage.destroy(isDuringShutdown);
     }
