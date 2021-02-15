@@ -16,10 +16,6 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.nio.serialization.DataSerializable;
-
-import java.io.Serializable;
-
 /**
  * Keeps generic metadata for a key value pair. The type of kept metadata
  * is object. It is up to the user of this class to determine the type of
