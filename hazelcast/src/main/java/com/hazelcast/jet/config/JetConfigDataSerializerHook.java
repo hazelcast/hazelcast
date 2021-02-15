@@ -37,7 +37,17 @@ public final class JetConfigDataSerializerHook implements DataSerializerHook {
      */
     public static final int JOB_CONFIG = 0;
 
-    public static final int FACTORY_ID = FactoryIdHelper.getFactoryId(JET_CONFIG_DS_FACTORY, JET_CONFIG_DS_FACTORY_ID);
+    /**
+     * Serialization ID of the {@link EdgeConfig} class.
+     */
+    public static final int EDGE_CONFIG = 1;
+
+    /**
+     * Serialization ID of the {@link ResourceConfig} class.
+     */
+    public static final int RESOURCE_CONFIG = 2;
+
+    static final int FACTORY_ID = FactoryIdHelper.getFactoryId(JET_CONFIG_DS_FACTORY, JET_CONFIG_DS_FACTORY_ID);
 
     @Override
     public int getFactoryId() {
@@ -55,6 +65,10 @@ public final class JetConfigDataSerializerHook implements DataSerializerHook {
             switch (typeId) {
                 case JOB_CONFIG:
                     return new JobConfig();
+                case EDGE_CONFIG:
+                    return new EdgeConfig();
+                case RESOURCE_CONFIG:
+                    return new ResourceConfig();
                 default:
                     throw new IllegalArgumentException("Unknown type id " + typeId);
             }

@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.serialization.SerializableByConvention;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.nio.ObjectDataInput;
@@ -28,6 +29,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.function.Function;
 
+@SerializableByConvention
 public class MetaSupplierFromProcessorSupplier implements ProcessorMetaSupplier, DataSerializable {
     private int preferredLocalParallelism;
     private ProcessorSupplier processorSupplier;

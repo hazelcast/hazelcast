@@ -32,6 +32,9 @@ public class AggregateOperation3Impl<T0, T1, T2, A, R>
         extends AggregateOperationImpl<A, R>
         implements AggregateOperation3<T0, T1, T2, A, R> {
 
+    public AggregateOperation3Impl() {
+    }
+
     public AggregateOperation3Impl(
             @Nonnull SupplierEx<A> createFn,
             @Nonnull BiConsumerEx<? super A, ? super T0> accumulateFn0,
@@ -130,5 +133,10 @@ public class AggregateOperation3Impl<T0, T1, T2, A, R>
                 createFn(), accumulateFns, combineFn(), deductFn(),
                 exportFn().andThen(thenFn), finishFn().andThen(thenFn)
         );
+    }
+
+    @Override
+    public int getClassId() {
+        return AggregateDataSerializerHook.AGGREGATE_OPERATION_3_IMPL;
     }
 }

@@ -20,20 +20,28 @@ import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.aggregate.AggregateOperation;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import static com.hazelcast.internal.util.Preconditions.checkNotNull;
-import static com.hazelcast.jet.impl.util.Util.checkSerializable;
+import java.io.IOException;
 
-public class AggregateOperationImpl<A, R> implements AggregateOperation<A, R> {
-    final BiConsumerEx<? super A, ?>[] accumulateFns;
-    private final SupplierEx<A> createFn;
-    private final BiConsumerEx<? super A, ? super A> combineFn;
-    private final BiConsumerEx<? super A, ? super A> deductFn;
-    private final FunctionEx<? super A, ? extends R> exportFn;
-    private final FunctionEx<? super A, ? extends R> finishFn;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.checkSerializable;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+
+public class AggregateOperationImpl<A, R> implements AggregateOperation<A, R>, IdentifiedDataSerializable {
+    BiConsumerEx<? super A, ?>[] accumulateFns;
+    private SupplierEx<A> createFn;
+    private BiConsumerEx<? super A, ? super A> combineFn;
+    private BiConsumerEx<? super A, ? super A> deductFn;
+    private FunctionEx<? super A, ? extends R> exportFn;
+    private FunctionEx<? super A, ? extends R> finishFn;
+
+    public AggregateOperationImpl() {
+    }
 
     public AggregateOperationImpl(
             @Nonnull SupplierEx<A> createFn,
@@ -129,5 +137,35 @@ public class AggregateOperationImpl<A, R> implements AggregateOperation<A, R> {
             throw new UnsupportedOperationException(
                     "Can't use exportFn on an aggregate operation with identity finishFn");
         };
+    }
+
+    @Override
+    public int getFactoryId() {
+        return AggregateDataSerializerHook.FACTORY_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return AggregateDataSerializerHook.AGGREGATE_OPERATION_IMPL;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeObject(accumulateFns);
+        out.writeObject(createFn);
+        out.writeObject(combineFn);
+        out.writeObject(deductFn);
+        out.writeObject(exportFn);
+        out.writeObject(finishFn);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        accumulateFns = in.readObject();
+        createFn = in.readObject();
+        combineFn = in.readObject();
+        deductFn = in.readObject();
+        exportFn = in.readObject();
+        finishFn = in.readObject();
     }
 }

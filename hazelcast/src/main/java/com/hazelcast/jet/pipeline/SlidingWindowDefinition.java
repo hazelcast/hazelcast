@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.pipeline;
 
+import com.hazelcast.internal.serialization.SerializableByConvention;
+
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
 
@@ -24,6 +26,7 @@ import static com.hazelcast.internal.util.Preconditions.checkTrue;
  *
  * @since 3.0
  */
+@SerializableByConvention
 public class SlidingWindowDefinition extends WindowDefinition {
     private final long windowSize;
     private final long slideBy;

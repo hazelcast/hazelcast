@@ -38,6 +38,9 @@ import static com.hazelcast.jet.datamodel.Tuple5.tuple5;
  */
 final class DataModelSerializerHooks {
 
+    private DataModelSerializerHooks() {
+    }
+
     public static final class WindowResultHook implements SerializerHook<WindowResult> {
 
         @Override

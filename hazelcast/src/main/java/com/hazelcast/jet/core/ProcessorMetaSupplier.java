@@ -19,6 +19,7 @@ package com.hazelcast.jet.core;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
+import com.hazelcast.internal.serialization.SerializableByConvention;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JobConfig;
@@ -345,6 +346,7 @@ public interface ProcessorMetaSupplier extends Serializable {
          * on a node with given {@link Address}.
          */
         @SuppressFBWarnings(value = "SE_BAD_FIELD", justification = "the class is never java-serialized")
+        @SerializableByConvention
         class SpecificMemberPms implements ProcessorMetaSupplier, DataSerializable {
 
             private ProcessorSupplier supplier;

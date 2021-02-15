@@ -73,7 +73,7 @@ public class Job_StaleInstanceTest extends JetTestSupport {
     @AfterClass
     public static void afterClass() {
         TestProcessors.reset(1);
-        instanceFactory.shutdownAll();
+        instanceFactory.terminateAll();
     }
 
     @Test(expected = JobNotFoundException.class)

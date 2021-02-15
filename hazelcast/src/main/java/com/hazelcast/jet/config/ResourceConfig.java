@@ -17,10 +17,13 @@
 package com.hazelcast.jet.config;
 
 import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.annotation.PrivateApi;
 
 import javax.annotation.Nonnull;
-import java.io.Serializable;
+import java.io.IOException;
 import java.net.URL;
 import java.util.Objects;
 
@@ -32,11 +35,14 @@ import static com.hazelcast.jet.impl.util.ReflectionUtils.toClassResourceId;
  * @since 3.0
  */
 @PrivateApi
-public class ResourceConfig implements Serializable {
+public class ResourceConfig implements IdentifiedDataSerializable {
 
-    private final URL url;
-    private final String id;
-    private final ResourceType resourceType;
+    private URL url;
+    private String id;
+    private ResourceType resourceType;
+
+    ResourceConfig() {
+    }
 
     /**
      * Creates a resource config with the given properties.
@@ -134,5 +140,29 @@ public class ResourceConfig implements Serializable {
     @Override
     public int hashCode() {
         return Objects.hash(url, id, resourceType);
+    }
+
+    @Override
+    public int getFactoryId() {
+        return JetConfigDataSerializerHook.FACTORY_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return JetConfigDataSerializerHook.RESOURCE_CONFIG;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeString(id);
+        out.writeShort(resourceType.getId());
+        out.writeObject(url);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        id = in.readString();
+        resourceType = ResourceType.getById(in.readShort());
+        url = in.readObject();
     }
 }

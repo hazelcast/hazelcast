@@ -28,31 +28,41 @@ public enum ResourceType {
      * Represents a classpath resource that will be on the classpath of the Jet
      * job.
      */
-    CLASSPATH_RESOURCE,
+    CLASSPATH_RESOURCE(0),
     /**
      * Represents a plain file. It will be available to the Jet job by its ID,
      * through {@link ProcessorSupplier.Context#attachedFile}.
      */
-    FILE,
+    FILE(1),
     /**
      * Represents a directory of plain files. It will be available to the Jet
      * job by its ID, through {@link ProcessorSupplier.Context#attachedDirectory}.
      */
-    DIRECTORY,
+    DIRECTORY(2),
     /**
      * Represents a class that will be on the classpath of the Jet job.
      */
-    CLASS,
+    CLASS(3),
     /**
      * Represents a JAR file whose classes will be on the classpath of the Jet
      * job.
      */
-    JAR,
+    JAR(4),
     /**
      * Represents a ZIP file that contains JAR files, all of whose classes will
      * be on the classpath of the Jet job.
      */
-    JARS_IN_ZIP;
+    JARS_IN_ZIP(5);
+
+    private final int id;
+
+    ResourceType(int id) {
+        this.id = id;
+    }
+
+    public int getId() {
+        return id;
+    }
 
     /**
      * Returns whether this resource type represents an archive containing
@@ -60,6 +70,20 @@ public enum ResourceType {
      */
     public boolean isClassArchive() {
         return this == ResourceType.JAR || this == ResourceType.JARS_IN_ZIP;
+    }
+
+    /**
+     * Returns the ResourceType for the given ID.
+     *
+     * @return the ResourceType found or null if not found
+     */
+    public static ResourceType getById(final int id) {
+        for (ResourceType resourceType : values()) {
+            if (resourceType.id == id) {
+                return resourceType;
+            }
+        }
+        return null;
     }
 
 }

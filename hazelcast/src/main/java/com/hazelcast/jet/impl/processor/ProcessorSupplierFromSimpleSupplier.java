@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.function.SupplierEx;
+import com.hazelcast.internal.serialization.SerializableByConvention;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.nio.ObjectDataInput;
@@ -29,6 +30,7 @@ import java.util.Collection;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+@SerializableByConvention
 public class ProcessorSupplierFromSimpleSupplier implements ProcessorSupplier, DataSerializable {
 
     private SupplierEx<? extends Processor> simpleSupplier;

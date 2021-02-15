@@ -16,9 +16,11 @@
 
 package com.hazelcast.jet.config;
 
-import com.hazelcast.jet.core.Edge;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-import java.io.Serializable;
+import java.io.IOException;
 
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
@@ -29,7 +31,7 @@ import static com.hazelcast.internal.util.Preconditions.checkPositive;
  *
  * @since 3.0
  */
-public class EdgeConfig implements Serializable {
+public class EdgeConfig implements IdentifiedDataSerializable {
 
     /**
      * The default size of the {@link #setQueueSize(int) concurrent queues}
@@ -148,5 +150,29 @@ public class EdgeConfig implements Serializable {
      */
     public int getPacketSizeLimit() {
         return packetSizeLimit;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return JetConfigDataSerializerHook.FACTORY_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return JetConfigDataSerializerHook.EDGE_CONFIG;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeInt(queueSize);
+        out.writeInt(receiveWindowMultiplier);
+        out.writeInt(packetSizeLimit);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        queueSize = in.readInt();
+        receiveWindowMultiplier = in.readInt();
+        packetSizeLimit = in.readInt();
     }
 }

@@ -17,6 +17,7 @@
 package com.hazelcast.jet.config;
 
 import com.hazelcast.config.MetricsConfig;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.annotation.EvolvingApi;
@@ -1132,7 +1133,7 @@ public class JobConfig implements IdentifiedDataSerializable {
         out.writeBoolean(autoScaling);
         out.writeBoolean(suspendOnFailure);
         out.writeBoolean(splitBrainProtectionEnabled);
-        out.writeObject(resourceConfigs);
+        SerializationUtil.writeMap(resourceConfigs, out);
         out.writeObject(serializerConfigs);
         out.writeObject(classLoaderFactory);
         out.writeUTF(initialSnapshotName);
@@ -1148,7 +1149,7 @@ public class JobConfig implements IdentifiedDataSerializable {
         autoScaling = in.readBoolean();
         suspendOnFailure = in.readBoolean();
         splitBrainProtectionEnabled = in.readBoolean();
-        resourceConfigs = in.readObject();
+        resourceConfigs = SerializationUtil.readMap(in);
         serializerConfigs = in.readObject();
         classLoaderFactory = in.readObject();
         initialSnapshotName = in.readUTF();

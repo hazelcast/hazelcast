@@ -16,11 +16,14 @@
 
 package com.hazelcast.jet.pipeline;
 
+import com.hazelcast.internal.serialization.SerializableByConvention;
+
 /**
  * Represents the definition of a session window.
  *
  * @since 3.0
  */
+@SerializableByConvention
 public class SessionWindowDefinition extends WindowDefinition {
     private final long sessionTimeout;
 

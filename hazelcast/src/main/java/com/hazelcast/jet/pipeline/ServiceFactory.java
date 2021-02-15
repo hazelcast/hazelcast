@@ -19,6 +19,7 @@ package com.hazelcast.jet.pipeline;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.internal.serialization.SerializableByConvention;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
@@ -85,6 +86,7 @@ import static java.util.Collections.emptyMap;
  *
  * @since 4.0
  */
+@SerializableByConvention
 public final class ServiceFactory<C, S> implements Serializable, Cloneable {
 
     /**

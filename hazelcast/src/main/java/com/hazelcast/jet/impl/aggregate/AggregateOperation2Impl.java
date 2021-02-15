@@ -32,6 +32,9 @@ public class AggregateOperation2Impl<T0, T1, A, R>
         extends AggregateOperationImpl<A, R>
         implements AggregateOperation2<T0, T1, A, R> {
 
+    public AggregateOperation2Impl() {
+    }
+
     public AggregateOperation2Impl(
             @Nonnull SupplierEx<A> createFn,
             @Nonnull BiConsumerEx<? super A, ? super T0> accumulateFn0,
@@ -111,5 +114,10 @@ public class AggregateOperation2Impl<T0, T1, A, R>
                 createFn(), accumulateFns, combineFn(), deductFn(),
                 exportFn().andThen(thenFn), finishFn().andThen(thenFn)
         );
+    }
+
+    @Override
+    public int getClassId() {
+        return AggregateDataSerializerHook.AGGREGATE_OPERATION_2_IMPL;
     }
 }
