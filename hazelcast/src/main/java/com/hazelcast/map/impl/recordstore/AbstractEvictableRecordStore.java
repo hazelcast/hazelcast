@@ -169,7 +169,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         if (expiryReason == MAX_IDLE_SECONDS) {
             // only send expired key to backup if
             // it is expired according to idleness.
-            expirySystem.accumulateOrSendExpiredKey(dataKey);
+            expirySystem.accumulateOrSendExpiredKey(dataKey, value.hashCode());
         }
     }
 
@@ -177,7 +177,6 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     public InvalidationQueue<ExpiredKey> getExpiredKeysQueue() {
         return expirySystem.getExpiredKeys();
     }
-
 
     @Override
     public void accessRecord(Data dataKey, Record record, long now) {

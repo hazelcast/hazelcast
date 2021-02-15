@@ -259,7 +259,7 @@ public class ExpirySystem {
 
         scanAndEvictExpiredKeys(maxScannableKeyCount, now, backup);
 
-        accumulateOrSendExpiredKey(null);
+        accumulateOrSendExpiredKey(null, UNSET);
     }
 
     /**
@@ -349,13 +349,13 @@ public class ExpirySystem {
     }
 
     // null dataKey is used to trigger backup operation sending...
-    public void accumulateOrSendExpiredKey(Data dataKey) {
+    public void accumulateOrSendExpiredKey(Data dataKey, long valueHashCode) {
         if (mapContainer.getTotalBackupCount() == 0) {
             return;
         }
 
         if (dataKey != null) {
-            expiredKeys.offer(new ExpiredKey(toHeapData(dataKey), UNSET));
+            expiredKeys.offer(new ExpiredKey(toHeapData(dataKey), valueHashCode));
         }
 
         clearExpiredRecordsTask.tryToSendBackupExpiryOp(recordStore, true);
