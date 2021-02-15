@@ -36,7 +36,7 @@
         <wiremock.version>2.27.2</wiremock.version>
         <hamcrest.version>2.2</hamcrest.version>
 
-        <maven.animal.sniffer.plugin.version>1.19</maven.animal.sniffer.plugin.version>
+        <maven.animal.sniffer.plugin.version>1.20</maven.animal.sniffer.plugin.version>
         <maven.compiler.plugin.version>3.8.1</maven.compiler.plugin.version>
         <maven.source.plugin.version>3.2.1</maven.source.plugin.version>
         <maven.bundle.plugin.version>5.1.1</maven.bundle.plugin.version>
