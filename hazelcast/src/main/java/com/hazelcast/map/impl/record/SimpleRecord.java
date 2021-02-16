@@ -153,7 +153,7 @@ class SimpleRecord<V> implements Record<V> {
 
     @Override
     public int getRawCreationTime() {
-        throw new UnsupportedOperationException();
+        return UNSET;
     }
 
     @Override
@@ -163,7 +163,7 @@ class SimpleRecord<V> implements Record<V> {
 
     @Override
     public int getRawLastAccessTime() {
-        throw new UnsupportedOperationException();
+        return UNSET;
     }
 
     @Override
@@ -173,7 +173,7 @@ class SimpleRecord<V> implements Record<V> {
 
     @Override
     public int getRawLastUpdateTime() {
-        throw new UnsupportedOperationException();
+        return UNSET;
     }
 
     @Override
@@ -183,7 +183,7 @@ class SimpleRecord<V> implements Record<V> {
 
     @Override
     public int getRawLastStoredTime() {
-        throw new UnsupportedOperationException();
+        return UNSET;
     }
 
     @Override
