@@ -32,6 +32,8 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -144,7 +146,12 @@ public class TenantControlTest extends TenantControlTestSupport {
         assertEquals(4, closeTenantCount.get());
         assertEquals(1, registerTenantCount.get());
         assertEqualsEventually(1, unregisterTenantCount);
-        assertEqualsEventually(3, clearedThreadInfoCount);
+        // thread context should be cleared at least twice.
+        // in most cases it would be three times, but there is a case when the structure
+        // gets destroyed before operation completes, in which case it's valid
+        // to only have thread context cleared only twice
+        assertTrueEventually(() -> assertThat("thread context not cleared enough times",
+                clearedThreadInfoCount.get(), greaterThanOrEqualTo(2)), 10);
     }
 
     @Test
