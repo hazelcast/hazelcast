@@ -20,6 +20,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
+import com.hazelcast.instance.impl.DefaultNodeContext;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.test.Accessors;
@@ -30,7 +31,6 @@ import java.util.Comparator;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 
-import static com.hazelcast.jet.impl.JetNodeContext.JET_EXTENSION_PRIORITY_LIST;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
 import static com.hazelcast.test.HazelcastTestSupport.spawn;
@@ -139,7 +139,7 @@ public class JetTestInstanceFactory {
 
         @Override
         protected TestNodeRegistry createRegistry() {
-            return new TestNodeRegistry(getKnownAddresses(), JET_EXTENSION_PRIORITY_LIST);
+            return new TestNodeRegistry(getKnownAddresses(), DefaultNodeContext.EXTENSION_PRIORITY_LIST);
         }
     }
 }
