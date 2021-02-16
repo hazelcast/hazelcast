@@ -2205,16 +2205,19 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     private MapStoreConfig handleMapStoreConfig(Node node, MapStoreConfig mapStoreConfig) {
         NamedNodeMap attributes = node.getAttributes();
+        boolean enabled = true;
         for (int a = 0; a < attributes.getLength(); a++) {
             Node att = attributes.item(a);
             if (matches("enabled", att.getNodeName())) {
-                mapStoreConfig.setEnabled(getBooleanValue(getTextContent(att)));
+                enabled = getBooleanValue(getTextContent(att));
             } else if (matches("initial-mode", att.getNodeName())) {
                 MapStoreConfig.InitialLoadMode mode = MapStoreConfig.InitialLoadMode
                         .valueOf(upperCaseInternal(getTextContent(att)));
                 mapStoreConfig.setInitialLoadMode(mode);
             }
         }
+        mapStoreConfig.setEnabled(enabled);
+
         for (Node n : childElements(node)) {
             String nodeName = cleanNodeName(n);
             if (matches("class-name", nodeName)) {

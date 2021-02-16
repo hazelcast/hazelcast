@@ -1074,6 +1074,51 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
+    public void testMapStoreEnabled() {
+        String xml = HAZELCAST_START_TAG
+                + "<map name=\"mymap\">"
+                + "<map-store enabled=\"true\" />"
+                + "</map>"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        MapStoreConfig mapStoreConfig = config.getMapConfig("mymap").getMapStoreConfig();
+
+        assertTrue(mapStoreConfig.isEnabled());
+    }
+
+    @Override
+    @Test
+    public void testMapStoreEnabledIfNotDisabled() {
+        String xml = HAZELCAST_START_TAG
+                + "<map name=\"mymap\">"
+                + "<map-store />"
+                + "</map>"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        MapStoreConfig mapStoreConfig = config.getMapConfig("mymap").getMapStoreConfig();
+
+        assertTrue(mapStoreConfig.isEnabled());
+    }
+
+    @Override
+    @Test
+    public void testMapStoreDisabled() {
+        String xml = HAZELCAST_START_TAG
+                + "<map name=\"mymap\">"
+                + "<map-store enabled=\"false\" />"
+                + "</map>"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        MapStoreConfig mapStoreConfig = config.getMapConfig("mymap").getMapStoreConfig();
+
+        assertFalse(mapStoreConfig.isEnabled());
+    }
+
+    @Override
+    @Test
     public void testMapStoreConfig_writeCoalescing_whenDefault() {
         MapStoreConfig mapStoreConfig = getWriteCoalescingMapStoreConfig(MapStoreConfig.DEFAULT_WRITE_COALESCING, true);
 
