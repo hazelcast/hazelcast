@@ -43,6 +43,8 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class TestBeansApplicationContext extends HazelcastTestSupport {
 
+    public static final String INTERNAL_JET_OBJECTS_PREFIX = "__jet.";
+
     @BeforeClass
     @AfterClass
     public static void cleanup() {
@@ -63,7 +65,9 @@ public class TestBeansApplicationContext extends HazelcastTestSupport {
         assertEquals(1, HazelcastClient.getAllHazelcastClients().size());
 
         HazelcastInstance hazelcast = Hazelcast.getAllHazelcastInstances().iterator().next();
-        assertEquals(2, hazelcast.getDistributedObjects().size());
+        long distributedObjectsSize = hazelcast.getDistributedObjects().stream().filter(
+                distributedObject -> !distributedObject.getName().startsWith(INTERNAL_JET_OBJECTS_PREFIX)).count();
+        assertEquals(2, distributedObjectsSize);
 
         context.getBean("client");
         context.getBean("client");
@@ -83,7 +87,7 @@ public class TestBeansApplicationContext extends HazelcastTestSupport {
         waitInstanceForSafeState(instance);
         Config config = instance.getConfig();
         assertEquals("spring-cluster", config.getClusterName());
-        assertTrue(config.getNetworkConfig().getJoin().getTcpIpConfig().isEnabled());
+        assertFalse(config.getNetworkConfig().getJoin().getTcpIpConfig().isEnabled());
         assertEquals(6, config.getMapConfig("map1").getBackupCount());
         assertFalse(config.getMapConfig("map1").isStatisticsEnabled());
         assertEquals(64, config.getNativeMemoryConfig().getSize().getValue());

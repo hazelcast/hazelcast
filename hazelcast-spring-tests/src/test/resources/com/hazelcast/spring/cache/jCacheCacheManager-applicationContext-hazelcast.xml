@@ -32,12 +32,10 @@
         <hz:config>
             <hz:instance-name>named-spring-hz-instance</hz:instance-name>
             <hz:cluster-name>dev</hz:cluster-name>
-            <hz:network port="5701" port-auto-increment="false">
+            <hz:network port="5701">
                 <hz:join>
-                    <hz:multicast enabled="true"/>
-                    <hz:tcp-ip enabled="false">
-                        <hz:interface>127.0.0.1:5701</hz:interface>
-                    </hz:tcp-ip>
+                    <hz:multicast enabled="false"/>
+                    <hz:auto-detection enabled="false"/>
                 </hz:join>
                 <hz:interfaces enabled="true">
                     <hz:interface>127.0.0.1</hz:interface>

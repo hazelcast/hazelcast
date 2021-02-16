@@ -201,6 +201,8 @@ import static org.junit.Assert.fail;
 @SuppressWarnings("unused")
 public class TestFullApplicationContext extends HazelcastTestSupport {
 
+    public static final String INTERNAL_JET_OBJECTS_PREFIX = "__jet.";
+
     private Config config;
 
     @Resource(name = "instance")
@@ -334,7 +336,9 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     @Test
     public void testMapConfig() {
         assertNotNull(config);
-        assertEquals(26, config.getMapConfigs().size());
+        long mapConfigSize = config.getMapConfigs()
+                .keySet().stream().filter(name -> !name.startsWith(INTERNAL_JET_OBJECTS_PREFIX)).count();
+        assertEquals(26, mapConfigSize);
 
         MapConfig testMapConfig = config.getMapConfig("testMap");
         assertNotNull(testMapConfig);

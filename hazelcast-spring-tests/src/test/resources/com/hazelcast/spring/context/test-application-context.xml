@@ -37,12 +37,10 @@
     <hz:hazelcast id="instance1">
         <hz:config>
             <hz:cluster-name>test</hz:cluster-name>
-            <hz:network port="5701" port-auto-increment="false">
+            <hz:network port="5701">
                 <hz:join>
                     <hz:multicast enabled="false"/>
-                    <hz:tcp-ip enabled="true">
-                        <hz:interface>127.0.0.1:5701</hz:interface>
-                    </hz:tcp-ip>
+                    <hz:auto-detection enabled="false"/>
                 </hz:join>
                 <hz:interfaces enabled="true">
                     <hz:interface>127.0.0.1</hz:interface>
