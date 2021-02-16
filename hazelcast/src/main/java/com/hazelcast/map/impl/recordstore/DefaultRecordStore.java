@@ -100,9 +100,10 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     protected final Collection<Future> loadingFutures = new ConcurrentLinkedQueue<>();
 
     /**
-     * A reference to the Metadata store.
+     * A reference to the Metadata store. It is initialized lazily only if the
+     * store is needed.
      */
-    protected final AbstractMetadataStore metadataStore;
+    private AbstractMetadataStore metadataStore;
 
     /**
      * The record store may be created with or without triggering the load.
@@ -130,7 +131,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         this.recordStoreLoader = createRecordStoreLoader(mapStoreContext);
         this.partitionService = mapServiceContext.getNodeEngine().getPartitionService();
         this.interceptorRegistry = mapContainer.getInterceptorRegistry();
-        this.metadataStore = createMetadataStore();
     }
 
     @Override
@@ -164,7 +164,16 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public AbstractMetadataStore getMetadataStore() {
+        if (metadataStore == null) {
+            metadataStore = createMetadataStore();
+        }
         return metadataStore;
+    }
+
+    private void destroyMetadataStore() {
+        if (metadataStore != null) {
+            metadataStore.destroy();
+        }
     }
 
     @Override
@@ -1405,7 +1414,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     private void destroyStorageImmediate(boolean isDuringShutdown, boolean internal) {
         mutationObserver.onDestroy(isDuringShutdown, internal);
         expirySystem.destroy();
-        getMetadataStore().destroy();
+        destroyMetadataStore();
         // Destroy storage in the end
         storage.destroy(isDuringShutdown);
     }
