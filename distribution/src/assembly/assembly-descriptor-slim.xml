@@ -17,53 +17,30 @@
 <assembly xmlns="http://maven.apache.org/ASSEMBLY/2.0.0"
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.0.0 http://maven.apache.org/xsd/assembly-2.0.0.xsd">
-    <id>hazelcast-jet</id>
+    <id>slim</id>
     <formats>
         <format>zip</format>
         <format>tar.gz</format>
     </formats>
+    <baseDirectory>hazelcast-${project.version}-slim</baseDirectory>
 
     <dependencySets>
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
             <includes>
+                <include>com.hazelcast:hazelcast</include>
                 <include>com.hazelcast.jet:hazelcast-jet</include>
-                <include>com.hazelcast.jet:hazelcast-jet-spring</include>
                 <include>com.hazelcast.jet:hazelcast-jet-sql</include>
                 <include>org.apache.logging.log4j:*</include>
                 <include>org.slf4j:*</include>
-                <include>io.prometheus.jmx:jmx_prometheus_javaagent</include>
-                <include>com.hazelcast.jet:hazelcast-jet-avro</include>
-                <include>com.hazelcast.jet:hazelcast-jet-cdc-debezium</include>
-                <include>com.hazelcast.jet:hazelcast-jet-cdc-mysql</include>
-                <include>com.hazelcast.jet:hazelcast-jet-cdc-postgres</include>
-                <include>com.hazelcast.jet:hazelcast-jet-csv</include>
-                <include>com.hazelcast.jet:hazelcast-jet-elasticsearch-7</include>
-                <include>com.hazelcast.jet:hazelcast-jet-grpc</include>
-                <include>com.hazelcast.jet:hazelcast-jet-files-azure</include>
-                <include>com.hazelcast.jet:hazelcast-jet-files-gcs</include>
-                <include>com.hazelcast.jet:hazelcast-jet-files-s3</include>
-                <include>com.hazelcast.jet:hazelcast-jet-hadoop-all</include>
-                <include>com.hazelcast.jet:hazelcast-jet-kafka</include>
-                <include>com.hazelcast.jet:hazelcast-jet-kinesis</include>
-                <include>com.hazelcast.jet:hazelcast-jet-protobuf</include>
-                <include>com.hazelcast.jet:hazelcast-jet-python</include>
-                <include>com.hazelcast.jet:hazelcast-jet-s3</include>
             </includes>
             <outputDirectory>lib</outputDirectory>
             <outputFileNameMapping>${artifact.artifactId}-${artifact.baseVersion}.${artifact.extension}</outputFileNameMapping>
         </dependencySet>
-        <dependencySet>
-            <useProjectArtifact>false</useProjectArtifact>
-            <includes>
-                <include>com.hazelcast.jet.examples:hazelcast-jet-examples-hello-world</include>
-            </includes>
-            <outputDirectory>examples</outputDirectory>
-            <outputFileNameMapping>hello-world.${artifact.extension}</outputFileNameMapping>
-        </dependencySet>
     </dependencySets>
+<!--
     <files>
-        <!-- Full Example YAML config files -->
+        &lt;!&ndash; Full Example YAML config files &ndash;&gt;
         <file>
             <source>${configs.from.jar}/hazelcast-jet-full-example.yaml</source>
             <destName>hazelcast-jet-full-example.yaml</destName>
@@ -80,7 +57,7 @@
             <outputDirectory>config/examples</outputDirectory>
         </file>
 
-        <!-- Simple XML config files -->
+        &lt;!&ndash; Simple XML config files &ndash;&gt;
         <file>
             <source>${configs.from.jar}/hazelcast-jet-default.xml</source>
             <destName>hazelcast-jet.xml</destName>
@@ -97,7 +74,7 @@
             <outputDirectory>config/examples</outputDirectory>
         </file>
 
-        <!-- Full Example XML config files -->
+        &lt;!&ndash; Full Example XML config files &ndash;&gt;
         <file>
             <source>${configs.from.jar}/hazelcast-jet-full-example.xml</source>
             <destName>hazelcast-jet-full-example.xml</destName>
@@ -114,6 +91,7 @@
             <outputDirectory>config/examples</outputDirectory>
         </file>
     </files>
+-->
     <fileSets>
         <fileSet>
             <directory>src/root</directory>

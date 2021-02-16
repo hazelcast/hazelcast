@@ -13,60 +13,30 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.1.0 http://maven.apache.org/xsd/assembly-2.1.0.xsd">
 
-<assembly>
     <id>Hazelcast Assembly</id>
     <formats>
         <format>zip</format>
     </formats>
+    <dependencySets>
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <includes>
+                <include>com.hazelcast:hazelcast-all</include>
+                <include>com.hazelcast:hazelcast-spring</include>
+                <include>com.hazelcast.jet:hazelcast-jet</include>
+                <include>com.hazelcast.jet:hazelcast-jet-sql</include>
+                <include>org.apache.logging.log4j:*</include>
+                <include>org.slf4j:*</include>
+            </includes>
+            <outputDirectory>lib</outputDirectory>
+            <outputFileNameMapping>${artifact.artifactId}-${artifact.baseVersion}.${artifact.extension}</outputFileNameMapping>
+        </dependencySet>
+    </dependencySets>
+
     <fileSets>
-        <fileSet>
-            <directory>hazelcast-spring/target</directory>
-            <outputDirectory>/lib/</outputDirectory>
-            <includes>
-                <include>hazelcast-spring-${project.version}.jar</include>
-            </includes>
-        </fileSet>
-
-        <fileSet>
-            <directory>hazelcast/target/</directory>
-            <outputDirectory>/lib/</outputDirectory>
-            <includes>
-                <include>hazelcast-${project.version}.jar</include>
-            </includes>
-        </fileSet>
-
-        <fileSet>
-            <directory>hazelcast-all/target/</directory>
-            <outputDirectory>/lib</outputDirectory>
-            <includes>
-                <include>hazelcast-all-${project.version}.jar</include>
-            </includes>
-        </fileSet>
-
-        <fileSet>
-            <directory>javadoc</directory>
-            <outputDirectory>docs/javadoc</outputDirectory>
-            <excludes>
-                <exclude>**/.svn/**</exclude>
-            </excludes>
-        </fileSet>
-
-        <fileSet>
-            <directory>hazelcast-documentation/build/asciidoc/pdf</directory>
-            <outputDirectory>docs/manual/pdf</outputDirectory>
-            <includes>
-                <include>**</include>
-            </includes>
-        </fileSet>
-
-        <fileSet>
-            <directory>hazelcast-documentation/build/asciidoc/html5</directory>
-            <outputDirectory>docs/manual/html-single</outputDirectory>
-            <includes>
-                <include>**</include>
-            </includes>
-        </fileSet>
 
         <fileSet>
             <directory>src/main/resources/</directory>
@@ -78,7 +48,7 @@
         </fileSet>
 
         <fileSet>
-            <directory>hazelcast/target/classes/</directory>
+            <directory>../hazelcast/target/classes/</directory>
             <outputDirectory>/bin/</outputDirectory>
             <fileMode>0755</fileMode>
             <includes>
@@ -86,15 +56,15 @@
             </includes>
         </fileSet>
         <fileSet>
-            <directory>hazelcast/target/classes/</directory>
+            <directory>../hazelcast/target/classes/</directory>
             <outputDirectory>/bin/</outputDirectory>
             <includes>
                 <include>*.bat</include>
             </includes>
         </fileSet>
         <fileSet>
-            <directory>hazelcast/target/</directory>
-            <outputDirectory>/bin/</outputDirectory>
+            <directory>../hazelcast/target/</directory>
+            <outputDirectory>/config/</outputDirectory>
             <includes>
                 <include>hazelcast.xml</include>
                 <include>hazelcast-full-example.xml</include>

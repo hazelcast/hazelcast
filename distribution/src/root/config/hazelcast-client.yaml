@@ -1,7 +1,4 @@
 hazelcast-client:
-  # Name of the cluster to connect to. Must match the name configured on the
-  # cluster members.
-  cluster-name: jet
   network:
     # List of addresses for the client to try to connect to. All members of
     # a Hazelcast Jet cluster accept client connections.

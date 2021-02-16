@@ -1,5 +1,5 @@
 SCRIPT_DIR="$(dirname "$0")"
-JET_HOME="$(cd "$SCRIPT_DIR/.." && pwd)"
+HAZELCAST_HOME="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 if [ "$JAVA_HOME" ]; then
     JAVA="$JAVA_HOME/bin/java"
@@ -27,21 +27,7 @@ if [ "$JAVA_VERSION" -ge "9" ]; then
     "
 fi
 
-IFS=',' read -ra MODULES <<< "$JET_MODULES"
-for module in "${MODULES[@]}"; do
-    # Strip leading/trailing whitespaces, when JET_MODULES contains modules
-    # separated by comma and space, e.g. "avro, kafka"
-    module=$(echo "$module" | sed 's/^[[:blank:]]*//;s/[[:blank:]]*$//')
-
-    # ${project.version} interpolated during build by maven assembly plugin
-    if [ -z "$CLASSPATH" ]; then
-        CLASSPATH="$JET_HOME/opt/hazelcast-jet-${module}-${project.version}.jar"
-    else
-        CLASSPATH="$JET_HOME/opt/hazelcast-jet-${module}-${project.version}.jar:$CLASSPATH"
-    fi
-done
-
-CLASSPATH="$JET_HOME/lib:$JET_HOME/lib/*:$CLASSPATH"
+CLASSPATH="$HAZELCAST_HOME/lib:$HAZELCAST_HOME/lib/*:$CLASSPATH"
 
 function readJvmOptionsFile {
     # Read jvm.options file
@@ -54,8 +40,8 @@ function readJvmOptionsFile {
       fi
 
       JVM_OPTIONS="$JVM_OPTIONS $line"
-    done < $JET_HOME/config/$1
+    done < $HAZELCAST_HOME/config/$1
 
-    # Evaluate variables in the options, allowing to use e.g. JET_HOME variable
+    # Evaluate variables in the options, allowing to use e.g. HAZELCAST_HOME variable
     JVM_OPTIONS=$(eval echo $JVM_OPTIONS)
 }
