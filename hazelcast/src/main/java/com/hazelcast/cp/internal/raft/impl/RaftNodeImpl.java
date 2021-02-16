@@ -269,6 +269,9 @@ public final class RaftNodeImpl implements RaftNode {
     public InternalCompletableFuture forceSetTerminatedStatus() {
         InternalCompletableFuture resultFuture = raftIntegration.newCompletableFuture();
         if (isTerminatedOrSteppedDown()) {
+            if (logger.isFineEnabled()) {
+                logger.fine("Already stepped down or terminated, not setting `TERMINATED` status.");
+            }
             resultFuture.complete(null);
             return resultFuture;
         }
@@ -431,7 +434,7 @@ public final class RaftNodeImpl implements RaftNode {
 
     @Override
     public InternalCompletableFuture replicateMembershipChange(RaftEndpoint member, MembershipChangeMode mode,
-                                                        long groupMembersCommitIndex) {
+                                                               long groupMembersCommitIndex) {
         InternalCompletableFuture resultFuture = raftIntegration.newCompletableFuture();
         raftIntegration.execute(new MembershipChangeTask(this, resultFuture, member, mode, groupMembersCommitIndex));
         return resultFuture;
@@ -463,7 +466,6 @@ public final class RaftNodeImpl implements RaftNode {
         }
 
         RaftNodeStatus prevStatus = this.status;
-        this.status = newStatus;
 
         if (prevStatus != newStatus) {
             Level level = Level.WARNING;
@@ -472,17 +474,20 @@ public final class RaftNodeImpl implements RaftNode {
             } else if ((newStatus == TERMINATED || newStatus == STEPPED_DOWN) && prevStatus != INITIAL) {
                 closeStateStore();
             }
-            logger.log(level, "Status is set to: " + newStatus);
-        }
+            //Status should be set to `TERMINATED` or `STEPPED_DOWN` after `closeStateStore`
+            this.status = newStatus;
 
-        raftIntegration.onNodeStatusChange(newStatus);
+            logger.log(level, "Status is set to: " + newStatus);
+            raftIntegration.onNodeStatusChange(newStatus);
+        }
     }
 
     private void groupDestroyed() {
         if (status != TERMINATED) {
-            status = TERMINATED;
             closeStateStore();
-            logger.warning("Status is set to: " + TERMINATED);
+            //Status should be set to `TERMINATED` after `closeStateStore`
+            status = TERMINATED;
+            logger.warning("Status is set to: " + TERMINATED + " on group destroyed");
         }
         raftIntegration.onGroupDestroyed(groupId);
     }
@@ -1354,7 +1359,7 @@ public final class RaftNodeImpl implements RaftNode {
         protected void innerRun() {
             if (state.role() == LEADER) {
                 if (isHeartbeatTimedOut(state.leaderState().majorityAppendRequestAckTimestamp(state.majority()))) {
-                    logger.warning("Demoting to " + FOLLOWER  + " since not received acks from majority recently...");
+                    logger.warning("Demoting to " + FOLLOWER + " since not received acks from majority recently...");
                     toFollower(state.term());
                     invalidateFuturesUntil(state.log().lastLogOrSnapshotIndex(), new StaleAppendRequestException(null));
                     return;
