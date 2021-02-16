@@ -48,6 +48,11 @@ public final class Bitmap<E> {
 
     private final SparseArray<E> entries = new SparseArray<>();
 
+    // Note! At the moment bitmap index doesn't support memory statistics,
+    // because we cannot produce precise memory estimate.
+    // Instead, we provide zero memory consumption estimation.
+    private enum ZeroCost { ZERO_COST }
+
     /**
      * Inserts the given values associated with the given entry having the given
      * unique key.
@@ -65,8 +70,8 @@ public final class Bitmap<E> {
             if (bitSet == null) {
                 bitSet = new SparseBitSet();
                 bitSets.put(value, bitSet);
-                operationStats.onEntryAdded(null, value);
             }
+            operationStats.onEntryAdded(null, ZeroCost.ZERO_COST);
             bitSet.add(key);
         }
 
@@ -90,8 +95,8 @@ public final class Bitmap<E> {
             SparseBitSet bitSet = bitSets.get(value);
             if (bitSet != null) {
                 bitSet.remove(key);
-                operationStats.onEntryRemoved(value);
             }
+            operationStats.onEntryRemoved(ZeroCost.ZERO_COST);
         }
 
         while (newValues.hasNext()) {
@@ -102,8 +107,8 @@ public final class Bitmap<E> {
             if (bitSet == null) {
                 bitSet = new SparseBitSet();
                 bitSets.put(value, bitSet);
-                operationStats.onEntryAdded(null, value);
             }
+            operationStats.onEntryAdded(null, ZeroCost.ZERO_COST);
             bitSet.add(key);
         }
 
@@ -126,9 +131,9 @@ public final class Bitmap<E> {
             if (bitSet != null) {
                 if (bitSet.remove(key)) {
                     bitSets.remove(value);
-                    operationStats.onEntryRemoved(value);
                 }
             }
+            operationStats.onEntryRemoved(ZeroCost.ZERO_COST);
         }
 
         entries.clear(key);

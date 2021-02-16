@@ -41,7 +41,6 @@ import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.Collection;
-import java.util.Map;
 
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
 import static java.util.Arrays.asList;
@@ -103,46 +102,6 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
 
     protected HazelcastInstance createInstance(Config config) {
         return createHazelcastInstance(config);
-    }
-
-    @Test
-    public void testQueryBitmapStatsPropagated() {
-        IMap<Integer, Integer> map = instance.getMap(mapName);
-
-        map.addIndex(IndexType.HASH, "__key");
-        int limit = 10;
-        for (int idx = 0; idx < limit; idx++) {
-            map.put(idx, idx);
-            map.put(idx, idx + 1);
-            map.remove(idx);
-        }
-
-        assertEquals(1, map.getLocalMapStats().getIndexStats().entrySet().size());
-        LocalIndexStats localIndexStats = map.getLocalMapStats().getIndexStats().entrySet().iterator().next().getValue();
-
-        assertEquals("Wrong map insert operations count in hashed index operations loop!", limit, localIndexStats.getInsertCount());
-        assertEquals("Wrong map update operations count in hashed index operations loop!", limit, localIndexStats.getUpdateCount());
-        assertEquals("Wrong map remove operations count in hashed index operations loop!", limit, localIndexStats.getRemoveCount());
-
-        map.addIndex(IndexType.BITMAP, "__key");
-        for (int idx = 0; idx < limit; idx++) {
-            map.put(idx, idx);
-            map.put(idx, idx + 1);
-            map.remove(idx);
-        }
-
-        assertEquals(2, map.getLocalMapStats().getIndexStats().entrySet().size());
-        for (Map.Entry<String, LocalIndexStats> it : map.getLocalMapStats().getIndexStats().entrySet()) {
-            if (it.getKey().contains("bitmap___key")) {
-                localIndexStats = it.getValue();
-                break;
-            }
-        }
-
-        assertEquals("Wrong map insert operations count in bitmap index operations loop!", limit, localIndexStats.getInsertCount());
-        assertEquals("Wrong map update operations count in bitmap index operations loop!", limit, localIndexStats.getUpdateCount());
-        assertEquals("Wrong map remove operations count in bitmap index operations loop!", limit, localIndexStats.getRemoveCount());
-
     }
 
     @Test
