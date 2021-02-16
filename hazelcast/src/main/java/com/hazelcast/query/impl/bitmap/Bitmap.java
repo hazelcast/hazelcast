@@ -17,6 +17,7 @@
 package com.hazelcast.query.impl.bitmap;
 
 import com.hazelcast.core.TypeConverter;
+import com.hazelcast.internal.monitor.impl.IndexOperationStats;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.predicates.AndPredicate;
 import com.hazelcast.query.impl.predicates.EqualPredicate;
@@ -55,7 +56,7 @@ public final class Bitmap<E> {
      * @param key    the unique key of the entry being inserted.
      * @param entry  the entry to insert.
      */
-    public void insert(Iterator values, long key, E entry) {
+    public void insert(Iterator values, long key, E entry, IndexOperationStats operationStats) {
         while (values.hasNext()) {
             Object value = values.next();
             assert value != null;
@@ -64,6 +65,7 @@ public final class Bitmap<E> {
             if (bitSet == null) {
                 bitSet = new SparseBitSet();
                 bitSets.put(value, bitSet);
+                operationStats.onEntryAdded(null, value);
             }
             bitSet.add(key);
         }
@@ -80,7 +82,7 @@ public final class Bitmap<E> {
      * @param key       the unique key of the entry being updated.
      * @param entry     the entry to update.
      */
-    public void update(Iterator oldValues, Iterator newValues, long key, E entry) {
+    public void update(Iterator oldValues, Iterator newValues, long key, E entry, IndexOperationStats operationStats) {
         while (oldValues.hasNext()) {
             Object value = oldValues.next();
             assert value != null;
@@ -88,6 +90,7 @@ public final class Bitmap<E> {
             SparseBitSet bitSet = bitSets.get(value);
             if (bitSet != null) {
                 bitSet.remove(key);
+                operationStats.onEntryRemoved(value);
             }
         }
 
@@ -99,6 +102,7 @@ public final class Bitmap<E> {
             if (bitSet == null) {
                 bitSet = new SparseBitSet();
                 bitSets.put(value, bitSet);
+                operationStats.onEntryAdded(null, value);
             }
             bitSet.add(key);
         }
@@ -113,7 +117,7 @@ public final class Bitmap<E> {
      * @param values the values to remove.
      * @param key    the unique key of an entry being removed.
      */
-    public void remove(Iterator values, long key) {
+    public void remove(Iterator values, long key, IndexOperationStats operationStats) {
         while (values.hasNext()) {
             Object value = values.next();
             assert value != null;
@@ -122,6 +126,7 @@ public final class Bitmap<E> {
             if (bitSet != null) {
                 if (bitSet.remove(key)) {
                     bitSets.remove(value);
+                    operationStats.onEntryRemoved(value);
                 }
             }
         }

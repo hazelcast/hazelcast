@@ -125,8 +125,6 @@ public final class BitmapIndexStore extends BaseIndexStore {
             return;
         }
 
-        Iterator statValues = makeIterator(value);
-
         if (internalObjectKeys == null) {
             // no remapping or long-to-long remapping
 
@@ -146,8 +144,7 @@ public final class BitmapIndexStore extends BaseIndexStore {
                     throw makeNegativeKeyException(key);
                 }
 
-                bitmap.insert(values, key, entry);
-                accountEntryInsert(operationStats, statValues);
+                bitmap.insert(values, key, entry, operationStats);
             } finally {
                 releaseWriteLock();
             }
@@ -162,8 +159,7 @@ public final class BitmapIndexStore extends BaseIndexStore {
                 long internalKey = internalKeyCounter++;
                 long replaced = internalObjectKeys.put(key, internalKey);
                 assert replaced == NO_KEY;
-                bitmap.insert(values, internalKey, entry);
-                accountEntryInsert(operationStats, statValues);
+                bitmap.insert(values, internalKey, entry, operationStats);
             } finally {
                 releaseWriteLock();
             }
@@ -177,8 +173,6 @@ public final class BitmapIndexStore extends BaseIndexStore {
             insert(newValue, entry, operationStats);
             return;
         }
-        Iterator statOldValues = makeIterator(oldValue);
-        Iterator statNewValues = makeIterator(newValue);
 
         if (internalObjectKeys == null) {
             // no remapping or long-to-long remapping
@@ -197,8 +191,7 @@ public final class BitmapIndexStore extends BaseIndexStore {
                         // see https://github.com/hazelcast/hazelcast/issues/17342#issuecomment-680840612
                         internalKey = internalKeyCounter++;
                         internalKeys.put(key, internalKey);
-                        bitmap.insert(newValues, internalKey, entry);
-                        accountEntryInsert(operationStats, newValues);
+                        bitmap.insert(newValues, internalKey, entry, operationStats);
                         return;
                     } else {
                         key = internalKey;
@@ -207,8 +200,7 @@ public final class BitmapIndexStore extends BaseIndexStore {
                     throw makeNegativeKeyException(key);
                 }
 
-                bitmap.update(oldValues, newValues, key, entry);
-                accountEntryUpdate(operationStats, statOldValues, statNewValues);
+                bitmap.update(oldValues, newValues, key, entry, operationStats);
             } finally {
                 releaseWriteLock();
             }
@@ -226,11 +218,9 @@ public final class BitmapIndexStore extends BaseIndexStore {
                     // see https://github.com/hazelcast/hazelcast/issues/17342#issuecomment-680840612
                     internalKey = internalKeyCounter++;
                     internalObjectKeys.put(key, internalKey);
-                    bitmap.insert(newValues, internalKey, entry);
-                    accountEntryInsert(operationStats, newValues);
+                    bitmap.insert(newValues, internalKey, entry, operationStats);
                 } else {
-                    bitmap.update(oldValues, newValues, internalKey, entry);
-                    accountEntryUpdate(operationStats, statOldValues, statNewValues);
+                    bitmap.update(oldValues, newValues, internalKey, entry, operationStats);
                 }
             } finally {
                 releaseWriteLock();
@@ -244,7 +234,6 @@ public final class BitmapIndexStore extends BaseIndexStore {
         if (value == NonTerminalJsonValue.INSTANCE) {
             return;
         }
-        Iterator valuesStats = makeIterator(value);
 
         if (internalObjectKeys == null) {
             // no remapping or long-to-long remapping
@@ -261,14 +250,13 @@ public final class BitmapIndexStore extends BaseIndexStore {
                     if (key != NO_KEY) {
                         // see https://github.com/hazelcast/hazelcast/issues/15439 and
                         // https://github.com/hazelcast/hazelcast/issues/17342#issuecomment-680840612
-                        bitmap.remove(values, key);
+                        bitmap.remove(values, key, operationStats);
                     }
                 } else {
                     if (key < 0) {
                         throw makeNegativeKeyException(key);
                     }
-                    bitmap.remove(values, key);
-                    accountEntryRemove(operationStats, valuesStats);
+                    bitmap.remove(values, key, operationStats);
                 }
             } finally {
                 releaseWriteLock();
@@ -285,8 +273,7 @@ public final class BitmapIndexStore extends BaseIndexStore {
                 if (internalKey != NO_KEY) {
                     // see https://github.com/hazelcast/hazelcast/issues/15439 and
                     // https://github.com/hazelcast/hazelcast/issues/17342#issuecomment-680840612
-                    bitmap.remove(values, internalKey);
-                    accountEntryRemove(operationStats, valuesStats);
+                    bitmap.remove(values, internalKey, operationStats);
                 }
             } finally {
                 releaseWriteLock();
@@ -414,64 +401,6 @@ public final class BitmapIndexStore extends BaseIndexStore {
         }
 
         return value;
-    }
-
-    /**
-     * Accounts insert operations
-     *
-     * @param operationStats current index stats
-     * @param values         iterator which points on first value should be inserted
-     */
-    private void accountEntryInsert(IndexOperationStats operationStats, Iterator values) {
-        if (values instanceof MultiValueIterator) {
-            while (values.hasNext()) {
-                operationStats.onEntryAdded(null, values.next());
-            }
-        } else {
-            operationStats.onEntryAdded(null, values);
-        }
-    }
-
-    /**
-     * Accounts update operations
-     *
-     * @param operationStats current index stats
-     * @param oldValues      iterator which points on first old value should be removed
-     * @param newValues      iterator which points on first old value should be inserted
-     */
-    private void accountEntryUpdate(IndexOperationStats operationStats, Iterator oldValues, Iterator newValues) {
-        if (newValues instanceof MultiValueIterator) {
-            while (newValues.hasNext()) {
-                operationStats.onEntryAdded(null, newValues.next());
-            }
-        } else {
-            operationStats.onEntryAdded(null, newValues);
-        }
-
-        if (oldValues instanceof MultiValueIterator) {
-            while (oldValues.hasNext()) {
-                operationStats.onEntryRemoved(oldValues.next());
-            }
-        } else {
-            operationStats.onEntryRemoved(oldValues.next());
-        }
-    }
-
-    /**
-     * Accounts remove operations
-     *
-     * @param operationStats current index stats
-     * @param oldValues      iterator which points on first old value should be removed
-     */
-    private void accountEntryRemove(IndexOperationStats operationStats, Iterator oldValues) {
-
-        if (oldValues instanceof MultiValueIterator) {
-            while (oldValues.hasNext()) {
-                operationStats.onEntryRemoved(oldValues.next());
-            }
-        } else {
-            operationStats.onEntryRemoved(oldValues.next());
-        }
     }
 
     private Map<Data, QueryableEntry> toMap(Iterator<QueryableEntry> iterator) {
