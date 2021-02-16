@@ -661,9 +661,13 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
 
     private void sendTerminateRaftNodeOpsForDestroyedGroup(CPGroupInfo group) {
         Map<UUID, CPMemberInfo> activeMembersMap = getActiveMembersMap();
-        RaftEndpoint localEndpoint = getLocalCPMember().toRaftEndpoint();
+        CPMemberInfo localCPMember = getLocalCPMember();
+        if (localCPMember == null) {
+            return;
+        }
+        RaftEndpoint localEndpoint = localCPMember.toRaftEndpoint();
         OperationService operationService = nodeEngine.getOperationService();
-        for (RaftEndpoint endpoint : group.members())  {
+        for (RaftEndpoint endpoint : group.members()) {
             if (endpoint.equals(localEndpoint)) {
                 terminateRaftNodeAsync(group.id());
             } else {
