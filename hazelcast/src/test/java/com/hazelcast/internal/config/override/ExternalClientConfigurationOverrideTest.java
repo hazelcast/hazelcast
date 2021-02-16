@@ -25,8 +25,10 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
+import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.ASYNC;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -41,5 +43,19 @@ public class ExternalClientConfigurationOverrideTest extends HazelcastTestSuppor
 
         assertEquals("test", config.getInstanceName());
         assertFalse(config.getNetworkConfig().isAutoDetectionEnabled());
+    }
+
+    @Test
+    public void shouldHandleConnectionStrategy() throws Exception {
+        ClientConfig config = new ClientConfig();
+        config.getConnectionStrategyConfig()
+          .setReconnectMode(ASYNC)
+          .setAsyncStart(true);
+
+        withEnvironmentVariable("HZCLIENT_CONNECTIONSTRATEGY_ASYNCSTART", "true")
+          .execute(() -> new ExternalConfigurationOverride().overwriteClientConfig(config));
+
+        assertTrue(config.getConnectionStrategyConfig().isAsyncStart());
+        assertEquals(ASYNC, config.getConnectionStrategyConfig().getReconnectMode());
     }
 }

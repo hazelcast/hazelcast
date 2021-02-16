@@ -200,7 +200,7 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     private void handleConnectionStrategy(Node node) {
-        ClientConnectionStrategyConfig strategyConfig = new ClientConnectionStrategyConfig();
+        ClientConnectionStrategyConfig strategyConfig = clientConfig.getConnectionStrategyConfig();
         String attrValue = getAttribute(node, "async-start");
         strategyConfig.setAsyncStart(attrValue != null && getBooleanValue(attrValue.trim()));
         attrValue = getAttribute(node, "reconnect-mode");
