@@ -39,9 +39,11 @@ import com.hazelcast.instance.StaticMemberNodeContext;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -62,6 +64,8 @@ import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getLastLogOrSnapshotE
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getSnapshotEntry;
 import static com.hazelcast.cp.internal.session.AbstractProxySessionManager.NO_SESSION_ID;
 import static com.hazelcast.instance.HazelcastInstanceFactory.newHazelcastInstance;
+import static com.hazelcast.spi.properties.GroupProperty.GRACEFUL_SHUTDOWN_MAX_WAIT;
+import static com.hazelcast.test.OverridePropertyRule.clear;
 import static com.hazelcast.test.TestHazelcastInstanceFactory.initOrCreateConfig;
 import static com.hazelcast.util.FutureUtil.returnWithDeadline;
 import static java.util.Arrays.asList;
@@ -80,6 +84,9 @@ import static org.junit.Assert.fail;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
+
+    @Rule
+    public OverridePropertyRule gracefulShutdownTimeoutRule = clear(GRACEFUL_SHUTDOWN_MAX_WAIT.getName());
 
     @Test
     public void testAwaitDiscoveryCompleted() throws InterruptedException {
@@ -930,6 +937,7 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
 
     @Test
     public void when_cpMembersShutdownConcurrently_then_theyCompleteTheirShutdown() throws ExecutionException, InterruptedException {
+        gracefulShutdownTimeoutRule.setOrClearProperty("10");
         // When there are N CP members, we can perform partially-concurrent shutdown in 2 steps:
         // In the first step, we shut down N - 2 members concurrently.
         // Once those members are done, we shutdown the last 2 CP members serially.
