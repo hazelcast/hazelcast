@@ -54,7 +54,7 @@ public class DynamicConfigPreJoinOperation
         for (IdentifiedDataSerializable config: configs) {
             out.writeObject(config);
         }
-        out.writeUTF(configCheckMode.name());
+        out.writeString(configCheckMode.name());
     }
 
     @Override
@@ -64,7 +64,7 @@ public class DynamicConfigPreJoinOperation
         for (int i = 0; i < size; i++) {
             configs[i] = in.readObject();
         }
-        configCheckMode = ConfigCheckMode.valueOf(in.readUTF());
+        configCheckMode = ConfigCheckMode.valueOf(in.readString());
     }
 
     @Override

@@ -189,7 +189,7 @@ public class CachePartitionLostListenerTest extends AbstractPartitionLostListene
                 withSettings().extraInterfaces(DataWriter.class));
         cachePartitionEventData.writeData(output);
 
-        verify(output).writeUTF("cacheName");
+        verify(output).writeString("cacheName");
         verify(output).writeInt(1);
     }
 
@@ -199,7 +199,7 @@ public class CachePartitionLostListenerTest extends AbstractPartitionLostListene
 
         ObjectDataInput input = mock(ObjectDataInput.class,
                 withSettings().extraInterfaces(DataReader.class));
-        when(input.readUTF()).thenReturn("cacheName");
+        when(input.readString()).thenReturn("cacheName");
         when(input.readInt()).thenReturn(1);
 
         cachePartitionEventData.readData(input);

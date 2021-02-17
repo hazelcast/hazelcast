@@ -51,13 +51,13 @@ public class AppendCallable
     @Override
     public void writeData(ObjectDataOutput out)
             throws IOException {
-        out.writeUTF(msg);
+        out.writeString(msg);
     }
 
     @Override
     public void readData(ObjectDataInput in)
             throws IOException {
-        msg = in.readUTF();
+        msg = in.readString();
     }
 
     @Override

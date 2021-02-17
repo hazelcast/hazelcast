@@ -70,12 +70,12 @@ public final class SingleAttributeProjection<I, O> implements Projection<I, O>, 
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(attributePath);
+        out.writeString(attributePath);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        attributePath = in.readUTF();
+        attributePath = in.readString();
     }
 
     @Override

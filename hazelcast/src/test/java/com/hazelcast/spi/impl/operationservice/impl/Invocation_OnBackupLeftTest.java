@@ -174,13 +174,13 @@ public class Invocation_OnBackupLeftTest extends HazelcastTestSupport {
 
         @Override
         protected void writeInternal(ObjectDataOutput out) throws IOException {
-            out.writeUTF(backupId);
+            out.writeString(backupId);
             out.writeInt(primaryResponseDelaySeconds);
         }
 
         @Override
         protected void readInternal(ObjectDataInput in) throws IOException {
-            backupId = in.readUTF();
+            backupId = in.readString();
             primaryResponseDelaySeconds = in.readInt();
         }
     }
@@ -204,12 +204,12 @@ public class Invocation_OnBackupLeftTest extends HazelcastTestSupport {
 
         @Override
         protected void writeInternal(ObjectDataOutput out) throws IOException {
-            out.writeUTF(backupId);
+            out.writeString(backupId);
         }
 
         @Override
         protected void readInternal(ObjectDataInput in) throws IOException {
-            backupId = in.readUTF();
+            backupId = in.readString();
         }
     }
 }

@@ -385,7 +385,7 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeInt(prefetchCount);
         out.writeLong(prefetchValidityMillis);
         out.writeLong(epochStart);
@@ -398,7 +398,7 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable, Named
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         prefetchCount = in.readInt();
         prefetchValidityMillis = in.readLong();
         epochStart = in.readLong();

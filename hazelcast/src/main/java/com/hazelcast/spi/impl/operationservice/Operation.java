@@ -673,7 +673,7 @@ public abstract class Operation implements DataSerializable, Tenantable {
         out.writeShort(flags);
 
         if (isFlagSet(BITMASK_SERVICE_NAME_SET)) {
-            out.writeUTF(serviceName);
+            out.writeString(serviceName);
         }
 
         if (isFlagSet(BITMASK_PARTITION_ID_32_BIT)) {
@@ -719,7 +719,7 @@ public abstract class Operation implements DataSerializable, Tenantable {
         flags = in.readShort();
 
         if (isFlagSet(BITMASK_SERVICE_NAME_SET)) {
-            serviceName = in.readUTF();
+            serviceName = in.readString();
         }
 
         if (isFlagSet(BITMASK_PARTITION_ID_32_BIT)) {

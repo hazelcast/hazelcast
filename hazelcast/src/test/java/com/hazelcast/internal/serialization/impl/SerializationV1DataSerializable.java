@@ -102,7 +102,7 @@ public class SerializationV1DataSerializable implements DataSerializable {
         out.writeLongArray(longs);
         out.writeFloatArray(floats);
         out.writeDoubleArray(doubles);
-        out.writeUTF(string);
+        out.writeString(string);
         out.writeUTFArray(strings);
 
         this.version = out.getVersion();
@@ -126,8 +126,8 @@ public class SerializationV1DataSerializable implements DataSerializable {
         this.longs = in.readLongArray();
         this.floats = in.readFloatArray();
         this.doubles = in.readDoubleArray();
-        this.string = in.readUTF();
-        this.strings = in.readUTFArray();
+        this.string = in.readString();
+        this.strings = in.readStringArray();
 
         this.version = in.getVersion();
     }

@@ -78,13 +78,13 @@ class NewIdBatchOperation extends Operation implements IdentifiedDataSerializabl
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        flakeIdGenName = in.readUTF();
+        flakeIdGenName = in.readString();
         batchSize = in.readInt();
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeUTF(flakeIdGenName);
+        out.writeString(flakeIdGenName);
         out.writeInt(batchSize);
     }
 

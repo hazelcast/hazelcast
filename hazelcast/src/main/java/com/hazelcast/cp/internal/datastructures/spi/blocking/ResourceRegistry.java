@@ -292,17 +292,17 @@ public abstract class ResourceRegistry<W extends WaitKey, R extends BlockingReso
         out.writeObject(groupId);
         out.writeInt(resources.size());
         for (Entry<String, R> e : resources.entrySet()) {
-            out.writeUTF(e.getKey());
+            out.writeString(e.getKey());
             out.writeObject(e.getValue());
         }
         out.writeInt(destroyedNames.size());
         for (String name : destroyedNames) {
-            out.writeUTF(name);
+            out.writeString(name);
         }
         out.writeInt(waitTimeouts.size());
         for (Entry<BiTuple<String, UUID>, BiTuple<Long, Long>> e : waitTimeouts.entrySet()) {
             BiTuple<String, UUID> t = e.getKey();
-            out.writeUTF(t.element1);
+            out.writeString(t.element1);
             writeUUID(out, t.element2);
             out.writeLong(e.getValue().element1);
         }
@@ -313,19 +313,19 @@ public abstract class ResourceRegistry<W extends WaitKey, R extends BlockingReso
         groupId = in.readObject();
         int count = in.readInt();
         for (int i = 0; i < count; i++) {
-            String name = in.readUTF();
+            String name = in.readString();
             R res = in.readObject();
             resources.put(name, res);
         }
         count = in.readInt();
         for (int i = 0; i < count; i++) {
-            String name = in.readUTF();
+            String name = in.readString();
             destroyedNames.add(name);
         }
         long now = Clock.currentTimeMillis();
         count = in.readInt();
         for (int i = 0; i < count; i++) {
-            String name = in.readUTF();
+            String name = in.readString();
             UUID invocationUid = readUUID(in);
             long timeout = in.readLong();
             waitTimeouts.put(BiTuple.of(name, invocationUid), BiTuple.of(timeout, now + timeout));

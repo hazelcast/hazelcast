@@ -75,13 +75,13 @@ public class InitSemaphoreOp extends RaftOp implements IndeterminateOperationSta
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeInt(permits);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         permits = in.readInt();
     }
 

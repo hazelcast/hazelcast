@@ -247,18 +247,18 @@ public class EvictionConfig implements EvictionConfiguration, IdentifiedDataSeri
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(size);
-        out.writeUTF(maxSizePolicy.toString());
-        out.writeUTF(evictionPolicy.toString());
-        out.writeUTF(comparatorClassName);
+        out.writeString(maxSizePolicy.toString());
+        out.writeString(evictionPolicy.toString());
+        out.writeString(comparatorClassName);
         out.writeObject(comparator);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         size = in.readInt();
-        maxSizePolicy = MaxSizePolicy.valueOf(in.readUTF());
-        evictionPolicy = EvictionPolicy.valueOf(in.readUTF());
-        comparatorClassName = in.readUTF();
+        maxSizePolicy = MaxSizePolicy.valueOf(in.readString());
+        evictionPolicy = EvictionPolicy.valueOf(in.readString());
+        comparatorClassName = in.readString();
         comparator = in.readObject();
     }
 

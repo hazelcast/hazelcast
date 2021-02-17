@@ -89,7 +89,7 @@ public class CPGroupSummary implements CPGroup, IdentifiedDataSerializable {
         for (CPMember member : members) {
             out.writeObject(member);
         }
-        out.writeUTF(status.toString());
+        out.writeString(status.toString());
     }
 
     @Override
@@ -110,7 +110,7 @@ public class CPGroupSummary implements CPGroup, IdentifiedDataSerializable {
             members.add(member);
         }
         members = unmodifiableSet(members);
-        status = CPGroupStatus.valueOf(in.readUTF());
+        status = CPGroupStatus.valueOf(in.readString());
     }
 
     @Override

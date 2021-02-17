@@ -100,12 +100,12 @@ public class ReplicationOperation extends Operation implements IdentifiedDataSer
 
 
         private void write(ObjectDataOutput out) throws IOException {
-            out.writeUTF(name);
+            out.writeString(name);
             ringBuffer.write(out);
         }
 
         private void read(ObjectDataInput in) throws IOException {
-            name = in.readUTF();
+            name = in.readString();
             ringBuffer = new TaskRingBuffer();
             ringBuffer.read(in);
         }

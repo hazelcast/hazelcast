@@ -60,13 +60,13 @@ public class ContainsValueOperation extends AbstractNamedSerializableOperation i
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         IOUtil.writeData(out, value);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         value = IOUtil.readData(in);
     }
 
