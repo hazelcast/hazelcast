@@ -45,7 +45,6 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.pickMaxIdleMillis;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.pickTTLMillis;
-import static com.hazelcast.map.impl.record.Record.UNSET;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
@@ -259,7 +258,7 @@ public class ExpirySystem {
 
         scanAndEvictExpiredKeys(maxScannableKeyCount, now, backup);
 
-        accumulateOrSendExpiredKey(null, UNSET);
+        tryToSendBackupExpiryOp();
     }
 
     /**
@@ -348,7 +347,6 @@ public class ExpirySystem {
         getOrCreateExpireTimeByKeyMap(false).clear();
     }
 
-    // null dataKey is used to trigger backup operation sending...
     public void accumulateOrSendExpiredKey(Data dataKey, long valueHashCode) {
         if (mapContainer.getTotalBackupCount() == 0) {
             return;
@@ -356,6 +354,14 @@ public class ExpirySystem {
 
         if (dataKey != null) {
             expiredKeys.offer(new ExpiredKey(toHeapData(dataKey), valueHashCode));
+        }
+
+        clearExpiredRecordsTask.tryToSendBackupExpiryOp(recordStore, true);
+    }
+
+    public void tryToSendBackupExpiryOp() {
+        if (mapContainer.getTotalBackupCount() == 0) {
+            return;
         }
 
         clearExpiredRecordsTask.tryToSendBackupExpiryOp(recordStore, true);
