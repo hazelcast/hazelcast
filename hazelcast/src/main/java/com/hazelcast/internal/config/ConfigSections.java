@@ -64,7 +64,8 @@ public enum ConfigSections {
     METRICS("metrics", false),
     AUDITLOG("auditlog", false),
     INSTANCE_TRACKING("instance-tracking", false),
-    SQL("sql", false);
+    SQL("sql", false),
+    JET("jet", false);
 
     final boolean multipleOccurrence;
     private final String name;

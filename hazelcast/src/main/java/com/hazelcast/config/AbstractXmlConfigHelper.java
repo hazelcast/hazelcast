@@ -173,6 +173,9 @@ public abstract class AbstractXmlConfigHelper {
         if (name.equals("split-brain-protection-ref")) {
             return "splitBrainProtectionName";
         }
+        if (name.equals("flow-control-period")) {
+            return "flowControlPeriodMs";
+        }
         return null;
     }
 

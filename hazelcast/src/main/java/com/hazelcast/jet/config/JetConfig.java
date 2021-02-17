@@ -73,4 +73,28 @@ public class JetConfig {
         this.defaultEdgeConfig = defaultEdgeConfig;
         return this;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        JetConfig jetConfig = (JetConfig) o;
+
+        if (!instanceConfig.equals(jetConfig.instanceConfig)) {
+            return false;
+        }
+        return defaultEdgeConfig.equals(jetConfig.defaultEdgeConfig);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = instanceConfig.hashCode();
+        result = 31 * result + defaultEdgeConfig.hashCode();
+        return result;
+    }
 }

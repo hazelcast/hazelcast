@@ -3605,4 +3605,111 @@
         <statement-timeout-millis>0</statement-timeout-millis>
     </sql>
 
+
+    <!--
+        ===== HAZELCAST JET CONFIGURATION =====
+
+        Configuration element's name is <jet>.
+
+        It has the following sub-elements:
+
+        * <instance>:
+            General configuration options pertaining to a Jet instance.
+
+            It has the following sub-elements:
+            * <cooperative-thread-count>:
+                Sets the number of threads each cluster member will use to execute Jet
+                jobs. This refers only to threads executing `cooperative`
+                processors; each `blocking` processor is assigned its own thread.
+            * <flow-control-period>:
+                While executing a Jet job there is the issue of regulating the rate
+                at which one member of the cluster sends data to another member. The
+                receiver will regularly report to each sender how much more data it
+                is allowed to send over a given DAG edge. This method sets the length
+                (in milliseconds) of the interval between flow-control ("ack") packets.
+            * <backup-count>:
+                Sets the number of backups that Jet will maintain for the job metadata
+                and snapshots. Each backup is on another cluster member; all backup
+                write operations must complete before the overall write operation can
+                complete. The maximum allowed number of backups is 6 and the default is
+                1.
+                For example, if you set the backup count to 2, Jet will replicate all
+                the job metadata and snapshot data to two other members. If one or two
+                members of the cluster fail, Jet can recover the data from the snapshot
+                and continue executing the job on the remaining members without loss.
+            * <scale-up-delay-millis>:
+                Sets the delay after which auto-scaled jobs will restart if a new member
+                is added to the cluster. The default is 10 seconds. Has no effect on
+                jobs with auto scaling disabled.
+            * <lossless-restart-enabled>:
+                Sets whether lossless job restart is enabled for the node. With lossless
+                restart you can restart the whole cluster without losing the jobs and
+                their state. The feature is implemented on top of the Hot Restart
+                feature of Hazelcast which persists the data to disk. If enabled, you
+                have to also configure Hot Restart.
+                Note: the snapshots exported using `Job#exportSnapshot` will also have
+                Hot Restart storage enabled.
+                Feature is disabled by default. If you enable this option in open-source,
+                the member will fail to start, you need Enterprise to run it and obtain a
+                license from Hazelcast.
+
+        * <edge-defaults>
+            A configuration object for a DAG `Edge` that holds fine-tuning parameters
+            that influence its performance characteristics.
+
+            It has the following sub-elements:
+            * <queue-size>:
+                Sets the capacity of processor-to-processor concurrent queues. The value
+                is rounded upwards to the next power of 2.
+                When data needs to travel between two processors on the same cluster
+                member, Jet sends it over a concurrent single-producer, single-consumer
+                (SPSC) queue of fixed capacity.
+                Since there are several processors executing the logic of each vertex,
+                and since the queues are SPSC, there will be
+                `senderParallelism * receiverParallelism` queues representing the edge on
+                each member. The edge capacity should strike a balance between
+                performance and memory usage.
+            * <packet-size-limit>
+                For a distributed edge, data is sent to a remote member via Hazelcast network
+                packets. Each packet is dedicated to the data of a single edge, but may contain
+                any number of data items. This setting limits the size of the packet in bytes.
+                Packets should be large enough to drown out any fixed overheads, but small enough
+                to allow good interleaving with other packets.
+                Note that a single item cannot straddle packets, therefore the maximum packet size
+                can exceed the value configured here by the size of a single data item.
+                This setting has no effect on a non-distributed edge.
+            * <receive-window-multiplier>
+                Sets the scaling factor used by the adaptive receive window sizing
+                function.
+                For each distributed edge the receiving member regularly sends
+                flow-control ("ack") packets to its sender which prevent it from sending
+                too much data and overflowing the buffers. The sender is allowed to send
+                the data one `receive window` further than the last acknowledged byte and
+                the receive window is sized in proportion to the rate of processing at
+                the receiver.
+                Ack packets are sent in regular intervals (InstanceConfig#setFlowControlPeriodMs)
+                and the `receive window multiplier` sets the factor of the linear
+                relationship between the amount of data processed within one such
+                interval and the size of the receive window.
+                To put it another way, let us define an `ackworth` as the amount of data
+                processed between two consecutive ack packets. The receive window
+                multiplier determines the number of ackworths the sender can be ahead of
+                the last acked byte.
+                This setting has no effect on a non-distributed edge.
+    -->
+    <jet>
+        <instance>
+            <cooperative-thread-count>4</cooperative-thread-count>
+            <flow-control-period>100</flow-control-period>
+            <backup-count>1</backup-count>
+            <scale-up-delay-millis>10000</scale-up-delay-millis>
+            <lossless-restart-enabled>false</lossless-restart-enabled>
+        </instance>
+        <edge-defaults>
+            <queue-size>1024</queue-size>
+            <packet-size-limit>16384</packet-size-limit>
+            <receive-window-multiplier>3</receive-window-multiplier>
+        </edge-defaults>
+    </jet>
+
 </hazelcast>

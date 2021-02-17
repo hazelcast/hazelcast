@@ -176,4 +176,40 @@ public class InstanceConfig {
         this.losslessRestartEnabled = enabled;
         return this;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        InstanceConfig that = (InstanceConfig) o;
+
+        if (cooperativeThreadCount != that.cooperativeThreadCount) {
+            return false;
+        }
+        if (flowControlPeriodMs != that.flowControlPeriodMs) {
+            return false;
+        }
+        if (backupCount != that.backupCount) {
+            return false;
+        }
+        if (scaleUpDelayMillis != that.scaleUpDelayMillis) {
+            return false;
+        }
+        return losslessRestartEnabled == that.losslessRestartEnabled;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = cooperativeThreadCount;
+        result = 31 * result + flowControlPeriodMs;
+        result = 31 * result + backupCount;
+        result = 31 * result + (int) (scaleUpDelayMillis ^ (scaleUpDelayMillis >>> 32));
+        result = 31 * result + (losslessRestartEnabled ? 1 : 0);
+        return result;
+    }
 }

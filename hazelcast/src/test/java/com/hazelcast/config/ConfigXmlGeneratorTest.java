@@ -40,6 +40,7 @@ import com.hazelcast.config.security.TlsAuthenticationConfig;
 import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapStore;
 import com.hazelcast.map.MapStoreFactory;
@@ -555,7 +556,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                                 .setType(PermissionConfig.PermissionType.REPLICATEDMAP)
                                 .setName("rmap")
                                 .setPrincipal("monitor")
-                        )));
+                )));
 
         cfg.setSecurityConfig(expectedConfig);
 
@@ -1320,7 +1321,6 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         assertEquals(1234, xmlMergePolicyConfig.getBatchSize());
         ConfigCompatibilityChecker.checkQueueConfig(expectedConfig, actualConfig);
     }
-
 
 
     @Test
@@ -2131,6 +2131,26 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         AuditlogConfig generatedConfig = getNewConfigViaXMLGenerator(config).getAuditlogConfig();
         assertTrue(generatedConfig + " should be compatible with " + config.getAuditlogConfig(),
                 new ConfigCompatibilityChecker.AuditlogConfigChecker().check(config.getAuditlogConfig(), generatedConfig));
+    }
+
+    @Test
+    public void testJetConfig() {
+        Config config = new Config();
+        JetConfig jetConfig = config.getJetConfig();
+        jetConfig.getInstanceConfig()
+                .setLosslessRestartEnabled(true)
+                .setScaleUpDelayMillis(123)
+                .setBackupCount(2)
+                .setFlowControlPeriodMs(123)
+                .setCooperativeThreadCount(123);
+
+        jetConfig.getDefaultEdgeConfig()
+                .setReceiveWindowMultiplier(123)
+                .setPacketSizeLimit(123)
+                .setQueueSize(123);
+
+        Config newConfig = getNewConfigViaXMLGenerator(config);
+        assertEquals(jetConfig, newConfig.getJetConfig());
     }
 
     @Test

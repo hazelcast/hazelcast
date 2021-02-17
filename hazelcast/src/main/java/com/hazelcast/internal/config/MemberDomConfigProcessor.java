@@ -133,6 +133,9 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.util.StringUtil;
+import com.hazelcast.jet.config.EdgeConfig;
+import com.hazelcast.jet.config.InstanceConfig;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.query.impl.IndexUtils;
@@ -175,6 +178,7 @@ import static com.hazelcast.internal.config.ConfigSections.HOT_RESTART_PERSISTEN
 import static com.hazelcast.internal.config.ConfigSections.IMPORT;
 import static com.hazelcast.internal.config.ConfigSections.INSTANCE_NAME;
 import static com.hazelcast.internal.config.ConfigSections.INSTANCE_TRACKING;
+import static com.hazelcast.internal.config.ConfigSections.JET;
 import static com.hazelcast.internal.config.ConfigSections.LICENSE_KEY;
 import static com.hazelcast.internal.config.ConfigSections.LIST;
 import static com.hazelcast.internal.config.ConfigSections.LISTENERS;
@@ -348,6 +352,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleInstanceTracking(node, config.getInstanceTrackingConfig());
         } else if (matches(SQL.getName(), nodeName)) {
             handleSql(node);
+        } else if (matches(JET.getName(), nodeName)) {
+            handleJet(node);
         } else {
             return true;
         }
@@ -2886,6 +2892,55 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             if (matches("enabled", att.getNodeName())) {
                 boolean enabled = getBooleanValue(getAttribute(node, "enabled"));
                 jmxConfig.setEnabled(enabled);
+            }
+        }
+    }
+
+    private void handleJet(Node node) {
+        JetConfig jetConfig = config.getJetConfig();
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            if (matches("instance", nodeName)) {
+                handleInstance(jetConfig, child);
+            } else if (matches("edge-defaults", nodeName)) {
+                handleEdgeDefaults(jetConfig, child);
+            }
+        }
+    }
+
+    private void handleInstance(JetConfig jetConfig, Node node) {
+        InstanceConfig instanceConfig = jetConfig.getInstanceConfig();
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            if (matches("cooperative-thread-count", nodeName)) {
+                instanceConfig.setCooperativeThreadCount(
+                        getIntegerValue("cooperative-thread-count", getTextContent(child)));
+            } else if (matches("flow-control-period", nodeName)) {
+                instanceConfig.setFlowControlPeriodMs(
+                        getIntegerValue("flow-control-period", getTextContent(child)));
+            } else if (matches("backup-count", nodeName)) {
+                instanceConfig.setBackupCount(
+                        getIntegerValue("backup-count", getTextContent(child)));
+            } else if (matches("scale-up-delay-millis", nodeName)) {
+                instanceConfig.setScaleUpDelayMillis(
+                        getLongValue("scale-up-delay-millis", getTextContent(child)));
+            } else if (matches("lossless-restart-enabled", nodeName)) {
+                instanceConfig.setLosslessRestartEnabled(getBooleanValue(getTextContent(child)));
+            }
+        }
+    }
+
+    private void handleEdgeDefaults(JetConfig jetConfig, Node node) {
+        EdgeConfig edgeConfig = jetConfig.getDefaultEdgeConfig();
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            if (matches("queue-size", nodeName)) {
+                edgeConfig.setQueueSize(getIntegerValue("queue-size", getTextContent(child)));
+            } else if (matches("packet-size-limit", nodeName)) {
+                edgeConfig.setPacketSizeLimit(getIntegerValue("packet-size-limit", getTextContent(child)));
+            } else if (matches("receive-window-multiplier", nodeName)) {
+                edgeConfig.setReceiveWindowMultiplier(
+                        getIntegerValue("receive-window-multiplier", getTextContent(child)));
             }
         }
     }

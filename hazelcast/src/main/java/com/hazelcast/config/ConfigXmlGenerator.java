@@ -36,6 +36,9 @@ import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.MapUtil;
+import com.hazelcast.jet.config.EdgeConfig;
+import com.hazelcast.jet.config.InstanceConfig;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
@@ -165,6 +168,7 @@ public class ConfigXmlGenerator {
         metricsConfig(gen, config);
         instanceTrackingConfig(gen, config);
         sqlConfig(gen, config);
+        jetConfig(gen, config);
         factoryWithPropertiesXmlGenerator(gen, "auditlog", config.getAuditlogConfig());
         userCodeDeploymentConfig(gen, config);
 
@@ -1625,6 +1629,26 @@ public class ConfigXmlGenerator {
                 .node("executor-pool-size", sqlConfig.getExecutorPoolSize())
                 .node("statement-timeout-millis", sqlConfig.getStatementTimeoutMillis())
                 .close();
+    }
+
+    private static void jetConfig(XmlGenerator gen, Config config) {
+        JetConfig jetConfig = config.getJetConfig();
+        InstanceConfig instanceConfig = jetConfig.getInstanceConfig();
+        EdgeConfig edgeConfig = jetConfig.getDefaultEdgeConfig();
+        gen.open("jet")
+                .open("instance")
+                    .node("cooperative-thread-count", instanceConfig.getCooperativeThreadCount())
+                    .node("flow-control-period", instanceConfig.getFlowControlPeriodMs())
+                    .node("backup-count", instanceConfig.getBackupCount())
+                    .node("scale-up-delay-millis", instanceConfig.getScaleUpDelayMillis())
+                    .node("lossless-restart-enabled", instanceConfig.isLosslessRestartEnabled())
+                .close()
+                .open("edge-defaults")
+                    .node("queue-size", edgeConfig.getQueueSize())
+                    .node("packet-size-limit", edgeConfig.getPacketSizeLimit())
+                    .node("receive-window-multiplier", edgeConfig.getReceiveWindowMultiplier())
+                .close()
+            .close();
     }
 
     private static void userCodeDeploymentConfig(XmlGenerator gen, Config config) {

@@ -175,4 +175,32 @@ public class EdgeConfig implements IdentifiedDataSerializable {
         receiveWindowMultiplier = in.readInt();
         packetSizeLimit = in.readInt();
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        EdgeConfig that = (EdgeConfig) o;
+
+        if (queueSize != that.queueSize) {
+            return false;
+        }
+        if (receiveWindowMultiplier != that.receiveWindowMultiplier) {
+            return false;
+        }
+        return packetSizeLimit == that.packetSizeLimit;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = queueSize;
+        result = 31 * result + receiveWindowMultiplier;
+        result = 31 * result + packetSizeLimit;
+        return result;
+    }
 }
