@@ -30,10 +30,10 @@ public interface RecordFactory<T> {
     Record<T> newRecord(Object value);
 
     // RU_COMPAT_4_1
-    default boolean isClusterV42() {
+    default boolean isClusterV41() {
         Version clusterVersion = geMapContainer().getMapServiceContext()
                 .getNodeEngine().getClusterService().getClusterVersion();
-        return clusterVersion.isEqualTo(Versions.V4_2);
+        return clusterVersion.isUnknownOrLessThan(Versions.V4_2);
     }
 
     // RU_COMPAT_4_1

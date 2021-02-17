@@ -55,7 +55,7 @@ public class ObjectRecordFactory implements RecordFactory<Object> {
     @Nonnull
     private Record<Object> newRecord(MapConfig mapConfig, boolean perEntryStatsEnabled,
                                      boolean hasEviction, Object objectValue) {
-        if (perEntryStatsEnabled || !isClusterV42()) {
+        if (perEntryStatsEnabled || isClusterV41()) {
             return new ObjectRecordWithStats(objectValue);
         }
 

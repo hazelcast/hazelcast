@@ -71,7 +71,7 @@ public final class Records {
         RecordReaderWriter readerWriter = record.getMatchingRecordReaderWriter();
         // RU_COMPAT_4_1
         Version version = out.getVersion();
-        if (version.isLessThan(Versions.V4_2)) {
+        if (version.isUnknownOrLessThan(Versions.V4_2)) {
             readerWriter = RU_COMPAT_MAP.get(readerWriter);
         }
 

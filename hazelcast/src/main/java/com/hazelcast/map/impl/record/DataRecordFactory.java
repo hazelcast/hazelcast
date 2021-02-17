@@ -59,7 +59,7 @@ public class DataRecordFactory implements RecordFactory<Data> {
 
     private Record<Data> newCachedSimpleRecord(Data valueData, MapConfig mapConfig,
                                                boolean perEntryStatsEnabled, boolean hasEviction) {
-        if (perEntryStatsEnabled || !isClusterV42()) {
+        if (perEntryStatsEnabled || isClusterV41()) {
             return new CachedDataRecordWithStats(valueData);
         }
 
@@ -84,7 +84,7 @@ public class DataRecordFactory implements RecordFactory<Data> {
 
     private Record<Data> newSimpleRecord(Data valueData, MapConfig mapConfig,
                                          boolean perEntryStatsEnabled, boolean hasEviction) {
-        if (perEntryStatsEnabled || !isClusterV42()) {
+        if (perEntryStatsEnabled || isClusterV41()) {
             return new DataRecordWithStats(valueData);
         }
 
