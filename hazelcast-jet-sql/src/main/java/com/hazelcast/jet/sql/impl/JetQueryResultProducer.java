@@ -68,15 +68,16 @@ public class JetQueryResultProducer implements QueryResultProducer {
     }
 
     public void consume(Inbox inbox) {
-        check();
+        ensureNotDone();
         for (Object[] row; (row = (Object[]) inbox.peek()) != null && rows.offer(new HeapRow(row)); ) {
             inbox.remove();
         }
     }
 
-    public void check() {
-        if (done.get() != null) {
-            throw new RuntimeException(done.get());
+    public void ensureNotDone() {
+        Exception exception = done.get();
+        if (exception != null) {
+            throw sneakyThrow(exception);
         }
     }
 

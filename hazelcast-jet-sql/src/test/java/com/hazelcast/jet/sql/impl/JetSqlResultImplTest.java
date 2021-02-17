@@ -16,9 +16,8 @@
 
 package com.hazelcast.jet.sql.impl;
 
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.jet.core.JetTestSupport;
-import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import org.junit.Test;
@@ -32,11 +31,9 @@ public class JetSqlResultImplTest extends JetTestSupport {
     @Test
     // test for https://github.com/hazelcast/hazelcast-jet/issues/2697
     public void when_closed_then_iteratorFails() {
-        JetInstance inst = createJetMember();
-        TestBatchSqlConnector.create(inst.getSql(), "m", 1);
-        SqlResult sqlResult = inst.getSql().execute("select * from m");
+        SqlResult sqlResult = createJetMember().getSql().execute("select * from table(generate_stream(1))");
         sqlResult.close();
         Iterator<SqlRow> iterator = sqlResult.iterator();
-        assertThatThrownBy(() -> iterator.hasNext());
+        assertThatThrownBy(() -> iterator.forEachRemaining(ConsumerEx.noop()));
     }
 }

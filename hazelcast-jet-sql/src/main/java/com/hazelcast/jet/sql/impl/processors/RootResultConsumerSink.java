@@ -52,7 +52,7 @@ public final class RootResultConsumerSink implements Processor {
 
     @Override
     public boolean tryProcess() {
-        rootResultConsumer.check();
+        rootResultConsumer.ensureNotDone();
         return true;
     }
 
