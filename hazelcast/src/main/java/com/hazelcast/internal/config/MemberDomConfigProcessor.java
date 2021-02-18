@@ -2647,9 +2647,9 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     void handleSecurityPermission(Node node, PermissionConfig.PermissionType type) {
         SecurityConfig cfg = config.getSecurityConfig();
         Node nameNode = getNamedItemNode(node, "name");
-        String name = nameNode != null ? getTextContent(nameNode) : "*";
+        String name = nameNode != null ? getTextContent(nameNode) : null;
         Node principalNode = getNamedItemNode(node, "principal");
-        String principal = principalNode != null ? getTextContent(principalNode) : "*";
+        String principal = principalNode != null ? getTextContent(principalNode) : null;
         PermissionConfig permConfig = new PermissionConfig(type, name, principal);
         cfg.addClientPermissionConfig(permConfig);
         for (Node child : childElements(node)) {

@@ -25,10 +25,14 @@ import com.hazelcast.instance.JetBuildInfo;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.permission.ManagementPermission;
 
 import java.security.Permission;
 
 public class GetClusterMetadataMessageTask extends AbstractCallableMessageTask<Void> {
+
+    public static final Permission REQUIRED_PERMISSION = new ManagementPermission("cluster.getMetadata");
+
     public GetClusterMetadataMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
@@ -66,7 +70,7 @@ public class GetClusterMetadataMessageTask extends AbstractCallableMessageTask<V
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return REQUIRED_PERMISSION;
     }
 
     @Override

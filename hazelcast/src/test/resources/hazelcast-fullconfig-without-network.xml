@@ -854,7 +854,7 @@
                     <action>all</action>
                 </actions>
             </countdown-latch-permission>
-            <semaphore-permission name="*">
+            <semaphore-permission name="*" principal="*">
                 <actions>
                     <action>all</action>
                 </actions>
@@ -874,7 +874,7 @@
                     <action>all</action>
                 </actions>
             </cardinality-estimator-permission>
-            <scheduled-executor-permission name="*">
+            <scheduled-executor-permission name="*" principal="*">
                 <actions>
                     <action>all</action>
                 </actions>
@@ -884,7 +884,7 @@
                     <action>all</action>
                 </actions>
             </cache-permission>
-            <user-code-deployment-permission name="*">
+            <user-code-deployment-permission name="*" principal="*">
                 <actions>
                     <action>all</action>
                 </actions>
@@ -894,7 +894,7 @@
                     <action>all</action>
                 </actions>
             </pn-counter-permission>
-            <ring-buffer-permission name="*">
+            <ring-buffer-permission name="*" principal="*">
                 <actions>
                     <action>all</action>
                 </actions>
@@ -909,6 +909,7 @@
                     <action>all</action>
                 </actions>
             </replicatedmap-permission>
+            <management-permission principal="mcadmin"/>
         </client-permissions>
         <client-block-unmapped-actions>true</client-block-unmapped-actions>
     </security>

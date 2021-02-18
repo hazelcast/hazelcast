@@ -2416,6 +2416,7 @@ hazelcast:
             - all
       user-code-deployment:
         - name: "*"
+          principal: "*"
           actions:
             - all
       pn-counter:
@@ -2426,6 +2427,10 @@ hazelcast:
         - name: "*"
           actions:
             - all
+      management:
+        - principal: management
+          endpoints:
+            - 127.0.0.1
     client-block-unmapped-actions: true
     security-interceptors:
       - com.your-package.YourSecurityInterceptorImplementation

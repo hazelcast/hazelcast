@@ -22,10 +22,13 @@ import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.permission.ManagementPermission;
 
 import java.security.Permission;
 
 public class MatchMCConfigMessageTask extends AbstractCallableMessageTask<String> {
+
+    public static final Permission REQUIRED_PERMISSION = new ManagementPermission("matchMCConfig");
 
     public MatchMCConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -54,7 +57,7 @@ public class MatchMCConfigMessageTask extends AbstractCallableMessageTask<String
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return REQUIRED_PERMISSION;
     }
 
     @Override

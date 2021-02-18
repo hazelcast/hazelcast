@@ -546,6 +546,11 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                                 .setName("mycounter")
                                 .setPrincipal("devos"),
                         new PermissionConfig()
+                                .setType(PermissionConfig.PermissionType.MANAGEMENT)
+                                .setPrincipal("mcadmin"),
+                        new PermissionConfig()
+                                .setType(PermissionConfig.PermissionType.CONFIG),
+                        new PermissionConfig()
                                 .setActions(newHashSet("read", "create"))
                                 .setType(PermissionConfig.PermissionType.REPLICATEDMAP)
                                 .setName("rmap")
