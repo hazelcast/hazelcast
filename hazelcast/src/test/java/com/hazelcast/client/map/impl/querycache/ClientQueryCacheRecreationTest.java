@@ -102,6 +102,9 @@ public class ClientQueryCacheRecreationTest extends HazelcastTestSupport {
             map.put(i, i);
         }
 
+        // Make sure that all events are processed before calling queryCache#recreate
+        assertCacheSizeEventually(queryCache, 100);
+
         InternalQueryCache internalQueryCache = (InternalQueryCache) queryCache;
         internalQueryCache.recreate();
 
@@ -157,6 +160,10 @@ public class ClientQueryCacheRecreationTest extends HazelcastTestSupport {
 
         assertTrueEventually(assertTask);
         assertTrueAllTheTime(assertTask, 3);
+    }
+
+    private static void assertCacheSizeEventually(QueryCache cache, int expectedCacheSize) {
+        assertTrueEventually(() -> assertEquals(expectedCacheSize, cache.size()));
     }
 
 }
