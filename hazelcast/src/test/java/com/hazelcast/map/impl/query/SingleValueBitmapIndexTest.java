@@ -57,6 +57,8 @@ import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 import java.util.function.IntPredicate;
+import static java.util.Arrays.asList;
+
 
 import static com.hazelcast.config.BitmapIndexOptions.UniqueKeyTransformation.LONG;
 import static com.hazelcast.config.BitmapIndexOptions.UniqueKeyTransformation.OBJECT;
@@ -66,7 +68,7 @@ import static com.hazelcast.query.Predicates.equal;
 import static com.hazelcast.query.Predicates.in;
 import static com.hazelcast.query.Predicates.notEqual;
 import static com.hazelcast.query.Predicates.or;
-import static java.util.Arrays.asList;
+
 import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
@@ -257,8 +259,8 @@ public class SingleValueBitmapIndexTest extends HazelcastTestSupport {
 
         LocalIndexStats statsA = personsA.getLocalMapStats().getIndexStats().values().iterator().next();
         LocalIndexStats statsB = personsB.getLocalMapStats().getIndexStats().values().iterator().next();
+        assertEquals(BATCH_COUNT * BATCH_SIZE, statsA.getInsertCount() + statsB.getInsertCount());
         assertEquals(BATCH_COUNT * BATCH_SIZE, statsA.getUpdateCount() + statsB.getUpdateCount());
-        assertEquals(0, statsA.getInsertCount() + statsB.getInsertCount());
     }
 
     @Override

@@ -160,7 +160,12 @@ public abstract class AbstractIndex implements InternalIndex {
     @Override
     public Set<QueryableEntry> evaluate(Predicate predicate) {
         assert converter != null;
-        return indexStore.evaluate(predicate, converter);
+        long timestamp = stats.makeTimestamp();
+
+        Set<QueryableEntry> result = indexStore.evaluate(predicate, converter);
+        stats.onIndexHit(timestamp, result.size());
+
+        return result;
     }
 
     @Override
