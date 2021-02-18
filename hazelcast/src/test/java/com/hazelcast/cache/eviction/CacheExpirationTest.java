@@ -42,6 +42,7 @@ import javax.cache.event.CacheEntryEvent;
 import javax.cache.event.CacheEntryExpiredListener;
 import javax.cache.event.CacheEntryListener;
 import javax.cache.event.CacheEntryListenerException;
+import javax.cache.event.CacheEntryRemovedListener;
 import javax.cache.expiry.Duration;
 import javax.cache.expiry.EternalExpiryPolicy;
 import javax.cache.expiry.ExpiryPolicy;
@@ -119,7 +120,7 @@ public class CacheExpirationTest extends CacheTestSupport {
     protected <K, V, M extends Serializable & ExpiryPolicy, T extends Serializable & CacheEntryListener<K, V>>
     CacheConfig<K, V> createCacheConfig(M expiryPolicy, T listener) {
         CacheConfig<K, V> cacheConfig = createCacheConfig(expiryPolicy);
-        MutableCacheEntryListenerConfiguration<K, V> listenerConfiguration = new MutableCacheEntryListenerConfiguration<K, V>(
+        MutableCacheEntryListenerConfiguration<K, V> listenerConfiguration = new MutableCacheEntryListenerConfiguration<>(
                 FactoryBuilder.factoryOf(listener), null, true, true
         );
         cacheConfig.addCacheEntryListenerConfiguration(listenerConfiguration);
@@ -298,18 +299,36 @@ public class CacheExpirationTest extends CacheTestSupport {
 
     @Test
     public void test_whenEntryIsRemovedBackupIsCleaned() {
-        SimpleExpiryListener listener = new SimpleExpiryListener();
+        SimpleExpiryAndRemovalListener listener = new SimpleExpiryAndRemovalListener();
         int ttlSeconds = 3;
         Duration duration = new Duration(TimeUnit.SECONDS, ttlSeconds);
         HazelcastExpiryPolicy expiryPolicy = new HazelcastExpiryPolicy(duration, duration, duration);
         CacheConfig<Integer, Integer> cacheConfig = createCacheConfig(expiryPolicy, listener);
         Cache<Integer, Integer> cache = createCache(cacheConfig);
+        AtomicInteger entriesPut = new AtomicInteger();
 
-        for (int i = 0; i < KEY_RANGE; i++) {
-            cache.put(i, i);
-            assertTrue("Expected to remove entry " + i + " but entry was not present. Expired entry count: "
-                    + listener.getExpirationCount().get(), cache.remove(i));
-        }
+        hiccupResilience()
+                .expectFailureIfRunForMillis(TimeUnit.SECONDS.toMillis(ttlSeconds))
+                .evaluateOutcomeWith(new DefaultHiccupOutcomeEvaluatingRunner())
+                .runBeforeRetry(() -> {
+                    // wait for the pending expiration events
+                    assertTrueEventually(() -> {
+                        int eventsReceived = listener.getExpirationCount().get() + listener.getRemovalCount().get();
+                        assertEquals(entriesPut.get(), eventsReceived);
+                    });
+                    // then reset the counters
+                    listener.getExpirationCount().set(0);
+                    listener.getRemovalCount().set(0);
+                    entriesPut.set(0);
+                })
+                .runWithResilience(() -> {
+                    for (int i = 0; i < KEY_RANGE; i++) {
+                        cache.put(i, i);
+                        entriesPut.incrementAndGet();
+                        assertTrue("Expected to remove entry " + i + " but entry was not present. Expired entry count: "
+                                + listener.getExpirationCount().get(), cache.remove(i));
+                    }
+                });
 
         sleepAtLeastSeconds(ttlSeconds);
         assertEquals(0, listener.getExpirationCount().get());
@@ -347,6 +366,20 @@ public class CacheExpirationTest extends CacheTestSupport {
 
         public AtomicInteger getExpirationCount() {
             return expirationCount;
+        }
+    }
+
+    public static class SimpleExpiryAndRemovalListener<K, V> extends SimpleExpiryListener<K, V> implements CacheEntryRemovedListener<K, V> {
+
+        private AtomicInteger removalCount = new AtomicInteger();
+
+        @Override
+        public void onRemoved(Iterable<CacheEntryEvent<? extends K, ? extends V>> cacheEntryEvents) throws CacheEntryListenerException {
+            removalCount.incrementAndGet();
+        }
+
+        public AtomicInteger getRemovalCount() {
+            return removalCount;
         }
     }
 }
