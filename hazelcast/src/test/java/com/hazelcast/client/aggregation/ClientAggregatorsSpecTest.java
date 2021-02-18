@@ -42,7 +42,7 @@ public class ClientAggregatorsSpecTest extends AggregatorsSpecTest {
     private TestHazelcastFactory factory;
 
     @Override
-    protected <K, V> IMap<K, V> getMapWithNodeCount(int nodeCount, boolean parallelAccumulation) {
+    protected <K, V> IMap<K, V> getMapWithNodeCount(int nodeCount, boolean parallelAccumulation, boolean useIndex, String postfix) {
         if (nodeCount < 1) {
             throw new IllegalArgumentException("node count < 1");
         }
