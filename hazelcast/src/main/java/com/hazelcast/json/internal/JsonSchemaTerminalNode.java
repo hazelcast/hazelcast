@@ -16,11 +16,12 @@
 
 package com.hazelcast.json.internal;
 
-import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
+
+import static com.hazelcast.json.internal.JsonDataSerializerHook.JSON_SCHEMA_TERMINAL_NODE;
 
 /**
  * Represents the description of a Json terminal value. These are null,
@@ -106,11 +107,11 @@ public class JsonSchemaTerminalNode extends JsonSchemaNode {
 
     @Override
     public int getFactoryId() {
-        return MapDataSerializerHook.F_ID;
+        return JsonDataSerializerHook.F_ID;
     }
 
     @Override
     public int getClassId() {
-        return MapDataSerializerHook.JSON_SCHEMA_TERMINAL_NODE;
+        return JSON_SCHEMA_TERMINAL_NODE;
     }
 }

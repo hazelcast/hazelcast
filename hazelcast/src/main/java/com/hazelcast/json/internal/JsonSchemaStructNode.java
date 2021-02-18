@@ -16,13 +16,14 @@
 
 package com.hazelcast.json.internal;
 
-import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.hazelcast.json.internal.JsonDataSerializerHook.JSON_SCHEMA_STRUCT_NODE;
 
 /**
  * A node that describes either a Json array or Json object.
@@ -124,12 +125,12 @@ public class JsonSchemaStructNode extends JsonSchemaNode {
 
     @Override
     public int getFactoryId() {
-        return MapDataSerializerHook.F_ID;
+        return JsonDataSerializerHook.F_ID;
     }
 
     @Override
     public int getClassId() {
-        return MapDataSerializerHook.JSON_SCHEMA_STRUCT_NODE;
+        return JSON_SCHEMA_STRUCT_NODE;
     }
 
 }

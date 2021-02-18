@@ -16,12 +16,13 @@
 
 package com.hazelcast.json.internal;
 
-import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
+
+import static com.hazelcast.json.internal.JsonDataSerializerHook.JSON_SCHEMA_NAME_VALUE;
 
 /**
  * A node that describes either a name-value pair in a Json object or
@@ -125,11 +126,11 @@ public class JsonSchemaNameValue implements IdentifiedDataSerializable {
 
     @Override
     public int getFactoryId() {
-        return MapDataSerializerHook.F_ID;
+        return JsonDataSerializerHook.F_ID;
     }
 
     @Override
     public int getClassId() {
-        return MapDataSerializerHook.JSON_SCHEMA_NAME_VALUE;
+        return JSON_SCHEMA_NAME_VALUE;
     }
 }
