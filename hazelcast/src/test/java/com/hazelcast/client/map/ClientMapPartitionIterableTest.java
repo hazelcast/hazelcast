@@ -16,120 +16,32 @@
 
 package com.hazelcast.client.map;
 
-import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.proxy.ClientMapProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.config.Config;
-import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.map.AbstractMapPartitionIterableTest;
+import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameter;
-import org.junit.runners.Parameterized.Parameters;
 
-import java.util.Iterator;
 import java.util.Map;
-
-import static java.util.Arrays.asList;
-import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.assertTrue;
-import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ClientMapPartitionIterableTest extends HazelcastTestSupport {
-
-    @Parameter
-    public boolean prefetchValues;
-
-    @Parameters(name = "prefetchValues:{0}")
-    public static Iterable<Object[]> parameters() {
-        return asList(new Object[] {Boolean.TRUE}, new Object[] {Boolean.FALSE});
-    }
-
-    protected TestHazelcastFactory factory;
-    protected HazelcastInstance server;
-    protected HazelcastInstance client;
-
-    @Before
+public class ClientMapPartitionIterableTest extends AbstractMapPartitionIterableTest {
+    @Override
     public void setup() {
-        Config config = getConfig();
-        ClientConfig clientConfig = getClientConfig();
-
         factory = new TestHazelcastFactory();
-        server = factory.newHazelcastInstance(config);
-        client = factory.newHazelcastClient(clientConfig);
+        factory.newHazelcastInstance(getConfig());
+        instance = factory.newHazelcastClient();
     }
 
-    @After
-    public void teardown() {
-        factory.terminateAll();
-    }
-
-    @Test
-    public void test_HasNext_Returns_False_On_EmptyPartition() {
-        ClientMapProxy<Integer, Integer> map = getMapProxy();
-
-        Iterator<Map.Entry<Integer, Integer>> iterator =
-                map.iterable(10, 1, prefetchValues).iterator();
-        assertFalse(iterator.hasNext());
-    }
-
-    @Test
-    public void test_HasNext_Returns_True_On_NonEmptyPartition() {
-        ClientMapProxy<String, String> map = getMapProxy();
-
-        String key = generateKeyForPartition(server, 1);
-        String value = randomString();
-        map.put(key, value);
-
-        Iterator<Map.Entry<String, String>> iterator = map.iterable(10, 1, prefetchValues).iterator();
-        assertTrue(iterator.hasNext());
-    }
-
-    @Test
-    public void test_Next_Returns_Value_On_NonEmptyPartition() {
-        ClientMapProxy<String, String> map = getMapProxy();
-
-        String key = generateKeyForPartition(server, 1);
-        String value = randomString();
-        map.put(key, value);
-
-        Iterator<Map.Entry<String, String>> iterator = map.iterable(10, 1, prefetchValues).iterator();
-        Map.Entry entry = iterator.next();
-        assertEquals(value, entry.getValue());
-    }
-
-    @Test
-    public void test_Next_Returns_Values_When_FetchSizeExceeds_On_NonEmptyPartition() {
-        ClientMapProxy<String, String> map = getMapProxy();
-        String value = randomString();
-        int count = 1000;
-        for (int i = 0; i < count; i++) {
-            String key = generateKeyForPartition(server, 42);
-            map.put(key, value);
-        }
-        Iterator<Map.Entry<String, String>> iterator = map.iterable(10, 42, prefetchValues).iterator();
-        for (int i = 0; i < count; i++) {
-            Map.Entry entry = iterator.next();
-            assertEquals(value, entry.getValue());
-        }
-    }
-
-    protected ClientConfig getClientConfig() {
-        return new ClientConfig();
-    }
-
-    private <K, V> ClientMapProxy<K, V> getMapProxy() {
-        String mapName = randomString();
-        return (ClientMapProxy<K, V>) client.getMap(mapName);
+    @Override
+    protected <K, V> Iterable<Map.Entry<K, V>> getIterable(IMap<K, V> map, int partitionId) {
+        return ((ClientMapProxy<K, V>) map).iterable(10, partitionId, prefetchValues);
     }
 }
