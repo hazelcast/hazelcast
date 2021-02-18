@@ -1667,11 +1667,6 @@ public class ClientMapProxy<K, V> extends ClientProxy
         return "IMap{" + "name='" + name + '\'' + '}';
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @return an iterator for the map entries
-     */
     @Override
     @Nonnull
     public Iterator<Entry<K, V>> iterator() {
@@ -1680,16 +1675,6 @@ public class ClientMapProxy<K, V> extends ClientProxy
         return new ClientMapIterator<>(this, partitionCount, false);
     }
 
-
-    /**
-     * {@inheritDoc}
-     *
-     * @param fetchSize size for fetching keys in bulk. This size can
-     *                  be thought of as page size for iteration. But
-     *                  notice that at every fetch only keys are retrieved,
-     *                  not values. Values are retrieved on each iterate.
-     * @return an iterator for the map entries
-     */
     @Override
     @Nonnull
     public Iterator<Entry<K, V>> iterator(int fetchSize) {
