@@ -17,9 +17,9 @@
 package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.internal.util.UuidUtil;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.impl.AbstractJetInstance;
 import com.hazelcast.jet.sql.impl.JetPlan.CreateMappingPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropMappingPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.SelectOrSinkPlan;
@@ -48,8 +48,6 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -64,7 +62,7 @@ public class JetPlanExecutorTest {
     private MappingCatalog catalog;
 
     @Mock
-    private JetInstance jetInstance;
+    private AbstractJetInstance jetInstance;
 
     @Mock
     private Map<String, QueryResultProducer> resultConsumerRegistry;
@@ -118,34 +116,16 @@ public class JetPlanExecutorTest {
     }
 
     @Test
-    public void test_execution() {
-        // given
-        QueryId queryId = QueryId.create(UuidUtil.newSecureUUID());
-        SqlRowMetadata rowMetadata = rowMetadata();
-        SelectOrSinkPlan plan = new SelectOrSinkPlan(dag, false, false, queryId, rowMetadata, planExecutor, emptyList());
-
-        given(jetInstance.newJob(dag)).willReturn(job);
-
-        // when
-        SqlResult result = planExecutor.execute(plan);
-
-        // then
-        assertThat(result.updateCount()).isEqualTo(-1);
-        assertThat(result.getRowMetadata()).isEqualTo(rowMetadata);
-        verify(resultConsumerRegistry).put(eq(queryId.toString()), isA(QueryResultProducer.class));
-    }
-
-    @Test
     public void test_insertExecution() {
         // given
         QueryId queryId = QueryId.create(UuidUtil.newSecureUUID());
         SqlRowMetadata rowMetadata = rowMetadata();
-        SelectOrSinkPlan plan = new SelectOrSinkPlan(dag, false, true, queryId, rowMetadata, planExecutor, emptyList());
+        SelectOrSinkPlan plan = new SelectOrSinkPlan(dag, false, true, rowMetadata, planExecutor, emptyList());
 
         given(jetInstance.newJob(dag)).willReturn(job);
 
         // when
-        SqlResult result = planExecutor.execute(plan);
+        SqlResult result = planExecutor.execute(plan, queryId);
 
         // then
         assertThat(result.updateCount()).isEqualTo(0);
@@ -157,12 +137,12 @@ public class JetPlanExecutorTest {
         // given
         QueryId queryId = QueryId.create(UuidUtil.newSecureUUID());
         SqlRowMetadata rowMetadata = rowMetadata();
-        SelectOrSinkPlan plan = new SelectOrSinkPlan(dag, true, true, queryId, rowMetadata, planExecutor, emptyList());
+        SelectOrSinkPlan plan = new SelectOrSinkPlan(dag, true, true, rowMetadata, planExecutor, emptyList());
 
         given(jetInstance.newJob(dag)).willReturn(job);
 
         // when, then
-        assertThatThrownBy(() -> planExecutor.execute(plan))
+        assertThatThrownBy(() -> planExecutor.execute(plan, queryId))
                 .hasMessageContaining("Cannot execute a streaming DML statement without a CREATE JOB command");
 
         verifyNoInteractions(job);
@@ -173,6 +153,6 @@ public class JetPlanExecutorTest {
     }
 
     private static SqlRowMetadata rowMetadata() {
-        return new SqlRowMetadata(singletonList(new SqlColumnMetadata("field", SqlColumnType.OBJECT)));
+        return new SqlRowMetadata(singletonList(new SqlColumnMetadata("field", SqlColumnType.OBJECT, true)));
     }
 }

@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.HeapRow;
@@ -31,30 +32,48 @@ import java.util.List;
 
 public final class ExpressionUtil {
 
-    public static final ExpressionEvalContext ZERO_ARGUMENTS_CONTEXT = index -> {
-        throw new IndexOutOfBoundsException("" + index);
+    /**
+     * An {@link ExpressionEvalContext} that would fail if any dynamic
+     * parameter (a.k.a. argument) or column expression requests its values.
+     * <p>
+     * Useful when evaluating expressions in planning phase where these are not
+     * available.
+     */
+    public static final ExpressionEvalContext NOT_IMPLEMENTED_ARGUMENTS_CONTEXT = new ExpressionEvalContext() {
+
+        @Override
+        public Object getArgument(int index) {
+            throw new IndexOutOfBoundsException("" + index);
+        }
+
+        @Override
+        public InternalSerializationService getSerializationService() {
+            throw new UnsupportedOperationException();
+        }
     };
 
     private ExpressionUtil() {
     }
 
     public static PredicateEx<Object[]> filterFn(
-            Expression<Boolean> predicate
+            @Nonnull Expression<Boolean> predicate,
+            @Nonnull ExpressionEvalContext context
     ) {
         return values -> {
             Row row = new HeapRow(values);
-            return Boolean.TRUE.equals(evaluate(predicate, row));
+            return Boolean.TRUE.equals(evaluate(predicate, row, context));
         };
     }
 
     public static FunctionEx<Object[], Object[]> projectionFn(
-            List<Expression<?>> projections
+            @Nonnull List<Expression<?>> projections,
+            @Nonnull ExpressionEvalContext context
     ) {
         return values -> {
             Row row = new HeapRow(values);
             Object[] result = new Object[projections.size()];
             for (int i = 0; i < projections.size(); i++) {
-                result[i] = evaluate(projections.get(i), row);
+                result[i] = evaluate(projections.get(i), row, context);
             }
             return result;
         };
@@ -69,13 +88,14 @@ public final class ExpressionUtil {
     public static Object[] join(
             @Nonnull Object[] leftRow,
             @Nonnull Object[] rightRow,
-            @Nonnull Expression<Boolean> predicate
+            @Nonnull Expression<Boolean> predicate,
+            @Nonnull ExpressionEvalContext context
     ) {
         Object[] joined = Arrays.copyOf(leftRow, leftRow.length + rightRow.length);
         System.arraycopy(rightRow, 0, joined, leftRow.length, rightRow.length);
 
         Row row = new HeapRow(joined);
-        return Boolean.TRUE.equals(evaluate(predicate, row)) ? joined : null;
+        return Boolean.TRUE.equals(evaluate(predicate, row, context)) ? joined : null;
     }
 
     /**
@@ -85,11 +105,12 @@ public final class ExpressionUtil {
     public static List<Object[]> evaluate(
             @Nullable Expression<Boolean> predicate,
             @Nullable List<Expression<?>> projection,
-            @Nonnull List<Object[]> rows
+            @Nonnull List<Object[]> rows,
+            @Nonnull ExpressionEvalContext context
     ) {
         List<Object[]> evaluatedRows = new ArrayList<>();
         for (Object[] values : rows) {
-            Object[] transformed = evaluate(predicate, projection, values);
+            Object[] transformed = evaluate(predicate, projection, values, context);
             if (transformed != null) {
                 evaluatedRows.add(transformed);
             }
@@ -105,11 +126,12 @@ public final class ExpressionUtil {
     public static Object[] evaluate(
             @Nullable Expression<Boolean> predicate,
             @Nullable List<Expression<?>> projection,
-            @Nonnull Object[] values
+            @Nonnull Object[] values,
+            @Nonnull ExpressionEvalContext context
     ) {
         Row row = new HeapRow(values);
 
-        if (predicate != null && !Boolean.TRUE.equals(evaluate(predicate, row))) {
+        if (predicate != null && !Boolean.TRUE.equals(evaluate(predicate, row, context))) {
             return null;
         }
 
@@ -119,12 +141,16 @@ public final class ExpressionUtil {
 
         Object[] result = new Object[projection.size()];
         for (int i = 0; i < projection.size(); i++) {
-            result[i] = evaluate(projection.get(i), row);
+            result[i] = evaluate(projection.get(i), row, context);
         }
         return result;
     }
 
-    public static <T> T evaluate(Expression<T> expression, Row row) {
-        return expression.eval(row, ZERO_ARGUMENTS_CONTEXT);
+    public static <T> T evaluate(
+            @Nonnull Expression<T> expression,
+            @Nonnull Row row,
+            @Nonnull ExpressionEvalContext context
+    ) {
+        return expression.eval(row, context);
     }
 }

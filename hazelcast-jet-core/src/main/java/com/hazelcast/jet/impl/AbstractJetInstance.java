@@ -66,16 +66,32 @@ public abstract class AbstractJetInstance implements JetInstance {
         this.observables = new ConcurrentHashMap<>();
     }
 
+    public long newJobId() {
+        return jobRepository.get().newJobId();
+    }
+
     @Nonnull @Override
     public Job newJob(@Nonnull DAG dag, @Nonnull JobConfig config) {
-        long jobId = uploadResourcesAndAssignId(config);
+        long jobId = newJobId();
+        return newJob(jobId, dag, config);
+    }
+
+    @Nonnull
+    public Job newJob(long jobId, @Nonnull DAG dag, @Nonnull JobConfig config) {
+        uploadResources(jobId, config);
         return newJobProxy(jobId, dag, config);
     }
 
     @Nonnull @Override
     public Job newJob(@Nonnull Pipeline pipeline, @Nonnull JobConfig config) {
+        long jobId = newJobId();
+        return newJob(jobId, pipeline, config);
+    }
+
+    @Nonnull
+    public Job newJob(long jobId, @Nonnull Pipeline pipeline, @Nonnull JobConfig config) {
         config = config.attachAll(((PipelineImpl) pipeline).attachedFiles());
-        long jobId = uploadResourcesAndAssignId(config);
+        uploadResources(jobId, config);
         return newJobProxy(jobId, pipeline, config);
     }
 
@@ -212,8 +228,8 @@ public abstract class AbstractJetInstance implements JetInstance {
 
     public abstract boolean existsDistributedObject(@Nonnull String serviceName, @Nonnull String objectName);
 
-    private long uploadResourcesAndAssignId(JobConfig config) {
-        return jobRepository.get().uploadJobResources(config);
+    private long uploadResources(long jobId, JobConfig config) {
+        return jobRepository.get().uploadJobResources(jobId, config);
     }
 
     public abstract ILogger getLogger();

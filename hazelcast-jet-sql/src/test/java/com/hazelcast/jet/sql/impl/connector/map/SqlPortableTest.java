@@ -100,21 +100,21 @@ public class SqlPortableTest extends SqlTestSupport {
         personClassDefinition =
                 new ClassDefinitionBuilder(PERSON_FACTORY_ID, PERSON_CLASS_ID, PERSON_CLASS_VERSION)
                         .addIntField("id")
-                        .addUTFField("name")
+                        .addStringField("name")
                         .build();
         serializationService.getPortableContext().registerClassDefinition(personClassDefinition);
 
         ClassDefinition evolvedPersonClassDefinition =
                 new ClassDefinitionBuilder(PERSON_FACTORY_ID, PERSON_CLASS_ID, PERSON_CLASS_VERSION + 1)
                         .addIntField("id")
-                        .addUTFField("name")
+                        .addStringField("name")
                         .addLongField("ssn")
                         .build();
         serializationService.getPortableContext().registerClassDefinition(evolvedPersonClassDefinition);
 
         ClassDefinition allTypesValueClassDefinition =
                 new ClassDefinitionBuilder(ALL_TYPES_FACTORY_ID, ALL_TYPES_CLASS_ID, ALL_TYPES_CLASS_VERSION)
-                        .addUTFField("string")
+                        .addStringField("string")
                         .addCharField("character")
                         .addBooleanField("boolean")
                         .addByteField("byte")
@@ -134,11 +134,11 @@ public class SqlPortableTest extends SqlTestSupport {
 
         instance().getMap(name).put(
                 new PortableGenericRecordBuilder(personIdClassDefinition)
-                        .writeInt("id", 1)
+                        .setInt("id", 1)
                         .build(),
                 new PortableGenericRecordBuilder(personClassDefinition)
-                        .writeInt("id", 2)
-                        .writeUTF("name", "Alice")
+                        .setInt("id", 2)
+                        .setString("name", "Alice")
                         .build()
         );
 
@@ -175,10 +175,10 @@ public class SqlPortableTest extends SqlTestSupport {
         Entry<Data, Data> entry = randomEntryFrom(name);
 
         InternalGenericRecord keyReader = serializationService.readAsInternalGenericRecord(entry.getKey());
-        assertThat(keyReader.readInt("id")).isEqualTo(0);
+        assertThat(keyReader.getInt("id")).isEqualTo(0);
 
         InternalGenericRecord valueReader = serializationService.readAsInternalGenericRecord(entry.getValue());
-        assertThat(valueReader.readUTF("name")).isNull();
+        assertThat(valueReader.getString("name")).isNull();
 
         assertRowsAnyOrder(
                 "SELECT * FROM " + name,
@@ -208,11 +208,11 @@ public class SqlPortableTest extends SqlTestSupport {
         Entry<Data, Data> entry = randomEntryFrom(name);
 
         InternalGenericRecord keyReader = serializationService.readAsInternalGenericRecord(entry.getKey());
-        assertThat(keyReader.readInt("id")).isEqualTo(1);
+        assertThat(keyReader.getInt("id")).isEqualTo(1);
 
         InternalGenericRecord valueReader = serializationService.readAsInternalGenericRecord(entry.getValue());
-        assertThat(valueReader.readInt("id")).isEqualTo(0);
-        assertThat(valueReader.readUTF("name")).isEqualTo("Alice");
+        assertThat(valueReader.getInt("id")).isEqualTo(0);
+        assertThat(valueReader.getString("name")).isEqualTo("Alice");
 
         assertRowsAnyOrder(
                 "SELECT * FROM " + name,
@@ -244,10 +244,10 @@ public class SqlPortableTest extends SqlTestSupport {
         Entry<Data, Data> entry = randomEntryFrom(name);
 
         InternalGenericRecord keyReader = serializationService.readAsInternalGenericRecord(entry.getKey());
-        assertThat(keyReader.readInt("id")).isEqualTo(1);
+        assertThat(keyReader.getInt("id")).isEqualTo(1);
 
         InternalGenericRecord valueReader = serializationService.readAsInternalGenericRecord(entry.getValue());
-        assertThat(valueReader.readInt("id")).isEqualTo(2);
+        assertThat(valueReader.getInt("id")).isEqualTo(2);
 
         assertRowsAnyOrder(
                 "SELECT key_id, value_id FROM " + name,
@@ -387,16 +387,16 @@ public class SqlPortableTest extends SqlTestSupport {
 
         InternalGenericRecord allTypesReader = serializationService
                 .readAsInternalGenericRecord(randomEntryFrom(name).getValue());
-        assertThat(allTypesReader.readUTF("string")).isEqualTo("string");
-        assertThat(allTypesReader.readChar("character")).isEqualTo('a');
-        assertThat(allTypesReader.readBoolean("boolean")).isTrue();
-        assertThat(allTypesReader.readByte("byte")).isEqualTo((byte) 126);
-        assertThat(allTypesReader.readShort("short")).isEqualTo((short) 32766);
-        assertThat(allTypesReader.readInt("int")).isEqualTo(2147483646);
-        assertThat(allTypesReader.readLong("long")).isEqualTo(9223372036854775806L);
-        assertThat(allTypesReader.readFloat("float")).isEqualTo(1234567890.1F);
-        assertThat(allTypesReader.readDouble("double")).isEqualTo(123451234567890.1D);
-        assertThat(allTypesReader.readGenericRecord("object")).isNull();
+        assertThat(allTypesReader.getString("string")).isEqualTo("string");
+        assertThat(allTypesReader.getChar("character")).isEqualTo('a');
+        assertThat(allTypesReader.getBoolean("boolean")).isTrue();
+        assertThat(allTypesReader.getByte("byte")).isEqualTo((byte) 126);
+        assertThat(allTypesReader.getShort("short")).isEqualTo((short) 32766);
+        assertThat(allTypesReader.getInt("int")).isEqualTo(2147483646);
+        assertThat(allTypesReader.getLong("long")).isEqualTo(9223372036854775806L);
+        assertThat(allTypesReader.getFloat("float")).isEqualTo(1234567890.1F);
+        assertThat(allTypesReader.getDouble("double")).isEqualTo(123451234567890.1D);
+        assertThat(allTypesReader.getGenericRecord("object")).isNull();
 
         assertRowsAnyOrder(
                 "SELECT * FROM " + name,
@@ -489,12 +489,12 @@ public class SqlPortableTest extends SqlTestSupport {
 
         assertThat(row.<Object>getObject(0)).isEqualToComparingFieldByField(
                 new PortableGenericRecordBuilder(personIdClassDefinition)
-                        .writeInt("id", 1)
+                        .setInt("id", 1)
                         .build());
         assertThat(row.<Object>getObject(1)).isEqualToComparingFieldByField(
                 new PortableGenericRecordBuilder(personClassDefinition)
-                        .writeInt("id", 0)
-                        .writeUTF("name", "Alice")
+                        .setInt("id", 0)
+                        .setString("name", "Alice")
                         .build());
     }
 

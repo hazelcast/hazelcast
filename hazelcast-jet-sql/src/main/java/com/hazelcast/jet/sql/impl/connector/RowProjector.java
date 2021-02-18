@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.sql.impl.connector;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryExtractor;
@@ -34,6 +36,7 @@ public class RowProjector implements Row {
 
     private final Expression<Boolean> predicate;
     private final List<Expression<?>> projection;
+    private final SimpleExpressionEvalContext context;
 
     @SuppressWarnings("unchecked")
     RowProjector(
@@ -41,7 +44,8 @@ public class RowProjector implements Row {
             QueryDataType[] types,
             QueryTarget target,
             Expression<Boolean> predicate,
-            List<Expression<?>> projection
+            List<Expression<?>> projection,
+            InternalSerializationService serializationService
     ) {
         this.target = target;
         this.extractors = createExtractors(target, paths, types);
@@ -49,6 +53,7 @@ public class RowProjector implements Row {
         this.predicate = predicate != null ? predicate
                 : (Expression<Boolean>) ConstantExpression.create(true, QueryDataType.BOOLEAN);
         this.projection = projection;
+        this.context = new SimpleExpressionEvalContext(serializationService);
     }
 
     private static QueryExtractor[] createExtractors(
@@ -67,15 +72,15 @@ public class RowProjector implements Row {
     }
 
     public Object[] project(Object object) {
-        target.setTarget(object);
+        target.setTarget(object, null);
 
-        if (!Boolean.TRUE.equals(evaluate(predicate, this))) {
+        if (!Boolean.TRUE.equals(evaluate(predicate, this, context))) {
             return null;
         }
 
         Object[] row = new Object[projection.size()];
         for (int i = 0; i < projection.size(); i++) {
-            row[i] = evaluate(projection.get(i), this);
+            row[i] = evaluate(projection.get(i), this, context);
         }
         return row;
     }

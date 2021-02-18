@@ -32,7 +32,7 @@ import java.util.List;
 
 interface JetPlan extends SqlPlan {
 
-    SqlResult execute();
+    SqlResult execute(QueryId queryId);
 
     class CreateMappingPlan implements JetPlan {
         private final Mapping mapping;
@@ -53,7 +53,7 @@ interface JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute() {
+        public SqlResult execute(QueryId queryId) {
             return planExecutor.execute(this);
         }
 
@@ -71,6 +71,11 @@ interface JetPlan extends SqlPlan {
 
         boolean ifNotExists() {
             return ifNotExists;
+        }
+
+        @Override
+        public boolean producesRows() {
+            return false;
         }
     }
 
@@ -90,7 +95,7 @@ interface JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute() {
+        public SqlResult execute(QueryId queryId) {
             return planExecutor.execute(this);
         }
 
@@ -104,6 +109,11 @@ interface JetPlan extends SqlPlan {
 
         boolean ifExists() {
             return ifExists;
+        }
+
+        @Override
+        public boolean producesRows() {
+            return false;
         }
     }
 
@@ -134,7 +144,7 @@ interface JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute() {
+        public SqlResult execute(QueryId queryId) {
             return planExecutor.execute(this);
         }
 
@@ -153,6 +163,11 @@ interface JetPlan extends SqlPlan {
         public SelectOrSinkPlan getExecutionPlan() {
             return dmlPlan;
         }
+
+        @Override
+        public boolean producesRows() {
+            return false;
+        }
     }
 
     class AlterJobPlan implements JetPlan {
@@ -167,7 +182,7 @@ interface JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute() {
+        public SqlResult execute(QueryId queryId) {
             return planExecutor.execute(this);
         }
 
@@ -181,6 +196,11 @@ interface JetPlan extends SqlPlan {
 
         public AlterJobOperation getOperation() {
             return operation;
+        }
+
+        @Override
+        public boolean producesRows() {
+            return false;
         }
     }
 
@@ -198,7 +218,7 @@ interface JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute() {
+        public SqlResult execute(QueryId queryId) {
             return planExecutor.execute(this);
         }
 
@@ -216,6 +236,11 @@ interface JetPlan extends SqlPlan {
 
         public String getWithSnapshotName() {
             return withSnapshotName;
+        }
+
+        @Override
+        public boolean producesRows() {
+            return false;
         }
     }
 
@@ -235,7 +260,7 @@ interface JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute() {
+        public SqlResult execute(QueryId queryId) {
             return planExecutor.execute(this);
         }
 
@@ -245,6 +270,11 @@ interface JetPlan extends SqlPlan {
 
         public String getJobName() {
             return jobName;
+        }
+
+        @Override
+        public boolean producesRows() {
+            return false;
         }
     }
 
@@ -260,7 +290,7 @@ interface JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute() {
+        public SqlResult execute(QueryId queryId) {
             return planExecutor.execute(this);
         }
 
@@ -275,13 +305,17 @@ interface JetPlan extends SqlPlan {
         public boolean isIfExists() {
             return ifExists;
         }
+
+        @Override
+        public boolean producesRows() {
+            return false;
+        }
     }
 
     class SelectOrSinkPlan implements JetPlan {
         private final DAG dag;
         private final boolean isStreaming;
         private final boolean isInsert;
-        private final QueryId queryId;
         private final SqlRowMetadata rowMetadata;
         private final JetPlanExecutor planExecutor;
         private final List<Permission> permissions;
@@ -290,7 +324,6 @@ interface JetPlan extends SqlPlan {
                 DAG dag,
                 boolean isStreaming,
                 boolean isInsert,
-                QueryId queryId,
                 SqlRowMetadata rowMetadata,
                 JetPlanExecutor planExecutor,
                 List<Permission> permissions
@@ -298,15 +331,14 @@ interface JetPlan extends SqlPlan {
             this.dag = dag;
             this.isStreaming = isStreaming;
             this.isInsert = isInsert;
-            this.queryId = queryId;
             this.rowMetadata = rowMetadata;
             this.planExecutor = planExecutor;
             this.permissions = permissions;
         }
 
         @Override
-        public SqlResult execute() {
-            return planExecutor.execute(this);
+        public SqlResult execute(QueryId queryId) {
+            return planExecutor.execute(this, queryId);
         }
 
         @Override
@@ -328,12 +360,13 @@ interface JetPlan extends SqlPlan {
             return isInsert;
         }
 
-        QueryId getQueryId() {
-            return queryId;
-        }
-
         SqlRowMetadata getRowMetadata() {
             return rowMetadata;
+        }
+
+        @Override
+        public boolean producesRows() {
+            return !isInsert;
         }
     }
 
@@ -352,12 +385,17 @@ interface JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute() {
+        public SqlResult execute(QueryId queryId) {
             return planExecutor.execute(this);
         }
 
         @Override
         public void checkPermissions(SqlSecurityContext context) {
+        }
+
+        @Override
+        public boolean producesRows() {
+            return true;
         }
     }
 }

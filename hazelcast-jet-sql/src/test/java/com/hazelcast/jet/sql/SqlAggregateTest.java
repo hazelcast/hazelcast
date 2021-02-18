@@ -699,8 +699,8 @@ public class SqlAggregateTest extends SqlTestSupport {
         assertRowsAnyOrder(
                 "SELECT name, SUM(distance * 2) FROM " + name + " GROUP BY name",
                 asList(
-                        new Row("Alice", 6L),
-                        new Row("Bob", 2L)
+                        new Row("Alice", new BigDecimal(6)),
+                        new Row("Bob", new BigDecimal(2))
                 )
         );
     }
@@ -736,8 +736,8 @@ public class SqlAggregateTest extends SqlTestSupport {
         assertRowsAnyOrder(
                 "SELECT name, SUM(distance * 2) s FROM " + name + " GROUP BY name HAVING s > 4",
                 asList(
-                        new Row("Alice", 6L),
-                        new Row("Joey", 6L)
+                        new Row("Alice", new BigDecimal(6)),
+                        new Row("Joey", new BigDecimal(6))
                 )
         );
     }
@@ -958,7 +958,7 @@ public class SqlAggregateTest extends SqlTestSupport {
         assertThatThrownBy(
                 () -> sqlService.execute("SELECT COUNT(*) FROM " + name + " GROUP BY ROLLUP(name, distance)"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("ROLLUP not supported");
+                .hasMessageContaining("Function 'ROLLUP' does not exist");
     }
 
     @Test
@@ -967,7 +967,7 @@ public class SqlAggregateTest extends SqlTestSupport {
         assertThatThrownBy(
                 () -> sqlService.execute("SELECT COUNT(*) FROM " + name + " GROUP BY CUBE(name, distance)"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("CUBE not supported");
+                .hasMessageContaining("Function 'CUBE' does not exist");
     }
 
     @Test
@@ -976,7 +976,7 @@ public class SqlAggregateTest extends SqlTestSupport {
         assertThatThrownBy(
                 () -> sqlService.execute("SELECT COUNT(*) FROM " + name + " GROUP BY GROUPING SETS ((name), (distance))"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("GROUPING SETS not supported");
+                .hasMessageContaining("Function 'GROUPING SETS' does not exist");
     }
 
     private static String createTable(String[]... values) {

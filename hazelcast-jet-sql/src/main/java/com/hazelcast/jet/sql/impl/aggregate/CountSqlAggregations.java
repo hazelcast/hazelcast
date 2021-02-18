@@ -33,7 +33,7 @@ public final class CountSqlAggregations {
     }
 
     @NotThreadSafe
-    private static final class CountSqlAggregation implements SqlAggregation {
+    private static class CountSqlAggregation implements SqlAggregation {
 
         private long value;
 
@@ -66,9 +66,7 @@ public final class CountSqlAggregations {
     }
 
     @NotThreadSafe
-    private static final class CountIgnoreNullsSqlAggregation implements SqlAggregation {
-
-        private long value;
+    private static final class CountIgnoreNullsSqlAggregation extends CountSqlAggregation {
 
         @Override
         public void accumulate(Object value) {
@@ -76,29 +74,7 @@ public final class CountSqlAggregations {
                 return;
             }
 
-            this.value++;
-        }
-
-        @Override
-        public void combine(SqlAggregation other0) {
-            CountIgnoreNullsSqlAggregation other = (CountIgnoreNullsSqlAggregation) other0;
-
-            value += other.value;
-        }
-
-        @Override
-        public Object collect() {
-            return value;
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeLong(value);
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
-            value = in.readLong();
+            super.accumulate(value);
         }
     }
 }

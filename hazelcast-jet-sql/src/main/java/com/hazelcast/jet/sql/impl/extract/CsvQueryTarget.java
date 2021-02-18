@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.extract;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.sql.impl.extract.QueryExtractor;
 import com.hazelcast.sql.impl.extract.QueryTarget;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -36,7 +37,8 @@ public class CsvQueryTarget implements QueryTarget {
     }
 
     @Override
-    public void setTarget(Object target) {
+    public void setTarget(Object target, Data targetData) {
+        assert targetData == null;
         entry = (String[]) target;
         assert entry.length == fieldList.size();
     }

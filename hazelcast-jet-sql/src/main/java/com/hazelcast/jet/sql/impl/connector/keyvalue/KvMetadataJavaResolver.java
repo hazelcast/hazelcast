@@ -138,7 +138,8 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
                 MappingField mappingField = userFieldsByPath.get(path);
                 if (mappingField != null && !type.getTypeFamily().equals(mappingField.type().getTypeFamily())) {
                     throw QueryException.error("Mismatch between declared and resolved type for field '"
-                            + mappingField.name() + "'");
+                            + mappingField.name() + "'. Declared: " + mappingField.type().getTypeFamily()
+                            + ", resolved: " + type.getTypeFamily());
                 }
             }
             return new ArrayList<>(userFieldsByPath.values());

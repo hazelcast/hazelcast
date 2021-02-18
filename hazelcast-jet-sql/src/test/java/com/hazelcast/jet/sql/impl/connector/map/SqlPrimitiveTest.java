@@ -116,7 +116,7 @@ public class SqlPrimitiveTest extends SqlTestSupport {
 
         assertMapEventually(
                 name,
-                "SINK INTO " + name + " (this, __key) VALUES (2, CAST(0 + 1 AS INT))",
+                "SINK INTO " + name + " (this, __key) VALUES ('2', CAST(0 + 1 AS INT))",
                 createMap(1, "2")
         );
         assertRowsAnyOrder(

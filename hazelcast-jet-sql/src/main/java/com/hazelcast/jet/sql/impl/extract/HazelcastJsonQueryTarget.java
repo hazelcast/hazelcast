@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.extract;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.sql.impl.QueryException;
@@ -43,7 +44,10 @@ class HazelcastJsonQueryTarget implements QueryTarget {
     }
 
     @Override
-    public void setTarget(Object target) {
+    public void setTarget(Object target, Data targetData) {
+        if (target == null && targetData != null) {
+            target = serializationService.toObject(targetData);
+        }
         this.target = target;
     }
 

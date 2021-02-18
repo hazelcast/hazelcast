@@ -34,9 +34,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
-import java.time.ZonedDateTime;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.Map;
 
 import static com.hazelcast.jet.core.TestUtil.createMap;
@@ -267,28 +265,7 @@ public class SqlPojoTest extends SqlTestSupport {
                         + ", \"timestampTz\""
                         + ", object"
                         + " FROM " + from,
-                createMap(BigInteger.valueOf(1), new AllTypesValue(
-                        "string",
-                        's',
-                        true,
-                        (byte) 127,
-                        (short) 32767,
-                        2147483647,
-                        9223372036854775807L,
-                        1234567890.1f,
-                        123451234567890.1,
-                        new BigDecimal("9223372036854775.123"),
-                        new BigInteger("9223372036854775"),
-                        LocalTime.of(12, 23, 34),
-                        LocalDate.of(2020, 4, 15),
-                        LocalDateTime.of(2020, 4, 15, 12, 23, 34, 1_000_000),
-                        Date.from(ofEpochMilli(1586953414200L)),
-                        GregorianCalendar.from(ZonedDateTime.of(2020, 4, 15, 12, 23, 34, 200_000_000, UTC)),
-                        ofEpochMilli(1586953414200L),
-                        ZonedDateTime.of(2020, 4, 15, 12, 23, 34, 200_000_000, UTC),
-                        OffsetDateTime.of(2020, 4, 15, 12, 23, 34, 200_000_000, UTC),
-                        null
-                )));
+                createMap(BigInteger.valueOf(1), AllTypesValue.testValue()));
 
         assertRowsAnyOrder(
                 "SELECT"

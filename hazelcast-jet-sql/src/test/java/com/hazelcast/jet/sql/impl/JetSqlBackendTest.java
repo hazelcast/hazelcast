@@ -81,7 +81,7 @@ public class JetSqlBackendTest {
                 ifNotExists,
                 SqlParserPos.ZERO
         );
-        QueryParseResult parseResult = new QueryParseResult(node, null, null, null);
+        QueryParseResult parseResult = new QueryParseResult(node, null, null, null, false);
 
         // when
         CreateMappingPlan plan = (CreateMappingPlan) sqlBackend.createPlan(null, parseResult, null);
@@ -109,7 +109,7 @@ public class JetSqlBackendTest {
                 ifExists,
                 SqlParserPos.ZERO
         );
-        QueryParseResult parseResult = new QueryParseResult(node, null, null, null);
+        QueryParseResult parseResult = new QueryParseResult(node, null, null, null, false);
 
         // when
         DropMappingPlan plan = (DropMappingPlan) sqlBackend.createPlan(null, parseResult, null);

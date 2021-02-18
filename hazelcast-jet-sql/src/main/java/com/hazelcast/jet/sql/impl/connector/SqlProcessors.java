@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.connector;
 
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.impl.execution.init.Contexts.ProcSupplierCtx;
 import com.hazelcast.jet.pipeline.ServiceFactory;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryTarget;
@@ -41,7 +42,8 @@ public final class SqlProcessors {
             List<Expression<?>> projection
     ) {
         ServiceFactory<?, RowProjector> service =
-                nonSharedService(ctx -> new RowProjector(paths, types, targetSupplier.get(), predicate, projection));
+                nonSharedService(ctx -> new RowProjector(paths, types, targetSupplier.get(), predicate, projection,
+                        ((ProcSupplierCtx) ctx).serializationService()));
         return mapUsingServiceP(service, RowProjector::project);
     }
 }

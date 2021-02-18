@@ -17,12 +17,14 @@
 package com.hazelcast.jet.sql.impl.connector.keyvalue;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.extract.QueryExtractor;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTarget;
@@ -53,6 +55,7 @@ public class KvRowProjector implements Row {
 
     private final Expression<Boolean> predicate;
     private final List<Expression<?>> projections;
+    private final ExpressionEvalContext context;
 
     @SuppressWarnings("unchecked")
     KvRowProjector(
@@ -61,7 +64,8 @@ public class KvRowProjector implements Row {
             QueryTarget keyTarget,
             QueryTarget valueTarget,
             Expression<Boolean> predicate,
-            List<Expression<?>> projections
+            List<Expression<?>> projections,
+            ExpressionEvalContext context
     ) {
         checkTrue(paths.length == types.length, "paths.length != types.length");
         this.keyTarget = keyTarget;
@@ -71,6 +75,7 @@ public class KvRowProjector implements Row {
         this.predicate = predicate != null ? predicate
                 : (Expression<Boolean>) ConstantExpression.create(true, QueryDataType.BOOLEAN);
         this.projections = projections;
+        this.context = context;
     }
 
     private static QueryExtractor[] createExtractors(
@@ -92,16 +97,16 @@ public class KvRowProjector implements Row {
     }
 
     public Object[] project(Entry<Object, Object> entry) {
-        keyTarget.setTarget(entry.getKey());
-        valueTarget.setTarget(entry.getValue());
+        keyTarget.setTarget(entry.getKey(), null);
+        valueTarget.setTarget(entry.getValue(), null);
 
-        if (!Boolean.TRUE.equals(evaluate(predicate, this))) {
+        if (!Boolean.TRUE.equals(evaluate(predicate, this, context))) {
             return null;
         }
 
         Object[] row = new Object[projections.size()];
         for (int i = 0; i < projections.size(); i++) {
-            row[i] = evaluate(projections.get(i), this);
+            row[i] = evaluate(projections.get(i), this, context);
         }
         return row;
     }
@@ -174,7 +179,8 @@ public class KvRowProjector implements Row {
                     keyDescriptor.create(serializationService, extractors, true),
                     valueDescriptor.create(serializationService, extractors, false),
                     predicate,
-                    projections
+                    projections,
+                    new SimpleExpressionEvalContext(serializationService)
             );
         }
 

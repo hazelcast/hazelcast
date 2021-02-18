@@ -50,7 +50,7 @@ public class ReceiverTaskletSendLimitTest {
         tasklet = new ReceiverTasklet(null,
                 new DefaultSerializationServiceBuilder().build(),
                 RWIN_MULTIPLIER, FLOW_CONTROL_PERIOD_MS,
-                new LoggingServiceImpl(null, null, BuildInfoProvider.getBuildInfo(), false),
+                new LoggingServiceImpl(null, null, BuildInfoProvider.getBuildInfo(), false, null),
                 new Address(), 0, "", null, "");
     }
 

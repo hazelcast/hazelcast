@@ -17,9 +17,10 @@
 package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
+import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.impl.AbstractJetInstance;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.sql.impl.JetPlan.AlterJobPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.CreateJobPlan;
@@ -52,13 +53,13 @@ import static java.util.Collections.singletonList;
 class JetPlanExecutor {
 
     private final MappingCatalog catalog;
-    private final JetInstance jetInstance;
-    private final Map<String, JetQueryResultProducer> resultConsumerRegistry;
+    private final AbstractJetInstance jetInstance;
+    private final Map<Long, JetQueryResultProducer> resultConsumerRegistry;
 
     JetPlanExecutor(
             MappingCatalog catalog,
-            JetInstance jetInstance,
-            Map<String, JetQueryResultProducer> resultConsumerRegistry
+            AbstractJetInstance jetInstance,
+            Map<Long, JetQueryResultProducer> resultConsumerRegistry
     ) {
         this.catalog = catalog;
         this.jetInstance = jetInstance;
@@ -153,10 +154,9 @@ class JetPlanExecutor {
         return SqlResultImpl.createUpdateCountResult(0);
     }
 
-    SqlResult execute(SelectOrSinkPlan plan) {
+    SqlResult execute(SelectOrSinkPlan plan, QueryId queryId) {
         if (plan.isInsert()) {
             if (plan.isStreaming()) {
-                // TODO [viliam] add test for this situation
                 throw QueryException.error("Cannot execute a streaming DML statement without a CREATE JOB command");
             }
 
@@ -166,12 +166,11 @@ class JetPlanExecutor {
             return SqlResultImpl.createUpdateCountResult(0);
         } else {
             JetQueryResultProducer queryResultProducer = new JetQueryResultProducer();
-            String queryIdStr = plan.getQueryId().toString();
-            Object oldValue = resultConsumerRegistry.put(queryIdStr, queryResultProducer);
+            Long jobId = jetInstance.newJobId();
+            Object oldValue = resultConsumerRegistry.put(jobId, queryResultProducer);
             assert oldValue == null : oldValue;
-
             try {
-                Job job = jetInstance.newJob(plan.getDag());
+                Job job = jetInstance.newJob(jobId, plan.getDag(), new JobConfig());
                 job.getFuture().whenComplete((r, t) -> {
                     if (t != null) {
                         int errorCode = t instanceof QueryException
@@ -182,16 +181,17 @@ class JetPlanExecutor {
                     }
                 });
             } catch (Throwable e) {
-                resultConsumerRegistry.remove(queryIdStr);
+                resultConsumerRegistry.remove(jobId);
                 throw e;
             }
 
-            return new JetSqlResultImpl(plan.getQueryId(), queryResultProducer, plan.getRowMetadata());
+            return new JetSqlResultImpl(queryId, queryResultProducer, plan.getRowMetadata(), plan.isStreaming());
         }
     }
 
     public SqlResult execute(ShowStatementPlan plan) {
-        SqlRowMetadata metadata = new SqlRowMetadata(singletonList(new SqlColumnMetadata("name", SqlColumnType.VARCHAR)));
+        SqlRowMetadata metadata = new SqlRowMetadata(
+                singletonList(new SqlColumnMetadata("name", SqlColumnType.VARCHAR, false)));
         Stream<String> rows;
         if (plan.getShowTarget() == ShowStatementTarget.MAPPINGS) {
             rows = catalog.getMappingNames().stream();
@@ -207,7 +207,7 @@ class JetPlanExecutor {
         return new JetSqlResultImpl(
                 QueryId.create(jetInstance.getHazelcastInstance().getLocalEndpoint().getUuid()),
                 new JetStaticQueryResultProducer(rows.sorted().map(name -> new HeapRow(new Object[]{name})).iterator()),
-                metadata
-        );
+                metadata,
+                false);
     }
 }

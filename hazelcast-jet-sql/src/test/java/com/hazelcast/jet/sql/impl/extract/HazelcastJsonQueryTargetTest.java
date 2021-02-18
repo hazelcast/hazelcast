@@ -104,7 +104,7 @@ public class HazelcastJsonQueryTargetTest {
         QueryExtractor nullExtractor = target.createExtractor("null", OBJECT);
         QueryExtractor objectExtractor = target.createExtractor("object", OBJECT);
 
-        target.setTarget(value);
+        target.setTarget(value, null);
 
         assertThat(topExtractor.get()).isInstanceOf(HazelcastJsonValue.class);
         assertThat(nonExistingExtractor.get()).isNull();

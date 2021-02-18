@@ -102,7 +102,7 @@ public class JsonQueryTargetTest {
         QueryExtractor nullExtractor = target.createExtractor("null", OBJECT);
         QueryExtractor objectExtractor = target.createExtractor("object", OBJECT);
 
-        target.setTarget(value);
+        target.setTarget(value, null);
 
         assertThat(topExtractor.get()).isInstanceOf(Map.class);
         assertThat(nonExistingExtractor.get()).isNull();

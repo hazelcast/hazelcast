@@ -601,9 +601,9 @@ public class SqlJoinTest extends SqlTestSupport {
         );
 
         String mapName = randomName();
-        instance().getMap(mapName).put("1", "value-1");
-        instance().getMap(mapName).put("2", "value-2");
-        instance().getMap(mapName).put("3", "value-3");
+        instance().getMap(mapName).put(1, "value-1");
+        instance().getMap(mapName).put(2, "value-2");
+        instance().getMap(mapName).put(3, "value-3");
 
         assertRowsAnyOrder(
                 "SELECT l.v, m.__key, m.this || '-s' " +
@@ -612,7 +612,7 @@ public class SqlJoinTest extends SqlTestSupport {
                 asList(
                         new Row(0, null, null),
                         new Row(null, null, null),
-                        new Row(2, "2", "value-2-s")
+                        new Row(2, 2, "value-2-s")
                 )
         );
     }

@@ -27,6 +27,7 @@ import org.junit.Test;
 
 import java.util.List;
 
+import static com.hazelcast.jet.sql.impl.ExpressionUtil.NOT_IMPLEMENTED_ARGUMENTS_CONTEXT;
 import static com.hazelcast.sql.impl.type.QueryDataType.BOOLEAN;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static java.util.Arrays.asList;
@@ -80,7 +81,7 @@ public class ExpressionUtilTest {
     }
 
     private void test_join(Expression<Boolean> predicate, Object[] leftRow, Object[] rightRow, Object[] expected) {
-        Object[] joined = ExpressionUtil.join(leftRow, rightRow, predicate);
+        Object[] joined = ExpressionUtil.join(leftRow, rightRow, predicate, NOT_IMPLEMENTED_ARGUMENTS_CONTEXT);
 
         assertThat(joined).isEqualTo(expected);
     }
@@ -89,7 +90,7 @@ public class ExpressionUtilTest {
     public void test_evaluate() {
         List<Object[]> rows = asList(new Object[]{0, "a"}, new Object[]{1, "b"});
 
-        List<Object[]> evaluated = ExpressionUtil.evaluate(null, null, rows);
+        List<Object[]> evaluated = ExpressionUtil.evaluate(null, null, rows, NOT_IMPLEMENTED_ARGUMENTS_CONTEXT);
 
         assertThat(evaluated).containsExactlyElementsOf(rows);
     }
@@ -103,7 +104,7 @@ public class ExpressionUtilTest {
             return value != 1;
         });
 
-        List<Object[]> evaluated = ExpressionUtil.evaluate(predicate, null, rows);
+        List<Object[]> evaluated = ExpressionUtil.evaluate(predicate, null, rows, NOT_IMPLEMENTED_ARGUMENTS_CONTEXT);
 
         assertThat(evaluated).containsExactly(new Object[]{0, "a"}, new Object[]{2, "c"});
     }
@@ -115,7 +116,8 @@ public class ExpressionUtilTest {
         MultiplyFunction<?> projection =
                 MultiplyFunction.create(ColumnExpression.create(0, INT), ConstantExpression.create(2, INT), INT);
 
-        List<Object[]> evaluated = ExpressionUtil.evaluate(null, singletonList(projection), rows);
+        List<Object[]> evaluated = ExpressionUtil.evaluate(null, singletonList(projection), rows,
+                NOT_IMPLEMENTED_ARGUMENTS_CONTEXT);
 
         assertThat(evaluated).containsExactly(new Object[]{0}, new Object[]{2}, new Object[]{4});
     }
@@ -131,7 +133,8 @@ public class ExpressionUtilTest {
         MultiplyFunction<?> projection =
                 MultiplyFunction.create(ColumnExpression.create(0, INT), ConstantExpression.create(2, INT), INT);
 
-        List<Object[]> evaluated = ExpressionUtil.evaluate(predicate, singletonList(projection), rows);
+        List<Object[]> evaluated = ExpressionUtil.evaluate(predicate, singletonList(projection), rows,
+                NOT_IMPLEMENTED_ARGUMENTS_CONTEXT);
 
         assertThat(evaluated).containsExactly(new Object[]{0}, new Object[]{4});
     }

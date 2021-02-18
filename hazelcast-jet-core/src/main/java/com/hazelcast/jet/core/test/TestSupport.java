@@ -193,8 +193,7 @@ public final class TestSupport {
     private static final long BLOCKING_TIME_LIMIT_MS_WARN = 10000;
 
     private static final LoggingServiceImpl LOGGING_SERVICE = new LoggingServiceImpl(
-            "test-group", null, BuildInfoProvider.getBuildInfo(), true
-    );
+            "test-group", null, BuildInfoProvider.getBuildInfo(), true, null);
 
     static {
         try {
@@ -204,7 +203,7 @@ public final class TestSupport {
         }
     }
 
-    private ProcessorMetaSupplier metaSupplier;
+    private final ProcessorMetaSupplier metaSupplier;
     private ProcessorSupplier supplier;
     private List<List<?>> inputs = emptyList();
     private int[] priorities = {};
@@ -826,13 +825,13 @@ public final class TestSupport {
             }
             // print warning
             if (elapsed > MILLISECONDS.toNanos(COOPERATIVE_TIME_LIMIT_MS_WARN)) {
-                System.out.println(String.format("Warning: call to %s() took %.2fms, it should be <%dms normally",
-                        methodName, toMillis(elapsed), COOPERATIVE_TIME_LIMIT_MS_WARN));
+                System.out.printf("Warning: call to %s() took %.2fms, it should be <%dms normally%n",
+                        methodName, toMillis(elapsed), COOPERATIVE_TIME_LIMIT_MS_WARN);
             }
         } else {
             if (elapsed > MILLISECONDS.toNanos(BLOCKING_TIME_LIMIT_MS_WARN)) {
-                System.out.println(String.format("Warning: call to %s() took %.2fms in non-cooperative processor. Is " +
-                                "this expected?", methodName, toMillis(elapsed)));
+                System.out.printf("Warning: call to %s() took %.2fms in non-cooperative processor. Is " +
+                        "this expected?%n", methodName, toMillis(elapsed));
             }
         }
     }
@@ -916,12 +915,8 @@ public final class TestSupport {
         return supplierFrom(supplier.get(singletonList(LOCAL_ADDRESS)).apply(LOCAL_ADDRESS), context);
     }
 
-    static ILogger getLogger(String name) {
+    private static ILogger getLogger(String name) {
         return LOGGING_SERVICE.getLogger(name);
-    }
-
-    static ILogger getLogger(Class clazz) {
-        return LOGGING_SERVICE.getLogger(clazz);
     }
 
     /**

@@ -24,7 +24,7 @@ import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class SqlJoinUnsupportedFeaturesTest extends SqlTestSupport {
+public class SqlUnsupportedFeaturesTest extends SqlTestSupport {
 
     private static SqlService sqlService;
 
@@ -67,7 +67,7 @@ public class SqlJoinUnsupportedFeaturesTest extends SqlTestSupport {
         assertThatThrownBy(() -> sqlService.execute(
                     "SELECT 1 FROM b WHERE EXISTS (SELECT 1 FROM b AS b2 WHERE b.v = b2.v)"))
                 .hasCauseInstanceOf(QueryException.class)
-                .hasMessageContaining("EXISTS not supported");
+                .hasMessageContaining("Function 'EXISTS' does not exist");
     }
 
     @Test
@@ -77,6 +77,16 @@ public class SqlJoinUnsupportedFeaturesTest extends SqlTestSupport {
         assertThatThrownBy(() -> sqlService.execute(
                     "SELECT 1 FROM b WHERE NOT EXISTS (SELECT 1 FROM b AS b2 WHERE b.v = b2.v)"))
                 .hasCauseInstanceOf(QueryException.class)
-                .hasMessageContaining("EXISTS not supported");
+                .hasMessageContaining("Function 'EXISTS' does not exist");
+    }
+
+    @Test
+    public void test_dynamicParams() {
+        TestBatchSqlConnector.create(sqlService, "b", 0);
+
+        assertThatThrownBy(() -> sqlService.execute(
+                "SELECT * FROM b WHERE v=?", 0))
+                .hasCauseInstanceOf(QueryException.class)
+                .hasMessageContaining("Query parameters not yet supported");
     }
 }

@@ -47,7 +47,7 @@ public class PortableUpsertTargetTest {
                 new ClassDefinitionBuilder(1, 2, 3)
                         .addPortableField("null", innerClassDefinition)
                         .addPortableField("object", innerClassDefinition)
-                        .addUTFField("string")
+                        .addStringField("string")
                         .addCharField("character")
                         .addBooleanField("boolean")
                         .addByteField("byte")
@@ -90,17 +90,17 @@ public class PortableUpsertTargetTest {
         Object portable = target.conclude();
 
         InternalGenericRecord record = ss.readAsInternalGenericRecord(ss.toData(portable));
-        assertThat(record.readGenericRecord("null")).isNull();
-        assertThat(record.readGenericRecord("object")).isNotNull();
-        assertThat(record.readUTF("string")).isEqualTo("1");
-        assertThat(record.readChar("character")).isEqualTo('2');
-        assertThat(record.readBoolean("boolean")).isEqualTo(true);
-        assertThat(record.readByte("byte")).isEqualTo((byte) 3);
-        assertThat(record.readShort("short")).isEqualTo((short) 4);
-        assertThat(record.readInt("int")).isEqualTo(5);
-        assertThat(record.readLong("long")).isEqualTo(6L);
-        assertThat(record.readFloat("float")).isEqualTo(7.1F);
-        assertThat(record.readDouble("double")).isEqualTo(7.2D);
+        assertThat(record.getGenericRecord("null")).isNull();
+        assertThat(record.getGenericRecord("object")).isNotNull();
+        assertThat(record.getString("string")).isEqualTo("1");
+        assertThat(record.getChar("character")).isEqualTo('2');
+        assertThat(record.getBoolean("boolean")).isEqualTo(true);
+        assertThat(record.getByte("byte")).isEqualTo((byte) 3);
+        assertThat(record.getShort("short")).isEqualTo((short) 4);
+        assertThat(record.getInt("int")).isEqualTo(5);
+        assertThat(record.getLong("long")).isEqualTo(6L);
+        assertThat(record.getFloat("float")).isEqualTo(7.1F);
+        assertThat(record.getDouble("double")).isEqualTo(7.2D);
     }
 
     @SuppressWarnings({"unused", "checkstyle:LineLength"})
@@ -126,8 +126,8 @@ public class PortableUpsertTargetTest {
                 new Object[]{new ClassDefinitionBuilder(1, 2, 3).addFloatArrayField("object").build(), new float[0]},
                 new Object[]{new ClassDefinitionBuilder(1, 2, 3).addDoubleArrayField("object").build(), null},
                 new Object[]{new ClassDefinitionBuilder(1, 2, 3).addDoubleArrayField("object").build(), new double[0]},
-                new Object[]{new ClassDefinitionBuilder(1, 2, 3).addUTFArrayField("object").build(), null},
-                new Object[]{new ClassDefinitionBuilder(1, 2, 3).addUTFArrayField("object").build(), new String[0]},
+                new Object[]{new ClassDefinitionBuilder(1, 2, 3).addStringArrayField("object").build(), null},
+                new Object[]{new ClassDefinitionBuilder(1, 2, 3).addStringArrayField("object").build(), new String[0]},
                 new Object[]{new ClassDefinitionBuilder(1, 2, 3).addPortableArrayField("object", innerClassDefinition).build(), null},
                 new Object[]{new ClassDefinitionBuilder(1, 2, 3).addPortableArrayField("object", innerClassDefinition).build(), new GenericRecord[0]},
         };

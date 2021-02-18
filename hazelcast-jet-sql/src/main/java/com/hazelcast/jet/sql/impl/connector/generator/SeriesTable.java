@@ -16,9 +16,13 @@
 
 package com.hazelcast.jet.sql.impl.connector.generator;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.jet.impl.execution.init.Contexts.ProcSupplierCtx;
 import com.hazelcast.jet.pipeline.BatchSource;
-import com.hazelcast.jet.pipeline.test.TestSources;
+import com.hazelcast.jet.pipeline.SourceBuilder;
+import com.hazelcast.jet.pipeline.SourceBuilder.SourceBuffer;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
+import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.sql.impl.QueryException;
@@ -26,8 +30,6 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.TableField;
 
-import javax.annotation.Nonnull;
-import java.io.Serializable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -56,7 +58,17 @@ class SeriesTable extends JetTable {
     }
 
     BatchSource<Object[]> items(Expression<Boolean> predicate, List<Expression<?>> projections) {
-        return TestSources.items(new SeriesGenerator(start, stop, step, predicate, projections));
+        int start = this.start;
+        int stop = this.stop;
+        int step = this.step;
+        return SourceBuilder
+                .batch("stream", ctx -> {
+                    InternalSerializationService serializationService = ((ProcSupplierCtx) ctx).serializationService();
+                    SimpleExpressionEvalContext context = new SimpleExpressionEvalContext(serializationService);
+                    return new DataGenerator(start, stop, step, predicate, projections, context);
+                })
+                .fillBufferFn(DataGenerator::fillBuffer)
+                .build();
     }
 
     long numberOfItems() {
@@ -75,40 +87,37 @@ class SeriesTable extends JetTable {
         }
     }
 
-    private static final class SeriesGenerator implements Iterable<Object[]>, Serializable {
+    private static final class DataGenerator {
 
-        private int start;
-        private int stop;
-        private int step;
-        private Expression<Boolean> predicate;
-        private List<Expression<?>> projections;
+        private static final int MAX_BATCH_SIZE = 1024;
 
-        @SuppressWarnings("unused")
-        private SeriesGenerator() {
-        }
+        private final Iterator<Object[]> iterator;
 
-        private SeriesGenerator(
+        private DataGenerator(
                 int start,
                 int stop,
                 int step,
                 Expression<Boolean> predicate,
-                List<Expression<?>> projections
+                List<Expression<?>> projections,
+                SimpleExpressionEvalContext context
         ) {
-            this.start = start;
-            this.stop = stop;
-            this.step = step;
-            this.predicate = predicate;
-            this.projections = projections;
+            this.iterator = IntStream.iterate(start, i -> i + step)
+                                     .limit(numberOfItems(start, stop, step))
+                                     .mapToObj(i -> ExpressionUtil.evaluate(predicate, projections, new Object[]{i},
+                                             context))
+                                     .filter(Objects::nonNull)
+                                     .iterator();
         }
 
-        @Nonnull
-        @Override
-        public Iterator<Object[]> iterator() {
-            return IntStream.iterate(start, i -> i + step)
-                            .limit(numberOfItems(start, stop, step))
-                            .mapToObj(i -> ExpressionUtil.evaluate(predicate, projections, new Object[]{i}))
-                            .filter(Objects::nonNull)
-                            .iterator();
+        private void fillBuffer(SourceBuffer<Object[]> buffer) {
+            for (int i = 0; i < MAX_BATCH_SIZE; i++) {
+                if (iterator.hasNext()) {
+                    buffer.add(iterator.next());
+                } else {
+                    buffer.close();
+                    return;
+                }
+            }
         }
     }
 }

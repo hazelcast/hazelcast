@@ -16,12 +16,15 @@
 
 package com.hazelcast.jet.sql.impl.connector.infoschema;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
+import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.schema.MappingField;
@@ -92,28 +95,33 @@ final class InfoSchemaConnector implements SqlConnector {
             @Nonnull List<Expression<?>> projection
     ) {
         InfoSchemaTable table = (InfoSchemaTable) table0;
-
-        List<Object[]> rows = ExpressionUtil.evaluate(predicate, projection, table.rows());
-
+        List<Object[]> rows = table.rows();
         return dag.newUniqueVertex(
                 table.toString(),
-                forceTotalParallelismOne(ProcessorSupplier.of(() -> new StaticSourceP(rows)))
+                forceTotalParallelismOne(ProcessorSupplier.of(() -> new StaticSourceP(predicate, projection, rows)))
         );
     }
 
     private static final class StaticSourceP extends AbstractProcessor {
 
-        private final List<Object[]> rows;
+        private final Expression<Boolean> predicate;
+        private final List<Expression<?>> projection;
+        private List<Object[]> rows;
 
         private Traverser<Object[]> traverser;
 
-        private StaticSourceP(List<Object[]> rows) {
+        private StaticSourceP(Expression<Boolean> predicate, List<Expression<?>> projection, List<Object[]> rows) {
+            this.predicate = predicate;
+            this.projection = projection;
             this.rows = rows;
         }
 
         @Override
         protected void init(@Nonnull Context context) {
-            traverser = Traversers.traverseIterable(rows);
+            InternalSerializationService serializationService = ((ProcCtx) context).serializationService();
+            SimpleExpressionEvalContext evalContext = new SimpleExpressionEvalContext(serializationService);
+            List<Object[]> processedRows = ExpressionUtil.evaluate(predicate, projection, rows, evalContext);
+            traverser = Traversers.traverseIterable(processedRows);
         }
 
         @Override

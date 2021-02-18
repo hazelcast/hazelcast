@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.keyvalue;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.sql.impl.inject.UpsertInjector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTarget;
@@ -82,7 +83,7 @@ public class KvMetadataNullResolver implements KvMetadataResolver {
 
     private static class NullQueryTarget implements QueryTarget {
         @Override
-        public void setTarget(Object target) { }
+        public void setTarget(Object target, Data targetData) { }
 
         @Override
         public QueryExtractor createExtractor(String path, QueryDataType type) {

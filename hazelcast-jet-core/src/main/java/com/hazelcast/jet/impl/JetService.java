@@ -76,7 +76,7 @@ public class JetService implements ManagedService, MembershipAwareService, LiveO
     private final Thread shutdownHookThread;
 
     private JetConfig config;
-    private JetInstance jetInstance;
+    private AbstractJetInstance jetInstance;
     private Networking networking;
     private TaskletExecutionService taskletExecutionService;
     private JobRepository jobRepository;
@@ -140,7 +140,7 @@ public class JetService implements ManagedService, MembershipAwareService, LiveO
 
         if (sqlCoreBackend != null) {
             try {
-                Method initJetInstanceMethod = sqlCoreBackend.getClass().getMethod("init", JetInstance.class);
+                Method initJetInstanceMethod = sqlCoreBackend.getClass().getMethod("init", AbstractJetInstance.class);
                 initJetInstanceMethod.invoke(sqlCoreBackend, jetInstance);
             } catch (ReflectiveOperationException e) {
                 throw new RuntimeException(e);

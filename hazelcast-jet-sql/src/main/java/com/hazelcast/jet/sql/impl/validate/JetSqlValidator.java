@@ -23,6 +23,7 @@ import com.hazelcast.jet.sql.impl.schema.JetSqlUserDefinedTableFunction;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
+import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlInsert;
@@ -45,6 +46,7 @@ import static org.apache.calcite.sql.SqlKind.VALUES;
 public class JetSqlValidator extends HazelcastSqlValidator {
 
     private boolean isCreateJob;
+    private boolean isInfiniteRows;
 
     public JetSqlValidator(
             SqlValidatorCatalogReader catalogReader,
@@ -73,10 +75,16 @@ public class JetSqlValidator extends HazelcastSqlValidator {
     }
 
     @Override
+    protected void validateFrom(SqlNode node, RelDataType targetRowType, SqlValidatorScope scope) {
+        super.validateFrom(node, targetRowType, scope);
+        isInfiniteRows = containsStreamingSource(node);
+    }
+
+    @Override
     public void validateInsert(SqlInsert insert) {
         super.validateInsert(insert);
 
-        if (!isCreateJob && containsStreamingSource(insert.getSource())) {
+        if (!isCreateJob && isInfiniteRows(insert.getSource())) {
             throw newValidationError(insert, RESOURCE.mustUseCreateJob());
         }
     }
@@ -85,7 +93,7 @@ public class JetSqlValidator extends HazelcastSqlValidator {
     protected void validateGroupClause(SqlSelect select) {
         super.validateGroupClause(select);
 
-        if (containsGroupingOrAggregation(select) && containsStreamingSource(select)) {
+        if (containsGroupingOrAggregation(select) && isInfiniteRows(select)) {
             throw newValidationError(select, RESOURCE.streamingAggregationsNotSupported());
         }
     }
@@ -165,5 +173,15 @@ public class JetSqlValidator extends HazelcastSqlValidator {
                 return call.getOperator().acceptCall(this, call);
             }
         });
+    }
+
+    @Override
+    public boolean isInfiniteRows() {
+        return isInfiniteRows;
+    }
+
+    public boolean isInfiniteRows(SqlNode node) {
+        isInfiniteRows |= containsStreamingSource(node);
+        return isInfiniteRows;
     }
 }

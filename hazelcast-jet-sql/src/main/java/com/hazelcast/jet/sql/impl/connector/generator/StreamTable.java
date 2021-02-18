@@ -16,14 +16,18 @@
 
 package com.hazelcast.jet.sql.impl.connector.generator;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.jet.impl.execution.init.Contexts.ProcSupplierCtx;
 import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.pipeline.SourceBuilder.SourceBuffer;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
+import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.TableField;
 
@@ -54,9 +58,14 @@ class StreamTable extends JetTable {
 
     StreamSource<Object[]> items(Expression<Boolean> predicate, List<Expression<?>> projections) {
         int rate = this.rate;
-        return SourceBuilder.stream("stream", ctx -> new StreamGenerator(rate, predicate, projections))
-                            .fillBufferFn(StreamGenerator::fillBuffer)
-                            .build();
+        return SourceBuilder
+                .stream("stream", ctx -> {
+                    InternalSerializationService serializationService = ((ProcSupplierCtx) ctx).serializationService();
+                    SimpleExpressionEvalContext context = new SimpleExpressionEvalContext(serializationService);
+                    return new StreamGenerator(rate, predicate, projections, context);
+                })
+                .fillBufferFn(StreamGenerator::fillBuffer)
+                .build();
     }
 
     private static final class StreamGenerator {
@@ -69,21 +78,28 @@ class StreamTable extends JetTable {
         private final int rate;
         private final Expression<Boolean> predicate;
         private final List<Expression<?>> projections;
+        private final ExpressionEvalContext context;
 
         private long sequence;
 
-        private StreamGenerator(int rate, Expression<Boolean> predicate, List<Expression<?>> projections) {
+        private StreamGenerator(
+                int rate,
+                Expression<Boolean> predicate,
+                List<Expression<?>> projections,
+                ExpressionEvalContext context
+        ) {
             this.startTime = System.nanoTime();
             this.rate = rate;
             this.predicate = predicate;
             this.projections = projections;
+            this.context = context;
         }
 
         private void fillBuffer(SourceBuffer<Object[]> buffer) {
             long now = System.nanoTime();
             long emitValuesUpTo = (now - startTime) / NANOS_PER_MICRO * rate / MICROS_PER_SECOND;
             for (int i = 0; i < MAX_BATCH_SIZE && sequence < emitValuesUpTo; i++) {
-                Object[] row = ExpressionUtil.evaluate(predicate, projections, new Object[]{sequence});
+                Object[] row = ExpressionUtil.evaluate(predicate, projections, new Object[]{sequence}, context);
                 if (row != null) {
                     buffer.add(row);
                 }

@@ -73,7 +73,7 @@
         <timestamp>${maven.build.timestamp}</timestamp>
 
         <!-- Main IMDG dependency -->
-        <hazelcast.version>4.1.1</hazelcast.version>
+        <hazelcast.version>4.2-SNAPSHOT</hazelcast.version>
         <!-- Dependencies on IMDG modules: must be the same versions IMDG depends on! -->
         <hazelcast.aws.version>3.3</hazelcast.aws.version>
         <hazelcast.kubernetes.version>2.2.1</hazelcast.kubernetes.version>

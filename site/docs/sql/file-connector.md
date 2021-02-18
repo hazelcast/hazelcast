@@ -166,7 +166,7 @@ external name should refer to the top-level field - not containing any
 
 ## File Table Functions
 
-To execute an ad hoc query against data in files you can use one of the
+To execute an ad-hoc query against data in files you can use one of the
 predefined table functions:
 
 * `csv_file`

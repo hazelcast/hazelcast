@@ -16,11 +16,19 @@
 
 package com.hazelcast.jet.sql.impl.validate;
 
+import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastAvgAggFunction;
+import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastCountAggFunction;
+import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastMinMaxAggFunction;
+import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastSumAggFunction;
 import com.hazelcast.jet.sql.impl.connector.file.FileTableFunction;
 import com.hazelcast.jet.sql.impl.connector.generator.SeriesGeneratorTableFunction;
 import com.hazelcast.jet.sql.impl.connector.generator.StreamGeneratorTableFunction;
 import com.hazelcast.jet.sql.impl.schema.JetSqlUserDefinedTableFunction;
 import com.hazelcast.jet.sql.impl.schema.JetTableFunction;
+import com.hazelcast.jet.sql.impl.validate.operators.HazelcastArgumentAssignmentOperator;
+import com.hazelcast.jet.sql.impl.validate.operators.HazelcastCollectionTableOperator;
+import com.hazelcast.jet.sql.impl.validate.operators.HazelcastRowOperator;
+import com.hazelcast.jet.sql.impl.validate.operators.HazelcastValuesOperator;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
@@ -28,8 +36,11 @@ import org.apache.calcite.schema.FunctionParameter;
 import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlIdentifier;
+import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperator;
+import org.apache.calcite.sql.SqlSpecialOperator;
 import org.apache.calcite.sql.SqlSyntax;
+import org.apache.calcite.sql.fun.SqlMapValueConstructor;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.type.FamilyOperandTypeChecker;
 import org.apache.calcite.sql.type.InferTypes;
@@ -47,6 +58,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class JetSqlOperatorTable extends ReflectiveSqlOperatorTable {
+
+    public static final SqlSpecialOperator VALUES = new HazelcastValuesOperator();
+    public static final SqlSpecialOperator ROW = new HazelcastRowOperator();
+    public static final SqlSpecialOperator COLLECTION_TABLE =
+            new HazelcastCollectionTableOperator("TABLE");
+    public static final SqlSpecialOperator ARGUMENT_ASSIGNMENT =
+            new HazelcastArgumentAssignmentOperator();
+    // TODO [viliam] this seems to work, but it doesn't extend the hz-specific classes
+    public static final SqlMapValueConstructor MAP_VALUE_CONSTRUCTOR =
+            new SqlMapValueConstructor();
+
+    public static final SqlFunction SUM = new HazelcastSumAggFunction();
+    public static final SqlFunction COUNT = new HazelcastCountAggFunction();
+    public static final SqlFunction AVG = new HazelcastAvgAggFunction();
+    public static final SqlFunction MIN = new HazelcastMinMaxAggFunction(SqlKind.MIN);
+    public static final SqlFunction MAX = new HazelcastMinMaxAggFunction(SqlKind.MAX);
 
     public static final SqlFunction CSV_FILE = from(FileTableFunction.CSV, "CSV_FILE");
     public static final SqlFunction JSON_FILE = from(FileTableFunction.JSON, "JSON_FILE");
@@ -66,7 +93,7 @@ public final class JetSqlOperatorTable extends ReflectiveSqlOperatorTable {
     private JetSqlOperatorTable() {
     }
 
-    static JetSqlOperatorTable instance() {
+    public static JetSqlOperatorTable instance() {
         return INSTANCE;
     }
 

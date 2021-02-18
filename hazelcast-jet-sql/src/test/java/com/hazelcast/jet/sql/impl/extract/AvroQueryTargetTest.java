@@ -89,23 +89,25 @@ public class AvroQueryTargetTest {
                                      .name("object").type().record("object").fields().endRecord().noDefault()
                                      .endRecord();
 
-        target.setTarget(new GenericRecordBuilder(schema)
-                .set("string", "string")
-                .set("boolean", true)
-                .set("byte", (byte) 127)
-                .set("short", (short) 32767)
-                .set("int", 2147483647)
-                .set("long", 9223372036854775807L)
-                .set("float", 1234567890.1F)
-                .set("double", 123451234567890.1D)
-                .set("decimal", "9223372036854775.123")
-                .set("time", "12:23:34")
-                .set("date", "2020-09-09")
-                .set("timestamp", "2020-09-09T12:23:34.1")
-                .set("timestampTz", "2020-09-09T12:23:34.2Z")
-                .set("null", null)
-                .set("object", new GenericRecordBuilder(SchemaBuilder.record("name").fields().endRecord()).build())
-                .build()
+        target.setTarget(
+                new GenericRecordBuilder(schema)
+                        .set("string", "string")
+                        .set("boolean", true)
+                        .set("byte", (byte) 127)
+                        .set("short", (short) 32767)
+                        .set("int", 2147483647)
+                        .set("long", 9223372036854775807L)
+                        .set("float", 1234567890.1F)
+                        .set("double", 123451234567890.1D)
+                        .set("decimal", "9223372036854775.123")
+                        .set("time", "12:23:34")
+                        .set("date", "2020-09-09")
+                        .set("timestamp", "2020-09-09T12:23:34.1")
+                        .set("timestampTz", "2020-09-09T12:23:34.2Z")
+                        .set("null", null)
+                        .set("object", new GenericRecordBuilder(SchemaBuilder.record("name").fields().endRecord()).build())
+                        .build(),
+                null
         );
 
         assertThat(topExtractor.get()).isInstanceOf(GenericRecord.class);

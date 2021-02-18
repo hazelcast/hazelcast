@@ -203,8 +203,7 @@ public class JobRepository {
      */
     @SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE",
             justification = "it's a false positive since java 11: https://github.com/spotbugs/spotbugs/issues/756")
-    long uploadJobResources(JobConfig jobConfig) {
-        long jobId = newJobId();
+    long uploadJobResources(long jobId, JobConfig jobConfig) {
         Map<String, byte[]> tmpMap = new HashMap<>();
         try {
             Supplier<IMap<String, byte[]>> jobFileStorage = Util.memoize(() -> getJobResources(jobId));
@@ -264,7 +263,7 @@ public class JobRepository {
         return baseDir;
     }
 
-    private long newJobId() {
+    public long newJobId() {
         return idGenerator.newId();
     }
 

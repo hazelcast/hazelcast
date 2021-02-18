@@ -29,6 +29,9 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Objects;
 
+import static java.time.Instant.ofEpochMilli;
+import static java.time.ZoneOffset.UTC;
+
 /**
  * A class that has a field of every supported type in SQL.
  */
@@ -86,6 +89,31 @@ public final class AllTypesValue implements Serializable {
         this.zonedDateTime = zonedDateTime;
         this.offsetDateTime = offsetDateTime;
         this.object = object;
+    }
+
+    public static AllTypesValue testValue() {
+        return new AllTypesValue(
+                "string",
+                's',
+                true,
+                (byte) 127,
+                (short) 32767,
+                2147483647,
+                9223372036854775807L,
+                1234567890.1f,
+                123451234567890.1,
+                new BigDecimal("9223372036854775.123"),
+                new BigInteger("9223372036854775"),
+                LocalTime.of(12, 23, 34),
+                LocalDate.of(2020, 4, 15),
+                LocalDateTime.of(2020, 4, 15, 12, 23, 34, 1_000_000),
+                Date.from(ofEpochMilli(1586953414200L)),
+                GregorianCalendar.from(ZonedDateTime.of(2020, 4, 15, 12, 23, 34, 200_000_000, UTC)),
+                ofEpochMilli(1586953414200L),
+                ZonedDateTime.of(2020, 4, 15, 12, 23, 34, 200_000_000, UTC),
+                OffsetDateTime.of(2020, 4, 15, 12, 23, 34, 200_000_000, UTC),
+                null
+        );
     }
 
     public String getString() {

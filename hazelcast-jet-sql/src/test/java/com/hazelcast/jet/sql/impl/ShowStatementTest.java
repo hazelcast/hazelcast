@@ -50,7 +50,7 @@ public class ShowStatementTest extends SqlTestSupport {
     @Test
     public void test_showStatement_metadata() {
         SqlRowMetadata expectedMetadata =
-                new SqlRowMetadata(singletonList(new SqlColumnMetadata("name", SqlColumnType.VARCHAR)));
+                new SqlRowMetadata(singletonList(new SqlColumnMetadata("name", SqlColumnType.VARCHAR, false)));
 
         assertThat(sqlService.execute("show mappings").getRowMetadata()).isEqualTo(expectedMetadata);
         assertThat(sqlService.execute("show jobs").getRowMetadata()).isEqualTo(expectedMetadata);

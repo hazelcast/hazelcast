@@ -37,18 +37,30 @@ class JetSqlResultImpl extends AbstractSqlResult {
     private final QueryId queryId;
     private final QueryResultProducer rootResultConsumer;
     private final SqlRowMetadata rowMetadata;
+    private final boolean isInfiniteRows;
 
     private ResultIterator<SqlRow> iterator;
 
-    JetSqlResultImpl(QueryId queryId, QueryResultProducer rootResultConsumer, SqlRowMetadata rowMetadata) {
+    JetSqlResultImpl(
+            QueryId queryId,
+            QueryResultProducer rootResultConsumer,
+            SqlRowMetadata rowMetadata,
+            boolean isInfiniteRows
+    ) {
         this.queryId = queryId;
         this.rootResultConsumer = rootResultConsumer;
         this.rowMetadata = rowMetadata;
+        this.isInfiniteRows = isInfiniteRows;
     }
 
     @Override
     public QueryId getQueryId() {
         return queryId;
+    }
+
+    @Override
+    public boolean isInfiniteRows() {
+        return isInfiniteRows;
     }
 
     @Nonnull @Override

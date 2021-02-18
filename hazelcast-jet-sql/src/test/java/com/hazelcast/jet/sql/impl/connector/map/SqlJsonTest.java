@@ -169,7 +169,7 @@ public class SqlJsonTest extends SqlTestSupport {
                 + ")"
         );
 
-        sqlService.execute("SINK INTO " + to + " SELECT 1, f.* FROM " + from + " f");
+        sqlService.execute("SINK INTO " + to + " SELECT '1', f.* FROM " + from + " f");
 
         assertRowsAnyOrder(
                 "SELECT * FROM " + to,

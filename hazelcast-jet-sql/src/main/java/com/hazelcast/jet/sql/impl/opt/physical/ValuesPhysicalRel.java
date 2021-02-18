@@ -16,32 +16,39 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
-import com.google.common.collect.ImmutableList;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
+import org.apache.calcite.rel.AbstractRelNode;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.core.Values;
+import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.rex.RexLiteral;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
-public class ValuesPhysicalRel extends Values implements PhysicalRel {
+public class ValuesPhysicalRel extends AbstractRelNode implements PhysicalRel {
+
+    private final RelDataType rowType;
+    private final List<Object[]> tuples;
 
     ValuesPhysicalRel(
             RelOptCluster cluster,
             RelTraitSet traits,
             RelDataType rowType,
-            ImmutableList<ImmutableList<RexLiteral>> tuples
+            List<Object[]> tuples
     ) {
-        super(cluster, rowType, tuples, traits);
+        super(cluster, traits);
+
+        this.rowType = rowType;
+        this.tuples = tuples;
     }
 
-    public List<Object[]> values() {
-        return OptUtils.convert(this, getRowType());
+    public List<Object[]> tuples() {
+        return tuples;
     }
 
     @Override
@@ -55,7 +62,24 @@ public class ValuesPhysicalRel extends Values implements PhysicalRel {
     }
 
     @Override
+    protected RelDataType deriveRowType() {
+        return rowType;
+    }
+
+    @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new ValuesPhysicalRel(getCluster(), traitSet, getRowType(), getTuples());
+        return new ValuesPhysicalRel(getCluster(), traitSet, rowType, tuples);
+    }
+
+    @Override
+    public RelWriter explainTerms(RelWriter pw) {
+        return super.explainTerms(pw)
+                .item("tuples",
+                        tuples.stream()
+                                .map(row -> Arrays.stream(row)
+                                        .map(String::valueOf)
+                                        .collect(Collectors.joining(", ", "{ ", " }")))
+                                .collect(Collectors.joining(", ", "[", "]"))
+                );
     }
 }

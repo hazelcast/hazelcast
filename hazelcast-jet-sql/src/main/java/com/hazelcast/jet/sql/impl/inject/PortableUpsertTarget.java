@@ -106,64 +106,64 @@ class PortableUpsertTarget implements UpsertTarget {
             try {
                 switch (type) {
                     case BOOLEAN:
-                        portable.writeBoolean(name, value != null && (boolean) value);
+                        portable.setBoolean(name, value != null && (boolean) value);
                         break;
                     case BYTE:
-                        portable.writeByte(name, value == null ? (byte) 0 : (byte) value);
+                        portable.setByte(name, value == null ? (byte) 0 : (byte) value);
                         break;
                     case SHORT:
-                        portable.writeShort(name, value == null ? (short) 0 : (short) value);
+                        portable.setShort(name, value == null ? (short) 0 : (short) value);
                         break;
                     case CHAR:
-                        portable.writeChar(name, value == null ? (char) 0 : (char) value);
+                        portable.setChar(name, value == null ? (char) 0 : (char) value);
                         break;
                     case INT:
-                        portable.writeInt(name, value == null ? 0 : (int) value);
+                        portable.setInt(name, value == null ? 0 : (int) value);
                         break;
                     case LONG:
-                        portable.writeLong(name, value == null ? 0L : (long) value);
+                        portable.setLong(name, value == null ? 0L : (long) value);
                         break;
                     case FLOAT:
-                        portable.writeFloat(name, value == null ? 0F : (float) value);
+                        portable.setFloat(name, value == null ? 0F : (float) value);
                         break;
                     case DOUBLE:
-                        portable.writeDouble(name, value == null ? 0D : (double) value);
+                        portable.setDouble(name, value == null ? 0D : (double) value);
                         break;
                     case UTF:
-                        portable.writeUTF(name, (String) QueryDataType.VARCHAR.convert(value));
+                        portable.setString(name, (String) QueryDataType.VARCHAR.convert(value));
                         break;
                     case PORTABLE:
-                        portable.writeGenericRecord(name, (GenericRecord) value);
+                        portable.setGenericRecord(name, (GenericRecord) value);
                         break;
                     case BOOLEAN_ARRAY:
-                        portable.writeBooleanArray(name, (boolean[]) value);
+                        portable.setBooleanArray(name, (boolean[]) value);
                         break;
                     case BYTE_ARRAY:
-                        portable.writeByteArray(name, (byte[]) value);
+                        portable.setByteArray(name, (byte[]) value);
                         break;
                     case SHORT_ARRAY:
-                        portable.writeShortArray(name, (short[]) value);
+                        portable.setShortArray(name, (short[]) value);
                         break;
                     case CHAR_ARRAY:
-                        portable.writeCharArray(name, (char[]) value);
+                        portable.setCharArray(name, (char[]) value);
                         break;
                     case INT_ARRAY:
-                        portable.writeIntArray(name, (int[]) value);
+                        portable.setIntArray(name, (int[]) value);
                         break;
                     case LONG_ARRAY:
-                        portable.writeLongArray(name, (long[]) value);
+                        portable.setLongArray(name, (long[]) value);
                         break;
                     case FLOAT_ARRAY:
-                        portable.writeFloatArray(name, (float[]) value);
+                        portable.setFloatArray(name, (float[]) value);
                         break;
                     case DOUBLE_ARRAY:
-                        portable.writeDoubleArray(name, (double[]) value);
+                        portable.setDoubleArray(name, (double[]) value);
                         break;
                     case UTF_ARRAY:
-                        portable.writeUTFArray(name, (String[]) value);
+                        portable.setStringArray(name, (String[]) value);
                         break;
                     case PORTABLE_ARRAY:
-                        portable.writeGenericRecordArray(name, (GenericRecord[]) value);
+                        portable.setGenericRecordArray(name, (GenericRecord[]) value);
                         break;
                     default:
                         throw QueryException.error("Unsupported type: " + type);

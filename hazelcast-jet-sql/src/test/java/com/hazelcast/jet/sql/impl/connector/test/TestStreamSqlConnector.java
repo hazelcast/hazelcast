@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.jet.impl.util.Util.toList;
+import static com.hazelcast.jet.sql.impl.ExpressionUtil.NOT_IMPLEMENTED_ARGUMENTS_CONTEXT;
 import static java.util.Collections.singletonList;
 
 /**
@@ -103,7 +104,9 @@ public class TestStreamSqlConnector implements SqlConnector {
             @Nonnull List<Expression<?>> projection
     ) {
         StreamSourceTransform<Object[]> source = (StreamSourceTransform<Object[]>) TestSources.itemStream(100,
-                (timestamp, sequence) -> ExpressionUtil.evaluate(predicate, projection, new Object[]{sequence}));
+                (timestamp, sequence) ->
+                        ExpressionUtil.evaluate(predicate, projection, new Object[]{sequence},
+                                NOT_IMPLEMENTED_ARGUMENTS_CONTEXT));
         ProcessorMetaSupplier pms = source.metaSupplierFn.apply(EventTimePolicy.noEventTime());
         return dag.newUniqueVertex("TestStream[" + table.getSchemaName() + "." + table.getSqlName() + ']', pms);
     }

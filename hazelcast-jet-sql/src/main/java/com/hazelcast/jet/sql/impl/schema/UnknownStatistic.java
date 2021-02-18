@@ -25,6 +25,8 @@ import org.apache.calcite.util.ImmutableBitSet;
 
 import java.util.List;
 
+import static java.util.Collections.emptyList;
+
 public final class UnknownStatistic implements Statistic {
 
     public static final UnknownStatistic INSTANCE = new UnknownStatistic();
@@ -54,7 +56,7 @@ public final class UnknownStatistic implements Statistic {
 
     @Override
     public List<RelCollation> getCollations() {
-        return null;
+        return emptyList();
     }
 
     @Override

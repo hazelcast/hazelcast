@@ -20,7 +20,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import javax.annotation.concurrent.NotThreadSafe;
 import java.io.IOException;
@@ -40,74 +39,12 @@ public final class AvgSqlAggregations {
 
     private static SqlAggregation from(QueryDataType operandType) {
         switch (operandType.getTypeFamily()) {
-            case TINYINT:
-            case SMALLINT:
-            case INTEGER:
-            case BIGINT:
-                return new AvgLongSqlAggregation();
             case DECIMAL:
                 return new AvgDecimalSqlAggregation();
-            case REAL:
             case DOUBLE:
                 return new AvgDoubleSqlAggregation();
             default:
-                throw QueryException.error("Unsupported operand type: " + operandType);
-        }
-    }
-
-    @NotThreadSafe
-    private static final class AvgLongSqlAggregation implements SqlAggregation {
-
-        private long sum;
-        private long count;
-
-        @Override
-        public void accumulate(Object value) {
-            add(value, 1);
-        }
-
-        @Override
-        public void combine(SqlAggregation other0) {
-            AvgLongSqlAggregation other = (AvgLongSqlAggregation) other0;
-
-            add(other.sum, other.count);
-        }
-
-        private void add(Object value, long count) {
-            if (value == null) {
-                return;
-            }
-
-            try {
-                sum = Math.addExact(sum, ((Number) value).longValue());
-            } catch (ArithmeticException e) {
-                throw QueryException.dataException(QueryDataTypeFamily.BIGINT + " overflow in 'AVG' function " +
-                                                   "(consider adding explicit CAST to DECIMAL)");
-            }
-            this.count += count;
-        }
-
-        @Override
-        public Object collect() {
-            if (count == 0) {
-                return null;
-            }
-
-            BigDecimal decimalSum = QueryDataType.BIGINT.getConverter().asDecimal(sum);
-            BigDecimal decimalCount = QueryDataType.BIGINT.getConverter().asDecimal(count);
-            return decimalSum.divide(decimalCount, DECIMAL_MATH_CONTEXT);
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeLong(sum);
-            out.writeLong(count);
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
-            sum = in.readLong();
-            count = in.readLong();
+                throw QueryException.error("Unexpected operand type: " + operandType);
         }
     }
 

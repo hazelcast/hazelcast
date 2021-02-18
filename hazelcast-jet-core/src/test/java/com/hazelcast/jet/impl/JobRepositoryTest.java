@@ -161,7 +161,7 @@ public class JobRepositoryTest extends JetTestSupport {
 
     private void testResourceCleanup() {
         try {
-            jobRepository.uploadJobResources(jobConfig);
+            jobRepository.uploadJobResources(jobRepository.newJobId(), jobConfig);
             fail();
         } catch (JetException e) {
             Collection<DistributedObject> objects = instance.getHazelcastInstance().getDistributedObjects();
@@ -208,7 +208,7 @@ public class JobRepositoryTest extends JetTestSupport {
 
     private long uploadResourcesForNewJob() {
         jobConfig.addClass(DummyClass.class);
-        return jobRepository.uploadJobResources(jobConfig);
+        return jobRepository.uploadJobResources(jobRepository.newJobId(), jobConfig);
     }
 
     private Data createDagData() {

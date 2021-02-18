@@ -19,7 +19,7 @@ package com.hazelcast.jet.sql.impl;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.impl.AbstractJetInstance;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.jet.sql.impl.connector.map.JetMapMetadataResolverImpl;
 import com.hazelcast.jet.sql.impl.schema.MappingCatalog;
@@ -27,6 +27,7 @@ import com.hazelcast.jet.sql.impl.schema.MappingStorage;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.impl.JetSqlCoreBackend;
+import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.schema.map.JetMapMetadataResolver;
@@ -42,10 +43,10 @@ public class JetSqlCoreBackendImpl implements JetSqlCoreBackend, ManagedService 
 
     private MappingCatalog catalog;
     private JetSqlBackend sqlBackend;
-    private Map<String, JetQueryResultProducer> resultConsumerRegistry;
+    private Map<Long, JetQueryResultProducer> resultConsumerRegistry;
 
     @SuppressWarnings("unused") // used through reflection
-    public void init(@Nonnull JetInstance jetInstance) {
+    public void init(@Nonnull AbstractJetInstance jetInstance) {
         HazelcastInstanceImpl hazelcastInstance = (HazelcastInstanceImpl) jetInstance.getHazelcastInstance();
         NodeEngine nodeEngine = hazelcastInstance.node.nodeEngine;
 
@@ -79,19 +80,17 @@ public class JetSqlCoreBackendImpl implements JetSqlCoreBackend, ManagedService 
     }
 
     @Override
-    public SqlResult execute(SqlPlan plan, List<Object> params, long timeout, int pageSize) {
-        if (params != null && !params.isEmpty()) {
-            throw new JetException("Query parameters not yet supported");
-        }
+    public SqlResult execute(QueryId queryId, SqlPlan plan, List<Object> params, long timeout, int pageSize) {
+        assert params == null || params.isEmpty();
         if (timeout > 0) {
             throw new JetException("Query timeout not yet supported");
         }
         // TODO: query page size defaults to 4096
 
-        return ((JetPlan) plan).execute();
+        return ((JetPlan) plan).execute(queryId);
     }
 
-    public Map<String, JetQueryResultProducer> getResultConsumerRegistry() {
+    public Map<Long, JetQueryResultProducer> getResultConsumerRegistry() {
         return resultConsumerRegistry;
     }
 

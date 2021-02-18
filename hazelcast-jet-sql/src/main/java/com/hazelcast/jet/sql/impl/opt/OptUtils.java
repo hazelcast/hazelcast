@@ -17,13 +17,14 @@
 package com.hazelcast.jet.sql.impl.opt;
 
 import com.google.common.collect.ImmutableList;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.sql.impl.calcite.SqlToQueryType;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.RexToExpression;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.RexToExpressionVisitor;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastRelOptTable;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
@@ -34,19 +35,18 @@ import org.apache.calcite.plan.ConventionTraitDef;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleOperand;
-import org.apache.calcite.plan.RelOptSchema;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTrait;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.plan.volcano.RelSubset;
 import org.apache.calcite.prepare.RelOptTableImpl;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.core.Values;
 import org.apache.calcite.rel.logical.LogicalTableScan;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexVisitor;
+import org.apache.calcite.sql.type.SqlTypeName;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -59,7 +59,6 @@ import java.util.Set;
 
 import static com.hazelcast.jet.sql.impl.opt.JetConventions.LOGICAL;
 import static com.hazelcast.jet.sql.impl.opt.JetConventions.PHYSICAL;
-import static java.util.Arrays.asList;
 
 /**
  * Static utility classes for rules.
@@ -127,7 +126,6 @@ public final class OptUtils {
         JetTable table = hazelcastTable.getTarget();
 
         HazelcastRelOptTable relTable = createRelTable(
-                null,
                 table.getQualifiedName(),
                 hazelcastTable,
                 cluster.getTypeFactory()
@@ -136,7 +134,6 @@ public final class OptUtils {
     }
 
     private static HazelcastRelOptTable createRelTable(
-            RelOptSchema relOptSchema,
             List<String> names,
             HazelcastTable hazelcastTable,
             RelDataTypeFactory typeFactory
@@ -144,7 +141,7 @@ public final class OptUtils {
         RelDataType rowType = hazelcastTable.getRowType(typeFactory);
 
         RelOptTableImpl relTable = RelOptTableImpl.create(
-                relOptSchema,
+                null,
                 rowType,
                 names,
                 hazelcastTable,
@@ -228,9 +225,9 @@ public final class OptUtils {
         return new RexToExpressionVisitor(schema, new QueryParameterMetadata());
     }
 
-    public static List<Object[]> convert(Values values) {
-        List<Object[]> rows = new ArrayList<>(values.getTuples().size());
-        for (List<RexLiteral> tuple : values.getTuples()) {
+    public static List<Object[]> convert(ImmutableList<ImmutableList<RexLiteral>> values) {
+        List<Object[]> rows = new ArrayList<>(values.size());
+        for (List<RexLiteral> tuple : values) {
 
             Object[] result = new Object[tuple.size()];
             for (int i = 0; i < tuple.size(); i++) {
@@ -244,25 +241,24 @@ public final class OptUtils {
         return rows;
     }
 
-    public static List<Object[]> convert(Values values, RelDataType rowType) {
-        List<QueryDataType> types = extractFieldTypes(rowType);
+    /**
+     * Converts a {@link TableField} to {@link RelDataType}.
+     */
+    public static RelDataType convert(TableField field, RelDataTypeFactory typeFactory) {
+        QueryDataType fieldType = field.getType();
 
-        List<Object[]> rows = new ArrayList<>(values.getTuples().size());
-        for (List<RexLiteral> tuple : values.getTuples()) {
+        SqlTypeName sqlTypeName = HazelcastTypeUtils.toCalciteType(fieldType);
 
-            Object[] result = new Object[tuple.size()];
-            for (int i = 0; i < tuple.size(); i++) {
-                RexLiteral literal = tuple.get(i);
-                Expression<?> expression = RexToExpression.convertLiteral(literal);
-                Object value = expression.eval(null, null);
-                result[i] = types.get(i).convert(value);
-            }
-            rows.add(result);
+        if (sqlTypeName == null) {
+            throw new IllegalStateException("Unexpected type family: " + fieldType);
         }
-        return rows;
+
+        RelDataType relType = typeFactory.createSqlType(sqlTypeName);
+        return typeFactory.createTypeWithNullability(relType, true);
     }
 
     private static List<QueryDataType> extractFieldTypes(RelDataType rowType) {
-        return asList(SqlToQueryType.mapRowType(rowType));
+        return Util.toList(rowType.getFieldList(),
+                f -> HazelcastTypeUtils.toHazelcastType(f.getType().getSqlTypeName()));
     }
 }

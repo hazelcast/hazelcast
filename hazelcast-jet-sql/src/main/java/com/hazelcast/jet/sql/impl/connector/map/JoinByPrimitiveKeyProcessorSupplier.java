@@ -23,6 +23,7 @@ import com.hazelcast.jet.impl.execution.init.Contexts.ProcSupplierCtx;
 import com.hazelcast.jet.impl.processor.AsyncTransformUsingServiceOrderedP;
 import com.hazelcast.jet.pipeline.ServiceFactories;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
+import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
@@ -30,6 +31,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
@@ -61,6 +63,7 @@ final class JoinByPrimitiveKeyProcessorSupplier implements ProcessorSupplier, Da
     private transient IMap<Object, Object> map;
     private transient InternalSerializationService serializationService;
     private transient Extractors extractors;
+    private transient SimpleExpressionEvalContext evalContext;
 
     @SuppressWarnings("unused")
     private JoinByPrimitiveKeyProcessorSupplier() {
@@ -85,6 +88,7 @@ final class JoinByPrimitiveKeyProcessorSupplier implements ProcessorSupplier, Da
         map = context.jetInstance().getMap(mapName);
         serializationService = ((ProcSupplierCtx) context).serializationService();
         extractors = Extractors.newBuilder(serializationService).build();
+        this.evalContext = new SimpleExpressionEvalContext(((ProcSupplierCtx) context).serializationService());
     }
 
     @Nonnull
@@ -106,7 +110,7 @@ final class JoinByPrimitiveKeyProcessorSupplier implements ProcessorSupplier, Da
                         return ctx.ref.getAsync(key).toCompletableFuture();
                     },
                     (left, value) -> {
-                        Object[] joined = join(left, left[leftEquiJoinIndex], value, projector, condition);
+                        Object[] joined = join(left, left[leftEquiJoinIndex], value, projector, condition, evalContext);
                         return joined != null ? singleton(joined)
                                 : inner ? null
                                 : singleton(extendArray(left, projector.getColumnCount()));
@@ -122,7 +126,8 @@ final class JoinByPrimitiveKeyProcessorSupplier implements ProcessorSupplier, Da
             Object key,
             Object value,
             KvRowProjector rightRowProjector,
-            Expression<Boolean> condition
+            Expression<Boolean> condition,
+            ExpressionEvalContext context
     ) {
         if (value == null) {
             return null;
@@ -133,7 +138,7 @@ final class JoinByPrimitiveKeyProcessorSupplier implements ProcessorSupplier, Da
             return null;
         }
 
-        return ExpressionUtil.join(left, right, condition);
+        return ExpressionUtil.join(left, right, condition, context);
     }
 
     @Override

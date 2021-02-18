@@ -22,6 +22,7 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.impl.pipeline.transform.BatchSourceTransform;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.test.TestSources;
+import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
@@ -46,6 +47,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.jet.impl.util.Util.toList;
+import static com.hazelcast.jet.sql.impl.ExpressionUtil.NOT_IMPLEMENTED_ARGUMENTS_CONTEXT;
 import static java.time.ZoneOffset.UTC;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -57,7 +59,7 @@ public class AllTypesSqlConnector implements SqlConnector {
 
     public static final String TYPE_NAME = "AllTypes";
 
-    private static final List<MappingField> FIELD_LIST = asList(
+    public static final List<MappingField> FIELD_LIST = asList(
             new MappingField("string", QueryDataType.VARCHAR),
             new MappingField("boolean", QueryDataType.BOOLEAN),
             new MappingField("byte", QueryDataType.TINYINT),
@@ -72,8 +74,8 @@ public class AllTypesSqlConnector implements SqlConnector {
             new MappingField("timestamp", QueryDataType.TIMESTAMP),
             new MappingField("timestampTz", QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME),
             new MappingField("object", QueryDataType.OBJECT)
-
     );
+
     private static final List<TableField> FIELD_LIST2 = toList(FIELD_LIST, f -> new TableField(f.name(), f.type(), false));
 
     private static final Object[] VALUES = new Object[]{
@@ -92,6 +94,8 @@ public class AllTypesSqlConnector implements SqlConnector {
             OffsetDateTime.of(2020, 4, 15, 12, 23, 34, 200_000_000, UTC),
             null
     };
+
+    public static final SqlTestSupport.Row ALL_TYPES_ROW = new SqlTestSupport.Row(VALUES);
 
     public static void create(SqlService sqlService, String tableName) {
         sqlService.execute("CREATE MAPPING " + tableName + " TYPE " + AllTypesSqlConnector.TYPE_NAME);
@@ -143,7 +147,7 @@ public class AllTypesSqlConnector implements SqlConnector {
             @Nullable Expression<Boolean> predicate,
             @Nonnull List<Expression<?>> projection
     ) {
-        Object[] row = ExpressionUtil.evaluate(predicate, projection, VALUES);
+        Object[] row = ExpressionUtil.evaluate(predicate, projection, VALUES, NOT_IMPLEMENTED_ARGUMENTS_CONTEXT);
         BatchSource<Object[]> source = TestSources.items(singletonList(row));
         ProcessorMetaSupplier pms = ((BatchSourceTransform<Object[]>) source).metaSupplier;
         return dag.newUniqueVertex(table.toString(), pms);

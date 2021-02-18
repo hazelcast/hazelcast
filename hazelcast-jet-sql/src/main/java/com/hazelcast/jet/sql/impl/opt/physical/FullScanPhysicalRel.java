@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastSchemaUtils;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
@@ -65,7 +64,7 @@ public class FullScanPhysicalRel extends TableScan implements PhysicalRel {
         List<RexNode> projection = new ArrayList<>(projects.size());
         for (Integer index : projects) {
             TableField field = table.getTarget().getField(index);
-            RelDataType relDataType = HazelcastSchemaUtils.convert(field, getCluster().getTypeFactory());
+            RelDataType relDataType = OptUtils.convert(field, getCluster().getTypeFactory());
             projection.add(new RexInputRef(index, relDataType));
         }
 
