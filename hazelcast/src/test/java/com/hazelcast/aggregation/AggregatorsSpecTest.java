@@ -125,7 +125,7 @@ public class AggregatorsSpecTest extends HazelcastTestSupport {
 
     @Test
     public void testAggregators() {
-        IMap<Integer, Person> map = getMapWithNodeCount(3, parallelAccumulation, useIndex, postfix);
+        IMap<Integer, Person> map = getMapWithNodeCount(3, parallelAccumulation, useIndex);
         populateMapWithPersons(map, postfix, PERSONS_COUNT);
 
         assertMinAggregators(map, postfix, predicate);
@@ -275,7 +275,7 @@ public class AggregatorsSpecTest extends HazelcastTestSupport {
 
     @Test
     public void testAggregators_nullCornerCases() {
-        IMap<Integer, Person> map = getMapWithNodeCount(3, parallelAccumulation, useIndex, postfix);
+        IMap<Integer, Person> map = getMapWithNodeCount(3, parallelAccumulation, useIndex);
         map.put(0, postfix.contains("[any]") ? PersonAny.nulls() : new Person());
 
         if (postfix.contains("[any]")) {
@@ -302,7 +302,7 @@ public class AggregatorsSpecTest extends HazelcastTestSupport {
 
     @Test
     public void testAggregators_emptyCornerCases() {
-        IMap<Integer, Person> map = getMapWithNodeCount(3, parallelAccumulation, useIndex, postfix);
+        IMap<Integer, Person> map = getMapWithNodeCount(3, parallelAccumulation, useIndex);
 
         if (postfix.contains("[any]")) {
             map.put(0, PersonAny.empty());
@@ -447,7 +447,7 @@ public class AggregatorsSpecTest extends HazelcastTestSupport {
         assertEquals(result, map.aggregate(Aggregators.distinct("optionalComparableValue" + p), predicate));
     }
 
-    protected <K, V> IMap<K, V> getMapWithNodeCount(int nodeCount, boolean parallelAccumulation, boolean useIndex, String postfix) {
+    protected <K, V> IMap<K, V> getMapWithNodeCount(int nodeCount, boolean parallelAccumulation, boolean useIndex) {
         if (nodeCount < 1) {
             throw new IllegalArgumentException("node count < 1");
         }
