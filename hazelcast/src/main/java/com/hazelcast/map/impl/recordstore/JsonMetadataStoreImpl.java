@@ -17,30 +17,30 @@
 package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.query.impl.AbstractMetadata;
+import com.hazelcast.query.impl.JsonMetadata;
 import com.hazelcast.query.impl.Metadata;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * On-heap Metadata Store. Uses CHM to store the key/metadata pairs.
+ * On-heap Json Metadata Store. Uses CHM to store the key/metadata pairs.
  */
-public class MetadataStore implements AbstractMetadataStore {
+public class JsonMetadataStoreImpl implements JsonMetadataStore {
 
-    private final ConcurrentMap<Data, AbstractMetadata> store;
+    private final ConcurrentMap<Data, JsonMetadata> store;
 
-    public MetadataStore() {
+    public JsonMetadataStoreImpl() {
         this.store = new ConcurrentHashMap<>();
     }
 
     @Override
-    public AbstractMetadata get(Data key) {
+    public JsonMetadata get(Data key) {
         return store.get(key);
     }
 
     @Override
-    public void set(Data key, AbstractMetadata metadata) {
+    public void set(Data key, JsonMetadata metadata) {
         store.put(key, metadata);
     }
 

@@ -511,7 +511,7 @@ public interface RecordStore<R extends Record> {
      * Gets metadata store associated with the record store.
      * @return the metadata store
      */
-    AbstractMetadataStore getMetadataStore();
+    JsonMetadataStore getMetadataStore();
 
     Storage getStorage();
 

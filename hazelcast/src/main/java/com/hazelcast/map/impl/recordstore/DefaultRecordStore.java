@@ -100,10 +100,10 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     protected final Collection<Future> loadingFutures = new ConcurrentLinkedQueue<>();
 
     /**
-     * A reference to the Metadata store. It is initialized lazily only if the
+     * A reference to the Оыщт Metadata store. It is initialized lazily only if the
      * store is needed.
      */
-    private AbstractMetadataStore metadataStore;
+    private JsonMetadataStore metadataStore;
 
     /**
      * The record store may be created with or without triggering the load.
@@ -138,8 +138,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return mapDataStore;
     }
 
-    protected AbstractMetadataStore createMetadataStore() {
-        return new MetadataStore();
+    protected JsonMetadataStore createMetadataStore() {
+        return new JsonMetadataStoreImpl();
     }
 
     @Override
@@ -163,7 +163,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public AbstractMetadataStore getMetadataStore() {
+    public JsonMetadataStore getMetadataStore() {
         if (metadataStore == null) {
             metadataStore = createMetadataStore();
         }

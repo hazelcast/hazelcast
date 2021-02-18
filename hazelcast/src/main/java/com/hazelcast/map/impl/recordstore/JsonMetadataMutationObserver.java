@@ -20,7 +20,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.MetadataInitializer;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.query.impl.AbstractMetadata;
+import com.hazelcast.query.impl.JsonMetadata;
 import com.hazelcast.query.impl.Metadata;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -40,11 +40,11 @@ public class JsonMetadataMutationObserver implements MutationObserver<Record> {
 
     private final SerializationService serializationService;
     private final MetadataInitializer metadataInitializer;
-    private final AbstractMetadataStore metadataStore;
+    private final JsonMetadataStore metadataStore;
 
     public JsonMetadataMutationObserver(SerializationService serializationService,
                                         MetadataInitializer metadataInitializer,
-                                        AbstractMetadataStore metadataStore) {
+                                        JsonMetadataStore metadataStore) {
         this.serializationService = serializationService;
         this.metadataInitializer = metadataInitializer;
         this.metadataStore = metadataStore;
@@ -96,11 +96,11 @@ public class JsonMetadataMutationObserver implements MutationObserver<Record> {
         metadataStore.clear();
     }
 
-    protected AbstractMetadata getMetadata(Data dataKey) {
+    protected JsonMetadata getMetadata(Data dataKey) {
         return metadataStore.get(dataKey);
     }
 
-    protected void setMetadata(Data dataKey, AbstractMetadata metadata) {
+    protected void setMetadata(Data dataKey, JsonMetadata metadata) {
         metadataStore.set(dataKey, metadata);
     }
 

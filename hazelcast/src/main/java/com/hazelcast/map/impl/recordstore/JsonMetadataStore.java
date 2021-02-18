@@ -17,18 +17,18 @@
 package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.query.impl.AbstractMetadata;
+import com.hazelcast.query.impl.JsonMetadata;
 
 /**
- * Abstraction of Metadata Store.
+ * Abstraction of Json Metadata Store.
  */
-public interface AbstractMetadataStore {
+public interface JsonMetadataStore {
 
     /**
      * @param key the key in the store
      * @return the metadata associated with the key, {@code null} if there is no the key in the store
      */
-    AbstractMetadata get(Data key);
+    JsonMetadata get(Data key);
 
     /**
      * Puts the key/metadata pair into the store. Replaces the old metadata value
@@ -36,7 +36,7 @@ public interface AbstractMetadataStore {
      * @param key the key in the store
      * @param metadata the metadata
      */
-    void set(Data key, AbstractMetadata metadata);
+    void set(Data key, JsonMetadata metadata);
 
     /**
      * Sets the new metadata key of the metadata associated with the key

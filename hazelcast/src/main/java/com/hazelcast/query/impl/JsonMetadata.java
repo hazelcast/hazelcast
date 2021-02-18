@@ -17,9 +17,9 @@
 package com.hazelcast.query.impl;
 
 /**
- * Abstraction of metadata that is stored either on-heap or off-heap.
+ * Abstraction of Json metadata that is stored either on-heap or off-heap.
  */
-public interface AbstractMetadata {
+public interface JsonMetadata {
 
     /**
      * Gets the key part of the metadata

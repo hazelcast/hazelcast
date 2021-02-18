@@ -21,7 +21,7 @@ package com.hazelcast.query.impl;
  * is object. It is up to the user of this class to determine the type of
  * metadata and act accordingly.
  */
-public class Metadata implements AbstractMetadata {
+public class Metadata implements JsonMetadata {
 
     private Object keyMeta;
     private Object valueMeta;
