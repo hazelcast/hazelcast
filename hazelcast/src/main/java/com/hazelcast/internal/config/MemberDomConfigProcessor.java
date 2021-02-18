@@ -372,11 +372,11 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             String name = cleanNodeName(n);
             if (matches("class-cache-mode", name)) {
                 UserCodeDeploymentConfig.ClassCacheMode classCacheMode
-                  = UserCodeDeploymentConfig.ClassCacheMode.valueOf(getTextContent(n));
+                        = UserCodeDeploymentConfig.ClassCacheMode.valueOf(getTextContent(n));
                 dcConfig.setClassCacheMode(classCacheMode);
             } else if (matches("provider-mode", name)) {
                 UserCodeDeploymentConfig.ProviderMode providerMode
-                  = UserCodeDeploymentConfig.ProviderMode.valueOf(getTextContent(n));
+                        = UserCodeDeploymentConfig.ProviderMode.valueOf(getTextContent(n));
                 dcConfig.setProviderMode(providerMode);
             } else if (matches("blacklist-prefixes", name)) {
                 dcConfig.setBlacklistedPrefixes(getTextContent(n));
@@ -415,7 +415,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                     hrConfig.setDataLoadTimeoutSeconds(getIntegerValue(dataLoadTimeoutName, getTextContent(n)));
                 } else if (matches("cluster-data-recovery-policy", name)) {
                     hrConfig.setClusterDataRecoveryPolicy(
-                      HotRestartClusterDataRecoveryPolicy.valueOf(upperCaseInternal(getTextContent(n))));
+                            HotRestartClusterDataRecoveryPolicy.valueOf(upperCaseInternal(getTextContent(n))));
                 } else if (matches("auto-remove-stale-data", name)) {
                     hrConfig.setAutoRemoveStaleData(getBooleanValue(getTextContent(n)));
                 }
@@ -532,8 +532,10 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     protected void handleSplitBrainProtection(Node node) {
         String name = getAttribute(node, "name");
-        SplitBrainProtectionConfig splitBrainProtectionConfig = config.getSplitBrainProtectionConfig(name);
-        splitBrainProtectionConfig.setName(name);
+        SplitBrainProtectionConfig splitBrainProtectionConfig = ConfigUtils.getByNameOrNew(
+                config.getSplitBrainProtectionConfigs(),
+                name,
+                SplitBrainProtectionConfig.class);
         handleSplitBrainProtectionNode(node, splitBrainProtectionConfig, name);
     }
 
@@ -845,14 +847,14 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     private void handleMemberServerSocketEndpointConfig(Node node) throws Exception {
         ServerSocketEndpointConfig config = (ServerSocketEndpointConfig) this.config.getAdvancedNetworkConfig()
-          .getEndpointConfigs().getOrDefault(EndpointQualifier.MEMBER, new ServerSocketEndpointConfig());
+                .getEndpointConfigs().getOrDefault(EndpointQualifier.MEMBER, new ServerSocketEndpointConfig());
         config.setProtocolType(ProtocolType.MEMBER);
         handleServerSocketEndpointConfig(config, node);
     }
 
     private void handleClientServerSocketEndpointConfig(Node node) throws Exception {
         ServerSocketEndpointConfig config = (ServerSocketEndpointConfig) this.config.getAdvancedNetworkConfig()
-          .getEndpointConfigs().getOrDefault(EndpointQualifier.CLIENT, new ServerSocketEndpointConfig());
+                .getEndpointConfigs().getOrDefault(EndpointQualifier.CLIENT, new ServerSocketEndpointConfig());
         config.setProtocolType(ProtocolType.CLIENT);
         handleServerSocketEndpointConfig(config, node);
     }
@@ -865,7 +867,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     private void handleRestServerSocketEndpointConfig(Node node) throws Exception {
         RestServerEndpointConfig config = (RestServerEndpointConfig) this.config.getAdvancedNetworkConfig()
-          .getEndpointConfigs().getOrDefault(EndpointQualifier.REST, new RestServerEndpointConfig());
+                .getEndpointConfigs().getOrDefault(EndpointQualifier.REST, new RestServerEndpointConfig());
         handleServerSocketEndpointConfig(config, node);
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
@@ -879,7 +881,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     private void handleMemcacheServerSocketEndpointConfig(Node node) throws Exception {
         ServerSocketEndpointConfig config = (ServerSocketEndpointConfig) this.config.getAdvancedNetworkConfig()
-          .getEndpointConfigs().getOrDefault(EndpointQualifier.MEMCACHE, new ServerSocketEndpointConfig());
+                .getEndpointConfigs().getOrDefault(EndpointQualifier.MEMCACHE, new ServerSocketEndpointConfig());
         config.setProtocolType(ProtocolType.MEMCACHE);
         handleServerSocketEndpointConfig(config, node);
     }
@@ -989,21 +991,29 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     protected void handleExecutor(Node node) throws Exception {
         String name = getTextContent(getNamedItemNode(node, "name"));
-        ExecutorConfig executorConfig = config.getExecutorConfig(name);
+        ExecutorConfig executorConfig = ConfigUtils.getByNameOrNew(config.getExecutorConfigs(),
+                name,
+                ExecutorConfig.class);
 
         handleViaReflection(node, config, executorConfig);
     }
 
     protected void handleDurableExecutor(Node node) throws Exception {
         String name = getTextContent(getNamedItemNode(node, "name"));
-        DurableExecutorConfig durableExecutorConfig = config.getDurableExecutorConfig(name);
+        DurableExecutorConfig durableExecutorConfig = ConfigUtils.getByNameOrNew(
+                config.getDurableExecutorConfigs(),
+                name,
+                DurableExecutorConfig.class);
 
         handleViaReflection(node, config, durableExecutorConfig);
     }
 
     protected void handleScheduledExecutor(Node node) {
         String name = getTextContent(getNamedItemNode(node, "name"));
-        ScheduledExecutorConfig scheduledExecutorConfig = config.getScheduledExecutorConfig(name);
+        ScheduledExecutorConfig scheduledExecutorConfig = ConfigUtils.getByNameOrNew(
+                config.getScheduledExecutorConfigs(),
+                name,
+                ScheduledExecutorConfig.class);
 
         handleScheduledExecutorNode(node, scheduledExecutorConfig);
     }
@@ -1013,7 +1023,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             String nodeName = cleanNodeName(child);
             if (matches("merge-policy", nodeName)) {
                 MergePolicyConfig mpConfig = createMergePolicyConfig(
-                  child, scheduledExecutorConfig.getMergePolicyConfig());
+                        child, scheduledExecutorConfig.getMergePolicyConfig());
                 scheduledExecutorConfig.setMergePolicyConfig(mpConfig);
             } else if (matches("capacity", nodeName)) {
                 scheduledExecutorConfig.setCapacity(parseInt(getTextContent(child)));
@@ -1034,8 +1044,10 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleCardinalityEstimator(Node node) {
-        CardinalityEstimatorConfig cardinalityEstimatorConfig = config.getCardinalityEstimatorConfig(
-          getTextContent(getNamedItemNode(node, "name")));
+        CardinalityEstimatorConfig cardinalityEstimatorConfig =
+                ConfigUtils.getByNameOrNew(config.getCardinalityEstimatorConfigs(),
+                                            getTextContent(getNamedItemNode(node, "name")),
+                                            CardinalityEstimatorConfig.class);
 
         handleCardinalityEstimatorNode(node, cardinalityEstimatorConfig);
     }
@@ -1045,7 +1057,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             String nodeName = cleanNodeName(child);
             if (matches("merge-policy", nodeName)) {
                 MergePolicyConfig mpConfig = createMergePolicyConfig(
-                  child, cardinalityEstimatorConfig.getMergePolicyConfig());
+                        child, cardinalityEstimatorConfig.getMergePolicyConfig());
                 cardinalityEstimatorConfig.setMergePolicyConfig(mpConfig);
             } else if (matches("backup-count", nodeName)) {
                 cardinalityEstimatorConfig.setBackupCount(parseInt(getTextContent(child)));
@@ -1061,13 +1073,19 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     protected void handlePNCounter(Node node) throws Exception {
         String name = getAttribute(node, "name");
-        PNCounterConfig pnCounterConfig = config.getPNCounterConfig(name);
+        PNCounterConfig pnCounterConfig = ConfigUtils.getByNameOrNew(
+                config.getPNCounterConfigs(),
+                name,
+                PNCounterConfig.class);
         handleViaReflection(node, config, pnCounterConfig);
     }
 
     protected void handleFlakeIdGenerator(Node node) {
         String name = getAttribute(node, "name");
-        FlakeIdGeneratorConfig generatorConfig = config.getFlakeIdGeneratorConfig(name);
+        FlakeIdGeneratorConfig generatorConfig = ConfigUtils.getByNameOrNew(
+                config.getFlakeIdGeneratorConfigs(),
+                name,
+                FlakeIdGeneratorConfig.class);
         handleFlakeIdGeneratorNode(node, generatorConfig);
     }
 
@@ -1411,7 +1429,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 tcpIpConfig.setEnabled(getBooleanValue(getTextContent(att)));
             } else if (matches(att.getNodeName(), "connection-timeout-seconds")) {
                 tcpIpConfig.setConnectionTimeoutSeconds(
-                  getIntegerValue("connection-timeout-seconds", getTextContent(att)));
+                        getIntegerValue("connection-timeout-seconds", getTextContent(att)));
             }
         }
         Set<String> memberTags = new HashSet<>(Arrays.asList("interface", "member", "members"));
@@ -1503,7 +1521,10 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     protected void handleQueue(Node node) {
         String name = getTextContent(getNamedItemNode(node, "name"));
-        QueueConfig qConfig = config.getQueueConfig(name);
+        QueueConfig qConfig = ConfigUtils.getByNameOrNew(
+                config.getQueueConfigs(),
+                name,
+                QueueConfig.class);
         handleQueueNode(node, qConfig);
     }
 
@@ -1541,7 +1562,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node listenerNode : childElements(n)) {
             if (matches("item-listener", cleanNodeName(listenerNode))) {
                 boolean incValue = getBooleanValue(getTextContent(
-                  getNamedItemNode(listenerNode, "include-value")));
+                        getNamedItemNode(listenerNode, "include-value")));
                 String listenerClass = getTextContent(listenerNode);
                 configAddFunction.accept(new ItemListenerConfig(listenerClass, incValue));
             }
@@ -1550,7 +1571,10 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     protected void handleList(Node node) {
         String name = getTextContent(getNamedItemNode(node, "name"));
-        ListConfig lConfig = config.getListConfig(name);
+        ListConfig lConfig = ConfigUtils.getByNameOrNew(
+                config.getListConfigs(),
+                name,
+                ListConfig.class);
         handleListNode(node, lConfig);
     }
 
@@ -1580,7 +1604,9 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     protected void handleSet(Node node) {
         String name = getTextContent(getNamedItemNode(node, "name"));
-        SetConfig sConfig = config.getSetConfig(name);
+        SetConfig sConfig = ConfigUtils.getByNameOrNew(config.getSetConfigs(),
+                name,
+                SetConfig.class);
         handleSetNode(node, sConfig);
     }
 
@@ -1609,7 +1635,10 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     protected void handleMultiMap(Node node) {
         String name = getTextContent(getNamedItemNode(node, "name"));
-        MultiMapConfig multiMapConfig = config.getMultiMapConfig(name);
+        MultiMapConfig multiMapConfig = ConfigUtils.getByNameOrNew(
+                config.getMultiMapConfigs(),
+                name,
+                MultiMapConfig.class);
         handleMultiMapNode(node, multiMapConfig);
     }
 
@@ -1644,9 +1673,9 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node listenerNode : childElements(n)) {
             if (matches("entry-listener", cleanNodeName(listenerNode))) {
                 boolean incValue = getBooleanValue(getTextContent(
-                  getNamedItemNode(listenerNode, "include-value")));
+                        getNamedItemNode(listenerNode, "include-value")));
                 boolean local = getBooleanValue(getTextContent(
-                  getNamedItemNode(listenerNode, "local")));
+                        getNamedItemNode(listenerNode, "local")));
                 String listenerClass = getTextContent(listenerNode);
                 configAddFunction.accept(new EntryListenerConfig(listenerClass, local, incValue));
             }
@@ -1655,7 +1684,10 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     protected void handleReplicatedMap(Node node) {
         String name = getTextContent(getNamedItemNode(node, "name"));
-        final ReplicatedMapConfig replicatedMapConfig = config.getReplicatedMapConfig(name);
+        final ReplicatedMapConfig replicatedMapConfig = ConfigUtils.getByNameOrNew(
+                config.getReplicatedMapConfigs(),
+                name,
+                ReplicatedMapConfig.class);
         handleReplicatedMapNode(node, replicatedMapConfig);
     }
 
@@ -1682,7 +1714,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     protected void handleMap(Node parentNode) throws Exception {
         String name = getAttribute(parentNode, "name");
-        MapConfig mapConfig = config.getMapConfig(name);
+        MapConfig mapConfig = ConfigUtils.getByNameOrNew(config.getMapConfigs(), name, MapConfig.class);
         handleMapNode(parentNode, mapConfig);
     }
 
@@ -1720,9 +1752,11 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 mapConfig.setReadBackupData(getBooleanValue(getTextContent(node)));
             } else if (matches("statistics-enabled", nodeName)) {
                 mapConfig.setStatisticsEnabled(getBooleanValue(getTextContent(node)));
+            } else if (matches("per-entry-stats-enabled", nodeName)) {
+                mapConfig.setPerEntryStatsEnabled(getBooleanValue(getTextContent(node)));
             } else if (matches("cache-deserialized-values", nodeName)) {
                 CacheDeserializedValues cacheDeserializedValues = CacheDeserializedValues
-                  .parseString(getTextContent(node));
+                        .parseString(getTextContent(node));
                 mapConfig.setCacheDeserializedValues(cacheDeserializedValues);
             } else if (matches("wan-replication-ref", nodeName)) {
                 mapWanReplicationRefHandle(node, mapConfig);
@@ -1748,8 +1782,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     private NearCacheConfig handleNearCacheConfig(Node node, NearCacheConfig existingNearCacheConfig) {
         String name = getAttribute(node, "name");
         NearCacheConfig nearCacheConfig = existingNearCacheConfig != null
-          ? existingNearCacheConfig
-          : new NearCacheConfig(name);
+                ? existingNearCacheConfig
+                : new NearCacheConfig(name);
 
         Boolean serializeKeys = null;
         for (Node child : childElements(node)) {
@@ -1798,7 +1832,11 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     protected void handleCache(Node node) throws Exception {
-        handleCacheNode(node, config.getCacheConfig(getAttribute(node, "name")));
+        CacheSimpleConfig cacheConfig =
+                ConfigUtils.getByNameOrNew(config.getCacheConfigs(),
+                        getAttribute(node, "name"),
+                        CacheSimpleConfig.class);
+        handleCacheNode(node, cacheConfig);
     }
 
     void handleCacheNode(Node node, CacheSimpleConfig cacheConfig) throws Exception {
@@ -2036,9 +2074,9 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             }
         }
         listenerConfig.setOldValueRequired(getBooleanValue(getTextContent(
-          getNamedItemNode(listenerNode, "old-value-required"))));
+                getNamedItemNode(listenerNode, "old-value-required"))));
         listenerConfig.setSynchronous(getBooleanValue(getTextContent(
-          getNamedItemNode(listenerNode, "synchronous"))));
+                getNamedItemNode(listenerNode, "synchronous"))));
         cacheSimpleConfig.addEntryListenerConfig(listenerConfig);
     }
 
@@ -2088,7 +2126,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node extractorNode : childElements(n)) {
             if (matches("attribute", cleanNodeName(extractorNode))) {
                 String extractor = getTextContent(
-                  getNamedItemNode(extractorNode, "extractor-class-name"));
+                        getNamedItemNode(extractorNode, "extractor-class-name"));
                 String name = getTextContent(extractorNode);
                 mapConfig.addAttributeConfig(new AttributeConfig(name, extractor));
             }
@@ -2108,7 +2146,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         for (Node queryCacheNode : childElements(n)) {
             if (matches("query-cache", cleanNodeName(queryCacheNode))) {
                 String cacheName = getTextContent(
-                  getNamedItemNode(queryCacheNode, "name"));
+                        getNamedItemNode(queryCacheNode, "name"));
                 QueryCacheConfig queryCacheConfig = new QueryCacheConfig(cacheName);
                 handleMapQueryCacheNode(mapConfig, queryCacheNode, queryCacheConfig);
             }
@@ -2167,16 +2205,19 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     private MapStoreConfig handleMapStoreConfig(Node node, MapStoreConfig mapStoreConfig) {
         NamedNodeMap attributes = node.getAttributes();
+        boolean enabled = true;
         for (int a = 0; a < attributes.getLength(); a++) {
             Node att = attributes.item(a);
             if (matches("enabled", att.getNodeName())) {
-                mapStoreConfig.setEnabled(getBooleanValue(getTextContent(att)));
+                enabled = getBooleanValue(getTextContent(att));
             } else if (matches("initial-mode", att.getNodeName())) {
                 MapStoreConfig.InitialLoadMode mode = MapStoreConfig.InitialLoadMode
                         .valueOf(upperCaseInternal(getTextContent(att)));
                 mapStoreConfig.setInitialLoadMode(mode);
             }
         }
+        mapStoreConfig.setEnabled(enabled);
+
         for (Node n : childElements(node)) {
             String nodeName = cleanNodeName(n);
             if (matches("class-name", nodeName)) {
@@ -2415,7 +2456,10 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     protected void handleRingbuffer(Node node) {
         String name = getTextContent(getNamedItemNode(node, "name"));
-        handleRingBufferNode(node, config.getRingbufferConfig(name));
+        handleRingBufferNode(node, ConfigUtils.getByNameOrNew(
+                config.getRingbufferConfigs(),
+                name,
+                RingbufferConfig.class));
     }
 
     void handleRingBufferNode(Node node, RingbufferConfig rbConfig) {
@@ -2638,7 +2682,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     private void handleMemcacheProtocol(Node node) {
         config.getNetworkConfig().getMemcacheProtocolConfig()
-            .setEnabled(getBooleanValue(getAttribute(node, "enabled")));
+                .setEnabled(getBooleanValue(getAttribute(node, "enabled")));
     }
 
     private void handleRestApi(Node node) {
@@ -2682,19 +2726,24 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     void handleEndpointGroup(Node node, String name) {
         boolean enabled = getBooleanValue(getAttribute(node, "enabled"));
-        RestEndpointGroup endpointGroup;
-        try {
-            endpointGroup = RestEndpointGroup.valueOf(name);
-        } catch (IllegalArgumentException e) {
-            throw new InvalidConfigurationException("Wrong name attribute value was provided in endpoint-group element: " + name
-                    + "\nAllowed values: " + Arrays.toString(RestEndpointGroup.values()));
-        }
+        RestEndpointGroup endpointGroup = lookupEndpointGroup(name);
+
         RestApiConfig restApiConfig = config.getNetworkConfig().getRestApiConfig();
         if (enabled) {
             restApiConfig.enableGroups(endpointGroup);
         } else {
             restApiConfig.disableGroups(endpointGroup);
         }
+    }
+
+    private RestEndpointGroup lookupEndpointGroup(String name) {
+        return Arrays.stream(RestEndpointGroup.values())
+          .filter(value -> value.toString().replace("_", "")
+            .equals(name.toUpperCase().replace("_", "")))
+          .findAny()
+          .orElseThrow(() -> new InvalidConfigurationException(
+            "Wrong name attribute value was provided in endpoint-group element: " + name
+              + "\nAllowed values: " + Arrays.toString(RestEndpointGroup.values())));
     }
 
     private void handleCPSubsystem(Node node) {
@@ -2848,8 +2897,6 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             String nodeName = cleanNodeName(child);
             if (matches("executor-pool-size", nodeName)) {
                 sqlConfig.setExecutorPoolSize(Integer.parseInt(getTextContent(child)));
-            } else if (matches("operation-pool-size", nodeName)) {
-                sqlConfig.setOperationPoolSize(Integer.parseInt(getTextContent(child)));
             } else if (matches("statement-timeout-millis", nodeName)) {
                 sqlConfig.setStatementTimeoutMillis(Long.parseLong(getTextContent(child)));
             }
@@ -3039,11 +3086,11 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     private void validateNetworkConfig() {
         if (occurrenceSet.contains("network")
-          && occurrenceSet.stream().anyMatch(c -> matches("advanced-network", c))
-          && config.getAdvancedNetworkConfig().isEnabled()) {
+                && occurrenceSet.stream().anyMatch(c -> matches("advanced-network", c))
+                && config.getAdvancedNetworkConfig().isEnabled()) {
             throw new InvalidConfigurationException("Ambiguous configuration: cannot include both <network> and "
-              + "an enabled <advanced-network> element. Configure network using one of <network> or "
-              + "<advanced-network enabled=\"true\">.");
+                    + "an enabled <advanced-network> element. Configure network using one of <network> or "
+                    + "<advanced-network enabled=\"true\">.");
         }
     }
 }

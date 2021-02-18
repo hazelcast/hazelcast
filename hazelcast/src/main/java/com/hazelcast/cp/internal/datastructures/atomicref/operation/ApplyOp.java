@@ -133,7 +133,7 @@ public class ApplyOp extends AbstractAtomicRefOp implements IdentifiedDataSerial
             throws IOException {
         super.writeData(out);
         IOUtil.writeData(out, function);
-        out.writeUTF(returnValueType.name());
+        out.writeString(returnValueType.name());
         out.writeBoolean(alter);
     }
 
@@ -142,7 +142,7 @@ public class ApplyOp extends AbstractAtomicRefOp implements IdentifiedDataSerial
             throws IOException {
         super.readData(in);
         function = IOUtil.readData(in);
-        returnValueType = ReturnValueType.valueOf(in.readUTF());
+        returnValueType = ReturnValueType.valueOf(in.readString());
         alter = in.readBoolean();
     }
 }

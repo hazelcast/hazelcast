@@ -327,7 +327,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     @Test
     public void testMapConfig() {
         assertNotNull(config);
-        assertEquals(25, config.getMapConfigs().size());
+        assertEquals(26, config.getMapConfigs().size());
 
         MapConfig testMapConfig = config.getMapConfig("testMap");
         assertNotNull(testMapConfig);
@@ -1238,6 +1238,12 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     }
 
     @Test
+    public void testMapPerEntryStats() {
+        MapConfig mapConfig = config.getMapConfig("map-with-per-entry-stats-enabled");
+        assertTrue(mapConfig.isPerEntryStatsEnabled());
+    }
+
+    @Test
     public void testFullQueryCacheConfig() {
         MapConfig mapConfig = config.getMapConfig("map-with-query-cache");
         QueryCacheConfig queryCacheConfig = mapConfig.getQueryCacheConfigs().get(0);
@@ -1474,7 +1480,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     public void testSqlConfig() {
         SqlConfig sqlConfig = config.getSqlConfig();
         assertEquals(10, sqlConfig.getExecutorPoolSize());
-        assertEquals(20, sqlConfig.getOperationPoolSize());
         assertEquals(30L, sqlConfig.getStatementTimeoutMillis());
     }
 }

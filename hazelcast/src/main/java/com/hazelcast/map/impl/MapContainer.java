@@ -160,7 +160,7 @@ public class MapContainer {
                 .indexProvider(mapServiceContext.getIndexProvider(mapConfig))
                 .usesCachedQueryableEntries(mapConfig.getCacheDeserializedValues() != CacheDeserializedValues.NEVER)
                 .partitionCount(partitionCount)
-                .resultFilter(queryableEntry -> hasNotExpired(queryableEntry)).build();
+                .resultFilter(this::hasNotExpired).build();
     }
 
     /**
@@ -174,11 +174,6 @@ public class MapContainer {
 
         if (!getIndexes(partitionId).isGlobal()) {
             ThreadUtil.assertRunningOnPartitionThread();
-        }
-
-        if (!partitionService.isPartitionOwner(partitionId)) {
-            // throw entry out if it is not owned by this local node.
-            return false;
         }
 
         RecordStore recordStore = mapServiceContext.getExistingRecordStore(partitionId, name);
@@ -230,9 +225,9 @@ public class MapContainer {
         return anyArg -> {
             switch (mapConfig.getInMemoryFormat()) {
                 case BINARY:
-                    return new DataRecordFactory(mapConfig, serializationService);
+                    return new DataRecordFactory(this, serializationService);
                 case OBJECT:
-                    return new ObjectRecordFactory(mapConfig, serializationService);
+                    return new ObjectRecordFactory(this, serializationService);
                 default:
                     throw new IllegalArgumentException("Invalid storage format: " + mapConfig.getInMemoryFormat());
             }
@@ -467,6 +462,19 @@ public class MapContainer {
         public Data apply(Object input) {
             SerializationService ss = mapStoreContext.getSerializationService();
             return ss.toData(input, partitioningStrategy);
+        }
+    }
+
+    public boolean isUseCachedDeserializedValuesEnabled(int partitionId) {
+        CacheDeserializedValues cacheDeserializedValues = getMapConfig().getCacheDeserializedValues();
+        switch (cacheDeserializedValues) {
+            case NEVER:
+                return false;
+            case ALWAYS:
+                return true;
+            default:
+                //if index exists then cached value is already set -> let's use it
+                return getIndexes(partitionId).haveAtLeastOneIndex();
         }
     }
 }

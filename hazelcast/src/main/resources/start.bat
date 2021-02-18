@@ -38,7 +38,7 @@ IF NOT "%JAVA_VERSION%" == "8" (
 	set JAVA_OPTS=%JAVA_OPTS% --add-modules java.se --add-exports java.base/jdk.internal.ref=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.nio=ALL-UNNAMED --add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.management/sun.management=ALL-UNNAMED --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED
 )
 
-set "CLASSPATH=%~dp0..\lib\hazelcast-all-${project.version}.jar;%~dp0..\user-lib;%~dp0..\user-lib\*"
+set "CLASSPATH=%~dp0..\lib\hazelcast-all-${project.version}.jar;%~dp0..\bin\user-lib;%~dp0..\bin\user-lib\*"
 
 ECHO ########################################
 ECHO # RUN_JAVA=%RUN_JAVA%

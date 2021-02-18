@@ -245,7 +245,7 @@ public final class PortableSerializer implements StreamSerializer<Object> {
                     writer.writeDouble(fieldName, record.getDouble(fieldName));
                     break;
                 case UTF:
-                    writer.writeUTF(fieldName, record.getString(fieldName));
+                    writer.writeString(fieldName, record.getString(fieldName));
                     break;
                 case DECIMAL:
                     writer.writeDecimal(fieldName, record.getDecimal(fieldName));
@@ -290,7 +290,7 @@ public final class PortableSerializer implements StreamSerializer<Object> {
                     writer.writeDoubleArray(fieldName, record.getDoubleArray(fieldName));
                     break;
                 case UTF_ARRAY:
-                    writer.writeUTFArray(fieldName, record.getStringArray(fieldName));
+                    writer.writeStringArray(fieldName, record.getStringArray(fieldName));
                     break;
                 case DECIMAL_ARRAY:
                     writer.writeDecimalArray(fieldName, record.getDecimalArray(fieldName));

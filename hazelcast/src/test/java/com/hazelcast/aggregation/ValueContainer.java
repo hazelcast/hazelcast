@@ -99,7 +99,7 @@ public class ValueContainer implements DataSerializable, Comparable<ValueContain
         out.writeObject(bigDecimal);
         out.writeObject(bigInteger);
         out.writeObject(numberValue);
-        out.writeUTF(stringValue);
+        out.writeString(stringValue);
     }
 
     @Override
@@ -111,7 +111,7 @@ public class ValueContainer implements DataSerializable, Comparable<ValueContain
         bigDecimal = in.readObject(BigDecimal.class);
         bigInteger = in.readObject(BigInteger.class);
         numberValue = in.readObject(Number.class);
-        stringValue = in.readUTF();
+        stringValue = in.readString();
     }
 
     @Override

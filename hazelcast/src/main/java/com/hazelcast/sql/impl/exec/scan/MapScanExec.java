@@ -70,7 +70,7 @@ public class MapScanExec extends AbstractMapScanExec {
 
     @Override
     protected KeyValueIterator createIterator() {
-        return MapScanExecUtils.createIterator(map, partitions);
+        return MapScanExecUtils.createIterator(map, partitions, serializationService);
     }
 
     @Override

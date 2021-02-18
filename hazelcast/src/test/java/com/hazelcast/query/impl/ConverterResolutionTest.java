@@ -226,6 +226,25 @@ public class ConverterResolutionTest {
             throw new UnsupportedOperationException();
         }
 
+        @Override
+        public Integer getKeyIfPresent() {
+            throw new UnsupportedOperationException("Should not be called.");
+        }
+
+        @Override
+        public Data getKeyDataIfPresent() {
+            throw new UnsupportedOperationException("Should not be called.");
+        }
+
+        @Override
+        public Value getValueIfPresent() {
+            throw new UnsupportedOperationException("Should not be called.");
+        }
+
+        @Override
+        public Data getValueDataIfPresent() {
+            throw new UnsupportedOperationException("Should not be called.");
+        }
     }
 
 }

@@ -68,7 +68,7 @@ public class CacheLoadAllOperationFactory
     @Override
     public void writeData(ObjectDataOutput out)
             throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeBoolean(replaceExistingValues);
         out.writeBoolean(keys != null);
         if (keys != null) {
@@ -82,7 +82,7 @@ public class CacheLoadAllOperationFactory
     @Override
     public void readData(ObjectDataInput in)
             throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         replaceExistingValues = in.readBoolean();
         boolean isKeysNotNull = in.readBoolean();
         if (isKeysNotNull) {

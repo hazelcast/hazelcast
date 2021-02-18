@@ -60,14 +60,14 @@ public final class DistributedObjectNamespace implements ObjectNamespace, Identi
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(service);
-        out.writeUTF(objectName);
+        out.writeString(service);
+        out.writeString(objectName);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        service = in.readUTF();
-        objectName = in.readUTF();
+        service = in.readString();
+        objectName = in.readString();
     }
 
     @Override

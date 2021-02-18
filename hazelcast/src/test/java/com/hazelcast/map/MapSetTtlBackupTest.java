@@ -91,7 +91,7 @@ public class MapSetTtlBackupTest extends HazelcastTestSupport {
         String mapName = randomMapName();
         HazelcastInstance instance = instances[0];
 
-        putKeys(instance, mapName, null, 0, 1000);
+        putKeys(instance, mapName, 0, 1000, 0, null);
         setTtl(instance, mapName, 0, 1000, 1, TimeUnit.SECONDS);
 
         sleepAtLeastMillis(1001);
@@ -105,11 +105,11 @@ public class MapSetTtlBackupTest extends HazelcastTestSupport {
         String mapName = randomMapName();
         HazelcastInstance instance = instances[0];
 
-        putKeys(instance, mapName, 15, 0, 20);
-        setTtl(instance, mapName, 0, 20, 0, TimeUnit.SECONDS);
-        sleepAtLeastMillis(15100);
+        putKeys(instance, mapName, 0, 1000, 15, TimeUnit.SECONDS);
+        setTtl(instance, mapName, 0, 1000, 0, TimeUnit.SECONDS);
+        sleepAtLeastSeconds(16);
         for (int i = 0; i < CLUSTER_SIZE; i++) {
-            assertKeys(instances, mapName, 0, 20);
+            assertKeys(instances, mapName, 0, 1);
         }
     }
 
@@ -118,13 +118,14 @@ public class MapSetTtlBackupTest extends HazelcastTestSupport {
     }
 
     @SuppressWarnings("SameParameterValue")
-    private static void putKeys(HazelcastInstance instance, String mapName, Integer withTTL, int from, int to) {
+    private static void putKeys(HazelcastInstance instance, String mapName,
+                                int from, int to, int ttl, TimeUnit timeUnit) {
         IMap<Integer, Integer> map = instance.getMap(mapName);
         for (int i = from; i < to; i++) {
-            if (withTTL == null) {
+            if (timeUnit == null) {
                 map.put(i, i);
             } else {
-                map.put(i, i, withTTL, TimeUnit.SECONDS);
+                map.put(i, i, ttl, timeUnit);
             }
         }
     }

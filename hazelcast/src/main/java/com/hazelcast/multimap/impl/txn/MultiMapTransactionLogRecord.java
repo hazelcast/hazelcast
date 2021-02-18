@@ -68,7 +68,7 @@ public class MultiMapTransactionLogRecord implements TransactionLogRecord {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeInt(partitionId);
         out.writeInt(opList.size());
         for (Operation op : opList) {
@@ -81,7 +81,7 @@ public class MultiMapTransactionLogRecord implements TransactionLogRecord {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         partitionId = in.readInt();
         int size = in.readInt();
         for (int i = 0; i < size; i++) {

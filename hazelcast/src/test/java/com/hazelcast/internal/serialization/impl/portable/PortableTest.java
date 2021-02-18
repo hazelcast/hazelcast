@@ -135,7 +135,7 @@ public class PortableTest {
     static ClassDefinition createNamedPortableClassDefinition(int portableVersion) {
         ClassDefinitionBuilder builder
                 = new ClassDefinitionBuilder(PORTABLE_FACTORY_ID, TestSerializationConstants.NAMED_PORTABLE, portableVersion);
-        builder.addUTFField("name");
+        builder.addStringField("name");
         builder.addIntField("myint");
         return builder.build();
     }
@@ -231,7 +231,7 @@ public class PortableTest {
                                 .addLongField("l").addCharArrayField("c").addPortableField("p", createNamedPortableClassDefinition(portableVersion)).build())
                 .addClassDefinition(
                         new ClassDefinitionBuilder(PORTABLE_FACTORY_ID, TestSerializationConstants.NAMED_PORTABLE, portableVersion)
-                                .addUTFField("name").addIntField("myint").build());
+                                .addStringField("name").addIntField("myint").build());
 
         SerializationService serializationService
                 = new DefaultSerializationServiceBuilder().setConfig(serializationConfig).build();
@@ -580,7 +580,7 @@ public class PortableTest {
 
         @Override
         public void writePortable(PortableWriter writer) throws IOException {
-            writer.writeUTF("shortString", shortString);
+            writer.writeString("shortString", shortString);
         }
 
         @Override
@@ -819,14 +819,14 @@ public class PortableTest {
 
         @Override
         public void writePortable(PortableWriter writer) throws IOException {
-            writer.writeUTF("s1", s1);
-            writer.writeUTF("s2", s2);
+            writer.writeString("s1", s1);
+            writer.writeString("s2", s2);
         }
 
         @Override
         public void readPortable(PortableReader reader) throws IOException {
-            s1 = reader.readUTF("s1");
-            s2 = reader.readUTF("s2");
+            s1 = reader.readString("s1");
+            s2 = reader.readString("s2");
         }
     }
 
@@ -854,12 +854,12 @@ public class PortableTest {
 
         @Override
         public void writePortable(PortableWriter writer) throws IOException {
-            writer.writeUTF("s", s);
+            writer.writeString("s", s);
         }
 
         @Override
         public void readPortable(PortableReader reader) throws IOException {
-            s = reader.readUTF("s");
+            s = reader.readString("s");
         }
     }
 

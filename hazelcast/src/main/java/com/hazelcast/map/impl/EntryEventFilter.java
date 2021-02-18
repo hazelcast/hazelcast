@@ -30,10 +30,10 @@ import java.io.IOException;
  */
 public class EntryEventFilter implements EventFilter, IdentifiedDataSerializable {
 
-    protected boolean includeValue;
     protected Data key;
+    protected boolean includeValue;
 
-    public EntryEventFilter(boolean includeValue, Data key) {
+    public EntryEventFilter(Data key, boolean includeValue) {
         this.includeValue = includeValue;
         this.key = key;
     }

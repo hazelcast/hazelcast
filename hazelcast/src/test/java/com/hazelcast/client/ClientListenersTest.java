@@ -36,6 +36,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.MergeOperation;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.map.listener.EntryMergedListener;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
@@ -134,7 +135,8 @@ public class ClientListenersTest extends HazelcastTestSupport {
         SerializationService serializationService = getSerializationService(server);
         Data key = serializationService.toData(1);
         Data value = serializationService.toData(new ClientRegressionWithMockNetworkTest.SamplePortable(1));
-        SplitBrainMergeTypes.MapMergeTypes mergingEntry = createMergingEntry(serializationService, key, value, Mockito.mock(Record.class));
+        SplitBrainMergeTypes.MapMergeTypes mergingEntry = createMergingEntry(serializationService, key, value,
+                Mockito.mock(Record.class), ExpiryMetadata.NULL);
         Operation op = new MergeOperation(map.getName(), Collections.singletonList(mergingEntry),
                 new PassThroughMergePolicy<>(), false);
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);

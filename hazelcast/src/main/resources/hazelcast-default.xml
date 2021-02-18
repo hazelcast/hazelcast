@@ -215,6 +215,21 @@
         -->
         <cache-deserialized-values>INDEX-ONLY</cache-deserialized-values>
 
+        <!--
+           Whether map level statistical information (total
+           hits, memory-cost etc.) should be gathered and stored.
+       -->
+        <statistics-enabled>true</statistics-enabled>
+
+        <!--
+            Whether statistical information (hits, creation
+            time, last access time etc.) should be gathered
+            and stored. You have to enable this if you plan to
+            implement a custom eviction policy, out-of-the-box
+            eviction policies work regardless of this setting.
+        -->
+        <per-entry-stats-enabled>false</per-entry-stats-enabled>
+
     </map>
 
     <multimap name="default">
@@ -320,7 +335,6 @@
 
     <sql>
         <executor-pool-size>-1</executor-pool-size>
-        <operation-pool-size>-1</operation-pool-size>
         <statement-timeout-millis>0</statement-timeout-millis>
     </sql>
 </hazelcast>

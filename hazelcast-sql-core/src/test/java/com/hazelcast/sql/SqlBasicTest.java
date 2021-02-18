@@ -71,6 +71,7 @@ import java.util.Set;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test that covers basic column read operations through SQL.
@@ -336,6 +337,7 @@ public class SqlBasicTest extends SqlTestSupport {
             SqlColumnMetadata columnMetadata = rowMetadata.getColumn(fieldIndex);
             assertEquals(adjustedField, columnMetadata.getName());
             assertEquals(fieldType, columnMetadata.getType());
+            assertTrue(columnMetadata.isNullable());
         }
 
         assertThrows(IndexOutOfBoundsException.class, () -> rowMetadata.getColumn(-1));
@@ -784,7 +786,7 @@ public class SqlBasicTest extends SqlTestSupport {
             out.writeObject(decimalVal);
 
             out.writeChar(charVal);
-            out.writeUTF(varcharVal);
+            out.writeString(varcharVal);
 
             out.writeObject(dateVal);
             out.writeObject(timeVal);
@@ -815,7 +817,7 @@ public class SqlBasicTest extends SqlTestSupport {
             decimalVal = in.readObject();
 
             charVal = in.readChar();
-            varcharVal = in.readUTF();
+            varcharVal = in.readString();
 
             dateVal = in.readObject();
             timeVal = in.readObject();
@@ -942,11 +944,11 @@ public class SqlBasicTest extends SqlTestSupport {
             writer.writeDouble(portableFieldName("doubleVal"), doubleVal);
 
             writer.writeChar(portableFieldName("charVal"), charVal);
-            writer.writeUTF(portableFieldName("varcharVal"), varcharVal);
+            writer.writeString(portableFieldName("varcharVal"), varcharVal);
 
             writer.writePortable(portableFieldName("portableVal"), portableVal);
 
-            writer.writeUTF(portableFieldName("nullVal"), null);
+            writer.writeString(portableFieldName("nullVal"), null);
         }
 
         @Override
@@ -961,10 +963,10 @@ public class SqlBasicTest extends SqlTestSupport {
             doubleVal = reader.readDouble(portableFieldName("doubleVal"));
 
             charVal = reader.readChar(portableFieldName("charVal"));
-            varcharVal = reader.readUTF(portableFieldName("varcharVal"));
+            varcharVal = reader.readString(portableFieldName("varcharVal"));
 
             portableVal = reader.readPortable(portableFieldName("portableVal"));
-            nullVal = reader.readUTF(portableFieldName("nullVal"));
+            nullVal = reader.readString(portableFieldName("nullVal"));
         }
     }
 
@@ -1020,7 +1022,7 @@ public class SqlBasicTest extends SqlTestSupport {
         }
     }
 
-    protected enum SerializationMode {
+    public enum SerializationMode {
         SERIALIZABLE,
         DATA_SERIALIZABLE,
         IDENTIFIED_DATA_SERIALIZABLE,

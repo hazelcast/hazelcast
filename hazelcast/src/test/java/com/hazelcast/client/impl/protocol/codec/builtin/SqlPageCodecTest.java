@@ -167,7 +167,7 @@ public class SqlPageCodecTest {
     }
 
     private void check(SqlColumnType type, List<Object> values, boolean last) {
-        SqlRowMetadata rowMetadata = new SqlRowMetadata(Collections.singletonList(new SqlColumnMetadata("a", type)));
+        SqlRowMetadata rowMetadata = new SqlRowMetadata(Collections.singletonList(new SqlColumnMetadata("a", type, true)));
 
         List<SqlRow> rows = new ArrayList<>();
 

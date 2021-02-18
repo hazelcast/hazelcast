@@ -219,9 +219,16 @@ hazelcast:
       # OFF: No metadata is created.
       metadata-policy: CREATE_ON_UPDATE
 
-      # Whether statistical information (hits, creation time, last access time etc.) should be gathered and stored.
-      # You can disable if you do not plan to use eviction on your entries.
-      statistics-enabled: false
+      # Whether map level statistical information (total
+      # hits, memory-cost etc.) should be gathered and stored.
+      statistics-enabled: true
+
+      # Whether statistical information (hits, creation
+      # time, last access time etc.) should be gathered
+      # and stored. You have to enable this if you plan to
+      # implement a custom eviction policy, out-of-the-box
+      # eviction policies work regardless of this setting.
+      per-entry-stats-enabled: false
 
       cache-deserialized-values: ALWAYS
 
@@ -959,5 +966,4 @@ hazelcast:
 
   sql:
     executor-pool-size: 16
-    operation-pool-size: 8
     statement-timeout-millis: 0

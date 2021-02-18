@@ -43,8 +43,8 @@ public final class QueryUtils {
     public static final String CATALOG = "hazelcast";
     public static final String SCHEMA_NAME_PARTITIONED = "partitioned";
 
-    public static final String WORKER_TYPE_OPERATION = "query-operation-thread";
     public static final String WORKER_TYPE_FRAGMENT = "query-fragment-thread";
+    public static final String WORKER_TYPE_SYSTEM = "query-system-thread";
     public static final String WORKER_TYPE_STATE_CHECKER = "query-state-checker";
 
     private QueryUtils() {
@@ -85,8 +85,8 @@ public final class QueryUtils {
      * @param columnType Internal type.
      * @return Public type.
      */
-    public static SqlColumnMetadata getColumnMetadata(String columnName, QueryDataType columnType) {
-        return new SqlColumnMetadata(columnName, columnType.getTypeFamily().getPublicType());
+    public static SqlColumnMetadata getColumnMetadata(String columnName, QueryDataType columnType, boolean columnIsNullable) {
+        return new SqlColumnMetadata(columnName, columnType.getTypeFamily().getPublicType(), columnIsNullable);
     }
 
     /**

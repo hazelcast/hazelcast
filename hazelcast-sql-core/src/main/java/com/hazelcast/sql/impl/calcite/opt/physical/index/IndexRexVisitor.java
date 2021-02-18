@@ -29,7 +29,7 @@ import org.apache.calcite.rex.RexTableInputRef;
 import org.apache.calcite.rex.RexVisitorImpl;
 
 /**
- * Visitor that checks whether the given epression is valid for index filter creation.
+ * Visitor that checks whether the given expression is valid for index filter creation.
  * <p>
  * Consider the expression {@code a > exp}. If there is an index on the column {@code [a]}, then
  * it can be used only if the {@code exp} will produce the same result for all rows. That is, it

@@ -71,7 +71,7 @@ public class CacheGetAllOperationFactory
     @Override
     public void writeData(ObjectDataOutput out)
             throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeObject(expiryPolicy);
         out.writeInt(keys.size());
         for (Data key : keys) {
@@ -82,7 +82,7 @@ public class CacheGetAllOperationFactory
     @Override
     public void readData(ObjectDataInput in)
             throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         expiryPolicy = in.readObject();
         int size = in.readInt();
         keys = createHashSet(size);

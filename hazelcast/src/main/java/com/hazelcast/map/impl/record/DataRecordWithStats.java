@@ -20,15 +20,14 @@ import com.hazelcast.internal.serialization.Data;
 
 import static com.hazelcast.internal.util.JVMUtil.REFERENCE_COST_IN_BYTES;
 
-public class DataRecordWithStats extends AbstractRecordWithStats<Data> {
+class DataRecordWithStats extends AbstractRecord<Data> {
     protected volatile Data value;
 
-    public DataRecordWithStats() {
+    DataRecordWithStats() {
     }
 
-    public DataRecordWithStats(Data value) {
-        super();
-        this.value = value;
+    DataRecordWithStats(Data value) {
+        setValue(value);
     }
 
     /**
@@ -36,7 +35,8 @@ public class DataRecordWithStats extends AbstractRecordWithStats<Data> {
      */
     @Override
     public long getCost() {
-        return super.getCost() + REFERENCE_COST_IN_BYTES + (value == null ? 0L : value.getHeapCost());
+        return super.getCost() + REFERENCE_COST_IN_BYTES
+                + (value == null ? 0L : value.getHeapCost());
     }
 
     @Override

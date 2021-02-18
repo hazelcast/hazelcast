@@ -18,38 +18,37 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
            xmlns="http://www.hazelcast.com/schema/client-config"
            targetNamespace="http://www.hazelcast.com/schema/client-config"
-           elementFormDefault="qualified"
-           attributeFormDefault="unqualified">
+           elementFormDefault="qualified">
 
     <xs:element name="hazelcast-client">
         <xs:complexType>
-            <xs:choice minOccurs="1" maxOccurs="unbounded">
+            <xs:choice maxOccurs="unbounded">
                 <xs:element ref="import" minOccurs="0" maxOccurs="unbounded"/>
-                <xs:element name="config-replacers" type="config-replacers" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="cluster-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="backup-ack-to-client-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
-                <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="network" type="network" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="security" type="security" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="listeners" type="listeners" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="serialization" type="serialization" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="native-memory" type="native-memory" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="proxy-factories" type="proxy-factories" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="load-balancer" type="load-balancer" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="config-replacers" type="config-replacers" minOccurs="0"/>
+                <xs:element name="cluster-name" type="xs:string" minOccurs="0"/>
+                <xs:element name="backup-ack-to-client-enabled" type="xs:boolean" minOccurs="0" default="true"/>
+                <xs:element name="properties" type="properties" minOccurs="0"/>
+                <xs:element name="network" type="network" minOccurs="0"/>
+                <xs:element name="security" type="security" minOccurs="0"/>
+                <xs:element name="listeners" type="listeners" minOccurs="0"/>
+                <xs:element name="serialization" type="serialization" minOccurs="0"/>
+                <xs:element name="native-memory" type="native-memory" minOccurs="0"/>
+                <xs:element name="proxy-factories" type="proxy-factories" minOccurs="0"/>
+                <xs:element name="load-balancer" type="load-balancer" minOccurs="0"/>
                 <xs:element name="near-cache" type="near-cache-client" minOccurs="0" maxOccurs="unbounded"/>
-                <xs:element name="query-caches" type="query-caches" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="connection-strategy" type="connection-strategy" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="instance-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="client-labels" type="labels" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="user-code-deployment" type="user-code-deployment" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="query-caches" type="query-caches" minOccurs="0"/>
+                <xs:element name="connection-strategy" type="connection-strategy" minOccurs="0"/>
+                <xs:element name="instance-name" type="xs:string" minOccurs="0"/>
+                <xs:element name="client-labels" type="labels" minOccurs="0"/>
+                <xs:element name="user-code-deployment" type="user-code-deployment" minOccurs="0"/>
                 <xs:element name="flake-id-generator" type="flake-id-generator" minOccurs="0"
                             maxOccurs="unbounded"/>
                 <xs:element name="reliable-topic" type="reliable-topic" minOccurs="0"
                             maxOccurs="unbounded"/>
-                <xs:element name="metrics" type="metrics" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="instance-tracking" type="instance-tracking" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="metrics" type="metrics" minOccurs="0"/>
+                <xs:element name="instance-tracking" type="instance-tracking" minOccurs="0"/>
             </xs:choice>
-            <xs:attribute name="id" type="xs:string" use="optional" default="default"/>
+            <xs:attribute name="id" type="xs:string" default="default"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="import">
@@ -63,9 +62,9 @@
     </xs:element>
     <xs:complexType name="config-replacers">
         <xs:sequence>
-            <xs:element name="replacer" type="replacer" minOccurs="1" maxOccurs="unbounded"/>
+            <xs:element name="replacer" type="replacer" maxOccurs="unbounded"/>
         </xs:sequence>
-        <xs:attribute name="fail-if-value-missing" use="optional" default="true">
+        <xs:attribute name="fail-if-value-missing" default="true">
             <xs:annotation>
                 <xs:documentation>
                     Controls if missing replacement value should lead to stop the boot process.
@@ -78,7 +77,7 @@
     </xs:complexType>
     <xs:complexType name="replacer">
         <xs:sequence>
-            <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="properties" type="properties" minOccurs="0"/>
         </xs:sequence>
         <xs:attribute name="class-name" use="required"/>
     </xs:complexType>
@@ -87,14 +86,14 @@
         <xs:sequence>
             <xs:any minOccurs="0" maxOccurs="unbounded" processContents="skip"/>
         </xs:sequence>
-        <xs:attribute name="enabled" type="xs:boolean" use="optional" default="true">
+        <xs:attribute name="enabled" type="xs:boolean" default="true">
             <xs:annotation>
                 <xs:documentation>
                     Specifies whether the the discovery strategy is enabled or not. Value can be true or false.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="connection-timeout-seconds" type="xs:int" use="optional" default="5">
+        <xs:attribute name="connection-timeout-seconds" type="xs:int" default="5">
             <xs:annotation>
                 <xs:documentation>
                     The maximum amount of time Hazelcast is going to try to connect to a well known member
@@ -106,40 +105,40 @@
     <!--NETWORK-->
     <xs:complexType name="network">
         <xs:all>
-            <xs:element ref="cluster-members" minOccurs="0" maxOccurs="1"/>
-            <xs:element ref="smart-routing" minOccurs="0" maxOccurs="1"/>
-            <xs:element ref="redo-operation" minOccurs="0" maxOccurs="1"/>
-            <xs:element ref="connection-timeout" minOccurs="0" maxOccurs="1"/>
-            <xs:element ref="socket-options" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="socket-interceptor" type="socket-interceptor" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="ssl" type="ssl" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="aws" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1" />
-            <xs:element name="gcp" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1" />
-            <xs:element name="azure" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1" />
-            <xs:element name="kubernetes" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1" />
-            <xs:element name="eureka" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1" />
-            <xs:element name="discovery-strategies" type="discovery-strategies" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="auto-detection" type="auto-detection" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="outbound-ports" type="outbound-ports" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="icmp-ping" type="icmp-ping" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="hazelcast-cloud" type="hazelcast-cloud" minOccurs="0" maxOccurs="1"/>
+            <xs:element ref="cluster-members" minOccurs="0"/>
+            <xs:element ref="smart-routing" minOccurs="0"/>
+            <xs:element ref="redo-operation" minOccurs="0"/>
+            <xs:element ref="connection-timeout" minOccurs="0"/>
+            <xs:element ref="socket-options" minOccurs="0"/>
+            <xs:element name="socket-interceptor" type="socket-interceptor" minOccurs="0"/>
+            <xs:element name="ssl" type="ssl" minOccurs="0"/>
+            <xs:element name="aws" type="aliased-discovery-strategy" minOccurs="0"/>
+            <xs:element name="gcp" type="aliased-discovery-strategy" minOccurs="0"/>
+            <xs:element name="azure" type="aliased-discovery-strategy" minOccurs="0"/>
+            <xs:element name="kubernetes" type="aliased-discovery-strategy" minOccurs="0"/>
+            <xs:element name="eureka" type="aliased-discovery-strategy" minOccurs="0"/>
+            <xs:element name="discovery-strategies" type="discovery-strategies" minOccurs="0"/>
+            <xs:element name="auto-detection" type="auto-detection" minOccurs="0"/>
+            <xs:element name="outbound-ports" type="outbound-ports" minOccurs="0"/>
+            <xs:element name="icmp-ping" type="icmp-ping" minOccurs="0"/>
+            <xs:element name="hazelcast-cloud" type="hazelcast-cloud" minOccurs="0"/>
         </xs:all>
     </xs:complexType>
 
     <xs:complexType name="discovery-strategies">
         <xs:sequence>
-            <xs:element name="node-filter" type="discovery-node-filter" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="node-filter" type="discovery-node-filter" minOccurs="0"/>
             <xs:element name="discovery-strategy" type="discovery-strategy" minOccurs="0" maxOccurs="unbounded"/>
         </xs:sequence>
     </xs:complexType>
 
     <xs:complexType name="icmp-ping">
         <xs:all>
-            <xs:element name="timeout-milliseconds" type="xs:long" minOccurs="0" maxOccurs="1" default="1000"/>
-            <xs:element name="interval-milliseconds" type="xs:long" minOccurs="0" maxOccurs="1" default="1000"/>
-            <xs:element name="ttl" type="xs:int" minOccurs="0" maxOccurs="1" default="255"/>
-            <xs:element name="max-attempts" type="xs:int" minOccurs="0" maxOccurs="1" default="2"/>
-            <xs:element name="echo-fail-fast-on-startup" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
+            <xs:element name="timeout-milliseconds" type="xs:long" minOccurs="0" default="1000"/>
+            <xs:element name="interval-milliseconds" type="xs:long" minOccurs="0" default="1000"/>
+            <xs:element name="ttl" type="xs:int" minOccurs="0" default="255"/>
+            <xs:element name="max-attempts" type="xs:int" minOccurs="0" default="2"/>
+            <xs:element name="echo-fail-fast-on-startup" type="xs:boolean" minOccurs="0" default="true"/>
         </xs:all>
         <xs:attribute name="enabled" type="xs:boolean" default="false"/>
     </xs:complexType>
@@ -150,7 +149,7 @@
 
     <xs:complexType name="hazelcast-cloud">
         <xs:all>
-            <xs:element name="discovery-token" type="xs:string" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="discovery-token" type="xs:string"/>
         </xs:all>
         <xs:attribute name="enabled" type="xs:boolean" use="required"/>
     </xs:complexType>
@@ -160,15 +159,15 @@
     </xs:complexType>
     <xs:complexType name="discovery-strategy">
         <xs:sequence>
-            <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="properties" type="properties" minOccurs="0"/>
         </xs:sequence>
-        <xs:attribute name="enabled" type="xs:boolean" use="optional" default="false"/>
+        <xs:attribute name="enabled" type="xs:boolean" default="false"/>
         <xs:attribute name="class" type="xs:string" use="required"/>
     </xs:complexType>
     <xs:element name="cluster-members">
         <xs:complexType>
             <xs:sequence>
-                <xs:element name="address" type="xs:string" minOccurs="1" maxOccurs="unbounded"/>
+                <xs:element name="address" type="xs:string" maxOccurs="unbounded"/>
             </xs:sequence>
         </xs:complexType>
     </xs:element>
@@ -221,11 +220,11 @@
     <xs:element name="socket-options">
         <xs:complexType>
             <xs:all>
-                <xs:element name="tcp-no-delay" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
-                <xs:element name="keep-alive" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
-                <xs:element name="reuse-address" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
-                <xs:element name="linger-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="3"/>
-                <xs:element name="buffer-size" minOccurs="0" maxOccurs="1" default="128">
+                <xs:element name="tcp-no-delay" type="xs:boolean" minOccurs="0" default="false"/>
+                <xs:element name="keep-alive" type="xs:boolean" minOccurs="0" default="true"/>
+                <xs:element name="reuse-address" type="xs:boolean" minOccurs="0" default="true"/>
+                <xs:element name="linger-seconds" type="xs:unsignedInt" minOccurs="0" default="3"/>
+                <xs:element name="buffer-size" minOccurs="0" default="128">
                     <xs:simpleType>
                         <xs:restriction base="xs:unsignedInt">
                             <xs:minInclusive value="1"/>
@@ -272,7 +271,7 @@
     <xs:complexType name="near-cache-client">
         <xs:complexContent>
             <xs:extension base="near-cache">
-                <xs:attribute name="name" use="optional" default="default">
+                <xs:attribute name="name" default="default">
                     <xs:simpleType>
                         <xs:restriction base="xs:string"/>
                     </xs:simpleType>
@@ -289,17 +288,17 @@
     </xs:complexType>
     <xs:complexType name="query-cache">
         <xs:all>
-            <xs:element name="include-value" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
-            <xs:element name="predicate" type="predicate" minOccurs="1" maxOccurs="1"/>
-            <xs:element name="entry-listeners" type="entry-listeners" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="in-memory-format" type="in-memory-format" minOccurs="0" maxOccurs="1" default="BINARY"/>
-            <xs:element name="populate" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
-            <xs:element name="coalesce" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
-            <xs:element name="delay-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0"/>
-            <xs:element name="batch-size" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="1"/>
-            <xs:element name="buffer-size" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="16"/>
-            <xs:element name="eviction" type="eviction" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="indexes" minOccurs="0" maxOccurs="1">
+            <xs:element name="include-value" type="xs:boolean" minOccurs="0" default="true"/>
+            <xs:element name="predicate" type="predicate"/>
+            <xs:element name="entry-listeners" type="entry-listeners" minOccurs="0"/>
+            <xs:element name="in-memory-format" type="in-memory-format" minOccurs="0" default="BINARY"/>
+            <xs:element name="populate" type="xs:boolean" minOccurs="0" default="true"/>
+            <xs:element name="coalesce" type="xs:boolean" minOccurs="0" default="false"/>
+            <xs:element name="delay-seconds" type="xs:unsignedInt" minOccurs="0" default="0"/>
+            <xs:element name="batch-size" type="xs:unsignedInt" minOccurs="0" default="1"/>
+            <xs:element name="buffer-size" type="xs:unsignedInt" minOccurs="0" default="16"/>
+            <xs:element name="eviction" type="eviction" minOccurs="0"/>
+            <xs:element name="indexes" minOccurs="0">
                 <xs:complexType>
                     <xs:sequence>
                         <xs:element name="index" type="index" minOccurs="0" maxOccurs="unbounded"/>
@@ -369,7 +368,7 @@
     <xs:complexType name="item-listener">
         <xs:simpleContent>
             <xs:extension base="listener-base">
-                <xs:attribute name="include-value" type="xs:boolean" use="optional" default="true"/>
+                <xs:attribute name="include-value" type="xs:boolean" default="true"/>
             </xs:extension>
         </xs:simpleContent>
     </xs:complexType>
@@ -381,7 +380,7 @@
     <xs:complexType name="entry-listener">
         <xs:simpleContent>
             <xs:extension base="item-listener">
-                <xs:attribute name="local" type="xs:boolean" use="optional" default="false"/>
+                <xs:attribute name="local" type="xs:boolean" default="false"/>
             </xs:extension>
         </xs:simpleContent>
     </xs:complexType>
@@ -389,20 +388,19 @@
 
     <xs:complexType name="connection-strategy">
         <xs:all>
-            <xs:element name="connection-retry" type="connection-retry" minOccurs="0"
-                        maxOccurs="1"/>
+            <xs:element name="connection-retry" type="connection-retry" minOccurs="0"/>
         </xs:all>
-        <xs:attribute name="async-start" type="xs:boolean" default="false" use="optional"/>
-        <xs:attribute name="reconnect-mode" type="reconnect-mode" default="ON" use="optional"/>
+        <xs:attribute name="async-start" type="xs:boolean" default="false"/>
+        <xs:attribute name="reconnect-mode" type="reconnect-mode" default="ON"/>
     </xs:complexType>
 
     <xs:complexType name="connection-retry">
         <xs:all>
-            <xs:element name="initial-backoff-millis" type="xs:int" minOccurs="0" maxOccurs="1" default="1000"/>
-            <xs:element name="max-backoff-millis" type="xs:int" minOccurs="0" maxOccurs="1" default="30000"/>
-            <xs:element name="multiplier" type="xs:double" minOccurs="0" maxOccurs="1" default="1.05"/>
-            <xs:element name="cluster-connect-timeout-millis" type="xs:long" minOccurs="0" maxOccurs="1" default="-1"/>
-            <xs:element name="jitter" type="xs:double" minOccurs="0" maxOccurs="1" default="0"/>
+            <xs:element name="initial-backoff-millis" type="xs:int" minOccurs="0" default="1000"/>
+            <xs:element name="max-backoff-millis" type="xs:int" minOccurs="0" default="30000"/>
+            <xs:element name="multiplier" type="xs:double" minOccurs="0" default="1.05"/>
+            <xs:element name="cluster-connect-timeout-millis" type="xs:long" minOccurs="0" default="-1"/>
+            <xs:element name="jitter" type="xs:double" minOccurs="0" default="0"/>
         </xs:all>
     </xs:complexType>
 
@@ -436,7 +434,7 @@
                 <xs:element name="token" type="token"/>
                 <xs:element name="kerberos" type="kerberos-identity"/>
             </xs:choice>
-            <xs:element name="realms" type="realms" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="realms" type="realms" minOccurs="0"/>
         </xs:sequence>
     </xs:complexType>
     <xs:complexType name="realms">
@@ -446,7 +444,7 @@
     </xs:complexType>
     <xs:complexType name="realm">
         <xs:all>
-            <xs:element name="authentication" type="authentication" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="authentication" type="authentication" minOccurs="0"/>
         </xs:all>
         <xs:attribute name="name" type="xs:string" use="required"/>
     </xs:complexType>
@@ -462,10 +460,10 @@
     </xs:complexType>
     <xs:complexType name="login-module">
         <xs:sequence>
-            <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="properties" type="properties" minOccurs="0"/>
         </xs:sequence>
         <xs:attribute name="class-name" type="non-space-string" use="required"/>
-        <xs:attribute name="usage" use="optional" default="REQUIRED">
+        <xs:attribute name="usage" default="REQUIRED">
             <xs:simpleType>
                 <xs:restriction base="non-space-string">
                     <xs:enumeration value="REQUIRED"/>
@@ -478,21 +476,21 @@
     </xs:complexType>
     <xs:complexType name="security-object">
         <xs:sequence>
-            <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="properties" type="properties" minOccurs="0"/>
         </xs:sequence>
         <xs:attribute name="class-name" type="non-space-string" use="required"/>
     </xs:complexType>
 
     <xs:complexType name="near-cache">
         <xs:all>
-            <xs:element name="in-memory-format" type="in-memory-format" minOccurs="0" maxOccurs="1" default="BINARY"/>
-            <xs:element name="serialize-keys" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
-            <xs:element name="invalidate-on-change" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
-            <xs:element name="time-to-live-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0"/>
-            <xs:element name="max-idle-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0"/>
-            <xs:element name="eviction" type="eviction" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="local-update-policy" type="xs:string" default="INVALIDATE" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="preloader" type="preloader" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="in-memory-format" type="in-memory-format" minOccurs="0" default="BINARY"/>
+            <xs:element name="serialize-keys" type="xs:boolean" minOccurs="0" default="false"/>
+            <xs:element name="invalidate-on-change" type="xs:boolean" minOccurs="0" default="true"/>
+            <xs:element name="time-to-live-seconds" type="xs:unsignedInt" minOccurs="0" default="0"/>
+            <xs:element name="max-idle-seconds" type="xs:unsignedInt" minOccurs="0" default="0"/>
+            <xs:element name="eviction" type="eviction" minOccurs="0"/>
+            <xs:element name="local-update-policy" type="xs:string" default="INVALIDATE" minOccurs="0"/>
+            <xs:element name="preloader" type="preloader" minOccurs="0"/>
         </xs:all>
     </xs:complexType>
 
@@ -516,17 +514,17 @@
     </xs:simpleType>
 
     <xs:complexType name="eviction">
-        <xs:attribute name="size" type="xs:nonNegativeInteger" default="10000" use="optional"/>
-        <xs:attribute name="max-size-policy" type="max-size-policy" default="ENTRY_COUNT" use="optional"/>
-        <xs:attribute name="eviction-policy" type="eviction-policy" default="LRU" use="optional"/>
-        <xs:attribute name="comparator-class-name" type="xs:string" use="optional"/>
+        <xs:attribute name="size" type="xs:nonNegativeInteger" default="10000"/>
+        <xs:attribute name="max-size-policy" type="max-size-policy" default="ENTRY_COUNT"/>
+        <xs:attribute name="eviction-policy" type="eviction-policy" default="LRU"/>
+        <xs:attribute name="comparator-class-name" type="xs:string"/>
     </xs:complexType>
 
     <xs:complexType name="preloader">
-        <xs:attribute name="enabled" type="xs:boolean" default="false" use="optional"/>
-        <xs:attribute name="directory" type="xs:string" use="optional"/>
-        <xs:attribute name="store-initial-delay-seconds" type="xs:positiveInteger" default="600" use="optional"/>
-        <xs:attribute name="store-interval-seconds" type="xs:positiveInteger" default="600" use="optional"/>
+        <xs:attribute name="enabled" type="xs:boolean" default="false"/>
+        <xs:attribute name="directory" type="xs:string"/>
+        <xs:attribute name="store-initial-delay-seconds" type="xs:positiveInteger" default="600"/>
+        <xs:attribute name="store-interval-seconds" type="xs:positiveInteger" default="600"/>
     </xs:complexType>
 
     <xs:simpleType name="in-memory-format">
@@ -546,9 +544,9 @@
 
     <xs:complexType name="serialization">
         <xs:all>
-            <xs:element name="portable-version" type="xs:unsignedInt" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="use-native-byte-order" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
-            <xs:element name="byte-order" minOccurs="0" maxOccurs="1" default="BIG_ENDIAN">
+            <xs:element name="portable-version" type="xs:unsignedInt" minOccurs="0"/>
+            <xs:element name="use-native-byte-order" type="xs:boolean" minOccurs="0" default="false"/>
+            <xs:element name="byte-order" minOccurs="0" default="BIG_ENDIAN">
                 <xs:simpleType>
                     <xs:restriction base="non-space-string">
                         <xs:enumeration value="BIG_ENDIAN"/>
@@ -556,11 +554,11 @@
                     </xs:restriction>
                 </xs:simpleType>
             </xs:element>
-            <xs:element name="enable-compression" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
-            <xs:element name="enable-shared-object" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
-            <xs:element name="allow-unsafe" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
-            <xs:element name="allow-override-default-serializers" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
-            <xs:element name="data-serializable-factories" minOccurs="0" maxOccurs="1">
+            <xs:element name="enable-compression" type="xs:boolean" minOccurs="0" default="false"/>
+            <xs:element name="enable-shared-object" type="xs:boolean" minOccurs="0" default="false"/>
+            <xs:element name="allow-unsafe" type="xs:boolean" minOccurs="0" default="false"/>
+            <xs:element name="allow-override-default-serializers" type="xs:boolean" minOccurs="0" default="false"/>
+            <xs:element name="data-serializable-factories" minOccurs="0">
                 <xs:complexType>
                     <xs:sequence>
                         <xs:element name="data-serializable-factory" type="serialization-factory" minOccurs="0"
@@ -568,7 +566,7 @@
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
-            <xs:element name="portable-factories" minOccurs="0" maxOccurs="1">
+            <xs:element name="portable-factories" minOccurs="0">
                 <xs:complexType>
                     <xs:sequence>
                         <xs:element name="portable-factory" type="serialization-factory" minOccurs="0"
@@ -576,10 +574,10 @@
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
-            <xs:element name="serializers" minOccurs="0" maxOccurs="1">
+            <xs:element name="serializers" minOccurs="0">
                 <xs:complexType>
-                    <xs:choice minOccurs="1" maxOccurs="unbounded">
-                        <xs:element name="global-serializer" type="global-serializer" minOccurs="0" maxOccurs="1">
+                    <xs:choice maxOccurs="unbounded">
+                        <xs:element name="global-serializer" type="global-serializer" minOccurs="0">
                             <xs:annotation>
                                 <xs:documentation>
                                     Global serializer class to be registered if no other serializer is applicable.
@@ -590,8 +588,8 @@
                     </xs:choice>
                 </xs:complexType>
             </xs:element>
-            <xs:element name="check-class-def-errors" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
-            <xs:element name="java-serialization-filter" type="java-serialization-filter" minOccurs="0" maxOccurs="1">
+            <xs:element name="check-class-def-errors" type="xs:boolean" minOccurs="0" default="true"/>
+            <xs:element name="java-serialization-filter" type="java-serialization-filter" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
                         Basic protection against untrusted deserialization based on class/package blacklisting and
@@ -615,7 +613,7 @@
     <xs:complexType name="global-serializer">
         <xs:simpleContent>
             <xs:extension base="xs:string">
-                <xs:attribute name="override-java-serialization" type="xs:boolean" default="false" use="optional">
+                <xs:attribute name="override-java-serialization" type="xs:boolean" default="false">
                     <xs:annotation>
                         <xs:documentation>
                             Java Serializable and Externalizable is prior to global serializer by default. If set true
@@ -628,14 +626,14 @@
     </xs:complexType>
     <xs:complexType name="java-serialization-filter">
         <xs:all>
-            <xs:element name="blacklist" type="filter-list" minOccurs="0" maxOccurs="1">
+            <xs:element name="blacklist" type="filter-list" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
                         Blacklisted classes and packages, which are not allowed to be deserialized.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="whitelist" type="filter-list" minOccurs="0" maxOccurs="1">
+            <xs:element name="whitelist" type="filter-list" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
                         Whitelisted classes and packages, which are allowed to be deserialized. If the list is empty
@@ -644,7 +642,7 @@
                 </xs:annotation>
             </xs:element>
         </xs:all>
-        <xs:attribute name="defaults-disabled" use="optional" default="false">
+        <xs:attribute name="defaults-disabled" default="false">
             <xs:annotation>
                 <xs:documentation>
                     Disables including default list entries (hardcoded in Hazelcast source code).
@@ -683,18 +681,18 @@
 
     <xs:complexType name="socket-interceptor">
         <xs:all>
-            <xs:element name="class-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="class-name" type="xs:string" minOccurs="0"/>
+            <xs:element name="properties" type="properties" minOccurs="0"/>
         </xs:all>
         <xs:attribute name="enabled" default="false" type="xs:boolean"/>
     </xs:complexType>
 
     <xs:complexType name="native-memory">
         <xs:all>
-            <xs:element name="size" type="memory-size" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="min-block-size" type="xs:positiveInteger" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="page-size" type="xs:positiveInteger" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="metadata-space-percentage" minOccurs="0" maxOccurs="1">
+            <xs:element name="size" type="memory-size" minOccurs="0"/>
+            <xs:element name="min-block-size" type="xs:positiveInteger" minOccurs="0"/>
+            <xs:element name="page-size" type="xs:positiveInteger" minOccurs="0"/>
+            <xs:element name="metadata-space-percentage" minOccurs="0">
                 <xs:simpleType>
                     <xs:restriction base="xs:decimal">
                         <xs:totalDigits value="3"/>
@@ -704,8 +702,8 @@
                     </xs:restriction>
                 </xs:simpleType>
             </xs:element>
-            <xs:element name="persistent-memory-directory" type="xs:string" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="persistent-memory" type="persistent-memory" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="persistent-memory-directory" type="xs:string" minOccurs="0"/>
+            <xs:element name="persistent-memory" type="persistent-memory" minOccurs="0"/>
         </xs:all>
         <xs:attribute name="allocator-type" default="POOLED" type="memory-allocator-type"/>
         <xs:attribute name="enabled" default="false" type="xs:boolean"/>
@@ -847,25 +845,25 @@
     </xs:complexType>
     <xs:complexType name="ssl">
         <xs:all>
-            <xs:element name="factory-class-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="factory-class-name" type="xs:string" minOccurs="0"/>
+            <xs:element name="properties" type="properties" minOccurs="0"/>
         </xs:all>
         <xs:attribute name="enabled" default="false" type="xs:boolean"/>
     </xs:complexType>
     <xs:complexType name="user-code-deployment">
         <xs:all>
-            <xs:element name="jarPaths" minOccurs="0" maxOccurs="1">
+            <xs:element name="jarPaths" minOccurs="0">
                 <xs:complexType>
                     <xs:sequence>
-                        <xs:element name="jarPath" type="xs:string" minOccurs="1" maxOccurs="unbounded"/>
+                        <xs:element name="jarPath" type="xs:string" maxOccurs="unbounded"/>
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
 
-            <xs:element name="classNames" minOccurs="0" maxOccurs="1">
+            <xs:element name="classNames" minOccurs="0">
                 <xs:complexType>
                     <xs:sequence>
-                        <xs:element name="className" type="xs:string" minOccurs="1" maxOccurs="unbounded"/>
+                        <xs:element name="className" type="xs:string" maxOccurs="unbounded"/>
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>

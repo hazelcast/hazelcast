@@ -17,31 +17,93 @@
 package com.hazelcast.map.impl.record;
 
 import com.hazelcast.config.CacheDeserializedValues;
+import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.map.impl.MapContainer;
+
+import static com.hazelcast.map.impl.eviction.Evictor.NULL_EVICTOR;
 
 public class DataRecordFactory implements RecordFactory<Data> {
 
-    private final boolean statisticsEnabled;
+    private final MapContainer mapContainer;
     private final SerializationService ss;
-    private final CacheDeserializedValues cacheDeserializedValues;
 
-    public DataRecordFactory(MapConfig config, SerializationService ss) {
+    public DataRecordFactory(MapContainer mapContainer, SerializationService ss) {
         this.ss = ss;
-        this.statisticsEnabled = config.isStatisticsEnabled();
-        this.cacheDeserializedValues = config.getCacheDeserializedValues();
+        this.mapContainer = mapContainer;
     }
 
     @Override
     public Record<Data> newRecord(Object value) {
+        MapConfig mapConfig = mapContainer.getMapConfig();
+        boolean perEntryStatsEnabled = mapConfig.isPerEntryStatsEnabled();
+        CacheDeserializedValues cacheDeserializedValues = mapConfig.getCacheDeserializedValues();
+        boolean hasEviction = mapContainer.getEvictor() != NULL_EVICTOR;
+
         Data valueData = ss.toData(value);
 
         switch (cacheDeserializedValues) {
             case NEVER:
-                return statisticsEnabled ? new DataRecordWithStats(valueData) : new DataRecord(valueData);
+                return newSimpleRecord(valueData, mapConfig, perEntryStatsEnabled, hasEviction);
             default:
-                return statisticsEnabled ? new CachedDataRecordWithStats(valueData) : new CachedDataRecord(valueData);
+                return newCachedSimpleRecord(valueData, mapConfig, perEntryStatsEnabled, hasEviction);
         }
+    }
+
+    @Override
+    public MapContainer geMapContainer() {
+        return mapContainer;
+    }
+
+    private Record<Data> newCachedSimpleRecord(Data valueData, MapConfig mapConfig,
+                                               boolean perEntryStatsEnabled, boolean hasEviction) {
+        if (perEntryStatsEnabled || isClusterV41()) {
+            return new CachedDataRecordWithStats(valueData);
+        }
+
+        if (hasEviction) {
+            if (mapConfig.getEvictionConfig().getEvictionPolicy() == EvictionPolicy.LRU) {
+                return new CachedSimpleRecordWithLRUEviction(valueData);
+            }
+
+            if (mapConfig.getEvictionConfig().getEvictionPolicy() == EvictionPolicy.LFU) {
+                return new CachedSimpleRecordWithLFUEviction(valueData);
+            }
+
+            if (mapConfig.getEvictionConfig().getEvictionPolicy() == EvictionPolicy.RANDOM) {
+                return new CachedSimpleRecord(valueData);
+            }
+
+            return new CachedDataRecordWithStats(valueData);
+        }
+
+        return new CachedSimpleRecord(valueData);
+    }
+
+    private Record<Data> newSimpleRecord(Data valueData, MapConfig mapConfig,
+                                         boolean perEntryStatsEnabled, boolean hasEviction) {
+        if (perEntryStatsEnabled || isClusterV41()) {
+            return new DataRecordWithStats(valueData);
+        }
+
+        if (hasEviction) {
+            if (mapConfig.getEvictionConfig().getEvictionPolicy() == EvictionPolicy.LRU) {
+                return new SimpleRecordWithLRUEviction<>(valueData);
+            }
+
+            if (mapConfig.getEvictionConfig().getEvictionPolicy() == EvictionPolicy.LFU) {
+                return new SimpleRecordWithLFUEviction<>(valueData);
+            }
+
+            if (mapConfig.getEvictionConfig().getEvictionPolicy() == EvictionPolicy.RANDOM) {
+                return new CachedSimpleRecord(valueData);
+            }
+
+            return new DataRecordWithStats(valueData);
+        }
+
+        return new CachedSimpleRecord(valueData);
     }
 }

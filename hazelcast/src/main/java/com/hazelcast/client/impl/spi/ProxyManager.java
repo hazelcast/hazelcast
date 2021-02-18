@@ -85,6 +85,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ForkJoinPool;
 
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -427,26 +428,19 @@ public final class ProxyManager {
         }
     }
 
-    private static class ClientProxyFuture {
+    private static class ClientProxyFuture implements ForkJoinPool.ManagedBlocker {
 
         volatile Object proxy;
 
         ClientProxy get() {
-            if (proxy == null) {
-                boolean interrupted = false;
-                synchronized (this) {
-                    while (proxy == null) {
-                        try {
-                            wait();
-                        } catch (InterruptedException e) {
-                            interrupted = true;
-                        }
-                    }
-                }
-                if (interrupted) {
-                    Thread.currentThread().interrupt();
-                }
+            // Ensure sufficient parallelism if
+            // caller thread is a ForkJoinPool thread
+            try {
+                ForkJoinPool.managedBlock(this);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
+
             if (proxy instanceof Throwable) {
                 throw rethrow((Throwable) proxy);
             }
@@ -461,6 +455,36 @@ public final class ProxyManager {
                 proxy = o;
                 notifyAll();
             }
+        }
+
+        @Override
+        public boolean block() throws InterruptedException {
+            if (Thread.currentThread().isInterrupted()
+                    || isReleasable()) {
+                return true;
+            }
+
+            boolean interrupted = false;
+            synchronized (this) {
+                while (proxy == null) {
+                    try {
+                        wait();
+                    } catch (InterruptedException e) {
+                        interrupted = true;
+                    }
+                }
+            }
+            if (interrupted) {
+                Thread.currentThread().interrupt();
+                return true;
+            }
+
+            return true;
+        }
+
+        @Override
+        public boolean isReleasable() {
+            return proxy != null;
         }
     }
 

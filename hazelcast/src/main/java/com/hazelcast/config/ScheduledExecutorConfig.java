@@ -306,11 +306,11 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeInt(durability);
         out.writeInt(capacity);
         out.writeInt(poolSize);
-        out.writeUTF(splitBrainProtectionName);
+        out.writeString(splitBrainProtectionName);
         out.writeObject(mergePolicyConfig);
         out.writeByte(capacityPolicy.getId());
         out.writeBoolean(statisticsEnabled);
@@ -318,11 +318,11 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         durability = in.readInt();
         capacity = in.readInt();
         poolSize = in.readInt();
-        splitBrainProtectionName = in.readUTF();
+        splitBrainProtectionName = in.readString();
         mergePolicyConfig = in.readObject();
         capacityPolicy = getById(in.readByte());
         statisticsEnabled = in.readBoolean();

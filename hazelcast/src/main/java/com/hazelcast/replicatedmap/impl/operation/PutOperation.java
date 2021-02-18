@@ -77,7 +77,7 @@ public class PutOperation extends AbstractReplicatedMapOperation implements Part
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         IOUtil.writeData(out, key);
         IOUtil.writeData(out, value);
         out.writeLong(ttl);
@@ -85,7 +85,7 @@ public class PutOperation extends AbstractReplicatedMapOperation implements Part
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         key = IOUtil.readData(in);
         value = IOUtil.readData(in);
         ttl = in.readLong();

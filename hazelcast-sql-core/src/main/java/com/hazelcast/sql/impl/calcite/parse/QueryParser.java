@@ -30,6 +30,7 @@ import org.apache.calcite.sql.parser.SqlParseException;
 import org.apache.calcite.sql.parser.SqlParser;
 import org.apache.calcite.sql.parser.SqlParser.Config;
 import org.apache.calcite.sql.parser.SqlParserImplFactory;
+import org.apache.calcite.sql.parser.impl.ParseException;
 import org.apache.calcite.sql.util.SqlVisitor;
 import org.apache.calcite.sql.validate.SqlConformance;
 
@@ -75,7 +76,14 @@ public class QueryParser {
                 }
             }
         } catch (Exception e) {
-            throw QueryException.error(SqlErrorCode.PARSING, e.getMessage(), e);
+            String message;
+            // Check particular type of exception which causes typical long multiline error messages.
+            if (e instanceof SqlParseException && e.getCause() instanceof ParseException) {
+                message = trimMessage(e.getMessage());
+            } else {
+                message = e.getMessage();
+            }
+            throw QueryException.error(SqlErrorCode.PARSING, message, e);
         }
     }
 
@@ -84,9 +92,10 @@ public class QueryParser {
 
         Config config = createConfig(sqlBackend.parserFactory());
         SqlParser parser = SqlParser.create(sql, config);
+        SqlNode topNode = parser.parseStmt();
 
         HazelcastSqlValidator validator = (HazelcastSqlValidator) sqlBackend.validator(catalogReader, typeFactory, conformance);
-        SqlNode node = validator.validate(parser.parseStmt());
+        SqlNode node = validator.validate(topNode);
 
         SqlVisitor<Void> visitor = sqlBackend.unsupportedOperationVisitor(catalogReader);
         node.accept(visitor);
@@ -95,7 +104,8 @@ public class QueryParser {
             node,
             new QueryParameterMetadata(validator.getParameterConverters(node)),
             validator,
-            sqlBackend
+            sqlBackend,
+            validator.isInfiniteRows()
         );
     }
 
@@ -107,5 +117,11 @@ public class QueryParser {
             configBuilder.setParserFactory(parserImplFactory);
         }
         return configBuilder.build();
+    }
+
+    private static String trimMessage(String message) {
+        String eol = System.getProperty("line.separator", "\n");
+        String[] parts = message.split(eol, 2);
+        return parts[0];
     }
 }

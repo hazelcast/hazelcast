@@ -16,25 +16,38 @@
 
 package com.hazelcast.map.impl.record;
 
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.serialization.Data;
 
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
+import static com.hazelcast.internal.util.JVMUtil.REFERENCE_COST_IN_BYTES;
+
 /**
- * CachedDataRecord.
+ * Used when {@link MapConfig#isPerEntryStatsEnabled()} ()} is {@code
+ * false} and {@link MapConfig#getCacheDeserializedValues()} is
+ * not {@link com.hazelcast.config.CacheDeserializedValues#NEVER}.
+ *
+ * @see CachedSimpleRecordWithLFUEviction
+ * @see CachedSimpleRecordWithLRUEviction
  */
-class CachedDataRecord extends DataRecord {
-    private static final AtomicReferenceFieldUpdater<CachedDataRecord, Object> CACHED_VALUE =
-            AtomicReferenceFieldUpdater.newUpdater(CachedDataRecord.class, Object.class, "cachedValue");
+class CachedSimpleRecord extends SimpleRecord<Data> {
+    private static final AtomicReferenceFieldUpdater<CachedSimpleRecord, Object> CACHED_VALUE =
+            AtomicReferenceFieldUpdater.newUpdater(CachedSimpleRecord.class, Object.class, "cachedValue");
 
     private transient volatile Object cachedValue;
 
-    CachedDataRecord() {
+    CachedSimpleRecord() {
     }
 
-    CachedDataRecord(Data value) {
+    CachedSimpleRecord(Data value) {
         super(value);
+    }
+
+    @Override
+    public long getCost() {
+        return super.getCost() + REFERENCE_COST_IN_BYTES;
     }
 
     @Override
@@ -67,9 +80,8 @@ class CachedDataRecord extends DataRecord {
             return false;
         }
 
-        CachedDataRecord that = (CachedDataRecord) o;
+        CachedSimpleRecord that = (CachedSimpleRecord) o;
         return Objects.equals(cachedValue, that.cachedValue);
-
     }
 
     @Override
@@ -81,7 +93,7 @@ class CachedDataRecord extends DataRecord {
 
     @Override
     public String toString() {
-        return "CachedDataRecord{"
+        return "CachedSimpleRecord{"
                 + "cachedValue=" + cachedValue
                 + ", " + super.toString()
                 + "} ";

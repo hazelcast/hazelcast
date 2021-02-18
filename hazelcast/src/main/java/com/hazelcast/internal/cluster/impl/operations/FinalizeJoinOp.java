@@ -158,7 +158,7 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
         super.writeInternalImpl(out);
         UUIDSerializationUtil.writeUUID(out, clusterId);
         out.writeLong(clusterStartTime);
-        out.writeUTF(clusterState.toString());
+        out.writeString(clusterState.toString());
         out.writeObject(clusterVersion);
         out.writeObject(preJoinOp);
         out.writeObject(postJoinOp);
@@ -169,7 +169,7 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
         super.readInternalImpl(in);
         clusterId = UUIDSerializationUtil.readUUID(in);
         clusterStartTime = in.readLong();
-        String stateName = in.readUTF();
+        String stateName = in.readString();
         clusterState = ClusterState.valueOf(stateName);
         clusterVersion = in.readObject();
         preJoinOp = readOnJoinOp(in);

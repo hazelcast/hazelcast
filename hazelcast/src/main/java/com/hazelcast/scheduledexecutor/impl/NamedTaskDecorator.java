@@ -60,9 +60,9 @@ public class NamedTaskDecorator<V> extends AbstractTaskDecorator<V>
             throws IOException {
         if (out.getVersion().isGreaterOrEqual(Versions.V4_1)) {
             super.writeData(out);
-            out.writeUTF(name);
+            out.writeString(name);
         } else {
-            out.writeUTF(name);
+            out.writeString(name);
             out.writeObject(delegate);
         }
     }
@@ -72,9 +72,9 @@ public class NamedTaskDecorator<V> extends AbstractTaskDecorator<V>
             throws IOException {
         if (in.getVersion().isGreaterOrEqual(Versions.V4_1)) {
             super.readData(in);
-            name = in.readUTF();
+            name = in.readString();
         } else {
-            name = in.readUTF();
+            name = in.readString();
             delegate = in.readObject();
         }
     }

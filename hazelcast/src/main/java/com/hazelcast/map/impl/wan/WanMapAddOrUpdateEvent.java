@@ -73,14 +73,14 @@ public class WanMapAddOrUpdateEvent implements InternalWanEvent<EntryView<Object
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(mapName);
+        out.writeString(mapName);
         out.writeObject(mergePolicy);
         out.writeObject(entryView);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        mapName = in.readUTF();
+        mapName = in.readString();
         mergePolicy = in.readObject();
         entryView = in.readObject();
     }

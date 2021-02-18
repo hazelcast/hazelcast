@@ -151,7 +151,7 @@ public final class JavaDefaultSerializers {
 
         @Override
         public Externalizable read(final ObjectDataInput in) throws IOException {
-            String className = in.readUTF();
+            String className = in.readString();
             try {
                 if (gzipEnabled) {
                     return readGzipped(((InputStream) in), className, in.getClassLoader());
@@ -186,7 +186,7 @@ public final class JavaDefaultSerializers {
 
         @Override
         public void write(final ObjectDataOutput out, final Externalizable obj) throws IOException {
-            out.writeUTF(obj.getClass().getName());
+            out.writeString(obj.getClass().getName());
 
             if (gzipEnabled) {
                 writeGzipped(((OutputStream) out), obj);
@@ -277,7 +277,7 @@ public final class JavaDefaultSerializers {
         @Override
         public Class read(final ObjectDataInput in) throws IOException {
             try {
-                return ClassLoaderUtil.loadClass(in.getClassLoader(), in.readUTF());
+                return ClassLoaderUtil.loadClass(in.getClassLoader(), in.readString());
             } catch (ClassNotFoundException e) {
                 throw new HazelcastSerializationException(e);
             }
@@ -285,7 +285,7 @@ public final class JavaDefaultSerializers {
 
         @Override
         public void write(final ObjectDataOutput out, final Class obj) throws IOException {
-            out.writeUTF(obj.getName());
+            out.writeString(obj.getName());
         }
     }
 
@@ -321,12 +321,12 @@ public final class JavaDefaultSerializers {
 
         @Override
         public void write(ObjectDataOutput out, HazelcastJsonValue object) throws IOException {
-            out.writeUTF(object.toString());
+            out.writeString(object.toString());
         }
 
         @Override
         public HazelcastJsonValue read(ObjectDataInput in) throws IOException {
-            return new HazelcastJsonValue(in.readUTF());
+            return new HazelcastJsonValue(in.readString());
         }
 
         @Override

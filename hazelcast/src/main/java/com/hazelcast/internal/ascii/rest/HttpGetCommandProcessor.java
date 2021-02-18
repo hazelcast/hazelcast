@@ -37,9 +37,11 @@ import com.hazelcast.internal.server.Server;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.util.StringUtil;
+import com.hazelcast.logging.impl.LoggingServiceImpl;
 
 import java.util.Collection;
 import java.util.concurrent.CompletionStage;
+import java.util.logging.Level;
 
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 import static com.hazelcast.internal.util.ExceptionUtil.peel;
@@ -90,6 +92,8 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
             } else if (uri.startsWith(URI_CP_MEMBERS_URL)) {
                 handleGetCPMembers(command);
                 sendResponse = false;
+            } else if (uri.startsWith(URI_LOG_LEVEL)) {
+                handleLogLevel(command);
             } else {
                 command.send404();
             }
@@ -397,4 +401,11 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
     protected void handleLicense(HttpGetCommand command) {
         command.send404();
     }
+
+    private void handleLogLevel(HttpGetCommand command) {
+        LoggingServiceImpl loggingService = (LoggingServiceImpl) getNode().getLoggingService();
+        Level level = loggingService.getLevel();
+        prepareResponse(command, new JsonObject().add("logLevel", level == null ? null : level.getName()));
+    }
+
 }

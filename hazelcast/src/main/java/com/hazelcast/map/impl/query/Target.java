@@ -25,9 +25,9 @@ import static com.hazelcast.map.impl.query.Target.TargetMode.PARTITION_OWNER;
  * Target for a query.
  * <p>
  * Possible options:<ul>
- *     <li>all nodes
- *     <li>local node only
- *     <li>given partition set
+ * <li>all nodes
+ * <li>local node only
+ * <li>given partition set
  * </ul>
  */
 public final class Target {
@@ -62,5 +62,14 @@ public final class Target {
 
     public static Target createPartitionTarget(PartitionIdSet partitions) {
         return new Target(TargetMode.PARTITION_OWNER, partitions);
+    }
+
+    @Override
+    public String toString() {
+        return "Target{"
+                + "mode=" + mode
+                + ", partitionsSize="
+                + (partitions == null ? 0 : partitions.size())
+                + '}';
     }
 }

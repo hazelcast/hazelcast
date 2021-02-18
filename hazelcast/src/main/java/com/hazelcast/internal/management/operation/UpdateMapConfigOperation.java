@@ -78,7 +78,7 @@ public class UpdateMapConfigOperation extends AbstractManagementOperation {
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeUTF(mapName);
+        out.writeString(mapName);
         out.writeInt(timeToLiveSeconds);
         out.writeInt(maxIdleSeconds);
         out.writeInt(maxSize);
@@ -89,7 +89,7 @@ public class UpdateMapConfigOperation extends AbstractManagementOperation {
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        mapName = in.readUTF();
+        mapName = in.readString();
         timeToLiveSeconds = in.readInt();
         maxIdleSeconds = in.readInt();
         maxSize = in.readInt();

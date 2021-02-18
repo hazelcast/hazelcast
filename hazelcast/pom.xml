@@ -175,6 +175,7 @@
                         <exclude>**/*.bat</exclude>
                         <exclude>META-INF/services/javax.annotation.processing.Processor</exclude>
                     </excludes>
+                    <forceCreation>true</forceCreation>
                 </configuration>
                 <executions>
                     <execution>
@@ -281,7 +282,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
-                <version>3.0.2</version>
+                <version>3.2.0</version>
                 <executions>
                     <execution>
                         <phase>process-sources</phase>

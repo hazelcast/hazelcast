@@ -63,15 +63,15 @@ public class PreJoinCacheConfig<K, V> extends CacheConfig<K, V> implements Versi
     @Override
     protected void writeKeyValueTypes(ObjectDataOutput out)
             throws IOException {
-        out.writeUTF(getKeyClassName());
-        out.writeUTF(getValueClassName());
+        out.writeString(getKeyClassName());
+        out.writeString(getValueClassName());
     }
 
     @Override
     protected void readKeyValueTypes(ObjectDataInput in)
             throws IOException {
-        setKeyClassName(in.readUTF());
-        setValueClassName(in.readUTF());
+        setKeyClassName(in.readString());
+        setValueClassName(in.readString());
     }
 
     @Override

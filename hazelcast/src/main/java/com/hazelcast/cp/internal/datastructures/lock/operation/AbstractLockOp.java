@@ -67,7 +67,7 @@ abstract class AbstractLockOp extends RaftOp implements IdentifiedDataSerializab
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeLong(sessionId);
         out.writeLong(threadId);
         writeUUID(out, invocationUid);
@@ -75,7 +75,7 @@ abstract class AbstractLockOp extends RaftOp implements IdentifiedDataSerializab
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         sessionId = in.readLong();
         threadId = in.readLong();
         invocationUid = readUUID(in);

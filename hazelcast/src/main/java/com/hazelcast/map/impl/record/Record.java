@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.record;
 
 import com.hazelcast.internal.util.Clock;
-import com.hazelcast.query.impl.Metadata;
 
 import static com.hazelcast.internal.util.TimeUtil.zeroOutMs;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -51,7 +50,7 @@ public interface Record<V> {
     int UNSET = -1;
 
     /**
-     * If not a {@link com.hazelcast.map.impl.record.CachedDataRecord}.
+     * If not a {@link com.hazelcast.map.impl.record.CachedSimpleRecord}.
      */
     Object NOT_CACHED = new Object();
 
@@ -66,9 +65,9 @@ public interface Record<V> {
      */
     long getCost();
 
-    long getVersion();
+    int getVersion();
 
-    void setVersion(long version);
+    void setVersion(int version);
 
     /**
      * Get current cache value or null.
@@ -79,7 +78,9 @@ public interface Record<V> {
      *
      * @return current cached value or null or cached record mutex.
      */
-    Object getCachedValueUnsafe();
+    default Object getCachedValueUnsafe() {
+        return Record.NOT_CACHED;
+    }
 
     /**
      * Atomically sets the cached value to the given new value
@@ -91,47 +92,60 @@ public interface Record<V> {
      * return indicates that the actual cached value
      * was not equal to the expected cached value.
      */
-    boolean casCachedValue(Object expectedValue, Object newValue);
+    default boolean casCachedValue(Object expectedValue, Object newValue) {
+        assert getCachedValueUnsafe() != Record.NOT_CACHED;
+        return true;
+    }
 
-    long getLastAccessTime();
+    default long getLastAccessTime() {
+        return UNSET;
+    }
 
-    void setLastAccessTime(long lastAccessTime);
+    default void setLastAccessTime(long lastAccessTime) {
+    }
 
-    long getLastUpdateTime();
+    default long getLastUpdateTime() {
+        return UNSET;
+    }
 
-    void setLastUpdateTime(long lastUpdatedTime);
+    default void setLastUpdateTime(long lastUpdateTime) {
+    }
 
-    long getCreationTime();
+    default long getCreationTime() {
+        return UNSET;
+    }
 
-    void setCreationTime(long creationTime);
+    default void setCreationTime(long creationTime) {
+    }
 
-    int getHits();
+    default int getHits() {
+        return UNSET;
+    }
 
-    void setHits(int hits);
-
-    long getExpirationTime();
-
-    void setExpirationTime(long expirationTime);
-
-    long getLastStoredTime();
-
-    void setLastStoredTime(long lastStoredTime);
+    default void setHits(int hits) {
+    }
 
     /**
      * Only used for Hot Restart, HDRecord
      *
      * @return current sequence number
      */
-    long getSequence();
+    default long getSequence() {
+        return UNSET;
+    }
 
     /**
      * Only used for Hot Restart, HDRecord
      */
-    void setSequence(long sequence);
+    default void setSequence(long sequence) {
+    }
 
-    void setMetadata(Metadata metadata);
+    default long getLastStoredTime() {
+        return UNSET;
+    }
 
-    Metadata getMetadata();
+    default void setLastStoredTime(long lastStoredTime) {
+    }
 
     default long recomputeWithBaseTime(int value) {
         if (value == UNSET) {
@@ -149,33 +163,6 @@ public interface Record<V> {
         }
 
         return diff;
-    }
-
-    default long getTtl() {
-        int ttl = getRawTtl();
-        return ttl == Integer.MAX_VALUE ? Long.MAX_VALUE : SECONDS.toMillis(ttl);
-    }
-
-    default void setTtl(long ttl) {
-        long ttlSeconds = MILLISECONDS.toSeconds(ttl);
-        if (ttlSeconds == 0 && ttl != 0) {
-            ttlSeconds = 1;
-        }
-
-        setRawTtl(ttlSeconds > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) ttlSeconds);
-    }
-
-    default long getMaxIdle() {
-        int maxIdle = getRawMaxIdle();
-        return maxIdle == Integer.MAX_VALUE ? Long.MAX_VALUE : SECONDS.toMillis(maxIdle);
-    }
-
-    default void setMaxIdle(long maxIdle) {
-        long maxIdleSeconds = MILLISECONDS.toSeconds(maxIdle);
-        if (maxIdleSeconds == 0 && maxIdle != 0) {
-            maxIdleSeconds = 1;
-        }
-        setRawMaxIdle(maxIdleSeconds > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) maxIdleSeconds);
     }
 
     default void onAccess(long now) {
@@ -197,6 +184,7 @@ public interface Record<V> {
     }
 
     default void onUpdate(long now) {
+        // We allow version overflow, versions can also be negative value.
         setVersion(getVersion() + 1);
         setLastUpdateTime(now);
     }
@@ -212,32 +200,31 @@ public interface Record<V> {
     RecordReaderWriter getMatchingRecordReaderWriter();
 
     /* Below `raw` methods are used during serialization of a record. */
+    default int getRawCreationTime() {
+        return UNSET;
+    }
 
-    int getRawTtl();
+    default void setRawCreationTime(int creationTime) {
+    }
 
-    int getRawMaxIdle();
+    default int getRawLastAccessTime() {
+        return UNSET;
+    }
 
-    int getRawCreationTime();
+    default void setRawLastAccessTime(int lastAccessTime) {
+    }
 
-    int getRawLastAccessTime();
+    default int getRawLastUpdateTime() {
+        return UNSET;
+    }
 
-    int getRawLastUpdateTime();
+    default void setRawLastUpdateTime(int lastUpdateTime) {
+    }
 
-    void setRawTtl(int readInt);
+    default int getRawLastStoredTime() {
+        return UNSET;
+    }
 
-    void setRawMaxIdle(int readInt);
-
-    void setRawCreationTime(int readInt);
-
-    void setRawLastAccessTime(int readInt);
-
-    void setRawLastUpdateTime(int readInt);
-
-    int getRawLastStoredTime();
-
-    void setRawLastStoredTime(int time);
-
-    int getRawExpirationTime();
-
-    void setRawExpirationTime(int time);
+    default void setRawLastStoredTime(int lastStoredTime) {
+    }
 }

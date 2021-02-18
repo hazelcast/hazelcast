@@ -57,12 +57,12 @@ public final class ClassDataFinderOperation extends Operation implements UrgentS
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeUTF(className);
+        out.writeString(className);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        className = in.readUTF();
+        className = in.readString();
     }
 
     @Override

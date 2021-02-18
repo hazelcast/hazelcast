@@ -53,13 +53,13 @@ public class SetLicenseOperation extends AbstractManagementOperation {
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        licenseKey = in.readUTF();
+        licenseKey = in.readString();
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(licenseKey);
+        out.writeString(licenseKey);
     }
 
 }

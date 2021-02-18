@@ -30,7 +30,7 @@ public class SqlResultImplTest extends SqlTestSupport {
     @Test
     public void test_rowsResult() {
         QueryId queryId = new QueryId(1, 2, 3, 4);
-        SqlRowMetadata metadata = new SqlRowMetadata(singletonList(new SqlColumnMetadata("n", SqlColumnType.INTEGER)));
+        SqlRowMetadata metadata = new SqlRowMetadata(singletonList(new SqlColumnMetadata("n", SqlColumnType.INTEGER, true)));
         QueryState queryState = QueryState.createInitiatorState(queryId, null, null, 0, null, null, metadata,
                 null, System::currentTimeMillis);
         SqlResultImpl r = SqlResultImpl.createRowsResult(queryState, new DefaultSerializationServiceBuilder().build());

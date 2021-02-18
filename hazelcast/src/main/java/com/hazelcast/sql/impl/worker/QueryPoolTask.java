@@ -18,11 +18,9 @@ package com.hazelcast.sql.impl.worker;
 
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.sql.impl.LocalMemberIdProvider;
 import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.operation.QueryCancelOperation;
 import com.hazelcast.sql.impl.operation.QueryOperation;
@@ -32,77 +30,36 @@ import com.hazelcast.sql.impl.operation.QueryOperationHandler;
 import java.util.UUID;
 
 import static com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
-import static com.hazelcast.sql.impl.QueryUtils.WORKER_TYPE_OPERATION;
 
-/**
- * Worker responsible for operation processing.
- */
-public class QueryOperationWorker implements Runnable {
+public class QueryPoolTask implements Runnable {
 
-    private static final Object POISON = new Object();
-
+    private final QueryOperationExecutable task;
     private final LocalMemberIdProvider localMemberIdProvider;
     private final QueryOperationHandler operationHandler;
     private final SerializationService ss;
-    private final Thread thread;
-    private final MPSCQueue<Object> queue;
     private final ILogger logger;
 
-    public QueryOperationWorker(
+    public QueryPoolTask(
+        QueryOperationExecutable task,
         LocalMemberIdProvider localMemberIdProvider,
         QueryOperationHandler operationHandler,
         SerializationService ss,
-        String instanceName,
-        int index,
         ILogger logger
     ) {
+        this.task = task;
         this.localMemberIdProvider = localMemberIdProvider;
         this.operationHandler = operationHandler;
         this.ss = ss;
         this.logger = logger;
-
-        thread = new Thread(this,  QueryUtils.workerName(instanceName, WORKER_TYPE_OPERATION, index));
-        queue = new MPSCQueue<>(thread, null);
-
-        thread.start();
-    }
-
-    public void submit(QueryOperationExecutable task) {
-        queue.add(task);
-    }
-
-    public void stop() {
-        queue.clear();
-        queue.add(POISON);
-
-        thread.interrupt();
     }
 
     @Override
     public void run() {
         try {
-            run0();
+            execute(task);
         } catch (Throwable t) {
             inspectOutOfMemoryError(t);
             logger.severe(t);
-        }
-    }
-
-    private void run0() {
-        try {
-            while (true) {
-                Object task = queue.take();
-
-                if (task == POISON) {
-                    break;
-                } else {
-                    assert task instanceof QueryOperationExecutable;
-
-                    execute((QueryOperationExecutable) task);
-                }
-            }
-        } catch (InterruptedException e) {
-            // No-op.
         }
     }
 
@@ -164,12 +121,5 @@ public class QueryOperationWorker implements Runnable {
                 localMemberId);
 
         operationHandler.submit(localMemberId, initiatorMemberId, cancelOperation);
-    }
-
-    /**
-     * For testing only.
-     */
-    boolean isThreadTerminated() {
-        return thread.getState() == Thread.State.TERMINATED;
     }
 }

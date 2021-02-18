@@ -26,15 +26,20 @@ import java.util.UUID;
 public class QueryClientState {
 
     private final UUID clientId;
+    private final QueryId queryId;
     private final AbstractSqlResult sqlResult;
     private final boolean closed;
+    private final long createdAt;
 
     private ResultIterator<SqlRow> iterator;
 
-    public QueryClientState(UUID clientId, AbstractSqlResult sqlResult, boolean closed) {
+    public QueryClientState(UUID clientId, QueryId queryId, AbstractSqlResult sqlResult, boolean closed) {
         this.clientId = clientId;
+        this.queryId = queryId;
         this.sqlResult = sqlResult;
         this.closed = closed;
+
+        createdAt = System.nanoTime();
     }
 
     public UUID getClientId() {
@@ -42,7 +47,7 @@ public class QueryClientState {
     }
 
     public QueryId getQueryId() {
-        return sqlResult.getQueryId();
+        return queryId;
     }
 
     public AbstractSqlResult getSqlResult() {
@@ -51,6 +56,10 @@ public class QueryClientState {
 
     public boolean isClosed() {
         return closed;
+    }
+
+    public long getCreatedAtNano() {
+        return createdAt;
     }
 
     public ResultIterator<SqlRow> getIterator() {

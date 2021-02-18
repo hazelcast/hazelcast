@@ -24,7 +24,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.impl.CachedQueryEntry;
-import com.hazelcast.query.impl.Metadata;
 import com.hazelcast.query.impl.getters.Extractors;
 
 import java.io.IOException;
@@ -65,7 +64,6 @@ public class LazyMapEntry<K, V> extends CachedQueryEntry<K, V>
     private static final long serialVersionUID = 0L;
 
     private transient boolean modified;
-    private transient Metadata metadata;
 
     private transient long newTtl = UNSET;
 
@@ -84,7 +82,6 @@ public class LazyMapEntry<K, V> extends CachedQueryEntry<K, V>
                              Data key, Object value, Extractors extractors, long ttl) {
         super.init(serializationService, key, value, extractors);
         modified = false;
-        metadata = null;
         newTtl = ttl;
         return this;
     }
@@ -195,13 +192,4 @@ public class LazyMapEntry<K, V> extends CachedQueryEntry<K, V>
     public int getClassId() {
         return MapDataSerializerHook.LAZY_MAP_ENTRY;
     }
-
-    public Metadata getMetadata() {
-        return metadata;
-    }
-
-    public void setMetadata(Metadata metadata) {
-        this.metadata = metadata;
-    }
-
 }

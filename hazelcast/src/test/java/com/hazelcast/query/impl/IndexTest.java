@@ -19,11 +19,15 @@ package com.hazelcast.query.impl;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.monitor.impl.MemberPartitionStateImpl;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.record.DataRecordFactory;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
@@ -39,6 +43,7 @@ import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.AndPredicate;
 import com.hazelcast.query.impl.predicates.EqualPredicate;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -66,6 +71,8 @@ import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
@@ -88,7 +95,21 @@ public class IndexTest {
 
     final InternalSerializationService ss =
             new DefaultSerializationServiceBuilder().addPortableFactory(FACTORY_ID, new TestPortableFactory()).build();
-    final DataRecordFactory recordFactory = new DataRecordFactory(new MapConfig(), ss);
+    MapContainer mapContainer = mock(MapContainer.class);
+
+    {
+        NodeEngine nodeEngine = mock(NodeEngine.class);
+        ClusterService clusterService = mock(ClusterService.class);
+        MapServiceContext mapServiceContext = mock(MapServiceContext.class);
+
+        when(mapServiceContext.getNodeEngine()).thenReturn(nodeEngine);
+        when(nodeEngine.getClusterService()).thenReturn(clusterService);
+        when(clusterService.getClusterVersion()).thenReturn(Versions.CURRENT_CLUSTER_VERSION);
+        when(mapContainer.getMapConfig()).thenReturn(new MapConfig());
+        when(mapContainer.getMapServiceContext()).thenReturn(mapServiceContext);
+    }
+
+    final DataRecordFactory recordFactory = new DataRecordFactory(mapContainer, ss);
 
     @Test
     public void testBasics() {
@@ -315,7 +336,7 @@ public class IndexTest {
             writer.writeLong("l", l);
             writer.writeFloat("f", f);
             writer.writeDouble("d", d);
-            writer.writeUTF("str", str);
+            writer.writeString("str", str);
         }
 
         public void readPortable(PortableReader reader) throws IOException {
@@ -327,7 +348,7 @@ public class IndexTest {
             l = reader.readLong("l");
             f = reader.readFloat("f");
             d = reader.readDouble("d");
-            str = reader.readUTF("str");
+            str = reader.readString("str");
         }
 
         @Override
@@ -463,6 +484,26 @@ public class IndexTest {
 
         public Record toRecord() {
             return recordFactory.newRecord(attributeValue);
+        }
+
+        @Override
+        public Object getKeyIfPresent() {
+            throw new UnsupportedOperationException("Should not be called.");
+        }
+
+        @Override
+        public Data getKeyDataIfPresent() {
+            throw new UnsupportedOperationException("Should not be called.");
+        }
+
+        @Override
+        public Object getValueIfPresent() {
+            throw new UnsupportedOperationException("Should not be called.");
+        }
+
+        @Override
+        public Data getValueDataIfPresent() {
+            throw new UnsupportedOperationException("Should not be called.");
         }
     }
 

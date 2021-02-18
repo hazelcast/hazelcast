@@ -107,7 +107,7 @@ public class ReplicateUpdateToCallerOperation extends AbstractSerializableOperat
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeLong(callId);
         IOUtil.writeData(out, dataKey);
         IOUtil.writeData(out, dataValue);
@@ -118,7 +118,7 @@ public class ReplicateUpdateToCallerOperation extends AbstractSerializableOperat
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         callId = in.readLong();
         dataKey = IOUtil.readData(in);
         dataValue = IOUtil.readData(in);

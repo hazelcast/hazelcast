@@ -38,13 +38,4 @@ public interface QueryOperationHandler {
      * @param operation Operation.
      */
     void execute(QueryOperation operation);
-
-    /**
-     * Create a channel for ordered operation scheduling.
-     *
-     * @param sourceMemberId Source member ID.
-     * @param targetMemberId Target member ID.
-     * @return Channel.
-     */
-    QueryOperationChannel createChannel(UUID sourceMemberId, UUID targetMemberId);
 }

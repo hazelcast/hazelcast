@@ -141,6 +141,7 @@ public class DynamicConfigBouncingTest extends HazelcastTestSupport {
                 .addAttributeConfig(new AttributeConfig("attribute", "foo.bar.ExtractorClass"))
                 .addQueryCacheConfig(queryCacheConfig)
                 .setStatisticsEnabled(false)
+                .setPerEntryStatsEnabled(true)
                 .setPartitioningStrategyConfig(new PartitioningStrategyConfig("foo.bar.Class"))
                 .setSplitBrainProtectionName("split-brain-protection");
     }
