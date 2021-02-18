@@ -70,6 +70,7 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
 
     private Node node;
     private PhoneHome phoneHome;
+    private CloudInfoCollector cloudInfoCollector;
 
     @Mock
     private Path kubernetesTokenPath;
@@ -87,7 +88,7 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
         when(dockerPath.toRealPath()).thenReturn(Paths.get(System.getProperty("user.dir")));
         when(kubernetesTokenPath.toRealPath()).thenReturn(Paths.get(System.getProperty("user.dir")));
 
-        MetricsCollector cloudInfoCollector = new CloudInfoCollector("http://localhost:8080/latest/meta-data",
+        cloudInfoCollector = new CloudInfoCollector("http://localhost:8080/latest/meta-data",
                 "http://localhost:8080/metadata/instance/compute?api-version=2018-02-01",
                 "http://localhost:8080/metadata.google.internal", kubernetesTokenPath, dockerPath);
 
@@ -282,5 +283,27 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
         phoneHome.phoneHome(false);
         verify(1, getRequestedFor(urlPathEqualTo("/ping"))
                 .withQueryParam("dck", equalTo("N")));
+    }
+
+    @Test
+    public void testPhoneHomeCalledTwice() throws IOException {
+        node.hazelcastInstance.getMap("hazelcast");
+
+        phoneHome.phoneHome(false);
+        phoneHome.phoneHome(false);
+
+        verify(2, getRequestedFor(urlPathEqualTo("/ping")).withQueryParam("mpct", equalTo("1")));
+    }
+
+    @Test
+    public void testCloudInfoCollectorCalledTwice_doesNotThrowException() {
+        PhoneHomeParameterCreator parameterCreator1 = new PhoneHomeParameterCreator();
+        cloudInfoCollector.forEachMetric(node,
+                (type, value) -> parameterCreator1.addParam(type.getRequestParameterName(), value));
+
+        PhoneHomeParameterCreator parameterCreator2 = new PhoneHomeParameterCreator();
+        cloudInfoCollector.forEachMetric(node,
+                (type, value) -> parameterCreator2.addParam(type.getRequestParameterName(), value));
+
     }
 }
