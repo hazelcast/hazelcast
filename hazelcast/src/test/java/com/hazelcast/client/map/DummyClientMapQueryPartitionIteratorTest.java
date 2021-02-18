@@ -20,9 +20,9 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.impl.proxy.ClientMapProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.map.AbstractMapQueryPartitionIteratorTest;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
@@ -60,7 +60,7 @@ public class DummyClientMapQueryPartitionIteratorTest extends AbstractMapQueryPa
                 .setSmartRouting(false)
                 .addAddress(addressString);
 
-        return getClientConfig(instance)
+        return new ClientConfig()
                 .setNetworkConfig(networkConfig);
     }
 
