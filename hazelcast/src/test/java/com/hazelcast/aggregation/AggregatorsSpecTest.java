@@ -119,8 +119,8 @@ public class AggregatorsSpecTest extends HazelcastTestSupport {
 
     @Before
     public void setUp() {
-        predicate = usePredicate ?
-                Predicates.greaterEqual("fieldWeCanQuery", Integer.MAX_VALUE) : Predicates.alwaysTrue();
+        predicate = usePredicate
+                ? Predicates.greaterEqual("fieldWeCanQuery", Integer.MAX_VALUE) : Predicates.alwaysTrue();
     }
 
     @Test
