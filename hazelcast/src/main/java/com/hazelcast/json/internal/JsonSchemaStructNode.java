@@ -106,11 +106,11 @@ public class JsonSchemaStructNode extends JsonSchemaNode {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(inners.size());
-        for (int i = 0; i < inners.size(); i++)
+        for (int i = 0; i < inners.size(); i++) {
             out.writeObject(inners.get(i));
+        }
+        // Don't serialize parent node from superclass to avoid cyclic dependency
     }
-    // Don't serialize parent node from superclass to avoid cyclic dependency
-}
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {

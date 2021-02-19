@@ -131,6 +131,14 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         this.recordStoreLoader = createRecordStoreLoader(mapStoreContext);
         this.partitionService = mapServiceContext.getNodeEngine().getPartitionService();
         this.interceptorRegistry = mapContainer.getInterceptorRegistry();
+        initJsonMetadataStore();
+    }
+
+    // Overridden in EE
+    protected void initJsonMetadataStore() {
+        // Forcibly initialize on-heap Json Metadata Store to avoid
+        // lazy initialization and potential race condition.
+        getOrCreateMetadataStore();
     }
 
     @Override
