@@ -28,6 +28,8 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class JsonMetadataStoreImpl implements JsonMetadataStore {
 
+    // We use CHM since the map might be accessed from partition
+    // and query threads concurrently
     private final ConcurrentMap<Data, JsonMetadata> store;
 
     public JsonMetadataStoreImpl() {
