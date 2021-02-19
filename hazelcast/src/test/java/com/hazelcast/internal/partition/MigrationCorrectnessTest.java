@@ -39,7 +39,7 @@ import static java.util.Arrays.asList;
 public class MigrationCorrectnessTest extends AbstractMigrationCorrectnessTest {
 
     @ClassRule
-    public static ChangeLoggingRule changeLoggingRule = new ChangeLoggingRule("log4j2-debug-migrations.xml");
+    public static ChangeLoggingRule changeLoggingRule = new ChangeLoggingRule("log4j2-trace-migrations.xml");
 
     @Parameters(name = "backups:{0},nodes:{1},fragmented:{2}")
     public static Collection<Object[]> parameters() {
