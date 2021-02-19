@@ -100,7 +100,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     protected final Collection<Future> loadingFutures = new ConcurrentLinkedQueue<>();
 
     /**
-     * A reference to the Оыщт Metadata store. It is initialized lazily only if the
+     * A reference to the Json Metadata store. It is initialized lazily only if the
      * store is needed.
      */
     private JsonMetadataStore metadataStore;
