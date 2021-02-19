@@ -193,7 +193,7 @@ public abstract class AbstractInbox extends AbstractMailbox implements InboundHa
                     }
                 }
 
-                // Adjust the expected ordinal after we processed the current batch, and unwounded pending batches.
+                // Adjust the expected ordinal after we processed the current batch and unwound pending batches.
                 expectedOrdinal = expectedOrdinal0;
 
                 return;
