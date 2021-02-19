@@ -18,6 +18,7 @@ package com.hazelcast.cache.eviction;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionConfig;
+import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -69,6 +70,15 @@ public class CacheEvictionPolicyComparatorTest extends AbstractCacheEvictionPoli
         int partitionCount = Integer.parseInt(ClusterProperty.PARTITION_COUNT.getDefaultValue());
         int iterationCount = (calculateMaxPartitionSize(DEFAULT_MAX_ENTRY_COUNT, partitionCount) * partitionCount) * 2;
         EvictionConfig evictionConfig = new EvictionConfig().setComparator(new MyEvictionPolicyComparator());
+
+        testEvictionPolicyComparator(evictionConfig, iterationCount);
+    }
+
+    @Test
+    public void test_evictionPolicyComparator_with_fifo_when_maxSizePolicy_is_entryCount() {
+        int partitionCount = Integer.parseInt(ClusterProperty.PARTITION_COUNT.getDefaultValue());
+        int iterationCount = (calculateMaxPartitionSize(DEFAULT_MAX_ENTRY_COUNT, partitionCount) * partitionCount) * 2;
+        EvictionConfig evictionConfig = new EvictionConfig().setEvictionPolicy(EvictionPolicy.FIFO);
 
         testEvictionPolicyComparator(evictionConfig, iterationCount);
     }

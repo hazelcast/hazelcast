@@ -640,6 +640,82 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testEvictionFIFO() {
+        testEvictionFIFOInternal(false);
+    }
+
+    @Test
+    public void testEvictionFIFO_statisticsDisabled() {
+        testEvictionFIFOInternal(true);
+    }
+
+    /**
+     * This test is only testing occurrence of FIFO eviction.
+     */
+    private void testEvictionFIFOInternal(boolean disableStats) {
+        int mapMaxSize = 10000;
+        String mapName = randomMapName();
+
+        MapConfig mapConfig = newMapConfig(mapName)
+                .setStatisticsEnabled(disableStats);
+
+        EvictionConfig evictionConfig = mapConfig.getEvictionConfig();
+        evictionConfig
+                .setEvictionPolicy(EvictionPolicy.FIFO)
+                .setMaxSizePolicy(MaxSizePolicy.PER_NODE)
+                .setSize(mapMaxSize);
+
+        Config config = getConfig()
+                .addMapConfig(mapConfig);
+
+        HazelcastInstance node = createHazelcastInstance(config);
+        IMap<Object, Object> map = node.getMap(mapName);
+
+        for (int i = 0; i < 2 * mapMaxSize; i++) {
+            map.put(i, i);
+        }
+
+        int mapSize = map.size();
+        assertTrue("Eviction did not work, map size " + mapSize + " should be smaller than allowed max size = " + mapMaxSize,
+                mapSize < mapMaxSize);
+    }
+
+    @Test
+    public void testEvictionFIFO2() throws InterruptedException {
+        int size = 10000;
+        String mapName = randomMapName("testEvictionFIFO2");
+
+        MapConfig mapConfig = newMapConfig(mapName);
+
+        EvictionConfig evictionConfig = mapConfig.getEvictionConfig();
+        evictionConfig
+                .setEvictionPolicy(EvictionPolicy.FIFO)
+                .setMaxSizePolicy(MaxSizePolicy.PER_NODE)
+                .setSize(size);
+
+        Config config = getConfig()
+                .setProperty(ClusterProperty.PARTITION_COUNT.getName(), "1")
+                .addMapConfig(mapConfig);
+
+        HazelcastInstance node = createHazelcastInstance(config);
+        IMap<Object, Object> map = node.getMap(mapName);
+        for (int i = 0; i < size; i++) {
+            map.put(i, i);
+            if (i < 100 || i >= size - 100) {
+                map.get(i);
+            }
+        }
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 100; j++) {
+                assertNotNull(map.get(j));
+            }
+            for (int j = size - 100; j < size; j++) {
+                assertNotNull(map.get(j));
+            }
+        }
+    }
+
+    @Test
     public void testMapRecordEviction() {
         String mapName = randomMapName();
         final int size = 100;
