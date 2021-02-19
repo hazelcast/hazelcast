@@ -121,6 +121,7 @@ public class QueryRunner {
     public Result runIndexOrPartitionScanQueryOnOwnedPartitions(Query query, boolean doPartitionScan) {
         int migrationStamp = getMigrationStamp();
         PartitionIdSet initialPartitions = mapServiceContext.getOrInitCachedMemberPartitions();
+        initialPartitions.intersect(query.getPartitionIdSet());
         MapContainer mapContainer = mapServiceContext.getMapContainer(query.getMapName());
 
         // to optimize the query we need to get any index instance

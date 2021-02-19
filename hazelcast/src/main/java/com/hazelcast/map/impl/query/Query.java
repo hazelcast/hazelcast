@@ -17,15 +17,18 @@
 package com.hazelcast.map.impl.query;
 
 import com.hazelcast.aggregation.Aggregator;
+import com.hazelcast.internal.cluster.Versions;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.IterationType;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.util.IterationType;
 
 import java.io.IOException;
 
@@ -34,18 +37,26 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 /**
  * Object representing a Query together with all possible co-variants: like a predicate, iterationType, etc.
  */
-public class Query implements IdentifiedDataSerializable {
+public class Query implements IdentifiedDataSerializable, Versioned {
 
     private String mapName;
     private Predicate predicate;
     private IterationType iterationType;
     private Aggregator aggregator;
     private Projection projection;
+    private PartitionIdSet partitionIdSet;
 
     public Query() {
     }
 
-    public Query(String mapName, Predicate predicate, IterationType iterationType, Aggregator aggregator, Projection projection) {
+    public Query(
+            String mapName,
+            Predicate predicate,
+            IterationType iterationType,
+            Aggregator aggregator,
+            Projection projection,
+            PartitionIdSet partitionIdSet
+    ) {
         this.mapName = checkNotNull(mapName);
         this.predicate = checkNotNull(predicate);
         this.iterationType = checkNotNull(iterationType);
@@ -55,7 +66,7 @@ public class Query implements IdentifiedDataSerializable {
         if (aggregator != null && projection != null) {
             throw new IllegalArgumentException("It's forbidden to use a Projection with an Aggregator.");
         }
-
+        this.partitionIdSet = partitionIdSet;
     }
 
     public String getMapName() {
@@ -94,6 +105,10 @@ public class Query implements IdentifiedDataSerializable {
         return projection != null;
     }
 
+    public PartitionIdSet getPartitionIdSet() {
+        return partitionIdSet;
+    }
+
     public Result createResult(SerializationService serializationService, long limit) {
         if (isAggregationQuery()) {
             Aggregator aggregatorClone = serializationService.toObject(serializationService.toData(aggregator));
@@ -128,6 +143,9 @@ public class Query implements IdentifiedDataSerializable {
         out.writeByte(iterationType.getId());
         out.writeObject(aggregator);
         out.writeObject(projection);
+        if (out.getVersion().isGreaterOrEqual(Versions.V4_2)) {
+            out.writeObject(partitionIdSet);
+        }
     }
 
     @Override
@@ -137,6 +155,9 @@ public class Query implements IdentifiedDataSerializable {
         this.iterationType = IterationType.getById(in.readByte());
         this.aggregator = in.readObject();
         this.projection = in.readObject();
+        if (in.getVersion().isGreaterOrEqual(Versions.V4_2)) {
+            this.partitionIdSet = in.readObject();
+        }
     }
 
     public static final class QueryBuilder {
@@ -145,6 +166,7 @@ public class Query implements IdentifiedDataSerializable {
         private IterationType iterationType;
         private Aggregator aggregator;
         private Projection projection;
+        private PartitionIdSet partitionIdSet;
 
         private QueryBuilder() {
         }
@@ -155,6 +177,7 @@ public class Query implements IdentifiedDataSerializable {
             this.iterationType = query.iterationType;
             this.aggregator = query.aggregator;
             this.projection = query.projection;
+            this.partitionIdSet = query.partitionIdSet;
         }
 
         public QueryBuilder mapName(String mapName) {
@@ -182,8 +205,13 @@ public class Query implements IdentifiedDataSerializable {
             return this;
         }
 
+        public QueryBuilder partitionIdSet(PartitionIdSet partitionIdSet) {
+            this.partitionIdSet = partitionIdSet;
+            return this;
+        }
+
         public Query build() {
-            return new Query(mapName, predicate, iterationType, aggregator, projection);
+            return new Query(mapName, predicate, iterationType, aggregator, projection, partitionIdSet);
         }
     }
 }

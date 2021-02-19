@@ -195,6 +195,15 @@ public class PartitionIdSet extends AbstractSet<Integer> {
     }
 
     /**
+     * Mutates this {@code PartitionIdSet} so it contains the intersection of
+     * this and {@code other}'s partition IDs.
+     */
+    public void intersect(PartitionIdSet other) {
+        this.bitSet.and(other.bitSet);
+        resetSize();
+    }
+
+    /**
      * Mutates this {@code PartitionIdSet} so it contains the union of this and {@code other}'s
      * partition IDs.
      */

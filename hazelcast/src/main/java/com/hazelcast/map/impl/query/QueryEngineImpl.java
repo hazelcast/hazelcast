@@ -91,15 +91,18 @@ public class QueryEngineImpl implements QueryEngine {
         Query adjustedQuery = adjustQuery(query);
         switch (target.mode()) {
             case ALL_NODES:
-                return runOnGivenPartitions(adjustedQuery, getAllPartitionIds(), TargetMode.ALL_NODES);
+                adjustedQuery = Query.of(query).partitionIdSet(getAllPartitionIds()).build();
+                return runOnGivenPartitions(adjustedQuery, TargetMode.ALL_NODES);
             case LOCAL_NODE:
-                return runOnGivenPartitions(adjustedQuery, getLocalPartitionIds(), TargetMode.LOCAL_NODE);
+                adjustedQuery = Query.of(query).partitionIdSet(getLocalPartitionIds()).build();
+                return runOnGivenPartitions(adjustedQuery, TargetMode.LOCAL_NODE);
             case PARTITION_OWNER:
                 int solePartition = target.partitions().solePartition();
                 if (solePartition >= 0) {
                     return runOnGivenPartition(adjustedQuery, solePartition);
                 } else {
-                    return runOnGivenPartitions(adjustedQuery, target.partitions(), TargetMode.ALL_NODES);
+                    adjustedQuery = Query.of(query).partitionIdSet(target.partitions()).build();
+                    return runOnGivenPartitions(adjustedQuery, TargetMode.ALL_NODES);
                 }
             default:
                 throw new IllegalArgumentException("Illegal target " + query);
@@ -120,12 +123,12 @@ public class QueryEngineImpl implements QueryEngine {
     }
 
     // query thread first, fallback to partition thread
-    private Result runOnGivenPartitions(Query query, PartitionIdSet partitions, TargetMode targetMode) {
-        Result result = doRunOnQueryThreads(query, partitions, targetMode);
-        if (isResultFromAnyPartitionMissing(partitions)) {
-            doRunOnPartitionThreads(query, partitions, result);
-        }
-        assertAllPartitionsQueried(partitions);
+    private Result runOnGivenPartitions(Query query, TargetMode targetMode) {
+        Result result = doRunOnQueryThreads(query, targetMode);
+//        if (isResultFromAnyPartitionMissing(partitions)) {
+//            doRunOnPartitionThreads(query, partitions, result);
+//        }
+        assertAllPartitionsQueried(query.getPartitionIdSet());
 
         return result;
     }
@@ -140,16 +143,16 @@ public class QueryEngineImpl implements QueryEngine {
         }
     }
 
-    private Result doRunOnQueryThreads(Query query, PartitionIdSet partitionIds, TargetMode targetMode) {
-        Result result = populateResult(query, partitionIds);
-        List<Future<Result>> futures = dispatchOnQueryThreads(query, partitionIds, targetMode);
-        addResultsOfPredicate(futures, result, partitionIds, false);
+    private Result doRunOnQueryThreads(Query query, TargetMode targetMode) {
+        Result result = populateResult(query);
+        List<Future<Result>> futures = dispatchOnQueryThreads(query, targetMode);
+        addResultsOfPredicate(futures, result, query.getPartitionIdSet(), false);
         return result;
     }
 
-    private List<Future<Result>> dispatchOnQueryThreads(Query query, PartitionIdSet partitionIds, TargetMode targetMode) {
+    private List<Future<Result>> dispatchOnQueryThreads(Query query, TargetMode targetMode) {
         try {
-            return dispatchFullQueryOnQueryThread(query, partitionIds, targetMode);
+            return dispatchFullQueryOnQueryThread(query, targetMode);
         } catch (Throwable t) {
             if (!(t instanceof HazelcastException)) {
                 // these are programmatic errors that needs to be visible
@@ -167,9 +170,9 @@ public class QueryEngineImpl implements QueryEngine {
         return Collections.emptyList();
     }
 
-    private Result populateResult(Query query, PartitionIdSet partitionIds) {
+    private Result populateResult(Query query) {
         return resultProcessorRegistry.get(query.getResultType()).populateResult(query,
-                queryResultSizeLimiter.getNodeResultLimit(partitionIds.size()));
+                queryResultSizeLimiter.getNodeResultLimit(query.getPartitionIdSet().size()));
     }
 
     private void doRunOnPartitionThreads(Query query, PartitionIdSet partitionIds, Result result) {
@@ -257,14 +260,10 @@ public class QueryEngineImpl implements QueryEngine {
         return queryResultSizeLimiter;
     }
 
-    protected List<Future<Result>> dispatchFullQueryOnQueryThread(
-            Query query,
-            PartitionIdSet partitionIdSet,
-            TargetMode targetMode
-    ) {
+    protected List<Future<Result>> dispatchFullQueryOnQueryThread(Query query, TargetMode targetMode) {
         switch (targetMode) {
             case ALL_NODES:
-                return dispatchFullQueryOnAllMembersOnQueryThread(query, partitionIdSet);
+                return dispatchFullQueryOnAllMembersOnQueryThread(query);
             case LOCAL_NODE:
                 return dispatchFullQueryOnLocalMemberOnQueryThread(query);
             default:
@@ -279,9 +278,9 @@ public class QueryEngineImpl implements QueryEngine {
         return singletonList(result);
     }
 
-    private List<Future<Result>> dispatchFullQueryOnAllMembersOnQueryThread(Query query, PartitionIdSet partitionIdSet) {
+    private List<Future<Result>> dispatchFullQueryOnAllMembersOnQueryThread(Query query) {
         Set<Address> members = new HashSet<>();
-        for (PrimitiveIterator.OfInt iterator = partitionIdSet.intIterator(); iterator.hasNext(); ) {
+        for (PrimitiveIterator.OfInt iterator = query.getPartitionIdSet().intIterator(); iterator.hasNext(); ) {
             members.add(partitionService.getPartitionOwner(iterator.next()));
         }
 

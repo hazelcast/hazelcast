@@ -88,9 +88,10 @@ public class QueryEngine_DispatchTest extends HazelcastTestSupport {
 
     private void dispatchFullQueryOnQueryThread(TargetMode target) {
         Query query = Query.of().mapName(map.getName()).predicate(Predicates.equal("this", value))
+                .partitionIdSet(queryEngine.getAllPartitionIds())
                 .iterationType(IterationType.ENTRY).build();
         List<Future<Result>> futures = queryEngine
-                .dispatchFullQueryOnQueryThread(query, queryEngine.getAllPartitionIds(), target);
+                .dispatchFullQueryOnQueryThread(query, target);
         Collection<Result> results = returnWithDeadline(futures, 1, TimeUnit.MINUTES);
         QueryResult result = (QueryResult) results.iterator().next();
 
