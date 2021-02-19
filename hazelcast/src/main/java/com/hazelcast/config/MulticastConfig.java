@@ -57,7 +57,7 @@ public class MulticastConfig implements TrustedInterfacesConfigurable<MulticastC
      * Default flag that indicates if the loopback mode
      * is turned on or off.
      */
-    public static final boolean DEFAULT_LOOPBACK_MODE_ENABLED = false;
+    public static final boolean DEFAULT_LOOPBACK_MODE_ENABLED = true;
 
     private static final int MULTICAST_TTL_UPPER_BOUND = 255;
 
