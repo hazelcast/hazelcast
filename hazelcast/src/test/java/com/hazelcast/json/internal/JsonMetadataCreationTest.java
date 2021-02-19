@@ -309,7 +309,7 @@ public class JsonMetadataCreationTest extends HazelcastTestSupport {
         NodeEngineImpl nodeEngine = getNodeEngineImpl(getBackupInstance(instances, partitionId, replicaIndex));
         MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
         RecordStore recordStore = mapService.getMapServiceContext().getPartitionContainer(partitionId).getRecordStore(mapName);
-        JsonMetadataStore metadataStore = recordStore.getMetadataStore();
+        JsonMetadataStore metadataStore = recordStore.getOrCreateMetadataStore();
         return metadataStore.get(keyData);
     }
 

@@ -163,7 +163,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public JsonMetadataStore getMetadataStore() {
+    public JsonMetadataStore getOrCreateMetadataStore() {
         if (metadataStore == null) {
             metadataStore = createMetadataStore();
         }

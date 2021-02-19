@@ -99,7 +99,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         // Add observer for json metadata
         if (mapContainer.getMapConfig().getMetadataPolicy() == MetadataPolicy.CREATE_ON_UPDATE) {
             mutationObserver.add(new JsonMetadataMutationObserver(serializationService,
-                    JsonMetadataInitializer.INSTANCE, getMetadataStore()));
+                    JsonMetadataInitializer.INSTANCE, getOrCreateMetadataStore()));
         }
 
         // Add observer for indexing

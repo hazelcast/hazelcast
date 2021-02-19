@@ -121,7 +121,7 @@ public class JsonMetadataCreationMigrationTest extends HazelcastTestSupport {
         NodeEngineImpl nodeEngine = getNodeEngineImpl(getBackupInstance(instances, partitionId, replicaIndex));
         MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
         RecordStore recordStore = mapService.getMapServiceContext().getPartitionContainer(partitionId).getRecordStore(mapName);
-        return recordStore.getMetadataStore().get(keyData);
+        return recordStore.getOrCreateMetadataStore().get(keyData);
     }
 
     protected Config getConfig() {
