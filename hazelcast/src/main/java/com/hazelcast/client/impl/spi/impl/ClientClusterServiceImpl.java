@@ -61,6 +61,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static java.util.Collections.EMPTY_SET;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableSet;
 
@@ -207,6 +208,22 @@ public class ClientClusterServiceImpl
                 memberListSnapshot.set(new MemberListSnapshot(0, clusterViewSnapshot.members));
             }
         }
+    }
+
+    /**
+     * Clears the member list and fires member removed event for members in the list.
+     */
+    public void clearMemberList() {
+        List<MembershipEvent> events;
+        synchronized (clusterViewLock) {
+            if (logger.isFineEnabled()) {
+                logger.fine("Resetting the member list ");
+            }
+            Collection<Member> prevMembers = memberListSnapshot.get().members.values();
+            memberListSnapshot.set(new MemberListSnapshot(0, new LinkedHashMap<>()));
+            events = detectMembershipEvents(prevMembers, EMPTY_SET);
+        }
+        fireEvents(events);
     }
 
     public void reset() {

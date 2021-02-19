@@ -73,7 +73,7 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
     public HazelcastInstance newHazelcastClient(ClientConfig config, String sourceIp) {
         if (!mockNetwork) {
             HazelcastInstance client = HazelcastClient.newHazelcastClient(config);
-            registerJvmNameAndPidMetric((HazelcastClientInstanceImpl) client);
+            registerJvmNameAndPidMetric(((HazelcastClientProxy) client).client);
             return client;
         }
 
