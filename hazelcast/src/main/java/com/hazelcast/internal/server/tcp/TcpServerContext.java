@@ -37,15 +37,14 @@ import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.server.ServerConnection;
+import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.util.AddressUtil;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
-import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.io.IOException;
@@ -60,6 +59,8 @@ import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.instance.EndpointQualifier.MEMCACHE;
 import static com.hazelcast.instance.EndpointQualifier.REST;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
+import static com.hazelcast.spi.properties.ClusterProperty.CONNECTION_MONITOR_INTERVAL;
+import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_CONNECT_TIMEOUT_SECONDS;
 
 @SuppressWarnings({"checkstyle:methodcount"})
 public class TcpServerContext implements ServerContext {
@@ -204,8 +205,12 @@ public class TcpServerContext implements ServerContext {
             node.getJoiner().blacklist(address, false);
         } else {
             if (clusterService.getMember(address) != null) {
-                nodeEngine.getExecutionService().schedule(ExecutionService.IO_EXECUTOR, new ReconnectionTask(address),
-                        getConnectionMonitorInterval(), TimeUnit.MILLISECONDS);
+                nodeEngine.getExecutionService()
+                        .schedule(
+                                ExecutionService.IO_EXECUTOR,
+                                new ReconnectionTask(address),
+                                properties().getMillis(CONNECTION_MONITOR_INTERVAL),
+                                TimeUnit.MILLISECONDS);
             }
         }
     }
@@ -251,17 +256,7 @@ public class TcpServerContext implements ServerContext {
             return config != null ? config.getSocketConnectTimeoutSeconds() : 0;
         }
 
-        return node.getProperties().getSeconds(ClusterProperty.SOCKET_CONNECT_TIMEOUT_SECONDS);
-    }
-
-    @Override
-    public long getConnectionMonitorInterval() {
-        return node.getProperties().getMillis(ClusterProperty.CONNECTION_MONITOR_INTERVAL);
-    }
-
-    @Override
-    public int getConnectionMonitorMaxFaults() {
-        return node.getProperties().getInteger(ClusterProperty.CONNECTION_MONITOR_MAX_FAULTS);
+        return node.getProperties().getSeconds(SOCKET_CONNECT_TIMEOUT_SECONDS);
     }
 
     @Override

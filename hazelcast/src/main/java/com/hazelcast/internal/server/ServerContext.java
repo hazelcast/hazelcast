@@ -95,10 +95,6 @@ public interface ServerContext {
 
     int getSocketConnectTimeoutSeconds(EndpointQualifier endpointQualifier);
 
-    long getConnectionMonitorInterval();
-
-    int getConnectionMonitorMaxFaults();
-
     void onDisconnect(Address endpoint, Throwable cause);
 
     void executeAsync(Runnable runnable);

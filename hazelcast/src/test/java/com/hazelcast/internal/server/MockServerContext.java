@@ -181,16 +181,6 @@ public class MockServerContext implements ServerContext {
     }
 
     @Override
-    public long getConnectionMonitorInterval() {
-        return 0;
-    }
-
-    @Override
-    public int getConnectionMonitorMaxFaults() {
-        return 0;
-    }
-
-    @Override
     public void onDisconnect(Address endpoint, Throwable cause) {
         logger.warning("Disconnected address: " + endpoint, cause);
     }
