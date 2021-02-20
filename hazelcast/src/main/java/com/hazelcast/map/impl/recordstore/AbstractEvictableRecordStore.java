@@ -126,7 +126,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
                                                        ExpiryReason expiryReason,
                                                        boolean backup) {
         Object value = evict(key, backup);
-        if (!backup) {
+        if (value != null && !backup) {
             doPostEvictionOperations(key, value, expiryReason);
         }
     }
@@ -159,6 +159,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     @Override
     public void doPostEvictionOperations(Data dataKey, Object value,
                                          ExpiryReason expiryReason) {
+        assert value != null : "value cannot be null";
 
         if (eventService.hasEventRegistration(SERVICE_NAME, name)) {
             EntryEventType eventType = expiryReason != NOT_EXPIRED ? EXPIRED : EVICTED;
