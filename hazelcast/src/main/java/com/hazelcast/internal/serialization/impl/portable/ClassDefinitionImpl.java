@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl.portable;
 
+import com.hazelcast.internal.serialization.SerializableByConvention;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.ClassDefinition;
@@ -29,11 +30,14 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.internal.serialization.SerializableByConvention.Reason.PUBLIC_API;
+
+@SerializableByConvention(PUBLIC_API)
 public class ClassDefinitionImpl implements ClassDefinition, DataSerializable {
 
     private int factoryId;
     private int classId;
-    private int version = -1;
+    private int version;
     private Map<String, FieldDefinition> fieldDefinitionsMap;
 
     @SuppressWarnings("unused")
@@ -124,6 +128,22 @@ public class ClassDefinitionImpl implements ClassDefinition, DataSerializable {
     }
 
     @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeInt(factoryId);
+        out.writeInt(classId);
+        out.writeInt(version);
+        out.writeObject(fieldDefinitionsMap);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        factoryId = in.readInt();
+        classId = in.readInt();
+        version = in.readInt();
+        fieldDefinitionsMap = in.readObject();
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -142,22 +162,6 @@ public class ClassDefinitionImpl implements ClassDefinition, DataSerializable {
             return false;
         }
         return fieldDefinitionsMap.equals(that.fieldDefinitionsMap);
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(factoryId);
-        out.writeInt(classId);
-        out.writeInt(version);
-        out.writeObject(fieldDefinitionsMap);
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        factoryId = in.readInt();
-        classId = in.readInt();
-        version = in.readInt();
-        fieldDefinitionsMap = in.readObject();
     }
 
     @Override

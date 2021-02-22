@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl.portable;
 
+import com.hazelcast.internal.serialization.SerializableByConvention;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -24,6 +25,9 @@ import com.hazelcast.nio.serialization.FieldType;
 
 import java.io.IOException;
 
+import static com.hazelcast.internal.serialization.SerializableByConvention.Reason.PUBLIC_API;
+
+@SerializableByConvention(PUBLIC_API)
 public class FieldDefinitionImpl implements FieldDefinition, DataSerializable {
 
     private int index;
@@ -81,6 +85,26 @@ public class FieldDefinitionImpl implements FieldDefinition, DataSerializable {
     }
 
     @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeInt(index);
+        out.writeString(fieldName);
+        out.writeByte(type.getId());
+        out.writeInt(factoryId);
+        out.writeInt(classId);
+        out.writeInt(version);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        index = in.readInt();
+        fieldName = in.readString();
+        type = FieldType.get(in.readByte());
+        factoryId = in.readInt();
+        classId = in.readInt();
+        version = in.readInt();
+    }
+
+    @Override
     @SuppressWarnings("checkstyle:npathcomplexity")
     public boolean equals(Object o) {
         if (this == o) {
@@ -107,26 +131,6 @@ public class FieldDefinitionImpl implements FieldDefinition, DataSerializable {
             return false;
         }
         return type == that.type;
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(index);
-        out.writeString(fieldName);
-        out.writeByte(type.getId());
-        out.writeInt(factoryId);
-        out.writeInt(classId);
-        out.writeInt(version);
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        index = in.readInt();
-        fieldName = in.readString();
-        type = FieldType.get(in.readByte());
-        factoryId = in.readInt();
-        classId = in.readInt();
-        version = in.readInt();
     }
 
     @Override
