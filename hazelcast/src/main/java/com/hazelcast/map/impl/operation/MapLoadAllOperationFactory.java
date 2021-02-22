@@ -54,7 +54,7 @@ public class MapLoadAllOperationFactory extends AbstractMapOperationFactory {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         final int size = keys.size();
         out.writeInt(size);
         for (Data key : keys) {
@@ -65,7 +65,7 @@ public class MapLoadAllOperationFactory extends AbstractMapOperationFactory {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         final int size = in.readInt();
         if (size > 0) {
             keys = new ArrayList<>(size);

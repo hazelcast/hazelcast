@@ -165,14 +165,14 @@ public class MapPredicateJsonMixedTypeTest extends HazelcastTestSupport {
 
         @Override
         public void writePortable(PortableWriter writer) throws IOException {
-            writer.writeUTF("name", this.name);
+            writer.writeString("name", this.name);
             writer.writeInt("age", this.age);
             writer.writeBoolean("onDuty", this.onDuty);
         }
 
         @Override
         public void readPortable(PortableReader reader) throws IOException {
-            this.name = reader.readUTF("name");
+            this.name = reader.readString("name");
             this.age = reader.readInt("age");
             this.onDuty = reader.readBoolean("onDuty");
 

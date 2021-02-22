@@ -70,14 +70,14 @@ public final class EventEnvelope implements IdentifiedDataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         UUIDSerializationUtil.writeUUID(out, id);
-        out.writeUTF(serviceName);
+        out.writeString(serviceName);
         IOUtil.writeObject(out, event);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         id = UUIDSerializationUtil.readUUID(in);
-        serviceName = in.readUTF();
+        serviceName = in.readString();
         event = IOUtil.readObject(in);
     }
 

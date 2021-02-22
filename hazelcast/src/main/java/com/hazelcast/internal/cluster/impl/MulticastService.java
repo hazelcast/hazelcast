@@ -19,6 +19,7 @@ package com.hazelcast.internal.cluster.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.MulticastConfig;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.ILogger;
@@ -117,20 +118,16 @@ public final class MulticastService implements Runnable {
             multicastSocket.bind(new InetSocketAddress(multicastConfig.getMulticastPort()));
             multicastSocket.setTimeToLive(multicastConfig.getMulticastTimeToLive());
             try {
-                // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4417033
-                // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6402758
-                if (!bindAddress.getInetAddress().isLoopbackAddress()) {
-                    multicastSocket.setInterface(bindAddress.getInetAddress());
-                } else if (multicastConfig.isLoopbackModeEnabled()) {
-                    multicastSocket.setLoopbackMode(true);
-                    multicastSocket.setInterface(bindAddress.getInetAddress());
-                } else {
-                    // If LoopBack is not enabled but its the selected interface from the given
-                    // bind address, then we rely on Default Network Interface.
-                    logger.warning("Hazelcast is bound to " + bindAddress.getHost() + " and loop-back mode is disabled in "
-                            + "the configuration. This could cause multicast auto-discovery issues and render it unable to work. "
-                            + "Check your network connectivity, try to enable the loopback mode and/or "
-                            + "force -Djava.net.preferIPv4Stack=true on your JVM.");
+                multicastSocket.setInterface(bindAddress.getInetAddress());
+                if (bindAddress.getInetAddress().isLoopbackAddress()) {
+                    // the parameter of the setLoopbackMode method is "disable: true to disable the LoopbackMode"!
+                    multicastSocket.setLoopbackMode(! multicastConfig.isLoopbackModeEnabled());
+                    if (multicastSocket.getLoopbackMode()) {
+                        logger.warning("Hazelcast is bound to " + bindAddress.getHost() + " and loop-back mode is "
+                                + "disabled. This could cause multicast auto-discovery issues "
+                                + "and render it unable to work. Check your network connectivity, try to enable the "
+                                + "loopback mode and/or force -Djava.net.preferIPv4Stack=true on your JVM.");
+                    }
                 }
             } catch (Exception e) {
                 logger.warning(e);
@@ -148,6 +145,10 @@ public final class MulticastService implements Runnable {
             mcService.addMulticastListener(new NodeMulticastListener(node));
         } catch (Exception e) {
             logger.severe(e);
+            // fail-fast if multicast is explicitly enabled (i.e. autodiscovery is not used)
+            if (multicastConfig.isEnabled()) {
+                throw new HazelcastException("Starting the MulticastService failed", e);
+            }
         }
         return mcService;
     }

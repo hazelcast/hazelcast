@@ -65,12 +65,12 @@ class DummyBackupOperation extends Operation implements BackupOperation {
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(backupKey);
+        out.writeString(backupKey);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        backupKey = in.readUTF();
+        backupKey = in.readString();
     }
 }

@@ -20,6 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.ByteArraySerializer;
 import com.hazelcast.nio.serialization.StreamSerializer;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.AbstractMap;
@@ -57,6 +58,9 @@ public final class ConstantSerializers {
             return CONSTANT_TYPE_NULL;
         }
 
+        @SuppressFBWarnings(
+                value = "NP_NONNULL_RETURN_VIOLATION",
+                justification = "NullSerializer is only used for null values.")
         @Override
         public Object read(final ObjectDataInput in) throws IOException {
             return null;

@@ -19,7 +19,7 @@ package com.hazelcast.query.impl;
 import com.hazelcast.core.TypeConverter;
 
 /**
- * Type of Attribute
+ * Type of attribute.
  */
 public enum AttributeType {
     /**

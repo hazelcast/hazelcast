@@ -114,7 +114,7 @@ public class EvictorImpl implements Evictor {
                 = recordStore.hasExpired(dataKey, now, backup);
         Object value = recordStore.evict(dataKey, backup);
 
-        if (!backup) {
+        if (value != null && !backup) {
             recordStore.doPostEvictionOperations(dataKey, value, expiryReason);
         }
     }

@@ -824,7 +824,7 @@ public class Node {
         JoinConfig join = getActiveMemberNetworkConfig(config).getJoin();
         join.verify();
 
-        if (shouldUseMulticastJoiner(join)) {
+        if (shouldUseMulticastJoiner(join) && multicastService != null) {
             logger.info("Using Multicast discovery");
             return new MulticastJoiner(this);
         } else if (join.getTcpIpConfig().isEnabled()) {

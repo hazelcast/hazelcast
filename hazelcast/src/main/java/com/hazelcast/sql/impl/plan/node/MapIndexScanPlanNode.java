@@ -110,7 +110,7 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode implements Ide
     protected void writeData0(ObjectDataOutput out) throws IOException {
         super.writeData0(out);
 
-        out.writeUTF(indexName);
+        out.writeString(indexName);
         out.writeInt(indexComponentCount);
         out.writeObject(indexFilter);
         SerializationUtil.writeList(converterTypes, out);
@@ -121,7 +121,7 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode implements Ide
     protected void readData0(ObjectDataInput in) throws IOException {
         super.readData0(in);
 
-        indexName = in.readUTF();
+        indexName = in.readString();
         indexComponentCount = in.readInt();
         indexFilter = in.readObject();
         converterTypes = SerializationUtil.readList(in);

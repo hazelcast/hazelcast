@@ -123,7 +123,7 @@ public class Query implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(mapName);
+        out.writeString(mapName);
         out.writeObject(predicate);
         out.writeByte(iterationType.getId());
         out.writeObject(aggregator);
@@ -132,7 +132,7 @@ public class Query implements IdentifiedDataSerializable {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        this.mapName = in.readUTF();
+        this.mapName = in.readString();
         this.predicate = in.readObject();
         this.iterationType = IterationType.getById(in.readByte());
         this.aggregator = in.readObject();

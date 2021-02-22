@@ -1441,7 +1441,8 @@ public abstract class HazelcastTestSupport {
             if (expectedType.isInstance(actualException)) {
                 return (T) actualException;
             } else {
-                String excMsg = String.format("Unexpected %s exception type thrown", actualException.getClass().getName());
+                String excMsg = String.format("Unexpected %s exception type thrown with message:\n%s",
+                        actualException.getClass().getName(), actualException.getMessage());
                 throw new AssertionFailedError(excMsg);
             }
         }

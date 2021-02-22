@@ -133,7 +133,7 @@ public class RaftQueryOp extends Operation implements IndeterminateOperationStat
         super.writeInternal(out);
         out.writeObject(groupId);
         out.writeObject(op);
-        out.writeUTF(queryPolicy.toString());
+        out.writeString(queryPolicy.toString());
     }
 
     @Override
@@ -141,7 +141,7 @@ public class RaftQueryOp extends Operation implements IndeterminateOperationStat
         super.readInternal(in);
         groupId = in.readObject();
         op = in.readObject();
-        queryPolicy = QueryPolicy.valueOf(in.readUTF());
+        queryPolicy = QueryPolicy.valueOf(in.readString());
     }
 
     @Override

@@ -1171,7 +1171,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeInt(getItemQueue().size());
         for (QueueItem item : getItemQueue()) {
             out.writeObject(item);
@@ -1184,7 +1184,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         pollWaitNotifyKey = new QueueWaitNotifyKey(name, "poll");
         offerWaitNotifyKey = new QueueWaitNotifyKey(name, "offer");
         int size = in.readInt();

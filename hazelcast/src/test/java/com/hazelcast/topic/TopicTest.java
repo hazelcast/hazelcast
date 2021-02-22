@@ -402,13 +402,13 @@ public class TopicTest extends HazelcastTestSupport {
 
         public void writeData(ObjectDataOutput out) throws IOException {
             publisher.writeData(out);
-            out.writeUTF(data);
+            out.writeString(data);
         }
 
         public void readData(ObjectDataInput in) throws IOException {
             publisher = new MemberImpl();
             publisher.readData(in);
-            data = in.readUTF();
+            data = in.readString();
         }
 
         @Override

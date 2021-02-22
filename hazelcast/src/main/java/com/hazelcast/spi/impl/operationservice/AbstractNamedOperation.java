@@ -39,12 +39,12 @@ public abstract class AbstractNamedOperation extends Operation implements NamedO
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(name);
+        out.writeString(name);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        name = in.readUTF();
+        name = in.readString();
     }
 
     @Override

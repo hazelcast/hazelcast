@@ -68,14 +68,14 @@ public class MapPutPartitionAwareCallable<T, P>
     @Override
     public void writeData(ObjectDataOutput out)
             throws IOException {
-        out.writeUTF(mapName);
+        out.writeString(mapName);
         out.writeObject(partitionKey);
     }
 
     @Override
     public void readData(ObjectDataInput in)
             throws IOException {
-        mapName = in.readUTF();
+        mapName = in.readString();
         partitionKey = in.readObject();
     }
 

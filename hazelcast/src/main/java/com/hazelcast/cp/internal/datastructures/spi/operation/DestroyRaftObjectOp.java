@@ -66,14 +66,14 @@ public class DestroyRaftObjectOp extends RaftOp implements IdentifiedDataSeriali
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(serviceName);
-        out.writeUTF(objectName);
+        out.writeString(serviceName);
+        out.writeString(objectName);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        serviceName = in.readUTF();
-        objectName = in.readUTF();
+        serviceName = in.readString();
+        objectName = in.readString();
     }
 
     @Override

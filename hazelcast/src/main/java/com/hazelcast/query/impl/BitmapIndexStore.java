@@ -50,7 +50,7 @@ import static com.hazelcast.query.impl.QueryableEntry.extractAttributeValue;
  * structures used to establish the correspondence between long bitmap keys and
  * actual user-provided keys.
  */
-@SuppressWarnings("rawtypes")
+@SuppressWarnings({"rawtypes", "checkstyle:MethodCount"})
 public final class BitmapIndexStore extends BaseIndexStore {
 
     private static final long NO_KEY = -1;
@@ -144,7 +144,7 @@ public final class BitmapIndexStore extends BaseIndexStore {
                     throw makeNegativeKeyException(key);
                 }
 
-                bitmap.insert(values, key, entry);
+                bitmap.insert(values, key, entry, operationStats);
             } finally {
                 releaseWriteLock();
             }
@@ -159,7 +159,7 @@ public final class BitmapIndexStore extends BaseIndexStore {
                 long internalKey = internalKeyCounter++;
                 long replaced = internalObjectKeys.put(key, internalKey);
                 assert replaced == NO_KEY;
-                bitmap.insert(values, internalKey, entry);
+                bitmap.insert(values, internalKey, entry, operationStats);
             } finally {
                 releaseWriteLock();
             }
@@ -191,7 +191,7 @@ public final class BitmapIndexStore extends BaseIndexStore {
                         // see https://github.com/hazelcast/hazelcast/issues/17342#issuecomment-680840612
                         internalKey = internalKeyCounter++;
                         internalKeys.put(key, internalKey);
-                        bitmap.insert(newValues, internalKey, entry);
+                        bitmap.insert(newValues, internalKey, entry, operationStats);
                         return;
                     } else {
                         key = internalKey;
@@ -200,7 +200,7 @@ public final class BitmapIndexStore extends BaseIndexStore {
                     throw makeNegativeKeyException(key);
                 }
 
-                bitmap.update(oldValues, newValues, key, entry);
+                bitmap.update(oldValues, newValues, key, entry, operationStats);
             } finally {
                 releaseWriteLock();
             }
@@ -218,9 +218,9 @@ public final class BitmapIndexStore extends BaseIndexStore {
                     // see https://github.com/hazelcast/hazelcast/issues/17342#issuecomment-680840612
                     internalKey = internalKeyCounter++;
                     internalObjectKeys.put(key, internalKey);
-                    bitmap.insert(newValues, internalKey, entry);
+                    bitmap.insert(newValues, internalKey, entry, operationStats);
                 } else {
-                    bitmap.update(oldValues, newValues, internalKey, entry);
+                    bitmap.update(oldValues, newValues, internalKey, entry, operationStats);
                 }
             } finally {
                 releaseWriteLock();
@@ -250,13 +250,13 @@ public final class BitmapIndexStore extends BaseIndexStore {
                     if (key != NO_KEY) {
                         // see https://github.com/hazelcast/hazelcast/issues/15439 and
                         // https://github.com/hazelcast/hazelcast/issues/17342#issuecomment-680840612
-                        bitmap.remove(values, key);
+                        bitmap.remove(values, key, operationStats);
                     }
                 } else {
                     if (key < 0) {
                         throw makeNegativeKeyException(key);
                     }
-                    bitmap.remove(values, key);
+                    bitmap.remove(values, key, operationStats);
                 }
             } finally {
                 releaseWriteLock();
@@ -273,7 +273,7 @@ public final class BitmapIndexStore extends BaseIndexStore {
                 if (internalKey != NO_KEY) {
                     // see https://github.com/hazelcast/hazelcast/issues/15439 and
                     // https://github.com/hazelcast/hazelcast/issues/17342#issuecomment-680840612
-                    bitmap.remove(values, internalKey);
+                    bitmap.remove(values, internalKey, operationStats);
                 }
             } finally {
                 releaseWriteLock();
@@ -526,7 +526,7 @@ public final class BitmapIndexStore extends BaseIndexStore {
     }
 
     /**
-     * Converts and at the same time canonicalizes the passed in values.
+     * Converts and at the same time canonicalizes the values passed in.
      */
     private final class CanonicalizingConverter implements TypeConverter {
 

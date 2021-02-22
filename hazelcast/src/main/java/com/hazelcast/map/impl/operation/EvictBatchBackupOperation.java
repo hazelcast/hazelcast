@@ -18,7 +18,9 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.exception.WrongTargetException;
@@ -32,7 +34,8 @@ import java.util.LinkedList;
 /**
  * Used to transfer expired keys from owner replica to backup replicas.
  */
-public class EvictBatchBackupOperation extends MapOperation implements BackupOperation {
+public class EvictBatchBackupOperation
+        extends MapOperation implements BackupOperation {
 
     private int primaryEntryCount;
     private String name;
@@ -61,10 +64,36 @@ public class EvictBatchBackupOperation extends MapOperation implements BackupOpe
         }
 
         for (ExpiredKey expiredKey : expiredKeys) {
-            recordStore.evict(expiredKey.getKey(), true);
+            Data key = expiredKey.getKey();
+            Record existingRecord = recordStore.getRecord(key);
+            if (hasSameValueHashCode(existingRecord, expiredKey)) {
+                recordStore.evict(key, true);
+            }
         }
 
         equalizeEntryCountWithPrimary();
+    }
+
+     public boolean hasSameValueHashCode(Record existingRecord, ExpiredKey expiredKey) {
+        if (existingRecord == null) {
+            return false;
+        }
+
+        // Value-hash-code = Hash code of value
+        // returned from method record#getValue()
+        //
+        // Value-hash-code of a record is always same between all
+        // replicas. By doing value-hash-code comparison we can prevent
+        // un-wanted record deletion on backup replicas. This is the
+        // scenario we tried to address here: Let's say on primary
+        // replica a record was expired and then it was queued to be
+        // sent to backup replicas but before it was sent to backup
+        // replicas, a new record was added to IMap with the same
+        // key, in this scenario, when already queued item is sent
+        // to backup replicas, backups should not remove the key if
+        // value-hash-codes are not equal. This will help to decrease
+        // possibility of un-wanted record deletion on backup replicas.
+        return existingRecord.getValue().hashCode() == expiredKey.getMetadata();
     }
 
     /**
@@ -111,11 +140,11 @@ public class EvictBatchBackupOperation extends MapOperation implements BackupOpe
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
 
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeInt(expiredKeys.size());
         for (ExpiredKey expiredKey : expiredKeys) {
             IOUtil.writeData(out, expiredKey.getKey());
-            out.writeLong(expiredKey.getCreationTime());
+            out.writeLong(expiredKey.getMetadata());
         }
         out.writeInt(primaryEntryCount);
     }
@@ -124,7 +153,7 @@ public class EvictBatchBackupOperation extends MapOperation implements BackupOpe
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
 
-        name = in.readUTF();
+        name = in.readString();
         int size = in.readInt();
         expiredKeys = new LinkedList<>();
         for (int i = 0; i < size; i++) {

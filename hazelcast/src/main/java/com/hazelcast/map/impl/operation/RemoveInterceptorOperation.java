@@ -65,13 +65,13 @@ public class RemoveInterceptorOperation extends AbstractNamedOperation
     @Override
     public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        id = in.readUTF();
+        id = in.readString();
     }
 
     @Override
     public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(id);
+        out.writeString(id);
     }
 
     @Override

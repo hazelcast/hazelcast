@@ -59,12 +59,12 @@ public class InstanceOfPredicate
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(klass.getName());
+        out.writeString(klass.getName());
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        String klassName = in.readUTF();
+        String klassName = in.readString();
         try {
             klass = ClassLoaderUtil.loadClass(in.getClassLoader(), klassName);
         } catch (ClassNotFoundException e) {

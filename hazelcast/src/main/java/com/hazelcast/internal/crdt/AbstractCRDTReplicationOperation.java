@@ -80,7 +80,7 @@ public abstract class AbstractCRDTReplicationOperation<T extends IdentifiedDataS
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeInt(replicationData.size());
         for (Entry<String, T> entry : replicationData.entrySet()) {
-            out.writeUTF(entry.getKey());
+            out.writeString(entry.getKey());
             out.writeObject(entry.getValue());
         }
     }
@@ -90,7 +90,7 @@ public abstract class AbstractCRDTReplicationOperation<T extends IdentifiedDataS
         final int mapSize = in.readInt();
         replicationData = createHashMap(mapSize);
         for (int i = 0; i < mapSize; i++) {
-            final String name = in.readUTF();
+            final String name = in.readString();
             final T crdt = in.readObject();
             replicationData.put(name, crdt);
         }

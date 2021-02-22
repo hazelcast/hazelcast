@@ -188,7 +188,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
         try {
             int pos = readPosition(fieldName, FieldType.UTF);
             in.position(pos);
-            return in.readUTF();
+            return in.readString();
         } catch (IOException e) {
             throw newIllegalStateException(e);
         } finally {
@@ -747,7 +747,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
                     in.position(in.position() + itemLength);
                 }
             }
-            return in.readUTF();
+            return in.readString();
         } catch (IOException e) {
             throw newIllegalStateException(e);
         } finally {

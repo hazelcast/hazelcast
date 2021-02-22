@@ -47,7 +47,7 @@ public class MapGetAllOperationFactory extends AbstractMapOperationFactory {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeInt(keys.size());
         for (Data key : keys) {
             IOUtil.writeData(out, key);
@@ -56,7 +56,7 @@ public class MapGetAllOperationFactory extends AbstractMapOperationFactory {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         int size = in.readInt();
         for (int i = 0; i < size; i++) {
             Data data = IOUtil.readData(in);

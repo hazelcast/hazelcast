@@ -2205,16 +2205,19 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     private MapStoreConfig handleMapStoreConfig(Node node, MapStoreConfig mapStoreConfig) {
         NamedNodeMap attributes = node.getAttributes();
+        boolean enabled = true;
         for (int a = 0; a < attributes.getLength(); a++) {
             Node att = attributes.item(a);
             if (matches("enabled", att.getNodeName())) {
-                mapStoreConfig.setEnabled(getBooleanValue(getTextContent(att)));
+                enabled = getBooleanValue(getTextContent(att));
             } else if (matches("initial-mode", att.getNodeName())) {
                 MapStoreConfig.InitialLoadMode mode = MapStoreConfig.InitialLoadMode
                         .valueOf(upperCaseInternal(getTextContent(att)));
                 mapStoreConfig.setInitialLoadMode(mode);
             }
         }
+        mapStoreConfig.setEnabled(enabled);
+
         for (Node n : childElements(node)) {
             String nodeName = cleanNodeName(n);
             if (matches("class-name", nodeName)) {
@@ -2723,19 +2726,24 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     void handleEndpointGroup(Node node, String name) {
         boolean enabled = getBooleanValue(getAttribute(node, "enabled"));
-        RestEndpointGroup endpointGroup;
-        try {
-            endpointGroup = RestEndpointGroup.valueOf(name);
-        } catch (IllegalArgumentException e) {
-            throw new InvalidConfigurationException("Wrong name attribute value was provided in endpoint-group element: " + name
-                    + "\nAllowed values: " + Arrays.toString(RestEndpointGroup.values()));
-        }
+        RestEndpointGroup endpointGroup = lookupEndpointGroup(name);
+
         RestApiConfig restApiConfig = config.getNetworkConfig().getRestApiConfig();
         if (enabled) {
             restApiConfig.enableGroups(endpointGroup);
         } else {
             restApiConfig.disableGroups(endpointGroup);
         }
+    }
+
+    private RestEndpointGroup lookupEndpointGroup(String name) {
+        return Arrays.stream(RestEndpointGroup.values())
+          .filter(value -> value.toString().replace("_", "")
+            .equals(name.toUpperCase().replace("_", "")))
+          .findAny()
+          .orElseThrow(() -> new InvalidConfigurationException(
+            "Wrong name attribute value was provided in endpoint-group element: " + name
+              + "\nAllowed values: " + Arrays.toString(RestEndpointGroup.values())));
     }
 
     private void handleCPSubsystem(Node node) {

@@ -121,7 +121,7 @@ public class NearCachePreloaderConfig implements IdentifiedDataSerializable, Ser
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeBoolean(enabled);
-        out.writeUTF(directory);
+        out.writeString(directory);
         out.writeInt(storeInitialDelaySeconds);
         out.writeInt(storeIntervalSeconds);
     }
@@ -129,7 +129,7 @@ public class NearCachePreloaderConfig implements IdentifiedDataSerializable, Ser
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         enabled = in.readBoolean();
-        directory = in.readUTF();
+        directory = in.readString();
         storeInitialDelaySeconds = in.readInt();
         storeIntervalSeconds = in.readInt();
     }

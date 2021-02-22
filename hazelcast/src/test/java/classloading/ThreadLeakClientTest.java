@@ -42,6 +42,7 @@ import static classloading.ThreadLeakTestUtils.getThreads;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
 public class ThreadLeakClientTest {
+    private int zeroTimeout = 0;
 
     @After
     public void shutdownInstances() {
@@ -76,8 +77,14 @@ public class ThreadLeakClientTest {
     @Test(expected = IllegalStateException.class)
     public void testThreadLeakWhenClientCanNotStart() {
         Set<Thread> testStartThreads = getThreads();
+
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getConnectionStrategyConfig()
+                .getConnectionRetryConfig()
+                .setClusterConnectTimeoutMillis(zeroTimeout);
+
         try {
-            HazelcastClient.newHazelcastClient();
+            HazelcastClient.newHazelcastClient(clientConfig);
         } finally {
             assertHazelcastThreadShutdown(testStartThreads);
         }
@@ -88,6 +95,7 @@ public class ThreadLeakClientTest {
         Hazelcast.newHazelcastInstance();
         ClientConfig config = new ClientConfig();
         config.setClusterName("invalid cluster");
+        config.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(zeroTimeout);
         Set<Thread> testStartThreads = getThreads();
         try {
             HazelcastClient.newHazelcastClient(config);
@@ -103,6 +111,7 @@ public class ThreadLeakClientTest {
         config.getNetworkConfig().getDiscoveryConfig().addDiscoveryStrategyConfig(
                 new DiscoveryStrategyConfig(new ClientDiscoverySpiTest.NoMemberDiscoveryStrategyFactory(),
                         Collections.<String, Comparable>emptyMap()));
+        config.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(zeroTimeout);
         Set<Thread> testStartThreads = getThreads();
         try {
             HazelcastClient.newHazelcastClient(config);

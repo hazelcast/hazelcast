@@ -31,7 +31,7 @@ public class PersonSerializer implements StreamSerializer<Person> {
     public void write(ObjectDataOutput out, Person object)
             throws IOException {
         out.writeInt(999);
-        out.writeUTF(object.getName());
+        out.writeString(object.getName());
         out.writeInt(999);
     }
 
@@ -42,7 +42,7 @@ public class PersonSerializer implements StreamSerializer<Person> {
             throw new IOException(" wrong value is read expected 999 ");
         }
         final Person person = new Person();
-        person.setName(in.readUTF());
+        person.setName(in.readString());
         if (in.readInt() != 999) {
             throw new IOException(" wrong value is read expected 999 ");
         }

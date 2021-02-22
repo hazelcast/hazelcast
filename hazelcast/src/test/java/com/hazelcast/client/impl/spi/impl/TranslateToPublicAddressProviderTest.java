@@ -31,12 +31,12 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.version.MemberVersion;
-import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.annotation.Nonnull;
 import java.net.UnknownHostException;
 import java.util.UUID;
 
@@ -214,18 +214,18 @@ public class TranslateToPublicAddressProviderTest {
         assertTrue(result);
     }
 
-    @NotNull
+    @Nonnull
     private TranslateToPublicAddressProvider createTranslateProvider() {
         return new TranslateToPublicAddressProvider(config.getNetworkConfig(),
                 new HazelcastProperties(config.getProperties()), mock(ILogger.class));
     }
 
-    @NotNull
+    @Nonnull
     private DefaultAddressProvider defaultAddressProvider() {
         return new DefaultAddressProvider(config.getNetworkConfig());
     }
 
-    @NotNull
+    @Nonnull
     private MemberInfo member(String host) {
         try {
             return new MemberInfo(new Address(host, 5701), UUID.randomUUID(), emptyMap(), false, VERSION);
@@ -234,7 +234,7 @@ public class TranslateToPublicAddressProviderTest {
         }
     }
 
-    @NotNull
+    @Nonnull
     private MemberInfo member(String host, String publicHost) {
         try {
             Address internalAddress = new Address(host, 5701);

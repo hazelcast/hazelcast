@@ -128,23 +128,23 @@ public abstract class AbstractWanPublisherConfig implements IdentifiedDataSerial
         int size = properties.size();
         out.writeInt(size);
         for (Map.Entry<String, Comparable> entry : properties.entrySet()) {
-            out.writeUTF(entry.getKey());
+            out.writeString(entry.getKey());
             out.writeObject(entry.getValue());
         }
-        out.writeUTF(className);
+        out.writeString(className);
         out.writeObject(implementation);
-        out.writeUTF(publisherId);
+        out.writeString(publisherId);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         int size = in.readInt();
         for (int i = 0; i < size; i++) {
-            properties.put(in.readUTF(), in.readObject());
+            properties.put(in.readString(), in.readObject());
         }
-        className = in.readUTF();
+        className = in.readString();
         implementation = in.readObject();
-        publisherId = in.readUTF();
+        publisherId = in.readString();
     }
 
     @Override

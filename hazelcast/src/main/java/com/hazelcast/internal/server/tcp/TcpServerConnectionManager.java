@@ -31,7 +31,6 @@ import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.server.NetworkStats;
 import com.hazelcast.internal.server.ServerConnection;
-import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.util.executor.StripedRunnable;
 
@@ -71,7 +70,7 @@ import java.util.concurrent.TimeUnit;
  * Private APIs and supporting stuff is in the Base class
  */
 public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
-        implements ServerConnectionManager, Consumer<Packet>, DynamicMetricsProvider {
+        implements Consumer<Packet>, DynamicMetricsProvider {
     private final Function<EndpointQualifier, ChannelInitializer> channelInitializerFn;
     private final TcpServerConnector connector;
     private final TcpServerControl serverControl;

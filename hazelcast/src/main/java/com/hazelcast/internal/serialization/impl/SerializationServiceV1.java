@@ -321,7 +321,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         if (isFlagSet(header, IDS_FLAG)) {
             skipBytesSafely(input, FACTORY_AND_CLASS_ID_BYTE_LENGTH);
         } else {
-            input.readUTF();
+            input.readString();
         }
 
         if (isFlagSet(header, EE_FLAG)) {

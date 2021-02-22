@@ -19,10 +19,12 @@ package com.hazelcast.client.impl.protocol.task.map;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapAddIndexCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
+import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.AddIndexOperationFactory;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
@@ -77,6 +79,14 @@ public class MapAddIndexMessageTask
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.indexConfig};
+        return new Object[] {parameters.indexConfig};
+    }
+
+    @Override
+    protected void beforeProcess() {
+        if (nodeEngine.getConfig().getMapConfig(parameters.name).getInMemoryFormat() == InMemoryFormat.NATIVE
+                && parameters.indexConfig.getType() == IndexType.BITMAP) {
+            throw new IllegalArgumentException("BITMAP indexes are not supported by NATIVE storage");
+        }
     }
 }

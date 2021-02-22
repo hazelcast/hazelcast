@@ -149,7 +149,7 @@ public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(modificationType != null ? modificationType.name() : "");
+        out.writeString(modificationType != null ? modificationType.name() : "");
         IOUtil.writeData(out, oldValue);
         IOUtil.writeData(out, newValue);
         UUIDSerializationUtil.writeUUID(out, caller);
@@ -161,7 +161,7 @@ public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        String modificationTypeName = in.readUTF();
+        String modificationTypeName = in.readString();
         modificationType = modificationTypeName.equals("")
                 ? null : EntryEventType.valueOf(modificationTypeName);
         oldValue = IOUtil.readData(in);

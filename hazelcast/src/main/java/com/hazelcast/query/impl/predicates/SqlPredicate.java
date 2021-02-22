@@ -105,12 +105,12 @@ public class SqlPredicate
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(sql);
+        out.writeString(sql);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        sql = in.readUTF();
+        sql = in.readString();
         predicate = createPredicate(sql);
     }
 

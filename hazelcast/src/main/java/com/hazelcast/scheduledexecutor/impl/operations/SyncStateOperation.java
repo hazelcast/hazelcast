@@ -92,7 +92,7 @@ public class SyncStateOperation
     protected void writeInternal(ObjectDataOutput out)
             throws IOException {
         super.writeInternal(out);
-        out.writeUTF(taskName);
+        out.writeString(taskName);
         writeMap(state, out);
         out.writeObject(stats);
         out.writeObject(result);
@@ -102,7 +102,7 @@ public class SyncStateOperation
     protected void readInternal(ObjectDataInput in)
             throws IOException {
         super.readInternal(in);
-        this.taskName = in.readUTF();
+        this.taskName = in.readString();
         this.state = readMap(in);
         this.stats = in.readObject();
         this.result = in.readObject();

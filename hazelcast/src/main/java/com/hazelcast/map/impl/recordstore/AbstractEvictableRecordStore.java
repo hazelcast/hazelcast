@@ -126,7 +126,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
                                                        ExpiryReason expiryReason,
                                                        boolean backup) {
         Object value = evict(key, backup);
-        if (!backup) {
+        if (value != null && !backup) {
             doPostEvictionOperations(key, value, expiryReason);
         }
     }
@@ -159,7 +159,6 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     @Override
     public void doPostEvictionOperations(Data dataKey, Object value,
                                          ExpiryReason expiryReason) {
-
         if (eventService.hasEventRegistration(SERVICE_NAME, name)) {
             EntryEventType eventType = expiryReason != NOT_EXPIRED ? EXPIRED : EVICTED;
             mapEventPublisher.publishEvent(thisAddress, name,
@@ -169,7 +168,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         if (expiryReason == MAX_IDLE_SECONDS) {
             // only send expired key to backup if
             // it is expired according to idleness.
-            expirySystem.accumulateOrSendExpiredKey(dataKey);
+            expirySystem.accumulateOrSendExpiredKey(dataKey, value.hashCode());
         }
     }
 
@@ -177,7 +176,6 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     public InvalidationQueue<ExpiredKey> getExpiredKeysQueue() {
         return expirySystem.getExpiredKeys();
     }
-
 
     @Override
     public void accessRecord(Data dataKey, Record record, long now) {

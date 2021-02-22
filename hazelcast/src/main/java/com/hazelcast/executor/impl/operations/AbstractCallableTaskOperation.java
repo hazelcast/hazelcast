@@ -68,14 +68,14 @@ abstract class AbstractCallableTaskOperation extends Operation implements NamedO
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         UUIDSerializationUtil.writeUUID(out, uuid);
         IOUtil.writeData(out, callableData);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         uuid = UUIDSerializationUtil.readUUID(in);
         callableData = IOUtil.readData(in);
     }

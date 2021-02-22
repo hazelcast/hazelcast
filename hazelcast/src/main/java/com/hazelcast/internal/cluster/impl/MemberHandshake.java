@@ -150,8 +150,8 @@ public class MemberHandshake
         out.writeInt(optionsSize);
         if (optionsSize > 0) {
             for (Map.Entry<String, String> entry : options.entrySet()) {
-                out.writeUTF(entry.getKey());
-                out.writeUTF(entry.getValue());
+                out.writeString(entry.getKey());
+                out.writeString(entry.getValue());
             }
         }
     }
@@ -178,7 +178,7 @@ public class MemberHandshake
         if (schemaVersion > SCHEMA_VERSION_1) {
             int optionsSize = in.readInt();
             for (int k = 0; k < optionsSize; k++) {
-                options.put(in.readUTF(), in.readUTF());
+                options.put(in.readString(), in.readString());
             }
         }
     }
