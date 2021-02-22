@@ -161,10 +161,7 @@ public abstract class AbstractMapPartitionIteratorTest extends HazelcastTestSupp
         IMap<String, String> map = instance.getMap(randomMapName());
 
         String value = randomString();
-        for (int i = 0; i < 100; i++) {
-            String key = generateKeyForPartition(instance, 1);
-            map.put(key, value);
-        }
+        putValuesToPartition(instance, map, randomString(), 1, 100);
         Iterator<Map.Entry<String, String>> iterator = getIterator(map);
         for (int i = 0; i < 100; i++) {
             Map.Entry<String, String> entry = iterator.next();

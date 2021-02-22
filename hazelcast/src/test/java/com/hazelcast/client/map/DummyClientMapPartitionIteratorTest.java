@@ -60,7 +60,6 @@ public class DummyClientMapPartitionIteratorTest extends AbstractMapPartitionIte
                 .setSmartRouting(false)
                 .addAddress(addressString);
 
-        return (new ClientConfig())
-                .setNetworkConfig(networkConfig);
+        return new ClientConfig().setNetworkConfig(networkConfig);
     }
 }

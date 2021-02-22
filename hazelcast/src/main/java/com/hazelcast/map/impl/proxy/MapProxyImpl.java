@@ -1009,7 +1009,6 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     @Nonnull
     public Iterator<Entry<K, V>> iterator(int fetchSize) {
         int partitionCount = partitionService.getPartitionCount();
-
         return new MapIterator<>(this, fetchSize, partitionCount, false);
     }
 
