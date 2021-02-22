@@ -36,13 +36,16 @@ public class MapQueryIterableTest extends AbstractMapQueryIterableTest {
     @Before
     public void setup() {
         factory = new TestHazelcastFactory();
-        instance = factory.newHazelcastInstance(smallInstanceConfig());
-        mapProxy = instance.getMap(randomMapName());
+        instanceProxy = factory.newHazelcastInstance(smallInstanceConfig());
     }
 
     @Override
-    protected <K, V, R> Iterable<R> getIterable(int fetchSize, Projection<Entry<K, V>, R> projection,
-                                                Predicate<K, V> predicate) {
-        return ((MapProxyImpl<K, V>) mapProxy).iterable(fetchSize, projection, predicate);
+    protected <K, V, R> Iterable<R> getIterable(
+            IMap<K, V> map,
+            int fetchSize,
+            Projection<Entry<K, V>, R> projection,
+            Predicate<K, V> predicate
+    ) {
+        return ((MapProxyImpl<K, V>) map).iterable(fetchSize, projection, predicate);
     }
 }
