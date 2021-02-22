@@ -1,39 +1,55 @@
 package com.hazelcast.config;
 
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+import com.hazelcast.test.TestLoggingUtils;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class DefaultConfigValidationTest {
+    private static final ILogger LOGGER;
     static int cnt = 0;
 
-    private static class ConfigTree {
+    static {
+        TestLoggingUtils.initializeLogging();
+        LOGGER = Logger.getLogger(DefaultConfigValidationTest.class);
+    }
+
+    private static class Tree {
+        private final Map<Node, Method> allNodeMethodPairs = new HashMap<>();
         Node root;
 
-        ConfigTree(Node root) {
-            this.root = root;
+        Tree() {
+            Config config = new Config();
+            this.root = new Node(config, allNodeMethodPairs);
+            initialize();
+        }
+
+        void initialize() {
+            root.populateChildren();
         }
     }
 
     private static class Node {
-        Object config;
-        Node parent;
-        Map<Node, Method> children;
+        private final List<Node> children;
+        private final Object config;
+        private final Map<Node, Method> allNodeMethodPairs;
 
-        Node(Object config) {
-            this(config, null, new HashMap<>());
+        Node(Object config, Map<Node, Method> allNodeMethodPairs) {
+            this(config, new ArrayList<>(), allNodeMethodPairs);
         }
 
-        Node(Object config, Node parent) {
-            this(config, parent, new HashMap<>());
-        }
-
-        Node(Object config, Node parent, Map<Node, Method> children) {
+        Node(Object config, List<Node> children, Map<Node, Method> allNodeMethodPairs) {
             this.config = config;
-            this.parent = parent;
             this.children = children;
+            this.allNodeMethodPairs = allNodeMethodPairs;
         }
 
         void populateChildren() {
@@ -44,12 +60,18 @@ public class DefaultConfigValidationTest {
                     try {
                         Constructor<?> constructor = method.getReturnType().getDeclaredConstructor();
                         constructor.setAccessible(true);
-                        Node child = new Node(constructor.newInstance(), this);
-                        children.put(child, method);
+                        Node child = new Node(constructor.newInstance(), this.allNodeMethodPairs);
+                        children.add(child);
+                        allNodeMethodPairs.put(child, method);
                         cnt++;
-                    } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-                        System.out.println(method.getName());
-                        e.printStackTrace(); //TODO
+                    } catch (NoSuchMethodException e) {
+                        LOGGER.warning(method.getReturnType().getCanonicalName() + " does not have a no-argument constructor.");
+                    } catch (InstantiationException e) {
+                        LOGGER.warning(
+                                "Error occurred while calling the constructor of " + method.getReturnType().getCanonicalName());
+                        LOGGER.warning(Arrays.toString(e.getStackTrace()));
+                    } catch (InvocationTargetException | IllegalAccessException e) {
+                        // do not expect these types of exceptions
                     }
                 }
             }
@@ -58,19 +80,15 @@ public class DefaultConfigValidationTest {
 
         void populateGrandChildren() {
 
-            for (Node child : children.keySet()) {
+            for (Node child : children) {
                 child.populateChildren();
             }
         }
     }
 
     public static void main(String[] args) {
-
-        Config config = new Config();
-        Node node = new Node(config);
-        node.populateChildren();
+        Tree t = new Tree();
+        System.out.println(t.allNodeMethodPairs.size());
         System.out.println(cnt);
-
-
     }
 }
