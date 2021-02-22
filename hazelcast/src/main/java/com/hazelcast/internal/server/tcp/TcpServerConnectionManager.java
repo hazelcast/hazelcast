@@ -58,9 +58,12 @@ import static com.hazelcast.internal.nio.ConnectionType.REST_CLIENT;
 import static com.hazelcast.internal.nio.IOUtil.close;
 import static com.hazelcast.internal.nio.IOUtil.setChannelOptions;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import static java.lang.Math.abs;
 import static java.util.Arrays.stream;
 import static java.util.Collections.unmodifiableSet;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  * This is the public APIs for connection manager
@@ -121,7 +124,7 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
         Plane plane = getPlane(streamId);
         TcpServerConnection connection = plane.connectionMap.get(address);
         if (connection == null && server.isLive()) {
-            if (plane.connectionsInProgress.add(address)) {
+            if (plane.connectionsInProgress.putIfAbsent(address, new CountDownLatch(1)) == null) {
                 if (logger.isFineEnabled()) {
                     logger.fine("Connection to: " + address + " streamId:" + streamId + " is not yet progress");
                 }
@@ -175,7 +178,7 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
             });
             return true;
         } finally {
-            plane.connectionsInProgress.remove(remoteAddress);
+            unblock(plane, remoteAddress);
         }
     }
 
@@ -199,7 +202,10 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
 
         connections.forEach(conn -> close(conn, "TcpServer is stopping"));
         acceptedChannels.clear();
-        stream(planes).forEach(plane -> plane.connectionsInProgress.clear());
+        stream(planes).forEach(plane -> {
+            plane.connectionsInProgress.forEach((address, holder) -> unblock(plane, address));
+            plane.connectionsInProgress.clear();
+        });
         stream(planes).forEach(plane -> plane.errorHandlers.clear());
 
         connections.clear();
@@ -239,7 +245,7 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
     }
 
     void failedConnection(Address address, int planeIndex, Throwable t, boolean silent) {
-        planes[planeIndex].connectionsInProgress.remove(address);
+        unblock(planes[planeIndex], address);
         serverContext.onFailedConnection(address);
         if (!silent) {
             getErrorHandler(address, planeIndex, false).onError(t);
@@ -342,6 +348,25 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
         if (endpointConfig == null) {
             context.collect(rootDescriptor.copy(), TCP_METRIC_CLIENT_COUNT, MANDATORY, COUNT, clientCount);
             context.collect(rootDescriptor.copy(), TCP_METRIC_TEXT_COUNT, MANDATORY, COUNT, textCount);
+        }
+    }
+
+    @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED")
+    @Override
+    public void blockOnConnect(Address address, long millis, int streamId) throws InterruptedException {
+        Plane plane = getPlane(streamId);
+        CountDownLatch latch = new CountDownLatch(1);
+        CountDownLatch previous = plane.connectionsInProgress.putIfAbsent(address, latch);
+        if (previous != null) {
+            latch = previous;
+        }
+        latch.await(millis, TimeUnit.MILLISECONDS);
+    }
+
+    private void unblock(Plane plane, final Address remoteAddress) {
+        CountDownLatch latch = plane.connectionsInProgress.remove(remoteAddress);
+        if (latch != null) {
+            latch.countDown();
         }
     }
 }

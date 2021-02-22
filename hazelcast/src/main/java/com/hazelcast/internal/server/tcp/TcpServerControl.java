@@ -146,7 +146,7 @@ public final class TcpServerControl {
                                        Collection<Address> remoteAddressAliases,
                                        MemberHandshake handshake) {
         final Address remoteAddress = new Address(connection.getRemoteSocketAddress());
-        if (connectionManager.planes[handshake.getPlaneIndex()].connectionsInProgress.contains(remoteAddress)) {
+        if (connectionManager.planes[handshake.getPlaneIndex()].connectionsInProgress.containsKey(remoteAddress)) {
             // this is the connection initiator side --> register the connection under the address that was requested
             remoteEndpoint = remoteAddress;
         }
