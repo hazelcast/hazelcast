@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,7 +78,7 @@ public class UpdateMapConfigOperation extends AbstractManagementOperation {
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeUTF(mapName);
+        out.writeString(mapName);
         out.writeInt(timeToLiveSeconds);
         out.writeInt(maxIdleSeconds);
         out.writeInt(maxSize);
@@ -89,7 +89,7 @@ public class UpdateMapConfigOperation extends AbstractManagementOperation {
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        mapName = in.readUTF();
+        mapName = in.readString();
         timeToLiveSeconds = in.readInt();
         maxIdleSeconds = in.readInt();
         maxSize = in.readInt();

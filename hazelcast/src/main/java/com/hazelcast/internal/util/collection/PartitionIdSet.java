@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,13 +33,14 @@ import java.util.PrimitiveIterator;
  * <p>
  * Additionally, the {@code PartitionIdSet} supplies specialized methods for {@code add},
  * {@code remove} and {@code contains} of primitive {@code int} arguments, as well as a
- * primitive {@code int} iterator implementation, to allow clients avoid cost of boxing
- * and unboxing.
+ * primitive {@code int} iterator implementation, to allow clients to avoid the cost of
+ * boxing and unboxing.
  * <p>
  * This set's {@link PartitionIdSet#iterator() iterator} is a view of the actual
  * set, so any changes on the set will be reflected in the iterator and vice versa.
  * <p>
- * This class is not thread-safe.
+ * This class is not thread-safe. Even if used as immutable, surprisingly,
+ * the {@link #size()} method mutates the state and is not thread-safe.
  */
 public class PartitionIdSet extends AbstractSet<Integer> {
 
@@ -51,6 +52,14 @@ public class PartitionIdSet extends AbstractSet<Integer> {
 
     public PartitionIdSet(int partitionCount) {
         this(partitionCount, new BitSet(partitionCount));
+    }
+
+    /**
+     * Creates a PartitionIdSet initially containing a sole partition ID.
+     */
+    public PartitionIdSet(int partitionCount, int solePartitionId) {
+        this(partitionCount);
+        bitSet.set(solePartitionId);
     }
 
     public PartitionIdSet(int partitionCount, Collection<Integer> initialPartitionIds) {
@@ -78,6 +87,11 @@ public class PartitionIdSet extends AbstractSet<Integer> {
         return new PartitionIdSetIterator();
     }
 
+    /**
+     * Return the number of partitions in the set.
+     * <p>
+     * The method mutates the state of this instance.
+     */
     @Override
     public int size() {
         if (size == SIZE_UNKNOWN) {
@@ -232,17 +246,36 @@ public class PartitionIdSet extends AbstractSet<Integer> {
         return result;
     }
 
+    /**
+     * Returns the sole partition ID, if this set has a size of 1. Otherwise returns -1.
+     */
+    public int solePartition() {
+        int candidateResult = bitSet.nextSetBit(0);
+        if (bitSet.nextSetBit(candidateResult + 1) < 0) {
+            return candidateResult;
+        } else {
+            return -1;
+        }
+    }
+
     private final class PartitionIdSetIterator
             implements PrimitiveIterator.OfInt {
 
-        private int index = -1;
+        private int last = -1;
+        private int next = -1;
 
         PartitionIdSetIterator() {
+            moveNext();
+        }
+
+        private void moveNext() {
+            last = next;
+            next = bitSet.nextSetBit(next + 1);
         }
 
         @Override
         public boolean hasNext() {
-            return bitSet.nextSetBit(index + 1) != -1;
+            return next >= 0;
         }
 
         @Override
@@ -252,17 +285,17 @@ public class PartitionIdSet extends AbstractSet<Integer> {
 
         @Override
         public int nextInt() {
-            int nextSetBit = bitSet.nextSetBit(index + 1);
-            if (nextSetBit == -1) {
+            if (!hasNext()) {
                 throw new NoSuchElementException("No more elements");
             }
-            index = nextSetBit;
-            return nextSetBit;
+            int res = next;
+            moveNext();
+            return res;
         }
 
         @Override
         public void remove() {
-            PartitionIdSet.this.remove(index);
+            PartitionIdSet.this.remove(last);
         }
     }
 

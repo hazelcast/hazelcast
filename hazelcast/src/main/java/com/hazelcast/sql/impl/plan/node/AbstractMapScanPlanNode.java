@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -108,7 +108,7 @@ public abstract class AbstractMapScanPlanNode extends ZeroInputPlanNode {
 
     @Override
     protected void writeData0(ObjectDataOutput out) throws IOException {
-        out.writeUTF(mapName);
+        out.writeString(mapName);
         out.writeObject(keyDescriptor);
         out.writeObject(valueDescriptor);
         SerializationUtil.writeList(fieldPaths, out);
@@ -119,7 +119,7 @@ public abstract class AbstractMapScanPlanNode extends ZeroInputPlanNode {
 
     @Override
     protected void readData0(ObjectDataInput in) throws IOException {
-        mapName = in.readUTF();
+        mapName = in.readString();
         keyDescriptor = in.readObject();
         valueDescriptor = in.readObject();
         fieldPaths = SerializationUtil.readList(in);

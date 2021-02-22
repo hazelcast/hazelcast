@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -279,6 +279,15 @@ public class PartitionIdSetTest {
         assertEquals(createWithPartitionCount(10, 1, 2), set);
         assertNotEquals(createWithPartitionCount(10, 1, 3), set);
         assertNotEquals(createWithPartitionCount(11, 1, 2), set);
+    }
+
+    @Test
+    public void test_solePartition() {
+        assertEquals(0, createWithPartitionCount(10, 0).solePartition());
+        assertEquals(1, createWithPartitionCount(10, 1).solePartition());
+        assertEquals(9, createWithPartitionCount(10, 9).solePartition());
+        assertEquals(-1, createWithPartitionCount(10, 0, 1).solePartition());
+        assertEquals(-1, createWithPartitionCount(10, 0, 9).solePartition());
     }
 
     private void assertContents(PartitionIdSet set) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.discovery.DiscoveryNode;
@@ -61,11 +63,11 @@ public class DiscoveryJoinerTest {
     @Before
     public void init() throws Exception {
         discoveryNodes = new ArrayList<DiscoveryNode>(2);
-        Address publicAddress = new Address("127.0.0.1", 50001);
-        Address privateAddress = new Address("127.0.0.2", 50001);
+        Address privateAddress = new Address("127.0.0.1", 5701);
+        Address publicAddress = new Address("127.0.0.2", 5701);
         discoveryNodes.add(new SimpleDiscoveryNode(privateAddress, publicAddress));
-        publicAddress = new Address("127.0.0.1", 50002);
-        privateAddress = new Address("127.0.0.2", 50002);
+        privateAddress = new Address("127.0.0.1", 5702);
+        publicAddress = new Address("127.0.0.2", 5702);
         discoveryNodes.add(new SimpleDiscoveryNode(privateAddress, publicAddress));
         factory = new TestHazelcastInstanceFactory(1);
         hz = factory.newHazelcastInstance();
@@ -81,15 +83,35 @@ public class DiscoveryJoinerTest {
         DiscoveryJoiner joiner = new DiscoveryJoiner(getNode(hz), service, true);
         doReturn(discoveryNodes).when(service).discoverNodes();
         Collection<Address> addresses = joiner.getPossibleAddresses();
-        assertEquals("[[127.0.0.1]:50001, [127.0.0.1]:50002]", addresses.toString());
+        assertEquals("[[127.0.0.2]:5701, [127.0.0.2]:5702]", addresses.toString());
     }
 
     @Test
-    public void test_DiscoveryJoiner_returns_private_address() {
+    public void test_DiscoveryJoiner_returns_private_address_and_enrich_member_with_public_address() {
         DiscoveryJoiner joiner = new DiscoveryJoiner(getNode(hz), service, false);
         doReturn(discoveryNodes).when(service).discoverNodes();
         Collection<Address> addresses = joiner.getPossibleAddresses();
-        assertEquals("[[127.0.0.2]:50001, [127.0.0.2]:50002]", addresses.toString());
+        assertEquals("[[127.0.0.1]:5702]", addresses.toString());
+    }
+
+    @Test
+    public void test_DiscoveryJoiner_enriches_member_with_public_address() {
+        DiscoveryJoiner joiner = new DiscoveryJoiner(getNode(hz), service, false);
+        doReturn(discoveryNodes).when(service).discoverNodes();
+        Collection<Address> addresses = joiner.getPossibleAddresses();
+        assertEquals("[127.0.0.2]:5701", getNode(hz).getLocalMember().getAddressMap()
+                .get(EndpointQualifier.resolve(ProtocolType.CLIENT, "public")).toString());
+    }
+
+    @Test
+    public void test_DiscoveryJoiner_enriches_member_with_public_address_when_advanced_network_used()
+            throws UnknownHostException {
+        DiscoveryJoiner joiner = new DiscoveryJoiner(getNode(hz), service, false);
+        doReturn(discoveryNodes).when(service).discoverNodes();
+        getNode(hz).getLocalMember().getAddressMap().put(EndpointQualifier.CLIENT, new Address("127.0.0.1", 5703));
+        Collection<Address> addresses = joiner.getPossibleAddresses();
+        assertEquals("[127.0.0.2]:5703", getNode(hz).getLocalMember().getAddressMap()
+                .get(EndpointQualifier.resolve(ProtocolType.CLIENT, "public")).toString());
     }
 
     @Test

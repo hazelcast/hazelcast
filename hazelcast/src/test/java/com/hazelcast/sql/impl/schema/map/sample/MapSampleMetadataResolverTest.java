@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -830,7 +830,7 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
             writer.writeLong(PORTABLE_LONG, fLong);
             writer.writeFloat(PORTABLE_FLOAT, fFloat);
             writer.writeDouble(PORTABLE_DOUBLE, fDouble);
-            writer.writeUTF(PORTABLE_STRING, fString);
+            writer.writeString(PORTABLE_STRING, fString);
             writer.writePortable(PORTABLE_OBJECT, fObject);
         }
 
@@ -844,7 +844,7 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
             fLong = reader.readLong(PORTABLE_LONG);
             fFloat = reader.readFloat(PORTABLE_FLOAT);
             fDouble = reader.readDouble(PORTABLE_DOUBLE);
-            fString = reader.readUTF(PORTABLE_STRING);
+            fString = reader.readString(PORTABLE_STRING);
             fObject = reader.readPortable(PORTABLE_OBJECT);
         }
     }

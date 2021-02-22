@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,11 +36,13 @@ import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -52,7 +54,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@Category(SlowTest.class)
 public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
 
     @After
@@ -62,6 +64,7 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
     }
 
     @Test
+    @Category(QuickTest.class)
     public void testClientPortConnection() {
         Config config1 = new Config();
         config1.setClusterName("foo");
@@ -250,8 +253,10 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
 
         //we are closing a connection and making sure It is not established ever again
         waitFlag.set(true);
+        UUID memberUUID = instance1.getLocalEndpoint().getUuid();
         instance1.shutdown();
 
+        makeSureDisconnectedFromServer(client, memberUUID);
         //we expect these operations to run without throwing exception, since they are done on live instance.
         clientMap.put(keyOwnedBy2, 1);
         assertEquals(1, clientMap.get(keyOwnedBy2));

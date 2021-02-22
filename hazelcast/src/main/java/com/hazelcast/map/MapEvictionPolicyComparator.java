@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 
@@ -23,13 +24,18 @@ import com.hazelcast.spi.eviction.EvictionPolicyComparator;
  * {@link IMap} specific {@link EvictionPolicyComparator} for
  * comparing {@link com.hazelcast.core.EntryView}s to be evicted.
  *
- * Implementors of the comparator have to implement {@code equals} and {@code hashCode} methods
- * to support correct config comparison.
+ * Implementors of the comparator have to implement {@code equals}
+ * and {@code hashCode} methods to support correct config comparison.
+ *
+ * Note that you may need to enable per entry stats via
+ * {@link MapConfig#setPerEntryStatsEnabled} to see
+ * all fields of entry view in your implementation.
  *
  * @param <K> type of the key
  * @param <V> type of the value
  * @see EvictionPolicyComparator
  * @see EntryView
+ * @see com.hazelcast.config.MapConfig#setPerEntryStatsEnabled
  */
 @FunctionalInterface
 public interface MapEvictionPolicyComparator<K, V>

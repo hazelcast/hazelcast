@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,16 +37,22 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
 
     private final Iterator<QueryableEntry> iterator;
 
-    private Data currentKey;
+    private Object currentKey;
+    private Data currentKeyData;
     private Object currentValue;
-    private Data nextKey;
+    private Data currentValueData;
+
+    private Object nextKey;
+    private Data nextKeyData;
     private Object nextValue;
+    private Data nextValueData;
 
     public MapIndexScanExecIterator(
         String mapName,
         InternalIndex index,
         int expectedComponentCount,
         IndexFilter indexFilter,
+        List<Boolean> ascs,
         List<QueryDataType> expectedConverterTypes,
         ExpressionEvalContext evalContext
     ) {
@@ -54,6 +60,7 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
             mapName,
             index,
             indexFilter,
+            ascs,
             evalContext,
             expectedComponentCount,
             expectedConverterTypes
@@ -66,7 +73,9 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
     public boolean tryAdvance() {
         if (!done()) {
             currentKey = nextKey;
+            currentKeyData = nextKeyData;
             currentValue = nextValue;
+            currentValueData = nextValueData;
 
             advance0();
 
@@ -78,7 +87,7 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
 
     @Override
     public boolean done() {
-        return nextKey == null;
+        return nextKeyData == null;
     }
 
     @Override
@@ -87,19 +96,33 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
     }
 
     @Override
+    public Data getKeyData() {
+        return currentKeyData;
+    }
+
+    @Override
     public Object getValue() {
         return currentValue;
+    }
+
+    @Override
+    public Data getValueData() {
+        return currentValueData;
     }
 
     private void advance0() {
         if (iterator.hasNext()) {
             QueryableEntry<?, ?> entry = iterator.next();
 
-            nextKey = entry.getKeyData();
-            nextValue = entry.getValue();
+            nextKey = entry.getKeyIfPresent();
+            nextKeyData = entry.getKeyDataIfPresent();
+            nextValue = entry.getValueIfPresent();
+            nextValueData = entry.getValueDataIfPresent();
         } else {
             nextKey = null;
+            nextKeyData = null;
             nextValue = null;
+            nextValueData = null;
         }
     }
 
@@ -107,13 +130,17 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
         String mapName,
         InternalIndex index,
         IndexFilter indexFilter,
+        List<Boolean> ascs,
         ExpressionEvalContext evalContext,
         int expectedComponentCount,
         List<QueryDataType> expectedConverterTypes
     ) {
+        // Now, the index subsystem supports only either all ascending or all descending directions
+        assert ascs != null;
+        boolean descending = ascs.size() > 0 && !ascs.get(0);
         if (indexFilter == null) {
             // No filter => this is a full scan (e.g. for HD)
-            return index.getSqlRecordIterator();
+            return index.getSqlRecordIterator(descending);
         }
 
         int actualComponentCount = index.getComponents().length;
@@ -130,7 +157,7 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
         validateConverterTypes(index, mapName, expectedConverterTypes, currentConverterTypes);
 
         // Query the index
-        return indexFilter.getEntries(index, evalContext);
+        return indexFilter.getEntries(index, descending, evalContext);
     }
 
     private void validateConverterTypes(

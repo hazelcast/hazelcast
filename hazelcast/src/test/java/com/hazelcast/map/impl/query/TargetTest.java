@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.query;
 
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -38,7 +39,7 @@ public class TargetTest {
     @Test
     public void testConstructor_withInvalidPartitionId() throws Exception {
         // retrieve the wanted constructor and make it accessible
-        Constructor<Target> constructor = Target.class.getDeclaredConstructor(Target.TargetMode.class, Integer.class);
+        Constructor<Target> constructor = Target.class.getDeclaredConstructor(Target.TargetMode.class, PartitionIdSet.class);
         constructor.setAccessible(true);
 
         // we expect an IllegalArgumentException to be thrown

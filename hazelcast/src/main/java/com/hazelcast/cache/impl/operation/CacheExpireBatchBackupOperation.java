@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -97,9 +97,9 @@ public class CacheExpireBatchBackupOperation extends CacheOperation {
         return super.onInvocationException(throwable);
     }
 
-    protected void evictIfSame(ExpiredKey key) {
+    public void evictIfSame(ExpiredKey key) {
         CacheRecord record = recordStore.getRecord(key.getKey());
-        if (record != null && record.getCreationTime() == key.getCreationTime()) {
+        if (record != null && record.getCreationTime() == key.getMetadata()) {
             recordStore.removeRecord(key.getKey());
         }
     }
@@ -115,7 +115,7 @@ public class CacheExpireBatchBackupOperation extends CacheOperation {
         out.writeInt(expiredKeys.size());
         for (ExpiredKey expiredKey : expiredKeys) {
             IOUtil.writeData(out, expiredKey.getKey());
-            out.writeLong(expiredKey.getCreationTime());
+            out.writeLong(expiredKey.getMetadata());
         }
         out.writeInt(primaryEntryCount);
     }

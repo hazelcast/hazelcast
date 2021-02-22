@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -131,7 +131,7 @@ public class CachePartitionIteratorMigrationTest extends HazelcastTestSupport {
         }
     }
 
-    private void putValuesToPartition(HazelcastInstance instance, CacheProxy<String, String> proxy, String value, int partitionId, int count) {
+    private static <T> void putValuesToPartition(HazelcastInstance instance, CacheProxy<String, T> proxy, T value, int partitionId, int count) {
         for (int i = 0; i < count; i++) {
             String key = generateKeyForPartition(instance, partitionId);
             proxy.put(key, value);

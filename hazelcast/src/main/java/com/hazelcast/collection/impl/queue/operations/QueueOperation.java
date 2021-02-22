@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.spi.impl.operationservice.NamedOperation;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
+import com.hazelcast.spi.tenantcontrol.TenantControl;
 
 import java.util.Collection;
 
@@ -114,5 +115,16 @@ public abstract class QueueOperation extends AbstractNamedOperation
     @Override
     public int getFactoryId() {
         return QueueDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public TenantControl getTenantControl() {
+        return getNodeEngine().getTenantControlService()
+                              .getTenantControl(QueueService.SERVICE_NAME, name);
+    }
+
+    @Override
+    public boolean requiresTenantContext() {
+        return true;
     }
 }

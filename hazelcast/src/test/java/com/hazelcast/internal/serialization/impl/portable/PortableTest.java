@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,13 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.ByteOrder;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -95,14 +101,20 @@ public class PortableTest {
 
         InnerPortable inner = new InnerPortable(new byte[]{0, 1, 2}, new char[]{'c', 'h', 'a', 'r'},
                 new short[]{3, 4, 5}, new int[]{9, 8, 7, 6}, new long[]{0, 1, 5, 7, 9, 11},
-                new float[]{0.6543f, -3.56f, 45.67f}, new double[]{456.456, 789.789, 321.321}, nn);
+                new float[]{0.6543f, -3.56f, 45.67f}, new double[]{456.456, 789.789, 321.321}, nn,
+                new BigDecimal[]{new BigDecimal(new BigInteger("12345"), 10), new BigDecimal("123456")},
+                new LocalTime[]{LocalTime.now(), LocalTime.now()},
+                new LocalDate[]{LocalDate.now(), LocalDate.now()},
+                new LocalDateTime[]{LocalDateTime.now()},
+                new OffsetDateTime[]{OffsetDateTime.now(), OffsetDateTime.now()});
 
         data = serializationService.toData(inner);
         assertEquals(inner, serializationService.toObject(data));
         assertEquals(inner, serializationService2.toObject(data));
 
         MainPortable main = new MainPortable((byte) 113, true, 'x', (short) -500, 56789, -50992225L, 900.5678f,
-                -897543.3678909d, "this is main portable object created for testing!", inner);
+                -897543.3678909d, "this is main portable object created for testing!", inner,
+                new BigDecimal("12312313"), LocalTime.now(), LocalDate.now(), LocalDateTime.now(), OffsetDateTime.now());
 
         data = serializationService.toData(main);
         assertEquals(main, serializationService.toObject(data));
@@ -123,7 +135,7 @@ public class PortableTest {
     static ClassDefinition createNamedPortableClassDefinition(int portableVersion) {
         ClassDefinitionBuilder builder
                 = new ClassDefinitionBuilder(PORTABLE_FACTORY_ID, TestSerializationConstants.NAMED_PORTABLE, portableVersion);
-        builder.addUTFField("name");
+        builder.addStringField("name");
         builder.addIntField("myint");
         return builder.build();
     }
@@ -219,7 +231,7 @@ public class PortableTest {
                                 .addLongField("l").addCharArrayField("c").addPortableField("p", createNamedPortableClassDefinition(portableVersion)).build())
                 .addClassDefinition(
                         new ClassDefinitionBuilder(PORTABLE_FACTORY_ID, TestSerializationConstants.NAMED_PORTABLE, portableVersion)
-                                .addUTFField("name").addIntField("myint").build());
+                                .addStringField("name").addIntField("myint").build());
 
         SerializationService serializationService
                 = new DefaultSerializationServiceBuilder().setConfig(serializationConfig).build();
@@ -254,8 +266,15 @@ public class PortableTest {
 
         assertRepeatedSerialisationGivesSameByteArrays(ss, new NamedPortable("issue-1096", 1096));
 
-        assertRepeatedSerialisationGivesSameByteArrays(ss, new InnerPortable(new byte[3], new char[5], new short[2],
-                new int[10], new long[7], new float[9], new double[1], new NamedPortable[]{new NamedPortable("issue-1096", 1096)}));
+        assertRepeatedSerialisationGivesSameByteArrays(ss, new InnerPortable(new byte[]{0, 1, 2}, new char[]{'c', 'h', 'a', 'r'},
+                new short[]{3, 4, 5}, new int[]{9, 8, 7, 6}, new long[]{0, 1, 5, 7, 9, 11},
+                new float[]{0.6543f, -3.56f, 45.67f}, new double[]{456.456, 789.789, 321.321},
+                new NamedPortable[]{new NamedPortable("issue-1096", 1096)},
+                new BigDecimal[]{new BigDecimal("12345"), new BigDecimal("123456")},
+                new LocalTime[]{LocalTime.now(), LocalTime.now()},
+                new LocalDate[]{LocalDate.now(), LocalDate.now()},
+                new LocalDateTime[]{LocalDateTime.now()},
+                new OffsetDateTime[]{OffsetDateTime.now()}));
 
         assertRepeatedSerialisationGivesSameByteArrays(ss,
                 new RawDataPortable(1096L, "issue-1096".toCharArray(), new NamedPortable("issue-1096", 1096), 1096,
@@ -561,7 +580,7 @@ public class PortableTest {
 
         @Override
         public void writePortable(PortableWriter writer) throws IOException {
-            writer.writeUTF("shortString", shortString);
+            writer.writeString("shortString", shortString);
         }
 
         @Override
@@ -727,7 +746,8 @@ public class PortableTest {
                 .setImplementation(new CustomSerializationTest.FooXmlSerializer())
                 .setTypeClass(CustomSerializationTest.Foo.class);
         config.addSerializerConfig(sc);
-        SerializationService serializationService = new DefaultSerializationServiceBuilder().setPortableVersion(1)
+        SerializationService serializationService = new DefaultSerializationServiceBuilder()
+                .setPortableVersion(1)
                 .addPortableFactory(PORTABLE_FACTORY_ID, new TestPortableFactory()).setConfig(config).build();
 
         CustomSerializationTest.Foo foo = new CustomSerializationTest.Foo("f");
@@ -799,14 +819,14 @@ public class PortableTest {
 
         @Override
         public void writePortable(PortableWriter writer) throws IOException {
-            writer.writeUTF("s1", s1);
-            writer.writeUTF("s2", s2);
+            writer.writeString("s1", s1);
+            writer.writeString("s2", s2);
         }
 
         @Override
         public void readPortable(PortableReader reader) throws IOException {
-            s1 = reader.readUTF("s1");
-            s2 = reader.readUTF("s2");
+            s1 = reader.readString("s1");
+            s2 = reader.readString("s2");
         }
     }
 
@@ -834,12 +854,12 @@ public class PortableTest {
 
         @Override
         public void writePortable(PortableWriter writer) throws IOException {
-            writer.writeUTF("s", s);
+            writer.writeString("s", s);
         }
 
         @Override
         public void readPortable(PortableReader reader) throws IOException {
-            s = reader.readUTF("s");
+            s = reader.readString("s");
         }
     }
 

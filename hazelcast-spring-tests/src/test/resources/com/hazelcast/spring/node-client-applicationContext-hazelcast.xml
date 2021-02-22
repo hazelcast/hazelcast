@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
         http://www.springframework.org/schema/beans/spring-beans.xsd
         http://www.hazelcast.com/schema/spring
-        http://www.hazelcast.com/schema/spring/hazelcast-spring-4.1.xsd">
+        http://www.hazelcast.com/schema/spring/hazelcast-spring-4.2.xsd">
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
           p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE">
@@ -454,6 +454,16 @@
             <hz:size unit="GIGABYTES" value="256"/>
             <hz:persistent-memory enabled="true" mode="SYSTEM_MEMORY"/>
         </hz:native-memory>
+    </hz:client>
+
+    <hz:client id="client22-with-overridden-default-serializers">
+        <hz:cluster-name>${cluster.name}</hz:cluster-name>
+        <hz:network>
+            <hz:member>127.0.0.1:5700</hz:member>
+            <hz:member>127.0.0.1:5701</hz:member>
+        </hz:network>
+
+        <hz:serialization allow-override-default-serializers="true"/>
     </hz:client>
 
     <bean id="credentials" class="com.hazelcast.security.UsernamePasswordCredentials">

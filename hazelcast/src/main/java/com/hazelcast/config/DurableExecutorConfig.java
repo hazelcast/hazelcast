@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package com.hazelcast.config;
 
 import com.hazelcast.durableexecutor.DurableExecutorService;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -232,30 +231,22 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedC
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeInt(poolSize);
         out.writeInt(durability);
         out.writeInt(capacity);
-        out.writeUTF(splitBrainProtectionName);
-
-        // RU_COMPAT_4_0
-        if (out.getVersion().isGreaterOrEqual(Versions.V4_1)) {
-            out.writeBoolean(statisticsEnabled);
-        }
+        out.writeString(splitBrainProtectionName);
+        out.writeBoolean(statisticsEnabled);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         poolSize = in.readInt();
         durability = in.readInt();
         capacity = in.readInt();
-        splitBrainProtectionName = in.readUTF();
-
-        // RU_COMPAT_4_0
-        if (in.getVersion().isGreaterOrEqual(Versions.V4_1)) {
-            statisticsEnabled = in.readBoolean();
-        }
+        splitBrainProtectionName = in.readString();
+        statisticsEnabled = in.readBoolean();
     }
 
     @Override

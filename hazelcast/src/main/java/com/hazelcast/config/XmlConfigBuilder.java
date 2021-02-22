@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -41,6 +40,7 @@ import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRI
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
+import static com.hazelcast.internal.util.XmlUtil.getNsAwareDocumentBuilderFactory;
 
 /**
  * A XML {@link ConfigBuilder} implementation.
@@ -188,10 +188,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigBuilder implements Config
 
     @Override
     protected Document parse(InputStream is) throws Exception {
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        dbf.setNamespaceAware(true);
-        dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-        DocumentBuilder builder = dbf.newDocumentBuilder();
+        DocumentBuilder builder = getNsAwareDocumentBuilderFactory().newDocumentBuilder();
         Document doc;
         try {
             doc = builder.parse(is);

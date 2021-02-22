@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,19 +68,19 @@ import static com.hazelcast.spi.properties.ClusterProperty.PRIORITY_GENERIC_OPER
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * A {@link com.hazelcast.spi.impl.operationexecutor.OperationExecutor} that schedules:
+ * An {@link OperationExecutor} that schedules:
  * <ol>
- * <li>partition specific operations to a specific partition-operation-thread (using a mod on the partition ID)</li>
- * <li>non specific operations to generic-operation-threads</li>
+ * <li>partition-specific operations to a specific-partition operation thread (using a mod on the partition ID)</li>
+ * <li>non-specific operations to generic operation threads</li>
  * </ol>
  * The {@link #execute(Object, int, boolean)} accepts an Object instead of a runnable to prevent needing to
- * create wrapper runnables around tasks. This is done to reduce the amount of object litter and therefor
- * reduce pressure on the GC.
+ * create wrapper Runnables around tasks. This is done to reduce the amount of object litter and therefore
+ * reduce the pressure on the GC.
  * <p>
- * There are 2 category of operation threads:
+ * There are 2 categories of operation threads:
  * <ol>
- * <li>partition specific operation threads: these threads are responsible for executing e.g. a map.put.
- * Operations for the same partition, always end up in the same thread.
+ * <li>partition-specific operation threads: these threads are responsible for executing e.g. a {@code map.put()}.
+ * Operations for the same partition always end up in the same thread.
  * </li>
  * <li>
  * generic operation threads: these threads are responsible for executing operations that are not
@@ -101,7 +101,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
     private final OperationRunner[] partitionOperationRunners;
 
     private final OperationQueue genericQueue
-            = new OperationQueueImpl(new LinkedBlockingQueue<Object>(), new LinkedBlockingQueue<Object>());
+            = new OperationQueueImpl(new LinkedBlockingQueue<>(), new LinkedBlockingQueue<>());
 
     // all operations that are not specific for a partition will be executed here, e.g. heartbeat or map.size()
     private final GenericOperationThread[] genericThreads;
@@ -163,9 +163,9 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
         for (int threadId = 0; threadId < threads.length; threadId++) {
             String threadName = createThreadPoolName(hzName, "partition-operation") + threadId;
             // the normalQueue will be a blocking queue. We don't want to idle, because there are many operation threads.
-            MPSCQueue<Object> normalQueue = new MPSCQueue<Object>(idleStrategy);
+            MPSCQueue<Object> normalQueue = new MPSCQueue<>(idleStrategy);
 
-            OperationQueue operationQueue = new OperationQueueImpl(normalQueue, new ConcurrentLinkedQueue<Object>());
+            OperationQueue operationQueue = new OperationQueueImpl(normalQueue, new ConcurrentLinkedQueue<>());
 
             PartitionOperationThread partitionThread = new PartitionOperationThread(threadName, threadId, operationQueue, logger,
                     nodeExtension, partitionOperationRunners, configClassLoader);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,8 @@
 
 package com.hazelcast.map.impl.query;
 
-import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
-
-import java.util.Collection;
+import com.hazelcast.query.impl.QueryableEntry;
 
 /**
  * Responsible for creating query results of a concrete type depending on the type of the Query.
@@ -47,5 +45,5 @@ public interface ResultProcessor<T extends Result> {
      * @param partitionIds partitionIds where the given entries reside
      * @return Result of a concrete type.
      */
-    T populateResult(Query query, long resultLimit, Collection<QueryableEntry> entries, PartitionIdSet partitionIds);
+    T populateResult(Query query, long resultLimit, Iterable<QueryableEntry> entries, PartitionIdSet partitionIds);
 }

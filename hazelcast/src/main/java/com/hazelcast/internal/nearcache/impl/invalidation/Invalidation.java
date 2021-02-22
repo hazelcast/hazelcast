@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -92,7 +92,7 @@ public abstract class Invalidation implements IMapEvent, IdentifiedDataSerializa
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(dataStructureName);
+        out.writeString(dataStructureName);
         UUIDSerializationUtil.writeUUID(out, sourceUuid);
         out.writeLong(sequence);
 
@@ -106,7 +106,7 @@ public abstract class Invalidation implements IMapEvent, IdentifiedDataSerializa
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        dataStructureName = in.readUTF();
+        dataStructureName = in.readString();
         sourceUuid = UUIDSerializationUtil.readUUID(in);
         sequence = in.readLong();
         boolean nullUuid = in.readBoolean();

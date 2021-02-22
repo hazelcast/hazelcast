@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -118,7 +118,7 @@ public final class ClientProperty {
      * <p>Discovery SPI is <b>disabled</b> by default</p>
      */
     public static final HazelcastProperty DISCOVERY_SPI_PUBLIC_IP_ENABLED
-            = new HazelcastProperty("hazelcast.discovery.public.ip.enabled", false);
+            = new HazelcastProperty("hazelcast.discovery.public.ip.enabled");
 
     /**
      * Controls the number of IO input threads. Defaults to -1, so the system will decide.

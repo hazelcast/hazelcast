@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hazelcast.config.SqlConfig;
 import com.hazelcast.internal.util.Preconditions;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -47,6 +48,8 @@ public final class SqlStatement {
     private List<Object> parameters = new ArrayList<>();
     private long timeout = DEFAULT_TIMEOUT;
     private int cursorBufferSize = DEFAULT_CURSOR_BUFFER_SIZE;
+    private String schema;
+    private SqlExpectedResultType expectedResultType = SqlExpectedResultType.ANY;
 
     public SqlStatement(@Nonnull String sql) {
         setSql(sql);
@@ -55,11 +58,20 @@ public final class SqlStatement {
     /**
      * Copying constructor.
      */
-    private SqlStatement(String sql, List<Object> parameters, long timeout, int cursorBufferSize) {
+    private SqlStatement(
+        String sql,
+        List<Object> parameters,
+        long timeout,
+        int cursorBufferSize,
+        String schema,
+        SqlExpectedResultType expectedResultType
+    ) {
         this.sql = sql;
         this.parameters = parameters;
         this.timeout = timeout;
         this.cursorBufferSize = cursorBufferSize;
+        this.schema = schema;
+        this.expectedResultType = expectedResultType;
     }
 
     /**
@@ -91,6 +103,38 @@ public final class SqlStatement {
         }
 
         this.sql = sql;
+
+        return this;
+    }
+
+    /**
+     * Gets the schema name.
+     *
+     * @return the schema name or {@code null} if there is none
+     * @since 4.2
+     */
+    @Nullable
+    public String getSchema() {
+        return schema;
+    }
+
+    /**
+     * Sets the schema name. The engine will try to resolve the non-qualified
+     * object identifiers from the statement in the given schema. If not found, the default
+     * search path will be used, which looks for objects in the predefined schemas {@code "partitioned"}
+     * and {@code "public"}.
+     * <p>
+     * The schema name is case sensitive. For example, {@code "foo"} and {@code "Foo"} are different schemas.
+     * <p>
+     * The default value is {@code null} meaning only the default search path is used.
+     *
+     * @param schema the current schema name
+     * @return this instance for chaining
+     * @since 4.2
+     */
+    @Nonnull
+    public SqlStatement setSchema(@Nullable String schema) {
+        this.schema = schema;
 
         return this;
     }
@@ -216,7 +260,7 @@ public final class SqlStatement {
      * <p>
      * Only positive values are allowed.
      * <p>
-     * The default value is expected to work well for the most workloads. A bigger buffer size may give you a slight performance
+     * The default value is expected to work well for most workloads. A bigger buffer size may give you a slight performance
      * boost for queries with large result sets at the cost of increased memory consumption.
      * <p>
      * Defaults to {@value #DEFAULT_CURSOR_BUFFER_SIZE}.
@@ -239,13 +283,40 @@ public final class SqlStatement {
     }
 
     /**
+     * Gets the expected result type.
+     *
+     * @return expected result type
+     * @since 4.2
+     */
+    @Nonnull
+    public SqlExpectedResultType getExpectedResultType() {
+        return expectedResultType;
+    }
+
+    /**
+     * Sets the expected result type.
+     *
+     * @param expectedResultType expected result type
+     * @return this instance for chaining
+     * @since 4.2
+     */
+    @Nonnull
+    public SqlStatement setExpectedResultType(@Nonnull SqlExpectedResultType expectedResultType) {
+        Preconditions.checkNotNull(expectedResultType, "Expected result type cannot be null");
+
+        this.expectedResultType = expectedResultType;
+
+        return this;
+    }
+
+    /**
      * Creates a copy of this instance
      *
      * @return Copy of this instance
      */
     @Nonnull
     public SqlStatement copy() {
-        return new SqlStatement(sql, new ArrayList<>(parameters), timeout, cursorBufferSize);
+        return new SqlStatement(sql, new ArrayList<>(parameters), timeout, cursorBufferSize, schema, expectedResultType);
     }
 
     @Override
@@ -263,7 +334,9 @@ public final class SqlStatement {
         return Objects.equals(sql, sqlStatement.sql)
             && Objects.equals(parameters, sqlStatement.parameters)
             && timeout == sqlStatement.timeout
-            && cursorBufferSize == sqlStatement.cursorBufferSize;
+            && cursorBufferSize == sqlStatement.cursorBufferSize
+            && Objects.equals(schema, sqlStatement.schema)
+            && expectedResultType == sqlStatement.expectedResultType;
     }
 
     @Override
@@ -273,6 +346,8 @@ public final class SqlStatement {
         result = 31 * result + parameters.hashCode();
         result = 31 * result + (int) (timeout ^ (timeout >>> 32));
         result = 31 * result + cursorBufferSize;
+        result = 31 * result + (schema != null ? schema.hashCode() : 0);
+        result = 31 * result + expectedResultType.ordinal();
 
         return result;
     }
@@ -280,10 +355,12 @@ public final class SqlStatement {
     @Override
     public String toString() {
         return "SqlStatement{"
-            + "sql=" + sql
+            + "schema=" + schema
+            + ", sql=" + sql
             + ", parameters=" + parameters
             + ", timeout=" + timeout
             + ", cursorBufferSize=" + cursorBufferSize
+            + ", expectedResultType=" + expectedResultType
             + '}';
     }
 }

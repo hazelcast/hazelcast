@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.partition.operation;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
@@ -38,18 +37,13 @@ public final class PartitionStateCheckOperation extends AbstractPartitionOperati
 
     private long stamp;
 
-    //RU_COMPAT_4_0
-    @Deprecated
-    private int version;
-
     private transient boolean stale;
 
     public PartitionStateCheckOperation() {
     }
 
-    public PartitionStateCheckOperation(long stamp, @Deprecated int version) {
+    public PartitionStateCheckOperation(long stamp) {
         this.stamp = stamp;
-        this.version = version;
     }
 
     @Override
@@ -57,24 +51,12 @@ public final class PartitionStateCheckOperation extends AbstractPartitionOperati
         ILogger logger = getLogger();
         InternalPartitionServiceImpl partitionService = getService();
 
-        if (getNodeEngine().getClusterService().getClusterVersion().isGreaterOrEqual(Versions.V4_1)) {
-            long currentStamp = partitionService.getPartitionStateStamp();
-            if (currentStamp != stamp) {
-                stale = true;
-                if (logger.isFineEnabled()) {
-                    logger.fine("Partition table is stale! Current stamp: " + currentStamp
-                            + ", master stamp: " + stamp);
-                }
-            }
-        } else {
-            //RU_COMPAT_4_0
-            int currentVersion = partitionService.getPartitionStateVersion();
-            if (currentVersion < version) {
-                stale = true;
-                if (logger.isFineEnabled()) {
-                    logger.fine("Partition table is stale! Current version: " + currentVersion
-                            + ", master version: " + version);
-                }
+        long currentStamp = partitionService.getPartitionStateStamp();
+        if (currentStamp != stamp) {
+            stale = true;
+            if (logger.isFineEnabled()) {
+                logger.fine("Partition table is stale! Current stamp: " + currentStamp
+                        + ", master stamp: " + stamp);
             }
         }
     }
@@ -92,21 +74,13 @@ public final class PartitionStateCheckOperation extends AbstractPartitionOperati
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        if (in.getVersion().isGreaterOrEqual(Versions.V4_1)) {
-            stamp = in.readLong();
-        } else {
-            version = in.readInt();
-        }
+        stamp = in.readLong();
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        if (out.getVersion().isGreaterOrEqual(Versions.V4_1)) {
-            out.writeLong(stamp);
-        } else {
-            out.writeInt(version);
-        }
+        out.writeLong(stamp);
     }
 
     @Override

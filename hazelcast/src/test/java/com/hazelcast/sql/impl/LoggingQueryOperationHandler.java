@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,21 +17,17 @@
 package com.hazelcast.sql.impl;
 
 import com.hazelcast.sql.impl.operation.QueryOperation;
-import com.hazelcast.sql.impl.operation.QueryOperationChannel;
 import com.hazelcast.sql.impl.operation.QueryOperationHandler;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class LoggingQueryOperationHandler implements QueryOperationHandler {
 
     private final LinkedBlockingQueue<SubmitInfo> submitInfos = new LinkedBlockingQueue<>();
     private final LinkedBlockingQueue<ExecuteInfo> executeInfos = new LinkedBlockingQueue<>();
-
-    private volatile Channel channel;
 
     @Override
     public boolean submit(UUID sourceMemberId, UUID memberId, QueryOperation operation) {
@@ -43,19 +39,6 @@ public class LoggingQueryOperationHandler implements QueryOperationHandler {
     @Override
     public void execute(QueryOperation operation) {
         executeInfos.add(new ExecuteInfo(operation, Thread.currentThread().getName()));
-    }
-
-    @Override
-    public QueryOperationChannel createChannel(UUID sourceMemberId, UUID memberId) {
-        Channel channel = new Channel(sourceMemberId, memberId, this);
-
-        this.channel = channel;
-
-        return channel;
-    }
-
-    public Channel getChannel() {
-        return channel;
     }
 
     public SubmitInfo tryPollSubmitInfo() {
@@ -95,35 +78,6 @@ public class LoggingQueryOperationHandler implements QueryOperationHandler {
             return res;
         } else {
             return null;
-        }
-    }
-
-    public static class Channel implements QueryOperationChannel {
-
-        private final UUID sourceMemberId;
-        private final UUID memberId;
-        private final LoggingQueryOperationHandler handler;
-        private final AtomicInteger submitCounter = new AtomicInteger();
-
-        private Channel(UUID sourceMemberId, UUID memberId, LoggingQueryOperationHandler handler) {
-            this.sourceMemberId = sourceMemberId;
-            this.memberId = memberId;
-            this.handler = handler;
-        }
-
-        @Override
-        public boolean submit(QueryOperation operation) {
-            submitCounter.incrementAndGet();
-
-            return handler.submit(sourceMemberId, memberId, operation);
-        }
-
-        public UUID getMemberId() {
-            return memberId;
-        }
-
-        public int getSubmitCounter() {
-            return submitCounter.get();
         }
     }
 

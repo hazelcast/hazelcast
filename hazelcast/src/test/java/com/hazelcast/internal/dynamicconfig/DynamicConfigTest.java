@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -861,7 +861,9 @@ public class DynamicConfigTest extends HazelcastTestSupport {
                 .addIndexConfig(new IndexConfig(IndexType.SORTED, "attr"))
                 .setMetadataPolicy(MetadataPolicy.OFF)
                 .setReadBackupData(true)
-                .setStatisticsEnabled(false);
+                .setStatisticsEnabled(false)
+                .setPerEntryStatsEnabled(true);
+
         mapConfig.getEvictionConfig()
                 .setEvictionPolicy(EvictionPolicy.RANDOM)
                 .setSize(4096)

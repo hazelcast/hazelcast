@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -349,7 +349,7 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         final Collection<CollectionItem> collection = getCollection();
         out.writeInt(collection.size());
         for (CollectionItem item : collection) {
@@ -363,7 +363,7 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         final int collectionSize = in.readInt();
         final Collection<CollectionItem> collection = getCollection();
         for (int i = 0; i < collectionSize; i++) {

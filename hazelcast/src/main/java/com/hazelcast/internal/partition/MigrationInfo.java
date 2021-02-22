@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,8 +34,6 @@ public class MigrationInfo implements IdentifiedDataSerializable {
     public enum MigrationStatus {
 
         ACTIVE(0),
-        //RU_COMPAT_4_0: INVALID is not used anymore
-        INVALID(1),
         SUCCESS(2),
         FAILED(3);
 
@@ -54,8 +52,6 @@ public class MigrationInfo implements IdentifiedDataSerializable {
             switch (code) {
                 case 0:
                     return ACTIVE;
-                case 1:
-                    return INVALID;
                 case 2:
                     return SUCCESS;
                 case 3:
@@ -154,8 +150,9 @@ public class MigrationInfo implements IdentifiedDataSerializable {
         return this;
     }
 
+    // RU_COMPAT_4_0 to be removed
     public boolean isValid() {
-        return status != MigrationStatus.INVALID;
+        return true;
     }
 
     public int getInitialPartitionVersion() {

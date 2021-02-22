@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,10 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.spi.impl.tenantcontrol.TenantContextual;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
+import com.hazelcast.spi.tenantcontrol.TenantControl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -53,7 +55,9 @@ public class LatencyTrackingCacheWriterTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance();
         plugin = new StoreLatencyPlugin(getNodeEngineImpl(hz));
         delegate = mock(CacheWriter.class);
-        cacheWriter = new LatencyTrackingCacheWriter<Integer, String>(delegate, plugin, NAME);
+        TenantContextual<CacheWriter<Integer, String>> contextual = TenantContextual.create(() -> delegate,
+                () -> true, TenantControl.NOOP_TENANT_CONTROL);
+        cacheWriter = new LatencyTrackingCacheWriter<Integer, String>(contextual, plugin, NAME);
     }
 
     @Test

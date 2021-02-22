@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -111,19 +111,19 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
      */
     public Object normalize(Object value) {
         if (value == null) {
-            return value;
+            return null;
         }
 
         Class<?> valueClass = value.getClass();
 
-        if (!converter.getValueClass().isAssignableFrom(valueClass)) {
-            // Expected and actual class don't match. Throw an error.
-            throw new QueryDataTypeMismatchException(converter.getValueClass(), valueClass);
-        }
-
         if (valueClass == converter.getNormalizedValueClass()) {
             // Do nothing if the value is already in the normalized form.
             return value;
+        }
+
+        if (!converter.getValueClass().isAssignableFrom(valueClass)) {
+            // Expected and actual class don't match. Throw an error.
+            throw new QueryDataTypeMismatchException(converter.getValueClass(), valueClass);
         }
 
         return converter.convertToSelf(converter, value);

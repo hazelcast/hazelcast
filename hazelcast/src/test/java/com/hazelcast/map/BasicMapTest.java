@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.ChangeLoggingRule;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ConfigureParallelRunnerWith;
@@ -46,6 +46,7 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import testsubjects.StaticSerializableBiConsumer;
 import testsubjects.StaticSerializableBiFunction;
 
@@ -80,20 +81,39 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeThat;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@ConfigureParallelRunnerWith(HeavilyMultiThreadedTestLimiter.class)
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
+@ConfigureParallelRunnerWith(HeavilyMultiThreadedTestLimiter.class)
 public class BasicMapTest extends HazelcastTestSupport {
+
+    @Parameterized.Parameter
+    public boolean statisticsEnabled;
+    @Parameterized.Parameter
+    public boolean perEntryStatsEnabled;
+
+    @Parameterized.Parameters(name = "statisticsEnabled:{0}, perEntryStatsEnabled:{1}")
+    public static Collection<Object[]> parameters() {
+        return asList(new Object[][]{
+                {true, true},
+                {false, true},
+                {true, false},
+                {false, false},
+        });
+    }
 
     /**
      * This rule is here artificially just to test that ChangeLoggingRule is working (meaning not broken).
@@ -115,8 +135,19 @@ public class BasicMapTest extends HazelcastTestSupport {
 
     protected Config getConfig() {
         Config cfg = smallInstanceConfig();
+        cfg.getMapConfig("default")
+                .setStatisticsEnabled(statisticsEnabled)
+                .setPerEntryStatsEnabled(perEntryStatsEnabled);
+
         MapConfig mapConfig = new MapConfig("mapWithTTL*");
         mapConfig.setTimeToLiveSeconds(1);
+        mapConfig.setStatisticsEnabled(statisticsEnabled);
+        mapConfig.setPerEntryStatsEnabled(perEntryStatsEnabled);
+
+        cfg.getMapConfig("testEntryView")
+        .setStatisticsEnabled(statisticsEnabled)
+        .setPerEntryStatsEnabled(perEntryStatsEnabled);
+
         cfg.addMapConfig(mapConfig);
         return cfg;
     }
@@ -776,8 +807,8 @@ public class BasicMapTest extends HazelcastTestSupport {
     @Test
     @SuppressWarnings("OverwrittenKey")
     public void testEntryView() {
-        Config config = new Config();
-        config.getMapConfig("default").setStatisticsEnabled(true);
+        assumeThat(statisticsEnabled, is(true));
+
         HazelcastInstance instance = getInstance();
 
         IMap<Integer, Integer> map = instance.getMap("testEntryView");
@@ -923,7 +954,7 @@ public class BasicMapTest extends HazelcastTestSupport {
     public void testAsyncMethodChaining() {
         IMap<Integer, Integer> map = getInstance().getMap("testGetPutRemoveAsync");
         CompletionStage<Integer> setThenGet = map.setAsync(1, 1)
-                                              .thenCompose(v -> map.getAsync(1));
+                .thenCompose(v -> map.getAsync(1));
         assertEquals(1L, (long) setThenGet.toCompletableFuture().join());
     }
 
@@ -1063,7 +1094,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.addEntryListener((EntryAddedListener<Integer, Integer>) event -> latch.countDown(), true);
 
         final Map<Integer, Integer> expected = IntStream.range(0, max).boxed()
-            .collect(Collectors.toMap(Function.identity(), Function.identity()));
+                .collect(Collectors.toMap(Function.identity(), Function.identity()));
         map.setAll(expected);
 
         assertEquals(max, map.size());
@@ -1082,7 +1113,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.addEntryListener((EntryAddedListener<Integer, Integer>) event -> latch.countDown(), true);
 
         final Map<Integer, Integer> expected = IntStream.range(0, max).boxed()
-            .collect(Collectors.toMap(Function.identity(), Function.identity()));
+                .collect(Collectors.toMap(Function.identity(), Function.identity()));
         map.setAll(expected);
 
         assertEquals(max, map.size());
@@ -1099,7 +1130,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.addEntryListener((EntryAddedListener<Integer, Integer>) event -> latch.countDown(), true);
 
         final Map<Integer, Integer> expected = IntStream.range(0, max).boxed()
-            .collect(Collectors.toMap(Function.identity(), Function.identity()));
+                .collect(Collectors.toMap(Function.identity(), Function.identity()));
         final Future<Void> future = map.setAllAsync(expected).toCompletableFuture();
 
         assertEqualsEventually(future::isDone, true);
@@ -2021,3 +2052,4 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
 }
+

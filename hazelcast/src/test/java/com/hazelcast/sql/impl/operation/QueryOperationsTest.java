@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,6 @@ import java.util.concurrent.ThreadLocalRandom;
 import static com.hazelcast.sql.impl.operation.QueryExecuteOperationFragmentMapping.EXPLICIT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
@@ -60,21 +59,16 @@ public class QueryOperationsTest extends SqlTestSupport {
         QueryId queryId = randomQueryId();
 
         QueryExecuteOperation original = prepareExecute(queryId);
-        assertNotEquals(QueryOperation.PARTITION_ANY, original.getPartition());
         assertEquals(SqlDataSerializerHook.F_ID, original.getFactoryId());
         assertEquals(SqlDataSerializerHook.OPERATION_EXECUTE, original.getClassId());
 
         QueryExecuteOperation restored = serializeDeserialize(original);
-        assertEquals(original.getPartition(), restored.getPartition());
         assertEquals(original.getPartitionMap(), restored.getPartitionMap());
         assertEquals(original.getFragments(), restored.getFragments());
         assertEquals(original.getOutboundEdgeMap(), restored.getOutboundEdgeMap());
         assertEquals(original.getInboundEdgeMap(), restored.getInboundEdgeMap());
         assertEquals(original.getEdgeInitialMemoryMap(), restored.getEdgeInitialMemoryMap());
         assertEquals(original.getArguments(), restored.getArguments());
-
-        assertEquals(original.getPartition(), prepareExecute(queryId).getPartition());
-        assertEquals(original.getPartition(), prepareCancel(queryId).getPartition());
     }
 
     @Test
@@ -82,19 +76,14 @@ public class QueryOperationsTest extends SqlTestSupport {
         QueryId queryId = randomQueryId();
 
         QueryCancelOperation original = prepareCancel(queryId);
-        assertNotEquals(QueryOperation.PARTITION_ANY, original.getPartition());
         assertEquals(SqlDataSerializerHook.F_ID, original.getFactoryId());
         assertEquals(SqlDataSerializerHook.OPERATION_CANCEL, original.getClassId());
 
         QueryCancelOperation restored = serializeDeserialize(original);
-        assertEquals(original.getPartition(), restored.getPartition());
         assertEquals(original.getQueryId(), restored.getQueryId());
         assertEquals(original.getErrorCode(), restored.getErrorCode());
         assertEquals(original.getErrorMessage(), restored.getErrorMessage());
         assertEquals(original.getOriginatingMemberId(), restored.getOriginatingMemberId());
-
-        assertEquals(original.getPartition(), prepareExecute(queryId).getPartition());
-        assertEquals(original.getPartition(), prepareCancel(queryId).getPartition());
     }
 
     @Test
@@ -103,19 +92,14 @@ public class QueryOperationsTest extends SqlTestSupport {
         int edgeId = randomInt();
 
         QueryBatchExchangeOperation original = prepareBatch(queryId, edgeId);
-        assertNotEquals(QueryOperation.PARTITION_ANY, original.getPartition());
         assertEquals(SqlDataSerializerHook.F_ID, original.getFactoryId());
         assertEquals(SqlDataSerializerHook.OPERATION_BATCH, original.getClassId());
 
         QueryBatchExchangeOperation restored = serializeDeserialize(original);
-        assertEquals(original.getPartition(), restored.getPartition());
         assertEquals(original.getQueryId(), restored.getQueryId());
         checkBatches(original.getBatch(), restored.getBatch());
         assertEquals(original.isLast(), restored.isLast());
         assertEquals(original.getRemainingMemory(), restored.getRemainingMemory());
-
-        assertEquals(original.getPartition(), prepareBatch(queryId, edgeId).getPartition());
-        assertEquals(original.getPartition(), prepareFlowControl(queryId, edgeId).getPartition());
     }
 
     @Test
@@ -124,17 +108,12 @@ public class QueryOperationsTest extends SqlTestSupport {
         int edgeId = randomInt();
 
         QueryFlowControlExchangeOperation original = prepareFlowControl(queryId, edgeId);
-        assertNotEquals(QueryOperation.PARTITION_ANY, original.getPartition());
         assertEquals(SqlDataSerializerHook.F_ID, original.getFactoryId());
         assertEquals(SqlDataSerializerHook.OPERATION_FLOW_CONTROL, original.getClassId());
 
         QueryFlowControlExchangeOperation restored = serializeDeserialize(original);
-        assertEquals(original.getPartition(), restored.getPartition());
         assertEquals(original.getQueryId(), restored.getQueryId());
         assertEquals(original.getRemainingMemory(), restored.getRemainingMemory());
-
-        assertEquals(original.getPartition(), prepareBatch(queryId, edgeId).getPartition());
-        assertEquals(original.getPartition(), prepareFlowControl(queryId, edgeId).getPartition());
     }
 
     @Test
@@ -143,7 +122,6 @@ public class QueryOperationsTest extends SqlTestSupport {
 
         QueryCheckOperation original = withCallerId(new QueryCheckOperation(queryIds));
         assertEquals(queryIds, original.getQueryIds());
-        assertEquals(QueryOperation.PARTITION_ANY, original.getPartition());
         assertEquals(SqlDataSerializerHook.F_ID, original.getFactoryId());
         assertEquals(SqlDataSerializerHook.OPERATION_CHECK, original.getClassId());
 
@@ -157,7 +135,6 @@ public class QueryOperationsTest extends SqlTestSupport {
 
         QueryCheckResponseOperation original = withCallerId(new QueryCheckResponseOperation(queryIds));
         assertEquals(queryIds, original.getQueryIds());
-        assertEquals(QueryOperation.PARTITION_ANY, original.getPartition());
         assertEquals(SqlDataSerializerHook.F_ID, original.getFactoryId());
         assertEquals(SqlDataSerializerHook.OPERATION_CHECK_RESPONSE, original.getClassId());
 
@@ -181,8 +158,6 @@ public class QueryOperationsTest extends SqlTestSupport {
         assertSame(original.getClass(), restored.getClass());
 
         assertEquals(original.getCallerId(), restored.getCallerId());
-
-        assertEquals(original.getPartition(), restored.getPartition());
 
         assertEquals(original.getFactoryId(), restored.getFactoryId());
         assertEquals(original.getClassId(), restored.getClassId());
@@ -257,7 +232,7 @@ public class QueryOperationsTest extends SqlTestSupport {
         long remainingMemory = randomLong();
 
         QueryBatchExchangeOperation res = withCallerId(
-            new QueryBatchExchangeOperation(queryId, edgeId, targetMemberId, batch, last, remainingMemory)
+            new QueryBatchExchangeOperation(queryId, edgeId, targetMemberId, batch, 0L, last, remainingMemory)
         );
 
         assertTrue(res.isInbound());
@@ -272,15 +247,19 @@ public class QueryOperationsTest extends SqlTestSupport {
     }
 
     private QueryFlowControlExchangeOperation prepareFlowControl(QueryId queryId, int edgeId) {
+        long ordinal = randomLong();
+        UUID targetMemberId = randomUUID();
         long remainingMemory = randomLong();
 
         QueryFlowControlExchangeOperation res = withCallerId(
-            new QueryFlowControlExchangeOperation(queryId, edgeId, remainingMemory)
+            new QueryFlowControlExchangeOperation(queryId, edgeId, targetMemberId, ordinal, remainingMemory)
         );
 
         assertFalse(res.isInbound());
         assertEquals(queryId, res.getQueryId());
         assertEquals(edgeId, res.getEdgeId());
+        assertEquals(targetMemberId, res.getTargetMemberId());
+        assertEquals(ordinal, res.getOrdinal());
         assertEquals(remainingMemory, res.getRemainingMemory());
 
         return res;

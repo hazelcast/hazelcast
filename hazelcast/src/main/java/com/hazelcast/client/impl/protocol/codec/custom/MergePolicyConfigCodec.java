@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("7830c4c7ec30b83893e78cd6ed0a15db")
+@Generated("32f248ec51bd5d4aa50cbcd83cff9ee4")
 public final class MergePolicyConfigCodec {
     private static final int BATCH_SIZE_FIELD_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = BATCH_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;

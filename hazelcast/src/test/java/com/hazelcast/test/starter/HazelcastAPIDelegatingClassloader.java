@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
@@ -180,5 +181,10 @@ public class HazelcastAPIDelegatingClassloader extends URLClassLoader {
 
     private boolean checkResourceExcluded(String resourceName) {
         return (parent instanceof FilteringClassLoader) && ((FilteringClassLoader) parent).checkResourceExcluded(resourceName);
+    }
+
+    @Override
+    public String toString() {
+        return "HazelcastAPIDelegatingClassloader{urls = \"" + Arrays.toString(getURLs()) + "\"}";
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.MemoryInfoAccessor;
 import com.hazelcast.internal.util.RuntimeMemoryInfoAccessor;
+import com.hazelcast.internal.util.ThreadUtil;
 import com.hazelcast.map.impl.eviction.EvictionChecker;
 import com.hazelcast.map.impl.eviction.Evictor;
 import com.hazelcast.map.impl.eviction.EvictorImpl;
@@ -46,6 +47,7 @@ import com.hazelcast.map.impl.query.QueryEntryFactory;
 import com.hazelcast.map.impl.record.DataRecordFactory;
 import com.hazelcast.map.impl.record.ObjectRecordFactory;
 import com.hazelcast.map.impl.record.RecordFactory;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
@@ -158,7 +160,24 @@ public class MapContainer {
                 .indexProvider(mapServiceContext.getIndexProvider(mapConfig))
                 .usesCachedQueryableEntries(mapConfig.getCacheDeserializedValues() != CacheDeserializedValues.NEVER)
                 .partitionCount(partitionCount)
-                .build();
+                .resultFilter(this::hasNotExpired).build();
+    }
+
+    /**
+     * @return {@code true} if queryableEntry has
+     * not expired, otherwise returns {@code false}
+     */
+    private boolean hasNotExpired(QueryableEntry queryableEntry) {
+        Data keyData = queryableEntry.getKeyData();
+        IPartitionService partitionService = mapServiceContext.getNodeEngine().getPartitionService();
+        int partitionId = partitionService.getPartitionId(keyData);
+
+        if (!getIndexes(partitionId).isGlobal()) {
+            ThreadUtil.assertRunningOnPartitionThread();
+        }
+
+        RecordStore recordStore = mapServiceContext.getExistingRecordStore(partitionId, name);
+        return recordStore != null && !recordStore.expireOrAccess(keyData);
     }
 
     public final void initEvictor() {
@@ -206,9 +225,9 @@ public class MapContainer {
         return anyArg -> {
             switch (mapConfig.getInMemoryFormat()) {
                 case BINARY:
-                    return new DataRecordFactory(mapConfig, serializationService);
+                    return new DataRecordFactory(this, serializationService);
                 case OBJECT:
-                    return new ObjectRecordFactory(mapConfig, serializationService);
+                    return new ObjectRecordFactory(this, serializationService);
                 default:
                     throw new IllegalArgumentException("Invalid storage format: " + mapConfig.getInMemoryFormat());
             }
@@ -234,7 +253,7 @@ public class MapContainer {
         WanReplicationService wanReplicationService = nodeEngine.getWanReplicationService();
         wanReplicationDelegate = wanReplicationService.getWanReplicationPublishers(wanReplicationRefName);
         wanMergePolicy = nodeEngine.getSplitBrainMergePolicyProvider()
-                                   .getMergePolicy(wanReplicationRef.getMergePolicyClassName());
+                .getMergePolicy(wanReplicationRef.getMergePolicyClassName());
 
         WanReplicationConfig wanReplicationConfig = config.getWanReplicationConfig(wanReplicationRefName);
         if (wanReplicationConfig != null) {
@@ -443,6 +462,19 @@ public class MapContainer {
         public Data apply(Object input) {
             SerializationService ss = mapStoreContext.getSerializationService();
             return ss.toData(input, partitioningStrategy);
+        }
+    }
+
+    public boolean isUseCachedDeserializedValuesEnabled(int partitionId) {
+        CacheDeserializedValues cacheDeserializedValues = getMapConfig().getCacheDeserializedValues();
+        switch (cacheDeserializedValues) {
+            case NEVER:
+                return false;
+            case ALWAYS:
+                return true;
+            default:
+                //if index exists then cached value is already set -> let's use it
+                return getIndexes(partitionId).haveAtLeastOneIndex();
         }
     }
 }

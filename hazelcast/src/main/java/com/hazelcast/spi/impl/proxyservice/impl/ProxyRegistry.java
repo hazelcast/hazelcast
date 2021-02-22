@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.internal.services.RemoteService;
+import com.hazelcast.internal.services.TenantContextAwareService;
 import com.hazelcast.internal.util.EmptyStatement;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
@@ -27,6 +28,8 @@ import com.hazelcast.spi.impl.InitializingObject;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
+import com.hazelcast.spi.impl.tenantcontrol.impl.TenantControlServiceImpl;
+import com.hazelcast.spi.tenantcontrol.TenantControl;
 
 import java.util.Collection;
 import java.util.Map;
@@ -218,7 +221,27 @@ public final class ProxyRegistry {
         boolean publishEvent = !local;
         DistributedObject proxy;
         try {
+            TenantControlServiceImpl tenantControlService = proxyService.nodeEngine.getTenantControlService();
+            TenantControl tenantControl = tenantControlService.getTenantControl(serviceName, name);
+
+            if (tenantControl == null) {
+                if (initialize && service instanceof TenantContextAwareService) {
+                    try {
+
+                        tenantControl = tenantControlService.initializeTenantControl(serviceName, name);
+                    } catch (Exception e) {
+                        // log and throw exception to be handled in outer catch block
+                        proxyService.logger.warning("Error while initializing tenant control for service '"
+                                + serviceName + "' and object '" + name + "'", e);
+                        throw e;
+                    }
+                } else {
+                    tenantControl = TenantControl.NOOP_TENANT_CONTROL;
+                }
+            }
             proxy = service.createDistributedObject(name, source, local);
+            tenantControl.registerObject(proxy.getDestroyContextForTenant());
+
             if (initialize && proxy instanceof InitializingObject) {
                 try {
                     ((InitializingObject) proxy).initialize();

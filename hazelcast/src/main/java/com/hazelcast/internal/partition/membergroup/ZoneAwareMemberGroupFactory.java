@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,10 +22,11 @@ import com.hazelcast.spi.partitiongroup.MemberGroup;
 import com.hazelcast.spi.partitiongroup.PartitionGroupMetaData;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 /**
  * ZoneAwareMemberGroupFactory is responsible for MemberGroups
@@ -37,7 +38,7 @@ public class ZoneAwareMemberGroupFactory extends BackupSafeMemberGroupFactory im
 
     @Override
     protected Set<MemberGroup> createInternalMemberGroups(Collection<? extends Member> allMembers) {
-        Map<String, MemberGroup> groups = new HashMap<String, MemberGroup>();
+        Map<String, MemberGroup> groups = createHashMap(allMembers.size());
         for (Member member : allMembers) {
 
             final String zoneInfo = member.getAttribute(PartitionGroupMetaData.PARTITION_GROUP_ZONE);
@@ -77,6 +78,6 @@ public class ZoneAwareMemberGroupFactory extends BackupSafeMemberGroupFactory im
                 }
             }
         }
-        return new HashSet<MemberGroup>(groups.values());
+        return new HashSet<>(groups.values());
     }
 }

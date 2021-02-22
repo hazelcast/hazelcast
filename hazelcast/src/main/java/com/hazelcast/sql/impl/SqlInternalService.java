@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,8 +31,6 @@ import com.hazelcast.sql.impl.state.QueryClientStateRegistry;
 import com.hazelcast.sql.impl.state.QueryState;
 import com.hazelcast.sql.impl.state.QueryStateRegistry;
 import com.hazelcast.sql.impl.state.QueryStateRegistryUpdater;
-import com.hazelcast.sql.impl.type.converter.Converter;
-import com.hazelcast.sql.impl.type.converter.Converters;
 
 import java.util.HashMap;
 import java.util.List;
@@ -71,8 +69,7 @@ public class SqlInternalService {
         String instanceName,
         NodeServiceProvider nodeServiceProvider,
         InternalSerializationService serializationService,
-        int operationThreadCount,
-        int fragmentThreadCount,
+        int threadCount,
         int outboxBatchSize,
         long stateCheckFrequency,
         PlanCacheChecker planCacheChecker
@@ -91,8 +88,7 @@ public class SqlInternalService {
             stateRegistry,
             outboxBatchSize,
             FLOW_CONTROL_FACTORY,
-            fragmentThreadCount,
-            operationThreadCount
+            threadCount
         );
 
         // State checker depends on state registries and operation handler.
@@ -125,6 +121,7 @@ public class SqlInternalService {
      * @return Query state.
      */
     public QueryState execute(
+        QueryId queryId,
         Plan plan,
         List<Object> params,
         long timeout,
@@ -151,6 +148,7 @@ public class SqlInternalService {
         BlockingRootResultConsumer consumer = new BlockingRootResultConsumer();
 
         QueryState state = stateRegistry.onInitiatorQueryStarted(
+            queryId,
             localMemberId,
             timeout,
             plan,
@@ -217,40 +215,35 @@ public class SqlInternalService {
         return clientStateRegistry;
     }
 
+    /**
+     * For testing only.
+     */
+    public QueryStateRegistryUpdater getStateRegistryUpdater() {
+        return stateRegistryUpdater;
+    }
+
     private void prepareParameters(Plan plan, List<Object> params) {
         assert params != null;
         QueryParameterMetadata parameterMetadata = plan.getParameterMetadata();
 
         int parameterCount = parameterMetadata.getParameterCount();
         if (parameterCount != params.size()) {
-            throw QueryException.error(SqlErrorCode.DATA_EXCEPTION,
-                    "Unexpected parameter count: expected " + parameterCount + ", got " + params.size());
+            throw QueryException.error(
+                SqlErrorCode.DATA_EXCEPTION,
+                "Unexpected parameter count: expected " + parameterCount + ", got " + params.size()
+            );
         }
 
         for (int i = 0; i < params.size(); ++i) {
             Object value = params.get(i);
-            if (value == null) {
-                continue;
-            }
 
-            Converter fromConverter = Converters.getConverter(value.getClass());
-            Converter toConverter = parameterMetadata.getParameterType(i).getConverter();
+            ParameterConverter parameterConverter = parameterMetadata.getParameterConverter(i);
 
-            if (fromConverter.getTypeFamily().getPrecedence() > toConverter.getTypeFamily().getPrecedence()) {
-                throw QueryException.error(SqlErrorCode.DATA_EXCEPTION,
-                    "Cannot implicitly convert parameter at position " + i + " from " + fromConverter.getTypeFamily()
-                        + " to " + toConverter.getTypeFamily() + " (consider adding an explicit CAST)"
-                );
-            }
+            Object newValue = parameterConverter.convert(value);
 
-            try {
-                value = toConverter.convertToSelf(fromConverter, value);
-            } catch (RuntimeException e) {
-                throw QueryException.error(SqlErrorCode.DATA_EXCEPTION,
-                        String.format("Failed to convert parameter at position %s from %s to %s: %s", i,
-                                fromConverter.getTypeFamily(), toConverter.getTypeFamily(), e.getMessage()));
+            if (newValue != value) {
+                params.set(i, newValue);
             }
-            params.set(i, value);
         }
     }
 

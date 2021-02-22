@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -106,13 +106,10 @@ public final class DomConfigHelper {
 
     public static String getTextContent(final Node node, boolean domLevel3) {
         if (node != null) {
-            final String text;
-            if (domLevel3) {
-                text = node.getTextContent();
-            } else {
-                text = getTextContentOld(node);
-            }
-            return text != null ? text.trim() : "";
+            final String text = domLevel3 ? node.getTextContent() : getTextContentOld(node);
+            return text != null
+              ? text.trim()
+              : "";
         }
         return "";
     }

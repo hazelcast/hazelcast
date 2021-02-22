@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,6 +50,7 @@ import com.hazelcast.spi.partitiongroup.PartitionGroupStrategy;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Test;
@@ -84,7 +85,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@Category(SlowTest.class)
 public class ClientDiscoverySpiTest extends HazelcastTestSupport {
 
     private static final ILogger LOGGER = Logger.getLogger(ClientDiscoverySpiTest.class);
@@ -110,6 +111,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(QuickTest.class)
     public void testParsing() {
         String xmlFileName = "hazelcast-client-discovery-spi-test.xml";
         InputStream xmlResource = ClientDiscoverySpiTest.class.getClassLoader().getResourceAsStream(xmlFileName);

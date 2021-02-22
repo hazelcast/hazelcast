@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import java.util.Collection;
 import java.util.HashSet;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -62,16 +63,11 @@ public class MemberGroupFactoryTest {
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testZoneAwareMemberGroupFactoryThrowsIllegalArgumentExceptionWhenNoMetadataIsProvided() {
         MemberGroupFactory groupFactory = new ZoneAwareMemberGroupFactory();
         Collection<Member> members = createMembersWithNoMetadata();
-        Collection<MemberGroup> memberGroups = groupFactory.createMemberGroups(members);
-
-        assertEquals("Member Groups: " + String.valueOf(memberGroups), 3, memberGroups.size());
-        for (MemberGroup memberGroup : memberGroups) {
-            assertEquals("Member Group: " + String.valueOf(memberGroup), 1, memberGroup.size());
-        }
+        assertThrows(IllegalArgumentException.class, () -> groupFactory.createMemberGroups(members));
     }
 
     private Collection<Member> createMembersWithNoMetadata() {
@@ -167,6 +163,78 @@ public class MemberGroupFactoryTest {
         members.add(member2);
         members.add(member3);
         return members;
+    }
+
+    @Test
+    public void testNodeMetadataAwareMemberGroupFactoryCreateMemberGroups() {
+        MemberGroupFactory groupFactory = new NodeAwareMemberGroupFactory();
+        Collection<Member> members = createMembersWithNodeAwareMetadata();
+        Collection<MemberGroup> memberGroups = groupFactory.createMemberGroups(members);
+
+        assertEquals("Member Groups: " + String.valueOf(memberGroups), 3, memberGroups.size());
+        for (MemberGroup memberGroup : memberGroups) {
+            assertEquals("Member Group: " + String.valueOf(memberGroup), 1, memberGroup.size());
+        }
+    }
+
+    private Collection<Member> createMembersWithNodeAwareMetadata() {
+        Collection<Member> members = new HashSet<Member>();
+        MemberImpl member1 = new MemberImpl(new Address("192.192.0.1", fakeAddress, 5701), VERSION, true);
+        member1.setAttribute(PartitionGroupMetaData.PARTITION_GROUP_NODE, "kubernetes-node-f0bbd602-f7cw");
+
+        MemberImpl member2 = new MemberImpl(new Address("192.192.0.2", fakeAddress, 5701), VERSION, true);
+        member2.setAttribute(PartitionGroupMetaData.PARTITION_GROUP_NODE, "kubernetes-node-f0bbd602-hgdl");
+
+        MemberImpl member3 = new MemberImpl(new Address("192.192.0.3", fakeAddress, 5701), VERSION, true);
+        member3.setAttribute(PartitionGroupMetaData.PARTITION_GROUP_NODE, "kubernetes-node-f0bbd602-0zjs");
+
+        members.add(member1);
+        members.add(member2);
+        members.add(member3);
+        return members;
+    }
+
+    @Test
+    public void testNodeAwareMemberGroupFactoryThrowsIllegalArgumentExceptionWhenNoMetadataIsProvided() {
+        MemberGroupFactory groupFactory = new NodeAwareMemberGroupFactory();
+        Collection<Member> members = createMembersWithNoMetadata();
+        assertThrows(IllegalArgumentException.class, () -> groupFactory.createMemberGroups(members));
+    }
+
+    @Test
+    public void testPlacementMetadataAwareMemberGroupFactoryCreateMemberGroups() {
+        MemberGroupFactory groupFactory = new PlacementAwareMemberGroupFactory();
+        Collection<Member> members = createMembersWithPlacementAwareMetadata();
+        Collection<MemberGroup> memberGroups = groupFactory.createMemberGroups(members);
+
+        assertEquals("Member Groups: " + memberGroups, 3, memberGroups.size());
+        for (MemberGroup memberGroup : memberGroups) {
+            assertEquals("Member Group: " + memberGroup, 1, memberGroup.size());
+        }
+    }
+
+    private Collection<Member> createMembersWithPlacementAwareMetadata() {
+        Collection<Member> members = new HashSet<>();
+        MemberImpl member1 = new MemberImpl(new Address("192.192.0.1", fakeAddress, 5701), VERSION, true);
+        member1.setAttribute(PartitionGroupMetaData.PARTITION_GROUP_PLACEMENT, "us-east-1a-placement-1");
+
+        MemberImpl member2 = new MemberImpl(new Address("192.192.0.2", fakeAddress, 5701), VERSION, true);
+        member2.setAttribute(PartitionGroupMetaData.PARTITION_GROUP_PLACEMENT, "us-east-1a-placement-2");
+
+        MemberImpl member3 = new MemberImpl(new Address("192.192.0.3", fakeAddress, 5701), VERSION, true);
+        member3.setAttribute(PartitionGroupMetaData.PARTITION_GROUP_PLACEMENT, "us-east-1a-placement-3");
+
+        members.add(member1);
+        members.add(member2);
+        members.add(member3);
+        return members;
+    }
+
+    @Test
+    public void testPlacementAwareMemberGroupFactoryThrowsIllegalArgumentExceptionWhenNoMetadataIsProvided() {
+        MemberGroupFactory groupFactory = new PlacementAwareMemberGroupFactory();
+        Collection<Member> members = createMembersWithNoMetadata();
+        assertThrows(IllegalArgumentException.class, () -> groupFactory.createMemberGroups(members));
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
+import java.util.Optional;
 import java.util.PriorityQueue;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -94,6 +95,7 @@ class ReferenceObjects {
     static String aString;
     static String anSqlString = "this > 5 AND this < 100";
     static UUID aUUID = new UUID(aLong, anInt);
+    static String aSmallString = "😊 Hello Приве́т नमस्ते שָׁלוֹם";
 
     static {
         CharBuffer cb = CharBuffer.allocate(Character.MAX_VALUE);
@@ -127,18 +129,18 @@ class ReferenceObjects {
     static CustomByteArraySerializable aCustomByteArraySerializable = new CustomByteArraySerializable(anInt, aFloat);
     static Portable[] portables = {anInnerPortable, anInnerPortable, anInnerPortable};
 
-    static AbstractMap.SimpleEntry aSimpleMapEntry = new AbstractMap.SimpleEntry(aString, anInnerPortable);
-    static AbstractMap.SimpleImmutableEntry aSimpleImmutableMapEntry = new AbstractMap.SimpleImmutableEntry(aString,
+    static AbstractMap.SimpleEntry aSimpleMapEntry = new AbstractMap.SimpleEntry(aSmallString, anInnerPortable);
+    static AbstractMap.SimpleImmutableEntry aSimpleImmutableMapEntry = new AbstractMap.SimpleImmutableEntry(aSmallString,
             anInnerPortable);
 
     static AnIdentifiedDataSerializable anIdentifiedDataSerializable = new AnIdentifiedDataSerializable(
-            aBoolean, aByte, aChar, aDouble, aShort, aFloat, anInt, aLong, aString,
+            aBoolean, aByte, aChar, aDouble, aShort, aFloat, anInt, aLong, aSmallString,
             booleans, bytes, chars, doubles, shorts, floats, ints, longs, strings,
             anInnerPortable, null,
             aCustomStreamSerializable,
             aCustomByteArraySerializable, aData);
     static APortable aPortable = new APortable(
-            aBoolean, aByte, aChar, aDouble, aShort, aFloat, anInt, aLong, aString, anInnerPortable,
+            aBoolean, aByte, aChar, aDouble, aShort, aFloat, anInt, aLong, aSmallString, anInnerPortable,
             booleans, bytes, chars, doubles, shorts, floats, ints, longs, strings, portables,
             anIdentifiedDataSerializable,
             aCustomStreamSerializable,
@@ -157,19 +159,21 @@ class ReferenceObjects {
     static BigInteger aBigInteger = new BigInteger("1314432323232411");
     static BigDecimal aBigDecimal = new BigDecimal(31231);
     static Class aClass = BigDecimal.class;
+    static Optional<String> aFullOptional = Optional.of("SERIALIZEDSTRING");
+    static Optional<String> anEmptyOptional = Optional.empty();
     static Enum anEnum = EntryEventType.ADDED;
 
     static Serializable serializable = new AJavaSerialiazable(anInt, aFloat);
     static Externalizable externalizable = new AJavaExternalizable(anInt, aFloat);
 
-    static Comparable<SampleTestObjects.ValueType> aComparable = new SampleTestObjects.ValueType(aString);
+    static Comparable<SampleTestObjects.ValueType> aComparable = new SampleTestObjects.ValueType(aSmallString);
 
     static ArrayList nonNullList = new ArrayList(asList(
-            aBoolean, aByte, aChar, aDouble, aShort, aFloat, anInt, aLong, aString, anInnerPortable,
+            aBoolean, aByte, aChar, aDouble, aShort, aFloat, anInt, aLong, aSmallString, anInnerPortable,
             booleans, bytes, chars, doubles, shorts, floats, ints, longs, strings,
             aCustomStreamSerializable, aCustomByteArraySerializable,
             anIdentifiedDataSerializable, aPortable,
-            aDate, aBigInteger, aBigDecimal, aClass, anEnum, aSimpleMapEntry, aSimpleImmutableMapEntry,
+            aDate, aBigInteger, aBigDecimal, aClass, anEmptyOptional, aFullOptional, anEnum, aSimpleMapEntry, aSimpleImmutableMapEntry,
             serializable, externalizable));
 
     static ArrayList arrayList = new ArrayList(asList(aNullObject, nonNullList));
@@ -211,7 +215,7 @@ class ReferenceObjects {
     static {
         arrayBlockingQueue.offer(aPortable);
         priorityBlockingQueue.offer(anInt);
-        priorityQueue.offer(aString);
+        priorityQueue.offer(aSmallString);
     }
     static DelayQueue delayQueue = new DelayQueue();
     static SynchronousQueue synchronousQueue = new SynchronousQueue();
@@ -222,7 +226,7 @@ class ReferenceObjects {
             aSimpleMapEntry, aSimpleImmutableMapEntry, booleans, bytes, chars, doubles, shorts, floats, ints, longs, strings,
             aCustomStreamSerializable, aCustomByteArraySerializable,
             anIdentifiedDataSerializable, aPortable,
-            aDate, aBigInteger, aBigDecimal, aClass, anEnum,
+            aDate, aBigInteger, aBigDecimal, aClass, aFullOptional, anEnum,
             serializable, externalizable,
             arrayList, linkedList, copyOnWriteArrayList, concurrentSkipListMap, concurrentHashMap, linkedHashMap, treeMap,
             hashSet, treeSet, linkedHashSet, copyOnWriteArraySet, concurrentSkipListSet, arrayDeque, linkedBlockingQueue,
@@ -232,50 +236,50 @@ class ReferenceObjects {
             Predicates.alwaysTrue(),
             Predicates.alwaysFalse(),
             Predicates.sql(anSqlString),
-            Predicates.equal(aString, aComparable),
-            Predicates.notEqual(aString, aComparable),
-            Predicates.greaterThan(aString, aComparable),
-            Predicates.between(aString, aComparable, aComparable),
-            Predicates.like(aString, aString),
-            Predicates.ilike(aString, aString),
-            Predicates.in(aString, aComparable, aComparable),
-            Predicates.regex(aString, aString),
-            Predicates.partitionPredicate(aComparable, Predicates.greaterThan(aString, aComparable)),
+            Predicates.equal(aSmallString, aComparable),
+            Predicates.notEqual(aSmallString, aComparable),
+            Predicates.greaterThan(aSmallString, aComparable),
+            Predicates.between(aSmallString, aComparable, aComparable),
+            Predicates.like(aSmallString, aSmallString),
+            Predicates.ilike(aSmallString, aSmallString),
+            Predicates.in(aSmallString, aComparable, aComparable),
+            Predicates.regex(aSmallString, aSmallString),
+            Predicates.partitionPredicate(aComparable, Predicates.greaterThan(aSmallString, aComparable)),
             Predicates.and(Predicates.sql(anSqlString),
-                    Predicates.equal(aString, aComparable),
-                    Predicates.notEqual(aString, aComparable),
-                    Predicates.greaterThan(aString, aComparable),
-                    Predicates.greaterEqual(aString, aComparable)),
+                    Predicates.equal(aSmallString, aComparable),
+                    Predicates.notEqual(aSmallString, aComparable),
+                    Predicates.greaterThan(aSmallString, aComparable),
+                    Predicates.greaterEqual(aSmallString, aComparable)),
             Predicates.or(Predicates.sql(anSqlString),
-                    Predicates.equal(aString, aComparable),
-                    Predicates.notEqual(aString, aComparable),
-                    Predicates.greaterThan(aString, aComparable),
-                    Predicates.greaterEqual(aString, aComparable)),
+                    Predicates.equal(aSmallString, aComparable),
+                    Predicates.notEqual(aSmallString, aComparable),
+                    Predicates.greaterThan(aSmallString, aComparable),
+                    Predicates.greaterEqual(aSmallString, aComparable)),
             Predicates.instanceOf(aCustomStreamSerializable.getClass()),
 
             // Aggregators
-            Aggregators.distinct(aString),
-            Aggregators.integerMax(aString),
-            Aggregators.maxBy(aString),
-            Aggregators.comparableMin(aString),
-            Aggregators.minBy(aString),
-            Aggregators.count(aString),
-            Aggregators.numberAvg(aString),
-            Aggregators.integerAvg(aString),
-            Aggregators.longAvg(aString),
-            Aggregators.doubleAvg(aString),
-            Aggregators.bigIntegerAvg(aString),
-            Aggregators.bigDecimalAvg(aString),
-            Aggregators.integerSum(aString),
-            Aggregators.longSum(aString),
-            Aggregators.doubleSum(aString),
-            Aggregators.fixedPointSum(aString),
-            Aggregators.floatingPointSum(aString),
-            Aggregators.bigDecimalSum(aString),
+            Aggregators.distinct(aSmallString),
+            Aggregators.integerMax(aSmallString),
+            Aggregators.maxBy(aSmallString),
+            Aggregators.comparableMin(aSmallString),
+            Aggregators.minBy(aSmallString),
+            Aggregators.count(aSmallString),
+            Aggregators.numberAvg(aSmallString),
+            Aggregators.integerAvg(aSmallString),
+            Aggregators.longAvg(aSmallString),
+            Aggregators.doubleAvg(aSmallString),
+            Aggregators.bigIntegerAvg(aSmallString),
+            Aggregators.bigDecimalAvg(aSmallString),
+            Aggregators.integerSum(aSmallString),
+            Aggregators.longSum(aSmallString),
+            Aggregators.doubleSum(aSmallString),
+            Aggregators.fixedPointSum(aSmallString),
+            Aggregators.floatingPointSum(aSmallString),
+            Aggregators.bigDecimalSum(aSmallString),
 
             // projections
-            Projections.singleAttribute(aString),
-            Projections.multiAttribute(aString, aString, anSqlString),
+            Projections.singleAttribute(aSmallString),
+            Projections.multiAttribute(aSmallString, aSmallString, anSqlString),
             Projections.identity()
     };
 }

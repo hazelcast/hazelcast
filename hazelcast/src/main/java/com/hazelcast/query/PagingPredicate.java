@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,14 +25,14 @@ import java.util.Map;
  * This interface is a special Predicate which helps to get a page-by-page result of a query.
  * It can be constructed with a page-size, an inner predicate for filtering, and a comparator for sorting.
  * This class is not thread-safe and stateless. To be able to reuse for another query, one should call
- * {@link #reset()}
+ * {@link #reset()}.
  * <br>
- * Here is an example usage.
+ * Here is an example usage:
  * <pre>
  * Predicate lessEqualThanFour = Predicates.lessEqual("this", 4);
  *
- * // We are constructing our paging predicate with a predicate and page size. In this case query results fetched two
- * by two.
+ * // We are constructing our paging predicate with a predicate and a page size. In this case query results
+ * // are fetched in batches of two.
  * PagingPredicate predicate = Predicates.pagingPredicate(lessEqualThanFour, 2);
  *
  * // we are initializing our map with integers from 0 to 10 as keys and values.
@@ -44,12 +44,12 @@ import java.util.Map;
  * // invoking the query
  * Collection&lt;Integer&gt; values = map.values(predicate);
  * System.out.println("values = " + values) // will print 'values = [0, 1]'
- * predicate.nextPage(); // we are setting up paging predicate to fetch next page in the next call.
+ * predicate.nextPage(); // we are setting up paging predicate to fetch the next page in the next call.
  * values = map.values(predicate);
  * System.out.println("values = " + values);// will print 'values = [2, 3]'
  * Entry anchor = predicate.getAnchor();
  * System.out.println("anchor -&gt; " + anchor); // will print 'anchor -&gt; 1=1',  since the anchor is the last entry of
- * the previous page.
+ *                                               // the previous page.
  * predicate.previousPage(); // we are setting up paging predicate to fetch previous page in the next call
  * values = map.values(predicate);
  * System.out.println("values = " + values) // will print 'values = [0, 1]'

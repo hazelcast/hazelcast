@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,6 @@ import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
 import com.hazelcast.cp.internal.raftop.metadata.InitMetadataRaftGroupOp;
 import com.hazelcast.cp.internal.raftop.metadata.PublishActiveCPMembersOp;
 import com.hazelcast.cp.internal.raftop.metadata.TerminateRaftNodesOp;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.internal.util.Clock;
@@ -666,9 +665,13 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
 
     private void sendTerminateRaftNodeOpsForDestroyedGroup(CPGroupInfo group) {
         Map<UUID, CPMemberInfo> activeMembersMap = getActiveMembersMap();
-        RaftEndpoint localEndpoint = getLocalCPMember().toRaftEndpoint();
+        CPMemberInfo localCPMember = getLocalCPMember();
+        if (localCPMember == null) {
+            return;
+        }
+        RaftEndpoint localEndpoint = localCPMember.toRaftEndpoint();
         OperationService operationService = nodeEngine.getOperationService();
-        for (RaftEndpoint endpoint : group.members())  {
+        for (RaftEndpoint endpoint : group.members()) {
             if (endpoint.equals(localEndpoint)) {
                 terminateRaftNodeAsync(group.id());
             } else {
@@ -1073,10 +1076,6 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
     }
 
     private void sendMembershipEvents(Collection<CPMemberInfo> currentMembers, Collection<CPMemberInfo> newMembers) {
-        // RU_COMPAT_4_0
-        if (nodeEngine.getClusterService().getClusterVersion().isUnknownOrLessThan(Versions.V4_1)) {
-            return;
-        }
         if (!isMetadataGroupLeader()) {
              return;
         }

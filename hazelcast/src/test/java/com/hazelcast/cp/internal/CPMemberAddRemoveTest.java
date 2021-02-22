@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,9 +37,10 @@ import com.hazelcast.instance.StaticMemberNodeContext;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
-
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -62,9 +63,11 @@ import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getSnapshotEntry;
 import static com.hazelcast.cp.internal.session.AbstractProxySessionManager.NO_SESSION_ID;
 import static com.hazelcast.instance.impl.HazelcastInstanceFactory.newHazelcastInstance;
 import static com.hazelcast.internal.util.FutureUtil.returnWithDeadline;
+import static com.hazelcast.spi.properties.ClusterProperty.GRACEFUL_SHUTDOWN_MAX_WAIT;
 import static com.hazelcast.test.Accessors.getAddress;
 import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
+import static com.hazelcast.test.OverridePropertyRule.clear;
 import static com.hazelcast.test.TestHazelcastInstanceFactory.initOrCreateConfig;
 import static java.util.Arrays.asList;
 import static org.hamcrest.Matchers.greaterThan;
@@ -80,8 +83,11 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({ SlowTest.class, ParallelJVMTest.class })
+@Category({SlowTest.class, ParallelJVMTest.class})
 public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
+
+    @Rule
+    public OverridePropertyRule gracefulShutdownTimeoutRule = clear(GRACEFUL_SHUTDOWN_MAX_WAIT.getName());
 
     @Test
     public void testAwaitDiscoveryCompleted() throws InterruptedException {
@@ -164,7 +170,7 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
         factory.getInstance(crashedMember.getAddress()).getLifecycleService().terminate();
 
         CPSubsystemManagementService cpSubsystemManagementService = runningInstance.getCPSubsystem()
-                                                                                         .getCPSubsystemManagementService();
+                                                                                   .getCPSubsystemManagementService();
         cpSubsystemManagementService.forceDestroyCPGroup(groupId.getName())
                                     .toCompletableFuture().get();
         cpSubsystemManagementService.removeCPMember(crashedMember.getUuid())
@@ -740,7 +746,7 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
         int commitIndexAdvanceCountToSnapshot = 50;
         Config config = createConfig(nodeCount, nodeCount);
         config.getCPSubsystemConfig().getRaftAlgorithmConfig()
-                .setCommitIndexAdvanceCountToSnapshot(commitIndexAdvanceCountToSnapshot);
+              .setCommitIndexAdvanceCountToSnapshot(commitIndexAdvanceCountToSnapshot);
 
         HazelcastInstance[] instances = new HazelcastInstance[nodeCount];
         for (int i = 0; i < nodeCount; i++) {
@@ -764,9 +770,9 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
         newInstance.getCPSubsystem().getCPSubsystemManagementService().promoteToCPMember().toCompletableFuture().join();
 
         List<CPMember> cpMembers = new ArrayList<>(newInstance.getCPSubsystem()
-                .getCPSubsystemManagementService()
-                .getCPMembers()
-                .toCompletableFuture().join());
+                                                              .getCPSubsystemManagementService()
+                                                              .getCPMembers()
+                                                              .toCompletableFuture().join());
 
         assertTrueEventually(() -> {
             RaftService service = getRaftService(newInstance);
@@ -774,6 +780,46 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
             assertEquals(cpMembers, activeMembers);
         });
     }
+
+    @Test
+    public void when_snapshotIsTakenWhileRemovingCPLeader_newMemberInstallsSnapshot() throws Exception {
+        int nodeCount = 3;
+        int commitIndexAdvanceCountToSnapshot = 50;
+        Config config = createConfig(nodeCount, nodeCount);
+        config.getCPSubsystemConfig().getRaftAlgorithmConfig().setCommitIndexAdvanceCountToSnapshot(commitIndexAdvanceCountToSnapshot);
+
+        HazelcastInstance[] instances = new HazelcastInstance[nodeCount];
+        for (int i = 0; i < nodeCount; i++) {
+            instances[i] = factory.newHazelcastInstance(config);
+        }
+
+        assertClusterSizeEventually(nodeCount, instances);
+        waitUntilCPDiscoveryCompleted(instances);
+
+        HazelcastInstance leaderInstance = getLeaderInstance(instances, getMetadataGroupId(instances[0]));
+
+        // `commitIndexAdvanceCountToSnapshot - 5` is selected on purpose to partially include removal of CP member in snapshot.
+        // Specifically, RemoveCPMemberOp will be in snapshot but CompleteRaftGroupMembershipChangesOp will not.
+        for (int i = 0; i < commitIndexAdvanceCountToSnapshot - 5; i++) {
+            getRaftInvocationManager(leaderInstance).invoke(getMetadataGroupId(instances[0]), new GetActiveCPMembersOp()).get();
+        }
+
+        // This will add 3 entries, RemoveCPMemberOp, ChangeRaftGroupMembersCmd and CompleteRaftGroupMembershipChangesOp.
+        // RemoveCPMemberOp will be in snapshot but CompleteRaftGroupMembershipChangesOp will not be included.
+        leaderInstance.shutdown();
+
+        HazelcastInstance newInstance = factory.newHazelcastInstance(config);
+        newInstance.getCPSubsystem().getCPSubsystemManagementService().promoteToCPMember().toCompletableFuture().join();
+
+        List<CPMember> cpMembers = new ArrayList<>(newInstance.getCPSubsystem().getCPSubsystemManagementService().getCPMembers().toCompletableFuture().join());
+
+        assertTrueEventually(() -> {
+            RaftService service = getRaftService(newInstance);
+            List<CPMemberInfo> activeMembers = new ArrayList<>(service.getMetadataGroupManager().getActiveMembers());
+            assertEquals(cpMembers, activeMembers);
+        });
+    }
+
 
     @Test
     public void when_newCPMemberIsAddedToTheMetadataGroupAfterRestart_newMemberCommitsMetadataGroupLogEntries() throws ExecutionException, InterruptedException {
@@ -977,6 +1023,7 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
 
     @Test
     public void when_cpMembersShutdownConcurrently_then_theyCompleteTheirShutdown() throws ExecutionException, InterruptedException {
+        gracefulShutdownTimeoutRule.setOrClearProperty("10");
         // When there are N CP members, we can perform partially-concurrent shutdown in 2 steps:
         // In the first step, we shut down N - 2 members concurrently.
         // Once those members are done, we shutdown the last 2 CP members serially.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * The predicate, filter and projection may be {@code null} in which case all elements are returned
  * and no projection is applied.
  */
-@Generated("e2863cdc4a6c658f758e5c8679e0cb15")
+@Generated("7db90d368d48c1a0baf258874c1968b0")
 public final class MapEventJournalReadCodec {
     //hex: 0x014200
     public static final int REQUEST_MESSAGE_TYPE = 82432;

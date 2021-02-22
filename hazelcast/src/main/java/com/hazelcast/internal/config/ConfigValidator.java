@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,8 @@ import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizePolicy;
@@ -45,14 +47,17 @@ import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.util.MutableInteger;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 import com.hazelcast.spi.merge.MergingValue;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.util.EnumMap;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.config.EvictionPolicy.LFU;
@@ -123,13 +128,14 @@ public final class ConfigValidator {
     public static void checkMapConfig(MapConfig mapConfig,
                                       NativeMemoryConfig nativeMemoryConfig,
                                       SplitBrainMergePolicyProvider mergePolicyProvider,
-                                      HazelcastProperties properties) {
+                                      HazelcastProperties properties, ILogger logger) {
 
         checkNotNativeWhenOpenSource(mapConfig.getInMemoryFormat());
+        checkNotBitmapIndexWhenNativeMemory(mapConfig.getInMemoryFormat(), mapConfig.getIndexConfigs());
 
         if (getBuildInfo().isEnterprise()) {
             checkMapNativeConfig(mapConfig, nativeMemoryConfig);
-            checkHotRestartSpecificConfig(mapConfig, properties);
+            warnForDeprecatedHotRestartProp(mapConfig, properties, logger);
         }
 
         checkMapEvictionConfig(mapConfig.getEvictionConfig());
@@ -157,7 +163,7 @@ public final class ConfigValidator {
                                                       EnumSet<MaxSizePolicy> policies) {
         String msg = "%s is not a valid max size policy to use with"
                 + " in memory format %s. Please select an appropriate one from list: %s";
-        throw new InvalidConfigurationException(String.format(msg, maxSizePolicy, inMemoryFormat, policies));
+        throw new InvalidConfigurationException(format(msg, maxSizePolicy, inMemoryFormat, policies));
     }
 
     public static void checkMapEvictionConfig(EvictionConfig evictionConfig) {
@@ -220,33 +226,17 @@ public final class ConfigValidator {
         }
     }
 
-    /**
-     * When Hot Restart is enabled, we want at least {@code
-     * hazelcast.hotrestart.free.native.memory.percentage}
-     * percent free HD memory space.
-     * <p>
-     * If configured max-size-policy is {@link
-     * MaxSizePolicy#FREE_NATIVE_MEMORY_PERCENTAGE},
-     * this method asserts that max-size is not below {@code
-     * hazelcast.hotrestart.free.native.memory.percentage}.
-     */
-    private static void checkHotRestartSpecificConfig(MapConfig mapConfig, HazelcastProperties properties) {
+    private static void warnForDeprecatedHotRestartProp(MapConfig mapConfig,
+                                                        HazelcastProperties properties, ILogger logger) {
         HotRestartConfig hotRestartConfig = mapConfig.getHotRestartConfig();
         if (hotRestartConfig == null || !hotRestartConfig.isEnabled()) {
             return;
         }
-        int hotRestartMinFreeNativeMemoryPercentage = properties.getInteger(HOT_RESTART_FREE_NATIVE_MEMORY_PERCENTAGE);
-        EvictionConfig evictionConfig = mapConfig.getEvictionConfig();
-        MaxSizePolicy maximumSizePolicy = evictionConfig.getMaxSizePolicy();
-        int localSizeConfig = evictionConfig.getSize();
-        if (FREE_NATIVE_MEMORY_PERCENTAGE == maximumSizePolicy && localSizeConfig < hotRestartMinFreeNativeMemoryPercentage) {
-            throw new InvalidConfigurationException(format(
-                    "There is a global limit on the minimum free native memory, configurable by the system property %s,"
-                            + " whose value is currently %d percent. The map %s has Hot Restart enabled,"
-                            + " but is configured with %d percent, which is lower than the allowed minimum.",
-                    HOT_RESTART_FREE_NATIVE_MEMORY_PERCENTAGE.getName(), hotRestartMinFreeNativeMemoryPercentage,
-                    mapConfig.getName(), localSizeConfig)
-            );
+        HazelcastProperty prop = HOT_RESTART_FREE_NATIVE_MEMORY_PERCENTAGE;
+        int hotRestartMinFreeNativeMemoryPercentage = properties.getInteger(prop);
+        if (hotRestartMinFreeNativeMemoryPercentage != Integer.parseInt(prop.getDefaultValue())) {
+            logger.warning(format("%s was deprecated in version 4.2. By starting from "
+                    + "that version setting it has no effect.", prop.getName()));
         }
     }
 
@@ -635,6 +625,23 @@ public final class ConfigValidator {
         if (inMemoryFormat == NATIVE && !getBuildInfo().isEnterprise()) {
             throw new InvalidConfigurationException("NATIVE storage format is supported in Hazelcast Enterprise only."
                     + " Make sure you have Hazelcast Enterprise JARs on your classpath!");
+        }
+    }
+
+    /**
+     * Throws {@link InvalidConfigurationException} if the given {@link InMemoryFormat}
+     * is {@link InMemoryFormat#NATIVE} and index configurations include {@link IndexType#BITMAP}.
+     *
+     * @param inMemoryFormat supplied inMemoryFormat
+     * @param indexConfigs {@link List} of {@link IndexConfig}
+     */
+    private static void checkNotBitmapIndexWhenNativeMemory(InMemoryFormat inMemoryFormat, List<IndexConfig> indexConfigs) {
+        if (inMemoryFormat == NATIVE) {
+            for (IndexConfig indexConfig : indexConfigs) {
+                if (indexConfig.getType() == IndexType.BITMAP) {
+                    throw new InvalidConfigurationException("BITMAP indexes are not supported by NATIVE storage");
+                }
+            }
         }
     }
 

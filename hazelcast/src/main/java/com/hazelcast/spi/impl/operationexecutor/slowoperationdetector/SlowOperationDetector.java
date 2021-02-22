@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -261,9 +261,9 @@ public final class SlowOperationDetector {
         }
 
         private void logWithConfigHint(SlowOperationLog log) {
-            // print a hint once how to enable logging of stacktraces
+            // print a hint once how to enable logging of stack traces
             logger.warning(format("Slow operation detected: %s"
-                            + "%nHint: You can enable the logging of stacktraces with the following system property: -D%s",
+                            + "%nHint: You can enable the logging of stack traces with the following system property: -D%s",
                     log.operation, SLOW_OPERATION_DETECTOR_STACK_TRACE_LOGGING_ENABLED));
             isFirstLog = false;
         }

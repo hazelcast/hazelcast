@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,14 +68,14 @@ abstract class AbstractCallableTaskOperation extends Operation implements NamedO
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         UUIDSerializationUtil.writeUUID(out, uuid);
         IOUtil.writeData(out, callableData);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         uuid = UUIDSerializationUtil.readUUID(in);
         callableData = IOUtil.readData(in);
     }

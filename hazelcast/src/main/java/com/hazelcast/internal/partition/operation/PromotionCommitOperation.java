@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -152,17 +152,9 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
         }
 
         long partitionStateStamp;
-        if (nodeEngine.getClusterService().getClusterVersion().isGreaterOrEqual(Versions.V4_1)) {
-            partitionStateStamp = partitionService.getPartitionStateStamp();
-            if (partitionState.getStamp() == partitionStateStamp) {
-                return alreadyAppliedAllPromotions();
-            }
-        } else {
-            //RU_COMPAT_4_0
-            partitionStateStamp = partitionService.getPartitionStateVersion();
-            if (partitionState.getVersion() <= partitionStateStamp) {
-                return alreadyAppliedAllPromotions();
-            }
+        partitionStateStamp = partitionService.getPartitionStateStamp();
+        if (partitionState.getStamp() == partitionStateStamp) {
+            return alreadyAppliedAllPromotions();
         }
 
         filterAlreadyAppliedPromotions();

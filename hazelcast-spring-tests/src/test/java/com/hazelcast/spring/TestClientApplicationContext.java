@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -157,6 +157,9 @@ public class TestClientApplicationContext {
 
     @Resource(name = "client21-persistent-memory-system-memory")
     private HazelcastClientProxy pmemSystemMemoryClient;
+
+    @Resource(name = "client22-with-overridden-default-serializers")
+    private HazelcastClientProxy clientWithOverriddenDefaultSerializers;
 
     @Resource(name = "instance")
     private HazelcastInstance instance;
@@ -356,11 +359,20 @@ public class TestClientApplicationContext {
 
         assertEquals(ByteOrder.BIG_ENDIAN, serConf.getByteOrder());
         assertFalse(serConf.isAllowUnsafe());
+        assertFalse(serConf.isAllowOverrideDefaultSerializers());
         assertTrue(serConf.isCheckClassDefErrors());
         assertFalse(serConf.isEnableCompression());
         assertTrue(serConf.isEnableSharedObject());
         assertFalse(serConf.isUseNativeByteOrder());
         assertEquals(0, serConf.getPortableVersion());
+    }
+
+    @Test
+    public void testOverrideDefaultSerializersSerializationConfig() {
+        final ClientConfig config = clientWithOverriddenDefaultSerializers.getClientConfig();
+        final SerializationConfig serializationConfig = config.getSerializationConfig();
+
+        assertTrue(serializationConfig.isAllowOverrideDefaultSerializers());
     }
 
     @Test

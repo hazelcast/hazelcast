@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ import com.hazelcast.internal.metrics.impl.ProviderHelper;
 import com.hazelcast.internal.monitor.impl.LocalSetStatsImpl;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
 import com.hazelcast.internal.services.StatisticsAwareService;
+import com.hazelcast.internal.services.TenantContextAwareService;
 import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.ContextMutexFactory;
@@ -49,7 +50,8 @@ import com.hazelcast.transaction.impl.Transaction;
 
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
 
-public class SetService extends CollectionService implements DynamicMetricsProvider , StatisticsAwareService<LocalSetStats> {
+public class SetService extends CollectionService implements DynamicMetricsProvider,
+        StatisticsAwareService<LocalSetStats>, TenantContextAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:setService";
 
@@ -63,11 +65,11 @@ public class SetService extends CollectionService implements DynamicMetricsProvi
             = new ConstructorFunction<String, Object>() {
         @Override
         public Object createNew(String name) {
-            SetConfig lockConfig = nodeEngine.getConfig().findSetConfig(name);
-            String splitBrainProtectionName = lockConfig.getSplitBrainProtectionName();
-            return splitBrainProtectionName == null ? NULL_OBJECT : splitBrainProtectionName;
+                SetConfig lockConfig = nodeEngine.getConfig().findSetConfig(name);
+                String splitBrainProtectionName = lockConfig.getSplitBrainProtectionName();
+                return splitBrainProtectionName == null ? NULL_OBJECT : splitBrainProtectionName;
         }
-    };
+            };
     private final ConcurrentMap<String, LocalSetStatsImpl> statsMap = new ConcurrentHashMap<>();
     private final ConstructorFunction<String, LocalSetStatsImpl> localCollectionStatsConstructorFunction =
             key -> new LocalSetStatsImpl();

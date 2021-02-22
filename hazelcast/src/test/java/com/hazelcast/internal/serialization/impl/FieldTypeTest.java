@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,10 @@ import static com.hazelcast.nio.serialization.FieldType.BYTE;
 import static com.hazelcast.nio.serialization.FieldType.BYTE_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.CHAR;
 import static com.hazelcast.nio.serialization.FieldType.CHAR_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.DATE;
+import static com.hazelcast.nio.serialization.FieldType.DATE_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.DECIMAL;
+import static com.hazelcast.nio.serialization.FieldType.DECIMAL_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.DOUBLE;
 import static com.hazelcast.nio.serialization.FieldType.DOUBLE_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.FLOAT;
@@ -40,9 +44,14 @@ import static com.hazelcast.nio.serialization.FieldType.PORTABLE;
 import static com.hazelcast.nio.serialization.FieldType.PORTABLE_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.SHORT;
 import static com.hazelcast.nio.serialization.FieldType.SHORT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.TIME;
+import static com.hazelcast.nio.serialization.FieldType.TIMESTAMP;
+import static com.hazelcast.nio.serialization.FieldType.TIMESTAMP_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.TIMESTAMP_WITH_TIMEZONE;
+import static com.hazelcast.nio.serialization.FieldType.TIMESTAMP_WITH_TIMEZONE_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.TIME_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.UTF;
 import static com.hazelcast.nio.serialization.FieldType.UTF_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.values;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -63,6 +72,11 @@ public class FieldTypeTest {
         assertFalse(DOUBLE.isArrayType());
         assertFalse(UTF.isArrayType());
         assertFalse(BYTE.isArrayType());
+        assertFalse(DECIMAL.isArrayType());
+        assertFalse(TIME.isArrayType());
+        assertFalse(DATE.isArrayType());
+        assertFalse(TIMESTAMP.isArrayType());
+        assertFalse(TIMESTAMP_WITH_TIMEZONE.isArrayType());
     }
 
     @Test
@@ -77,6 +91,11 @@ public class FieldTypeTest {
         assertTrue(FLOAT_ARRAY.isArrayType());
         assertTrue(DOUBLE_ARRAY.isArrayType());
         assertTrue(UTF_ARRAY.isArrayType());
+        assertTrue(DECIMAL_ARRAY.isArrayType());
+        assertTrue(TIME_ARRAY.isArrayType());
+        assertTrue(DATE_ARRAY.isArrayType());
+        assertTrue(TIMESTAMP_ARRAY.isArrayType());
+        assertTrue(TIMESTAMP_WITH_TIMEZONE_ARRAY.isArrayType());
     }
 
     @Test
@@ -90,12 +109,11 @@ public class FieldTypeTest {
         assertEquals(LONG, LONG_ARRAY.getSingleType());
         assertEquals(FLOAT, FLOAT_ARRAY.getSingleType());
         assertEquals(DOUBLE, DOUBLE_ARRAY.getSingleType());
-        assertEquals(UTF, UTF_ARRAY.getSingleType());
+        assertEquals(DECIMAL, DECIMAL_ARRAY.getSingleType());
+        assertEquals(TIME, TIME_ARRAY.getSingleType());
+        assertEquals(DATE, DATE_ARRAY.getSingleType());
+        assertEquals(TIMESTAMP, TIMESTAMP_ARRAY.getSingleType());
+        assertEquals(TIMESTAMP_WITH_TIMEZONE, TIMESTAMP_WITH_TIMEZONE_ARRAY.getSingleType());
     }
 
-    @Test
-    public void assertCorrectTypesCount() {
-        assertEquals("Wrong types count! See isArrayType() implementation for details what will break",
-                20, values().length);
-    }
 }

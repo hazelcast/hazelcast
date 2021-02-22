@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,6 @@ import static com.hazelcast.config.XMLConfigBuilderTest.HAZELCAST_END_TAG;
 import static com.hazelcast.config.XMLConfigBuilderTest.HAZELCAST_START_TAG;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -376,13 +375,14 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
         final int mapBackupCount = 6;
         final int mapStoreWriteDelaySeconds = 10;
         final int mapStoreWriteBatchSize = 100;
+        final String mapStoreClassName = "com.hazelcast.examples.MyMapStore";
         MapXmlConfigBuilder importedMapConfig = new MapXmlConfigBuilder()
                 .withName(mapName)
                 .withBackupCount(mapBackupCount)
                 .withStore(new MapXmlStoreConfigBuilder()
                                    .enabled()
                                    .withInitialMode(MapStoreConfig.InitialLoadMode.LAZY)
-                                   .withClassName("com.hazelcast.examples.MyMapStore")
+                                   .withClassName(mapStoreClassName)
                                    .withWriteDelay(mapStoreWriteDelaySeconds)
                                    .withWriteBatchSize(mapStoreWriteBatchSize));
 
@@ -404,16 +404,11 @@ public class XmlConfigImportVariableReplacementTest extends AbstractConfigImport
         assertEquals("mymap", myMapConfig.getName());
         assertEquals(10, myMapConfig.getTimeToLiveSeconds());
 
-        // these are the defaults here not overridden with the content of
-        // the imported document
-        // this is a difference between importing overlapping XML and YAML
-        // configuration
-        // YAML recursively merges the two files
         assertEquals(1, myMapConfig.getBackupCount());
         MapStoreConfig myMapStoreConfig = myMapConfig.getMapStoreConfig();
-        assertEquals(0, myMapStoreConfig.getWriteDelaySeconds());
-        assertEquals(1, myMapStoreConfig.getWriteBatchSize());
-        assertNull(myMapStoreConfig.getClassName());
+        assertEquals(mapStoreWriteDelaySeconds, myMapStoreConfig.getWriteDelaySeconds());
+        assertEquals(mapStoreWriteBatchSize, myMapStoreConfig.getWriteBatchSize());
+        assertEquals(mapStoreClassName, myMapStoreConfig.getClassName());
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -54,6 +55,7 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
     private HazelcastProperties properties;
     private NativeMemoryConfig nativeMemoryConfig;
     private SplitBrainMergePolicyProvider splitBrainMergePolicyProvider;
+    private ILogger logger;
 
     @Before
     public void setUp() {
@@ -66,6 +68,7 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
         when(nodeEngine.getSplitBrainMergePolicyProvider()).thenReturn(splitBrainMergePolicyProvider);
 
         properties = nodeEngine.getProperties();
+        logger = nodeEngine.getLogger(MapConfig.class);
     }
 
     @Test
@@ -75,12 +78,12 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
 
     @Test
     public void checkMapConfig_BINARY() {
-        checkMapConfig(getMapConfig(BINARY), nativeMemoryConfig, splitBrainMergePolicyProvider, properties);
+        checkMapConfig(getMapConfig(BINARY), nativeMemoryConfig, splitBrainMergePolicyProvider, properties, logger);
     }
 
     @Test
     public void checkMapConfig_OBJECT() {
-        checkMapConfig(getMapConfig(OBJECT), nativeMemoryConfig, splitBrainMergePolicyProvider, properties);
+        checkMapConfig(getMapConfig(OBJECT), nativeMemoryConfig, splitBrainMergePolicyProvider, properties, logger);
     }
 
     /**
@@ -88,7 +91,7 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
      */
     @Test(expected = InvalidConfigurationException.class)
     public void checkMapConfig_NATIVE() {
-        checkMapConfig(getMapConfig(NATIVE), nativeMemoryConfig, splitBrainMergePolicyProvider, properties);
+        checkMapConfig(getMapConfig(NATIVE), nativeMemoryConfig, splitBrainMergePolicyProvider, properties, logger);
     }
 
     private MapConfig getMapConfig(InMemoryFormat inMemoryFormat) {

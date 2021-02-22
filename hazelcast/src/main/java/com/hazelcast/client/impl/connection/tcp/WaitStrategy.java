@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ public class WaitStrategy {
     private final ILogger logger;
     private int attempt;
     private int currentBackoffMillis;
-    private long clusterConnectTimeoutMillis;
+    private final long clusterConnectTimeoutMillis;
     private long clusterConnectAttemptBegin;
 
     WaitStrategy(int initialBackoffMillis, int maxBackoffMillis,
@@ -55,7 +55,7 @@ public class WaitStrategy {
         long currentTimeMillis = Clock.currentTimeMillis();
         long timePassed = currentTimeMillis - clusterConnectAttemptBegin;
         if (timePassed > clusterConnectTimeoutMillis) {
-            logger.warning(String.format("Unable to get live cluster connection, cluster connect timeout (%d millis) is "
+            logger.warning(String.format("Unable to get live cluster connection, cluster connect timeout (%d ms) is "
                     + "reached. Attempt %d.", clusterConnectTimeoutMillis, attempt));
             return false;
         }
@@ -67,9 +67,9 @@ public class WaitStrategy {
 
         actualSleepTime = Math.min(actualSleepTime, clusterConnectTimeoutMillis - timePassed);
 
-        logger.warning(String.format("Unable to get live cluster connection, retry in %d ms, attempt: %d "
-                + ", cluster connect timeout: %d seconds "
-                + ", max backoff millis: %d", actualSleepTime, attempt, clusterConnectTimeoutMillis, maxBackoffMillis));
+        logger.warning(String.format("Unable to get live cluster connection, retry in %d ms, attempt: %d"
+                + ", cluster connect timeout: %d ms"
+                + ", max backoff: %d ms", actualSleepTime, attempt, clusterConnectTimeoutMillis, maxBackoffMillis));
 
         try {
             Thread.sleep(actualSleepTime);

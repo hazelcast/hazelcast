@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Informs the member to roll back work done on behalf of a transaction.
  */
-@Generated("1d7f90d4767bb3ed80c1795c01173fd8")
+@Generated("46621ff8e4bab95eccdf81308306fe19")
 public final class XATransactionRollbackCodec {
     //hex: 0x140700
     public static final int REQUEST_MESSAGE_TYPE = 1312512;

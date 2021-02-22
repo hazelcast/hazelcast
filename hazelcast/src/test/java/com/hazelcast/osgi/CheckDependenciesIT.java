@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,9 @@
 package com.hazelcast.osgi;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -31,8 +33,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Enumeration;
+import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -60,6 +65,9 @@ public class CheckDependenciesIT extends HazelcastTestSupport {
             // these 2 XML-related packages are part of the platform since Java SE 6
             "org.xml.sax",
             "org.w3c.dom",
+
+            // GSS-API (& Kerberos) related classes - part of JDK since 1.4
+            "org.ietf.jgss"
     };
 
     @Test
@@ -76,7 +84,22 @@ public class CheckDependenciesIT extends HazelcastTestSupport {
         }
     }
 
-    private Manifest getHazelcastManifest() throws IOException {
+    /**
+     * Verify the {@code HazelcastManifestTransformer} was properly used.
+     */
+    @Test
+    public void verifyManifestEntries() throws IOException {
+        Manifest mf = getHazelcastManifest();
+        Attributes mainAttributes = mf.getMainAttributes();
+        assertEquals("Unexpected Bundle-Name attribute value", getBundleName(), mainAttributes.getValue("Bundle-Name"));
+        assertNotNull("The Main-Class attribute is expected", mainAttributes.getValue("Main-Class"));
+    }
+
+    protected String getBundleName() {
+        return "Hazelcast(Core)";
+    }
+
+    protected Manifest getHazelcastManifest() throws IOException {
         URL hazelcastAllManifestUrl = findHazelcastManifestURL();
         InputStream inputStream = null;
         try {
@@ -134,6 +157,10 @@ public class CheckDependenciesIT extends HazelcastTestSupport {
     }
 
     protected boolean isMatching(String urlString) {
-        return urlString.contains("hazelcast-4.") && urlString.contains("target");
+        return urlString.contains("hazelcast-" + getMajorVersion() + ".") && urlString.contains("target");
+    }
+
+    protected String getMajorVersion() {
+        return StringUtil.tokenizeVersionString(BuildInfoProvider.getBuildInfo().getVersion())[0];
     }
 }

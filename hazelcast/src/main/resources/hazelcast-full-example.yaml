@@ -1,4 +1,4 @@
-# Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+# Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -278,16 +278,16 @@ hazelcast:
   #             To narrow the members in the cloud down to only Hazelcast members, you can set
   #                         this to the one you specified in the EC2 console. It is optional.
   #     * "discovery-strategies":
-  #         Set its "enabled" attribute to true for discovery in various cloud infrastructures.
-  #         You can define multiple discovery strategies using the "discovery-strategy" sub-element and its properties.
+  #         Add additional strategies for discovery in various cloud infrastructures.
+  #         You can define multiple discovery strategies using the "discovery-strategies" sub-element and its properties.
   #         Please refer to
   #         http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#discovering-cluster-members
   #         to see the properties you can use.
   #         The following is an example for EC2 cloud.
   #         "discovery-strategies"
-  #            discovery-strategy:
-  #              - enabled: true
-  #                class: com.hazelcast.aws.AwsDiscoveryStrategy
+  #            discovery-strategies:
+  #              - class: com.hazelcast.aws.AwsDiscoveryStrategy
+  #                enabled: true
   #                properties:
   #                  access-key: test-access-key
   #                  secret-key: test-secret-key
@@ -362,12 +362,15 @@ hazelcast:
           #   tag-key: type
           #   tag-value: hz-nodes
           # discovery-strategies:
-          #   - enabled: true
-          #     class: com.hazelcast.jclouds.JCloudsDiscoveryStrategy
-          #     properties:
-          #       - provider: google-compute-engine
-          #       - identity: GCE_IDENTITY
-          #       - credential: GCE_CREDENTIAL
+          #   node-filter:
+          #     class: DummyFilterClass
+          #   discovery-strategies:
+          #     - class: com.hazelcast.jclouds.JCloudsDiscoveryStrategy
+          #       enabled: true
+          #       properties:
+          #         provider: google-compute-engine
+          #         identity: GCE_IDENTITY
+          #         credential: GCE_CREDENTIAL
       custom-publisher:
         customPublisherId:
           class-name: com.companyName.CustomWanPublisher
@@ -1009,8 +1012,12 @@ hazelcast:
   #     Data will be stored in the map that uses Hazelcast's High-Density Memory Store feature. This
   #     option is available only in Hazelcast Enterprise HD.
   # * "statistics-enabled":
-  #     When you enable it, you can retrieve map entry statistics such as creation time, expiration time,
-  #     number of hits, key, value, etc. Its default value is true.
+  #     When you enable it, you can have map level statistics such as last access time to map,
+  #     total number of hits, key, value, etc. Its default value is true.
+  # * "per-entry-stats-enabled":
+  #     Enable/disable per entry statistics. Its default value is false.
+  #     When you enable it, you can retrieve entry level statistics such as hits, creation time,
+  #     last access time, last update time,last stored time.
   # * "metadata-policy"
   # Metadata policy for this map. Hazelcast may process objects of supported types ahead of time to
   # create additional metadata about them. This metadata then is used to make querying and indexing faster.
@@ -1277,6 +1284,7 @@ hazelcast:
       in-memory-format: BINARY
       metadata-policy: CREATE_ON_UPDATE
       statistics-enabled: true
+      per-entry-stats-enabled: false
       cache-deserialized-values: ALWAYS
       backup-count: 1
       async-backup-count: 0
@@ -2023,6 +2031,8 @@ hazelcast:
   #     Set as true to enable shared object when default Java serialization is used. Its default value is false.
   # * "allow-unsafe":
   #     Set as true to allow the usage of unsafe. Its default value is false.
+  # * "allow-override-default-serializers":
+  #     Set as true to allow override of default serializers. Its default value is false.
   # * "data-serializable-factories":
   #     Lists your class implementations of Hazelcast's DataSerializableFactory. Each factory has the required
   #     "factory-id" attribute that you should give as the ID of your factory.
@@ -3465,13 +3475,9 @@ hazelcast:
   #     * "executor-pool-size":
   #         Defines the number of threads responsible for query execution.
   #
-  #     * "operation-pool-size":
-  #         Defines the number of threads responsible for network operations processing.
-  #
   #     * "statement-timeout-millis":
   #         Defines the timeout in milliseconds that is applied to queries without an explicit timeout.
   #
   sql:
     executor-pool-size: 8
-    operation-pool-size: 8
     statement-timeout-millis: 0

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,9 +73,12 @@ public class MapExecuteOnKeysMessageTask
         int partitions = partitionService.getPartitionCount();
         PartitionIdSet partitionIds = new PartitionIdSet(partitions);
         Iterator<Data> iterator = parameters.keys.iterator();
-        while (iterator.hasNext() && partitionIds.size() < partitions) {
+        int addedPartitions = 0;
+        while (iterator.hasNext() && addedPartitions < partitions) {
             Data key = iterator.next();
-            partitionIds.add(partitionService.getPartitionId(key));
+            if (partitionIds.add(partitionService.getPartitionId(key))) {
+                addedPartitions++;
+            }
         }
         return partitionIds;
     }

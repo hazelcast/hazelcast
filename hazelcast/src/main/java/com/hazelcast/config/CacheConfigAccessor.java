@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,14 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.spi.annotation.PrivateApi;
-import com.hazelcast.spi.tenantcontrol.TenantControl;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
- * Accessor for CacheConfig fields
+ * Accessor for package-private methods of {@link CacheConfig}.
  */
 @PrivateApi
 public final class CacheConfigAccessor {
@@ -28,11 +31,8 @@ public final class CacheConfigAccessor {
     private CacheConfigAccessor() {
     }
 
-    public static <K, V> TenantControl getTenantControl(CacheConfig<K, V> cacheConfig) {
-        return cacheConfig.getTenantControl();
-    }
-
-    public static <K, V> void setTenantControl(CacheConfig<K, V> cacheConfig, TenantControl tenantControl) {
-        cacheConfig.setTenantControl(tenantControl);
+    public static void setSerializationService(@Nonnull CacheConfig<?, ?> config,
+                                               @Nullable SerializationService serializationService) {
+        config.setSerializationService(serializationService);
     }
 }

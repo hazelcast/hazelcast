@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -118,6 +118,15 @@ public class LocalKeySetTest extends HazelcastTestSupport {
         Set<String> result = map.localKeySet(new GoodPredicate());
 
         assertEquals(setOf(localKey1, localKey3), result);
+    }
+
+    @Test
+    public void whenPartitionPredicate() {
+        map.put(localKey1, "local");
+        map.put(remoteKey1, "remote");
+
+        Predicate<String, String> partitionPredicate = Predicates.partitionPredicate(remoteKey1, Predicates.alwaysTrue());
+        assertEquals(0, map.localKeySet(partitionPredicate).size());
     }
 
     @Test

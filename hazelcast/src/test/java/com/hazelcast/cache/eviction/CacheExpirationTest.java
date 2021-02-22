@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,7 +59,6 @@ import static com.hazelcast.test.OverridePropertyRule.set;
 import static com.hazelcast.test.backup.TestBackupUtils.assertBackupSizeEventually;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
@@ -298,21 +297,20 @@ public class CacheExpirationTest extends CacheTestSupport {
 
     @Test
     public void test_whenEntryIsRemovedBackupIsCleaned() {
-        SimpleExpiryListener listener = new SimpleExpiryListener();
         int ttlSeconds = 3;
         Duration duration = new Duration(TimeUnit.SECONDS, ttlSeconds);
         HazelcastExpiryPolicy expiryPolicy = new HazelcastExpiryPolicy(duration, duration, duration);
-        CacheConfig<Integer, Integer> cacheConfig = createCacheConfig(expiryPolicy, listener);
+        CacheConfig<Integer, Integer> cacheConfig = createCacheConfig(expiryPolicy);
         Cache<Integer, Integer> cache = createCache(cacheConfig);
 
         for (int i = 0; i < KEY_RANGE; i++) {
             cache.put(i, i);
-            assertTrue("Expected to remove entry " + i + " but entry was not present. Expired entry count: "
-                    + listener.getExpirationCount().get(), cache.remove(i));
         }
 
-        sleepAtLeastSeconds(ttlSeconds);
-        assertEquals(0, listener.getExpirationCount().get());
+        for (int i = 0; i < KEY_RANGE; i++) {
+            cache.remove(i, i);
+        }
+
         for (int i = 1; i < CLUSTER_SIZE; i++) {
             BackupAccessor backupAccessor = TestBackupUtils.newCacheAccessor(instances, cache.getName(), i);
             assertBackupSizeEventually(0, backupAccessor);

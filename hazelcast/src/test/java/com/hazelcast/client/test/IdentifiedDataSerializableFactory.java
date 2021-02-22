@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -88,11 +88,11 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
         }
 
         public void writePortable(PortableWriter writer) throws IOException {
-            writer.writeUTF("n", name);
+            writer.writeString("n", name);
         }
 
         public void readPortable(PortableReader reader) throws IOException {
-            name = reader.readUTF("n");
+            name = reader.readString("n");
         }
     }
 
@@ -116,11 +116,11 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
         }
 
         public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeUTF(param);
+            out.writeString(param);
         }
 
         public void readData(ObjectDataInput in) throws IOException {
-            param = in.readUTF();
+            param = in.readString();
         }
     }
 
@@ -437,13 +437,13 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
         @Override
         public void writeData(ObjectDataOutput out)
                 throws IOException {
-            out.writeUTF(prefix);
+            out.writeString(prefix);
         }
 
         @Override
         public void readData(ObjectDataInput in)
                 throws IOException {
-            prefix = in.readUTF();
+            prefix = in.readString();
         }
     }
 
@@ -524,12 +524,12 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
 
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeUTF(startSignalLatchName);
+            out.writeString(startSignalLatchName);
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
-            startSignalLatchName = in.readUTF();
+            startSignalLatchName = in.readString();
         }
     }
 

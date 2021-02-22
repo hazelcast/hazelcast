@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql.impl.type.converter;
 
+import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.math.BigDecimal;
@@ -50,7 +52,7 @@ public abstract class AbstractStringConverter extends Converter {
             return false;
         }
 
-        throw cannotConvert(QueryDataTypeFamily.BOOLEAN, val);
+        throw cannotParseError(QueryDataTypeFamily.BOOLEAN);
     }
 
     @Override
@@ -58,7 +60,7 @@ public abstract class AbstractStringConverter extends Converter {
         try {
             return Byte.parseByte(cast(val));
         } catch (NumberFormatException e) {
-            throw cannotConvert(QueryDataTypeFamily.TINYINT, val);
+            throw cannotParseError(QueryDataTypeFamily.TINYINT);
         }
     }
 
@@ -67,7 +69,7 @@ public abstract class AbstractStringConverter extends Converter {
         try {
             return Short.parseShort(cast(val));
         } catch (NumberFormatException e) {
-            throw cannotConvert(QueryDataTypeFamily.SMALLINT, val);
+            throw cannotParseError(QueryDataTypeFamily.SMALLINT);
         }
     }
 
@@ -76,7 +78,7 @@ public abstract class AbstractStringConverter extends Converter {
         try {
             return Integer.parseInt(cast(val));
         } catch (NumberFormatException e) {
-            throw cannotConvert(QueryDataTypeFamily.INTEGER, val);
+            throw cannotParseError(QueryDataTypeFamily.INTEGER);
         }
     }
 
@@ -85,7 +87,7 @@ public abstract class AbstractStringConverter extends Converter {
         try {
             return Long.parseLong(cast(val));
         } catch (NumberFormatException e) {
-            throw cannotConvert(QueryDataTypeFamily.BIGINT, val);
+            throw cannotParseError(QueryDataTypeFamily.BIGINT);
         }
     }
 
@@ -94,7 +96,7 @@ public abstract class AbstractStringConverter extends Converter {
         try {
             return new BigDecimal(cast(val), DECIMAL_MATH_CONTEXT);
         } catch (NumberFormatException e) {
-            throw cannotConvert(QueryDataTypeFamily.DECIMAL, val);
+            throw cannotParseError(QueryDataTypeFamily.DECIMAL);
         }
     }
 
@@ -103,7 +105,7 @@ public abstract class AbstractStringConverter extends Converter {
         try {
             return Float.parseFloat(cast(val));
         } catch (NumberFormatException e) {
-            throw cannotConvert(QueryDataTypeFamily.REAL, val);
+            throw cannotParseError(QueryDataTypeFamily.REAL);
         }
     }
 
@@ -112,7 +114,7 @@ public abstract class AbstractStringConverter extends Converter {
         try {
             return Double.parseDouble(cast(val));
         } catch (NumberFormatException e) {
-            throw cannotConvert(QueryDataTypeFamily.DOUBLE, val);
+            throw cannotParseError(QueryDataTypeFamily.DOUBLE);
         }
     }
 
@@ -126,7 +128,7 @@ public abstract class AbstractStringConverter extends Converter {
         try {
             return LocalDate.parse(cast(val));
         } catch (DateTimeParseException e) {
-            throw cannotConvert(QueryDataTypeFamily.DATE, val);
+            throw cannotParseError(QueryDataTypeFamily.DATE);
         }
     }
 
@@ -135,7 +137,7 @@ public abstract class AbstractStringConverter extends Converter {
         try {
             return LocalTime.parse(cast(val));
         } catch (DateTimeParseException e) {
-            throw cannotConvert(QueryDataTypeFamily.TIME, val);
+            throw cannotParseError(QueryDataTypeFamily.TIME);
         }
     }
 
@@ -144,7 +146,7 @@ public abstract class AbstractStringConverter extends Converter {
         try {
             return LocalDateTime.parse(cast(val));
         } catch (DateTimeParseException e) {
-            throw cannotConvert(QueryDataTypeFamily.TIMESTAMP, val);
+            throw cannotParseError(QueryDataTypeFamily.TIMESTAMP);
         }
     }
 
@@ -153,7 +155,7 @@ public abstract class AbstractStringConverter extends Converter {
         try {
             return OffsetDateTime.parse(cast(val));
         } catch (DateTimeParseException e) {
-            throw cannotConvert(QueryDataTypeFamily.TIMESTAMP_WITH_TIME_ZONE, val);
+            throw cannotParseError(QueryDataTypeFamily.TIMESTAMP_WITH_TIME_ZONE);
         }
     }
 
@@ -168,4 +170,10 @@ public abstract class AbstractStringConverter extends Converter {
     }
 
     protected abstract String cast(Object val);
+
+    private static QueryException cannotParseError(QueryDataTypeFamily target) {
+        String message = "Cannot parse " + QueryDataTypeFamily.VARCHAR + " value to " + target;
+
+        return QueryException.error(SqlErrorCode.DATA_EXCEPTION, message);
+    }
 }

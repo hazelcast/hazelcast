@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ public class MapAddEntryListenerToKeyWithPredicateMessageTask
     @Override
     protected EventFilter getEventFilter() {
         Predicate predicate = serializationService.toObject(parameters.predicate);
-        QueryEventFilter eventFilter = new QueryEventFilter(parameters.includeValue, parameters.key, predicate);
+        QueryEventFilter eventFilter = new QueryEventFilter(parameters.key, predicate, parameters.includeValue);
         return new EventListenerFilter(parameters.listenerFlags, eventFilter);
     }
 

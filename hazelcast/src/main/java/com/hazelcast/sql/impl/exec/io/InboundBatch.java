@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,17 +26,23 @@ import java.util.UUID;
 public final class InboundBatch {
 
     private final RowBatch batch;
+    private final long ordinal;
     private final boolean last;
     private final UUID senderId;
 
-    public InboundBatch(RowBatch batch, boolean last, UUID senderId) {
+    public InboundBatch(RowBatch batch, long ordinal, boolean last, UUID senderId) {
         this.batch = batch;
+        this.ordinal = ordinal;
         this.last = last;
         this.senderId = senderId;
     }
 
     public RowBatch getBatch() {
         return batch;
+    }
+
+    public long getOrdinal() {
+        return ordinal;
     }
 
     public boolean isLast() {

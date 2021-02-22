@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,7 +63,7 @@ public class IndexRangeFilter implements IndexFilter, IdentifiedDataSerializable
 
     @SuppressWarnings("checkstyle:CyclomaticComplexity")
     @Override
-    public Iterator<QueryableEntry> getEntries(InternalIndex index, ExpressionEvalContext evalContext) {
+    public Iterator<QueryableEntry> getEntries(InternalIndex index, boolean descending, ExpressionEvalContext evalContext) {
         if (from != null) {
             if (to != null) {
                 // Lower and upper bounds
@@ -79,7 +79,7 @@ public class IndexRangeFilter implements IndexFilter, IdentifiedDataSerializable
                     return Collections.emptyIterator();
                 }
 
-                return index.getSqlRecordIterator(fromValue, fromInclusive, toValue, toInclusive);
+                return index.getSqlRecordIterator(fromValue, fromInclusive, toValue, toInclusive, descending);
             } else {
                 // Lower bound only
                 Comparable fromValue = from.getValue(evalContext);
@@ -89,7 +89,7 @@ public class IndexRangeFilter implements IndexFilter, IdentifiedDataSerializable
                     return Collections.emptyIterator();
                 }
 
-                return index.getSqlRecordIterator(fromComparison, fromValue);
+                return index.getSqlRecordIterator(fromComparison, fromValue, descending);
             }
         } else {
             assert to != null;
@@ -102,7 +102,7 @@ public class IndexRangeFilter implements IndexFilter, IdentifiedDataSerializable
                 return Collections.emptyIterator();
             }
 
-            return index.getSqlRecordIterator(toComparison, toValue);
+            return index.getSqlRecordIterator(toComparison, toValue, descending);
         }
     }
 

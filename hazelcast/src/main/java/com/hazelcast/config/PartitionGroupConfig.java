@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,8 @@ import static com.hazelcast.internal.util.Preconditions.isNotNull;
  * With PartitionGroupConfig, you can control how primary and backup partitions are mapped to physical Members.
  * <p>
  * Hazelcast will always place partitions on different partition groups so as to provide redundancy.
- * There are three partition group schemes defined in {@link MemberGroupType}: PER_MEMBER, HOST_AWARE
- * CUSTOM, ZONE_AWARE, SPI.
+ * There are seven partition group schemes defined in {@link MemberGroupType}: PER_MEMBER, HOST_AWARE
+ * CUSTOM, ZONE_AWARE, NODE_AWARE, PLACEMENT_AWARE, SPI.
  * <p>
  * In all cases a partition will never be created on the same group. If there are more partitions defined than
  * there are partition groups, then only those partitions, up to the number of partition groups, will be created.
@@ -77,20 +77,50 @@ import static com.hazelcast.internal.util.Preconditions.isNotNull;
  * <p>
  * You can define as many <code>member-group</code>s as you want. Hazelcast will always store backups in a different
  * member-group to the primary partition.
+ *
+ * <h1>ZONE_AWARE Partition Groups</h1>
+ * In this scheme, groups are allocated according to the metadata provided by Discovery SPI.
+ * These metadata are availability zone, rack and host. The backups of the partitions are not
+ * placed on the same group so this is very useful for ensuring partitions are placed on
+ * different availability zones without providing the IP addresses to the config ahead.
+ * <code>
  * <pre>
  * &lt;partition-group enabled="true" group-type="ZONE_AWARE"/&gt;
  * </pre>
+ * </code>
  *
- * <h1>Zone Aware Partition Groups</h1>
- * In this scheme, groups are allocated according to the metadata provided by Discovery SPI Partitions are not
- * written to the same group. This is very useful for ensuring partitions are written to availability
- * zones or different racks without providing the IP addresses to the config ahead.
+ * <h1>NODE_AWARE Partition Groups</h1>
+ * In this scheme, groups are allocated according to node name metadata provided by Discovery SPI.
+ * For container orchestration tools like Kubernetes and Docker Swarm, node is the term used to refer
+ * machine that containers/pods run on. A node may be a virtual or physical machine.
+ * The backups of the partitions are not placed on same group so this is very useful for ensuring partitions
+ * are placed on different nodes without providing the IP addresses to the config ahead.
+ *
+ * <code>
  * <pre>
- * &lt;partition-group enabled="true" group-type="SPI"/&gt;
+ * &lt;partition-group enabled="true" group-type="NODE_AWARE"/&gt;
  * </pre>
+ * </code>
+ *
+ * <h1>PLACEMENT_AWARE Partition Groups</h1>
+ * In this scheme, groups are allocated according to the placement metadata provided by Discovery
+ * SPI. Depending on the cloud provider, this metadata indicates the placement information (rack,
+ * fault domain, etc.) of a VM in a zone. This scheme provides a finer granularity than ZONE_AWARE
+ * for partition groups and is useful to provide good redundancy when running members within a
+ * single availability zone.
+ *
+ * <code>
+ * <pre>
+ * &lt;partition-group enabled="true" group-type="PLACEMENT_AWARE"/&gt;
+ * </pre>
+ * </code>
  *
  * <h1>SPI Aware Partition Groups</h1>
  * In this scheme, groups are allocated according to the implementation provided by Discovery SPI.
+ * <code>
+ * <pre>
+ * &lt;partition-group enabled="true" group-type="SPI"/&gt;
+ * </pre>
  *
  * <h2>Overlapping Groups</h2>
  * Care should be taken when selecting overlapping groups, e.g.
@@ -139,6 +169,16 @@ public class PartitionGroupConfig {
          * If only one zone is available, backups will be created in the same zone.
          */
         ZONE_AWARE,
+        /**
+         * Node Aware. Backups will be created in other nodes.
+         * If only one node is available, backups will be created in the same node.
+         */
+        NODE_AWARE,
+        /**
+         * Placement Aware. Backups will be created in other placement groups.
+         * If only one placement group is available, backups will be created in the same group.
+         */
+        PLACEMENT_AWARE,
         /**
          * MemberGroup implementation will be provided by the user via Discovery SPI.
          */

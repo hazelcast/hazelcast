@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 import static com.hazelcast.query.impl.AbstractIndex.NULL;
@@ -42,7 +43,7 @@ import static java.util.Collections.emptySet;
 public class OrderedIndexStore extends BaseSingleValueIndexStore {
 
     private final ConcurrentSkipListMap<Comparable, Map<Data, QueryableEntry>> recordMap =
-            new ConcurrentSkipListMap<>(Comparables.COMPARATOR);
+        new ConcurrentSkipListMap<>(Comparables.COMPARATOR);
 
     private final IndexFunctor<Comparable, QueryableEntry> addFunctor;
     private final IndexFunctor<Comparable, Data> removeFunctor;
@@ -65,7 +66,6 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
 
     @Override
     Object insertInternal(Comparable value, QueryableEntry record) {
-        markIndexStoreExpirableIfNecessary(record);
         return addFunctor.invoke(value, record);
     }
 
@@ -116,11 +116,19 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
     }
 
     @Override
-    public Iterator<QueryableEntry> getSqlRecordIterator() {
-        Iterator<QueryableEntry> iterator = new IndexEntryFlatteningIterator(recordMap.values().iterator());
-        Iterator<QueryableEntry> nullIterator = recordsWithNullValue.values().iterator();
+    public Iterator<QueryableEntry> getSqlRecordIterator(boolean descending) {
+        if (descending) {
+            Iterator<QueryableEntry> iterator = new IndexEntryFlatteningIterator(recordMap.descendingMap().values().iterator());
+            Iterator<QueryableEntry> nullIterator = recordsWithNullValue.values().iterator();
 
-        return new FlatCompositeIterator<>(Arrays.asList(nullIterator, iterator).iterator());
+            return new FlatCompositeIterator<>(Arrays.asList(iterator, nullIterator).iterator());
+
+        } else {
+            Iterator<QueryableEntry> iterator = new IndexEntryFlatteningIterator(recordMap.values().iterator());
+            Iterator<QueryableEntry> nullIterator = recordsWithNullValue.values().iterator();
+
+            return new FlatCompositeIterator<>(Arrays.asList(nullIterator, iterator).iterator());
+        }
     }
 
     @Override
@@ -139,21 +147,38 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
     }
 
     @Override
-    public Iterator<QueryableEntry> getSqlRecordIterator(Comparison comparison, Comparable searchedValue) {
+    public Iterator<QueryableEntry> getSqlRecordIterator(Comparison comparison, Comparable searchedValue, boolean descending) {
         Iterator<Map<Data, QueryableEntry>> iterator;
 
+        ConcurrentNavigableMap navigableMap = descending ? recordMap.descendingMap() : recordMap;
         switch (comparison) {
             case LESS:
-                iterator = recordMap.headMap(searchedValue, false).values().iterator();
+                if (descending) {
+                    iterator = navigableMap.tailMap(searchedValue, false).values().iterator();
+                } else {
+                    iterator = navigableMap.headMap(searchedValue, false).values().iterator();
+                }
                 break;
             case LESS_OR_EQUAL:
-                iterator = recordMap.headMap(searchedValue, true).values().iterator();
+                if (descending) {
+                    iterator = navigableMap.tailMap(searchedValue, true).values().iterator();
+                } else {
+                    iterator = navigableMap.headMap(searchedValue, true).values().iterator();
+                }
                 break;
             case GREATER:
-                iterator = recordMap.tailMap(searchedValue, false).values().iterator();
+                if (descending) {
+                    iterator = navigableMap.headMap(searchedValue, false).values().iterator();
+                } else {
+                    iterator = navigableMap.tailMap(searchedValue, false).values().iterator();
+                }
                 break;
             case GREATER_OR_EQUAL:
-                iterator = recordMap.tailMap(searchedValue, true).values().iterator();
+                if (descending) {
+                    iterator = navigableMap.headMap(searchedValue, true).values().iterator();
+                } else {
+                    iterator = navigableMap.tailMap(searchedValue, true).values().iterator();
+                }
                 break;
             default:
                 throw new IllegalArgumentException("Unrecognized comparison: " + comparison);
@@ -163,11 +188,13 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
     }
 
     @Override
+    @SuppressWarnings("checkstyle:NPathComplexity")
     public Iterator<QueryableEntry> getSqlRecordIterator(
         Comparable from,
         boolean fromInclusive,
         Comparable to,
-        boolean toInclusive
+        boolean toInclusive,
+        boolean descending
     ) {
         int order = Comparables.compare(from, to);
 
@@ -187,7 +214,13 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
             return emptyIterator();
         }
 
-        return new IndexEntryFlatteningIterator(recordMap.subMap(from, fromInclusive, to, toInclusive).values().iterator());
+        ConcurrentNavigableMap navigableMap = descending ? recordMap.descendingMap() : recordMap;
+        Comparable from0 = descending ? to : from;
+        boolean fromInclusive0 = descending ? toInclusive : fromInclusive;
+        Comparable to0 = descending ? from : to;
+        boolean toInclusive0 = descending ? fromInclusive : toInclusive;
+        return new IndexEntryFlatteningIterator(
+            navigableMap.subMap(from0, fromInclusive0, to0, toInclusive0).values().iterator());
     }
 
     @Override

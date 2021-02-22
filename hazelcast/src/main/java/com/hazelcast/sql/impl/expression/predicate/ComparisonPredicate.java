@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,12 +19,14 @@ package com.hazelcast.sql.impl.expression.predicate;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.expression.BiExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
@@ -75,6 +77,24 @@ public final class ComparisonPredicate extends BiExpression<Boolean> implements 
         Object right = operand2.eval(row, context);
         if (right == null) {
             return null;
+        }
+
+        if (this.operand1.getType().getTypeFamily() == QueryDataTypeFamily.OBJECT) {
+            Class<?> leftClass = left.getClass();
+            Class<?> rightClass = right.getClass();
+
+            if (!leftClass.equals(rightClass)) {
+                throw QueryException.error(
+                        "Cannot compare two OBJECT values, because "
+                                + "left operand has " + leftClass + " type and "
+                                + "right operand has " + rightClass + " type");
+            }
+
+            if (!(left instanceof Comparable)) {
+                throw QueryException.error(
+                        "Cannot compare OBJECT value because " + leftClass + " doesn't implement Comparable interface");
+            }
+
         }
 
         Comparable leftComparable = (Comparable) left;

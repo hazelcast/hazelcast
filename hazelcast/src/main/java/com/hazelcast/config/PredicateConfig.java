@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -202,15 +202,15 @@ public class PredicateConfig implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(className);
-        out.writeUTF(sql);
+        out.writeString(className);
+        out.writeString(sql);
         out.writeObject(implementation);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        className = in.readUTF();
-        sql = in.readUTF();
+        className = in.readString();
+        sql = in.readString();
         implementation = in.readObject();
     }
 }

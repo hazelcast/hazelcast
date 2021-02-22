@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,6 @@ public class AddCacheConfigOperation extends Operation implements IdentifiedData
     @Override
     public void run() {
         ICacheService cacheService = getService();
-        cacheService.setTenantControl(cacheConfig);
         cacheService.putCacheConfigIfAbsent(cacheConfig);
     }
 
@@ -68,6 +67,4 @@ public class AddCacheConfigOperation extends Operation implements IdentifiedData
     public int getClassId() {
         return CacheDataSerializerHook.ADD_CACHE_CONFIG_OPERATION;
     }
-
-
 }

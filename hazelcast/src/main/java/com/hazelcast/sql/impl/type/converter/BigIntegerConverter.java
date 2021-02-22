@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ public final class BigIntegerConverter extends AbstractDecimalConverter {
         try {
             return casted.byteValueExact();
         } catch (ArithmeticException e) {
-            throw numericOverflow(QueryDataTypeFamily.TINYINT, val);
+            throw numericOverflowError(QueryDataTypeFamily.TINYINT);
         }
     }
 
@@ -55,7 +55,7 @@ public final class BigIntegerConverter extends AbstractDecimalConverter {
         try {
             return casted.shortValueExact();
         } catch (ArithmeticException e) {
-            throw numericOverflow(QueryDataTypeFamily.SMALLINT, val);
+            throw numericOverflowError(QueryDataTypeFamily.SMALLINT);
         }
     }
 
@@ -65,7 +65,7 @@ public final class BigIntegerConverter extends AbstractDecimalConverter {
         try {
             return casted.intValueExact();
         } catch (ArithmeticException e) {
-            throw numericOverflow(QueryDataTypeFamily.INTEGER, val);
+            throw numericOverflowError(QueryDataTypeFamily.INTEGER);
         }
     }
 
@@ -75,7 +75,7 @@ public final class BigIntegerConverter extends AbstractDecimalConverter {
         try {
             return casted.longValueExact();
         } catch (ArithmeticException e) {
-            throw numericOverflow(QueryDataTypeFamily.BIGINT, val);
+            throw numericOverflowError(QueryDataTypeFamily.BIGINT);
         }
     }
 

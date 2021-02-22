@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,18 @@
 
 package com.hazelcast.instance.impl;
 
-import com.hazelcast.internal.cluster.impl.TcpIpJoiner;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.InterfacesConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.instance.AddressPicker;
 import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.internal.cluster.impl.TcpIpJoiner;
+import com.hazelcast.internal.util.AddressUtil;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.internal.util.AddressUtil;
 
 import java.io.IOException;
 import java.net.Inet4Address;
@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -150,7 +151,7 @@ class DefaultAddressPicker
 
         if (logger.isFineEnabled()) {
             logger.fine("Picked " + bindAddress + (endpointQualifier == null ? "" : ", for endpoint " + endpointQualifier)
-                  + ", using socket " + serverSocketChannel.socket() + ", bind any local is " + bindAny);
+                    + ", using socket " + serverSocketChannel.socket() + ", bind any local is " + bindAny);
         }
 
         return getPublicAddress(port);
@@ -268,7 +269,7 @@ class DefaultAddressPicker
     }
 
     private static void appendMatchingInterfaces(Collection<InterfaceDefinition> interfaces,
-            Map<String, String> address2DomainMap, String configInterface) {
+                                                 Map<String, String> address2DomainMap, String configInterface) {
 
         for (Entry<String, String> entry : address2DomainMap.entrySet()) {
             String address = entry.getKey();
@@ -436,7 +437,9 @@ class DefaultAddressPicker
 
     @Override
     public Map<EndpointQualifier, Address> getPublicAddressMap() {
-        return Collections.singletonMap(MEMBER, publicAddress);
+        HashMap<EndpointQualifier, Address> publicAddressMap = new HashMap<>();
+        publicAddressMap.put(MEMBER, publicAddress);
+        return publicAddressMap;
     }
 
     void setHostnameResolver(HostnameResolver hostnameResolver) {

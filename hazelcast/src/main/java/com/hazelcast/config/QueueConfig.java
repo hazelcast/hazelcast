@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package com.hazelcast.config;
 
 import com.hazelcast.collection.IQueue;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.nio.ObjectDataInput;
@@ -92,7 +91,7 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Ver
         this.emptyQueueTtl = config.emptyQueueTtl;
         this.statisticsEnabled = config.statisticsEnabled;
         this.splitBrainProtectionName = config.splitBrainProtectionName;
-        this.mergePolicyConfig = config.mergePolicyConfig;
+        this.mergePolicyConfig = new MergePolicyConfig(config.mergePolicyConfig);
         this.queueStoreConfig = config.queueStoreConfig != null ? new QueueStoreConfig(config.queueStoreConfig) : null;
         this.listenerConfigs = new ArrayList<>(config.getItemListenerConfigs());
         this.priorityComparatorClassName = config.priorityComparatorClassName;
@@ -400,7 +399,7 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Ver
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         writeNullableList(listenerConfigs, out);
         out.writeInt(backupCount);
         out.writeInt(asyncBackupCount);
@@ -408,18 +407,14 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Ver
         out.writeInt(emptyQueueTtl);
         out.writeObject(queueStoreConfig);
         out.writeBoolean(statisticsEnabled);
-        out.writeUTF(splitBrainProtectionName);
+        out.writeString(splitBrainProtectionName);
         out.writeObject(mergePolicyConfig);
-
-        // RU_COMPAT_4_0
-        if (out.getVersion().isGreaterOrEqual(Versions.V4_1)) {
-            out.writeUTF(priorityComparatorClassName);
-        }
+        out.writeString(priorityComparatorClassName);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         listenerConfigs = readNullableList(in);
         backupCount = in.readInt();
         asyncBackupCount = in.readInt();
@@ -427,13 +422,9 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Ver
         emptyQueueTtl = in.readInt();
         queueStoreConfig = in.readObject();
         statisticsEnabled = in.readBoolean();
-        splitBrainProtectionName = in.readUTF();
+        splitBrainProtectionName = in.readString();
         mergePolicyConfig = in.readObject();
-
-        // RU_COMPAT_4_0
-        if (in.getVersion().isGreaterOrEqual(Versions.V4_1)) {
-            priorityComparatorClassName = in.readUTF();
-        }
+        priorityComparatorClassName = in.readString();
     }
 
     @Override

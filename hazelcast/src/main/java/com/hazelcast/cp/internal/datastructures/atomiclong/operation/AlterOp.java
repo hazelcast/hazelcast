@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -100,14 +100,14 @@ public class AlterOp extends AbstractAtomicLongOp {
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
         out.writeObject(function);
-        out.writeUTF(alterResultType.name());
+        out.writeString(alterResultType.name());
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
         function = in.readObject();
-        alterResultType = AlterResultType.valueOf(in.readUTF());
+        alterResultType = AlterResultType.valueOf(in.readString());
     }
 
 }

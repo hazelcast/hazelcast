@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.IterationType;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.map.IMap;
@@ -684,7 +685,18 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     @Override
     @SuppressWarnings("unchecked")
     public Set<K> keySet(@Nonnull Predicate<K, V> predicate) {
-        return executePredicate(predicate, IterationType.KEY, true);
+        return executePredicate(predicate, IterationType.KEY, true, Target.ALL_NODES);
+    }
+
+    /**
+     * Execute the {@code keySet} operation only on the given {@code
+     * partitions}.
+     * <p>
+     * <b>Warning:</b> {@code partitions} is mutated during the call.
+     */
+    @SuppressWarnings("unchecked")
+    public Set<K> keySet(@Nonnull Predicate<K, V> predicate, PartitionIdSet partitions) {
+        return executePredicate(predicate, IterationType.KEY, true, Target.createPartitionTarget(partitions));
     }
 
     @Nonnull
@@ -694,8 +706,20 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Set<Map.Entry<K, V>> entrySet(@Nonnull Predicate predicate) {
-        return executePredicate(predicate, IterationType.ENTRY, true);
+        return executePredicate(predicate, IterationType.ENTRY, true, Target.ALL_NODES);
+    }
+
+    /**
+     * Execute the {@code entrySet} operation only on the given {@code
+     * partitions}.
+     * <p>
+     * <b>Warning:</b> {@code partitions} is mutated during the call.
+     */
+    @SuppressWarnings("unchecked")
+    public Set<Map.Entry<K, V>> entrySet(@Nonnull Predicate predicate, PartitionIdSet partitions) {
+        return executePredicate(predicate, IterationType.ENTRY, true, Target.createPartitionTarget(partitions));
     }
 
     @Nonnull
@@ -707,12 +731,23 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     @Override
     @SuppressWarnings("unchecked")
     public Collection<V> values(@Nonnull Predicate predicate) {
-        return executePredicate(predicate, IterationType.VALUE, false);
+        return executePredicate(predicate, IterationType.VALUE, false, Target.ALL_NODES);
     }
 
-    private Set executePredicate(Predicate predicate, IterationType iterationType, boolean uniqueResult) {
+    /**
+     * Execute the {@code values} operation only on the given {@code
+     * partitions}.
+     * <p>
+     * <b>Warning:</b> {@code partitions} is mutated during the call.
+     */
+    @SuppressWarnings("unchecked")
+    public Collection<V> values(@Nonnull Predicate predicate, PartitionIdSet partitions) {
+        return executePredicate(predicate, IterationType.VALUE, false, Target.createPartitionTarget(partitions));
+    }
+
+    private Set executePredicate(Predicate predicate, IterationType iterationType, boolean uniqueResult, Target target) {
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
-        QueryResult result = executeQueryInternal(predicate, iterationType, Target.ALL_NODES);
+        QueryResult result = executeQueryInternal(predicate, iterationType, target);
         incrementOtherOperationsStat();
         return transformToSet(serializationService, result, predicate, iterationType, uniqueResult, false);
     }
@@ -828,6 +863,22 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     @Override
     public <R> Collection<R> project(@Nonnull Projection<? super Map.Entry<K, V>, R> projection,
                                      @Nonnull Predicate<K, V> predicate) {
+        return project(projection, predicate, Target.ALL_NODES);
+    }
+
+    /**
+     * Execute the {@code project} operation only on the given {@code
+     * partitions}.
+     * <p>
+     * <b>Warning:</b> {@code partitions} is mutated during the call.
+     */
+    public <R> Collection<R> project(@Nonnull Projection<? super Map.Entry<K, V>, R> projection,
+                                     @Nonnull Predicate<K, V> predicate, PartitionIdSet partitions) {
+        return project(projection, predicate, Target.createPartitionTarget(partitions));
+    }
+
+    private <R> Collection<R> project(@Nonnull Projection<? super Map.Entry<K, V>, R> projection,
+                                     @Nonnull Predicate<K, V> predicate, Target target) {
         checkNotNull(projection, NULL_PROJECTION_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         checkNotPagingPredicate(predicate, "project");
@@ -835,7 +886,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         // HazelcastInstanceAware handled by cloning
         projection = serializationService.toObject(serializationService.toData(projection));
 
-        QueryResult result = executeQueryInternal(predicate, null, projection, IterationType.VALUE, Target.ALL_NODES);
+        QueryResult result = executeQueryInternal(predicate, null, projection, IterationType.VALUE, target);
         return transformToSet(serializationService, result, predicate, IterationType.VALUE, false, false);
     }
 

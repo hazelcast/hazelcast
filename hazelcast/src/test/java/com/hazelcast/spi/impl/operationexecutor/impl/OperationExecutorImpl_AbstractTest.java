@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,7 +71,7 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
 
     @Before
     public void setup() throws Exception {
-        loggingService = new LoggingServiceImpl("foo", "jdk", new BuildInfo("1", "1", "1", 1, false, (byte) 1, "1"), true);
+        loggingService = new LoggingServiceImpl("foo", "jdk", new BuildInfo("1", "1", "1", 1, false, (byte) 1, "1"), true, null);
 
         serializationService = new DefaultSerializationServiceBuilder().build();
         config = smallInstanceConfig();
@@ -229,14 +229,15 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
         }
 
         @Override
-        public void run(Packet packet) throws Exception {
+        public boolean run(Packet packet) throws Exception {
             packets.add(packet);
             Operation op = serializationService.toObject(packet);
             run(op);
+            return false;
         }
 
         @Override
-        public void run(Operation task) {
+        public boolean run(Operation task) {
             operations.add(task);
 
             currentTask = task;
@@ -247,6 +248,7 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
             } finally {
                 currentTask = null;
             }
+            return false;
         }
     }
 

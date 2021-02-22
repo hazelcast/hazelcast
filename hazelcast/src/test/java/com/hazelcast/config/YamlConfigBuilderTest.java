@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -911,6 +911,34 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    public void testMapConfig_statisticsEnable() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  map:\n"
+                + "    mymap:\n"
+                + "      statistics-enabled: false";
+
+        Config config = buildConfig(yaml);
+        MapConfig mapConfig = config.getMapConfig("mymap");
+
+        assertFalse(mapConfig.isStatisticsEnabled());
+    }
+
+    @Override
+    public void testMapConfig_perEntryStatsEnabled() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  map:\n"
+                + "    mymap:\n"
+                + "      per-entry-stats-enabled: true";
+
+        Config config = buildConfig(yaml);
+        MapConfig mapConfig = config.getMapConfig("mymap");
+
+        assertTrue(mapConfig.isStatisticsEnabled());
+    }
+
+    @Override
     @Test
     public void testMapConfig_metadataPolicy_defaultValue() {
         String yaml = ""
@@ -1029,6 +1057,56 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
         assertTrue(mapStoreConfig.isEnabled());
         assertEquals(MapStoreConfig.InitialLoadMode.EAGER, mapStoreConfig.getInitialLoadMode());
+    }
+
+    @Override
+    @Test
+    public void testMapStoreEnabled() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  map:\n"
+                + "    mymap:\n"
+                + "      map-store:\n"
+                + "        enabled: true\n"
+                + "        initial-mode: EAGER\n";
+
+        Config config = buildConfig(yaml);
+        MapStoreConfig mapStoreConfig = config.getMapConfig("mymap").getMapStoreConfig();
+
+        assertTrue(mapStoreConfig.isEnabled());
+    }
+
+    @Override
+    @Test
+    public void testMapStoreEnabledIfNotDisabled() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  map:\n"
+                + "    mymap:\n"
+                + "      map-store:\n"
+                + "        initial-mode: EAGER\n";
+
+        Config config = buildConfig(yaml);
+        MapStoreConfig mapStoreConfig = config.getMapConfig("mymap").getMapStoreConfig();
+
+        assertTrue(mapStoreConfig.isEnabled());
+    }
+
+    @Override
+    @Test
+    public void testMapStoreDisabled() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  map:\n"
+                + "    mymap:\n"
+                + "      map-store:\n"
+                + "        enabled: false\n"
+                + "        initial-mode: EAGER\n";
+
+        Config config = buildConfig(yaml);
+        MapStoreConfig mapStoreConfig = config.getMapConfig("mymap").getMapStoreConfig();
+
+        assertFalse(mapStoreConfig.isEnabled());
     }
 
     @Override
@@ -1173,6 +1251,36 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         PartitionGroupConfig partitionGroupConfig = config.getPartitionGroupConfig();
         assertTrue(partitionGroupConfig.isEnabled());
         assertEquals(PartitionGroupConfig.MemberGroupType.ZONE_AWARE, partitionGroupConfig.getGroupType());
+    }
+
+    @Override
+    @Test
+    public void testPartitionGroupNodeAware() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  partition-group:\n"
+                + "    enabled: true\n"
+                + "    group-type: NODE_AWARE\n";
+
+        Config config = buildConfig(yaml);
+        PartitionGroupConfig partitionGroupConfig = config.getPartitionGroupConfig();
+        assertTrue(partitionGroupConfig.isEnabled());
+        assertEquals(PartitionGroupConfig.MemberGroupType.NODE_AWARE, partitionGroupConfig.getGroupType());
+    }
+
+    @Override
+    @Test
+    public void testPartitionGroupPlacementAware() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  partition-group:\n"
+                + "    enabled: true\n"
+                + "    group-type: PLACEMENT_AWARE\n";
+
+        Config config = buildConfig(yaml);
+        PartitionGroupConfig partitionGroupConfig = config.getPartitionGroupConfig();
+        assertTrue(partitionGroupConfig.isEnabled());
+        assertEquals(PartitionGroupConfig.MemberGroupType.PLACEMENT_AWARE, partitionGroupConfig.getGroupType());
     }
 
     @Override
@@ -2714,6 +2822,23 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    public void testEmptyUserCodeDeployment() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  user-code-deployment:\n"
+                + "    enabled: true\n";
+
+        Config config = buildConfig(yaml);
+        UserCodeDeploymentConfig userCodeDeploymentConfig = config.getUserCodeDeploymentConfig();
+        assertTrue(userCodeDeploymentConfig.isEnabled());
+        assertEquals(UserCodeDeploymentConfig.ClassCacheMode.ETERNAL, userCodeDeploymentConfig.getClassCacheMode());
+        assertEquals(UserCodeDeploymentConfig.ProviderMode.LOCAL_AND_CACHED_CLASSES, userCodeDeploymentConfig.getProviderMode());
+        assertNull(userCodeDeploymentConfig.getBlacklistedPrefixes());
+        assertNull(userCodeDeploymentConfig.getWhitelistedPrefixes());
+        assertNull(userCodeDeploymentConfig.getProviderFilter());
+    }
+
+    @Override
     @Test
     public void testCRDTReplicationConfig() {
         final String yaml = ""
@@ -2785,6 +2910,21 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertTrue(whiteList.getPrefixes().contains("["));
         assertTrue(blackList.getClasses().contains("com.acme.app.BeanComparator"));
     }
+
+    @Override
+    @Test
+    public void testAllowOverrideDefaultSerializers() {
+        final String yaml = ""
+          + "hazelcast:\n"
+          + "  serialization:\n"
+          + "    allow-override-default-serializers: true\n";
+
+        final Config config = new InMemoryYamlConfig(yaml);
+        final boolean isAllowOverrideDefaultSerializers
+          = config.getSerializationConfig().isAllowOverrideDefaultSerializers();
+        assertTrue(isAllowOverrideDefaultSerializers);
+    }
+
 
     @Override
     @Test
@@ -3416,12 +3556,10 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
             + "hazelcast:\n"
             + "  sql:\n"
             + "    executor-pool-size: 10\n"
-            + "    operation-pool-size: 20\n"
             + "    statement-timeout-millis: 30\n";
         Config config = buildConfig(yaml);
         SqlConfig sqlConfig = config.getSqlConfig();
         assertEquals(10, sqlConfig.getExecutorPoolSize());
-        assertEquals(20, sqlConfig.getOperationPoolSize());
         assertEquals(30L, sqlConfig.getStatementTimeoutMillis());
     }
 
@@ -3702,6 +3840,24 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "      host: syslogserver.acme.com\n"
                 + "      port: 514\n"
                 + "      type: tcp\n";
+        return new InMemoryYamlConfig(yaml);
+    }
+
+    @Override
+    protected Config buildMapWildcardConfig() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  map:\n"
+                + "    map*:\n"
+                + "      attributes:\n"
+                + "        name:\n"
+                + "          extractor-class-name: usercodedeployment.CapitalizingFirstNameExtractor\n"
+                + "    mapBackup2*:\n"
+                + "      backup-count: 2\n"
+                + "      attributes:\n"
+                + "        name:\n"
+                + "          extractor-class-name: usercodedeployment.CapitalizingFirstNameExtractor\n";
+
         return new InMemoryYamlConfig(yaml);
     }
 }

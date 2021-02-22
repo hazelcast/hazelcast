@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,7 +72,7 @@ public class Employee implements Portable {
     }
 
     public void writePortable(PortableWriter writer) throws IOException {
-        writer.writeUTF("n", name);
+        writer.writeString("n", name);
         writer.writeInt("a", age);
 
         writer.writeByte("b", by);
@@ -83,8 +83,8 @@ public class Employee implements Portable {
         writer.writeLong("l", l);
         writer.writeFloat("f", f);
         writer.writeDouble("d", d);
-        writer.writeUTF("str", str);
-        writer.writeUTF("utfstr", utfStr);
+        writer.writeString("str", str);
+        writer.writeString("utfstr", utfStr);
 
         writer.writeByteArray("bb", byteArray);
         writer.writeCharArray("cc", charArray);
@@ -107,7 +107,7 @@ public class Employee implements Portable {
     }
 
     public void readPortable(PortableReader reader) throws IOException {
-        name = reader.readUTF("n");
+        name = reader.readString("n");
         age = reader.readInt("a");
 
         by = reader.readByte("b");
@@ -118,8 +118,8 @@ public class Employee implements Portable {
         l = reader.readLong("l");
         f = reader.readFloat("f");
         d = reader.readDouble("d");
-        str = reader.readUTF("str");
-        utfStr = reader.readUTF("utfstr");
+        str = reader.readString("str");
+        utfStr = reader.readString("utfstr");
 
         byteArray = reader.readByteArray("bb");
         charArray = reader.readCharArray("cc");

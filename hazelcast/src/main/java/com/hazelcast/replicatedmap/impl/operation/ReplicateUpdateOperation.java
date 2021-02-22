@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -95,7 +95,7 @@ public class ReplicateUpdateOperation extends AbstractNamedSerializableOperation
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         response.writeData(out);
-        out.writeUTF(name);
+        out.writeString(name);
         IOUtil.writeData(out, dataKey);
         IOUtil.writeData(out, dataValue);
         out.writeLong(ttl);
@@ -107,7 +107,7 @@ public class ReplicateUpdateOperation extends AbstractNamedSerializableOperation
     protected void readInternal(ObjectDataInput in) throws IOException {
         response = new VersionResponsePair();
         response.readData(in);
-        name = in.readUTF();
+        name = in.readString();
         dataKey = IOUtil.readData(in);
         dataValue = IOUtil.readData(in);
         ttl = in.readLong();

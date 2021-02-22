@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@
         <Logger name="com.hazelcast.client.impl.protocol.task" level="debug"/>
         <Logger name="com.hazelcast.client.impl.operations" level="debug"/>
         <Logger name="com.hazelcast.client.impl.spi.ClientListenerService" level="trace"/>
-        <!--<Logger name="com.hazelcast.client.impl.spi.ClientClusterService" level="trace"/>-->
+        <Logger name="com.hazelcast.cp.internal" level="trace"/>
         <!--<Logger name="com.hazelcast.client.impl.spi.ClientInvocationService" level="trace"/>-->
         <!--<Logger name="com.hazelcast.client.impl.connection.ClientConnectionManager" level="trace"/>-->
     </Loggers>

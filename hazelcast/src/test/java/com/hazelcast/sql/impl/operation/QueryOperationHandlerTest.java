@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,19 @@
 
 package com.hazelcast.sql.impl.operation;
 
-import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.config.Config;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
-import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.sql.impl.SqlErrorCode;
-import com.hazelcast.sql.impl.NodeServiceProviderImpl;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.SqlInternalService;
-import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.exec.AbstractUpstreamAwareExec;
 import com.hazelcast.sql.impl.exec.CreateExecPlanNodeVisitor;
 import com.hazelcast.sql.impl.exec.CreateExecPlanNodeVisitorCallback;
 import com.hazelcast.sql.impl.exec.Exec;
 import com.hazelcast.sql.impl.exec.IterationResult;
-import com.hazelcast.sql.impl.exec.root.BlockingRootResultConsumer;
 import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.plan.node.PlanNode;
 import com.hazelcast.sql.impl.plan.node.PlanNodeVisitor;
@@ -41,61 +36,51 @@ import com.hazelcast.sql.impl.plan.node.UniInputPlanNode;
 import com.hazelcast.sql.impl.plan.node.io.ReceivePlanNode;
 import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.ListRowBatch;
-import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
+import com.hazelcast.sql.impl.state.QueryState;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.sql.impl.worker.QueryFragmentExecutable;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
-import java.util.ArrayList;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
- * A set of integration tests for query message processing on a single member.
- * <p>
- * Abbreviations:
- * <ul>
- *     <li>E - execute</li>
- *     <li>Bx - batch request with x ordinal</li>
- *     <li>C - cancel</li>
- *     <li>L - leave of the other member</li>
- * </ul>
+ * Tests for different combinations of events
  */
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-@Ignore("https://github.com/hazelcast/hazelcast/issues/16929#issuecomment-699819103")
 public class QueryOperationHandlerTest extends SqlTestSupport {
 
     private static final int EDGE_ID = 1;
-    private static final int BATCH_SIZE = 100;
 
-    private static final long STATE_CHECK_FREQUENCY = 100L;
+    private static final int VALUE_0 = 0;
+    private static final int VALUE_1 = 1;
 
-    private static volatile State testState;
+    private static final Duration ASSERT_FALSE_TIMEOUT = Duration.ofMillis(1000L);
 
-    private TestHazelcastInstanceFactory factory;
-
-    private HazelcastInstanceProxy initiator;
-    private HazelcastInstanceProxy participant;
+    private final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(2);
 
     private UUID initiatorId;
     private UUID participantId;
@@ -105,357 +90,438 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
 
     private Map<UUID, PartitionIdSet> partitionMap;
 
-    private QueryExecuteOperation initiatorExecuteOperation;
-    private QueryBatchExchangeOperation initiatorBatch1Operation;
-    private QueryBatchExchangeOperation initiatorBatch2Operation;
-    private QueryCancelOperation initiatorCancelOperation;
+    private QueryId queryId;
 
-    private QueryExecuteOperation participantExecuteOperation;
-    private QueryBatchExchangeOperation participantBatch1Operation;
-    private QueryBatchExchangeOperation participantBatch2Operation;
-    private QueryCancelOperation participantCancelOperation;
+    @Parameterized.Parameter
+    public boolean targetIsNotInitiator;
 
-    private QueryOperationChannel toInitiatorChannel;
-    private QueryOperationChannel toParticipantChannel;
+    @Parameterized.Parameters(name = "targetIsNotInitiator:{0}")
+    public static Object[] parameters() {
+        return new Object[]{true, false};
+    }
+
+    @Override
+    protected Config getConfig() {
+        return smallInstanceConfig();
+    }
 
     @Before
     public void before() {
-        factory = new TestHazelcastInstanceFactory(2);
-
-        initiator = (HazelcastInstanceProxy) factory.newHazelcastInstance();
-        participant = (HazelcastInstanceProxy) factory.newHazelcastInstance();
+        HazelcastInstanceProxy initiator = (HazelcastInstanceProxy) factory.newHazelcastInstance();
+        HazelcastInstanceProxy participant = (HazelcastInstanceProxy) factory.newHazelcastInstance();
 
         initiatorId = initiator.getLocalEndpoint().getUuid();
         participantId = participant.getLocalEndpoint().getUuid();
 
-        initiatorService = setInternalService(initiator, STATE_CHECK_FREQUENCY);
-        participantService = setInternalService(participant, STATE_CHECK_FREQUENCY);
+        initiatorService = sqlInternalService(initiator);
+        participantService = sqlInternalService(participant);
+
+        setStateCheckFrequency(Long.MAX_VALUE);
 
         partitionMap = new HashMap<>();
         partitionMap.put(initiatorId, new PartitionIdSet(2, Collections.singletonList(1)));
-        partitionMap.put(participantId, new PartitionIdSet(1, Collections.singletonList(2)));
+        partitionMap.put(participantId, new PartitionIdSet(2, Collections.singletonList(2)));
 
-        // Start the query with maximum timeout by default.
-        prepare(Long.MAX_VALUE);
-    }
-
-    private void prepare(long timeout) {
-        testState = startQueryOnInitiator(timeout);
-
-        initiatorExecuteOperation = createExecuteOperation(initiatorId);
-        participantExecuteOperation = createExecuteOperation(participantId);
-
-        initiatorBatch1Operation = createBatch1Operation(initiatorId);
-        participantBatch1Operation = createBatch1Operation(participantId);
-
-        initiatorBatch2Operation = createBatch2Operation(initiatorId);
-        participantBatch2Operation = createBatch2Operation(participantId);
-
-        initiatorCancelOperation = createCancelOperation(participantId);
-        participantCancelOperation = createCancelOperation(initiatorId);
-
-        toInitiatorChannel = participantService.getOperationHandler().createChannel(participantId, initiatorId);
-        toParticipantChannel = initiatorService.getOperationHandler().createChannel(initiatorId, participantId);
+        queryId = QueryId.create(initiatorId);
     }
 
     @After
     public void after() {
-        if (factory != null) {
-            factory.shutdownAll();
+        factory.shutdownAll();
+    }
+
+    @Test
+    public void test_E() {
+        sendExecute(false);
+        assertQueryRegisteredEventually(queryId);
+
+        if (targetIsNotInitiator) {
+            setOrphanedQueryStateCheckFrequency(100L);
+            setStateCheckFrequency(100L);
+            assertQueryNotRegisteredEventually(queryId);
         }
     }
 
     @Test
-    public void test_initiator_timeout() {
-        stopQueryOnInitiator();
-        prepare(50L);
-
-        sendToInitiator(initiatorExecuteOperation);
-        checkNoQueryOnInitiator();
+    public void test_E_B1_B2_ordered() {
+        check_E_B1_B2(true);
     }
 
     @Test
-    public void test_initiator_E_B1_B2_C() {
-        // EXECUTE
-        sendToInitiator(initiatorExecuteOperation);
-        testState.assertStartedEventually();
+    public void test_E_B1_B2_unordered() {
+        check_E_B1_B2(false);
+    }
 
-        // BATCH 1
-        sendToInitiator(initiatorBatch1Operation);
-        ListRowBatch batch = testState.assertRowsArrived(BATCH_SIZE);
-        checkMonotonicBatch(batch, 0, BATCH_SIZE);
+    private void check_E_B1_B2(boolean ordered) {
+        sendExecute(ordered);
+        QueryState state = assertQueryRegisteredEventually(queryId);
 
-        // BATCH 2
-        sendToInitiator(initiatorBatch2Operation);
-        batch = testState.assertRowsArrived(BATCH_SIZE);
-        checkMonotonicBatch(batch, BATCH_SIZE, BATCH_SIZE);
-        testState.assertCompletedEventually();
-        checkNoQueryOnInitiator();
+        TestExec exec = assertExecCreatedEventually(state);
+        assertFalse(exec.consumed0);
+        assertFalse(exec.consumed1);
 
-        // CANCEL
-        sendToInitiator(initiatorCancelOperation);
-        checkNoQueryOnInitiator();
+        sendBatch(VALUE_0);
+        assertConsumedEventually(exec, VALUE_0);
+
+        sendBatch(VALUE_1);
+        assertConsumedEventually(exec, VALUE_1);
+
+        assertQueryNotRegisteredEventually(queryId);
     }
 
     @Test
-    public void test_initiator_E_B1_C_B2() {
-        // EXECUTE
-        sendToInitiator(initiatorExecuteOperation);
-        testState.assertStartedEventually();
-
-        // BATCH 1
-        sendToInitiator(initiatorBatch1Operation);
-        ListRowBatch batch = testState.assertRowsArrived(BATCH_SIZE);
-        checkMonotonicBatch(batch, 0, BATCH_SIZE);
-
-        // CANCEL
-        sendToInitiator(initiatorCancelOperation);
-        checkNoQueryOnInitiator();
-
-        // BATCH 2
-        sendToInitiator(initiatorBatch2Operation);
-        checkNoQueryOnInitiator();
-        testState.assertNoRows();
+    public void test_E_B2_B1_ordered() {
+        check_E_B2_B1(true);
     }
 
     @Test
-    public void test_initiator_E_C_B1_B2() {
-        // EXECUTE
-        sendToInitiator(initiatorExecuteOperation);
-        testState.assertStartedEventually();
+    public void test_E_B2_B1_unordered() {
+        check_E_B2_B1(false);
+    }
 
-        // CANCEL
-        sendToInitiator(initiatorCancelOperation);
-        checkNoQueryOnInitiator();
+    public void check_E_B2_B1(boolean ordered) {
+        sendExecute(ordered);
 
-        // BATCH 1
-        sendToInitiator(initiatorBatch1Operation);
-        checkNoQueryOnInitiator();
+        QueryState state = assertQueryRegisteredEventually(queryId);
 
-        // BATCH 2
-        sendToInitiator(initiatorBatch2Operation);
-        checkNoQueryOnInitiator();
-        testState.assertNoRows();
+        TestExec exec = assertExecCreatedEventually(state);
+        assertFalse(exec.consumed0);
+        assertFalse(exec.consumed1);
+
+        // Send the second batch, only unordered exec should process it
+        sendBatch(VALUE_1);
+
+        if (ordered) {
+            assertNotConsumedWithDelay(exec, VALUE_1);
+        } else {
+            assertConsumedEventually(exec, VALUE_1);
+        }
+
+        // Send the first batch, processing should be finished in both modes
+        sendBatch(VALUE_0);
+
+        assertConsumedEventually(exec, VALUE_0);
+
+        if (ordered) {
+            assertConsumedEventually(exec, VALUE_1);
+            assertFalse(exec.reordered);
+        } else {
+            assertTrue(exec.reordered);
+        }
+
+        assertQueryNotRegisteredEventually(queryId);
     }
 
     @Test
-    public void test_initiator_E_L_B() {
-        // EXECUTE
-        sendToInitiator(initiatorExecuteOperation);
-        testState.assertStartedEventually();
+    public void test_E_B_C() {
+        sendExecute(false);
 
-        // LEAVE
-        participant.shutdown();
-        checkNoQueryOnInitiator();
+        QueryState state = assertQueryRegisteredEventually(queryId);
 
-        // BATCH
-        sendToInitiator(initiatorBatch1Operation);
-        checkNoQueryOnInitiator();
+        TestExec exec = assertExecCreatedEventually(state);
+        assertFalse(exec.consumed0);
+        assertFalse(exec.consumed1);
+
+        sendBatch(VALUE_0);
+        assertConsumedEventually(exec, VALUE_0);
+
+        sendCancel();
+        assertQueryNotRegisteredEventually(queryId);
     }
 
     @Test
-    public void test_participant_E_B1_B2_C() {
-        // EXECUTE
-        sendToParticipant(participantExecuteOperation);
-        testState.assertStartedEventually();
+    public void test_E_C_B() {
+        sendExecute(false);
 
-        // BATCH 1
-        sendToParticipant(participantBatch1Operation);
-        ListRowBatch batch = testState.assertRowsArrived(BATCH_SIZE);
-        checkMonotonicBatch(batch, 0, BATCH_SIZE);
+        QueryState state = assertQueryRegisteredEventually(queryId);
 
-        // BATCH 2
-        sendToParticipant(participantBatch2Operation);
-        batch = testState.assertRowsArrived(BATCH_SIZE);
-        checkMonotonicBatch(batch, BATCH_SIZE, BATCH_SIZE);
-        testState.assertCompletedEventually();
-        checkNoQueryOnParticipant();
+        TestExec exec = assertExecCreatedEventually(state);
+        assertFalse(exec.consumed0);
+        assertFalse(exec.consumed1);
 
-        // CANCEL
-        sendToParticipant(participantCancelOperation);
-        checkNoQueryOnParticipant();
+        sendCancel();
+        assertQueryNotRegisteredEventually(queryId);
+
+        sendBatch(VALUE_0);
+
+        if (targetIsNotInitiator) {
+            assertQueryRegisteredEventually(queryId);
+
+            setStateCheckFrequency(100L);
+        }
+
+        assertQueryNotRegisteredEventually(queryId);
     }
 
     @Test
-    public void test_participant_E_B1_C_B2() {
-        // EXECUTE
-        sendToParticipant(participantExecuteOperation);
-        testState.assertStartedEventually();
+    public void test_B() {
+        sendBatch(VALUE_0);
 
-        // BATCH 1
-        sendToParticipant(participantBatch1Operation);
-        ListRowBatch batch = testState.assertRowsArrived(BATCH_SIZE);
-        checkMonotonicBatch(batch, 0, BATCH_SIZE);
+        if (targetIsNotInitiator) {
+            QueryState state = assertQueryRegisteredEventually(queryId);
+            assertExecNotCreatedWithDelay(state);
 
-        // CANCEL
-        sendToParticipant(participantCancelOperation);
-        checkNoQueryOnParticipant();
+            setStateCheckFrequency(100L);
+        }
 
-        // BATCH 2
-        sendToParticipant(participantBatch2Operation);
-        checkQueryOnParticipant();
-        stopQueryOnInitiator();
-        checkNoQueryOnParticipant();
-        testState.assertNoRows();
+        assertQueryNotRegisteredEventually(queryId);
     }
 
     @Test
-    public void test_participant_E_C_B1_B2() {
-        // EXECUTE
-        sendToParticipant(participantExecuteOperation);
-        testState.assertStartedEventually();
+    public void test_B_C() {
+        sendBatch(VALUE_0);
 
-        // CANCEL
-        sendToParticipant(participantCancelOperation);
-        checkNoQueryOnParticipant();
+        if (targetIsNotInitiator) {
+            QueryState state = assertQueryRegisteredEventually(queryId);
+            assertExecNotCreatedWithDelay(state);
 
-        // BATCH 1
-        sendToParticipant(participantBatch1Operation);
-        checkQueryOnParticipant();
+            sendCancel();
+        }
 
-        // BATCH 2
-        sendToParticipant(participantBatch2Operation);
-        checkQueryOnParticipant();
-        stopQueryOnInitiator();
-        checkNoQueryOnParticipant();
-        testState.assertNoRows();
-    }
-
-    @Ignore("https://github.com/hazelcast/hazelcast/issues/16868")
-    @Test
-    public void test_participant_C_E_B1_B2() {
-        fail("Cannot handle reordered cancel -> execute");
+        assertQueryNotRegisteredEventually(queryId);
     }
 
     @Test
-    public void test_participant_B1_E_B2_C() {
-        // BATCH 1
-        sendToParticipant(participantBatch1Operation);
-        checkQueryOnParticipant();
-
-        // EXECUTE
-        sendToParticipant(participantExecuteOperation);
-        testState.assertStartedEventually();
-
-        // BATCH 2
-        sendToParticipant(participantBatch2Operation);
-        RowBatch batch = testState.assertRowsArrived(BATCH_SIZE * 2);
-        checkMonotonicBatch(batch, 0, BATCH_SIZE * 2);
-        testState.assertCompletedEventually();
-        checkNoQueryOnParticipant();
-
-        // CANCEL
-        sendToParticipant(participantCancelOperation);
-        checkNoQueryOnParticipant();
+    public void test_B1_E_B2_ordered() {
+        check_B1_E_B2(true);
     }
 
     @Test
-    public void test_participant_B1_E_C_B2() {
-        // BATCH 1
-        sendToParticipant(participantBatch1Operation);
-        checkQueryOnParticipant();
-
-        // EXECUTE
-        sendToParticipant(participantExecuteOperation);
-        testState.assertStartedEventually();
-        RowBatch batch = testState.assertRowsArrived(BATCH_SIZE);
-        checkMonotonicBatch(batch, 0, BATCH_SIZE);
-
-        // CANCEL
-        sendToParticipant(participantCancelOperation);
-        checkNoQueryOnParticipant();
-
-        // BATCH 2
-        sendToParticipant(participantBatch2Operation);
-        checkQueryOnParticipant();
-        stopQueryOnInitiator();
-        checkNoQueryOnParticipant();
-        testState.assertNoRows();
+    public void test_B1_E_B2_unordered() {
+        check_B1_E_B2(false);
     }
 
-    @Ignore("https://github.com/hazelcast/hazelcast/issues/16868")
-    @Test
-    public void test_participant_B1_C_E_B2() {
-        fail("Cannot handle reordered cancel -> execute");
-    }
+    private void check_B1_E_B2(boolean ordered) {
+        if (targetIsNotInitiator) {
+            sendBatch(VALUE_0);
+            QueryState state = assertQueryRegisteredEventually(queryId);
+            assertExecNotCreatedWithDelay(state);
 
-    @Ignore("https://github.com/hazelcast/hazelcast/issues/16868")
-    @Test
-    public void test_participant_C_B1_E_B2() {
-        fail("Cannot handle reordered cancel -> execute");
+            sendExecute(ordered);
+            TestExec exec = assertExecCreatedEventually(state);
+            assertConsumedEventually(exec, VALUE_0);
+
+            sendBatch(VALUE_1);
+            assertConsumedEventually(exec, VALUE_1);
+
+            assertQueryNotRegisteredEventually(queryId);
+        }
     }
 
     @Test
-    public void test_participant_B1_B2_E_C() {
-        // BATCH 1
-        sendToParticipant(participantBatch1Operation);
-        checkQueryOnParticipant();
-
-        // BATCH 2
-        sendToParticipant(participantBatch2Operation);
-        checkQueryOnParticipant();
-
-        // EXECUTE
-        sendToParticipant(participantExecuteOperation);
-        testState.assertStartedEventually();
-
-        // BATCH 2
-        RowBatch batch = testState.assertRowsArrived(BATCH_SIZE * 2);
-        checkMonotonicBatch(batch, 0, BATCH_SIZE * 2);
-        testState.assertCompletedEventually();
-        checkNoQueryOnParticipant();
-
-        // CANCEL
-        sendToParticipant(participantCancelOperation);
-        checkNoQueryOnParticipant();
-    }
-
-    @Ignore("https://github.com/hazelcast/hazelcast/issues/16868")
-    @Test
-    public void test_participant_B1_B2_C_E() {
-        fail("Cannot handle reordered cancel -> execute");
-    }
-
-    @Ignore("https://github.com/hazelcast/hazelcast/issues/16868")
-    @Test
-    public void test_participant_B1_C_B2_E() {
-        fail("Cannot handle reordered cancel -> execute");
-    }
-
-    @Ignore("https://github.com/hazelcast/hazelcast/issues/16868")
-    @Test
-    public void test_participant_C_B1_B2_E() {
-        fail("Cannot handle reordered cancel -> execute");
+    public void test_B2_E_B1_ordered() {
+        check_B2_E_B1(true);
     }
 
     @Test
-    public void test_participant_E_L_B() {
-        // EXECUTE
-        sendToParticipant(participantExecuteOperation);
-        testState.assertStartedEventually();
-
-        // LEAVE
-        initiator.shutdown();
-        checkNoQueryOnParticipant();
-
-        // BATCH
-        sendToParticipant(participantBatch1Operation);
-        checkNoQueryOnParticipant();
+    public void test_B2_E_B1_unordered() {
+        check_B2_E_B1(false);
     }
 
-    private QueryExecuteOperation createExecuteOperation(UUID toMemberId) {
-        PlanNode node = new ParticipantNode(
-            1, new ReceivePlanNode(2, EDGE_ID, Collections.singletonList(QueryDataType.INT))
+    private void check_B2_E_B1(boolean ordered) {
+        if (targetIsNotInitiator) {
+            sendBatch(VALUE_1);
+            QueryState state = assertQueryRegisteredEventually(queryId);
+            assertExecNotCreatedWithDelay(state);
+
+            sendExecute(ordered);
+            TestExec exec = assertExecCreatedEventually(state);
+
+            if (ordered) {
+                assertNotConsumedWithDelay(exec, VALUE_1);
+            } else {
+                assertConsumedEventually(exec, VALUE_1);
+            }
+
+            sendBatch(VALUE_0);
+            assertConsumedEventually(exec, VALUE_0);
+
+            if (ordered) {
+                assertConsumedEventually(exec, VALUE_1);
+                assertFalse(exec.reordered);
+            } else {
+                assertTrue(exec.reordered);
+            }
+
+            assertQueryNotRegisteredEventually(queryId);
+        }
+    }
+
+    @Test
+    public void test_B1_B2_E_ordered() {
+        check_B1_B2_E(true);
+    }
+
+    @Test
+    public void test_B1_B2_E_unordered() {
+        check_B1_B2_E(false);
+    }
+
+    private void check_B1_B2_E(boolean ordered) {
+        if (targetIsNotInitiator) {
+            sendBatch(VALUE_0);
+            QueryState state = assertQueryRegisteredEventually(queryId);
+            assertExecNotCreatedWithDelay(state);
+
+            sendBatch(VALUE_1);
+            assertExecNotCreatedWithDelay(state);
+
+            sendExecute(ordered);
+            TestExec exec = assertExecCreatedEventually(state);
+            assertConsumedEventually(exec, VALUE_0);
+            assertConsumedEventually(exec, VALUE_1);
+            assertFalse(exec.reordered);
+
+            assertQueryNotRegisteredEventually(queryId);
+        }
+    }
+
+    @Test
+    public void test_B2_B1_E_ordered() {
+        check_B2_B1_E(true);
+    }
+
+    @Test
+    public void test_B2_B1_E_unordered() {
+        check_B2_B1_E(false);
+    }
+
+    private void check_B2_B1_E(boolean ordered) {
+        if (targetIsNotInitiator) {
+            sendBatch(VALUE_1);
+            QueryState state = assertQueryRegisteredEventually(queryId);
+            assertExecNotCreatedWithDelay(state);
+
+            sendBatch(VALUE_0);
+            assertExecNotCreatedWithDelay(state);
+
+            sendExecute(ordered);
+            TestExec exec = assertExecCreatedEventually(state);
+            assertConsumedEventually(exec, VALUE_0);
+            assertConsumedEventually(exec, VALUE_1);
+
+            if (ordered) {
+                assertFalse(exec.reordered);
+            } else {
+                assertTrue(exec.reordered);
+            }
+
+            assertQueryNotRegisteredEventually(queryId);
+        }
+    }
+
+    @Test
+    public void test_C() {
+        sendCancel();
+
+        if (targetIsNotInitiator) {
+            QueryState state = assertQueryRegisteredEventually(queryId);
+            assertTrue(state.isCancelled());
+
+            setStateCheckFrequency(100L);
+        }
+
+        assertQueryNotRegisteredEventually(queryId);
+    }
+
+    @Test
+    public void test_C_E() {
+        sendCancel();
+
+        if (targetIsNotInitiator) {
+            QueryState state = assertQueryRegisteredEventually(queryId);
+            assertTrue(state.isCancelled());
+
+            sendExecute(false);
+        }
+
+        assertQueryNotRegisteredEventually(queryId);
+    }
+
+    @Test
+    public void test_C_B_E() {
+        sendCancel();
+
+        if (targetIsNotInitiator) {
+            QueryState state = assertQueryRegisteredEventually(queryId);
+            assertTrue(state.isCancelled());
+
+            sendBatch(VALUE_0);
+            assertExecNotCreatedWithDelay(state);
+
+            sendExecute(false);
+        }
+
+        assertQueryNotRegisteredEventually(queryId);
+    }
+
+    private void sendExecute(boolean ordered) {
+        if (!targetIsNotInitiator) {
+            // Initiator must register the state in advance.
+            Plan plan = new Plan(
+                Collections.emptyMap(),
+                Collections.emptyList(),
+                Collections.emptyList(),
+                Collections.emptyMap(),
+                Collections.emptyMap(),
+                Collections.emptyMap(),
+                null,
+                QueryParameterMetadata.EMPTY,
+                null,
+                Collections.emptySet(),
+                Collections.emptyList()
+            );
+
+            QueryState state = initiatorService.getStateRegistry().onInitiatorQueryStarted(
+                QueryId.create(initiatorId),
+                initiatorId,
+                Long.MAX_VALUE,
+                plan,
+                null,
+                null,
+                TestQueryResultProducer.INSTANCE,
+                initiatorService.getOperationHandler()
+            );
+
+            this.queryId = state.getQueryId();
+        }
+
+        send(initiatorId, targetId(), createExecuteOperation(targetId(), ordered));
+    }
+
+    private void sendBatch(int value) {
+        UUID sourceId = targetId() == initiatorId ? participantId : initiatorId;
+
+        send(sourceId, targetId(), createBatchOperation(targetId(), value));
+    }
+
+    private void sendCancel() {
+        send(initiatorId, targetId(), createCancelOperation(initiatorId));
+    }
+
+    private void send(UUID sourceMemberId, UUID targetMemberId, QueryOperation operation) {
+        SqlInternalService sourceService = sourceMemberId.equals(initiatorId) ? initiatorService : participantService;
+
+        sourceService.getOperationHandler().submit(
+            sourceMemberId,
+            targetMemberId,
+            operation
+        );
+    }
+
+    private QueryExecuteOperation createExecuteOperation(UUID targetMemberId, boolean ordered) {
+        TestNode node = new TestNode(
+            1, new ReceivePlanNode(2, EDGE_ID, ordered, Collections.singletonList(QueryDataType.INT))
         );
 
         QueryExecuteOperationFragment fragment = new QueryExecuteOperationFragment(
             node,
             QueryExecuteOperationFragmentMapping.EXPLICIT,
-            Collections.singletonList(toMemberId)
+            Collections.singletonList(targetMemberId)
         );
 
         return new QueryExecuteOperation(
-            testState.getQueryId(),
+            queryId,
             partitionMap,
             Collections.singletonList(fragment),
             Collections.singletonMap(EDGE_ID, 0),
@@ -465,161 +531,124 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
         );
     }
 
-    private QueryBatchExchangeOperation createBatch1Operation(UUID toMemberId) {
+    private QueryBatchExchangeOperation createBatchOperation(UUID targetMemberId, int value) {
+        long ordinal = value;
+        boolean last = value == 1;
+        ListRowBatch rows = createMonotonicBatch(value, 1);
+
         return new QueryBatchExchangeOperation(
-            testState.getQueryId(),
+            queryId,
             EDGE_ID,
-            toMemberId,
-            createMonotonicBatch(0, BATCH_SIZE),
-            false,
+            targetMemberId,
+            rows,
+            ordinal,
+            last,
             Long.MAX_VALUE
         );
     }
 
-    private QueryBatchExchangeOperation createBatch2Operation(UUID toMemberId) {
-        return new QueryBatchExchangeOperation(
-            testState.getQueryId(),
-            EDGE_ID,
-            toMemberId,
-            createMonotonicBatch(BATCH_SIZE, BATCH_SIZE),
-            true,
-            Long.MAX_VALUE
-        );
-    }
-
-    private QueryCancelOperation createCancelOperation(UUID fromMemberId) {
+    private QueryCancelOperation createCancelOperation(UUID sourceMemberId) {
         return new QueryCancelOperation(
-            testState.getQueryId(),
+            queryId,
             SqlErrorCode.GENERIC,
             "Error",
-            fromMemberId
+            sourceMemberId
         );
     }
 
-    private State startQueryOnInitiator(long timeout) {
-        Plan plan = new Plan(
-            partitionMap,
-            Collections.emptyList(),
-            Collections.emptyList(),
-            Collections.emptyMap(),
-            Collections.emptyMap(),
-            Collections.emptyMap(),
-            null,
-            QueryParameterMetadata.EMPTY,
-            null,
-            Collections.emptySet(),
-            Collections.emptyList()
-        );
-
-        QueryId queryId = initiatorService.getStateRegistry().onInitiatorQueryStarted(
-            initiatorId,
-            timeout,
-            plan,
-            null,
-            null,
-            new BlockingRootResultConsumer(),
-            initiatorService.getOperationHandler()
-        ).getQueryId();
-
-        testState = new State(queryId);
-
-        return testState;
+    private UUID targetId() {
+        return targetIsNotInitiator ? participantId : initiatorId;
     }
 
-    private void stopQueryOnInitiator() {
-        initiatorService.getStateRegistry().onQueryCompleted(testState.getQueryId());
+    private SqlInternalService targetService() {
+        return targetIsNotInitiator ? participantService : initiatorService;
     }
 
-    private void sendToInitiator(QueryOperation operation) {
-        send(participantId, initiatorId, operation);
+    private void setOrphanedQueryStateCheckFrequency(long frequency) {
+        initiatorService.getStateRegistryUpdater().setOrphanedQueryStateCheckFrequency(frequency);
+        participantService.getStateRegistryUpdater().setOrphanedQueryStateCheckFrequency(frequency);
     }
 
-    private void sendToParticipant(QueryOperation operation) {
-        send(initiatorId, participantId, operation);
+    private void setStateCheckFrequency(long frequency) {
+        initiatorService.getStateRegistryUpdater().setStateCheckFrequency(frequency);
+        participantService.getStateRegistryUpdater().setStateCheckFrequency(frequency);
     }
 
-    private void send(UUID fromId, UUID toId, QueryOperation operation) {
-        SqlInternalService fromService = fromId.equals(initiatorId) ? initiatorService : participantService;
-        QueryOperationChannel toChannel = toId.equals(initiatorId) ? toInitiatorChannel : toParticipantChannel;
+    private TestExec assertExecCreatedEventually(QueryState state) {
+        return assertTrueEventually(() -> {
+            Set<QueryFragmentExecutable> fragments = state.getDistributedState().getFragments();
 
-        if (operation instanceof QueryBatchExchangeOperation) {
-            toChannel.submit(operation);
+            assertFalse(fragments.isEmpty());
+
+            return (TestExec) fragments.iterator().next().getExec();
+        });
+    }
+
+    private void assertExecNotCreatedWithDelay(QueryState state) {
+        assertTrueDelayed((int) ASSERT_FALSE_TIMEOUT.getSeconds(), () -> {
+            Set<QueryFragmentExecutable> fragments = state.getDistributedState().getFragments();
+
+            assertTrue(fragments.isEmpty());
+        });
+    }
+
+    private QueryState assertQueryRegisteredEventually(QueryId queryId) {
+        return assertTrueEventually(() -> {
+            QueryState state0 = targetService().getStateRegistry().getState(queryId);
+
+            assertNotNull(state0);
+
+            return state0;
+        });
+    }
+
+    private void assertQueryNotRegisteredEventually(QueryId queryId) {
+        assertTrueEventually(() -> {
+            QueryState state0 = targetService().getStateRegistry().getState(queryId);
+
+            assertNull(state0);
+        }, ASSERT_FALSE_TIMEOUT.toMillis());
+    }
+
+    private void assertConsumedEventually(TestExec exec, int value) {
+        assert value == VALUE_0 || value == VALUE_1;
+
+        if (value == VALUE_0) {
+            assertTrueEventually(() -> assertTrue(exec.consumed0));
         } else {
-            fromService.getOperationHandler().submit(
-                fromId,
-                toId,
-                operation
-            );
-        }
-
-        try {
-            Thread.sleep(50L);
-        } catch (InterruptedException e) {
-            // No-op.
+            assertTrueEventually(() -> assertTrue(exec.consumed1));
         }
     }
 
-    private void checkNoQueryOnInitiator() {
-        checkNoQuery(initiatorService);
+    private void assertNotConsumedWithDelay(TestExec exec, int value) {
+        assert value == VALUE_0 || value == VALUE_1;
+
+        if (value == VALUE_0) {
+            assertTrueDelayed((int) ASSERT_FALSE_TIMEOUT.getSeconds(), () -> assertFalse(exec.consumed0));
+        } else {
+            assertTrueDelayed((int) ASSERT_FALSE_TIMEOUT.getSeconds(), () -> assertFalse(exec.consumed1));
+        }
     }
 
-    private void checkQueryOnParticipant() {
-        checkQuery(participantService);
+    private static <T> T assertTrueEventually(Supplier<T> task) {
+        AtomicReference<T> resRef = new AtomicReference<>();
+
+        assertTrueEventually(() -> {
+            T res = task.get();
+
+            resRef.set(res);
+        });
+
+        return resRef.get();
     }
 
-    private void checkNoQueryOnParticipant() {
-        checkNoQuery(participantService);
-    }
-
-    private void checkQuery(SqlInternalService service) {
-        assertTrueEventually(() -> assertNotNull(service.getStateRegistry().getState(testState.getQueryId())));
-    }
-
-    private void checkNoQuery(SqlInternalService service) {
-        assertTrueEventually(() -> assertNull(service.getStateRegistry().getState(testState.getQueryId())));
-    }
-
-    private static SqlServiceImpl getService(HazelcastInstance instance) {
-        return ((HazelcastInstanceProxy) instance).getOriginal().node.nodeEngine.getSqlService();
-    }
-
-    private static SqlInternalService setInternalService(HazelcastInstanceProxy member, long stateCheckFrequency) {
-        // Stop the old service.
-        getService(member).getInternalService().shutdown();
-
-        // Start the new one.
-        NodeEngineImpl nodeEngine = member.getOriginal().node.nodeEngine;
-
-        NodeServiceProviderImpl nodeServiceProvider = new NodeServiceProviderImpl(nodeEngine);
-
-        String instanceName = nodeEngine.getHazelcastInstance().getName();
-        InternalSerializationService serializationService = (InternalSerializationService) nodeEngine.getSerializationService();
-
-        SqlInternalService internalService = new SqlInternalService(
-            instanceName,
-            nodeServiceProvider,
-            serializationService,
-            Runtime.getRuntime().availableProcessors(),
-            Runtime.getRuntime().availableProcessors(),
-            1000,
-            stateCheckFrequency,
-            null
-        );
-
-        internalService.start();
-
-        getService(member).setInternalService(internalService);
-
-        return internalService;
-    }
-
-    @SuppressWarnings("unused")
-    private static class ParticipantNode extends UniInputPlanNode implements CreateExecPlanNodeVisitorCallback {
-        private ParticipantNode() {
+    private static class TestNode extends UniInputPlanNode implements CreateExecPlanNodeVisitorCallback {
+        @SuppressWarnings("unused")
+        private TestNode() {
             // No-op.
         }
 
-        private ParticipantNode(int id, PlanNode upstream) {
+        private TestNode(int id, PlanNode upstream) {
             super(id, upstream);
         }
 
@@ -630,30 +659,47 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
 
         @Override
         public void onVisit(CreateExecPlanNodeVisitor visitor) {
-            visitor.setExec(new ParticipantExec(id, visitor.pop()));
+            visitor.setExec(new TestExec(id, visitor.pop()));
         }
     }
 
-    private static class ParticipantExec extends AbstractUpstreamAwareExec {
+    private static class TestExec extends AbstractUpstreamAwareExec {
 
-        private ParticipantExec(int id, Exec upstream) {
+        private boolean consumed0;
+        private boolean consumed1;
+
+        private boolean reordered;
+
+        private TestExec(int id, Exec upstream) {
             super(id, upstream);
         }
 
         @Override
         protected IterationResult advance0() {
-            testState.onAdvance();
-
             while (true) {
                 if (!state.advance()) {
                     return IterationResult.WAIT;
                 }
 
-                testState.pushRows(state.consumeBatch());
+                RowBatch batch = state.consumeBatch();
+
+                for (int i = 0; i < batch.getRowCount(); i++) {
+                    Integer value = batch.getRow(i).get(0);
+
+                    if (value == VALUE_0) {
+                        consumed0 = true;
+                    } else {
+                        assert value == VALUE_1;
+
+                        consumed1 = true;
+
+                        if (!consumed0) {
+                            reordered = true;
+                        }
+                    }
+                }
 
                 if (state.isDone()) {
-                    testState.onCompleted();
-
                     return IterationResult.FETCHED_DONE;
                 }
             }
@@ -662,62 +708,6 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
         @Override
         protected RowBatch currentBatch0() {
             return EmptyRowBatch.INSTANCE;
-        }
-    }
-
-    private static class State {
-
-        private final QueryId queryId;
-
-        private volatile boolean started;
-        private volatile boolean completed;
-
-        private final BlockingQueue<Row> rows = new LinkedBlockingQueue<>();
-
-        private State(QueryId queryId) {
-            this.queryId = queryId;
-        }
-
-        public QueryId getQueryId() {
-            return queryId;
-        }
-
-        private void assertStartedEventually() {
-            assertTrueEventually(() -> assertTrue(started));
-        }
-
-        private void onAdvance() {
-            started = true;
-        }
-
-        private void onCompleted() {
-            this.completed = true;
-        }
-
-        private void assertCompletedEventually() {
-            assertTrueEventually(() -> assertTrue(completed));
-        }
-
-        private void pushRows(RowBatch batch) {
-            for (int i = 0; i < batch.getRowCount(); i++) {
-                this.rows.add(batch.getRow(i));
-            }
-        }
-
-        private ListRowBatch assertRowsArrived(int count) {
-            assertTrueEventually(() -> assertTrue(rows.size() >= count));
-
-            List<Row> res = new ArrayList<>(count);
-
-            for (int i = 0; i < count; i++) {
-                res.add(rows.poll());
-            }
-
-            return new ListRowBatch(res);
-        }
-
-        private void assertNoRows() {
-            assertTrue(rows.isEmpty());
         }
     }
 }

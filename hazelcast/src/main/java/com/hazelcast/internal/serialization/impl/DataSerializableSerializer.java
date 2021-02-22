@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -147,7 +147,7 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
                     }
                 }
             } else {
-                className = in.readUTF();
+                className = in.readString();
                 if (null == aClass) {
                     ds = ClassLoaderUtil.newInstance(in.getClassLoader(), className);
                 }
@@ -236,9 +236,9 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
             out.writeInt(ds.getClassId());
         } else {
             if (obj instanceof TypedDataSerializable) {
-                out.writeUTF(((TypedDataSerializable) obj).getClassType().getName());
+                out.writeString(((TypedDataSerializable) obj).getClassType().getName());
             } else {
-                out.writeUTF(obj.getClass().getName());
+                out.writeString(obj.getClass().getName());
             }
         }
         obj.writeData(out);

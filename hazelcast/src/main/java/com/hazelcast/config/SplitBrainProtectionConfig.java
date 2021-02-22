@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,8 +70,10 @@ public class SplitBrainProtectionConfig implements IdentifiedDataSerializable, N
 
     private String name;
     private boolean enabled;
-    private int minimumClusterSize;
-    private List<SplitBrainProtectionListenerConfig> listenerConfigs = new ArrayList<SplitBrainProtectionListenerConfig>();
+    private int minimumClusterSize = 2;
+
+    private List<SplitBrainProtectionListenerConfig> listenerConfigs = new ArrayList<>();
+
     private SplitBrainProtectionOn protectOn = READ_WRITE;
     private String functionClassName;
     private SplitBrainProtectionFunction functionImplementation;
@@ -197,24 +199,24 @@ public class SplitBrainProtectionConfig implements IdentifiedDataSerializable, N
     @Override
     public void writeData(ObjectDataOutput out)
             throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeBoolean(enabled);
         out.writeInt(minimumClusterSize);
         writeNullableList(listenerConfigs, out);
-        out.writeUTF(protectOn.name());
-        out.writeUTF(functionClassName);
+        out.writeString(protectOn.name());
+        out.writeString(functionClassName);
         out.writeObject(functionImplementation);
     }
 
     @Override
     public void readData(ObjectDataInput in)
             throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         enabled = in.readBoolean();
         minimumClusterSize = in.readInt();
         listenerConfigs = readNullableList(in);
-        protectOn = SplitBrainProtectionOn.valueOf(in.readUTF());
-        functionClassName = in.readUTF();
+        protectOn = SplitBrainProtectionOn.valueOf(in.readString());
+        functionClassName = in.readString();
         functionImplementation = in.readObject();
     }
 

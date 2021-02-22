@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,12 +30,18 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
 import com.hazelcast.nio.serialization.GenericRecord;
+import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;
 
-import java.io.IOException;
+import javax.annotation.Nonnull;
 import java.io.Serializable;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
@@ -58,92 +64,41 @@ public abstract class AbstractGenericRecordTest extends HazelcastTestSupport {
     protected abstract HazelcastInstance[] createCluster();
 
     @Test
-    public void testPutWithoutFactory_readAsPortable() throws IOException {
+    public void testPutWithoutFactory_readAsPortable() {
+        MainPortable expectedPortable = createMainPortable();
+        GenericRecord expected = createGenericRecord(expectedPortable);
 
-        NamedPortable[] nn = new NamedPortable[2];
-        nn[0] = new NamedPortable("name", 123);
-        nn[1] = new NamedPortable("name", 123);
-        InnerPortable inner = new InnerPortable(new byte[]{0, 1, 2}, new char[]{'c', 'h', 'a', 'r'},
-                new short[]{3, 4, 5}, new int[]{9, 8, 7, 6}, new long[]{0, 1, 5, 7, 9, 11},
-                new float[]{0.6543f, -3.56f, 45.67f}, new double[]{456.456, 789.789, 321.321}, nn);
-
-        MainPortable expectedMain = new MainPortable((byte) 113, true, 'x', (short) -500, 56789, -50992225L, 900.5678f,
-                -897543.3678909d, "this is main portable object created for testing!", inner);
-
+        assertEquals(expectedPortable.c, expected.getChar("c"));
+        assertEquals(expectedPortable.f, expected.getFloat("f"), 0.1);
         HazelcastInstance[] instances = createCluster();
-        ClassDefinition namedPortableClassDefinition =
-                new ClassDefinitionBuilder(TestSerializationConstants.PORTABLE_FACTORY_ID, TestSerializationConstants.NAMED_PORTABLE)
-                        .addUTFField("name").addIntField("myint").build();
-        ClassDefinition innerPortableClassDefinition =
-                new ClassDefinitionBuilder(TestSerializationConstants.PORTABLE_FACTORY_ID, TestSerializationConstants.INNER_PORTABLE)
-                        .addByteArrayField("b")
-                        .addCharArrayField("c")
-                        .addShortArrayField("s")
-                        .addIntArrayField("i")
-                        .addLongArrayField("l")
-                        .addFloatArrayField("f")
-                        .addDoubleArrayField("d")
-                        .addPortableArrayField("nn", namedPortableClassDefinition).build();
-        ClassDefinition mainPortableClassDefinition =
-                new ClassDefinitionBuilder(PortableTest.PORTABLE_FACTORY_ID, TestSerializationConstants.MAIN_PORTABLE)
-                        .addByteField("b")
-                        .addBooleanField("bool")
-                        .addCharField("c")
-                        .addShortField("s")
-                        .addIntField("i")
-                        .addLongField("l")
-                        .addFloatField("f")
-                        .addDoubleField("d")
-                        .addUTFField("str")
-                        .addPortableField("p", innerPortableClassDefinition)
-                        .build();
-
-        GenericRecord namedRecord = GenericRecord.Builder.portable(namedPortableClassDefinition)
-                .writeUTF("name", nn[0].name)
-                .writeInt("myint", nn[0].myint).build();
-        GenericRecord[] namedRecords = new GenericRecord[2];
-        namedRecords[0] = namedRecord;
-        namedRecords[1] = namedRecord;
-
-        GenericRecord innerRecord = GenericRecord.Builder.portable(innerPortableClassDefinition)
-                .writeByteArray("b", inner.bb)
-                .writeCharArray("c", inner.cc)
-                .writeShortArray("s", inner.ss)
-                .writeIntArray("i", inner.ii)
-                .writeLongArray("l", inner.ll)
-                .writeFloatArray("f", inner.ff)
-                .writeDoubleArray("d", inner.dd)
-                .writeGenericRecordArray("nn", namedRecords).build();
-
-        GenericRecord expected = GenericRecord.Builder.portable(mainPortableClassDefinition)
-                .writeByte("b", expectedMain.b)
-                .writeBoolean("bool", expectedMain.bool)
-                .writeChar("c", expectedMain.c)
-                .writeShort("s", expectedMain.s)
-                .writeInt("i", expectedMain.i)
-                .writeLong("l", expectedMain.l)
-                .writeFloat("f", expectedMain.f)
-                .writeDouble("d", expectedMain.d)
-                .writeUTF("str", expectedMain.str)
-                .writeGenericRecord("p", innerRecord)
-                .build();
-
-        assertEquals(expectedMain.c, expected.readChar("c"));
-        assertEquals(expectedMain.f, expected.readFloat("f"), 0.1);
-
         IMap<Object, Object> clusterMap = instances[0].getMap("test");
         clusterMap.put(1, expected);
-
         HazelcastInstance instance = createAccessorInstance(serializationConfig);
         IMap<Object, Object> map = instance.getMap("test");
 
         MainPortable actual = (MainPortable) map.get(1);
-
-        assertEquals(expectedMain, actual);
+        assertEquals(expectedPortable, actual);
     }
 
     @Test
-    public void testPutGenericRecordBack() throws IOException {
+    public void testPutWithoutFactory_readAsGenericRecord() {
+        MainPortable expectedPortable = createMainPortable();
+        GenericRecord expected = createGenericRecord(expectedPortable);
+
+        assertEquals(expectedPortable.c, expected.getChar("c"));
+        assertEquals(expectedPortable.f, expected.getFloat("f"), 0.1);
+        HazelcastInstance[] instances = createCluster();
+        IMap<Object, Object> clusterMap = instances[0].getMap("test");
+        clusterMap.put(1, expected);
+        HazelcastInstance instance = createAccessorInstance(new SerializationConfig());
+        IMap<Object, Object> map = instance.getMap("test");
+
+        GenericRecord actual = (GenericRecord) map.get(1);
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testPutGenericRecordBack() {
 
         HazelcastInstance[] instances = createCluster();
 
@@ -163,8 +118,8 @@ public abstract class AbstractGenericRecordTest extends HazelcastTestSupport {
         assertTrue(actualRecord.hasField("name"));
         assertTrue(actualRecord.hasField("myint"));
 
-        assertEquals(expected.name, actualRecord.readUTF("name"));
-        assertEquals(expected.myint, actualRecord.readInt("myint"));
+        assertEquals(expected.name, actualRecord.getString("name"));
+        assertEquals(expected.myint, actualRecord.getInt("myint"));
 
 
         //read from the instance with serialization config
@@ -173,7 +128,7 @@ public abstract class AbstractGenericRecordTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testReadReturnsGenericRecord() throws IOException {
+    public void testReadReturnsGenericRecord() {
 
         HazelcastInstance[] instances = createCluster();
 
@@ -188,12 +143,12 @@ public abstract class AbstractGenericRecordTest extends HazelcastTestSupport {
         assertTrue(actual.hasField("name"));
         assertTrue(actual.hasField("myint"));
 
-        assertEquals(expected.name, actual.readUTF("name"));
-        assertEquals(expected.myint, actual.readInt("myint"));
+        assertEquals(expected.name, actual.getString("name"));
+        assertEquals(expected.myint, actual.getInt("myint"));
     }
 
     @Test
-    public void testEntryProcessorReturnsGenericRecord() throws IOException {
+    public void testEntryProcessorReturnsGenericRecord() {
 
         HazelcastInstance[] instances = createCluster();
 
@@ -208,12 +163,12 @@ public abstract class AbstractGenericRecordTest extends HazelcastTestSupport {
             GenericRecord genericRecord = (GenericRecord) value;
 
             GenericRecord modifiedGenericRecord = genericRecord.newBuilder()
-                    .writeUTF("name", "bar")
-                    .writeInt("myint", 4).build();
+                                                               .setString("name", "bar")
+                                                               .setInt("myint", 4).build();
 
             entry.setValue(modifiedGenericRecord);
 
-            return genericRecord.readInt("myint");
+            return genericRecord.getInt("myint");
         });
         assertEquals(expected.myint, returnValue);
 
@@ -223,7 +178,7 @@ public abstract class AbstractGenericRecordTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testCloneWithGenericBuilderOnEntryProcessor() throws IOException {
+    public void testCloneWithGenericBuilderOnEntryProcessor() {
 
         HazelcastInstance[] instances = createCluster();
 
@@ -238,11 +193,11 @@ public abstract class AbstractGenericRecordTest extends HazelcastTestSupport {
             GenericRecord genericRecord = (GenericRecord) value;
 
             GenericRecord modifiedGenericRecord = genericRecord.cloneWithBuilder()
-                    .writeInt("myint", 4).build();
+                                                               .setInt("myint", 4).build();
 
             entry.setValue(modifiedGenericRecord);
 
-            return genericRecord.readInt("myint");
+            return genericRecord.getInt("myint");
         });
         assertEquals(expected.myint, returnValue);
 
@@ -264,7 +219,7 @@ public abstract class AbstractGenericRecordTest extends HazelcastTestSupport {
         public Integer call() throws Exception {
             IMap<Object, Object> map = instance.getMap("test");
             GenericRecord genericRecord = (GenericRecord) map.get(1);
-            return genericRecord.readInt("myint");
+            return genericRecord.getInt("myint");
         }
     }
 
@@ -290,21 +245,21 @@ public abstract class AbstractGenericRecordTest extends HazelcastTestSupport {
         createCluster();
         ClassDefinition namedPortableClassDefinition =
                 new ClassDefinitionBuilder(TestSerializationConstants.PORTABLE_FACTORY_ID, TestSerializationConstants.NAMED_PORTABLE)
-                        .addUTFField("name").addIntField("myint").build();
+                        .addStringField("name").addIntField("myint").build();
 
         ClassDefinition inConsistentNamedPortableClassDefinition =
                 new ClassDefinitionBuilder(TestSerializationConstants.PORTABLE_FACTORY_ID, TestSerializationConstants.NAMED_PORTABLE)
-                        .addUTFField("WrongName").addIntField("myint").build();
+                        .addStringField("WrongName").addIntField("myint").build();
 
 
-        GenericRecord namedRecord = GenericRecord.Builder.portable(namedPortableClassDefinition)
-                .writeUTF("name", "foo")
-                .writeInt("myint", 123).build();
+        GenericRecord namedRecord = GenericRecordBuilder.portable(namedPortableClassDefinition)
+                                                        .setString("name", "foo")
+                                                        .setInt("myint", 123).build();
 
 
-        GenericRecord inConsistentNamedRecord = GenericRecord.Builder.portable(inConsistentNamedPortableClassDefinition)
-                .writeUTF("WrongName", "foo")
-                .writeInt("myint", 123).build();
+        GenericRecord inConsistentNamedRecord = GenericRecordBuilder.portable(inConsistentNamedPortableClassDefinition)
+                                                                    .setString("WrongName", "foo")
+                                                                    .setInt("myint", 123).build();
 
 
         HazelcastInstance instance = createAccessorInstance(serializationConfig);
@@ -312,6 +267,110 @@ public abstract class AbstractGenericRecordTest extends HazelcastTestSupport {
         map.put(1, namedRecord);
 
         map.put(2, inConsistentNamedRecord);
+    }
+
+    @Nonnull
+    private MainPortable createMainPortable() {
+        NamedPortable[] nn = new NamedPortable[2];
+        nn[0] = new NamedPortable("name", 123);
+        nn[1] = new NamedPortable("name", 123);
+        InnerPortable inner = new InnerPortable(new byte[]{0, 1, 2}, new char[]{'c', 'h', 'a', 'r'},
+                new short[]{3, 4, 5}, new int[]{9, 8, 7, 6}, new long[]{0, 1, 5, 7, 9, 11},
+                new float[]{0.6543f, -3.56f, 45.67f}, new double[]{456.456, 789.789, 321.321}, nn,
+                new BigDecimal[]{new BigDecimal("12345"), new BigDecimal("123456")},
+                new LocalTime[]{LocalTime.now(), LocalTime.now()},
+                new LocalDate[]{LocalDate.now(), LocalDate.now()},
+                new LocalDateTime[]{LocalDateTime.now()},
+                new OffsetDateTime[]{OffsetDateTime.now()});
+
+        return new MainPortable((byte) 113, true, 'x', (short) -500, 56789, -50992225L, 900.5678f,
+                -897543.3678909d, "this is main portable object created for testing!", inner,
+                new BigDecimal("12312313"), LocalTime.now(), LocalDate.now(), LocalDateTime.now(), OffsetDateTime.now());
+    }
+
+    @Nonnull
+    private GenericRecord createGenericRecord(MainPortable expectedPortable) {
+        InnerPortable inner = expectedPortable.p;
+        ClassDefinition namedPortableClassDefinition =
+                new ClassDefinitionBuilder(TestSerializationConstants.PORTABLE_FACTORY_ID, TestSerializationConstants.NAMED_PORTABLE)
+                        .addStringField("name").addIntField("myint").build();
+        ClassDefinition innerPortableClassDefinition =
+                new ClassDefinitionBuilder(TestSerializationConstants.PORTABLE_FACTORY_ID, TestSerializationConstants.INNER_PORTABLE)
+                        .addByteArrayField("b")
+                        .addCharArrayField("c")
+                        .addShortArrayField("s")
+                        .addIntArrayField("i")
+                        .addLongArrayField("l")
+                        .addFloatArrayField("f")
+                        .addDoubleArrayField("d")
+                        .addPortableArrayField("nn", namedPortableClassDefinition)
+                        .addDecimalArrayField("bigDecimals")
+                        .addTimeArrayField("localTimes")
+                        .addDateArrayField("localDates")
+                        .addTimestampArrayField("localDateTimes")
+                        .addTimestampWithTimezoneArrayField("offsetDateTimes")
+                        .build();
+        ClassDefinition mainPortableClassDefinition =
+                new ClassDefinitionBuilder(PortableTest.PORTABLE_FACTORY_ID, TestSerializationConstants.MAIN_PORTABLE)
+                        .addByteField("b")
+                        .addBooleanField("bool")
+                        .addCharField("c")
+                        .addShortField("s")
+                        .addIntField("i")
+                        .addLongField("l")
+                        .addFloatField("f")
+                        .addDoubleField("d")
+                        .addStringField("str")
+                        .addPortableField("p", innerPortableClassDefinition)
+                        .addDecimalField("bigDecimal")
+                        .addTimeField("localTime")
+                        .addDateField("localDate")
+                        .addTimestampField("localDateTime")
+                        .addTimestampWithTimezoneField("offsetDateTime")
+                        .build();
+
+        GenericRecord[] namedRecords = new GenericRecord[inner.nn.length];
+        int i = 0;
+        for (NamedPortable namedPortable : inner.nn) {
+            GenericRecord namedRecord = GenericRecordBuilder.portable(namedPortableClassDefinition)
+                                                            .setString("name", inner.nn[i].name)
+                                                            .setInt("myint", inner.nn[i].myint).build();
+            namedRecords[i++] = namedRecord;
+        }
+
+        GenericRecord innerRecord = GenericRecordBuilder.portable(innerPortableClassDefinition)
+                                                        .setByteArray("b", inner.bb)
+                                                        .setCharArray("c", inner.cc)
+                                                        .setShortArray("s", inner.ss)
+                                                        .setIntArray("i", inner.ii)
+                                                        .setLongArray("l", inner.ll)
+                                                        .setFloatArray("f", inner.ff)
+                                                        .setDoubleArray("d", inner.dd)
+                                                        .setGenericRecordArray("nn", namedRecords)
+                                                        .setDecimalArray("bigDecimals", inner.bigDecimals)
+                                                        .setTimeArray("localTimes", inner.localTimes)
+                                                        .setDateArray("localDates", inner.localDates)
+                                                        .setTimestampArray("localDateTimes", inner.localDateTimes)
+                                                        .setTimestampWithTimezoneArray("offsetDateTimes", inner.offsetDateTimes)
+                                                        .build();
+
+        return GenericRecordBuilder.portable(mainPortableClassDefinition)
+                                   .setByte("b", expectedPortable.b)
+                                   .setBoolean("bool", expectedPortable.bool)
+                                   .setChar("c", expectedPortable.c)
+                                   .setShort("s", expectedPortable.s)
+                                   .setInt("i", expectedPortable.i)
+                                   .setLong("l", expectedPortable.l)
+                                   .setFloat("f", expectedPortable.f)
+                                   .setDouble("d", expectedPortable.d)
+                                   .setString("str", expectedPortable.str)
+                                   .setGenericRecord("p", innerRecord)
+                                   .setDecimal("bigDecimal", expectedPortable.bigDecimal)
+                                   .setTime("localTime", expectedPortable.localTime)
+                                   .setDate("localDate", expectedPortable.localDate)
+                                   .setTimestamp("localDateTime", expectedPortable.localDateTime)
+                                   .setTimestampWithTimezone("offsetDateTime", expectedPortable.offsetDateTime)
+                                   .build();
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,10 @@ package com.hazelcast.internal.serialization.impl.defaultserializers;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
-import com.hazelcast.nio.serialization.ClassNameFilter;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.ClassNameFilter;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -35,17 +36,19 @@ import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Date;
+import java.util.Optional;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import static com.hazelcast.internal.nio.IOUtil.newObjectInputStream;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVASCRIPT_JSON_SERIALIZATION_TYPE;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_BIG_DECIMAL;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_BIG_INTEGER;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_CLASS;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_DATE;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_EXTERNALIZABLE;
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_OPTIONAL;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_SERIALIZABLE;
-import static com.hazelcast.internal.nio.IOUtil.newObjectInputStream;
 import static java.lang.Math.max;
 
 
@@ -148,7 +151,7 @@ public final class JavaDefaultSerializers {
 
         @Override
         public Externalizable read(final ObjectDataInput in) throws IOException {
-            String className = in.readUTF();
+            String className = in.readString();
             try {
                 if (gzipEnabled) {
                     return readGzipped(((InputStream) in), className, in.getClassLoader());
@@ -183,7 +186,7 @@ public final class JavaDefaultSerializers {
 
         @Override
         public void write(final ObjectDataOutput out, final Externalizable obj) throws IOException {
-            out.writeUTF(obj.getClass().getName());
+            out.writeString(obj.getClass().getName());
 
             if (gzipEnabled) {
                 writeGzipped(((OutputStream) out), obj);
@@ -219,22 +222,16 @@ public final class JavaDefaultSerializers {
 
         @Override
         public BigInteger read(final ObjectDataInput in) throws IOException {
-            final byte[] bytes = new byte[in.readInt()];
-            in.readFully(bytes);
-            return new BigInteger(bytes);
+            return IOUtil.readBigInteger(in);
         }
 
         @Override
-        public void write(final ObjectDataOutput out, final BigInteger obj) throws IOException {
-            final byte[] bytes = obj.toByteArray();
-            out.writeInt(bytes.length);
-            out.write(bytes);
+        public void write(final ObjectDataOutput out, BigInteger value) throws IOException {
+            IOUtil.writeBigInteger(out, value);
         }
     }
 
     public static final class BigDecimalSerializer extends SingletonSerializer<BigDecimal> {
-
-        final BigIntegerSerializer bigIntegerSerializer = new BigIntegerSerializer();
 
         @Override
         public int getTypeId() {
@@ -242,18 +239,13 @@ public final class JavaDefaultSerializers {
         }
 
         @Override
-        public BigDecimal read(final ObjectDataInput in) throws IOException {
-            BigInteger bigInt = bigIntegerSerializer.read(in);
-            int scale = in.readInt();
-            return new BigDecimal(bigInt, scale);
+        public BigDecimal read(ObjectDataInput in) throws IOException {
+            return IOUtil.readBigDecimal(in);
         }
 
         @Override
-        public void write(final ObjectDataOutput out, final BigDecimal obj) throws IOException {
-            BigInteger bigInt = obj.unscaledValue();
-            int scale = obj.scale();
-            bigIntegerSerializer.write(out, bigInt);
-            out.writeInt(scale);
+        public void write(final ObjectDataOutput out, BigDecimal value) throws IOException {
+            IOUtil.writeBigDecimal(out, value);
         }
     }
 
@@ -285,7 +277,7 @@ public final class JavaDefaultSerializers {
         @Override
         public Class read(final ObjectDataInput in) throws IOException {
             try {
-                return ClassLoaderUtil.loadClass(in.getClassLoader(), in.readUTF());
+                return ClassLoaderUtil.loadClass(in.getClassLoader(), in.readString());
             } catch (ClassNotFoundException e) {
                 throw new HazelcastSerializationException(e);
             }
@@ -293,7 +285,35 @@ public final class JavaDefaultSerializers {
 
         @Override
         public void write(final ObjectDataOutput out, final Class obj) throws IOException {
-            out.writeUTF(obj.getName());
+            out.writeString(obj.getName());
+        }
+    }
+
+    public static final class OptionalSerializer extends SingletonSerializer<Optional> {
+
+        @Override
+        public int getTypeId() {
+            return JAVA_DEFAULT_TYPE_OPTIONAL;
+        }
+
+        @Override
+        public Optional read(final ObjectDataInput in) throws IOException {
+            final boolean present = in.readBoolean();
+            if (present) {
+                return Optional.of(in.readObject());
+            }
+
+            return Optional.empty();
+        }
+
+        @Override
+        public void write(final ObjectDataOutput out, final Optional obj) throws IOException {
+            if (obj.isPresent()) {
+                out.writeBoolean(true);
+                out.writeObject(obj.get());
+            } else {
+                out.writeBoolean(false);
+            }
         }
     }
 
@@ -301,12 +321,12 @@ public final class JavaDefaultSerializers {
 
         @Override
         public void write(ObjectDataOutput out, HazelcastJsonValue object) throws IOException {
-            out.writeUTF(object.toString());
+            out.writeString(object.toString());
         }
 
         @Override
         public HazelcastJsonValue read(ObjectDataInput in) throws IOException {
-            return new HazelcastJsonValue(in.readUTF());
+            return new HazelcastJsonValue(in.readString());
         }
 
         @Override

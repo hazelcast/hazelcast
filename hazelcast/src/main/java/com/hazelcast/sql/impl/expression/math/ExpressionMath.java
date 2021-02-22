@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,11 +59,8 @@ public final class ExpressionMath {
             throw QueryException.error(SqlErrorCode.DATA_EXCEPTION,
                     "BIGINT overflow in '/' operator (consider adding explicit CAST to DECIMAL)");
         }
-        try {
-            return left / right;
-        } catch (ArithmeticException e) {
-            throw QueryException.error(SqlErrorCode.DATA_EXCEPTION, "division by zero");
-        }
+
+        return left / right;
     }
 
     /**
@@ -80,7 +77,7 @@ public final class ExpressionMath {
     @SuppressWarnings("checkstyle:MagicNumber")
     public static double divideExact(double left, double right) {
         if (right == +0.0 || right == -0.0) {
-            throw QueryException.error(SqlErrorCode.DATA_EXCEPTION, "division by zero");
+            throw new ArithmeticException("Division by zero");
         }
 
         return left / right;
@@ -100,7 +97,7 @@ public final class ExpressionMath {
     @SuppressWarnings("checkstyle:MagicNumber")
     public static float divideExact(float left, float right) {
         if (right == +0.0f || right == -0.0f) {
-            throw QueryException.error(SqlErrorCode.DATA_EXCEPTION, "division by zero");
+            throw new ArithmeticException("Division by zero");
         }
 
         return left / right;

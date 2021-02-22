@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 
 package com.hazelcast.internal.cluster;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.impl.MemberImpl;
-import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
-import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -32,12 +32,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.cluster.impl.MemberImpl.NA_MEMBER_LIST_JOIN_VERSION;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readMap;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeMap;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
-import static java.util.Collections.singletonMap;
 
 public class MemberInfo implements IdentifiedDataSerializable {
 
@@ -112,7 +110,7 @@ public class MemberInfo implements IdentifiedDataSerializable {
     }
 
     public MemberImpl toMember() {
-        return new MemberImpl.Builder(singletonMap(MEMBER, address))
+        return new MemberImpl.Builder(address)
                 .version(version)
                 .uuid(uuid)
                 .attributes(attributes)
@@ -131,8 +129,8 @@ public class MemberInfo implements IdentifiedDataSerializable {
             attributes = createHashMap(size);
         }
         for (int i = 0; i < size; i++) {
-            String key = in.readUTF();
-            String value = in.readUTF();
+            String key = in.readString();
+            String value = in.readString();
             attributes.put(key, value);
         }
         version = in.readObject();
@@ -148,8 +146,8 @@ public class MemberInfo implements IdentifiedDataSerializable {
         out.writeInt(attributes == null ? 0 : attributes.size());
         if (attributes != null) {
             for (Map.Entry<String, String> entry : attributes.entrySet()) {
-                out.writeUTF(entry.getKey());
-                out.writeUTF(entry.getValue());
+                out.writeString(entry.getKey());
+                out.writeString(entry.getValue());
             }
         }
         out.writeObject(version);

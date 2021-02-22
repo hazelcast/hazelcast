@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,9 +32,7 @@ import com.hazelcast.spi.impl.tenantcontrol.NoopTenantControlFactory;
  * </ul>
  */
 @Beta
-@FunctionalInterface
 public interface TenantControlFactory {
-
     /**
      * Default tenant control factory. Always produces {@link TenantControl#NOOP_TENANT_CONTROL}
      */
@@ -47,11 +45,19 @@ public interface TenantControlFactory {
      * Further operations from other threads will use the returned context
      * for this particular Hazelcast object to re-establish the invocation context
      *
-     * @param event hook to destroy any Hazelcast object when the tenant is destroyed,
-     * This is used, for example, to delete all associated caches from the application when
-     * it gets undeployed, so there are no ClassCastExceptions afterwards
-     *
      * @return new TenantControl instance with the saved state of the current tenant
      */
-    TenantControl saveCurrentTenant(DestroyEventContext event);
+    TenantControl saveCurrentTenant();
+
+    /**
+     * If the method returns false (classes are not always available),
+     * all objects, e.g. CacheConfigs are always sent over the wire
+     * in a form that does not require classes to be loaded / available.
+     * Objects will be sent using class names instead of class types,
+     * and sending byte arrays instead of serialized objects.
+     * This is so de-serialization does not fail with ClassNotFoundException
+     *
+     * @return true is the associated applications are always loaded and running
+     */
+    boolean isClassesAlwaysAvailable();
 }

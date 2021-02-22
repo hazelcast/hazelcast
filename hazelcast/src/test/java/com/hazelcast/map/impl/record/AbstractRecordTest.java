@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.record;
 
 import com.hazelcast.internal.util.Clock;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -30,54 +29,47 @@ import static com.hazelcast.map.impl.record.Record.UNSET;
 import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class AbstractRecordTest {
 
-    private static final Data KEY = mock(Data.class);
     private static final Object VALUE = new Object();
 
-    private ObjectRecord record;
-    private ObjectRecord recordSameAttributes;
-    private ObjectRecord recordOtherVersion;
-    private ObjectRecord recordOtherTtl;
-    private ObjectRecord recordOtherCreationTime;
-    private ObjectRecord recordOtherHits;
-    private ObjectRecord recordOtherLastAccessTime;
-    private ObjectRecord recordOtherLastUpdateTime;
+    private Record record;
+    private Record recordSameAttributes;
+    private Record recordOtherVersion;
+    private Record recordOtherCreationTime;
+    private Record recordOtherHits;
+    private Record recordOtherLastAccessTime;
+    private Record recordOtherLastUpdateTime;
 
     @Before
     public void setUp() throws Exception {
-        record = new ObjectRecord(VALUE);
+        record = new ObjectRecordWithStats(VALUE);
 
-        recordSameAttributes = new ObjectRecord();
+        recordSameAttributes = new ObjectRecordWithStats();
         recordSameAttributes.setValue(VALUE);
 
-        recordOtherVersion = new ObjectRecord(VALUE);
+        recordOtherVersion = new ObjectRecordWithStats(VALUE);
         recordOtherVersion.setVersion(42);
 
-        recordOtherTtl = new ObjectRecord(VALUE);
-        recordOtherTtl.setTtl(2342);
-
-        recordOtherCreationTime = new ObjectRecord(VALUE);
+        recordOtherCreationTime = new ObjectRecordWithStats(VALUE);
         recordOtherCreationTime.setCreationTime(Clock.currentTimeMillis());
 
-        recordOtherHits = new ObjectRecord(VALUE);
+        recordOtherHits = new ObjectRecordWithStats(VALUE);
         recordOtherHits.setHits(23);
 
-        recordOtherLastAccessTime = new ObjectRecord(VALUE);
+        recordOtherLastAccessTime = new ObjectRecordWithStats(VALUE);
         recordOtherLastAccessTime.setLastAccessTime(Clock.currentTimeMillis());
 
-        recordOtherLastUpdateTime = new ObjectRecord(VALUE);
+        recordOtherLastUpdateTime = new ObjectRecordWithStats(VALUE);
         recordOtherLastUpdateTime.setLastUpdateTime(Clock.currentTimeMillis() + 10000);
     }
 
     @Test
-    public void testCasCachedValue() {
-        assertTrue(record.casCachedValue(null, null));
+    public void testGetCachedValueUnsafe() {
+        assertEquals(Record.NOT_CACHED, record.getCachedValueUnsafe());
     }
 
     @Test
@@ -98,7 +90,6 @@ public class AbstractRecordTest {
         assertNotEquals(record, new Object());
 
         assertNotEquals(record, recordOtherVersion);
-        assertNotEquals(record, recordOtherTtl);
         assertNotEquals(record, recordOtherCreationTime);
         assertNotEquals(record, recordOtherHits);
         assertNotEquals(record, recordOtherLastAccessTime);
@@ -112,7 +103,6 @@ public class AbstractRecordTest {
 
         assumeDifferentHashCodes();
         assertNotEquals(record.hashCode(), recordOtherVersion.hashCode());
-        assertNotEquals(record.hashCode(), recordOtherTtl.hashCode());
         assertNotEquals(record.hashCode(), recordOtherCreationTime.hashCode());
         assertNotEquals(record.hashCode(), recordOtherHits.hashCode());
         assertNotEquals(record.hashCode(), recordOtherLastAccessTime.hashCode());

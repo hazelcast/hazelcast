@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -103,21 +103,24 @@ public class MemberHandshakeHandlerTest {
     @Parameter
     public ProtocolType protocolType;
 
-    // connection type of TcpIpConnection for which MemberHandshake is processed
     @Parameter(1)
+    public String protocolIdentifier;
+
+    // connection type of TcpIpConnection for which MemberHandshake is processed
+    @Parameter(2)
     public String connectionType;
 
     // this map populates MemberHandshake.localAddresses map
-    @Parameter(2)
+    @Parameter(3)
     public Map<ProtocolType, Collection<Address>> localAddresses;
 
     // MemberHandshake.reply (true to test MemberHandshake from connection initiator to server,
     // false when the other way around)
-    @Parameter(3)
+    @Parameter(4)
     public boolean reply;
 
     // addresses on which the TcpIpConnection is expected to be registered in the connectionsMap
-    @Parameter(4)
+    @Parameter(5)
     public List<Address> expectedAddresses;
 
     private final TestAwareInstanceFactory factory = new TestAwareInstanceFactory();
@@ -134,23 +137,23 @@ public class MemberHandshakeHandlerTest {
     public static List<Object> parameters() {
         return Arrays.asList(new Object[]{
                 // on MEMBER connections, only MEMBER addresses are registered
-                new Object[]{ProtocolType.MEMBER, ConnectionType.MEMBER,
+                new Object[]{ProtocolType.MEMBER, null, ConnectionType.MEMBER,
                         localAddresses_memberOnly(), false, singletonList(INITIATOR_MEMBER_ADDRESS)},
-                new Object[]{ProtocolType.MEMBER, ConnectionType.MEMBER,
+                new Object[]{ProtocolType.MEMBER, null, ConnectionType.MEMBER,
                         localAddresses_memberOnly(), true, singletonList(INITIATOR_MEMBER_ADDRESS)},
-                new Object[]{ProtocolType.MEMBER, ConnectionType.MEMBER,
+                new Object[]{ProtocolType.MEMBER, null, ConnectionType.MEMBER,
                         localAddresses_memberWan(), false, singletonList(INITIATOR_MEMBER_ADDRESS)},
                 // when protocol type not supported by BindHandler, nothing is registered
-                new Object[]{ProtocolType.CLIENT, null, localAddresses_memberWan(), false, emptyList()},
+                new Object[]{ProtocolType.CLIENT, null, null, localAddresses_memberWan(), false, emptyList()},
                 // when protocol type is WAN, initiator address is always registered
-                new Object[]{WAN, ConnectionType.MEMBER,
+                new Object[]{WAN, "wan", ConnectionType.MEMBER,
                         localAddresses_memberOnly(), false, singletonList(INITIATOR_CLIENT_SOCKET_ADDRESS)},
-                new Object[]{WAN, ConnectionType.MEMBER,
+                new Object[]{WAN, "wan", ConnectionType.MEMBER,
                         localAddresses_memberWan(), false, singletonList(INITIATOR_CLIENT_SOCKET_ADDRESS)},
-                new Object[]{WAN, ConnectionType.MEMBER,
+                new Object[]{WAN, "wan", ConnectionType.MEMBER,
                         localAddresses_memberOnly(), true, singletonList(INITIATOR_CLIENT_SOCKET_ADDRESS)},
                 // when protocol type is WAN, advertised public WAN server socket from initiator is also registered on the server
-                new Object[]{WAN, ConnectionType.MEMBER,
+                new Object[]{WAN, "wan", ConnectionType.MEMBER,
                         localAddresses_memberWan(), true,
                         Arrays.asList(INITIATOR_CLIENT_SOCKET_ADDRESS, INITIATOR_WAN_ADDRESS)}
         });
@@ -162,7 +165,7 @@ public class MemberHandshakeHandlerTest {
         serializationService = getSerializationService(hz);
         Node node = getNode(hz);
         connectionManager = TcpServerConnectionManager.class.cast(
-                node.getServer().getConnectionManager(EndpointQualifier.resolve(protocolType, "wan")));
+                node.getServer().getConnectionManager(EndpointQualifier.resolve(protocolType, protocolIdentifier)));
         tcpServerControl = getFieldValueReflectively(connectionManager, "serverControl");
 
         // setup mock channel & socket

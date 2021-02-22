@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -103,7 +103,6 @@ public final class FailoverClientConfigSupport {
         for (ClientConfig alternativeClientConfig : alternativeClientConfigs.subList(1, alternativeClientConfigs.size())) {
             checkValidAlternative(mainConfig, alternativeClientConfig);
         }
-
     }
 
     private static void throwInvalidConfigurationException(String rootClusterName, String clusterName, String configName) {
@@ -225,7 +224,7 @@ public final class FailoverClientConfigSupport {
             throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "network:outboundPortDefinitions");
         }
         if (notEqual(mainNetworkConfig.getOutboundPorts(), alternativeNetworkConfig.getOutboundPorts())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "network:smartRouting");
+            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "network:outboundPorts");
         }
         if (notEqual(mainNetworkConfig.getClientIcmpPingConfig(), alternativeNetworkConfig.getClientIcmpPingConfig())) {
             throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "network:clientIcmp");

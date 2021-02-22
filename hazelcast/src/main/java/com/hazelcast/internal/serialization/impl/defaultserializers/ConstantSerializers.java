@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.ByteArraySerializer;
 import com.hazelcast.nio.serialization.StreamSerializer;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.AbstractMap;
@@ -33,7 +34,6 @@ import static com.hazelcast.internal.serialization.impl.SerializationConstants.C
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_CHAR_ARRAY;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_DOUBLE;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_DOUBLE_ARRAY;
-import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_SIMPLE_ENTRY;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_FLOAT;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_FLOAT_ARRAY;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_INTEGER;
@@ -43,6 +43,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationConstants.C
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_NULL;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_SHORT;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_SHORT_ARRAY;
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_SIMPLE_ENTRY;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_SIMPLE_IMMUTABLE_ENTRY;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_STRING;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_STRING_ARRAY;
@@ -57,6 +58,9 @@ public final class ConstantSerializers {
             return CONSTANT_TYPE_NULL;
         }
 
+        @SuppressFBWarnings(
+                value = "NP_NONNULL_RETURN_VIOLATION",
+                justification = "NullSerializer is only used for null values.")
         @Override
         public Object read(final ObjectDataInput in) throws IOException {
             return null;
@@ -220,12 +224,12 @@ public final class ConstantSerializers {
 
         @Override
         public String read(final ObjectDataInput in) throws IOException {
-            return in.readUTF();
+            return in.readString();
         }
 
         @Override
         public void write(final ObjectDataOutput out, final String obj) throws IOException {
-            out.writeUTF(obj);
+            out.writeString(obj);
         }
     }
 
@@ -386,12 +390,12 @@ public final class ConstantSerializers {
 
         @Override
         public String[] read(final ObjectDataInput in) throws IOException {
-            return in.readUTFArray();
+            return in.readStringArray();
         }
 
         @Override
         public void write(final ObjectDataOutput out, final String[] obj) throws IOException {
-            out.writeUTFArray(obj);
+            out.writeStringArray(obj);
         }
     }
 

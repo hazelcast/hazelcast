@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,14 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.collection.ArrayUtils;
-import com.hazelcast.internal.serialization.Data;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
@@ -251,7 +252,13 @@ public class ByteArrayObjectDataOutput extends VersionedObjectDataOutput impleme
     }
 
     @Override
+    @Deprecated
     public void writeUTF(final String str) throws IOException {
+        writeString(str);
+    }
+
+    @Override
+    public void writeString(@Nullable String str) throws IOException {
         if (str == null) {
             writeInt(NULL_ARRAY_LENGTH);
             return;
@@ -350,12 +357,18 @@ public class ByteArrayObjectDataOutput extends VersionedObjectDataOutput impleme
     }
 
     @Override
+    @Deprecated
     public void writeUTFArray(String[] strings) throws IOException {
+       writeStringArray(strings);
+    }
+
+    @Override
+    public void writeStringArray(@Nullable String[] strings) throws IOException {
         int len = strings != null ? strings.length : NULL_ARRAY_LENGTH;
         writeInt(len);
         if (len > 0) {
             for (String s : strings) {
-                writeUTF(s);
+                writeString(s);
             }
         }
     }

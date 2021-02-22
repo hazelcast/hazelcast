@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.query;
 
-import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.iteration.IterationPointer;
@@ -28,13 +27,10 @@ import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
-import com.hazelcast.map.impl.StoreAdapter;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.map.impl.recordstore.RecordStoreAdapter;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.Metadata;
 import com.hazelcast.query.impl.QueryableEntriesSegment;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
@@ -87,7 +83,6 @@ public class PartitionScanRunner {
         boolean nativeMemory = recordStore.getInMemoryFormat() == InMemoryFormat.NATIVE;
         boolean useCachedValues = isUseCachedDeserializedValuesEnabled(mapContainer, partitionId);
         Extractors extractors = mapServiceContext.getExtractors(mapName);
-        StoreAdapter storeAdapter = new RecordStoreAdapter(recordStore);
         Map.Entry<Integer, Map.Entry> nearestAnchorEntry =
                 pagingPredicate == null ? null : pagingPredicate.getNearestAnchorEntry();
 
@@ -104,8 +99,7 @@ public class PartitionScanRunner {
 
                 queryEntry.init(ss, key, value, extractors);
                 queryEntry.setRecord(record);
-                queryEntry.setStoreAdapter(storeAdapter);
-                queryEntry.setMetadata(PartitionScanRunner.this.getMetadataFromRecord(recordStore, key, record));
+                queryEntry.setMetadata(recordStore.getMetadataStore().get(key));
 
                 if (predicate.apply(queryEntry)
                         && compareAnchor(pagingPredicate, queryEntry, nearestAnchorEntry)) {
@@ -121,11 +115,6 @@ public class PartitionScanRunner {
             }
         }, false);
         result.orderAndLimit(pagingPredicate, nearestAnchorEntry);
-    }
-
-    // overridden in ee
-    protected Metadata getMetadataFromRecord(RecordStore recordStore, Data dataKey, Record record) {
-        return record.getMetadata();
     }
 
     /**
@@ -177,15 +166,6 @@ public class PartitionScanRunner {
     }
 
     protected boolean isUseCachedDeserializedValuesEnabled(MapContainer mapContainer, int partitionId) {
-        CacheDeserializedValues cacheDeserializedValues = mapContainer.getMapConfig().getCacheDeserializedValues();
-        switch (cacheDeserializedValues) {
-            case NEVER:
-                return false;
-            case ALWAYS:
-                return true;
-            default:
-                //if index exists then cached value is already set -> let's use it
-                return mapContainer.getIndexes(partitionId).haveAtLeastOneIndex();
-        }
+        return mapContainer.isUseCachedDeserializedValuesEnabled(partitionId);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,8 +30,8 @@ import java.util.Collection;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @SpringAware
-public class JCacheCacheWriter
-        implements CacheWriter, HazelcastInstanceAware, NodeAware {
+public class JCacheCacheWriter<K, V>
+        implements CacheWriter<K, V>, HazelcastInstanceAware, NodeAware {
 
     public static final AtomicBoolean HAZELCAST_INSTANCE_INJECTED = new AtomicBoolean();
     public static final AtomicBoolean NODE_INJECTED = new AtomicBoolean();

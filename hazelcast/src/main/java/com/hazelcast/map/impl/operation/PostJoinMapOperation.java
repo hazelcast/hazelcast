@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,20 +90,20 @@ public class PostJoinMapOperation extends Operation implements IdentifiedDataSer
 
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeUTF(mapName);
+            out.writeString(mapName);
             out.writeInt(interceptors.size());
             for (Map.Entry<String, MapInterceptor> entry : interceptors) {
-                out.writeUTF(entry.getKey());
+                out.writeString(entry.getKey());
                 out.writeObject(entry.getValue());
             }
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
-            mapName = in.readUTF();
+            mapName = in.readString();
             int size = in.readInt();
             for (int i = 0; i < size; i++) {
-                String id = in.readUTF();
+                String id = in.readString();
                 MapInterceptor interceptor = in.readObject();
                 interceptors.add(new AbstractMap.SimpleImmutableEntry<>(id, interceptor));
             }

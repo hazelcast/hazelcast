@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,9 +63,9 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.map.impl.querycache.subscriber.AbstractQueryCacheEndToEndConstructor.OPERATION_WAIT_TIMEOUT_MINUTES;
 import static com.hazelcast.map.impl.querycache.subscriber.EventPublisherHelper.publishEntryEvent;
 import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest.newQueryCacheRequest;
+import static com.hazelcast.query.impl.Indexes.SKIP_PARTITIONS_COUNT_CHECK;
 import static java.lang.Boolean.TRUE;
 import static java.util.concurrent.TimeUnit.MINUTES;
-import static com.hazelcast.query.impl.Indexes.SKIP_PARTITIONS_COUNT_CHECK;
 
 
 /**
@@ -335,7 +335,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
 
         Set<K> resultingSet = new HashSet<>();
 
-        Set<QueryableEntry> query = indexes.query(predicate, SKIP_PARTITIONS_COUNT_CHECK);
+        Iterable<QueryableEntry> query = indexes.query(predicate, SKIP_PARTITIONS_COUNT_CHECK);
         if (query != null) {
             for (QueryableEntry entry : query) {
                 K key = toObject(entry.getKeyData());
@@ -354,7 +354,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
 
         Set<Map.Entry<K, V>> resultingSet = new HashSet<>();
 
-        Set<QueryableEntry> query = indexes.query(predicate, SKIP_PARTITIONS_COUNT_CHECK);
+        Iterable<QueryableEntry> query = indexes.query(predicate, SKIP_PARTITIONS_COUNT_CHECK);
         if (query != null) {
             for (QueryableEntry entry : query) {
                 Map.Entry<K, V> copyEntry = new CachedQueryEntry<>(serializationService, entry.getKeyData(),
@@ -377,7 +377,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
 
         List<Data> resultingList = new ArrayList<>();
 
-        Set<QueryableEntry> query = indexes.query(predicate, SKIP_PARTITIONS_COUNT_CHECK);
+        Iterable<QueryableEntry> query = indexes.query(predicate, SKIP_PARTITIONS_COUNT_CHECK);
         if (query != null) {
             for (QueryableEntry entry : query) {
                 resultingList.add(entry.getValueData());
@@ -416,7 +416,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
         checkNotNull(listener, "listener cannot be null");
 
         Data keyData = toData(key);
-        EventFilter filter = new EntryEventFilter(includeValue, keyData);
+        EventFilter filter = new EntryEventFilter(keyData, includeValue);
         QueryCacheEventService eventService = getEventService();
         String mapName = delegate.getName();
         return eventService.addListener(mapName, cacheId, listener, filter);
@@ -428,7 +428,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
         checkNotNull(predicate, "predicate cannot be null");
 
         QueryCacheEventService eventService = getEventService();
-        EventFilter filter = new QueryEventFilter(includeValue, null, predicate);
+        EventFilter filter = new QueryEventFilter(null, predicate, includeValue);
         String mapName = delegate.getName();
         return eventService.addListener(mapName, cacheId, listener, filter);
     }
@@ -440,7 +440,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
         checkNotNull(key, "key cannot be null");
 
         QueryCacheEventService eventService = getEventService();
-        EventFilter filter = new QueryEventFilter(includeValue, toData(key), predicate);
+        EventFilter filter = new QueryEventFilter(toData(key), predicate, includeValue);
         String mapName = delegate.getName();
         return eventService.addListener(mapName, cacheId, listener, filter);
     }
@@ -461,7 +461,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
 
         IndexConfig config0 = getNormalizedIndexConfig(config);
 
-        indexes.addOrGetIndex(config0, null);
+        indexes.addOrGetIndex(config0);
 
         InternalSerializationService serializationService = context.getSerializationService();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ import com.hazelcast.internal.serialization.impl.defaultserializers.DelayQueueSt
 import com.hazelcast.internal.serialization.impl.defaultserializers.HashMapStreamSerializer;
 import com.hazelcast.internal.serialization.impl.defaultserializers.HashSetStreamSerializer;
 import com.hazelcast.internal.serialization.impl.defaultserializers.JavaDefaultSerializers;
+import com.hazelcast.internal.serialization.impl.defaultserializers.JavaDefaultSerializers.OptionalSerializer;
 import com.hazelcast.internal.serialization.impl.defaultserializers.LinkedBlockingQueueStreamSerializer;
 import com.hazelcast.internal.serialization.impl.defaultserializers.LinkedHashMapStreamSerializer;
 import com.hazelcast.internal.serialization.impl.defaultserializers.LinkedHashSetStreamSerializer;
@@ -80,6 +81,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Optional;
 import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.TreeMap;
@@ -222,6 +224,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
     private void registerJavaTypeSerializers() {
         //Java extensions: more serializers
         registerConstant(Class.class, new ClassSerializer());
+        registerConstant(Optional.class, new OptionalSerializer());
         registerConstant(Date.class, new DateSerializer());
         registerConstant(BigInteger.class, new BigIntegerSerializer());
         registerConstant(BigDecimal.class, new BigDecimalSerializer());
@@ -318,7 +321,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         if (isFlagSet(header, IDS_FLAG)) {
             skipBytesSafely(input, FACTORY_AND_CLASS_ID_BYTE_LENGTH);
         } else {
-            input.readUTF();
+            input.readString();
         }
 
         if (isFlagSet(header, EE_FLAG)) {

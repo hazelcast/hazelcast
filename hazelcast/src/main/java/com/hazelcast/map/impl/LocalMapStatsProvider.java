@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -120,9 +120,9 @@ public class LocalMapStatsProvider {
                 }
                 IPartition partition = partitionService.getPartition(partitionContainer.getPartitionId(), false);
                 if (partition.isLocal()) {
-                    addPrimaryStatsOf(recordStore, getOrCreateOnDemandStats(statsPerMap, recordStore));
+                    addStatsOfPrimaryReplica(recordStore, getOrCreateOnDemandStats(statsPerMap, recordStore));
                 } else {
-                    addReplicaStatsOf(recordStore, getOrCreateOnDemandStats(statsPerMap, recordStore));
+                    addStatsOfBackupReplica(recordStore, getOrCreateOnDemandStats(statsPerMap, recordStore));
                 }
             }
         }
@@ -187,11 +187,15 @@ public class LocalMapStatsProvider {
         PartitionContainer[] partitionContainers = mapServiceContext.getPartitionContainers();
         for (PartitionContainer partitionContainer : partitionContainers) {
             IPartition partition = partitionService.getPartition(partitionContainer.getPartitionId());
+            RecordStore existingRecordStore = partitionContainer.getExistingRecordStore(mapName);
+            if (existingRecordStore == null) {
+                continue;
+            }
 
             if (partition.isLocal()) {
-                addPrimaryStatsOf(partitionContainer.getExistingRecordStore(mapName), onDemandStats);
+                addStatsOfPrimaryReplica(existingRecordStore, onDemandStats);
             } else {
-                addReplicaStatsOf(partitionContainer.getExistingRecordStore(mapName), onDemandStats);
+                addStatsOfBackupReplica(existingRecordStore, onDemandStats);
             }
         }
         addStructureStats(mapName, onDemandStats);
@@ -208,17 +212,7 @@ public class LocalMapStatsProvider {
         // NOP
     }
 
-    private static void addPrimaryStatsOf(RecordStore recordStore, LocalMapOnDemandCalculatedStats onDemandStats) {
-        if (recordStore != null) {
-            // we need to update the locked entry count here whether or not the map is empty
-            // keys that are not contained by a map can be locked
-            onDemandStats.incrementLockedEntryCount(recordStore.getLockedEntryCount());
-        }
-
-        if (!hasRecords(recordStore)) {
-            return;
-        }
-
+    private static void addStatsOfPrimaryReplica(RecordStore recordStore, LocalMapOnDemandCalculatedStats onDemandStats) {
         LocalRecordStoreStats stats = recordStore.getLocalRecordStoreStats();
 
         onDemandStats.incrementHits(stats.getHits());
@@ -231,16 +225,12 @@ public class LocalMapStatsProvider {
         onDemandStats.setLastAccessTime(stats.getLastAccessTime());
         onDemandStats.setLastUpdateTime(stats.getLastUpdateTime());
         onDemandStats.setBackupCount(recordStore.getMapContainer().getMapConfig().getTotalBackupCount());
+        // we need to update the locked entry count here whether or not the map is empty
+        // keys that are not contained by a map can be locked
+        onDemandStats.incrementLockedEntryCount(recordStore.getLockedEntryCount());
     }
 
-    /**
-     * Calculates and adds replica partition stats.
-     */
-    private void addReplicaStatsOf(RecordStore recordStore, LocalMapOnDemandCalculatedStats onDemandStats) {
-        if (!hasRecords(recordStore)) {
-            return;
-        }
-
+    private void addStatsOfBackupReplica(RecordStore recordStore, LocalMapOnDemandCalculatedStats onDemandStats) {
         long backupEntryCount = 0;
         long backupEntryMemoryCost = 0;
 
@@ -264,10 +254,6 @@ public class LocalMapStatsProvider {
         onDemandStats.incrementBackupEntryMemoryCost(backupEntryMemoryCost);
         onDemandStats.incrementBackupEntryCount(backupEntryCount);
         onDemandStats.setBackupCount(recordStore.getMapContainer().getMapConfig().getTotalBackupCount());
-    }
-
-    private static boolean hasRecords(RecordStore recordStore) {
-        return recordStore != null && recordStore.size() > 0;
     }
 
     private boolean isReplicaAvailable(Address replicaAddress, int backupCount) {

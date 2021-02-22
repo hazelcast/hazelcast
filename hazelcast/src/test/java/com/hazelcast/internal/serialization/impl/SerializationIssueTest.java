@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -97,7 +97,7 @@ public class SerializationIssueTest extends HazelcastTestSupport {
                             javaSerializer.write(out, v);
                         } else if (v instanceof DummyValue) {
                             out.writeBoolean(false);
-                            out.writeUTF(((DummyValue) v).s);
+                            out.writeString(((DummyValue) v).s);
                             out.writeInt(((DummyValue) v).k);
                         }
                     }
@@ -109,7 +109,7 @@ public class SerializationIssueTest extends HazelcastTestSupport {
                         if (java) {
                             return javaSerializer.read(in);
                         }
-                        return new DummyValue(in.readUTF(), in.readInt());
+                        return new DummyValue(in.readString(), in.readInt());
                     }
 
                     public int getTypeId() {
@@ -147,14 +147,14 @@ public class SerializationIssueTest extends HazelcastTestSupport {
                     @Override
                     public void write(ObjectDataOutput out, Object v) throws IOException {
                         writeCounter.incrementAndGet();
-                        out.writeUTF(((DummyValue) v).s);
+                        out.writeString(((DummyValue) v).s);
                         out.writeInt(((DummyValue) v).k);
                     }
 
                     @Override
                     public Object read(ObjectDataInput in) throws IOException {
                         readCounter.incrementAndGet();
-                        return new DummyValue(in.readUTF(), in.readInt());
+                        return new DummyValue(in.readString(), in.readInt());
                     }
 
                     public int getTypeId() {

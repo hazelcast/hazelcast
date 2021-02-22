@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,7 +64,7 @@ public class CacheRemoveAllOperationFactory implements OperationFactory, Identif
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeInt(completionId);
         out.writeInt(keys == null ? -1 : keys.size());
         if (keys != null) {
@@ -76,7 +76,7 @@ public class CacheRemoveAllOperationFactory implements OperationFactory, Identif
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         completionId = in.readInt();
         int size = in.readInt();
         if (size == -1) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.TopicPublishAllCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
@@ -28,7 +27,6 @@ import com.hazelcast.security.permission.TopicPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.topic.impl.PublishAllOperation;
 import com.hazelcast.topic.impl.TopicService;
-import com.hazelcast.version.Version;
 
 import java.security.Permission;
 import java.util.List;
@@ -42,12 +40,6 @@ public class TopicPublishAllMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        // RU_COMPAT_4_0
-        Version clusterVersion = nodeEngine.getClusterService().getClusterVersion();
-        if (!clusterVersion.isGreaterOrEqual(Versions.V4_1)) {
-            throw new UnsupportedOperationException(
-                    "Publish all is unavailable at cluster version " + clusterVersion);
-        }
         return new PublishAllOperation(parameters.name, items());
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,13 +56,13 @@ public final class SampleTestObjects {
 
         @Override
         public void writePortable(PortableWriter writer) throws IOException {
-            writer.writeUTF("n", name);
+            writer.writeString("n", name);
             writer.writeInt("a", age);
         }
 
         @Override
         public void readPortable(PortableReader reader) throws IOException {
-            name = reader.readUTF("n");
+            name = reader.readString("n");
             age = reader.readInt("a");
         }
 

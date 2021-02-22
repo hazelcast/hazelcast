@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,9 @@
 package com.hazelcast.internal.util;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.portable.PortableHook;
-import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.Serializer;
@@ -31,11 +31,22 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.dynamic.DynamicType;
+import org.apache.catalina.Context;
+import org.apache.catalina.WebResourceRoot;
+import org.apache.catalina.Wrapper;
+import org.apache.catalina.startup.Tomcat;
+import org.apache.catalina.webresources.DirResourceSet;
+import org.apache.catalina.webresources.StandardRoot;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -51,13 +62,19 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.internal.nio.IOUtil.toByteArray;
 import static com.hazelcast.test.TestCollectionUtils.setOf;
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -98,6 +115,42 @@ public class ServiceLoaderTest extends HazelcastTestSupport {
         while (iterator.hasNext()) {
             Class<?> hook = iterator.next();
             assertEquals(childLoader, hook.getClassLoader());
+        }
+    }
+
+    @Test
+    public void testMultipleClassloaderLoadsTheSameClass_fromParentClassLoader() throws Exception {
+        // Given: a parent & child class loaders that can load same classes
+        //        and same factoryId from same URL
+        // When:  requesting classes loaded by parent class loader from the child loader
+        // Then:  classes from parent class loader are returned
+
+        // Use case:
+        //  - Hazelcast jars in both tomcat/lib and tomcat/webapps/foo/lib
+        //  - Tomcat configured with hazelcast session manager (also in tomcat/lib)
+        //  - Session manager is being initialized for foo context: service loading
+        //    uses foo webapp classloader to locate all resources by factoryId.
+        //    It locates factoryId's both in foo/lib and tomcat/lib but returned
+        //    classes must be loaded from the parent classloader (from the
+        //    Hazelcast jar in tomcat/lib, same as the HazelcastInstance class that
+        //    is being started by the session manager).
+        ClassLoader parent = this.getClass().getClassLoader();
+        ClassLoader childLoader = new StealingClassloader(parent);
+        // ensure parent and child loader load separate Class objects for same class name
+        assertNotSame(parent.loadClass(DataSerializerHook.class.getName()),
+                        childLoader.loadClass(DataSerializerHook.class.getName()));
+
+        // request from childLoader the classes that implement DataSerializerHook, as loaded by parent
+        Iterator<? extends Class<?>> iterator
+                = ServiceLoader.classIterator(DataSerializerHook.class, "com.hazelcast.DataSerializerHook", childLoader);
+
+        //make sure hooks were found.
+        assertTrue(iterator.hasNext());
+
+        // ensure all hooks are loaded from parent classloader
+        while (iterator.hasNext()) {
+            Class<?> hook = iterator.next();
+            assertSame(parent, hook.getClassLoader());
         }
     }
 
@@ -423,6 +476,103 @@ public class ServiceLoaderTest extends HazelcastTestSupport {
         }
 
         assertEquals(1, implementations.size());
+    }
+
+    @Test
+    public void testClassIteratorInTomcat_whenClassesInBothLibs()
+            throws Exception {
+        ClassLoader launchClassLoader = this.getClass().getClassLoader();
+        ClassLoader webappClassLoader;
+        // setup embedded tomcat
+        Tomcat tomcat = new Tomcat();
+        tomcat.setPort(13256); // 8080 may be used by some other tests
+        Context ctx = tomcat.addContext("", null);
+        // Map target/classes as WEB-INF/classes, so webapp classloader
+        // will locate compiled production classes in the webapp classpath.
+        // The purpose of this setup is to make project classes available
+        // to both launch classloader and webapplication classloader,
+        // modeling a Tomcat deployment in which Hazelcast JARs are deployed
+        // in both tomcat/lib and webapp/lib
+        File webInfClasses = new File("target/classes");
+        WebResourceRoot resources = new StandardRoot(ctx);
+        resources.addPreResources(new DirResourceSet(resources, "/WEB-INF/classes",
+                webInfClasses.getAbsolutePath(), "/"));
+        ctx.setResources(resources);
+
+        TestServiceLoaderServlet testServlet = new TestServiceLoaderServlet();
+        Wrapper wrapper = tomcat.addServlet("", "testServlet", testServlet);
+        wrapper.setLoadOnStartup(1);
+        ctx.addServletMappingDecoded("/", "testServlet");
+
+        tomcat.start();
+        try {
+            assertTrueEventually(() -> assertTrue(testServlet.isInitDone()));
+            assertNull("No failure is expected from servlet init() method", testServlet.failure());
+
+            webappClassLoader = testServlet.getWebappClassLoader();
+
+            assertNotEquals(launchClassLoader, webappClassLoader);
+            Iterator<? extends Class<?>> iterator
+                    = ServiceLoader.classIterator(DataSerializerHook.class, "com.hazelcast.DataSerializerHook",
+                    webappClassLoader);
+            assertTrue(iterator.hasNext());
+            while (iterator.hasNext()) {
+                Class<?> klass = iterator.next();
+                assertEquals(launchClassLoader, klass.getClassLoader());
+            }
+        } finally {
+            tomcat.stop();
+        }
+    }
+
+    private static class TestServiceLoaderServlet extends HttpServlet {
+
+        private static final long serialVersionUID = 1L;
+        private volatile ClassLoader webappClassLoader;
+        private AtomicBoolean initDone = new AtomicBoolean();
+        private AtomicReference<Throwable> failure = new AtomicReference<>();
+
+        @Override
+        public void init() throws ServletException {
+            super.init();
+            try {
+                webappClassLoader = Thread.currentThread().getContextClassLoader();
+                Class<?> dshKlass = webappClassLoader.loadClass(DataSerializerHook.class.getName());
+                Iterator<? extends Class<?>> iterator
+                        = ServiceLoader.classIterator(dshKlass, "com.hazelcast.DataSerializerHook",
+                        webappClassLoader);
+                // webapp classloader locates and loads classes from webapp classpath
+                assertTrue(iterator.hasNext());
+                while (iterator.hasNext()) {
+                    Class<?> klass = iterator.next();
+                    assertEquals(webappClassLoader, klass.getClassLoader());
+                }
+            } catch (Throwable t) {
+                failure.set(t);
+                throw new ServletException(t);
+            } finally {
+                initDone.set(true);
+            }
+        }
+
+        @Override
+        protected void doGet(HttpServletRequest req, HttpServletResponse resp)
+                throws IOException {
+            resp.setContentType("text/plain");
+            resp.getWriter().print("OK");
+        }
+
+        public ClassLoader getWebappClassLoader() {
+            return webappClassLoader;
+        }
+
+        public boolean isInitDone() {
+            return initDone.get();
+        }
+
+        public Throwable failure() {
+            return failure.get();
+        }
     }
 
     public interface ServiceLoaderTestInterface {

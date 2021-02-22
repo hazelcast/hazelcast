@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,6 +66,7 @@ import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.spi.impl.servicemanager.ServiceManager;
 import com.hazelcast.spi.impl.servicemanager.impl.ServiceManagerImpl;
+import com.hazelcast.spi.impl.tenantcontrol.impl.TenantControlServiceImpl;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -122,6 +123,7 @@ public class NodeEngineImpl implements NodeEngine {
     private final Diagnostics diagnostics;
     private final SplitBrainMergePolicyProvider splitBrainMergePolicyProvider;
     private final ConcurrencyDetection concurrencyDetection;
+    private final TenantControlServiceImpl tenantControlService;
 
     @SuppressWarnings("checkstyle:executablestatementcount")
     public NodeEngineImpl(Node node) {
@@ -160,10 +162,12 @@ public class NodeEngineImpl implements NodeEngine {
             this.splitBrainProtectionService = new SplitBrainProtectionServiceImpl(this);
             this.diagnostics = newDiagnostics();
             this.splitBrainMergePolicyProvider = new SplitBrainMergePolicyProvider(this);
+            this.tenantControlService = new TenantControlServiceImpl(this);
             serviceManager.registerService(OperationServiceImpl.SERVICE_NAME, operationService);
             serviceManager.registerService(OperationParker.SERVICE_NAME, operationParker);
             serviceManager.registerService(UserCodeDeploymentService.SERVICE_NAME, userCodeDeploymentService);
             serviceManager.registerService(ClusterWideConfigurationService.SERVICE_NAME, configurationService);
+            serviceManager.registerService(TenantControlServiceImpl.SERVICE_NAME, tenantControlService);
         } catch (Throwable e) {
             try {
                 shutdown(true);
@@ -310,6 +314,11 @@ public class NodeEngineImpl implements NodeEngine {
     @Override
     public InternalProxyService getProxyService() {
         return proxyService;
+    }
+
+    @Override
+    public TenantControlServiceImpl getTenantControlService() {
+        return tenantControlService;
     }
 
     public OperationParker getOperationParker() {

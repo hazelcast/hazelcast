@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ public final class ListMultiFrameCodec {
     private ListMultiFrameCodec() {
     }
 
-    public static <T> void encode(ClientMessage clientMessage, Collection<T> collection,
+    public static <T> void encode(ClientMessage clientMessage, Iterable<T> collection,
                                   BiConsumer<ClientMessage, T> encodeFunction) {
         clientMessage.add(BEGIN_FRAME.copy());
         for (T item : collection) {
@@ -44,7 +44,7 @@ public final class ListMultiFrameCodec {
         clientMessage.add(END_FRAME.copy());
     }
 
-    public static <T> void encodeContainsNullable(ClientMessage clientMessage, Collection<T> collection,
+    public static <T> void encodeContainsNullable(ClientMessage clientMessage, Iterable<T> collection,
                                                   BiConsumer<ClientMessage, T> encodeFunction) {
         clientMessage.add(BEGIN_FRAME.copy());
         for (T item : collection) {

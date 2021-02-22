@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,12 @@
 package com.hazelcast.internal.partition;
 
 import com.hazelcast.cluster.Address;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.partition.impl.InternalPartitionImpl;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.impl.Versioned;
-import com.hazelcast.version.Version;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -49,8 +47,6 @@ public final class PartitionRuntimeState implements IdentifiedDataSerializable, 
     private int[][] encodedPartitionTable;
     private int[] versions;
     private long stamp;
-    //RU_COMPAT_4_0: Used as global version when cluster version == 4.0
-    private int version;
     private Collection<MigrationInfo> completedMigrations;
     // used to know ongoing migrations when master changed
     private Collection<MigrationInfo> activeMigrations;
@@ -62,19 +58,7 @@ public final class PartitionRuntimeState implements IdentifiedDataSerializable, 
     }
 
     public PartitionRuntimeState(InternalPartition[] partitions, Collection<MigrationInfo> completedMigrations, long stamp) {
-        this(partitions, completedMigrations, stamp, 0);
-    }
-
-    //RU_COMPAT_4_0
-    @Deprecated
-    public PartitionRuntimeState(InternalPartition[] partitions, Collection<MigrationInfo> completedMigrations, int version) {
-        this(partitions, completedMigrations, 0L, version);
-    }
-
-    private PartitionRuntimeState(InternalPartition[] partitions, Collection<MigrationInfo> completedMigrations,
-            long stamp, int version) {
         this.stamp = stamp;
-        this.version = version;
         this.completedMigrations = completedMigrations != null ? completedMigrations : Collections.emptyList();
         Map<PartitionReplica, Integer> replicaToIndexes = createPartitionReplicaToIndexMap(partitions);
         allReplicas = toPartitionReplicaArray(replicaToIndexes);
@@ -146,25 +130,6 @@ public final class PartitionRuntimeState implements IdentifiedDataSerializable, 
         return result;
     }
 
-    //RU_COMPAT_4_0
-    @Deprecated
-    public PartitionReplica[][] getPartitionTable() {
-        int length = encodedPartitionTable.length;
-        PartitionReplica[][] result = new PartitionReplica[length][MAX_REPLICA_COUNT];
-        for (int partitionId = 0; partitionId < length; partitionId++) {
-            int[] addressIndexes = encodedPartitionTable[partitionId];
-            for (int replicaIndex = 0; replicaIndex < addressIndexes.length; replicaIndex++) {
-                int index = addressIndexes[replicaIndex];
-                if (index != -1) {
-                    PartitionReplica replica = allReplicas[index];
-                    assert replica != null;
-                    result[partitionId][replicaIndex] = replica;
-                }
-            }
-        }
-        return result;
-    }
-
     public Address getMaster() {
         return master;
     }
@@ -187,12 +152,7 @@ public final class PartitionRuntimeState implements IdentifiedDataSerializable, 
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        Version clusterVersion = in.getVersion();
-        if (clusterVersion.isGreaterOrEqual(Versions.V4_1)) {
-            stamp = in.readLong();
-        } else {
-            version = in.readInt();
-        }
+        stamp = in.readLong();
 
         int memberCount = in.readInt();
         allReplicas = new PartitionReplica[memberCount];
@@ -214,30 +174,16 @@ public final class PartitionRuntimeState implements IdentifiedDataSerializable, 
             }
         }
 
-        if (clusterVersion.isGreaterOrEqual(Versions.V4_1)) {
-            for (int i = 0; i < partitionCount; i++) {
-                versions[i] = in.readInt();
-            }
-            activeMigrations = readNullableCollection(in);
-        } else {
-            //RU_COMPAT_4_0
-            MigrationInfo activeMigration = in.readObject();
-            if (activeMigration != null) {
-                activeMigrations = Collections.singleton(activeMigration);
-            }
+        for (int i = 0; i < partitionCount; i++) {
+            versions[i] = in.readInt();
         }
-
+        activeMigrations = readNullableCollection(in);
         completedMigrations = readNullableCollection(in);
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        Version clusterVersion = out.getVersion();
-        if (clusterVersion.isGreaterOrEqual(Versions.V4_1)) {
-            out.writeLong(stamp);
-        } else {
-            out.writeInt(version);
-        }
+        out.writeLong(stamp);
 
         out.writeInt(allReplicas.length);
         for (int index = 0; index < allReplicas.length; index++) {
@@ -253,23 +199,10 @@ public final class PartitionRuntimeState implements IdentifiedDataSerializable, 
             }
         }
 
-        if (clusterVersion.isGreaterOrEqual(Versions.V4_1)) {
-            for (int v : versions) {
-                out.writeInt(v);
-            }
-            writeNullableCollection(activeMigrations, out);
-        } else {
-            //RU_COMPAT_4_0
-            MigrationInfo activeMigration;
-            if (activeMigrations == null || activeMigrations.isEmpty()) {
-                activeMigration = null;
-            } else {
-                assert activeMigrations.size() == 1 : "Active migrations should be singleton: " + activeMigrations;
-                activeMigration = activeMigrations.iterator().next();
-            }
-            out.writeObject(activeMigration);
+        for (int v : versions) {
+            out.writeInt(v);
         }
-
+        writeNullableCollection(activeMigrations, out);
         writeNullableCollection(completedMigrations, out);
     }
 
@@ -286,12 +219,6 @@ public final class PartitionRuntimeState implements IdentifiedDataSerializable, 
 
     public long getStamp() {
         return stamp;
-    }
-
-    //RU_COMPAT_4_0
-    @Deprecated
-    public int getVersion() {
-        return version;
     }
 
     @Override

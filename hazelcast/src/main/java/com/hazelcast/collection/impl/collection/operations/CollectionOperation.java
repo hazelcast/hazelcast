@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,6 +43,7 @@ import com.hazelcast.spi.impl.operationservice.NamedOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
+import com.hazelcast.spi.tenantcontrol.TenantControl;
 
 public abstract class CollectionOperation extends Operation
         implements NamedOperation, PartitionAwareOperation, IdentifiedDataSerializable {
@@ -116,12 +117,12 @@ public abstract class CollectionOperation extends Operation
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
     }
 
     @Override
@@ -154,5 +155,17 @@ public abstract class CollectionOperation extends Operation
     private AbstractLocalCollectionStats getLocalCollectionStats() {
         CollectionService collectionService = getService();
         return collectionService.getLocalCollectionStats(name);
+    }
+
+    @Override
+    public TenantControl getTenantControl() {
+        CollectionService collectionService = getService();
+        return getNodeEngine().getTenantControlService()
+                .getTenantControl(collectionService.getServiceName(), name);
+    }
+
+    @Override
+    public boolean requiresTenantContext() {
+        return true;
     }
 }

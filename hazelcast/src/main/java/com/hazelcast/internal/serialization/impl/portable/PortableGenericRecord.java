@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,26 @@
 
 package com.hazelcast.internal.serialization.impl.portable;
 
+import com.hazelcast.internal.serialization.impl.AbstractGenericRecord;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.GenericRecord;
+import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.util.Arrays;
+import java.util.Set;
 
-public class PortableGenericRecord implements GenericRecord {
+public class PortableGenericRecord extends AbstractGenericRecord {
 
     private final ClassDefinition classDefinition;
     private final Object[] objects;
@@ -43,24 +52,30 @@ public class PortableGenericRecord implements GenericRecord {
 
     @Nonnull
     @Override
-    public Builder newBuilder() {
-        return Builder.portable(classDefinition);
+    public GenericRecordBuilder newBuilder() {
+        return GenericRecordBuilder.portable(classDefinition);
     }
 
     @Nonnull
     @Override
-    public Builder cloneWithBuilder() {
+    public GenericRecordBuilder cloneWithBuilder() {
         return new PortableGenericRecordBuilder(classDefinition, Arrays.copyOf(objects, objects.length));
     }
 
+    @Nonnull
     @Override
-    public GenericRecord[] readGenericRecordArray(@Nonnull String fieldName) {
-        return read(fieldName, FieldType.PORTABLE_ARRAY);
+    public Set<String> getFieldNames() {
+        return classDefinition.getFieldNames();
     }
 
     @Override
-    public GenericRecord readGenericRecord(@Nonnull String fieldName) {
-        return read(fieldName, FieldType.PORTABLE);
+    public GenericRecord[] getGenericRecordArray(@Nonnull String fieldName) {
+        return get(fieldName, FieldType.PORTABLE_ARRAY);
+    }
+
+    @Override
+    public GenericRecord getGenericRecord(@Nonnull String fieldName) {
+        return get(fieldName, FieldType.PORTABLE);
     }
 
     @Override
@@ -75,102 +90,172 @@ public class PortableGenericRecord implements GenericRecord {
     }
 
     @Override
-    public boolean readBoolean(@Nonnull String fieldName) {
-        return read(fieldName, FieldType.BOOLEAN);
+    public boolean getBoolean(@Nonnull String fieldName) {
+        return get(fieldName, FieldType.BOOLEAN);
     }
 
     @Override
-    public byte readByte(@Nonnull String fieldName) {
-        return read(fieldName, FieldType.BYTE);
+    public byte getByte(@Nonnull String fieldName) {
+        return get(fieldName, FieldType.BYTE);
     }
 
     @Override
-    public char readChar(@Nonnull String fieldName) {
-        return read(fieldName, FieldType.CHAR);
+    public char getChar(@Nonnull String fieldName) {
+        return get(fieldName, FieldType.CHAR);
     }
 
     @Override
-    public double readDouble(@Nonnull String fieldName) {
-        return read(fieldName, FieldType.DOUBLE);
+    public double getDouble(@Nonnull String fieldName) {
+        return get(fieldName, FieldType.DOUBLE);
     }
 
     @Override
-    public float readFloat(@Nonnull String fieldName) {
-        return read(fieldName, FieldType.FLOAT);
+    public float getFloat(@Nonnull String fieldName) {
+        return get(fieldName, FieldType.FLOAT);
     }
 
     @Override
-    public int readInt(@Nonnull String fieldName) {
-        return read(fieldName, FieldType.INT);
+    public int getInt(@Nonnull String fieldName) {
+        return get(fieldName, FieldType.INT);
     }
 
     @Override
-    public long readLong(@Nonnull String fieldName) {
-        return read(fieldName, FieldType.LONG);
+    public long getLong(@Nonnull String fieldName) {
+        return get(fieldName, FieldType.LONG);
     }
 
     @Override
-    public short readShort(@Nonnull String fieldName) {
-        return read(fieldName, FieldType.SHORT);
+    public short getShort(@Nonnull String fieldName) {
+        return get(fieldName, FieldType.SHORT);
     }
 
     @Override
-    public String readUTF(@Nonnull String fieldName) {
-        return read(fieldName, FieldType.UTF);
+    @Nullable
+    public String getString(@Nonnull String fieldName) {
+        return get(fieldName, FieldType.UTF);
     }
 
     @Override
-    public boolean[] readBooleanArray(@Nonnull String fieldName) {
-        return read(fieldName, FieldType.BOOLEAN_ARRAY);
+    @Nullable
+    public BigDecimal getDecimal(@Nonnull String fieldName) {
+        return get(fieldName, FieldType.DECIMAL);
     }
 
     @Override
-    public byte[] readByteArray(@Nonnull String fieldName) {
-        return read(fieldName, FieldType.BYTE_ARRAY);
+    @Nullable
+    public LocalTime getTime(@Nonnull String fieldName) {
+        return get(fieldName, FieldType.TIME);
     }
 
     @Override
-    public char[] readCharArray(@Nonnull String fieldName) {
-        return read(fieldName, FieldType.CHAR_ARRAY);
+    @Nullable
+    public LocalDate getDate(@Nonnull String fieldName) {
+        return get(fieldName, FieldType.DATE);
     }
 
     @Override
-    public double[] readDoubleArray(@Nonnull String fieldName) {
-        return read(fieldName, FieldType.DOUBLE_ARRAY);
+    @Nullable
+    public LocalDateTime getTimestamp(@Nonnull String fieldName) {
+        return get(fieldName, FieldType.TIMESTAMP);
     }
 
     @Override
-    public float[] readFloatArray(@Nonnull String fieldName) {
-        return read(fieldName, FieldType.FLOAT_ARRAY);
+    @Nullable
+    public OffsetDateTime getTimestampWithTimezone(@Nonnull String fieldName) {
+        return get(fieldName, FieldType.TIMESTAMP_WITH_TIMEZONE);
     }
 
     @Override
-    public int[] readIntArray(@Nonnull String fieldName) {
-        return read(fieldName, FieldType.INT_ARRAY);
+    @Nullable
+    public boolean[] getBooleanArray(@Nonnull String fieldName) {
+        return get(fieldName, FieldType.BOOLEAN_ARRAY);
     }
 
     @Override
-    public long[] readLongArray(@Nonnull String fieldName) {
-        return read(fieldName, FieldType.LONG_ARRAY);
+    @Nullable
+    public byte[] getByteArray(@Nonnull String fieldName) {
+        return get(fieldName, FieldType.BYTE_ARRAY);
     }
 
     @Override
-    public short[] readShortArray(@Nonnull String fieldName) {
-        return read(fieldName, FieldType.SHORT_ARRAY);
+    @Nullable
+    public char[] getCharArray(@Nonnull String fieldName) {
+        return get(fieldName, FieldType.CHAR_ARRAY);
     }
 
     @Override
-    public String[] readUTFArray(@Nonnull String fieldName) {
-        return read(fieldName, FieldType.UTF_ARRAY);
+    @Nullable
+    public double[] getDoubleArray(@Nonnull String fieldName) {
+        return get(fieldName, FieldType.DOUBLE_ARRAY);
     }
 
-    private <T> T read(String fieldName, FieldType fieldType) {
+    @Override
+    @Nullable
+    public float[] getFloatArray(@Nonnull String fieldName) {
+        return get(fieldName, FieldType.FLOAT_ARRAY);
+    }
+
+    @Override
+    @Nullable
+    public int[] getIntArray(@Nonnull String fieldName) {
+        return get(fieldName, FieldType.INT_ARRAY);
+    }
+
+    @Override
+    @Nullable
+    public long[] getLongArray(@Nonnull String fieldName) {
+        return get(fieldName, FieldType.LONG_ARRAY);
+    }
+
+    @Override
+    @Nullable
+    public short[] getShortArray(@Nonnull String fieldName) {
+        return get(fieldName, FieldType.SHORT_ARRAY);
+    }
+
+    @Override
+    @Nullable
+    public String[] getStringArray(@Nonnull String fieldName) {
+        return get(fieldName, FieldType.UTF_ARRAY);
+    }
+
+    @Override
+    @Nullable
+    public BigDecimal[] getDecimalArray(@Nonnull String fieldName) {
+        return get(fieldName, FieldType.DECIMAL_ARRAY);
+    }
+
+    @Override
+    @Nullable
+    public LocalTime[] getTimeArray(@Nonnull String fieldName) {
+        return get(fieldName, FieldType.TIME_ARRAY);
+    }
+
+    @Override
+    @Nullable
+    public LocalDate[] getDateArray(@Nonnull String fieldName) {
+        return get(fieldName, FieldType.DATE_ARRAY);
+    }
+
+    @Override
+    @Nullable
+    public LocalDateTime[] getTimestampArray(@Nonnull String fieldName) {
+        return get(fieldName, FieldType.TIMESTAMP_ARRAY);
+    }
+
+    @Override
+    @Nullable
+    public OffsetDateTime[] getTimestampWithTimezoneArray(@Nonnull String fieldName) {
+        return get(fieldName, FieldType.TIMESTAMP_WITH_TIMEZONE_ARRAY);
+    }
+
+    private <T> T get(@Nonnull String fieldName, FieldType fieldType) {
         FieldDefinition fd = check(fieldName, fieldType);
         return (T) objects[fd.getIndex()];
     }
 
     @Nonnull
-    private FieldDefinition check(String fieldName, FieldType fieldType) {
+    private FieldDefinition check(@Nonnull String fieldName, FieldType fieldType) {
         FieldDefinition fd = classDefinition.getField(fieldName);
         if (fd == null) {
             throw new HazelcastSerializationException("Invalid field name: '" + fieldName
@@ -186,9 +271,12 @@ public class PortableGenericRecord implements GenericRecord {
     }
 
     @Override
+    protected Object getClassIdentifier() {
+        return classDefinition;
+    }
+
+    @Override
     public String toString() {
-        return "PortableGenericRecord{classDefinition=" + classDefinition
-                + ", objects=" + Arrays.toString(objects)
-                + '}';
+        return "PortableGenericRecord:" + super.toString();
     }
 }

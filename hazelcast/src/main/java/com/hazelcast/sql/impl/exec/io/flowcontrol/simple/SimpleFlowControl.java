@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,6 +49,9 @@ public class SimpleFlowControl implements FlowControl {
 
     /** Remote streams that should be notified. */
     private HashMap<UUID, SimpleFlowControlStream> pendingStreams;
+
+    /** Monotonically increasing ordinal of control flow messages. */
+    private long ordinal;
 
     public SimpleFlowControl(long maxMemory, double thresholdPercentage) {
         this.maxMemory = maxMemory;
@@ -160,6 +163,8 @@ public class SimpleFlowControl implements FlowControl {
         QueryFlowControlExchangeOperation operation = new QueryFlowControlExchangeOperation(
             queryId,
             edgeId,
+            stream.getMemberId(),
+            ordinal++,
             stream.getLocalMemory()
         );
 

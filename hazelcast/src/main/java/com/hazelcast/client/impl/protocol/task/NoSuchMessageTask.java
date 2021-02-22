@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,7 +85,7 @@ public class NoSuchMessageTask extends AbstractMessageTask<ClientMessage> {
             String clientVersion = endpoint.getClientVersion();
 
             return "Cannot process SQL client operation due to version mismatch "
-                + "(please ensure that a client and a member have the same version) "
+                + "(please ensure that the client and the member have the same version) "
                 + "[memberVersion=" + memberVersion + ", clientVersion=" + clientVersion + ']';
         }
 

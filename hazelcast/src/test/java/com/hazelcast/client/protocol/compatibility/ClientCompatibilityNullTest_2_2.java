@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -5854,7 +5854,7 @@ public class ClientCompatibilityNullTest_2_2 {
     @Test
     public void test_DynamicConfigAddMapConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 739;
-        ClientMessage encoded = DynamicConfigAddMapConfigCodec.encodeRequest(aString, anInt, anInt, anInt, anInt, null, aBoolean, aString, aString, anInt, aString, null, null, aBoolean, null, null, null, null, null, null, null, null, null, null, null, null, anInt);
+        ClientMessage encoded = DynamicConfigAddMapConfigCodec.encodeRequest(aString, anInt, anInt, anInt, anInt, null, aBoolean, aString, aString, anInt, aString, null, null, aBoolean, null, null, null, null, null, null, null, null, null, null, null, null, anInt, aBoolean);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6543,18 +6543,18 @@ public class ClientCompatibilityNullTest_2_2 {
     }
 
     @Test
-    public void test_SqlExecuteCodec_encodeRequest() {
+    public void test_SqlExecute_reservedCodec_encodeRequest() {
         int fileClientMessageIndex = 833;
-        ClientMessage encoded = SqlExecuteCodec.encodeRequest(aString, aListOfData, aLong, anInt);
+        ClientMessage encoded = SqlExecute_reservedCodec.encodeRequest(aString, aListOfData, aLong, anInt);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
 
     @Test
-    public void test_SqlExecuteCodec_decodeResponse() {
+    public void test_SqlExecute_reservedCodec_decodeResponse() {
         int fileClientMessageIndex = 834;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        SqlExecuteCodec.ResponseParameters parameters = SqlExecuteCodec.decodeResponse(fromFile);
+        SqlExecute_reservedCodec.ResponseParameters parameters = SqlExecute_reservedCodec.decodeResponse(fromFile);
         assertTrue(isEqual(null, parameters.queryId));
         assertTrue(isEqual(null, parameters.rowMetadata));
         assertTrue(isEqual(null, parameters.rowPage));
@@ -6564,18 +6564,18 @@ public class ClientCompatibilityNullTest_2_2 {
     }
 
     @Test
-    public void test_SqlFetchCodec_encodeRequest() {
+    public void test_SqlFetch_reservedCodec_encodeRequest() {
         int fileClientMessageIndex = 835;
-        ClientMessage encoded = SqlFetchCodec.encodeRequest(anSqlQueryId, anInt);
+        ClientMessage encoded = SqlFetch_reservedCodec.encodeRequest(anSqlQueryId, anInt);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
 
     @Test
-    public void test_SqlFetchCodec_decodeResponse() {
+    public void test_SqlFetch_reservedCodec_decodeResponse() {
         int fileClientMessageIndex = 836;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        SqlFetchCodec.ResponseParameters parameters = SqlFetchCodec.decodeResponse(fromFile);
+        SqlFetch_reservedCodec.ResponseParameters parameters = SqlFetch_reservedCodec.decodeResponse(fromFile);
         assertTrue(isEqual(null, parameters.rowPage));
         assertTrue(isEqual(aBoolean, parameters.rowPageLast));
         assertTrue(isEqual(null, parameters.error));
@@ -6595,8 +6595,44 @@ public class ClientCompatibilityNullTest_2_2 {
     }
 
     @Test
-    public void test_CPSubsystemAddMembershipListenerCodec_encodeRequest() {
+    public void test_SqlExecuteCodec_encodeRequest() {
         int fileClientMessageIndex = 839;
+        ClientMessage encoded = SqlExecuteCodec.encodeRequest(aString, aListOfData, aLong, anInt, null, aByte, anSqlQueryId);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_SqlExecuteCodec_decodeResponse() {
+        int fileClientMessageIndex = 840;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        SqlExecuteCodec.ResponseParameters parameters = SqlExecuteCodec.decodeResponse(fromFile);
+        assertTrue(isEqual(null, parameters.rowMetadata));
+        assertTrue(isEqual(null, parameters.rowPage));
+        assertTrue(isEqual(aLong, parameters.updateCount));
+        assertTrue(isEqual(null, parameters.error));
+    }
+
+    @Test
+    public void test_SqlFetchCodec_encodeRequest() {
+        int fileClientMessageIndex = 841;
+        ClientMessage encoded = SqlFetchCodec.encodeRequest(anSqlQueryId, anInt);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_SqlFetchCodec_decodeResponse() {
+        int fileClientMessageIndex = 842;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        SqlFetchCodec.ResponseParameters parameters = SqlFetchCodec.decodeResponse(fromFile);
+        assertTrue(isEqual(null, parameters.rowPage));
+        assertTrue(isEqual(null, parameters.error));
+    }
+
+    @Test
+    public void test_CPSubsystemAddMembershipListenerCodec_encodeRequest() {
+        int fileClientMessageIndex = 843;
         ClientMessage encoded = CPSubsystemAddMembershipListenerCodec.encodeRequest(aBoolean);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -6604,7 +6640,7 @@ public class ClientCompatibilityNullTest_2_2 {
 
     @Test
     public void test_CPSubsystemAddMembershipListenerCodec_decodeResponse() {
-        int fileClientMessageIndex = 840;
+        int fileClientMessageIndex = 844;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         assertTrue(isEqual(aUUID, CPSubsystemAddMembershipListenerCodec.decodeResponse(fromFile)));
     }
@@ -6619,7 +6655,7 @@ public class ClientCompatibilityNullTest_2_2 {
 
     @Test
     public void test_CPSubsystemAddMembershipListenerCodec_handleMembershipEventEvent() {
-        int fileClientMessageIndex = 841;
+        int fileClientMessageIndex = 845;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         CPSubsystemAddMembershipListenerCodecHandler handler = new CPSubsystemAddMembershipListenerCodecHandler();
         handler.handle(fromFile);
@@ -6627,7 +6663,7 @@ public class ClientCompatibilityNullTest_2_2 {
 
     @Test
     public void test_CPSubsystemRemoveMembershipListenerCodec_encodeRequest() {
-        int fileClientMessageIndex = 842;
+        int fileClientMessageIndex = 846;
         ClientMessage encoded = CPSubsystemRemoveMembershipListenerCodec.encodeRequest(aUUID);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -6635,14 +6671,14 @@ public class ClientCompatibilityNullTest_2_2 {
 
     @Test
     public void test_CPSubsystemRemoveMembershipListenerCodec_decodeResponse() {
-        int fileClientMessageIndex = 843;
+        int fileClientMessageIndex = 847;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         assertTrue(isEqual(aBoolean, CPSubsystemRemoveMembershipListenerCodec.decodeResponse(fromFile)));
     }
 
     @Test
     public void test_CPSubsystemAddGroupAvailabilityListenerCodec_encodeRequest() {
-        int fileClientMessageIndex = 844;
+        int fileClientMessageIndex = 848;
         ClientMessage encoded = CPSubsystemAddGroupAvailabilityListenerCodec.encodeRequest(aBoolean);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -6650,7 +6686,7 @@ public class ClientCompatibilityNullTest_2_2 {
 
     @Test
     public void test_CPSubsystemAddGroupAvailabilityListenerCodec_decodeResponse() {
-        int fileClientMessageIndex = 845;
+        int fileClientMessageIndex = 849;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         assertTrue(isEqual(aUUID, CPSubsystemAddGroupAvailabilityListenerCodec.decodeResponse(fromFile)));
     }
@@ -6666,7 +6702,7 @@ public class ClientCompatibilityNullTest_2_2 {
 
     @Test
     public void test_CPSubsystemAddGroupAvailabilityListenerCodec_handleGroupAvailabilityEventEvent() {
-        int fileClientMessageIndex = 846;
+        int fileClientMessageIndex = 850;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         CPSubsystemAddGroupAvailabilityListenerCodecHandler handler = new CPSubsystemAddGroupAvailabilityListenerCodecHandler();
         handler.handle(fromFile);
@@ -6674,7 +6710,7 @@ public class ClientCompatibilityNullTest_2_2 {
 
     @Test
     public void test_CPSubsystemRemoveGroupAvailabilityListenerCodec_encodeRequest() {
-        int fileClientMessageIndex = 847;
+        int fileClientMessageIndex = 851;
         ClientMessage encoded = CPSubsystemRemoveGroupAvailabilityListenerCodec.encodeRequest(aUUID);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -6682,7 +6718,7 @@ public class ClientCompatibilityNullTest_2_2 {
 
     @Test
     public void test_CPSubsystemRemoveGroupAvailabilityListenerCodec_decodeResponse() {
-        int fileClientMessageIndex = 848;
+        int fileClientMessageIndex = 852;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         assertTrue(isEqual(aBoolean, CPSubsystemRemoveGroupAvailabilityListenerCodec.decodeResponse(fromFile)));
     }

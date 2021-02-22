@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the collection of values in the multimap.The collection is NOT backed by the map, so changes to the map
  * are NOT reflected in the collection, and vice-versa.
  */
-@Generated("2cf429cd9f9606b2a19f6f0ef7d0d98c")
+@Generated("65f3e32c2b0a4d6805c0034fd4ae452c")
 public final class MultiMapValuesCodec {
     //hex: 0x020500
     public static final int REQUEST_MESSAGE_TYPE = 132352;

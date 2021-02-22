@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,16 +63,16 @@ public final class DistributedObjectEventPacket implements IdentifiedDataSeriali
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeBoolean(eventType == EventType.CREATED);
-        out.writeUTF(serviceName);
-        out.writeUTF(name);
+        out.writeString(serviceName);
+        out.writeString(name);
         UUIDSerializationUtil.writeUUID(out, source);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         eventType = in.readBoolean() ? EventType.CREATED : EventType.DESTROYED;
-        serviceName = in.readUTF();
-        name = in.readUTF();
+        serviceName = in.readString();
+        name = in.readString();
         source = UUIDSerializationUtil.readUUID(in);
     }
 

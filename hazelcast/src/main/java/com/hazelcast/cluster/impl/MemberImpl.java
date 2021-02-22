@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,12 +28,12 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.version.MemberVersion;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
-import static java.util.Collections.singletonMap;
 
 public final class MemberImpl
         extends AbstractMember
@@ -54,11 +54,11 @@ public final class MemberImpl
     }
 
     public MemberImpl(Address address, MemberVersion version, boolean localMember) {
-        this(singletonMap(MEMBER, address), address, version, localMember, null, null, false, NA_MEMBER_LIST_JOIN_VERSION, null);
+        this(newHashMap(MEMBER, address), address, version, localMember, null, null, false, NA_MEMBER_LIST_JOIN_VERSION, null);
     }
 
     public MemberImpl(Address address, MemberVersion version, boolean localMember, UUID uuid) {
-        this(singletonMap(MEMBER, address), address, version, localMember, uuid, null, false, NA_MEMBER_LIST_JOIN_VERSION, null);
+        this(newHashMap(MEMBER, address), address, version, localMember, uuid, null, false, NA_MEMBER_LIST_JOIN_VERSION, null);
     }
 
     private MemberImpl(Map<EndpointQualifier, Address> addresses, MemberVersion version, boolean localMember,
@@ -208,7 +208,7 @@ public final class MemberImpl
 
         public MemberImpl build() {
             if (addressMap == null) {
-                addressMap = singletonMap(MEMBER, address);
+                addressMap = newHashMap(MEMBER, address);
             }
             if (address == null) {
                 address = addressMap.get(MEMBER);
@@ -216,5 +216,11 @@ public final class MemberImpl
             return new MemberImpl(addressMap, address, version, localMember, uuid,
                     attributes, liteMember, memberListJoinVersion, instance);
         }
+    }
+
+    private static Map<EndpointQualifier, Address> newHashMap(EndpointQualifier member, Address address) {
+        Map<EndpointQualifier, Address> result = new HashMap<>();
+        result.put(member, address);
+        return result;
     }
 }

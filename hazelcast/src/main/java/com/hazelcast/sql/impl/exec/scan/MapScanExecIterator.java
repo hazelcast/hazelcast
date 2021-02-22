@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,19 @@
 package com.hazelcast.sql.impl.exec.scan;
 
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
-import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.SqlErrorCode;
 
 import java.util.Iterator;
 import java.util.Map;
+
+import static com.hazelcast.map.impl.record.Records.getValueOrCachedValue;
 
 /**
  * Iterator over map partitions.
@@ -36,30 +39,41 @@ public class MapScanExecIterator implements KeyValueIterator {
 
     private final MapContainer map;
     private final Iterator<Integer> partsIterator;
+    private final InternalSerializationService serializationService;
     private final long now = Clock.currentTimeMillis();
 
     private RecordStore currentRecordStore;
     private Iterator<Map.Entry<Data, Record<Object>>> currentRecordStoreIterator;
 
-    private Data currentKey;
+    private Data currentKeyData;
     private Object currentValue;
-    private Data nextKey;
+    private Data currentValueData;
+    private Data nextKeyData;
     private Object nextValue;
+    private Data nextValueData;
 
-    public MapScanExecIterator(MapContainer map, Iterator<Integer> partsIterator) {
+    private boolean useCachedValues;
+
+    public MapScanExecIterator(
+        MapContainer map,
+        Iterator<Integer> partsIterator,
+        InternalSerializationService serializationService
+    ) {
         this.map = map;
         this.partsIterator = partsIterator;
+        this.serializationService = serializationService;
 
-        advance0();
+        advance0(true);
     }
 
     @Override
     public boolean tryAdvance() {
         if (!done()) {
-            currentKey = nextKey;
+            currentKeyData = nextKeyData;
             currentValue = nextValue;
+            currentValueData = nextValueData;
 
-            advance0();
+            advance0(false);
 
             return true;
         } else {
@@ -69,20 +83,21 @@ public class MapScanExecIterator implements KeyValueIterator {
 
     @Override
     public boolean done() {
-        return nextKey == null;
+        return nextKeyData == null;
     }
 
     /**
      * Get the next key/value pair from the store.
      */
-    @SuppressWarnings("unchecked")
-    private void advance0() {
+    @SuppressWarnings({"unchecked", "checkstyle:CyclomaticComplexity"})
+    private void advance0(boolean first) {
         while (true) {
             // Move to the next record store if needed.
             if (currentRecordStoreIterator == null) {
                 if (!partsIterator.hasNext()) {
-                    nextKey = null;
+                    nextKeyData = null;
                     nextValue = null;
+                    nextValueData = null;
 
                     return;
                 } else {
@@ -92,9 +107,13 @@ public class MapScanExecIterator implements KeyValueIterator {
 
                     if (!isOwned) {
                         throw QueryException.error(
-                            SqlErrorCode.PARTITION_DISTRIBUTION,
-                            "Partition is not owned by member: " + nextPart
+                                SqlErrorCode.PARTITION_DISTRIBUTION,
+                                "Partition is not owned by member: " + nextPart
                         ).markInvalidate();
+                    }
+
+                    if (first) {
+                        useCachedValues = map.isUseCachedDeserializedValuesEnabled(nextPart);
                     }
 
                     currentRecordStore = map.getMapServiceContext().getRecordStore(nextPart, map.getName());
@@ -108,7 +127,7 @@ public class MapScanExecIterator implements KeyValueIterator {
                         currentRecordStore.checkIfLoaded();
                     } catch (RetryableHazelcastException e) {
                         throw QueryException.error(SqlErrorCode.MAP_LOADING_IN_PROGRESS, "Map loading is in progress: "
-                            + map.getName(), e);
+                                + map.getName(), e);
                     }
 
                     currentRecordStoreIterator = currentRecordStore.getStorage().mutationTolerantIterator();
@@ -121,9 +140,21 @@ public class MapScanExecIterator implements KeyValueIterator {
             while (currentRecordStoreIterator.hasNext()) {
                 Map.Entry<Data, Record<Object>> entry = currentRecordStoreIterator.next();
 
-                if (!currentRecordStore.isExpired(entry.getValue(), now, false)) {
-                    nextKey = entry.getKey();
-                    nextValue = entry.getValue().getValue();
+                if (!currentRecordStore.isExpired(entry.getKey(), now, false)) {
+                    nextKeyData = entry.getKey();
+
+                    Record record = entry.getValue();
+
+                    nextValue = useCachedValues ? getValueOrCachedValue(record, serializationService) : record.getValue();
+
+                    if (nextValue instanceof Data) {
+                        nextValueData = (Data) nextValue;
+                        nextValue = null;
+                    } else {
+                        Object possiblyData = record.getValue();
+
+                        nextValueData = possiblyData instanceof Data ? (Data) possiblyData : null;
+                    }
 
                     return;
                 }
@@ -137,11 +168,21 @@ public class MapScanExecIterator implements KeyValueIterator {
 
     @Override
     public Object getKey() {
-        return currentKey;
+        return null;
+    }
+
+    @Override
+    public Data getKeyData() {
+        return currentKeyData;
     }
 
     @Override
     public Object getValue() {
         return currentValue;
+    }
+
+    @Override
+    public Data getValueData() {
+        return currentValueData;
     }
 }

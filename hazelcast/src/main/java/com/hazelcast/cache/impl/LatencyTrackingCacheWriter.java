@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.spi.impl.tenantcontrol.TenantContextual;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin.LatencyProbe;
 import com.hazelcast.internal.util.Timer;
@@ -29,13 +30,13 @@ public class LatencyTrackingCacheWriter<K, V> implements CacheWriter<K, V> {
 
     static final String KEY = "CacheStoreLatency";
 
-    private final CacheWriter<K, V> delegate;
+    private final TenantContextual<CacheWriter<K, V>> delegate;
     private final LatencyProbe writeProbe;
     private final LatencyProbe writeAllProbe;
     private final LatencyProbe deleteProbe;
     private final LatencyProbe deleteAllProbe;
 
-    public LatencyTrackingCacheWriter(CacheWriter<K, V> delegate, StoreLatencyPlugin plugin, String cacheName) {
+    public LatencyTrackingCacheWriter(TenantContextual<CacheWriter<K, V>> delegate, StoreLatencyPlugin plugin, String cacheName) {
         this.delegate = delegate;
         this.writeProbe = plugin.newProbe(KEY, cacheName, "write");
         this.writeAllProbe = plugin.newProbe(KEY, cacheName, "writeAll");
@@ -47,7 +48,7 @@ public class LatencyTrackingCacheWriter<K, V> implements CacheWriter<K, V> {
     public void write(Cache.Entry<? extends K, ? extends V> entry) throws CacheWriterException {
         long startNanos = Timer.nanos();
         try {
-            delegate.write(entry);
+            delegate.get().write(entry);
         } finally {
             writeProbe.recordValue(Timer.nanosElapsed(startNanos));
         }
@@ -57,7 +58,7 @@ public class LatencyTrackingCacheWriter<K, V> implements CacheWriter<K, V> {
     public void writeAll(Collection<Cache.Entry<? extends K, ? extends V>> collection) throws CacheWriterException {
         long startNanos = Timer.nanos();
         try {
-            delegate.writeAll(collection);
+            delegate.get().writeAll(collection);
         } finally {
             writeAllProbe.recordValue(Timer.nanosElapsed(startNanos));
         }
@@ -67,7 +68,7 @@ public class LatencyTrackingCacheWriter<K, V> implements CacheWriter<K, V> {
     public void delete(Object o) throws CacheWriterException {
         long startNanos = Timer.nanos();
         try {
-            delegate.delete(o);
+            delegate.get().delete(o);
         } finally {
             deleteProbe.recordValue(Timer.nanosElapsed(startNanos));
         }
@@ -77,7 +78,7 @@ public class LatencyTrackingCacheWriter<K, V> implements CacheWriter<K, V> {
     public void deleteAll(Collection<?> collection) throws CacheWriterException {
         long startNanos = Timer.nanos();
         try {
-            delegate.deleteAll(collection);
+            delegate.get().deleteAll(collection);
         } finally {
             deleteAllProbe.recordValue(Timer.nanosElapsed(startNanos));
         }

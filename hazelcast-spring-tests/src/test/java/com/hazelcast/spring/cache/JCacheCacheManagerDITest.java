@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ public class JCacheCacheManagerDITest {
 
     @Test
     public void testCacheWithCacheLoaderFactory_dependenciesInjected() {
-        Cache cacheWithLoader = springCacheManager.getCacheManager().getCache("cacheWithLoader");
+        Cache<Integer, ?> cacheWithLoader = springCacheManager.getCacheManager().getCache("cacheWithLoader");
         // use cacheloader at least once to ensure it's instantiated
         cacheWithLoader.get(1);
 
@@ -59,7 +59,7 @@ public class JCacheCacheManagerDITest {
         assertTrue("Node not injected to NodeAware object",
                 JCacheCacheLoaderFactory.NODE_INJECTED.get());
         assertNotNull("Spring bean not injected to @SpringAware object",
-                JCacheCacheLoaderFactory.instance.getDummyBean());
+                JCacheCacheLoaderFactory.INJECTED_DUMMY_BEAN.get());
         assertTrue("HazelcastInstance not injected to HazelcastInstanceAware object",
                 JCacheCacheLoader.HAZELCAST_INSTANCE_INJECTED.get());
         assertTrue("Node not injected to NodeAware object",
@@ -70,7 +70,7 @@ public class JCacheCacheManagerDITest {
 
     @Test
     public void testCacheWithCacheWriterFactory_dependenciesInjected() {
-        Cache cacheWithWriter = springCacheManager.getCacheManager().getCache("cacheWithWriter");
+        Cache<Integer, String> cacheWithWriter = springCacheManager.getCacheManager().getCache("cacheWithWriter");
         // use cacheloader at least once to ensure it's instantiated
         cacheWithWriter.put(1, "1");
 
@@ -80,7 +80,7 @@ public class JCacheCacheManagerDITest {
         assertTrue("Node not injected to NodeAware object",
                 JCacheCacheWriterFactory.NODE_INJECTED.get());
         assertNotNull("Spring bean not injected to @SpringAware object",
-                JCacheCacheWriterFactory.instance.getDummyBean());
+                JCacheCacheWriterFactory.INJECTED_DUMMY_BEAN.get());
         assertTrue("HazelcastInstance not injected to HazelcastInstanceAware object",
                 JCacheCacheWriter.HAZELCAST_INSTANCE_INJECTED.get());
         assertTrue("Node not injected to NodeAware object",
@@ -91,7 +91,7 @@ public class JCacheCacheManagerDITest {
 
     @Test
     public void testCacheWithExpiryPolicyFactory_dependenciesInjected() {
-        Cache cacheWithExpiryPolicy = springCacheManager.getCacheManager().getCache("cacheWithExpiryPolicy");
+        Cache<Integer, String> cacheWithExpiryPolicy = springCacheManager.getCacheManager().getCache("cacheWithExpiryPolicy");
         // use cacheloader at least once to ensure it's instantiated
         cacheWithExpiryPolicy.put(1, "1");
 
@@ -101,7 +101,7 @@ public class JCacheCacheManagerDITest {
         assertTrue("Node not injected to NodeAware object",
                 JCacheExpiryPolicyFactory.NODE_INJECTED.get());
         assertNotNull("Spring bean not injected to @SpringAware object",
-                JCacheExpiryPolicyFactory.instance.getDummyBean());
+                JCacheExpiryPolicyFactory.INJECTED_DUMMY_BEAN.get());
         assertTrue("HazelcastInstance not injected to HazelcastInstanceAware object",
                 JCacheExpiryPolicy.HAZELCAST_INSTANCE_INJECTED.get());
         assertTrue("Node not injected to NodeAware object",
@@ -112,8 +112,8 @@ public class JCacheCacheManagerDITest {
 
     @Test
     public void testCacheWithListeners_dependenciesInjected() {
-        Cache cacheWithPartitionLostListener = springCacheManager.getCacheManager()
-                .getCache("cacheWithListeners");
+        Cache<Integer, ?> cacheWithPartitionLostListener = springCacheManager.getCacheManager()
+                                                                             .getCache("cacheWithListeners");
 
         cacheWithPartitionLostListener.get(1);
 

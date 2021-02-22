@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -470,6 +470,8 @@
             Set as true to enable shared object when default Java serialization is used. Its default value is false.
         * <allow-unsafe>:
             Set as true to allow the usage of unsafe. Its default value is false.
+        * <allow-override-default-serializers>:
+            Set as true to allow override of default serializers. Its default value is false.
         * <data-serializable-factories>:
             Lists your class implementations of Hazelcast's DataSerializableFactory using the <data-serializable-factory>
             sub-elements. Each factory has the required "factory-id" attribute that you should give as the ID of your
@@ -503,6 +505,7 @@
         <enable-compression>false</enable-compression>
         <enable-shared-object>true</enable-shared-object>
         <allow-unsafe>false</allow-unsafe>
+        <allow-override-default-serializers>false</allow-override-default-serializers>
         <data-serializable-factories>
             <data-serializable-factory factory-id="1">com.hazelcast.examples.DataSerializableFactory
             </data-serializable-factory>
@@ -796,12 +799,14 @@
                 Specifies how long to wait (backoff) after the first failure before retrying in milliseconds.
                 Its default value is 1000 ms.
             * <max-backoff-millis>: Specifies the upper limit for the backoff in milliseconds. Its default value is 30000 ms.
-            * <multiplier>: Factor to multiply the backoff after a failed retry. Its default value is 2.
+            * <multiplier>: Factor to multiply the backoff after a failed retry. Its default value is 1.05.
             * <cluster-connect-timeout-millis>: Timeout value in milliseconds for the client to give up to connect to
               the current cluster
               Depending on FailoverConfig, a client can shutdown or start trying on alternative cluster after reaching the timeout.
-              Its default value is 20000
-            * <jitter>: Specifies by how much to randomize backoffs. Its default value is 0.2.
+              Its default value is -1. For the default value, the client will not stop trying to connect to the cluster.
+              If the failover client is used, the client will start trying to connect alternative clusters after
+              120000 ms. For any other value, both the failover and non-failover client will use that as it is.
+            * <jitter>: Specifies by how much to randomize backoffs. Its default value is 0.
     -->
     <connection-strategy async-start="true" reconnect-mode="ASYNC">
         <connection-retry>

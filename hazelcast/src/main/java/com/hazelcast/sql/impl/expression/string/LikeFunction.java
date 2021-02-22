@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql.impl.expression.string;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
@@ -26,6 +28,7 @@ import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.io.IOException;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -54,18 +57,26 @@ public class LikeFunction extends TriExpression<Boolean> implements IdentifiedDa
     /** Special characters which require escaping in Java. */
     private static final String ESCAPE_CHARACTERS_JAVA = "[]()|^+*?{}$\\.";
 
+    private boolean negated;
     private transient State state;
 
     public LikeFunction() {
         // No-op.
     }
 
-    private LikeFunction(Expression<?> source, Expression<?> pattern, Expression<?> escape) {
+    private LikeFunction(Expression<?> source, Expression<?> pattern, Expression<?> escape, boolean negated) {
         super(source, pattern, escape);
+
+        this.negated = negated;
     }
 
-    public static LikeFunction create(Expression<?> source, Expression<?> pattern, Expression<?> escape) {
-        return new LikeFunction(source, pattern, escape);
+    public static LikeFunction create(
+        Expression<?> source,
+        Expression<?> pattern,
+        Expression<?> escape,
+        boolean negated
+    ) {
+        return new LikeFunction(source, pattern, escape, negated);
     }
 
     @SuppressFBWarnings(value = "NP_BOOLEAN_RETURN_NULL", justification = "SQL has three-valued boolean logic")
@@ -99,7 +110,13 @@ public class LikeFunction extends TriExpression<Boolean> implements IdentifiedDa
             state = new State();
         }
 
-        return state.like(source, pattern, escape);
+        boolean res = state.like(source, pattern, escape);
+
+        if (negated) {
+            res = !res;
+        }
+
+        return res;
     }
 
     @Override
@@ -115,6 +132,44 @@ public class LikeFunction extends TriExpression<Boolean> implements IdentifiedDa
     @Override
     public int getClassId() {
         return SqlDataSerializerHook.EXPRESSION_LIKE;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        super.writeData(out);
+
+        out.writeBoolean(negated);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        super.readData(in);
+
+        negated = in.readBoolean();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        if (!super.equals(o)) {
+            return false;
+        }
+
+        LikeFunction that = (LikeFunction) o;
+
+        return negated == that.negated;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), negated);
     }
 
     /**

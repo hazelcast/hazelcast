@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -462,7 +462,8 @@ public class ConfigXmlGenerator {
                 .node("byte-order", c.getByteOrder())
                 .node("enable-compression", c.isEnableCompression())
                 .node("enable-shared-object", c.isEnableSharedObject())
-                .node("allow-unsafe", c.isAllowUnsafe());
+                .node("allow-unsafe", c.isAllowUnsafe())
+                .node("allow-override-default-serializers", c.isAllowOverrideDefaultSerializers());
 
         Map<Integer, String> dsfClasses = c.getDataSerializableFactoryClasses();
         Map<Integer, DataSerializableFactory> dsfImpls = c.getDataSerializableFactories();
@@ -946,6 +947,7 @@ public class ConfigXmlGenerator {
             gen.open("map", "name", m.getName())
                     .node("in-memory-format", m.getInMemoryFormat())
                     .node("statistics-enabled", m.isStatisticsEnabled())
+                    .node("per-entry-stats-enabled", m.isPerEntryStatsEnabled())
                     .node("cache-deserialized-values", cacheDeserializedVal)
                     .node("backup-count", m.getBackupCount())
                     .node("async-backup-count", m.getAsyncBackupCount())
@@ -1621,7 +1623,6 @@ public class ConfigXmlGenerator {
         SqlConfig sqlConfig = config.getSqlConfig();
         gen.open("sql")
                 .node("executor-pool-size", sqlConfig.getExecutorPoolSize())
-                .node("operation-pool-size", sqlConfig.getOperationPoolSize())
                 .node("statement-timeout-millis", sqlConfig.getStatementTimeoutMillis())
                 .close();
     }

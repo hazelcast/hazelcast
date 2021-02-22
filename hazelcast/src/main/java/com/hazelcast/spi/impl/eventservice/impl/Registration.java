@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -107,8 +107,8 @@ public class Registration implements EventRegistration {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         UUIDSerializationUtil.writeUUID(out, id);
-        out.writeUTF(serviceName);
-        out.writeUTF(topic);
+        out.writeString(serviceName);
+        out.writeString(topic);
         out.writeObject(subscriber);
         out.writeObject(filter);
     }
@@ -116,8 +116,8 @@ public class Registration implements EventRegistration {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         id = UUIDSerializationUtil.readUUID(in);
-        serviceName = in.readUTF();
-        topic = in.readUTF();
+        serviceName = in.readString();
+        topic = in.readString();
         subscriber = in.readObject();
         filter = in.readObject();
     }

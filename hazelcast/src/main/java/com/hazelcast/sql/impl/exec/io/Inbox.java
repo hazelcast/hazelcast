@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,12 +34,13 @@ public class Inbox extends AbstractInbox {
         QueryOperationHandler operationHandler,
         QueryId queryId,
         int edgeId,
+        boolean ordered,
         int rowWidth,
         UUID localMemberId,
         int remainingStreams,
         FlowControl flowControl
     ) {
-        super(operationHandler, queryId, edgeId, rowWidth, localMemberId, remainingStreams, flowControl);
+        super(operationHandler, queryId, edgeId, ordered, rowWidth, localMemberId, remainingStreams, flowControl);
     }
 
     @Override

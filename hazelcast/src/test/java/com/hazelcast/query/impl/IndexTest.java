@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,15 @@ package com.hazelcast.query.impl;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.monitor.impl.MemberPartitionStateImpl;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.record.DataRecordFactory;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
@@ -39,6 +43,7 @@ import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.AndPredicate;
 import com.hazelcast.query.impl.predicates.EqualPredicate;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -60,11 +65,14 @@ import java.util.Set;
 
 import static com.hazelcast.config.MapConfig.DEFAULT_IN_MEMORY_FORMAT;
 import static com.hazelcast.instance.impl.TestUtil.toData;
+import static com.hazelcast.internal.util.IterableUtil.size;
 import static com.hazelcast.query.impl.Indexes.SKIP_PARTITIONS_COUNT_CHECK;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
@@ -87,7 +95,21 @@ public class IndexTest {
 
     final InternalSerializationService ss =
             new DefaultSerializationServiceBuilder().addPortableFactory(FACTORY_ID, new TestPortableFactory()).build();
-    final DataRecordFactory recordFactory = new DataRecordFactory(new MapConfig(), ss);
+    MapContainer mapContainer = mock(MapContainer.class);
+
+    {
+        NodeEngine nodeEngine = mock(NodeEngine.class);
+        ClusterService clusterService = mock(ClusterService.class);
+        MapServiceContext mapServiceContext = mock(MapServiceContext.class);
+
+        when(mapServiceContext.getNodeEngine()).thenReturn(nodeEngine);
+        when(nodeEngine.getClusterService()).thenReturn(clusterService);
+        when(clusterService.getClusterVersion()).thenReturn(Versions.CURRENT_CLUSTER_VERSION);
+        when(mapContainer.getMapConfig()).thenReturn(new MapConfig());
+        when(mapContainer.getMapServiceContext()).thenReturn(mapServiceContext);
+    }
+
+    final DataRecordFactory recordFactory = new DataRecordFactory(mapContainer, ss);
 
     @Test
     public void testBasics() {
@@ -104,7 +126,7 @@ public class IndexTest {
         IndexConfig config = IndexUtils.createTestIndexConfig(IndexType.HASH, "favoriteCity");
 
         Indexes is = Indexes.newBuilder(ss, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
-        is.addOrGetIndex(config, null);
+        is.addOrGetIndex(config);
         Data key = ss.toData(1);
         Data value = ss.toData(new SerializableWithEnum(SerializableWithEnum.City.ISTANBUL));
         is.putEntry(new QueryEntry(ss, key, value, newExtractor()), null, Index.OperationSource.USER);
@@ -119,7 +141,7 @@ public class IndexTest {
         IndexConfig config = IndexUtils.createTestIndexConfig(IndexType.HASH, "favoriteCity");
 
         Indexes is = Indexes.newBuilder(ss, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
-        is.addOrGetIndex(config, null);
+        is.addOrGetIndex(config);
         Data key = ss.toData(1);
         Data value = ss.toData(new SerializableWithEnum(SerializableWithEnum.City.ISTANBUL));
         is.putEntry(new QueryEntry(ss, key, value, newExtractor()), null, Index.OperationSource.USER);
@@ -137,14 +159,14 @@ public class IndexTest {
 
     @Test
     public void testIndex() throws QueryException {
-        Indexes is = Indexes.newBuilder(ss, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
-        Index dIndex = is.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "d"), null);
-        Index boolIndex = is.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "bool"), null);
-        Index strIndex = is.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "str"), null);
+        Indexes indexes = Indexes.newBuilder(ss, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
+        Index dIndex = indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "d"));
+        Index boolIndex = indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "bool"));
+        Index strIndex = indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "str"));
         for (int i = 0; i < 1000; i++) {
             Data key = ss.toData(i);
             Data value = ss.toData(new MainPortable(i % 2 == 0, -10.34d, "joe" + i));
-            is.putEntry(new QueryEntry(ss, key, value, newExtractor()), null, Index.OperationSource.USER);
+            indexes.putEntry(new QueryEntry(ss, key, value, newExtractor()), null, Index.OperationSource.USER);
         }
         assertEquals(1000, dIndex.getRecords(-10.34d).size());
         assertEquals(1, strIndex.getRecords("joe23").size());
@@ -155,7 +177,7 @@ public class IndexTest {
         for (int i = 0; i < 1000; i++) {
             Data key = ss.toData(i);
             Data value = ss.toData(new MainPortable(false, 11.34d, "joe"));
-            is.putEntry(new QueryEntry(ss, key, value, newExtractor()), null, Index.OperationSource.USER);
+            indexes.putEntry(new QueryEntry(ss, key, value, newExtractor()), null, Index.OperationSource.USER);
         }
 
         assertEquals(0, dIndex.getRecords(-10.34d).size());
@@ -169,7 +191,7 @@ public class IndexTest {
         for (int i = 0; i < 1000; i++) {
             Data key = ss.toData(i);
             Data value = ss.toData(new MainPortable(false, -1 * (i + 1), "joe" + i));
-            is.putEntry(new QueryEntry(ss, key, value, newExtractor()), null, Index.OperationSource.USER);
+            indexes.putEntry(new QueryEntry(ss, key, value, newExtractor()), null, Index.OperationSource.USER);
         }
         assertEquals(0, dIndex.getRecords(1d, true, 1001d, true).size());
         assertEquals(1000, dIndex.getRecords(-1001d, true, -1d, true).size());
@@ -179,7 +201,7 @@ public class IndexTest {
         for (int i = 0; i < 1000; i++) {
             Data key = ss.toData(i);
             Data value = ss.toData(new MainPortable(false, 1 * (i + 1), "joe" + i));
-            is.putEntry(new QueryEntry(ss, key, value, newExtractor()), null, Index.OperationSource.USER);
+            indexes.putEntry(new QueryEntry(ss, key, value, newExtractor()), null, Index.OperationSource.USER);
         }
         assertEquals(1000, dIndex.getRecords(1d, true, 1001d, true).size());
         assertEquals(0, dIndex.getRecords(-1d, true, -1001d, true).size());
@@ -187,9 +209,9 @@ public class IndexTest {
         assertEquals(401, dIndex.getRecords(Comparison.GREATER_OR_EQUAL, 600d).size());
         assertEquals(9, dIndex.getRecords(Comparison.LESS, 10d).size());
         assertEquals(10, dIndex.getRecords(Comparison.LESS_OR_EQUAL, 10d).size());
-        assertEquals(1, is.query(new AndPredicate(new EqualPredicate("d", 1d), new EqualPredicate("bool", "false")), SKIP_PARTITIONS_COUNT_CHECK).size());
-        assertEquals(1, is.query(new AndPredicate(new EqualPredicate("d", 1), new EqualPredicate("bool", Boolean.FALSE)), SKIP_PARTITIONS_COUNT_CHECK).size());
-        assertEquals(1, is.query(new AndPredicate(new EqualPredicate("d", "1"), new EqualPredicate("bool", false)), SKIP_PARTITIONS_COUNT_CHECK).size());
+        assertEquals(1, size(indexes.query(new AndPredicate(new EqualPredicate("d", 1d), new EqualPredicate("bool", "false")), SKIP_PARTITIONS_COUNT_CHECK)));
+        assertEquals(1, size(indexes.query(new AndPredicate(new EqualPredicate("d", 1), new EqualPredicate("bool", Boolean.FALSE)), SKIP_PARTITIONS_COUNT_CHECK)));
+        assertEquals(1, size(indexes.query(new AndPredicate(new EqualPredicate("d", "1"), new EqualPredicate("bool", false)), SKIP_PARTITIONS_COUNT_CHECK)));
     }
 
     private void clearIndexes(Index... indexes) {
@@ -201,7 +223,7 @@ public class IndexTest {
     @Test
     public void testIndexWithNull() throws QueryException {
         Indexes is = Indexes.newBuilder(ss, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
-        Index strIndex = is.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.SORTED, "str"), null);
+        Index strIndex = is.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.SORTED, "str"));
 
         Data value = ss.toData(new MainPortable(false, 1, null));
         Data key1 = ss.toData(0);
@@ -314,7 +336,7 @@ public class IndexTest {
             writer.writeLong("l", l);
             writer.writeFloat("f", f);
             writer.writeDouble("d", d);
-            writer.writeUTF("str", str);
+            writer.writeString("str", str);
         }
 
         public void readPortable(PortableReader reader) throws IOException {
@@ -326,7 +348,7 @@ public class IndexTest {
             l = reader.readLong("l");
             f = reader.readFloat("f");
             d = reader.readDouble("d");
-            str = reader.readUTF("str");
+            str = reader.readString("str");
         }
 
         @Override
@@ -463,6 +485,26 @@ public class IndexTest {
         public Record toRecord() {
             return recordFactory.newRecord(attributeValue);
         }
+
+        @Override
+        public Object getKeyIfPresent() {
+            throw new UnsupportedOperationException("Should not be called.");
+        }
+
+        @Override
+        public Data getKeyDataIfPresent() {
+            throw new UnsupportedOperationException("Should not be called.");
+        }
+
+        @Override
+        public Object getValueIfPresent() {
+            throw new UnsupportedOperationException("Should not be called.");
+        }
+
+        @Override
+        public Data getValueDataIfPresent() {
+            throw new UnsupportedOperationException("Should not be called.");
+        }
     }
 
     private void testIt(boolean ordered) {
@@ -471,12 +513,12 @@ public class IndexTest {
         IndexConfig config = IndexUtils.createTestIndexConfig(type, QueryConstants.THIS_ATTRIBUTE_NAME.value());
 
         IndexImpl index = new IndexImpl(
-            config,
-            ss,
-            newExtractor(),
-            copyBehavior,
-            PerIndexStats.EMPTY,
-            MemberPartitionStateImpl.DEFAULT_PARTITION_COUNT
+                config,
+                ss,
+                newExtractor(),
+                copyBehavior,
+                PerIndexStats.EMPTY,
+                MemberPartitionStateImpl.DEFAULT_PARTITION_COUNT
         );
 
         assertEquals(0, index.getRecords(0L).size());

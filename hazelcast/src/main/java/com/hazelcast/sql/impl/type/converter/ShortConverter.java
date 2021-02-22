@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ public final class ShortConverter extends Converter {
         byte converted = (byte) casted;
 
         if (converted != casted) {
-            throw numericOverflow(QueryDataTypeFamily.TINYINT, val);
+            throw numericOverflowError(QueryDataTypeFamily.TINYINT);
         }
 
         return converted;

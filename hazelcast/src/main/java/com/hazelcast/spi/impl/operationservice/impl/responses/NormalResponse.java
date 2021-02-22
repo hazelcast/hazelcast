@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import static com.hazelcast.internal.nio.IOUtil.writeObject;
 import static com.hazelcast.spi.impl.SpiDataSerializerHook.NORMAL_RESPONSE;
 
 /**
- * A NormalResponse is send when an Operation needs to return a value. This response value can be a 'normal' value,
+ * A NormalResponse is sent when an Operation needs to return a value. This response value can be a 'normal' value,
  * but it can also contain the exception thrown.
  * <p>
  * Currently there is a limitation in the design that needs to be dealt with in the future: there is no distinction

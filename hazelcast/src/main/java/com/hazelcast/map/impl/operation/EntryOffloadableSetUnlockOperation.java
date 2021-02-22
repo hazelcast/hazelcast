@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.locksupport.LockWaitNotifyKey;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.Data;
@@ -150,22 +149,19 @@ public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(modificationType != null ? modificationType.name() : "");
+        out.writeString(modificationType != null ? modificationType.name() : "");
         IOUtil.writeData(out, oldValue);
         IOUtil.writeData(out, newValue);
         UUIDSerializationUtil.writeUUID(out, caller);
         out.writeLong(begin);
         out.writeObject(entryBackupProcessor);
-        // RU_COMPAT_4_0
-        if (out.getVersion().isGreaterOrEqual(Versions.V4_1)) {
-            out.writeLong(newTtl);
-        }
+        out.writeLong(newTtl);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        String modificationTypeName = in.readUTF();
+        String modificationTypeName = in.readString();
         modificationType = modificationTypeName.equals("")
                 ? null : EntryEventType.valueOf(modificationTypeName);
         oldValue = IOUtil.readData(in);
@@ -173,10 +169,7 @@ public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
         caller = UUIDSerializationUtil.readUUID(in);
         begin = in.readLong();
         entryBackupProcessor = in.readObject();
-        // RU_COMPAT_4_0
-        if (in.getVersion().isGreaterOrEqual(Versions.V4_1)) {
-            newTtl = in.readLong();
-        }
+        newTtl = in.readLong();
     }
 
 }

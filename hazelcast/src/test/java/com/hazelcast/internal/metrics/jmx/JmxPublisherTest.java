@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,6 +42,8 @@ import static com.hazelcast.internal.metrics.jmx.MetricsMBean.Type.LONG;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -285,6 +287,24 @@ public class JmxPublisherTest {
         jmxPublisher.shutdown();
 
         helper.assertMBeans(emptyList());
+    }
+
+    @Test
+    public void when_double_rendering_values_are_reported() {
+        MetricDescriptor descriptor1 = newDescriptor()
+                .withMetric("c")
+                .withTag("tag1", "a")
+                .withTag("tag2", "b");
+        jmxPublisher.publishLong(descriptor1, 1L);
+
+        MetricDescriptor descriptor2 = newDescriptor()
+                .withMetric("c")
+                .withTag("tag1", "a")
+                .withTag("tag2", "b");
+
+        AssertionError assertionError = assertThrows(AssertionError.class, () -> jmxPublisher.publishLong(descriptor2, 2L));
+        assertTrue(assertionError.getMessage().contains("[metric=c,tag1=a,tag2=b,excludedTargets={}]"));
+        assertTrue(assertionError.getMessage().contains("Present value: 1, new value: 2"));
     }
 
     private MetricDescriptor newDescriptor() {

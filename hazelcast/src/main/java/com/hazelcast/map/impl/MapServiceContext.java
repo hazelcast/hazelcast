@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -135,7 +135,7 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport,
     RecordStore getExistingRecordStore(int partitionId, String mapName);
 
     /**
-     * Returns cached cached collection of owned partitions,
+     * Returns cached collection of owned partitions,
      * When it is null, reloads and caches it again.
      */
     PartitionIdSet getOrInitCachedMemberPartitions();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -143,21 +143,21 @@ public class DiscoveryStrategyConfig implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(className);
+        out.writeString(className);
 
         out.writeInt(properties.size());
         for (Map.Entry<String, Comparable> entry : properties.entrySet()) {
-            out.writeUTF(entry.getKey());
+            out.writeString(entry.getKey());
             out.writeObject(entry.getValue());
         }
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        className = in.readUTF();
+        className = in.readString();
         int size = in.readInt();
         for (int i = 0; i < size; i++) {
-            properties.put(in.readUTF(), in.readObject());
+            properties.put(in.readString(), in.readObject());
         }
     }
 }

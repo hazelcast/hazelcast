@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,14 +30,14 @@ public class IndexImpl extends AbstractIndex {
     private final GlobalIndexPartitionTracker partitionTracker;
 
     public IndexImpl(
-        IndexConfig config,
-        InternalSerializationService ss,
-        Extractors extractors,
-        IndexCopyBehavior copyBehavior,
-        PerIndexStats stats,
-        int partitionCount
+            IndexConfig config,
+            InternalSerializationService ss,
+            Extractors extractors,
+            IndexCopyBehavior copyBehavior,
+            PerIndexStats stats,
+            int partitionCount
     ) {
-        super(config, ss, extractors, copyBehavior, stats, null);
+        super(config, ss, extractors, copyBehavior, stats);
 
         partitionTracker = new GlobalIndexPartitionTracker(partitionCount);
     }

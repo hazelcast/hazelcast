@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -206,7 +206,7 @@ public class MembershipChangeSchedule implements IdentifiedDataSerializable {
             out.writeLong(commitIndex);
         }
         out.writeObject(member);
-        out.writeUTF(membershipChangeMode.name());
+        out.writeString(membershipChangeMode.name());
         out.writeInt(changes.size());
         for (CPGroupMembershipChange change : changes) {
             out.writeObject(change);
@@ -222,7 +222,7 @@ public class MembershipChangeSchedule implements IdentifiedDataSerializable {
             membershipChangeCommitIndices.add(commitIndex);
         }
         member = in.readObject();
-        membershipChangeMode = MembershipChangeMode.valueOf(in.readUTF());
+        membershipChangeMode = MembershipChangeMode.valueOf(in.readString());
         int groupCount = in.readInt();
         for (int i = 0; i < groupCount; i++) {
             CPGroupMembershipChange change = in.readObject();

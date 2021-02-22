@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,9 +31,7 @@ public class GenericTargetExtractor extends AbstractGenericExtractor {
     @Override
     public Object get() {
         try {
-            Object target = targetAccessor.getTargetDeserialized();
-
-            return type.normalize(target);
+            return targetAccessor.getTargetForDirectAccess(type);
         } catch (QueryDataTypeMismatchException e) {
             throw QueryException.dataException("Failed to extract map entry " + (key ? "key" : "value")
                 + " because of type mismatch [expectedClass=" + e.getExpectedClass().getName()

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.predicates.PagingPredicateImpl;
 import com.hazelcast.query.impl.predicates.PartitionPredicateImpl;
 
+import javax.annotation.Nonnull;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -32,13 +33,13 @@ import java.util.Map;
 import java.util.Objects;
 
 public class PagingPredicateHolder {
-    private AnchorDataListHolder anchorDataListHolder;
-    private Data predicateData;
-    private Data comparatorData;
-    private int pageSize;
-    private int page;
-    private byte iterationTypeId;
-    private Data partitionKeyData;
+    private final AnchorDataListHolder anchorDataListHolder;
+    private final Data predicateData;
+    private final Data comparatorData;
+    private final int pageSize;
+    private final int page;
+    private final byte iterationTypeId;
+    private final Data partitionKeyData;
 
     public PagingPredicateHolder(AnchorDataListHolder anchorDataListHolder, Data predicateData, Data comparatorData, int pageSize,
                                  int page, byte iterationTypeId, Data partitionKeyData) {
@@ -80,7 +81,6 @@ public class PagingPredicateHolder {
     }
 
     public <K, V> Predicate<K, V> asPredicate(SerializationService serializationService) {
-
         List<Map.Entry<Integer, Map.Entry<K, V>>> anchorList = anchorDataListHolder.asAnchorList(serializationService);
         Predicate predicate = serializationService.toObject(predicateData);
         Comparator comparator = serializationService.toObject(comparatorData);
@@ -91,7 +91,7 @@ public class PagingPredicateHolder {
             return pagingPredicate;
         }
 
-        return new PartitionPredicateImpl<K, V>(serializationService.toObject(partitionKeyData), pagingPredicate);
+        return new PartitionPredicateImpl<>(serializationService.toObject(partitionKeyData), pagingPredicate);
     }
 
     public static <K, V> PagingPredicateHolder of(Predicate<K, V> predicate,
@@ -112,12 +112,8 @@ public class PagingPredicateHolder {
         return buildHolder(serializationService, pagingPredicate, null);
     }
 
-    private static <K, V> PagingPredicateHolder ofInternal(PartitionPredicate<K, V> partitionPredicate,
+    private static <K, V> PagingPredicateHolder ofInternal(@Nonnull PartitionPredicate<K, V> partitionPredicate,
                                                            SerializationService serializationService) {
-        if (partitionPredicate == null) {
-            return null;
-        }
-
         PagingPredicateImpl<K, V> pagingPredicate = (PagingPredicateImpl<K, V>) partitionPredicate.getTarget();
 
         Data partitionKeyData = serializationService.toData(partitionPredicate.getPartitionKey());

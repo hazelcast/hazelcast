@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ class InvalidRawDataPortable2 extends RawDataPortable {
         final ObjectDataInput input = reader.getRawDataInput();
         k = input.readInt();
         l = reader.readLong("l");
-        s = input.readUTF();
+        s = input.readString();
         p = reader.readPortable("p");
         sds = input.readObject();
     }

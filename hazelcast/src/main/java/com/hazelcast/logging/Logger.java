@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,10 @@ package com.hazelcast.logging;
 
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.util.StringUtil;
+
+import javax.annotation.Nonnull;
+
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Provides static utilities to access the global shared logging machinery.
@@ -60,8 +64,9 @@ public final class Logger {
      * @param clazz the class to obtain the logger for.
      * @return the obtained logger.
      */
-    public static ILogger getLogger(Class clazz) {
-        return getLogger(clazz.getName());
+    public static ILogger getLogger(@Nonnull Class clazz) {
+        checkNotNull(clazz, "class must not be null");
+        return getLoggerInternal(clazz.getName());
     }
 
     /**
@@ -70,17 +75,24 @@ public final class Logger {
      * @param name the name of the logger to obtain.
      * @return the obtained logger.
      */
-    public static ILogger getLogger(String name) {
-        // try the fast path first
+    public static ILogger getLogger(@Nonnull String name) {
+        checkNotNull(name, "name must not be null");
+        return getLoggerInternal(name);
+    }
+
+    private static ILogger getLoggerInternal(String name) {
         LoggerFactory existingFactory = loggerFactory;
         if (existingFactory != null) {
             return existingFactory.getLogger(name);
         }
+        return createFactoryInternal().getLogger(name);
+    }
 
+    private static LoggerFactory createFactoryInternal() {
         synchronized (FACTORY_LOCK) {
-            existingFactory = loggerFactory;
+            LoggerFactory existingFactory = loggerFactory;
             if (existingFactory != null) {
-                return existingFactory.getLogger(name);
+                return existingFactory;
             }
 
             LoggerFactory createdFactory = null;
@@ -106,8 +118,7 @@ public final class Logger {
                     loggerFactoryClassOrType = loggingType;
                 }
             }
-
-            return createdFactory.getLogger(name);
+            return createdFactory;
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import com.hazelcast.client.impl.protocol.codec.ClientAddClusterViewListenerCode
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.cluster.MemberInfo;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.internal.cluster.impl.MembershipManager;
@@ -148,16 +147,12 @@ public class ClusterViewListenerService {
         }
 
         int version;
-        if (nodeEngine.getClusterService().getClusterVersion().isGreaterOrEqual(Versions.V4_1)) {
-            long currentStamp = partitionTableView.stamp();
-            long latestStamp = latestPartitionStamp.get();
-            if (currentStamp != latestStamp && latestPartitionStamp.compareAndSet(latestStamp, currentStamp)) {
-                partitionTableVersion.incrementAndGet();
-            }
-            version = partitionTableVersion.get();
-        } else {
-            version = partitionTableView.version();
+        long currentStamp = partitionTableView.stamp();
+        long latestStamp = latestPartitionStamp.get();
+        if (currentStamp != latestStamp && latestPartitionStamp.compareAndSet(latestStamp, currentStamp)) {
+            partitionTableVersion.incrementAndGet();
         }
+        version = partitionTableVersion.get();
 
         return ClientAddClusterViewListenerCodec.encodePartitionsViewEvent(version, partitions.entrySet());
     }

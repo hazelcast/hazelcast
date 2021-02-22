@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -154,12 +154,12 @@ public abstract class AbstractPredicate<K, V> implements Predicate<K, V>, Identi
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(attributeName);
+        out.writeString(attributeName);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        attributeName = in.readUTF();
+        attributeName = in.readString();
     }
 
     @Override

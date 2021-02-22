@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import org.w3c.dom.NodeList;
 
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathException;
@@ -46,6 +45,7 @@ import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.Preconditions.checkFalse;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.internal.util.StringUtil.trim;
+import static com.hazelcast.internal.util.XmlUtil.getNsAwareDocumentBuilderFactory;
 import static java.lang.String.format;
 
 /**
@@ -177,10 +177,7 @@ public class EncryptionReplacer extends AbstractPbeReplacer {
 
     private static Properties loadPropertiesFromConfig(FileInputStream fileInputStream) throws Exception {
         try {
-            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-            dbf.setNamespaceAware(true);
-            dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-            DocumentBuilder builder = dbf.newDocumentBuilder();
+            DocumentBuilder builder = getNsAwareDocumentBuilderFactory().newDocumentBuilder();
             Document doc = builder.parse(fileInputStream);
             Element root = doc.getDocumentElement();
             return loadProperties(findReplacerDefinition(root));

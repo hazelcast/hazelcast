@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -142,14 +142,14 @@ public final class Address implements IdentifiedDataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(port);
         out.write(type);
-        out.writeUTF(host);
+        out.writeString(host);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         port = in.readInt();
         type = in.readByte();
-        host = in.readUTF();
+        host = in.readString();
     }
 
     @Override

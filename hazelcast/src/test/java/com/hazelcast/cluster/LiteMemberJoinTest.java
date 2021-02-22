@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
+import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -38,16 +39,16 @@ import org.junit.runner.RunWith;
 import java.util.HashSet;
 import java.util.Set;
 
+import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSize;
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
 import static com.hazelcast.test.HazelcastTestSupport.closeConnectionBetween;
-import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static com.hazelcast.test.OverridePropertyRule.clear;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@Category(SlowTest.class)
 public class LiteMemberJoinTest {
 
     @Rule
@@ -64,6 +65,7 @@ public class LiteMemberJoinTest {
     }
 
     @Test
+    @Category(QuickTest.class)
     public void test_liteMemberIsCreated() {
         final Config liteConfig = new Config().setLiteMember(true);
         final HazelcastInstance liteInstance = Hazelcast.newHazelcastInstance(liteConfig);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,7 @@ import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import com.hazelcast.internal.partition.IPartitionService;
 
+import javax.annotation.Nonnull;
 import javax.cache.CacheException;
 import javax.cache.CacheManager;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
@@ -71,6 +72,7 @@ import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLET
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrowAllowedTypeFirst;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
+import com.hazelcast.spi.tenantcontrol.DestroyEventContext;
 
 /**
  * Abstract {@link com.hazelcast.cache.ICache} implementation which provides shared internal implementations
@@ -92,7 +94,7 @@ abstract class CacheProxySupport<K, V>
     private static final int TIMEOUT = 10;
 
     protected final ILogger logger;
-    protected final CacheConfig<K, V> cacheConfig;
+    protected CacheConfig<K, V> cacheConfig;
     protected final String name;
     protected final String nameWithPrefix;
     protected final ICacheService cacheService;
@@ -163,6 +165,11 @@ abstract class CacheProxySupport<K, V>
     @Override
     public void close() {
         close0(false);
+    }
+
+    @Override
+    public @Nonnull DestroyEventContext getDestroyContextForTenant() {
+        return () -> cacheConfig = ((CacheService) cacheService).reSerializeCacheConfig(cacheConfig);
     }
 
     @Override
@@ -315,7 +322,7 @@ abstract class CacheProxySupport<K, V>
         return invoke(operation, keyData, withCompletionEvent);
     }
 
-   protected  <T> InvocationFuture<T> replaceAsyncInternal(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy,
+    protected  <T> InvocationFuture<T> replaceAsyncInternal(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy,
                                                           boolean hasOldValue, boolean isGet, boolean withCompletionEvent) {
         ensureOpen();
         if (hasOldValue) {
@@ -338,7 +345,7 @@ abstract class CacheProxySupport<K, V>
         return invoke(operation, keyData, withCompletionEvent);
     }
 
-   protected <T> InvocationFuture<T> putAsyncInternal(K key, V value, ExpiryPolicy expiryPolicy,
+    protected <T> InvocationFuture<T> putAsyncInternal(K key, V value, ExpiryPolicy expiryPolicy,
                                                       boolean isGet, boolean withCompletionEvent) {
         ensureOpen();
         validateNotNull(key, value);
@@ -544,9 +551,12 @@ abstract class CacheProxySupport<K, V>
         PartitionIdSet partitionIds = new PartitionIdSet(partitions);
 
         Iterator<Data> iterator = keys.iterator();
-        while (iterator.hasNext() && partitionIds.size() < partitions) {
+        int addedPartitions = 0;
+        while (iterator.hasNext() && addedPartitions < partitions) {
             Data key = iterator.next();
-            partitionIds.add(partitionService.getPartitionId(key));
+            if (partitionIds.add(partitionService.getPartitionId(key))) {
+                addedPartitions++;
+            }
         }
         return partitionIds;
     }

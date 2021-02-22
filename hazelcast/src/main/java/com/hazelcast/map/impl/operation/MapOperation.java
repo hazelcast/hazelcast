@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,16 +27,19 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.event.MapEventPublisher;
+import com.hazelcast.map.impl.eviction.Evictor;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.mapstore.writebehind.TxnReservedCapacityCounter;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.map.impl.wan.WanMapEntryView;
 import com.hazelcast.memory.NativeOutOfMemoryError;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
+import com.hazelcast.spi.tenantcontrol.TenantControl;
 import com.hazelcast.wan.impl.CallerProvenance;
 
 import javax.annotation.Nonnull;
@@ -193,20 +196,13 @@ public abstract class MapOperation extends AbstractNamedOperation
     }
 
     void disposeDeferredBlocks() {
-        if (!disposeDeferredBlocks) {
+        if (!disposeDeferredBlocks
+                || recordStore == null
+                || recordStore.getInMemoryFormat() != NATIVE) {
             return;
         }
 
-        int partitionId = getPartitionId();
-        if (partitionId == -1) {
-            return;
-        }
-
-        MapService service = getService();
-        RecordStore recordStore = service.getMapServiceContext().getExistingRecordStore(partitionId, name);
-        if (recordStore != null) {
-            recordStore.disposeDeferredBlocks();
-        }
+        recordStore.disposeDeferredBlocks();
     }
 
     private boolean canPublishWanEvent(MapContainer mapContainer) {
@@ -284,6 +280,9 @@ public abstract class MapOperation extends AbstractNamedOperation
     }
 
     protected final void evict(Data justAddedKey) {
+        if (mapContainer.getEvictor() == Evictor.NULL_EVICTOR) {
+            return;
+        }
         recordStore.evictEntries(justAddedKey);
         disposeDeferredBlocks();
     }
@@ -328,8 +327,10 @@ public abstract class MapOperation extends AbstractNamedOperation
         }
 
         Data dataValue = toHeapData(mapServiceContext.toData(value));
+        ExpiryMetadata expiredMetadata = recordStore.getExpirySystem().getExpiredMetadata(dataKey);
         WanMapEntryView<Object, Object> entryView = createWanEntryView(
-                toHeapData(dataKey), dataValue, record, getNodeEngine().getSerializationService());
+                toHeapData(dataKey), dataValue, record, expiredMetadata,
+                getNodeEngine().getSerializationService());
 
         mapEventPublisher.publishWanUpdate(name, entryView, hasLoadProvenance);
     }
@@ -359,5 +360,16 @@ public abstract class MapOperation extends AbstractNamedOperation
             return dataValue;
         }
         return mapServiceContext.toData(record.getValue());
+    }
+
+    @Override
+    public TenantControl getTenantControl() {
+        return getNodeEngine().getTenantControlService()
+                .getTenantControl(MapService.SERVICE_NAME, name);
+    }
+
+    @Override
+    public boolean requiresTenantContext() {
+        return true;
     }
 }

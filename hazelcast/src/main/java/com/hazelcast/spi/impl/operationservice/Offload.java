@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -146,6 +146,9 @@ public abstract class Offload extends CallStatus {
      *
      * It is allowed to call {@link Operation#sendResponse(Object)} in the start
      * method if there is nothing to offload.
+     *
+     * Note: TenantControl propagation is the implementor's responsibility
+     * as it will not automatically be propagated to the offloaded thread.
      *
      * @throws Exception if something fails. If this happens, regular Operation
      *                   exception handling is triggered and normally the

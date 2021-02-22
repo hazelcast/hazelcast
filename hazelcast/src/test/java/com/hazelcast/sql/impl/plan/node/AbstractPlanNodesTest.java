@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuil
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.sql.impl.plan.node.io.ReceiveSortMergePlanNode;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -175,6 +176,16 @@ public class AbstractPlanNodesTest {
 
         @Override
         public void onEmptyNode(EmptyPlanNode node) {
+            nodes.add(node);
+        }
+
+        @Override
+        public void onReceiveSortMergeNode(ReceiveSortMergePlanNode node) {
+            nodes.add(node);
+        }
+
+        @Override
+        public void onFetchNode(FetchPlanNode node) {
             nodes.add(node);
         }
 

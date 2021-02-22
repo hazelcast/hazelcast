@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a PN counter configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("3fd787a8a36b2c04609d76bd1189c88f")
+@Generated("f52c6b0f00f79d201368e66bce56cc90")
 public final class DynamicConfigAddPNCounterConfigCodec {
     //hex: 0x1B1000
     public static final int REQUEST_MESSAGE_TYPE = 1773568;

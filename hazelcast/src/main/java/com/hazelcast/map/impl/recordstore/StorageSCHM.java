@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,13 @@
 
 package com.hazelcast.map.impl.recordstore;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializableByConvention;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.SampleableConcurrentHashMap;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.map.impl.recordstore.expiry.ExpirySystem;
 
 /**
  * An extended {@link SampleableConcurrentHashMap} with {@link IMap} specifics.
@@ -31,18 +32,22 @@ import com.hazelcast.internal.serialization.Data;
 @SerializableByConvention
 public class StorageSCHM<R extends Record> extends SampleableConcurrentHashMap<Data, R> {
 
+    private static final long serialVersionUID = -1133966339806826032L;
     private static final int DEFAULT_INITIAL_CAPACITY = 256;
 
-    private final SerializationService serializationService;
+    private final transient SerializationService serializationService;
+    private final transient ExpirySystem expirySystem;
 
-    public StorageSCHM(SerializationService serializationService) {
+    public StorageSCHM(SerializationService serializationService, ExpirySystem expirySystem) {
         super(DEFAULT_INITIAL_CAPACITY);
 
         this.serializationService = serializationService;
+        this.expirySystem = expirySystem;
     }
 
     @Override
     protected <E extends SamplingEntry> E createSamplingEntry(Data key, R record) {
-        return (E) new LazyEvictableEntryView<>(key, record, serializationService);
+        return (E) new LazyEvictableEntryView<>(key, record,
+                expirySystem.getExpiredMetadata(key), serializationService);
     }
 }

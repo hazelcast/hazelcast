@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package com.hazelcast.query.impl.bitmap;
 
+import com.hazelcast.internal.monitor.impl.GlobalIndexOperationStats;
+import com.hazelcast.internal.monitor.impl.IndexOperationStats;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -89,6 +91,8 @@ public class BitmapTest {
 
     private final Bitmap<String> bitmap = new Bitmap<>();
 
+    private final IndexOperationStats operationStats = new GlobalIndexOperationStats();
+
     @Test
     public void testInsertUpdateRemove() {
         // insert
@@ -147,21 +151,21 @@ public class BitmapTest {
     }
 
     private void insert(long key, long value) {
-        bitmap.insert(values(value), key, Long.toString(key));
+        bitmap.insert(values(value), key, Long.toString(key), operationStats);
         for (ExpectedQuery expectedQuery : expectedQueries) {
             expectedQuery.insert(key, value);
         }
     }
 
     private void update(long key, long oldValue, long newValue) {
-        bitmap.update(values(oldValue), values(newValue), key, Long.toString(key));
+        bitmap.update(values(oldValue), values(newValue), key, Long.toString(key), operationStats);
         for (ExpectedQuery expectedQuery : expectedQueries) {
             expectedQuery.update(key, oldValue, newValue);
         }
     }
 
     private void remove(long key, long value) {
-        bitmap.remove(values(value), key);
+        bitmap.remove(values(value), key, operationStats);
         for (ExpectedQuery expectedQuery : expectedQueries) {
             expectedQuery.remove(key, value);
         }

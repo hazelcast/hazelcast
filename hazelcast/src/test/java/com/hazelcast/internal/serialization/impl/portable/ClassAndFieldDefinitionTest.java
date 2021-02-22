@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -200,12 +200,12 @@ public class ClassAndFieldDefinitionTest {
     @Test(expected = HazelcastSerializationException.class)
     public void testClassDefinitionBuilder_addingSameFieldTwice() {
         new ClassDefinitionBuilder(1, 2, 1)
-                .addUTFField("name").addUTFField("name");
+                .addStringField("name").addStringField("name");
     }
 
     @Test(expected = HazelcastSerializationException.class)
     public void testClassDefinitionBuilder_addingSameFieldTwice_withDifferentType() {
         new ClassDefinitionBuilder(1, 2, 1)
-                .addUTFField("name").addIntField("name");
+                .addStringField("name").addIntField("name");
     }
 }

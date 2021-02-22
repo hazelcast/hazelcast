@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,22 +20,46 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
+import com.hazelcast.spi.tenantcontrol.DestroyEventContext;
 import com.hazelcast.spi.tenantcontrol.TenantControl;
+import com.hazelcast.spi.tenantcontrol.Tenantable;
 
-import java.io.Closeable;
+import javax.annotation.Nonnull;
+import java.io.IOException;
 
 /**
- * Default no-op implementation of TenantControl
+ * Default no-op implementation of {@link TenantControl}
  */
 public final class NoopTenantControl implements TenantControl, IdentifiedDataSerializable {
 
     @Override
-    public Closeable setTenant(boolean createRequestScope) {
+    public Closeable setTenant() {
         return NoopCloseable.INSTANCE;
     }
 
     @Override
-    public void unregister() {
+    public void registerObject(@Nonnull DestroyEventContext destroyEventContext) {
+    }
+
+    @Override
+    public void unregisterObject() {
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+    }
+
+    @Override
+    public void clearThreadContext() {
+    }
+
+    @Override
+    public boolean isAvailable(@Nonnull Tenantable tenantable) {
+        return true;
     }
 
     private static final class NoopCloseable implements Closeable {
@@ -65,15 +89,5 @@ public final class NoopTenantControl implements TenantControl, IdentifiedDataSer
     @Override
     public int getClassId() {
         return SpiDataSerializerHook.NOOP_TENANT_CONTROL;
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput out) {
-
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) {
-
     }
 }

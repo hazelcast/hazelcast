@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,23 +20,23 @@ import java.util.EventListener;
 
 /**
  * Message listener for {@link ITopic}.
+ * <p>
+ * A MessageListener will never be called concurrently (provided that it's not registered twice). So there
+ * is no need to synchronize access to the state it reads or writes. Also there is no need to synchronize
+ * when publishing to the ITopic, the ITopic is responsible for memory consistency effects. In other words,
+ * there is no need to make fields of the MessageListener volatile or access them using synchronized blocks.
  *
- * Provided that a MessageListener is not registered twice, a MessageListener will never be called concurrently. So there
- * is no need to provide thread-safety on internal state in the MessageListener. Also there is no need to enforce safe
- * publication, the ITopic is responsible for the memory consistency effects. In other words, there is no need to make
- * internal fields of the MessageListener volatile or access them using synchronized blocks.
- *
- * @param <E> message
+ * @param <E> message type
  */
 @FunctionalInterface
 public interface MessageListener<E> extends EventListener {
 
     /**
-     * Invoked when a message is received for the added topic. Note that topic guarantees message ordering.
+     * Invoked when a message is received for the topic. Note that the topic guarantees message ordering.
      * Therefore there is only one thread invoking onMessage. The user should not keep the thread busy, but preferably
      * should dispatch it via an Executor. This will increase the performance of the topic.
      *
-     * @param message the message that is received for the added topic
+     * @param message the message that is received for the topic
      */
     void onMessage(Message<E> message);
 }

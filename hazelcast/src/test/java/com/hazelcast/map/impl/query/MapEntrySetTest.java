@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,9 @@ package com.hazelcast.map.impl.query;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.IMap;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -31,10 +33,14 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.AbstractMap.SimpleEntry;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
+import static com.hazelcast.query.Predicates.partitionPredicate;
 import static com.hazelcast.test.Accessors.getSerializationService;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -42,13 +48,13 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MapEntrySetTest extends HazelcastTestSupport {
 
+    private HazelcastInstance instance;
     private IMap<String, String> map;
     private SerializationService serializationService;
 
     @Before
     public void setup() {
-        HazelcastInstance instance = createHazelcastInstance();
-
+        instance = createHazelcastInstance();
         map = instance.getMap(randomName());
         serializationService = getSerializationService(instance);
     }
@@ -106,6 +112,48 @@ public class MapEntrySetTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void whenSelectingPartitionSubset() {
+        PartitionIdSet partitionSubset = new PartitionIdSet(4, asList(1, 3));
+        Set<String> matchingKeys = new HashSet<>();
+        for (int i = 0; i < 5; i++) {
+            String key = generateKeyForPartition(instance, i);
+            map.put(key, key);
+            if (partitionSubset.contains(i)) {
+                matchingKeys.add(key);
+            }
+        }
+
+        Set<Entry<String, String>> result =
+                ((MapProxyImpl<String, String>) map).entrySet(Predicates.alwaysTrue(), partitionSubset);
+        assertEquals(2, result.size());
+        for (String key : matchingKeys) {
+            assertResultContains(result, key, key);
+        }
+    }
+
+    @Test
+    public void when_selectingPartitionSubset_and_partitionPredicate() {
+        PartitionIdSet partitionSubset = new PartitionIdSet(4, asList(1, 3));
+        Set<String> matchingKeys = new HashSet<>();
+        String key1 = null;
+        for (int i = 0; i < 5; i++) {
+            String key = generateKeyForPartition(instance, i);
+            if (i == 1) {
+                key1 = key;
+            }
+            map.put(key, key);
+            if (partitionSubset.contains(i)) {
+                matchingKeys.add(key);
+            }
+        }
+
+        Set<Entry<String, String>> result = ((MapProxyImpl<String, String>) map)
+                .entrySet(partitionPredicate(key1, Predicates.alwaysTrue()), partitionSubset);
+        assertEquals(1, result.size());
+        assertResultContains(result, key1, key1);
+    }
+
+    @Test
     public void testResultType() {
         map.put("1", "a");
         Set<Map.Entry<String, String>> result = map.entrySet(Predicates.alwaysTrue());
@@ -117,7 +165,7 @@ public class MapEntrySetTest extends HazelcastTestSupport {
     }
 
     private static void assertResultContains(Set<Map.Entry<String, String>> result, String key, String value) {
-        assertContains(result, new SimpleEntry<String, String>(key, value));
+        assertContains(result, new SimpleEntry<>(key, value));
     }
 
     static class GoodPredicate implements Predicate<String, String> {

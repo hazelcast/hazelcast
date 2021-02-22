@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -167,6 +167,8 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
                 serializationConfig.setEnableSharedObject(getBooleanValue(getTextContent(child)));
             } else if (matches("allow-unsafe", name)) {
                 serializationConfig.setAllowUnsafe(getBooleanValue(getTextContent(child)));
+            } else if (matches("allow-override-default-serializers", name)) {
+                serializationConfig.setAllowOverrideDefaultSerializers(getBooleanValue(getTextContent(child)));
             } else if (matches("data-serializable-factories", name)) {
                 fillDataSerializableFactories(child, serializationConfig);
             } else if (matches("portable-factories", name)) {

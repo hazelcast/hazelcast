@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Enables or disables the statistics or the management support for the
  * cache with the given name on a member with the given address.
  */
-@Generated("70e543f80f50fd68c8d83d8d486ea1c9")
+@Generated("af263e09a14c25090a866606f9778550")
 public final class CacheManagementConfigCodec {
     //hex: 0x131100
     public static final int REQUEST_MESSAGE_TYPE = 1249536;

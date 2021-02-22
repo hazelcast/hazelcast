@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,13 +27,13 @@ import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.Message;
 import com.hazelcast.topic.MessageListener;
-import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -221,7 +221,7 @@ public class ClientTopicTest {
         topic.publishAll(messages);
     }
 
-    @NotNull
+    @Nonnull
     private ITopic<String> createTopic(AtomicInteger count, Collection<String> receivedValues) {
         ITopic<String> topic = client.getTopic(randomString());
         topic.addMessageListener(new MessageListener<String>() {

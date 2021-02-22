@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -143,7 +143,7 @@ public final class MetadataRaftGroupSnapshot implements IdentifiedDataSerializab
         for (CPMemberInfo member : initializedCPMembers) {
             out.writeObject(member);
         }
-        out.writeUTF(initializationStatus.name());
+        out.writeString(initializationStatus.name());
         out.writeInt(initializationCommitIndices.size());
         for (long commitIndex : initializationCommitIndices) {
             out.writeLong(commitIndex);
@@ -181,7 +181,7 @@ public final class MetadataRaftGroupSnapshot implements IdentifiedDataSerializab
             initializedCPMembers.add(member);
         }
 
-        initializationStatus = MetadataRaftGroupInitStatus.valueOf(in.readUTF());
+        initializationStatus = MetadataRaftGroupInitStatus.valueOf(in.readString());
         len = in.readInt();
         for (int i = 0; i < len; i++) {
             long commitIndex = in.readLong();

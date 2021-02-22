@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,8 +71,19 @@ public final class DeferredValue<V> {
         return serializedValue;
     }
 
-    // returns a new DeferredValue representing the same value as this
     public DeferredValue<V> shallowCopy() {
+        return shallowCopy(true, null);
+    }
+
+    /**
+     * returns a new DeferredValue representing the same value as this,
+     * possibly creating a serialized value
+     *
+     * @param resolved is false, force serialization of the returned copy
+     * @param serializationService service to use to serialize
+     * @return
+     */
+    public DeferredValue<V> shallowCopy(boolean resolved, SerializationService serializationService) {
         if (this == NULL_VALUE) {
             return NULL_VALUE;
         }
@@ -81,7 +92,12 @@ public final class DeferredValue<V> {
             copy.serializedValueExists = true;
             copy.serializedValue = serializedValue;
         }
-        if (valueExists) {
+        if (!resolved && serializationService != null) {
+            if (!serializedValueExists) {
+                copy.serializedValueExists = true;
+                copy.serializedValue = getSerializedValue(serializationService);
+            }
+        } else if (valueExists) {
             copy.valueExists = true;
             copy.value = value;
         }

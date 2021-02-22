@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -382,27 +382,27 @@ public class MapStoreConfig implements IdentifiedDataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeBoolean(enabled);
         out.writeBoolean(writeCoalescing);
-        out.writeUTF(className);
-        out.writeUTF(factoryClassName);
+        out.writeString(className);
+        out.writeString(factoryClassName);
         out.writeInt(writeDelaySeconds);
         out.writeInt(writeBatchSize);
         out.writeObject(implementation);
         out.writeObject(factoryImplementation);
         out.writeObject(properties);
-        out.writeUTF(initialLoadMode.name());
+        out.writeString(initialLoadMode.name());
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         enabled = in.readBoolean();
         writeCoalescing = in.readBoolean();
-        className = in.readUTF();
-        factoryClassName = in.readUTF();
+        className = in.readString();
+        factoryClassName = in.readString();
         writeDelaySeconds = in.readInt();
         writeBatchSize = in.readInt();
         implementation = in.readObject();
         factoryImplementation = in.readObject();
         properties = in.readObject();
-        initialLoadMode = InitialLoadMode.valueOf(in.readUTF());
+        initialLoadMode = InitialLoadMode.valueOf(in.readString());
     }
 }
