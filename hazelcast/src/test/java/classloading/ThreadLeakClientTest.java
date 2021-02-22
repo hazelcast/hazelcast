@@ -42,7 +42,7 @@ import static classloading.ThreadLeakTestUtils.getThreads;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
 public class ThreadLeakClientTest {
-    private static int TIMEOUT_MS = 5 * 1000;
+    private int zeroTimeout = 0;
 
     @After
     public void shutdownInstances() {
@@ -81,7 +81,7 @@ public class ThreadLeakClientTest {
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getConnectionStrategyConfig()
                 .getConnectionRetryConfig()
-                .setClusterConnectTimeoutMillis(TIMEOUT_MS);
+                .setClusterConnectTimeoutMillis(zeroTimeout);
 
         try {
             HazelcastClient.newHazelcastClient(clientConfig);
@@ -95,7 +95,7 @@ public class ThreadLeakClientTest {
         Hazelcast.newHazelcastInstance();
         ClientConfig config = new ClientConfig();
         config.setClusterName("invalid cluster");
-        config.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(TIMEOUT_MS);
+        config.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(zeroTimeout);
         Set<Thread> testStartThreads = getThreads();
         try {
             HazelcastClient.newHazelcastClient(config);
@@ -111,7 +111,7 @@ public class ThreadLeakClientTest {
         config.getNetworkConfig().getDiscoveryConfig().addDiscoveryStrategyConfig(
                 new DiscoveryStrategyConfig(new ClientDiscoverySpiTest.NoMemberDiscoveryStrategyFactory(),
                         Collections.<String, Comparable>emptyMap()));
-        config.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(TIMEOUT_MS);
+        config.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(zeroTimeout);
         Set<Thread> testStartThreads = getThreads();
         try {
             HazelcastClient.newHazelcastClient(config);
