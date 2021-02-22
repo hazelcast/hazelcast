@@ -86,9 +86,7 @@ public class DefaultConfigValidationTest {
                             child = new Node(constructor.newInstance("foo"), method.invoke(this.defaultConfig, "foo")); //TODO
                         }
                         if (child.initialConfig != null) {
-                            System.out.println();
                             for (Method m : method.getReturnType().getDeclaredMethods()) {
-                                System.out.println(m.getName());
                                 if (m.getName().equals("equals")) {
                                     children.add(child);
                                     cnt++;
@@ -126,7 +124,6 @@ public class DefaultConfigValidationTest {
             try {
                 Assert.assertEquals(configNode.defaultConfig, configNode.initialConfig);
             } catch (Error e) {
-                System.out.println(e.getMessage());
                 cnt2++;
             }
         }
