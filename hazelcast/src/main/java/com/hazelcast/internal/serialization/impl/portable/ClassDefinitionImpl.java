@@ -16,26 +16,35 @@
 
 package com.hazelcast.internal.serialization.impl.portable;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
-public class ClassDefinitionImpl implements ClassDefinition {
+public class ClassDefinitionImpl implements ClassDefinition, DataSerializable {
 
-    private final int factoryId;
-    private final int classId;
+    private int factoryId;
+    private int classId;
     private int version = -1;
-    private final Map<String, FieldDefinition> fieldDefinitionsMap = new LinkedHashMap<String, FieldDefinition>();
+    private Map<String, FieldDefinition> fieldDefinitionsMap;
+
+    @SuppressWarnings("unused")
+    private ClassDefinitionImpl() {
+    }
 
     public ClassDefinitionImpl(int factoryId, int classId, int version) {
         this.factoryId = factoryId;
         this.classId = classId;
         this.version = version;
+        this.fieldDefinitionsMap = new LinkedHashMap<>();
     }
 
     public void addFieldDef(FieldDefinitionImpl fd) {
@@ -133,6 +142,22 @@ public class ClassDefinitionImpl implements ClassDefinition {
             return false;
         }
         return fieldDefinitionsMap.equals(that.fieldDefinitionsMap);
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeInt(factoryId);
+        out.writeInt(classId);
+        out.writeInt(version);
+        out.writeObject(fieldDefinitionsMap);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        factoryId = in.readInt();
+        classId = in.readInt();
+        version = in.readInt();
+        fieldDefinitionsMap = in.readObject();
     }
 
     @Override
