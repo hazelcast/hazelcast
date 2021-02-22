@@ -103,7 +103,7 @@ public class ClientQueryCacheRecreationTest extends HazelcastTestSupport {
         }
 
         // Make sure that all events are processed before calling queryCache#recreate
-        assertCacheSizeEventually(queryCache, 100);
+        assertCacheSizeEventuallyWithTryRecover(queryCache, 100);
 
         InternalQueryCache internalQueryCache = (InternalQueryCache) queryCache;
         internalQueryCache.recreate();
@@ -112,14 +112,7 @@ public class ClientQueryCacheRecreationTest extends HazelcastTestSupport {
             map.put(i, i);
         }
 
-        assertTrueEventually(() -> {
-            try {
-                assertEquals(200, queryCache.size());
-            } catch (AssertionError e) {
-                queryCache.tryRecover();
-                throw e;
-            }
-        });
+        assertCacheSizeEventuallyWithTryRecover(queryCache, 200);
 
         Set<Object> keySet = queryCache.keySet();
         for (int i = 0; i < 300; i++) {
@@ -162,8 +155,15 @@ public class ClientQueryCacheRecreationTest extends HazelcastTestSupport {
         assertTrueAllTheTime(assertTask, 3);
     }
 
-    private static void assertCacheSizeEventually(QueryCache cache, int expectedCacheSize) {
-        assertTrueEventually(() -> assertEquals(expectedCacheSize, cache.size()));
+    private static void assertCacheSizeEventuallyWithTryRecover(QueryCache cache, int expectedCacheSize) {
+        assertTrueEventually(() -> {
+            try {
+                assertEquals(expectedCacheSize, cache.size());
+            } catch (AssertionError e) {
+                cache.tryRecover();
+                throw e;
+            }
+        });
     }
 
 }
