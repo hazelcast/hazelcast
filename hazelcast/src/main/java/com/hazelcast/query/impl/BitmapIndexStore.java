@@ -526,7 +526,7 @@ public final class BitmapIndexStore extends BaseIndexStore {
     }
 
     /**
-     * Converts and at the same time canonicalizes the passed in values.
+     * Converts and at the same time canonicalizes the values passed in.
      */
     private final class CanonicalizingConverter implements TypeConverter {
 

@@ -21,9 +21,8 @@ import com.hazelcast.query.impl.Indexes;
 
 /**
  * Optimizes predicate for faster execution.
- * It has to treat input predicate as immutable. It may the same instance
+ * It has to treat input predicate as immutable. It may return the same instance
  * if no optimization has been performed.
- *
 */
 public interface QueryOptimizer {
     <K, V> Predicate<K, V> optimize(Predicate<K, V> predicate, Indexes indexes);
