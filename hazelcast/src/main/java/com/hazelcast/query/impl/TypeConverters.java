@@ -712,7 +712,7 @@ public final class TypeConverters {
                 Number number = (Number) value;
                 return convertNumberToOffsetDateTime(number);
             }
-            throw new IllegalArgumentException("Cannot convert [" + value + "] to java.time.LocalTime");
+            throw new IllegalArgumentException("Cannot convert [" + value + "] to java.time.OffsetDateTime");
         }
 
         private OffsetDateTime convertNumberToOffsetDateTime(Number number) {

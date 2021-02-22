@@ -237,10 +237,10 @@ public class SqlOrderByTest extends SqlTestSupport {
     @Test
     public void testSelectWithOrderByDefaultTemporalTypes() {
         List<String> fields = Arrays.asList(
-                "dateVal",
-                "timeVal",
-                "timestampVal",
-                "tsTzOffsetDateTimeVal"
+            "dateVal",
+            "timeVal",
+            "timestampVal",
+            "tsTzOffsetDateTimeVal"
         );
 
         List<Boolean> orderDirections = new ArrayList<>(fields.size());
