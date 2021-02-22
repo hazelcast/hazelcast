@@ -94,7 +94,7 @@
         <junit.version>4.13.2</junit.version>
         <hamcrest.version>2.2</hamcrest.version>
         <mockito.version>3.6.0</mockito.version>
-        <powermock.version>2.0.7</powermock.version>
+        <powermock.version>2.0.9</powermock.version>
         <bytebuddy.version>1.10.20</bytebuddy.version>
         <reflections.version>0.9.10</reflections.version>
         <jmh.version>1.27</jmh.version>
