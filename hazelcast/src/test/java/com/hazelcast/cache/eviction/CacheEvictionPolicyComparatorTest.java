@@ -73,13 +73,4 @@ public class CacheEvictionPolicyComparatorTest extends AbstractCacheEvictionPoli
 
         testEvictionPolicyComparator(evictionConfig, iterationCount);
     }
-
-    @Test
-    public void test_evictionPolicyComparator_with_fifo_when_maxSizePolicy_is_entryCount() {
-        int partitionCount = Integer.parseInt(ClusterProperty.PARTITION_COUNT.getDefaultValue());
-        int iterationCount = (calculateMaxPartitionSize(DEFAULT_MAX_ENTRY_COUNT, partitionCount) * partitionCount) * 2;
-        EvictionConfig evictionConfig = new EvictionConfig().setEvictionPolicy(EvictionPolicy.FIFO);
-
-        testEvictionPolicyComparator(evictionConfig, iterationCount);
-    }
 }
