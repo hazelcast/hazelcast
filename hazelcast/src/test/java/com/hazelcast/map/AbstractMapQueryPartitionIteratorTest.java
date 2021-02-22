@@ -18,7 +18,6 @@ package com.hazelcast.map;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.projection.Projections;
 import com.hazelcast.query.Predicate;
@@ -50,69 +49,84 @@ import static org.junit.Assert.assertTrue;
 public abstract class AbstractMapQueryPartitionIteratorTest extends HazelcastTestSupport {
 
     protected TestHazelcastFactory factory;
-    protected HazelcastInstance instance;
-    protected IMap<String, String> mapProxy;
+    protected HazelcastInstance instanceProxy;
 
     @After
     public void teardown() {
         factory.terminateAll();
     }
 
-    protected abstract <K, V, R> Iterator<R> getIterator(int fetchSize, int partitionId, Projection<Entry<K, V>, R> projection,
-                                                Predicate<K, V> predicate);
+    protected abstract <K, V, R> Iterator<R> getIterator(
+            IMap<K, V> map,
+            int fetchSize,
+            int partitionId,
+            Projection<Entry<K, V>, R> projection,
+            Predicate<K, V> predicate
+    );
 
     @Test(expected = NoSuchElementException.class)
     public void test_next_Throws_Exception_On_EmptyPartition() {
-        getIterator(10, 1,
+        IMap<String, String> map = instanceProxy.getMap(randomMapName());
+        getIterator(map, 10, 1,
                 new TestProjection(), Predicates.alwaysTrue()).next();
     }
 
     @Test(expected = NullPointerException.class)
     public void test_null_projection_throws_exception() {
-        getIterator(10, 1, null, Predicates.alwaysTrue());
+        IMap<String, String> map = instanceProxy.getMap(randomMapName());
+        getIterator(map, 10, 1, null, Predicates.alwaysTrue());
     }
 
     @Test(expected = NullPointerException.class)
     public void test_null_predicate_throws_exception() {
-        getIterator(10, 1, new TestProjection(), null);
+        IMap<String, String> map = instanceProxy.getMap(randomMapName());
+        getIterator(map, 10, 1, new TestProjection(), null);
     }
 
     @Test
     public void test_HasNext_Returns_False_On_EmptyPartition() {
-        final Iterator<String> iterator = getIterator(10, 1,
+        IMap<String, String> map = instanceProxy.getMap(randomMapName());
+
+        final Iterator<String> iterator = getIterator(map, 10, 1,
                 new TestProjection(), Predicates.alwaysTrue());
+
         assertFalse(iterator.hasNext());
     }
 
     @Test
     public void test_Next_Returns_Value_On_NonEmptyPartition() {
         String value = randomString();
-        fillMap(mapProxy, 1, 1, value);
+        IMap<String, String> map = instanceProxy.getMap(randomMapName());
+        fillMap(map, 1, 1, value);
 
-        final Iterator<String> iterator = getIterator(10, 1,
+        Iterator<String> iterator = getIterator(map, 10, 1,
                 new GetValueProjection<>(), Predicates.alwaysTrue());
-        final String next = iterator.next();
+        String next = iterator.next();
+
         assertEquals(value, next);
     }
 
     @Test
     public void test_Next_Returns_Value_On_NonEmptyPartition_and_HasNext_Returns_False_when_Item_Consumed() {
         String value = randomString();
-        fillMap(mapProxy, 1, 1, value);
+        IMap<String, String> map = instanceProxy.getMap(randomMapName());
+        fillMap(map, 1, 1, value);
 
-        final Iterator<String> iterator = getIterator(10, 1,
+        Iterator<String> iterator = getIterator(map, 10, 1,
                 new GetValueProjection<>(), Predicates.alwaysTrue());
-        final String next = iterator.next();
-        assertEquals(value, next);
+        String next = iterator.next();
         boolean hasNext = iterator.hasNext();
+
+        assertEquals(value, next);
         assertFalse(hasNext);
     }
 
     @Test
     public void test_HasNext_Returns_True_On_NonEmptyPartition() {
-        fillMap(mapProxy, 1, 1, randomString());
+        IMap<String, String> map = instanceProxy.getMap(randomMapName());
+        fillMap(map, 1, 1, randomString());
 
-        final Iterator<String> iterator = getIterator(10, 1,
+        Iterator<String> iterator = getIterator(map, 10, 1,
                 new TestProjection(), Predicates.alwaysTrue());
         assertTrue(iterator.hasNext());
     }
@@ -120,12 +134,13 @@ public abstract class AbstractMapQueryPartitionIteratorTest extends HazelcastTes
 
     @Test
     public void test_with_projection_and_true_predicate() {
-        fillMap(mapProxy, 1, 100, randomString());
-        final Iterator<String> iterator = getIterator(10, 1,
+        IMap<String, String> map = instanceProxy.getMap(randomMapName());
+        fillMap(map, 1, 100, randomString());
+        final Iterator<String> iterator = getIterator(map, 10, 1,
                 new TestProjection(), Predicates.alwaysTrue());
         final ArrayList<String> projected = collectAll(iterator);
 
-        final Collection<String> actualValues = mapProxy.values();
+        final Collection<String> actualValues = map.values();
         assertEquals(actualValues.size(), projected.size());
 
         for (String value : actualValues) {
@@ -135,10 +150,9 @@ public abstract class AbstractMapQueryPartitionIteratorTest extends HazelcastTes
 
     @Test
     public void test_with_projection_and_predicate() {
-        final MapProxyImpl<String, Integer> intMap =
-                (MapProxyImpl<String, Integer>) instance.<String, Integer>getMap(randomMapName());
+        IMap<String, Integer> intMap = instanceProxy.getMap(randomMapName());
         fillMap(intMap, 1, 100);
-        final Iterator<Entry<String, Integer>> iterator = intMap.iterator(10, 1,
+         Iterator<Entry<String, Integer>> iterator = getIterator(intMap, 10, 1,
                 Projections.identity(),
                 new EvenPredicate());
         final ArrayList<Entry<String, Integer>> projected = collectAll(iterator);
@@ -158,7 +172,8 @@ public abstract class AbstractMapQueryPartitionIteratorTest extends HazelcastTes
 
     @Test(expected = UnsupportedOperationException.class)
     public void test_remove_Throws_Exception() {
-        final Iterator<String> iterator = getIterator(10, 1,
+        IMap<String, String> map = instanceProxy.getMap(randomMapName());
+        Iterator<String> iterator = getIterator(map, 10, 1,
                 new TestProjection(), Predicates.alwaysTrue());
 
         iterator.remove();
@@ -166,9 +181,11 @@ public abstract class AbstractMapQueryPartitionIteratorTest extends HazelcastTes
 
     @Test
     public void test_Next_Returns_Values_When_FetchSizeExceeds_On_NonEmptyPartition() {
+        IMap<String, String> map = instanceProxy.getMap(randomMapName());
         String value = randomString();
-        fillMap(mapProxy, 1, 100, value);
-        final Iterator<String> iterator = getIterator(10, 1,
+
+        fillMap(map, 1, 100, value);
+        final Iterator<String> iterator = getIterator(map, 10, 1,
                 new GetValueProjection<>(), Predicates.alwaysTrue());
 
         for (int i = 0; i < 100; i++) {
@@ -180,9 +197,9 @@ public abstract class AbstractMapQueryPartitionIteratorTest extends HazelcastTes
     @SuppressWarnings("unchecked")
     @Test
     public void test_NoExceptions_When_IndexesAreAccessed_During_PredicateOptimization() {
-        int count = instance.getPartitionService().getPartitions().size() * 10;
+        int count = instanceProxy.getPartitionService().getPartitions().size() * 10;
 
-        MapProxyImpl<Integer, Integer> map = (MapProxyImpl<Integer, Integer>) instance.<Integer, Integer>getMap(randomMapName());
+        IMap<Integer, Integer> map = instanceProxy.getMap(randomMapName());
         for (int i = 0; i < count; ++i) {
             map.put(i, i);
         }
@@ -190,20 +207,20 @@ public abstract class AbstractMapQueryPartitionIteratorTest extends HazelcastTes
         // this predicate is a subject for optimizing it into a between predicate
         Predicate<Integer, Integer> predicate = and(greaterEqual("this", 0), lessEqual("this", count - 1));
 
-        Collection result = collectAll(map.iterator(10, 1, Projections.identity(), predicate));
+        Collection result = collectAll(getIterator(map, 10, 1, Projections.identity(), predicate));
         assertFalse(result.isEmpty());
     }
 
     private void fillMap(IMap<String, String> map, int partitionId, int count, String value) {
         for (int i = 0; i < count; i++) {
-            String key = generateKeyForPartition(instance, partitionId);
+            String key = generateKeyForPartition(instanceProxy, partitionId);
             map.put(key, value);
         }
     }
 
     private void fillMap(IMap<String, Integer> map, int partitionId, int count) {
         for (int i = 0; i < count; i++) {
-            String key = generateKeyForPartition(instance, partitionId);
+            String key = generateKeyForPartition(instanceProxy, partitionId);
             map.put(key, i);
         }
     }

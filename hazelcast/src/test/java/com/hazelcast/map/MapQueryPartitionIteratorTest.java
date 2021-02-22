@@ -37,13 +37,17 @@ public class MapQueryPartitionIteratorTest extends AbstractMapQueryPartitionIter
     @Before
     public void init() {
         factory = new TestHazelcastFactory();
-        instance = factory.newHazelcastInstance(smallInstanceConfig());
-        mapProxy = instance.getMap(randomMapName());
+        instanceProxy = factory.newHazelcastInstance(smallInstanceConfig());
     }
 
     @Override
-    protected <K, V, R> Iterator<R> getIterator(int fetchSize, int partitionId, Projection<Entry<K, V>, R> projection,
-                                                Predicate<K, V> predicate) {
-        return ((MapProxyImpl<K, V>) mapProxy).iterator(fetchSize, partitionId, projection, predicate);
+    protected <K, V, R> Iterator<R> getIterator(
+            IMap<K, V> map,
+            int fetchSize,
+            int partitionId,
+            Projection<Entry<K, V>, R> projection,
+            Predicate<K, V> predicate
+    ) {
+        return ((MapProxyImpl<K, V>) map).iterator(fetchSize, partitionId, projection, predicate);
     }
 }

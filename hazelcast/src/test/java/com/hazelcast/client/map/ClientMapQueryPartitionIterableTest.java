@@ -19,6 +19,7 @@ package com.hazelcast.client.map;
 import com.hazelcast.client.impl.proxy.ClientMapProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.map.AbstractMapQueryPartitionIterableTest;
+import com.hazelcast.map.IMap;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -37,13 +38,18 @@ public class ClientMapQueryPartitionIterableTest extends AbstractMapQueryPartiti
     @Before
     public void setup() {
         factory = new TestHazelcastFactory();
-        this.instance = factory.newHazelcastInstance(smallInstanceConfig());
-        this.mapProxy = factory.newHazelcastClient().getMap(randomMapName());
+        factory.newHazelcastInstance(smallInstanceConfig());
+        this.instanceProxy = factory.newHazelcastClient();
     }
 
     @Override
-    protected <K, V, R> Iterable<R> getIterable(int fetchSize, int partitionId, Projection<Entry<K, V>, R> projection,
-                                                Predicate<K, V> predicate) {
-        return ((ClientMapProxy<K, V>) mapProxy).iterable(fetchSize, partitionId, projection, predicate);
+    protected <K, V, R> Iterable<R> getIterable(
+            IMap<K, V> map,
+            int fetchSize,
+            int partitionId,
+            Projection<Entry<K, V>, R> projection,
+            Predicate<K, V> predicate
+    ) {
+        return ((ClientMapProxy<K, V>) map).iterable(fetchSize, partitionId, projection, predicate);
     }
 }

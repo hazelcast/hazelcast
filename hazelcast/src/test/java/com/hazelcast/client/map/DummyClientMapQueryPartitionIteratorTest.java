@@ -21,9 +21,9 @@ import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.impl.proxy.ClientMapProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.cluster.Address;
-import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.AbstractMapQueryPartitionIteratorTest;
+import com.hazelcast.map.IMap;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -41,32 +41,30 @@ import java.util.Map;
 public class DummyClientMapQueryPartitionIteratorTest extends AbstractMapQueryPartitionIteratorTest {
 
     @Before
-    public void setup() {
+    public void init() {
         factory = new TestHazelcastFactory();
-
-        Config config = getConfig();
-        instance = factory.newHazelcastInstance(config);
-        factory.newHazelcastInstance(config);
-
-        HazelcastInstance client = factory.newHazelcastClient(getClientConfig(instance));
-        mapProxy = client.getMap(randomMapName());
+        HazelcastInstance server = factory.newHazelcastInstance(getConfig());
+        instanceProxy = factory.newHazelcastClient(getClientConfig(server));
     }
 
     private ClientConfig getClientConfig(HazelcastInstance instance) {
         Address address = instance.getCluster().getLocalMember().getAddress();
         String addressString = address.getHost() + ":" + address.getPort();
-
         ClientNetworkConfig networkConfig = new ClientNetworkConfig()
                 .setSmartRouting(false)
                 .addAddress(addressString);
 
-        return new ClientConfig()
-                .setNetworkConfig(networkConfig);
+        return new ClientConfig().setNetworkConfig(networkConfig);
     }
 
     @Override
-    protected <K, V, R> Iterator<R> getIterator(int fetchSize, int partitionId, Projection<Map.Entry<K, V>, R> projection,
-                                                Predicate<K, V> predicate) {
-        return ((ClientMapProxy<K, V>) mapProxy).iterator(10, partitionId, projection, predicate);
+    protected <K, V, R> Iterator<R> getIterator(
+            IMap<K, V> map,
+            int fetchSize,
+            int partitionId,
+            Projection<Map.Entry<K, V>, R> projection,
+            Predicate<K, V> predicate
+    ) {
+        return ((ClientMapProxy<K, V>) map).iterator(10, partitionId, projection, predicate);
     }
 }
