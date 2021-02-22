@@ -33,9 +33,9 @@ import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.test.HazelcastTestSupport;
-import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 
+import javax.annotation.Nonnull;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -269,7 +269,7 @@ public abstract class AbstractGenericRecordTest extends HazelcastTestSupport {
         map.put(2, inConsistentNamedRecord);
     }
 
-    @NotNull
+    @Nonnull
     private MainPortable createMainPortable() {
         NamedPortable[] nn = new NamedPortable[2];
         nn[0] = new NamedPortable("name", 123);
@@ -288,7 +288,7 @@ public abstract class AbstractGenericRecordTest extends HazelcastTestSupport {
                 new BigDecimal("12312313"), LocalTime.now(), LocalDate.now(), LocalDateTime.now(), OffsetDateTime.now());
     }
 
-    @NotNull
+    @Nonnull
     private GenericRecord createGenericRecord(MainPortable expectedPortable) {
         InnerPortable inner = expectedPortable.p;
         ClassDefinition namedPortableClassDefinition =
