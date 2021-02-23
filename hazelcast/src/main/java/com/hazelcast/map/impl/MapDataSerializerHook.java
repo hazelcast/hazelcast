@@ -316,8 +316,9 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int MERGE_MAP_OPERATION_PROCESSOR = 152;
     public static final int MAP_ENTRY_REPLACING_PROCESSOR = 153;
     public static final int LOCAL_RECORD_STORE_STATS = 154;
+    public static final int QUERY_PARTITIONS = 155;
 
-    private static final int LEN = LOCAL_RECORD_STORE_STATS + 1;
+    private static final int LEN = QUERY_PARTITIONS + 1;
 
     @Override
     public int getFactoryId() {

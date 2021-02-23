@@ -309,7 +309,18 @@ public class QueryEngineImpl implements QueryEngine {
 
         List<Future<Result>> futures = new ArrayList<>(members.size());
         for (Address address : members) {
-            Operation operation = createQueryOperation(query);
+            List<Integer> memberPartitions = partitionService.getMemberPartitions(address);
+            int[] targetPartitions = memberPartitions.stream().mapToInt(i -> i).filter(partitionIdSet::contains).toArray();
+
+            Operation operation;
+
+            //are we targeting all partitions
+            if (targetPartitions.length == memberPartitions.size()) {
+                operation = createQueryOperation(query);
+            } else {
+                operation = createQueryPartitionsOperation(query, targetPartitions);
+            }
+
             Future<Result> future = operationService.invokeOnTarget(
                     MapService.SERVICE_NAME, operation, address);
             futures.add(future);
@@ -345,6 +356,11 @@ public class QueryEngineImpl implements QueryEngine {
     private Operation createQueryPartitionOperation(Query query) {
         return mapServiceContext.getMapOperationProvider(query.getMapName()).createQueryPartitionOperation(query);
     }
+
+    private Operation createQueryPartitionsOperation(Query query, int[] partitions) {
+        return mapServiceContext.getMapOperationProvider(query.getMapName()).createQueryPartitionsOperation(query, partitions);
+    }
+
 
     private static boolean shouldSkipPartitionsQuery(PartitionIdSet partitionIds) {
         return partitionIds == null || partitionIds.isEmpty();
