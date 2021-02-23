@@ -35,6 +35,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 
 import java.util.Collection;
+import java.util.stream.IntStream;
 
 import static com.hazelcast.internal.util.SetUtil.singletonPartitionIdSet;
 
@@ -166,6 +167,39 @@ public class QueryRunner {
             result = populateNonEmptyResult(query, entries, actualPartitions);
         }
 
+        return result;
+    }
+
+    public Result runIndexOrPartitionScanQueryOnOwnedPartitions(Query query, int[] partitions) {
+        int migrationStamp = getMigrationStamp();
+
+        PartitionIdSet ownedInitialPartitions = mapServiceContext.getOrInitCachedMemberPartitions();
+        PartitionIdSet initialPartitions = new PartitionIdSet(ownedInitialPartitions.getPartitionCount());
+        IntStream.of(partitions).filter(i -> ownedInitialPartitions.contains(i)).forEach(initialPartitions::add);
+        MapContainer mapContainer = mapServiceContext.getMapContainer(query.getMapName());
+
+        // to optimize the query we need to get any index instance
+        Indexes indexes = mapContainer.getIndexes();
+        if (indexes == null) {
+            indexes = mapContainer.getIndexes(initialPartitions.iterator().next());
+        }
+        // first we optimize the query
+        Predicate predicate = queryOptimizer.optimize(query.getPredicate(), indexes);
+
+        // then we try to run using an index, but if that doesn't work, we'll try a full table scan
+        Iterable<QueryableEntry> entries = runUsingGlobalIndexSafely(predicate, mapContainer, migrationStamp,
+                initialPartitions.size());
+
+        Result result;
+        if (entries == null) {
+            result = runUsingPartitionScanSafely(query, predicate, initialPartitions, migrationStamp);
+            if (result == null) {
+                // full scan didn't work, returning empty result
+                result = populateEmptyResult(query, initialPartitions);
+            }
+        } else {
+            result = populateNonEmptyResult(query, entries, initialPartitions);
+        }
         return result;
     }
 
