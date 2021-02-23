@@ -47,4 +47,6 @@ public class ListConfig extends CollectionConfig<ListConfig> {
                 + "}";
     }
 
+
+
 }

@@ -18,6 +18,8 @@ package com.hazelcast.config;
 
 import com.hazelcast.sql.SqlStatement;
 
+import java.util.Objects;
+
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
@@ -110,5 +112,22 @@ public class SqlConfig {
             + "executorPoolSize=" + executorPoolSize
             + ", statementTimeoutMillis=" + statementTimeoutMillis
             + '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        SqlConfig sqlConfig = (SqlConfig) o;
+        return executorPoolSize == sqlConfig.executorPoolSize && statementTimeoutMillis == sqlConfig.statementTimeoutMillis;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(executorPoolSize, statementTimeoutMillis);
     }
 }
