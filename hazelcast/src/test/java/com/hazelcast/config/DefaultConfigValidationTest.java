@@ -135,13 +135,12 @@ public class DefaultConfigValidationTest {
                             Constructor<?> constructor = method.getReturnType().getDeclaredConstructor();
                             constructor.setAccessible(true);
                             child = new Node(constructor.newInstance(), method.invoke(this.defaultConfig), this);
-                        } else if (method.getParameterCount() == 1){
+                        } else if (method.getParameterCount() == 1) {
                             Constructor<?> constructor = method.getReturnType().getDeclaredConstructor(String.class);
                             constructor.setAccessible(true);
                             child = new Node(constructor.newInstance("foo"),
                                     method.invoke(this.defaultConfig, "foo"), this);
-                        }
-                        else {
+                        } else {
                             System.out.println(method.getParameterCount()); //TODO
                             System.out.println(Arrays.toString(method.getParameterTypes()));
                             System.out.println(method.getReturnType().getName());
