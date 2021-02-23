@@ -16,8 +16,6 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -31,15 +29,11 @@ import java.util.Map;
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class MapPartitionIteratorTest extends AbstractMapPartitionIteratorTest {
-    @Override
-    public void setup() {
-        factory = new TestHazelcastFactory();
-        instance = factory.newHazelcastInstance(getConfig());
-    }
+public abstract class AbstractMapIterableTest extends AbstractMapIteratorTest {
 
-    @Override
-    protected <K, V> Iterator<Map.Entry<K, V>> getIterator(IMap<K, V> map, int partitionId) {
-        return ((MapProxyImpl<K, V>) map).iterator(10, partitionId, prefetchValues);
+    protected abstract <K, V> Iterable<Map.Entry<K, V>> getIterable(IMap<K, V> map);
+
+    protected <K, V> Iterator<Map.Entry<K, V>> getIterator(IMap<K, V> map) {
+        return getIterable(map).iterator();
     }
 }

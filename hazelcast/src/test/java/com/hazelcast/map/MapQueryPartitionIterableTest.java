@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.map;
+package com.hazelcast.map;
 
-import com.hazelcast.client.impl.proxy.ClientMapProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.map.AbstractMapQueryPartitionIteratorTest;
-import com.hazelcast.map.IMap;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -29,28 +27,22 @@ import org.junit.Before;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Iterator;
-import java.util.Map;
+import java.util.Map.Entry;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ClientMapQueryPartitionIteratorTest extends AbstractMapQueryPartitionIteratorTest {
+public class MapQueryPartitionIterableTest extends AbstractMapQueryPartitionIterableTest {
 
     @Before
-    public void setup() {
+    public void init() {
         factory = new TestHazelcastFactory();
-        factory.newHazelcastInstance(smallInstanceConfig());
-        instanceProxy = factory.newHazelcastClient();
+        instanceProxy = factory.newHazelcastInstance(smallInstanceConfig());
     }
 
     @Override
-    protected <K, V, R> Iterator<R> getIterator(
-            IMap<K, V> map,
-            int fetchSize,
-            int partitionId,
-            Projection<Map.Entry<K, V>, R> projection,
-            Predicate<K, V> predicate
-    ) {
-        return ((ClientMapProxy<K, V>) map).iterator(10, partitionId, projection, predicate);
+    protected <K, V, R> Iterable<R> getIterable(IMap<K, V> map, int fetchSize, int partitionId,
+                                                Projection<Entry<K, V>, R> projection,
+                                                Predicate<K, V> predicate) {
+        return ((MapProxyImpl<K, V>) map).iterable(fetchSize, partitionId, projection, predicate);
     }
 }

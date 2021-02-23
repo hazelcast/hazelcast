@@ -16,16 +16,12 @@
 
 package com.hazelcast.client.map;
 
-import com.hazelcast.client.impl.proxy.ClientMapProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.map.AbstractMapQueryPartitionIteratorTest;
+import com.hazelcast.map.AbstractMapIteratorTest;
 import com.hazelcast.map.IMap;
-import com.hazelcast.projection.Projection;
-import com.hazelcast.query.Predicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Before;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
@@ -34,23 +30,17 @@ import java.util.Map;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ClientMapQueryPartitionIteratorTest extends AbstractMapQueryPartitionIteratorTest {
+public class ClientMapIteratorTest extends AbstractMapIteratorTest {
 
-    @Before
+    @Override
     public void setup() {
         factory = new TestHazelcastFactory();
-        factory.newHazelcastInstance(smallInstanceConfig());
-        instanceProxy = factory.newHazelcastClient();
+        factory.newHazelcastInstance(getConfig());
+        instance = factory.newHazelcastClient();
     }
 
     @Override
-    protected <K, V, R> Iterator<R> getIterator(
-            IMap<K, V> map,
-            int fetchSize,
-            int partitionId,
-            Projection<Map.Entry<K, V>, R> projection,
-            Predicate<K, V> predicate
-    ) {
-        return ((ClientMapProxy<K, V>) map).iterator(10, partitionId, projection, predicate);
+    protected <K, V> Iterator<Map.Entry<K, V>> getIterator(IMap<K, V> map) {
+        return map.iterator();
     }
 }

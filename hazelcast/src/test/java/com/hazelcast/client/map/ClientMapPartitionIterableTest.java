@@ -18,39 +18,30 @@ package com.hazelcast.client.map;
 
 import com.hazelcast.client.impl.proxy.ClientMapProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.map.AbstractMapQueryPartitionIteratorTest;
+import com.hazelcast.map.AbstractMapPartitionIterableTest;
 import com.hazelcast.map.IMap;
-import com.hazelcast.projection.Projection;
-import com.hazelcast.query.Predicate;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Before;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
-import java.util.Iterator;
 import java.util.Map;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ClientMapQueryPartitionIteratorTest extends AbstractMapQueryPartitionIteratorTest {
-
-    @Before
+public class ClientMapPartitionIterableTest extends AbstractMapPartitionIterableTest {
+    @Override
     public void setup() {
         factory = new TestHazelcastFactory();
-        factory.newHazelcastInstance(smallInstanceConfig());
-        instanceProxy = factory.newHazelcastClient();
+        factory.newHazelcastInstance(getConfig());
+        instance = factory.newHazelcastClient();
     }
 
     @Override
-    protected <K, V, R> Iterator<R> getIterator(
-            IMap<K, V> map,
-            int fetchSize,
-            int partitionId,
-            Projection<Map.Entry<K, V>, R> projection,
-            Predicate<K, V> predicate
-    ) {
-        return ((ClientMapProxy<K, V>) map).iterator(10, partitionId, projection, predicate);
+    protected <K, V> Iterable<Map.Entry<K, V>> getIterable(IMap<K, V> map, int partitionId) {
+        return ((ClientMapProxy<K, V>) map).iterable(10, partitionId, prefetchValues);
     }
 }
