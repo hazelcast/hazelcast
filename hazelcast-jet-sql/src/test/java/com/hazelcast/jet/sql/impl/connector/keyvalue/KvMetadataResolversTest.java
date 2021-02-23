@@ -29,9 +29,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.stubbing.Answer;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
@@ -60,10 +62,11 @@ public class KvMetadataResolversTest {
 
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
+        MockitoAnnotations.openMocks(this);
 
         given(nodeEngine.getSerializationService()).willReturn(ss);
-        given(resolver.supportedFormat()).willReturn(JAVA_FORMAT);
+        given(resolver.supportedFormats())
+                .willAnswer((Answer<Stream<String>>) invocationOnMock -> Stream.of(JAVA_FORMAT));
 
         resolvers = new KvMetadataResolvers(resolver);
     }

@@ -33,6 +33,7 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static java.util.Collections.emptyList;
 
@@ -63,8 +64,8 @@ public class KvMetadataNullResolver implements KvMetadataResolver {
     }
 
     @Override
-    public String supportedFormat() {
-        return null;
+    public Stream<String> supportedFormats() {
+        return Stream.of((String) null);
     }
 
     private static class NullQueryTargetDescriptor implements QueryTargetDescriptor {

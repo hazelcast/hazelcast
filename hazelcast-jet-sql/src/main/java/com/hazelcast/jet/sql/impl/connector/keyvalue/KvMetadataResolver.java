@@ -21,6 +21,7 @@ import com.hazelcast.jet.sql.impl.schema.MappingField;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 /**
  * Interface for key-value resolution of fields for a particular
@@ -28,7 +29,7 @@ import java.util.Map;
  */
 public interface KvMetadataResolver {
 
-    String supportedFormat();
+    Stream<String> supportedFormats();
 
     List<MappingField> resolveAndValidateFields(
             boolean isKey,
