@@ -53,29 +53,26 @@ public class DefaultConfigValidationTest {
     @Test
     public void validateServerConfiguration() {
         Tree t = new Tree(new Config());
-        System.out.println(t.getAllNodes().size());
         System.out.println("Number of tested configs: " + numberOfTestedConfigs);
         int numberOfFailedConfigs = 0;
         for (Node configNode : t.getAllNodes()) {
             try {
                 Assert.assertEquals(configNode.defaultConfig, configNode.initialConfig);
             } catch (Error e) {
-                System.out.println(configNode.defaultConfig.getClass());
-                numberOfFailedConfigs++;
+                System.out.println(configNode.name + " (Child of "
+                        + configNode.parent.name
+                        + ") failed the test.");
+                numberOfFailedConfigs++; //TODO
             }
         }
         System.out.println("Number of failed configs: " + numberOfFailedConfigs);
         Config config = new Config();
         System.out.println(config.getSplitBrainProtectionConfig("foo")); //TODO
-        System.out.println(config.getWanReplicationConfig("foo"));
-        System.out.println(config.getSecurityConfig().getRealmConfig("foo"));
-        System.out.println(config.getServicesConfig().getServiceConfig("foo"));
     }
 
     @Test
     public void validateClientConfiguration() {
         Tree t = new Tree(new ClientConfig());
-        System.out.println(t.getAllNodes().size());
         System.out.println("Number of tested configs: " + numberOfTestedConfigs);
         int numberOfFailedConfigs = 0;
         for (Node configNode : t.getAllNodes()) {
@@ -92,7 +89,7 @@ public class DefaultConfigValidationTest {
         Node root;
 
         Tree(Object config) {
-            this.root = new Node(config, null);
+            this.root = new Node(config, null, null);
             root.populateChildren();
         }
 
@@ -112,15 +109,19 @@ public class DefaultConfigValidationTest {
         private final Object defaultConfig; // Created with new XXXConfig()
         private final Object initialConfig; // Created with getXXXConfig()
         private final List<Node> children;
+        private final Node parent; // Used for better logging
+        private final String name; // Used for better logging
 
-        Node(Object defaultConfig, Object initialConfig) {
-            this(defaultConfig, initialConfig, new ArrayList<>());
+        Node(Object defaultConfig, Object initialConfig, Node parent) {
+            this(defaultConfig, initialConfig, new ArrayList<>(), parent);
         }
 
-        Node(Object defaultConfig, Object initialConfig, List<Node> children) {
+        Node(Object defaultConfig, Object initialConfig, List<Node> children, Node parent) {
             this.defaultConfig = defaultConfig;
             this.initialConfig = initialConfig;
             this.children = children;
+            this.parent = parent;
+            this.name = defaultConfig.getClass().getName();
         }
 
         void populateChildren() {
@@ -133,14 +134,15 @@ public class DefaultConfigValidationTest {
                         if (method.getParameterCount() == 0) {
                             Constructor<?> constructor = method.getReturnType().getDeclaredConstructor();
                             constructor.setAccessible(true);
-                            child = new Node(constructor.newInstance(), method.invoke(this.defaultConfig));
+                            child = new Node(constructor.newInstance(), method.invoke(this.defaultConfig), this);
                         } else if (method.getParameterCount() == 1){
                             Constructor<?> constructor = method.getReturnType().getDeclaredConstructor(String.class);
                             constructor.setAccessible(true);
-                            child = new Node(constructor.newInstance("foo"), method.invoke(this.defaultConfig, "foo")); //TODO
+                            child = new Node(constructor.newInstance("foo"),
+                                    method.invoke(this.defaultConfig, "foo"), this);
                         }
                         else {
-                            System.out.println(method.getParameterCount());
+                            System.out.println(method.getParameterCount()); //TODO
                             System.out.println(Arrays.toString(method.getParameterTypes()));
                             System.out.println(method.getReturnType().getName());
                             System.out.println(method.getName());
@@ -157,9 +159,7 @@ public class DefaultConfigValidationTest {
                             }
                             if (!hasEquals) {
                                 LOGGER.warning(method.getReturnType().getCanonicalName()
-                                        + " (Child of "
-                                        + defaultConfig.getClass().getCanonicalName()
-                                        + ") should have implemented equals method.");
+                                        + " (Child of " + name + ") should have implemented equals method.");
 
                             }
                         }
@@ -168,14 +168,11 @@ public class DefaultConfigValidationTest {
                                 || method.getReturnType() == RealmConfig.class
                                 || method.getReturnType() == ServiceConfig.class)) {
                             LOGGER.warning(method.getReturnType().getCanonicalName()
-                                    + " (Child of "
-                                    + defaultConfig.getClass().getCanonicalName()
-                                    + ") does not have a suitable constructor.");
+                                    + " (Child of " + name + ") does not have a suitable constructor.");
                         }
                     } catch (InstantiationException e) {
                         LOGGER.warning("Error occurred while calling the constructor of "
-                                + method.getReturnType().getCanonicalName()
-                                + " (Child of " + defaultConfig.getClass().getCanonicalName() + ")");
+                                + method.getReturnType().getCanonicalName() + " (Child of " + name + ")"); //TODO
                     } catch (InvocationTargetException | IllegalAccessException e) {
                         e.printStackTrace();
                     }
