@@ -34,7 +34,6 @@ import com.hazelcast.core.MultiExecutionCallback;
 import com.hazelcast.executor.LocalExecutorStats;
 import com.hazelcast.executor.impl.ExecutionCallbackAdapter;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
@@ -548,18 +547,6 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         Object response;
         try {
             response = f.get();
-        } catch (Exception e) {
-            response = e;
-        }
-        return response;
-    }
-
-    private Object retrieveResultFromMessage(ClientInvocationFuture f) {
-        Object response;
-        try {
-            SerializationService serializationService = getClient().getSerializationService();
-            Data data = ExecutorServiceSubmitToMemberCodec.decodeResponse(f.get());
-            response = serializationService.toObject(data);
         } catch (Exception e) {
             response = e;
         }
