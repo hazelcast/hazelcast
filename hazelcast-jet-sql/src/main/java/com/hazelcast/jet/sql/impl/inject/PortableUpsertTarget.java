@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.inject;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecordBuilder;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldDefinition;
@@ -25,8 +24,14 @@ import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.util.Arrays;
 
 import static com.hazelcast.jet.sql.impl.inject.UpsertInjector.FAILING_TOP_LEVEL_INJECTOR;
@@ -38,31 +43,10 @@ class PortableUpsertTarget implements UpsertTarget {
 
     private final Object[] values;
 
-    PortableUpsertTarget(
-            InternalSerializationService serializationService,
-            int factoryId, int classId, int classVersion
-    ) {
-        this.classDefinition = lookupClassDefinition(serializationService, factoryId, classId, classVersion);
+    PortableUpsertTarget(@Nonnull ClassDefinition classDef) {
+        this.classDefinition = classDef;
 
-        this.values = new Object[classDefinition.getFieldCount()];
-    }
-
-    private static ClassDefinition lookupClassDefinition(
-            InternalSerializationService serializationService,
-            int factoryId,
-            int classId,
-            int classVersion
-    ) {
-        ClassDefinition classDefinition = serializationService
-                .getPortableContext()
-                .lookupClassDefinition(factoryId, classId, classVersion);
-        if (classDefinition == null) {
-            throw QueryException.error(
-                    "Unable to find class definition for factoryId: " + factoryId
-                    + ", classId: " + classId + ", classVersion: " + classVersion
-            );
-        }
-        return classDefinition;
+        this.values = new Object[classDef.getFieldCount()];
     }
 
     @Override
@@ -129,8 +113,23 @@ class PortableUpsertTarget implements UpsertTarget {
                     case DOUBLE:
                         portable.setDouble(name, value == null ? 0D : (double) value);
                         break;
+                    case DECIMAL:
+                        portable.setDecimal(name, (BigDecimal) value);
+                        break;
                     case UTF:
                         portable.setString(name, (String) QueryDataType.VARCHAR.convert(value));
+                        break;
+                    case TIME:
+                        portable.setTime(name, (LocalTime) value);
+                        break;
+                    case DATE:
+                        portable.setDate(name, (LocalDate) value);
+                        break;
+                    case TIMESTAMP:
+                        portable.setTimestamp(name, (LocalDateTime) value);
+                        break;
+                    case TIMESTAMP_WITH_TIMEZONE:
+                        portable.setTimestampWithTimezone(name, (OffsetDateTime) value);
                         break;
                     case PORTABLE:
                         portable.setGenericRecord(name, (GenericRecord) value);
@@ -159,8 +158,23 @@ class PortableUpsertTarget implements UpsertTarget {
                     case DOUBLE_ARRAY:
                         portable.setDoubleArray(name, (double[]) value);
                         break;
+                    case DECIMAL_ARRAY:
+                        portable.setDecimalArray(name, (BigDecimal[]) value);
+                        break;
                     case UTF_ARRAY:
                         portable.setStringArray(name, (String[]) value);
+                        break;
+                    case TIME_ARRAY:
+                        portable.setTimeArray(name, (LocalTime[]) value);
+                        break;
+                    case DATE_ARRAY:
+                        portable.setDateArray(name, (LocalDate[]) value);
+                        break;
+                    case TIMESTAMP_ARRAY:
+                        portable.setTimestampArray(name, (LocalDateTime[]) value);
+                        break;
+                    case TIMESTAMP_WITH_TIMEZONE_ARRAY:
+                        portable.setTimestampWithTimezoneArray(name, (OffsetDateTime[]) value);
                         break;
                     case PORTABLE_ARRAY:
                         portable.setGenericRecordArray(name, (GenericRecord[]) value);

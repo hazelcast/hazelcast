@@ -19,41 +19,35 @@ package com.hazelcast.jet.sql.impl.inject;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.ClassDefinition;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 
 public class PortableUpsertTargetDescriptor implements UpsertTargetDescriptor {
 
-    private int factoryId;
-    private int classId;
-    private int classVersion;
+    private ClassDefinition classDefinition;
 
     @SuppressWarnings("unused")
     private PortableUpsertTargetDescriptor() {
     }
 
-    public PortableUpsertTargetDescriptor(int factoryId, int classId, int classVersion) {
-        this.factoryId = factoryId;
-        this.classId = classId;
-        this.classVersion = classVersion;
+    public PortableUpsertTargetDescriptor(@Nonnull ClassDefinition classDefinition) {
+        this.classDefinition = classDefinition;
     }
 
     @Override
     public UpsertTarget create(InternalSerializationService serializationService) {
-        return new PortableUpsertTarget(serializationService, factoryId, classId, classVersion);
+        return new PortableUpsertTarget(classDefinition);
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(factoryId);
-        out.writeInt(classId);
-        out.writeInt(classVersion);
+        out.writeObject(classDefinition);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        factoryId = in.readInt();
-        classId = in.readInt();
-        classVersion = in.readInt();
+        this.classDefinition = in.readObject();
     }
 }

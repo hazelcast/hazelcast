@@ -23,6 +23,7 @@ import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecord;
 import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecordBuilder;
 import com.hazelcast.jet.sql.SqlTestSupport;
+import com.hazelcast.jet.sql.impl.connector.test.AllTypesSqlConnector;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.record.Record;
@@ -36,6 +37,11 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map.Entry;
@@ -53,6 +59,7 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLA
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FACTORY_ID;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.PORTABLE_FORMAT;
+import static java.time.ZoneOffset.UTC;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.Spliterator.ORDERED;
@@ -114,8 +121,8 @@ public class SqlPortableTest extends SqlTestSupport {
 
         ClassDefinition allTypesValueClassDefinition =
                 new ClassDefinitionBuilder(ALL_TYPES_FACTORY_ID, ALL_TYPES_CLASS_ID, ALL_TYPES_CLASS_VERSION)
-                        .addStringField("string")
                         .addCharField("character")
+                        .addStringField("string")
                         .addBooleanField("boolean")
                         .addByteField("byte")
                         .addShortField("short")
@@ -123,6 +130,11 @@ public class SqlPortableTest extends SqlTestSupport {
                         .addLongField("long")
                         .addFloatField("float")
                         .addDoubleField("double")
+                        .addDecimalField("decimal")
+                        .addTimeField("time")
+                        .addDateField("date")
+                        .addTimestampField("timestamp")
+                        .addTimestampWithTimezoneField("timestampTz")
                         .addPortableField("object", personClassDefinition)
                         .build();
         serializationService.getPortableContext().registerClassDefinition(allTypesValueClassDefinition);
@@ -174,11 +186,11 @@ public class SqlPortableTest extends SqlTestSupport {
 
         Entry<Data, Data> entry = randomEntryFrom(name);
 
-        InternalGenericRecord keyReader = serializationService.readAsInternalGenericRecord(entry.getKey());
-        assertThat(keyReader.getInt("id")).isEqualTo(0);
+        InternalGenericRecord keyRecord = serializationService.readAsInternalGenericRecord(entry.getKey());
+        assertThat(keyRecord.getInt("id")).isEqualTo(0);
 
-        InternalGenericRecord valueReader = serializationService.readAsInternalGenericRecord(entry.getValue());
-        assertThat(valueReader.getString("name")).isNull();
+        InternalGenericRecord valueRecord = serializationService.readAsInternalGenericRecord(entry.getValue());
+        assertThat(valueRecord.getString("name")).isNull();
 
         assertRowsAnyOrder(
                 "SELECT * FROM " + name,
@@ -207,12 +219,12 @@ public class SqlPortableTest extends SqlTestSupport {
 
         Entry<Data, Data> entry = randomEntryFrom(name);
 
-        InternalGenericRecord keyReader = serializationService.readAsInternalGenericRecord(entry.getKey());
-        assertThat(keyReader.getInt("id")).isEqualTo(1);
+        InternalGenericRecord keyRecord = serializationService.readAsInternalGenericRecord(entry.getKey());
+        assertThat(keyRecord.getInt("id")).isEqualTo(1);
 
-        InternalGenericRecord valueReader = serializationService.readAsInternalGenericRecord(entry.getValue());
-        assertThat(valueReader.getInt("id")).isEqualTo(0);
-        assertThat(valueReader.getString("name")).isEqualTo("Alice");
+        InternalGenericRecord valueRecord = serializationService.readAsInternalGenericRecord(entry.getValue());
+        assertThat(valueRecord.getInt("id")).isEqualTo(0);
+        assertThat(valueRecord.getString("name")).isEqualTo("Alice");
 
         assertRowsAnyOrder(
                 "SELECT * FROM " + name,
@@ -243,11 +255,11 @@ public class SqlPortableTest extends SqlTestSupport {
 
         Entry<Data, Data> entry = randomEntryFrom(name);
 
-        InternalGenericRecord keyReader = serializationService.readAsInternalGenericRecord(entry.getKey());
-        assertThat(keyReader.getInt("id")).isEqualTo(1);
+        InternalGenericRecord keyRecord = serializationService.readAsInternalGenericRecord(entry.getKey());
+        assertThat(keyRecord.getInt("id")).isEqualTo(1);
 
-        InternalGenericRecord valueReader = serializationService.readAsInternalGenericRecord(entry.getValue());
-        assertThat(valueReader.getInt("id")).isEqualTo(2);
+        InternalGenericRecord valueRecord = serializationService.readAsInternalGenericRecord(entry.getValue());
+        assertThat(valueRecord.getInt("id")).isEqualTo(2);
 
         assertRowsAnyOrder(
                 "SELECT key_id, value_id FROM " + name,
@@ -355,8 +367,11 @@ public class SqlPortableTest extends SqlTestSupport {
 
     @Test
     public void test_allTypes() throws IOException {
-        String name = randomName();
-        sqlService.execute("CREATE MAPPING " + name + ' '
+        String from = randomName();
+        AllTypesSqlConnector.create(sqlService, from);
+
+        String to = randomName();
+        sqlService.execute("CREATE MAPPING " + to + ' '
                 + "TYPE " + IMapSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ("
                 + '\'' + OPTION_KEY_FORMAT + "'='" + PORTABLE_FORMAT + '\''
@@ -370,48 +385,47 @@ public class SqlPortableTest extends SqlTestSupport {
                 + ")"
         );
 
-        sqlService.execute("SINK INTO " + name + " VALUES ("
-                + "13"
-                + ", 'string'"
-                + ", 'a'"
-                + ", true"
-                + ", 126"
-                + ", 32766"
-                + ", 2147483646"
-                + ", 9223372036854775806"
-                + ", 1234567890.1"
-                + ", 123451234567890.1"
-                + ", null"
-                + ")"
-        );
+        sqlService.execute("SINK INTO " + to + " SELECT 13, 'a', f.* FROM " + from + " f");
 
-        InternalGenericRecord allTypesReader = serializationService
-                .readAsInternalGenericRecord(randomEntryFrom(name).getValue());
-        assertThat(allTypesReader.getString("string")).isEqualTo("string");
-        assertThat(allTypesReader.getChar("character")).isEqualTo('a');
-        assertThat(allTypesReader.getBoolean("boolean")).isTrue();
-        assertThat(allTypesReader.getByte("byte")).isEqualTo((byte) 126);
-        assertThat(allTypesReader.getShort("short")).isEqualTo((short) 32766);
-        assertThat(allTypesReader.getInt("int")).isEqualTo(2147483646);
-        assertThat(allTypesReader.getLong("long")).isEqualTo(9223372036854775806L);
-        assertThat(allTypesReader.getFloat("float")).isEqualTo(1234567890.1F);
-        assertThat(allTypesReader.getDouble("double")).isEqualTo(123451234567890.1D);
-        assertThat(allTypesReader.getGenericRecord("object")).isNull();
+        InternalGenericRecord valueRecord = serializationService
+                .readAsInternalGenericRecord(randomEntryFrom(to).getValue());
+        assertThat(valueRecord.getString("string")).isEqualTo("string");
+        assertThat(valueRecord.getChar("character")).isEqualTo('a');
+        assertThat(valueRecord.getBoolean("boolean")).isTrue();
+        assertThat(valueRecord.getByte("byte")).isEqualTo((byte) 127);
+        assertThat(valueRecord.getShort("short")).isEqualTo((short) 32767);
+        assertThat(valueRecord.getInt("int")).isEqualTo(2147483647);
+        assertThat(valueRecord.getLong("long")).isEqualTo(9223372036854775807L);
+        assertThat(valueRecord.getFloat("float")).isEqualTo(1234567890.1F);
+        assertThat(valueRecord.getDouble("double")).isEqualTo(123451234567890.1D);
+        assertThat(valueRecord.getDecimal("decimal")).isEqualTo(new BigDecimal("9223372036854775.123"));
+        assertThat(valueRecord.getTime("time")).isEqualTo(LocalTime.of(12, 23, 34));
+        assertThat(valueRecord.getDate("date")).isEqualTo(LocalDate.of(2020, 4, 15));
+        assertThat(valueRecord.getTimestamp("timestamp"))
+                .isEqualTo(LocalDateTime.of(2020, 4, 15, 12, 23, 34, 1_000_000));
+        assertThat(valueRecord.getTimestampWithTimezone("timestampTz"))
+                .isEqualTo(OffsetDateTime.of(2020, 4, 15, 12, 23, 34, 200_000_000, UTC));
+        assertThat(valueRecord.getGenericRecord("object")).isNull();
 
         assertRowsAnyOrder(
-                "SELECT * FROM " + name,
+                "SELECT * FROM " + to,
                 singletonList(new Row(
-                       13
-                       , "string"
-                       , "a"
-                       , true
-                       , (byte) 126
-                       , (short) 32766
-                       , 2147483646
-                       , 9223372036854775806L
-                       , 1234567890.1F
-                       , 123451234567890.1D
-                       , null
+                        13,
+                        "a",
+                        "string",
+                        true,
+                        (byte) 127,
+                        (short) 32767,
+                        2147483647,
+                        9223372036854775807L,
+                        1234567890.1F,
+                        123451234567890.1D,
+                        new BigDecimal("9223372036854775.123"),
+                        LocalTime.of(12, 23, 34),
+                        LocalDate.of(2020, 4, 15),
+                        LocalDateTime.of(2020, 4, 15, 12, 23, 34, 1_000_000),
+                        OffsetDateTime.of(2020, 4, 15, 12, 23, 34, 200_000_000, UTC),
+                        null
                 ))
         );
     }
@@ -496,6 +510,97 @@ public class SqlPortableTest extends SqlTestSupport {
                         .setInt("id", 0)
                         .setString("name", "Alice")
                         .build());
+    }
+
+    @Test
+    public void test_derivesClassDefinitionFromSchema() throws IOException {
+        String from = randomName();
+        AllTypesSqlConnector.create(sqlService, from);
+
+        String to = randomName();
+        sqlService.execute("CREATE MAPPING " + to + " ("
+                           + "id INT EXTERNAL NAME \"__key.id\""
+                           + ", string VARCHAR"
+                           + ", \"boolean\" BOOLEAN"
+                           + ", byte TINYINT"
+                           + ", short SMALLINT"
+                           + ", \"int\" INT"
+                           + ", long BIGINT"
+                           + ", \"float\" REAL"
+                           + ", \"double\" DOUBLE"
+                           + ", \"decimal\" DECIMAL"
+                           + ", \"time\" TIME"
+                           + ", \"date\" DATE"
+                           + ", \"timestamp\" TIMESTAMP"
+                           + ", timestampTz TIMESTAMP WITH TIME ZONE"
+                           + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
+                           + "OPTIONS ("
+                           + '\'' + OPTION_KEY_FORMAT + "'='" + PORTABLE_FORMAT + '\''
+                           + ", '" + OPTION_KEY_FACTORY_ID + "'='" + PERSON_ID_FACTORY_ID + '\''
+                           + ", '" + OPTION_KEY_CLASS_ID + "'='" + PERSON_ID_CLASS_ID + '\''
+                           + ", '" + OPTION_KEY_CLASS_VERSION + "'='" + PERSON_ID_CLASS_VERSION + '\''
+                           + ", '" + OPTION_VALUE_FORMAT + "'='" + PORTABLE_FORMAT + '\''
+                           + ", '" + OPTION_VALUE_FACTORY_ID + "'='" + 997 + '\''
+                           + ", '" + OPTION_VALUE_CLASS_ID + "'='" + 998 + '\''
+                           + ", '" + OPTION_VALUE_CLASS_VERSION + "'='" + 999 + '\''
+                           + ")"
+        );
+
+        sqlService.execute("SINK INTO " + to + " SELECT "
+                           + "13"
+                           + ", string "
+                           + ", \"boolean\" "
+                           + ", byte "
+                           + ", short "
+                           + ", \"int\" "
+                           + ", long "
+                           + ", \"float\" "
+                           + ", \"double\" "
+                           + ", \"decimal\" "
+                           + ", \"time\" "
+                           + ", \"date\" "
+                           + ", \"timestamp\" "
+                           + ", timestampTz "
+                           + "FROM " + from
+        );
+
+        InternalGenericRecord valueRecord = serializationService
+                .readAsInternalGenericRecord(randomEntryFrom(to).getValue());
+        assertThat(valueRecord.getString("string")).isEqualTo("string");
+        assertThat(valueRecord.getBoolean("boolean")).isTrue();
+        assertThat(valueRecord.getByte("byte")).isEqualTo((byte) 127);
+        assertThat(valueRecord.getShort("short")).isEqualTo((short) 32767);
+        assertThat(valueRecord.getInt("int")).isEqualTo(2147483647);
+        assertThat(valueRecord.getLong("long")).isEqualTo(9223372036854775807L);
+        assertThat(valueRecord.getFloat("float")).isEqualTo(1234567890.1F);
+        assertThat(valueRecord.getDouble("double")).isEqualTo(123451234567890.1D);
+        assertThat(valueRecord.getDecimal("decimal")).isEqualTo(new BigDecimal("9223372036854775.123"));
+        assertThat(valueRecord.getTime("time")).isEqualTo(LocalTime.of(12, 23, 34));
+        assertThat(valueRecord.getDate("date")).isEqualTo(LocalDate.of(2020, 4, 15));
+        assertThat(valueRecord.getTimestamp("timestamp"))
+                .isEqualTo(LocalDateTime.of(2020, 4, 15, 12, 23, 34, 1_000_000));
+        assertThat(valueRecord.getTimestampWithTimezone("timestampTz"))
+                .isEqualTo(OffsetDateTime.of(2020, 4, 15, 12, 23, 34, 200_000_000, UTC));
+
+        assertRowsAnyOrder(
+                "SELECT * FROM " + to,
+                singletonList(new Row(
+                        13,
+                        "string",
+                        true,
+                        (byte) 127,
+                        (short) 32767,
+                        2147483647,
+                        9223372036854775807L,
+                        1234567890.1f,
+                        123451234567890.1,
+                        new BigDecimal("9223372036854775.123"),
+                        LocalTime.of(12, 23, 34),
+                        LocalDate.of(2020, 4, 15),
+                        LocalDateTime.of(2020, 4, 15, 12, 23, 34, 1_000_000),
+                        OffsetDateTime.of(2020, 4, 15, 12, 23, 34, 200_000_000, UTC)
+                ))
+        );
     }
 
     @SuppressWarnings({"OptionalGetWithoutIsPresent", "unchecked", "rawtypes"})

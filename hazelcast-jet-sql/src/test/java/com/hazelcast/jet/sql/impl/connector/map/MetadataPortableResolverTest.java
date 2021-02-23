@@ -59,10 +59,30 @@ public class MetadataPortableResolverTest {
             "false, this"
     })
     public void test_resolveFields(boolean key, String prefix) {
+        List<MappingField> fields = INSTANCE.resolveAndValidateFields(
+                key,
+                singletonList(field("field", QueryDataType.INT, prefix + ".field")),
+                ImmutableMap.of(
+                        (key ? OPTION_KEY_FACTORY_ID : OPTION_VALUE_FACTORY_ID), "1",
+                        (key ? OPTION_KEY_CLASS_ID : OPTION_VALUE_CLASS_ID), "2",
+                        (key ? OPTION_KEY_CLASS_VERSION : OPTION_VALUE_CLASS_VERSION), "3"
+                ),
+                new DefaultSerializationServiceBuilder().build()
+        );
+
+        assertThat(fields).containsExactly(field("field", QueryDataType.INT, prefix + ".field"));
+    }
+
+    @Test
+    @Parameters({
+            "true, __key",
+            "false, this"
+    })
+    public void test_resolveFieldsFromClassDefinition(boolean key, String prefix) {
         InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
         ClassDefinition classDefinition =
                 new ClassDefinitionBuilder(1, 2, 3)
-                        .addUTFField("string")
+                        .addStringField("string")
                         .addCharField("character")
                         .addBooleanField("boolean")
                         .addByteField("byte")
@@ -71,6 +91,11 @@ public class MetadataPortableResolverTest {
                         .addLongField("long")
                         .addFloatField("float")
                         .addDoubleField("double")
+                        .addDecimalField("decimal")
+                        .addTimeField("time")
+                        .addDateField("date")
+                        .addTimestampField("timestamp")
+                        .addTimestampWithTimezoneField("timestampTz")
                         .build();
         ss.getPortableContext().registerClassDefinition(classDefinition);
         Map<String, String> options = ImmutableMap.of(
@@ -90,7 +115,12 @@ public class MetadataPortableResolverTest {
                 field("int", QueryDataType.INT, prefix + ".int"),
                 field("long", QueryDataType.BIGINT, prefix + ".long"),
                 field("float", QueryDataType.REAL, prefix + ".float"),
-                field("double", QueryDataType.DOUBLE, prefix + ".double")
+                field("double", QueryDataType.DOUBLE, prefix + ".double"),
+                field("decimal", QueryDataType.DECIMAL, prefix + ".decimal"),
+                field("time", QueryDataType.TIME, prefix + ".time"),
+                field("date", QueryDataType.DATE, prefix + ".date"),
+                field("timestamp", QueryDataType.TIMESTAMP, prefix + ".timestamp"),
+                field("timestampTz", QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME, prefix + ".timestampTz")
         );
     }
 
@@ -99,7 +129,7 @@ public class MetadataPortableResolverTest {
             "true, __key",
             "false, this"
     })
-    public void when_userDeclaresField_then_itsNameHasPrecedenceOverResolvedOne(boolean key, String prefix) {
+    public void when_userDeclaresField_then_itsNameHasPrecedenceOverClassDefinitionOne(boolean key, String prefix) {
         InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
         ClassDefinition classDefinition =
                 new ClassDefinitionBuilder(1, 2, 3)
@@ -134,7 +164,7 @@ public class MetadataPortableResolverTest {
         ClassDefinition classDefinition =
                 new ClassDefinitionBuilder(1, 2, 3)
                         .addIntField("field1")
-                        .addUTFField("field2")
+                        .addStringField("field2")
                         .build();
         ss.getPortableContext().registerClassDefinition(classDefinition);
         Map<String, String> options = ImmutableMap.of(
@@ -160,7 +190,7 @@ public class MetadataPortableResolverTest {
             "true, __key",
             "false, this"
     })
-    public void when_typeMismatchBetweenDeclaredAndSchemaField_then_throws(boolean key, String prefix) {
+    public void when_typeMismatchBetweenDeclaredAndClassDefinitionField_then_throws(boolean key, String prefix) {
         InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
         ClassDefinition classDefinition =
                 new ClassDefinitionBuilder(1, 2, 3)
@@ -218,6 +248,79 @@ public class MetadataPortableResolverTest {
             "false, this"
     })
     public void test_resolveMetadata(boolean key, String prefix) {
+        KvMetadata metadata = INSTANCE.resolveMetadata(
+                key,
+                asList(
+                        field("boolean", QueryDataType.BOOLEAN, prefix + ".boolean"),
+                        field("byte", QueryDataType.TINYINT, prefix + ".byte"),
+                        field("short", QueryDataType.SMALLINT, prefix + ".short"),
+                        field("int", QueryDataType.INT, prefix + ".int"),
+                        field("long", QueryDataType.BIGINT, prefix + ".long"),
+                        field("float", QueryDataType.REAL, prefix + ".float"),
+                        field("double", QueryDataType.DOUBLE, prefix + ".double"),
+                        field("decimal", QueryDataType.DECIMAL, prefix + ".decimal"),
+                        field("string", QueryDataType.VARCHAR, prefix + ".string"),
+                        field("time", QueryDataType.TIME, prefix + ".time"),
+                        field("date", QueryDataType.DATE, prefix + ".date"),
+                        field("timestamp", QueryDataType.TIMESTAMP, prefix + ".timestamp"),
+                        field("timestampTz", QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME, prefix + ".timestampTz")
+                ),
+                ImmutableMap.of(
+                        (key ? OPTION_KEY_FACTORY_ID : OPTION_VALUE_FACTORY_ID), "1",
+                        (key ? OPTION_KEY_CLASS_ID : OPTION_VALUE_CLASS_ID), "2",
+                        (key ? OPTION_KEY_CLASS_VERSION : OPTION_VALUE_CLASS_VERSION), "3"
+                ),
+                new DefaultSerializationServiceBuilder().build()
+        );
+
+        assertThat(metadata.getFields()).containsExactly(
+                new MapTableField("boolean", QueryDataType.BOOLEAN, false, QueryPath.create(prefix + ".boolean")),
+                new MapTableField("byte", QueryDataType.TINYINT, false, QueryPath.create(prefix + ".byte")),
+                new MapTableField("short", QueryDataType.SMALLINT, false, QueryPath.create(prefix + ".short")),
+                new MapTableField("int", QueryDataType.INT, false, QueryPath.create(prefix + ".int")),
+                new MapTableField("long", QueryDataType.BIGINT, false, QueryPath.create(prefix + ".long")),
+                new MapTableField("float", QueryDataType.REAL, false, QueryPath.create(prefix + ".float")),
+                new MapTableField("double", QueryDataType.DOUBLE, false, QueryPath.create(prefix + ".double")),
+                new MapTableField("decimal", QueryDataType.DECIMAL, false, QueryPath.create(prefix + ".decimal")),
+                new MapTableField("string", QueryDataType.VARCHAR, false, QueryPath.create(prefix + ".string")),
+                new MapTableField("time", QueryDataType.TIME, false, QueryPath.create(prefix + ".time")),
+                new MapTableField("date", QueryDataType.DATE, false, QueryPath.create(prefix + ".date")),
+                new MapTableField("timestamp", QueryDataType.TIMESTAMP, false, QueryPath.create(prefix + ".timestamp")),
+                new MapTableField(
+                        "timestampTz",
+                        QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME,
+                        false,
+                        QueryPath.create(prefix + ".timestampTz"
+                )),
+                new MapTableField(prefix, QueryDataType.OBJECT, true, QueryPath.create(prefix))
+        );
+        assertThat(metadata.getQueryTargetDescriptor()).isEqualTo(GenericQueryTargetDescriptor.DEFAULT);
+        assertThat(metadata.getUpsertTargetDescriptor())
+                .isEqualToComparingFieldByField(new PortableUpsertTargetDescriptor(
+                        new ClassDefinitionBuilder(1, 2, 3)
+                                .addBooleanField("boolean")
+                                .addByteField("byte")
+                                .addShortField("short")
+                                .addIntField("int")
+                                .addLongField("long")
+                                .addFloatField("float")
+                                .addDoubleField("double")
+                                .addDecimalField("decimal")
+                                .addStringField("string")
+                                .addTimeField("time")
+                                .addDateField("date")
+                                .addTimestampField("timestamp")
+                                .addTimestampWithTimezoneField("timestampTz")
+                                .build()
+                ));
+    }
+
+    @Test
+    @Parameters({
+            "true, __key",
+            "false, this"
+    })
+    public void test_resolveMetadataWithExistingClassDefinition(boolean key, String prefix) {
         InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
         ClassDefinition classDefinition =
                 new ClassDefinitionBuilder(1, 2, 3)
@@ -243,11 +346,7 @@ public class MetadataPortableResolverTest {
         );
         assertThat(metadata.getQueryTargetDescriptor()).isEqualTo(GenericQueryTargetDescriptor.DEFAULT);
         assertThat(metadata.getUpsertTargetDescriptor())
-                .isEqualToComparingFieldByField(new PortableUpsertTargetDescriptor(
-                        classDefinition.getFactoryId(),
-                        classDefinition.getClassId(),
-                        classDefinition.getVersion())
-                );
+                .isEqualToComparingFieldByField(new PortableUpsertTargetDescriptor(classDefinition));
     }
 
     private static MappingField field(String name, QueryDataType type, String externalName) {

@@ -26,13 +26,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class PortableUpsertTargetDescriptorTest {
 
     private static final InternalSerializationService SERIALIZATION_SERVICE =
-            new DefaultSerializationServiceBuilder()
-                    .addClassDefinition(new ClassDefinitionBuilder(1, 2, 3).build())
-                    .build();
+            new DefaultSerializationServiceBuilder().build();
 
     @Test
     public void test_create() {
-        PortableUpsertTargetDescriptor descriptor = new PortableUpsertTargetDescriptor(1, 2, 3);
+        PortableUpsertTargetDescriptor descriptor =
+                new PortableUpsertTargetDescriptor(new ClassDefinitionBuilder(1, 2, 3).build());
 
         // when
         UpsertTarget target = descriptor.create(SERIALIZATION_SERVICE);
@@ -43,7 +42,12 @@ public class PortableUpsertTargetDescriptorTest {
 
     @Test
     public void test_serialization() {
-        PortableUpsertTargetDescriptor original = new PortableUpsertTargetDescriptor(1, 2, 3);
+        PortableUpsertTargetDescriptor original = new PortableUpsertTargetDescriptor(
+                new ClassDefinitionBuilder(1, 2, 3)
+                        .addIntField("int")
+                        .addPortableField("object", new ClassDefinitionBuilder(4, 5, 6).build())
+                        .build()
+        );
 
         // when
         PortableUpsertTargetDescriptor serialized =
