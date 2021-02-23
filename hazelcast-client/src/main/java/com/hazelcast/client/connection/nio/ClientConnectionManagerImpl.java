@@ -34,6 +34,7 @@ import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCustomCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientIsFailoverSupportedCodec;
 import com.hazelcast.client.spi.ClientExecutionService;
+import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.config.SSLConfig;
@@ -650,7 +651,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         private final ClientInvocationFuture isFailoverFuture;
 
         AuthCallback(ClientConnection connection, boolean asOwner, Address target,
-                     AuthenticationFuture future, ScheduledFuture timeoutTaskFuture, ClientInvocationFuture isFailoverFuture) {
+                AuthenticationFuture future, ScheduledFuture timeoutTaskFuture, ClientInvocationFuture isFailoverFuture) {
             this.connection = connection;
             this.asOwner = asOwner;
             this.target = target;
@@ -697,17 +698,20 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         }
 
         private void handleSuccessResult(ClientAuthenticationCodec.ResponseParameters result) {
-            if (result.partitionCountExist) {
-                clusterPartitionCount = result.partitionCount;
-            }
-            if (result.clusterIdExist) {
-                clusterId = result.clusterId;
-            }
-            if (result.serverHazelcastVersionExist) {
-                connection.setConnectedServerVersion(result.serverHazelcastVersion);
-            }
             connection.setRemoteEndpoint(result.address);
             if (asOwner) {
+                if (result.partitionCountExist) {
+                    clusterPartitionCount = result.partitionCount;
+                }
+                if (result.serverHazelcastVersionExist) {
+                    connection.setConnectedServerVersion(result.serverHazelcastVersion);
+                }
+                if (result.clusterIdExist) {
+                    if (clusterId != null && !result.clusterId.equals(clusterId)) {
+                        ((ClientClusterServiceImpl) client.getClientClusterService()).clearMemberList();
+                    }
+                    clusterId = result.clusterId;
+                }
                 connection.setIsAuthenticatedAsOwner();
                 ClientPrincipal principal = new ClientPrincipal(result.uuid, result.ownerUuid);
                 setPrincipal(principal);

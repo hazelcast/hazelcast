@@ -105,6 +105,7 @@ public class ClientClusterRestartEventTest {
         });
 
         instance.shutdown();
+        hazelcastFactory.cleanup();
         instance = hazelcastFactory.newHazelcastInstance(newConfig());
         Member newMember = instance.getCluster().getLocalMember();
 
@@ -162,6 +163,8 @@ public class ClientClusterRestartEventTest {
                 }
             }
         });
+
+        hazelcastFactory.cleanup();
 
         Future<HazelcastInstance> f1 = spawn(new Callable<HazelcastInstance>() {
             @Override

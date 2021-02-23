@@ -54,7 +54,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
     private final ClientClusterServiceImpl clusterService;
     private final ClientPartitionServiceImpl partitionService;
     private final ClientConnectionManagerImpl connectionManager;
-    private volatile Set<Member> members = new LinkedHashSet<Member>();
+    private volatile Set<Member> members;
 
     private volatile CountDownLatch initialListFetchedLatch;
     private volatile long lastCorrelationId = -1;
@@ -84,6 +84,17 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
 
     @Override
     public void handleMemberListEventV10(Collection<Member> initialMembers) {
+        if (members == null) {
+            //this means this is the first time client connected to this cluster.
+            members = new LinkedHashSet<Member>();
+            members.addAll(initialMembers);
+            logger.info(membersString());
+            clusterService.handleInitialMembershipEvent(
+                    new InitialMembershipEvent(client.getCluster(), unmodifiableSet(members)));
+            initialListFetchedLatch.countDown();
+            return;
+        }
+
         Set<Member> prevMembers = Collections.emptySet();
         if (!members.isEmpty()) {
             prevMembers = new LinkedHashSet<Member>(members.size());
@@ -92,15 +103,6 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
         }
 
         members.addAll(initialMembers);
-
-        if (prevMembers.isEmpty()) {
-            //this means this is the first time client connected to cluster
-            logger.info(membersString());
-            clusterService.handleInitialMembershipEvent(
-                    new InitialMembershipEvent(client.getCluster(), unmodifiableSet(members)));
-            initialListFetchedLatch.countDown();
-            return;
-        }
 
         List<MembershipEvent> events = detectMembershipEvents(prevMembers);
         logger.info(membersString());
@@ -139,6 +141,18 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
         invocation.invokeUrgent().get();
         lastCorrelationId = clientMessage.getCorrelationId();
         waitInitialMemberListFetched();
+    }
+
+    public void clearMemberListOnClusterRestart() {
+        Set<Member> prevMembers = Collections.emptySet();
+        if (!members.isEmpty()) {
+            prevMembers = new LinkedHashSet<Member>(members.size());
+            prevMembers.addAll(members);
+            members.clear();
+        }
+
+        List<MembershipEvent> events = detectMembershipEvents(prevMembers);
+        fireMembershipEvent(events);
     }
 
     void cleanupOnDisconnect() {
@@ -231,7 +245,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
                 + '}';
     }
 
-    void clearMembers() {
-        members = new LinkedHashSet<Member>();
+    void clearMembersOnClusterChange() {
+        members = null;
     }
 }
