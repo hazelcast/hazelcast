@@ -34,7 +34,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Queue;
 
@@ -141,10 +140,8 @@ public class DefaultConfigValidationTest {
                             child = new Node(constructor.newInstance("foo"),
                                     method.invoke(this.defaultConfig, "foo"), this);
                         } else {
-                            System.out.println(method.getParameterCount()); //TODO
-                            System.out.println(Arrays.toString(method.getParameterTypes()));
-                            System.out.println(method.getReturnType().getName());
-                            System.out.println(method.getName());
+                            LOGGER.warning(method.getReturnType().getCanonicalName()
+                                    + " (Child of " + name + ") is called from " + method.getName());
                         }
                         if (child != null && child.initialConfig != null) {
                             boolean hasEquals = false;
