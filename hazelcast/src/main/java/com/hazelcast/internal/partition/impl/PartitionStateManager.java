@@ -95,6 +95,19 @@ public class PartitionStateManager {
         partitionStateGenerator = new PartitionStateGeneratorImpl();
     }
 
+    /**
+     * @return {@code true} if there are partitions having {@link
+     * InternalPartitionImpl#isMigrating()} flag set, {@code false} otherwise.
+     */
+    boolean hasMigratingPartitions() {
+        for (int i = 0; i < partitionCount; ++i) {
+            if (partitions[i].isMigrating()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Probe(name = PARTITIONS_METRIC_PARTITION_REPLICA_STATE_MANAGER_LOCAL_PARTITION_COUNT)
     private int localPartitionCount() {
         int count = 0;

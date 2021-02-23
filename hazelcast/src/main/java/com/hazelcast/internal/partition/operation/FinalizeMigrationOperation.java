@@ -54,6 +54,7 @@ public final class FinalizeMigrationOperation extends AbstractPartitionOperation
      * This constructor should not be used to obtain an instance of this class; it exists to fulfill IdentifiedDataSerializable
      * coding conventions.
      */
+    @SuppressWarnings("unused")
     public FinalizeMigrationOperation() {
         migrationInfo = null;
         endpoint = null;
@@ -97,7 +98,6 @@ public final class FinalizeMigrationOperation extends AbstractPartitionOperation
         }
 
         partitionStateManager.clearMigratingFlag(partitionId);
-        partitionService.getMigrationManager().removeActiveMigration(partitionId);
         if (success) {
             nodeEngine.onPartitionMigrate(migrationInfo);
         }

@@ -77,6 +77,7 @@ public class PartitionReplicaStateChecker {
         this.migrationManager = partitionService.getMigrationManager();
     }
 
+    @SuppressWarnings("checkstyle:npathcomplexity")
     public PartitionServiceState getPartitionServiceState() {
         if (partitionService.isFetchMostRecentPartitionTableTaskRequired()) {
             return FETCHING_PARTITION_TABLE;
@@ -87,6 +88,10 @@ public class PartitionReplicaStateChecker {
         }
 
         if (migrationManager.hasOnGoingMigration()) {
+            return MIGRATION_LOCAL;
+        }
+
+        if (partitionStateManager.hasMigratingPartitions()) {
             return MIGRATION_LOCAL;
         }
 
