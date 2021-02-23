@@ -56,10 +56,10 @@ class NodeExtensionCommon {
     private final ILogger logger;
     private final JetService jetService;
 
-    NodeExtensionCommon(Node node) {
+    NodeExtensionCommon(Node node, JetService jetService) {
         this.node = node;
         this.logger = node.getLogger(getClass().getName());
-        this.jetService = new JetService(node);
+        this.jetService = jetService;
     }
 
     void beforeStart() {

@@ -31,7 +31,7 @@ public class JetNodeExtension extends DefaultNodeExtension implements JetPacketC
 
     public JetNodeExtension(Node node) {
         super(node);
-        extCommon = new NodeExtensionCommon(node);
+        extCommon = new NodeExtensionCommon(node, new JetService(node));
     }
 
     @Override
