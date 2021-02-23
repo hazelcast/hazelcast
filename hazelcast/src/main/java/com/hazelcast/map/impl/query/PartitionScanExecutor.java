@@ -20,7 +20,7 @@ import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryableEntriesSegment;
 
-import java.util.Collection;
+import java.util.BitSet;
 
 /**
  * Responsible for executing a full partition scan for the given partitions.
@@ -28,7 +28,7 @@ import java.util.Collection;
  */
 public interface PartitionScanExecutor {
 
-    void execute(String mapName, Predicate predicate, Collection<Integer> partitions, Result result);
+    void execute(String mapName, Predicate predicate, BitSet partitions, Result result);
 
     /**
      * Executes the predicate on a partition chunk. The offset in the partition

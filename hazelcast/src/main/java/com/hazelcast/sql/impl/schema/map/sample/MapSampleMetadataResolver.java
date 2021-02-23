@@ -30,6 +30,7 @@ import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 
+import javax.annotation.Nonnull;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -85,18 +86,18 @@ public final class MapSampleMetadataResolver {
     /**
      * Resolve metadata from a portable object.
      *
-     * @param clazz Portable class definition.
+     * @param classDef Portable class definition.
      * @param isKey Whether this is a key.
      * @return Metadata.
      */
     private static MapSampleMetadata resolvePortable(
-        ClassDefinition clazz,
+        @Nonnull ClassDefinition classDef,
         boolean isKey,
         JetMapMetadataResolver jetMapMetadataResolver
     ) {
         LinkedHashMap<String, TableField> fields = new LinkedHashMap<>();
 
-        Map<String, QueryDataType> simpleFields = FieldsUtil.resolvePortable(clazz);
+        Map<String, QueryDataType> simpleFields = FieldsUtil.resolvePortable(classDef);
 
         for (Entry<String, QueryDataType> fieldEntry : simpleFields.entrySet()) {
             String name = fieldEntry.getKey();
@@ -114,7 +115,7 @@ public final class MapSampleMetadataResolver {
 
         return new MapSampleMetadata(
             GenericQueryTargetDescriptor.DEFAULT,
-            jetMapMetadataResolver.resolvePortable(clazz, isKey),
+            jetMapMetadataResolver.resolvePortable(classDef, isKey),
             new LinkedHashMap<>(fields)
         );
     }

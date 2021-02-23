@@ -20,7 +20,6 @@ import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.IterationType;
-import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -31,6 +30,7 @@ import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 
 import java.io.IOException;
+import java.util.BitSet;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
@@ -44,7 +44,7 @@ public class Query implements IdentifiedDataSerializable, Versioned {
     private IterationType iterationType;
     private Aggregator aggregator;
     private Projection projection;
-    private PartitionIdSet partitionIdSet;
+    private BitSet partitionIdSet;
 
     public Query() {
     }
@@ -55,7 +55,7 @@ public class Query implements IdentifiedDataSerializable, Versioned {
             IterationType iterationType,
             Aggregator aggregator,
             Projection projection,
-            PartitionIdSet partitionIdSet
+            BitSet partitionIdSet
     ) {
         this.mapName = checkNotNull(mapName);
         this.predicate = checkNotNull(predicate);
@@ -105,7 +105,7 @@ public class Query implements IdentifiedDataSerializable, Versioned {
         return projection != null;
     }
 
-    public PartitionIdSet getPartitionIdSet() {
+    public BitSet getPartitionIdSet() {
         return partitionIdSet;
     }
 
@@ -166,7 +166,7 @@ public class Query implements IdentifiedDataSerializable, Versioned {
         private IterationType iterationType;
         private Aggregator aggregator;
         private Projection projection;
-        private PartitionIdSet partitionIdSet;
+        private BitSet partitionIdSet;
 
         private QueryBuilder() {
         }
@@ -205,7 +205,7 @@ public class Query implements IdentifiedDataSerializable, Versioned {
             return this;
         }
 
-        public QueryBuilder partitionIdSet(PartitionIdSet partitionIdSet) {
+        public QueryBuilder partitionIdSet(BitSet partitionIdSet) {
             this.partitionIdSet = partitionIdSet;
             return this;
         }
