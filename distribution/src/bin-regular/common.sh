@@ -4,7 +4,7 @@ HAZELCAST_HOME="$(cd "$SCRIPT_DIR/.." && pwd)"
 if [ "$JAVA_HOME" ]; then
     JAVA="$JAVA_HOME/bin/java"
 else
-    JAVA="$(which java 2>/dev/null)"
+    JAVA="$(command -v java 2>/dev/null)"
 fi
 
 if [ -z "$JAVA" ]; then
@@ -25,6 +25,18 @@ if [ "$JAVA_VERSION" -ge "9" ]; then
         --add-opens java.management/sun.management=ALL-UNNAMED \
         --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED \
     "
+fi
+
+if [ -n "${CLASSPATH}" ]; then
+  export CLASSPATH="${CLASSPATH_DEFAULT}:${CLASSPATH}"
+else
+  export CLASSPATH="${CLASSPATH_DEFAULT}"
+fi
+
+if [ -n "${JAVA_OPTS}" ]; then
+  export JAVA_OPTS="${JAVA_OPTS_DEFAULT} ${JAVA_OPTS}"
+else
+  export JAVA_OPTS="${JAVA_OPTS_DEFAULT}"
 fi
 
 CLASSPATH="$HAZELCAST_HOME/lib:$HAZELCAST_HOME/lib/*:$CLASSPATH"
