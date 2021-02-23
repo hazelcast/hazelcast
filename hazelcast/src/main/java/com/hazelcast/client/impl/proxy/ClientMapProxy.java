@@ -475,6 +475,24 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @Override
+    public InternalCompletableFuture<Void> deleteAsync(@Nonnull K key) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        return deleteAsyncInternal(key);
+    }
+
+    protected InternalCompletableFuture<Void> deleteAsyncInternal(Object key) {
+        try {
+            Data keyData = toData(key);
+            ClientMessage request = MapDeleteCodec.encodeRequest(name, keyData, getThreadId());
+            ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
+            SerializationService ss = getSerializationService();
+            return new ClientDelegatingFuture<>(future, ss, clientMessage -> null);
+        } catch (Exception e) {
+            throw rethrow(e);
+        }
+    }
+
+    @Override
     public boolean tryRemove(@Nonnull K key, long timeout, @Nonnull TimeUnit timeunit) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(timeunit, NULL_TIMEUNIT_IS_NOT_ALLOWED);
