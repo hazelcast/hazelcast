@@ -89,7 +89,15 @@ public enum AttributeType {
     /**
      * Portable
      */
-    PORTABLE(TypeConverters.PORTABLE_CONVERTER);
+    PORTABLE(TypeConverters.PORTABLE_CONVERTER),
+    /**
+     * LocalDate
+     */
+    LOCALDATE(TypeConverters.LOCALDATE_CONVERTER),
+    /**
+     * LocalDateTime
+     */
+    LOCALDATE_TIME(TypeConverters.LOCALDATE_TIME_CONVERTER);
 
     private final TypeConverter converter;
 
