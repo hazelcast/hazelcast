@@ -18,7 +18,7 @@ import java.util.Queue;
 //@Category({QuickTest.class, ParallelJVMTest.class})
 public class DefaultConfigValidationTest {
     private static final ILogger LOGGER;
-    static int cnt = 0;
+    static int numberOfTestedConfigs = 0;
 
     static {
         TestLoggingUtils.initializeLogging();
@@ -86,11 +86,11 @@ public class DefaultConfigValidationTest {
                         }
                         if (child.initialConfig != null) {
                             boolean hasEquals = false;
-                            for (Method m : method.getReturnType().getDeclaredMethods()) {
-                                if (m.getName().equals("equals")) {
+                            for (Method m : method.getReturnType().getMethods()) {
+                                if (m.getName().equals("equals") && !m.getDeclaringClass().equals(Object.class)) {
                                     children.add(child);
                                     hasEquals = true;
-                                    cnt++;
+                                    numberOfTestedConfigs++;
                                     break;
                                 }
                             }
@@ -125,16 +125,16 @@ public class DefaultConfigValidationTest {
     public static void main(String[] args) {
         Tree t = new Tree();
         System.out.println(t.getAllNodes().size());
-        System.out.println(cnt);
-        int cnt2 = 0;
+        System.out.println("Number of tested configs: " + numberOfTestedConfigs);
+        int numberOfFailedConfigs = 0;
         for (Node configNode : t.getAllNodes()) {
             try {
                 Assert.assertEquals(configNode.defaultConfig, configNode.initialConfig);
             } catch (Error e) {
-                cnt2++;
+                numberOfFailedConfigs++;
             }
         }
-        System.out.println(cnt2);
+        System.out.println("Number of failed configs: " + numberOfFailedConfigs);
         Config config = new Config();
         System.out.println(config.getSplitBrainProtectionConfig("foo")); //TODO
         System.out.println(config.getWanReplicationConfig("foo"));
