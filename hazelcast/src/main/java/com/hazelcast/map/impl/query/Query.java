@@ -67,7 +67,7 @@ public class Query implements IdentifiedDataSerializable, Versioned {
         if (aggregator != null && projection != null) {
             throw new IllegalArgumentException("It's forbidden to use a Projection with an Aggregator.");
         }
-        this.partitionIdSet = partitionIdSet;
+        this.partitionIdSet = checkNotNull(partitionIdSet);
     }
 
     public String getMapName() {
