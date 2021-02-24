@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.query;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
@@ -54,7 +55,9 @@ public class MapEntrySetTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        instance = createHazelcastInstance();
+        Config config = regularInstanceConfig()
+                .setProperty(QueryEngineImpl.DISABLE_MIGRATION_FALLBACK.getName(), "true");
+        instance = createHazelcastInstance(config);
         map = instance.getMap(randomName());
         serializationService = getSerializationService(instance);
     }

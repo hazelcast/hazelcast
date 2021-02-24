@@ -35,6 +35,7 @@ import com.hazelcast.query.impl.predicates.PagingPredicateImpl;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -67,6 +68,9 @@ import static java.util.Collections.singletonList;
  */
 public class QueryEngineImpl implements QueryEngine {
 
+    public static final HazelcastProperty DISABLE_MIGRATION_FALLBACK =
+            new HazelcastProperty(QueryEngineImpl.class.getName() + ".disableMigrationFallback", false);
+
     private final MapServiceContext mapServiceContext;
     private final NodeEngine nodeEngine;
     private final ILogger logger;
@@ -75,6 +79,7 @@ public class QueryEngineImpl implements QueryEngine {
     private final OperationService operationService;
     private final ClusterService clusterService;
     private final ResultProcessorRegistry resultProcessorRegistry;
+    private final boolean disableMigrationFallback;
 
     public QueryEngineImpl(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
@@ -85,6 +90,7 @@ public class QueryEngineImpl implements QueryEngine {
         this.operationService = nodeEngine.getOperationService();
         this.clusterService = nodeEngine.getClusterService();
         this.resultProcessorRegistry = mapServiceContext.getResultProcessorRegistry();
+        this.disableMigrationFallback = nodeEngine.getProperties().getBoolean(DISABLE_MIGRATION_FALLBACK);
     }
 
     @SuppressWarnings("unchecked")
@@ -127,8 +133,10 @@ public class QueryEngineImpl implements QueryEngine {
     // query thread first, fallback to partition thread
     private Result runOnGivenPartitions(Query query, PartitionIdSet partitions, TargetMode targetMode) {
         Result result = doRunOnQueryThreads(query, partitions, targetMode);
-        if (isResultFromAnyPartitionMissing(partitions)) {
-            doRunOnPartitionThreads(query, partitions, result);
+        if (!disableMigrationFallback) {
+            if (isResultFromAnyPartitionMissing(partitions)) {
+                doRunOnPartitionThreads(query, partitions, result);
+            }
         }
         assertAllPartitionsQueried(partitions);
 

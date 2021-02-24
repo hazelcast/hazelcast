@@ -266,6 +266,7 @@ public class SingleValueBitmapIndexTest extends HazelcastTestSupport {
     @Override
     protected Config getConfig() {
         Config config = HazelcastTestSupport.smallInstanceConfig();
+        config.setProperty(QueryEngineImpl.DISABLE_MIGRATION_FALLBACK.getName(), "true");
         MapConfig mapConfig = config.getMapConfig("persons");
         mapConfig.addIndexConfig(indexConfig);
         // disable periodic metrics collection (may interfere with the test)
@@ -299,18 +300,14 @@ public class SingleValueBitmapIndexTest extends HazelcastTestSupport {
     @SuppressWarnings("unchecked")
     private void verifyQueries() {
         for (int i = 0; i < actualQueries.length; ++i) {
-            try {
-                Predicate actualQuery = actualQueries[i];
-                ExpectedQuery expectedQuery = expectedQueries[i];
+            Predicate actualQuery = actualQueries[i];
+            ExpectedQuery expectedQuery = expectedQueries[i];
 
-                long before = persons.getLocalMapStats().getIndexStats().values().iterator().next().getQueryCount();
-                Set<Map.Entry<Long, Person>> entries = persons.entrySet(actualQuery);
-                long after = persons.getLocalMapStats().getIndexStats().values().iterator().next().getQueryCount();
-                assertEquals(1, after - before);
-                expectedQuery.verify(entries);
-            } catch (Throwable t) {
-                throw new AssertionError("Failed at query " + i + ": " + t, t);
-            }
+            long before = persons.getLocalMapStats().getIndexStats().values().iterator().next().getQueryCount();
+            Set<Map.Entry<Long, Person>> entries = persons.entrySet(actualQuery);
+            long after = persons.getLocalMapStats().getIndexStats().values().iterator().next().getQueryCount();
+            assertEquals(1, after - before);
+            expectedQuery.verify(entries);
         }
     }
 

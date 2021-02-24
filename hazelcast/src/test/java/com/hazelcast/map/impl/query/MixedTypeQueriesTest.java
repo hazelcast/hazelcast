@@ -78,6 +78,7 @@ public class MixedTypeQueriesTest extends HazelcastTestSupport {
 
         config.getMapConfig("expected").setInMemoryFormat(inMemoryFormat);
         config.getMapConfig("actual").setInMemoryFormat(inMemoryFormat);
+        config.setProperty(QueryEngineImpl.DISABLE_MIGRATION_FALLBACK.getName(), "true");
         HazelcastInstance instance = createHazelcastInstance(config);
 
         expected = instance.getMap("expected");

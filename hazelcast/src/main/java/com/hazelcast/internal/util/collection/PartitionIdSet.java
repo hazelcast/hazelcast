@@ -54,6 +54,7 @@ public class PartitionIdSet extends AbstractSet<Integer> implements IdentifiedDa
     private BitSet bitSet;
     private int size = SIZE_UNKNOWN;
 
+    // for deserialization
     PartitionIdSet() { }
 
     public PartitionIdSet(int partitionCount) {
