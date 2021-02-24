@@ -19,8 +19,12 @@ package com.hazelcast.query.impl.predicates;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.BinaryInterface;
+import com.hazelcast.query.impl.Index;
+import com.hazelcast.query.impl.QueryContext;
+import com.hazelcast.query.impl.QueryableEntry;
 
 import java.io.IOException;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -28,7 +32,7 @@ import java.util.regex.Pattern;
  * Like Predicate
  */
 @BinaryInterface
-public class LikePredicate extends AbstractPredicate {
+public class LikePredicate extends AbstractPredicate implements IndexAwarePredicate {
 
     private static final long serialVersionUID = 1L;
 
@@ -41,6 +45,25 @@ public class LikePredicate extends AbstractPredicate {
     public LikePredicate(String attributeName, String expression) {
         super(attributeName);
         this.expression = expression;
+    }
+
+    @Override
+    public Set<QueryableEntry> filter(QueryContext queryContext) {
+        Index index = queryContext.getIndex(attributeName);
+        return index.getRecords(expression, true, expression + "\uFFFF", false);
+    }
+
+    @Override
+    public boolean isIndexed(QueryContext queryContext) {
+        Index index = queryContext.getIndex(attributeName);
+        if (index != null && index.isOrdered()) {
+            int firstEntry = expression.indexOf('%');
+            if (firstEntry > 0) {
+                int secondEntry = expression.indexOf('%', firstEntry + 1);
+                return secondEntry == -1;
+            }
+        }
+        return false;
     }
 
     @Override
