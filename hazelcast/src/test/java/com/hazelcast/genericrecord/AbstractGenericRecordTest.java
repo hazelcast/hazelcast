@@ -25,6 +25,7 @@ import com.hazelcast.internal.serialization.impl.portable.InnerPortable;
 import com.hazelcast.internal.serialization.impl.portable.MainPortable;
 import com.hazelcast.internal.serialization.impl.portable.NamedPortable;
 import com.hazelcast.internal.serialization.impl.portable.PortableTest;
+import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.serialization.ClassDefinition;
@@ -288,6 +289,56 @@ public abstract class AbstractGenericRecordTest extends HazelcastTestSupport {
     @Test(expected = HazelcastSerializationException.class)
     public void testInconsistentClassDefinition() {
         createCluster();
+
+        HazelcastInstance instance = createAccessorInstance(serializationConfig);
+        IMap<Object, Object> map = instance.getMap("test");
+
+        BiTuple<GenericRecord, GenericRecord> records = getInconsistentGenericRecords();
+        map.put(1, records.element1);
+        map.put(2, records.element2);
+    }
+
+    @Test
+    public void testInconsistentClassDefinition_whenCheckClassDefErrorsIsFalse() {
+        createCluster();
+
+        SerializationConfig serializationConfig = new SerializationConfig(this.serializationConfig);
+        serializationConfig.setCheckClassDefErrors(false);
+        HazelcastInstance instance = createAccessorInstance(serializationConfig);
+        IMap<Object, Object> map = instance.getMap("test");
+
+        BiTuple<GenericRecord, GenericRecord> records = getInconsistentGenericRecords();
+        map.put(1, records.element1);
+        map.put(2, records.element2);
+    }
+
+    @Test(expected = HazelcastSerializationException.class)
+    public void testInconsistentClassDefinitionOfNestedPortableFields() {
+        createCluster();
+
+        HazelcastInstance instance = createAccessorInstance(serializationConfig);
+        IMap<Object, Object> map = instance.getMap("test");
+
+        BiTuple<GenericRecord, GenericRecord> records = getInconsistentNestedGenericRecords();
+        map.put(1, records.element1);
+        map.put(2, records.element2);
+    }
+
+    @Test
+    public void testInconsistentClassDefinitionOfNestedPortableFields_whenCheckClassDefErrorsIsFalse() {
+        createCluster();
+
+        SerializationConfig serializationConfig = new SerializationConfig(this.serializationConfig);
+        serializationConfig.setCheckClassDefErrors(false);
+        HazelcastInstance instance = createAccessorInstance(serializationConfig);
+        IMap<Object, Object> map = instance.getMap("test");
+
+        BiTuple<GenericRecord, GenericRecord> records = getInconsistentNestedGenericRecords();
+        map.put(1, records.element1);
+        map.put(2, records.element2);
+    }
+
+    private BiTuple<GenericRecord, GenericRecord> getInconsistentGenericRecords() {
         ClassDefinition namedPortableClassDefinition =
                 new ClassDefinitionBuilder(TestSerializationConstants.PORTABLE_FACTORY_ID, TestSerializationConstants.NAMED_PORTABLE)
                         .addUTFField("name").addIntField("myint").build();
@@ -296,22 +347,50 @@ public abstract class AbstractGenericRecordTest extends HazelcastTestSupport {
                 new ClassDefinitionBuilder(TestSerializationConstants.PORTABLE_FACTORY_ID, TestSerializationConstants.NAMED_PORTABLE)
                         .addUTFField("WrongName").addIntField("myint").build();
 
-
-        GenericRecord namedRecord = GenericRecord.Builder.portable(namedPortableClassDefinition)
+        GenericRecord record = GenericRecord.Builder.portable(namedPortableClassDefinition)
                 .writeUTF("name", "foo")
                 .writeInt("myint", 123).build();
-
 
         GenericRecord inConsistentNamedRecord = GenericRecord.Builder.portable(inConsistentNamedPortableClassDefinition)
                 .writeUTF("WrongName", "foo")
                 .writeInt("myint", 123).build();
 
-
-        HazelcastInstance instance = createAccessorInstance(serializationConfig);
-        IMap<Object, Object> map = instance.getMap("test");
-        map.put(1, namedRecord);
-
-        map.put(2, inConsistentNamedRecord);
+        return BiTuple.of(record, inConsistentNamedRecord);
     }
 
+    private BiTuple<GenericRecord, GenericRecord> getInconsistentNestedGenericRecords() {
+        ClassDefinition childCd = new ClassDefinitionBuilder(1, 1)
+                .addIntField("a")
+                .build();
+
+        ClassDefinition inconsistentChildCd = new ClassDefinitionBuilder(1, 1)
+                .addBooleanField("a")
+                .build();
+
+        ClassDefinition namedPortableClassDefinition = new ClassDefinitionBuilder(1, 2)
+                .addUTFField("name")
+                .addPortableField("child", childCd)
+                .build();
+
+        ClassDefinition inconsistentNamedPortableClassDefinition = new ClassDefinitionBuilder(1, 2)
+                .addUTFField("name")
+                .addPortableField("child", inconsistentChildCd)
+                .build();
+
+        GenericRecord record = GenericRecord.Builder.portable(namedPortableClassDefinition)
+                .writeUTF("name", "foo")
+                .writeGenericRecord("child", GenericRecord.Builder.portable(childCd)
+                        .writeInt("a", 1)
+                        .build()
+                ).build();
+
+        GenericRecord otherRecord = GenericRecord.Builder.portable(inconsistentNamedPortableClassDefinition)
+                .writeUTF("name", "foo")
+                .writeGenericRecord("child", GenericRecord.Builder.portable(inconsistentChildCd)
+                        .writeBoolean("a", false)
+                        .build()
+                ).build();
+
+        return BiTuple.of(record, otherRecord);
+    }
 }
