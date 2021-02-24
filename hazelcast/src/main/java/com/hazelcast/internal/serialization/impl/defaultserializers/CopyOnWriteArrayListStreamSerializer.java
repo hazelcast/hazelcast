@@ -50,7 +50,9 @@ public class CopyOnWriteArrayListStreamSerializer<E> extends AbstractCollectionS
     @SuppressWarnings("DuplicatedCode")
     public void write(ObjectDataOutput out, CopyOnWriteArrayList<E> collection) throws IOException {
         Spliterator<E> cowSplitIterator = collection.spliterator();
-        out.writeInt((int) cowSplitIterator.getExactSizeIfKnown());
+        int size = (int) cowSplitIterator.getExactSizeIfKnown();
+        assert size != -1;
+        out.writeInt(size);
         cowSplitIterator.forEachRemaining(object -> {
             try {
                 out.writeObject(object);
