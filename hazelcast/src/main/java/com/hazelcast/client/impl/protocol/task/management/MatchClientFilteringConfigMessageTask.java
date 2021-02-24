@@ -17,48 +17,37 @@
 package com.hazelcast.client.impl.protocol.task.management;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.MCApplyMCConfigCodec;
-import com.hazelcast.client.impl.protocol.codec.MCApplyMCConfigCodec.RequestParameters;
+import com.hazelcast.client.impl.protocol.codec.MCMatchMCConfigCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.ManagementCenterService;
-import com.hazelcast.internal.management.dto.ClientBwListDTO;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.permission.ManagementPermission;
 
 import java.security.Permission;
 
-public class ApplyMCConfigMessageTask extends AbstractCallableMessageTask<RequestParameters> {
+public class MatchClientFilteringConfigMessageTask extends AbstractCallableMessageTask<String> {
 
-    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("clientfiltering.applyConfig");
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("clientfiltering.matchConfig");
 
-    public ApplyMCConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public MatchClientFilteringConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
     protected Object call() throws Exception {
-        ManagementCenterService mcs = nodeEngine.getManagementCenterService();
-        if (mcs == null) {
-            throw new HazelcastException("ManagementCenterService is not initialized yet");
-        }
-        ClientBwListDTO.Mode mode = ClientBwListDTO.Mode.getById(parameters.clientBwListMode);
-        if (mode == null) {
-            throw new IllegalArgumentException("Unexpected client B/W list mode = [" + parameters.clientBwListMode + "]");
-        }
-        mcs.applyMCConfig(parameters.eTag, new ClientBwListDTO(mode, parameters.clientBwListEntries));
-        return null;
+        ManagementCenterService mcService = nodeEngine.getManagementCenterService();
+        return mcService != null && parameters.equals(mcService.getLastMCConfigETag());
     }
 
     @Override
-    protected RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MCApplyMCConfigCodec.decodeRequest(clientMessage);
+    protected String decodeClientMessage(ClientMessage clientMessage) {
+        return MCMatchMCConfigCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MCApplyMCConfigCodec.encodeResponse();
+        return MCMatchMCConfigCodec.encodeResponse((Boolean) response);
     }
 
     @Override
@@ -78,16 +67,12 @@ public class ApplyMCConfigMessageTask extends AbstractCallableMessageTask<Reques
 
     @Override
     public String getMethodName() {
-        return "applyMCConfig";
+        return "matchMCConfig";
     }
 
     @Override
     public Object[] getParameters() {
-        return new Object[] {
-                parameters.eTag,
-                parameters.clientBwListMode,
-                parameters.clientBwListEntries
-        };
+        return new Object[]{parameters};
     }
 
     @Override

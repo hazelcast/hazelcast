@@ -526,7 +526,7 @@ import com.hazelcast.client.impl.protocol.task.list.ListSetMessageTask;
 import com.hazelcast.client.impl.protocol.task.list.ListSizeMessageTask;
 import com.hazelcast.client.impl.protocol.task.list.ListSubMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.AddWanBatchPublisherConfigMessageTask;
-import com.hazelcast.client.impl.protocol.task.management.ApplyMCConfigMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.ApplyClientFilteringConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.ChangeClusterStateMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.ChangeClusterVersionMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.ChangeWanReplicationStateMessageTask;
@@ -543,7 +543,7 @@ import com.hazelcast.client.impl.protocol.task.management.HotRestartInterruptBac
 import com.hazelcast.client.impl.protocol.task.management.HotRestartTriggerBackupMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.HotRestartTriggerForceStartMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.HotRestartTriggerPartialStartMessageTask;
-import com.hazelcast.client.impl.protocol.task.management.MatchMCConfigMessageTask;
+import com.hazelcast.client.impl.protocol.task.management.MatchClientFilteringConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.PollMCEventsMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.PromoteLiteMemberMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.PromoteToCPMemberMessageTask;
@@ -1777,9 +1777,9 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
         factories.put(MCGetTimedMemberStateCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new GetTimedMemberStateMessageTask(cm, node, con));
         factories.put(MCMatchMCConfigCodec.REQUEST_MESSAGE_TYPE,
-                (cm, con) -> new MatchMCConfigMessageTask(cm, node, con));
+                (cm, con) -> new MatchClientFilteringConfigMessageTask(cm, node, con));
         factories.put(MCApplyMCConfigCodec.REQUEST_MESSAGE_TYPE,
-                (cm, con) -> new ApplyMCConfigMessageTask(cm, node, con));
+                (cm, con) -> new ApplyClientFilteringConfigMessageTask(cm, node, con));
         factories.put(MCGetClusterMetadataCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new GetClusterMetadataMessageTask(cm, node, con));
         factories.put(MCShutdownClusterCodec.REQUEST_MESSAGE_TYPE,
