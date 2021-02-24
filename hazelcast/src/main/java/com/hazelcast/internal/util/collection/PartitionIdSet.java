@@ -101,7 +101,8 @@ public class PartitionIdSet extends AbstractSet<Integer> implements IdentifiedDa
     public int size() {
         int s = size;
         if (s == SIZE_UNKNOWN) {
-            s = size = bitSet.cardinality();
+            s = bitSet.cardinality();
+            size = s;
         }
 
         return s;

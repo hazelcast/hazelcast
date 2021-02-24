@@ -62,12 +62,18 @@ import static java.util.Collections.singletonList;
  * <p>
  * Top level-query actors:
  * <ul>
- * <li>QueryEngine orchestrates the queries and  merging the result</li>
- * <li>QueryRunner -&gt; runs the query logic in the calling thread (so like evaluates the predicates and asks the index)</li>
+ *     <li>QueryEngine orchestrates the queries and merging the result
+ *     <li>QueryRunner -&gt; runs the query logic in the calling thread (so like evaluates the predicates and asks the index)
  * </ul>
  */
 public class QueryEngineImpl implements QueryEngine {
 
+    /**
+     * Used only for tests to disable the fallback to partition operations. We
+     * had issues when the fallback fixed the results in the normal case and
+     * the much worsened performance went unnoticed. (E.g.
+     * https://github.com/hazelcast/hazelcast/issues/18240).
+     */
     public static final HazelcastProperty DISABLE_MIGRATION_FALLBACK =
             new HazelcastProperty(QueryEngineImpl.class.getName() + ".disableMigrationFallback", false);
 
