@@ -30,7 +30,7 @@ import java.util.UUID;
 
 public class CheckWanConsistencyMessageTask extends AbstractCallableMessageTask<RequestParameters> {
 
-    public static final Permission REQUIRED_PERMISSION = new ManagementPermission("wan.checkConsistency");
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("wan.checkConsistency");
 
     public CheckWanConsistencyMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

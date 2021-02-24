@@ -33,7 +33,7 @@ import java.security.Permission;
 
 public class ChangeWanReplicationStateMessageTask extends AbstractInvocationMessageTask<RequestParameters> {
 
-    public static final Permission REQUIRED_PERMISSION = new ManagementPermission("wan.changeReplicationState");
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("wan.changeReplicationState");
 
     public ChangeWanReplicationStateMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

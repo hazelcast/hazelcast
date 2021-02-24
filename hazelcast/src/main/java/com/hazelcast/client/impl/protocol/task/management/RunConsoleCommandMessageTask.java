@@ -32,7 +32,7 @@ import java.security.Permission;
 
 public class RunConsoleCommandMessageTask extends AbstractInvocationMessageTask<RequestParameters> {
 
-    public static final Permission REQUIRED_PERMISSION = new ManagementPermission("runConsoleCommand");
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("runConsoleCommand");
 
     public RunConsoleCommandMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

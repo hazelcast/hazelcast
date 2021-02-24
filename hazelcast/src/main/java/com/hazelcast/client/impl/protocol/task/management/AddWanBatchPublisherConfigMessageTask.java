@@ -37,7 +37,7 @@ import static com.hazelcast.config.WanBatchPublisherConfig.DEFAULT_QUEUE_FULL_BE
 
 public class AddWanBatchPublisherConfigMessageTask extends AbstractCallableMessageTask<RequestParameters> {
 
-    public static final Permission REQUIRED_PERMISSION = new ManagementPermission("wan.addBatchPublisherConfig");
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("wan.addBatchPublisherConfig");
 
     public AddWanBatchPublisherConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

@@ -37,7 +37,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class GetCPMembersMessageTask extends AbstractAsyncMessageTask<Void, List<SimpleEntry<UUID, UUID>>> {
 
-    public static final Permission REQUIRED_PERMISSION = new ManagementPermission("cluster.getCPMembers");
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("cp.getCPMembers");
 
     public GetCPMembersMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

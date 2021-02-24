@@ -31,7 +31,7 @@ import java.util.UUID;
 
 public class WanSyncMapMessageTask extends AbstractCallableMessageTask<RequestParameters> {
 
-    public static final Permission REQUIRED_PERMISSION = new ManagementPermission("wan.syncMap");
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("wan.syncMap");
 
     public WanSyncMapMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

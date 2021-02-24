@@ -35,7 +35,7 @@ import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 
 public class ShutdownClusterMessageTask extends AbstractCallableMessageTask<Void> {
 
-    public static final Permission REQUIRED_PERMISSION = new ManagementPermission("cluster.shutdown");
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("cluster.shutdown");
 
     public ShutdownClusterMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

@@ -34,7 +34,7 @@ import static java.util.stream.Collectors.toList;
 
 public class GetSystemPropertiesMessageTask extends AbstractCallableMessageTask<Void> {
 
-    public static final Permission REQUIRED_PERMISSION = new ManagementPermission("member.getSystemProperties");
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("member.getSystemProperties");
 
     public GetSystemPropertiesMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

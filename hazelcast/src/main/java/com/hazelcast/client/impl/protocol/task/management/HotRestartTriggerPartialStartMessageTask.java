@@ -29,7 +29,7 @@ import java.security.Permission;
 public class HotRestartTriggerPartialStartMessageTask
         extends AbstractCallableMessageTask<Void> {
 
-    public static final Permission REQUIRED_PERMISSION = new ManagementPermission("hotrestart.triggerPartialStart");
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("hotrestart.triggerPartialStart");
 
     private final Node node;
 

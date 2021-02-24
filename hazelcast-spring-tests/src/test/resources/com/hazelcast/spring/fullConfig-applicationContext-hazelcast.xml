@@ -875,6 +875,7 @@
                             <hz:action>all</hz:action>
                         </hz:actions>
                     </hz:replicatedmap-permission>
+                    <hz:management-permission principal="mcadmin"/>
                 </hz:client-permissions>
                 <hz:client-block-unmapped-actions>false</hz:client-block-unmapped-actions>
             </hz:security>

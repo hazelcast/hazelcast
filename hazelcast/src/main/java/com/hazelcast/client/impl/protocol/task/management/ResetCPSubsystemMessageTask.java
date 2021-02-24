@@ -30,7 +30,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class ResetCPSubsystemMessageTask extends AbstractAsyncMessageTask<Void, Void> {
 
-    public static final Permission REQUIRED_PERMISSION = new ManagementPermission("member.resetCPSubsystem");
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("cp.resetCPSubsystem");
 
     public ResetCPSubsystemMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

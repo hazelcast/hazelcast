@@ -29,7 +29,7 @@ import java.security.Permission;
 public class HotRestartInterruptBackupMessageTask
         extends AbstractCallableMessageTask<Void> {
 
-    public static final Permission REQUIRED_PERMISSION = new ManagementPermission("hotrestart.interruptBackup");
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("hotrestart.interruptBackup");
 
     private final Node node;
 

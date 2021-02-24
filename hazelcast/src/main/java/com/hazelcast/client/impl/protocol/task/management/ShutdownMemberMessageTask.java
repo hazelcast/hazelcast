@@ -28,7 +28,7 @@ import java.security.Permission;
 
 public class ShutdownMemberMessageTask extends AbstractCallableMessageTask<Void> {
 
-    public static final Permission REQUIRED_PERMISSION = new ManagementPermission("member.shutdown");
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("member.shutdown");
 
     public ShutdownMemberMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

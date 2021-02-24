@@ -30,7 +30,7 @@ import java.security.Permission;
 
 public class GetMemberConfigMessageTask extends AbstractCallableMessageTask<Void> {
 
-    public static final Permission REQUIRED_PERMISSION = new ManagementPermission("member.getConfig");
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("member.getConfig");
 
     public GetMemberConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

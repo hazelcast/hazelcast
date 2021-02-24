@@ -33,7 +33,7 @@ import java.util.List;
 
 public class PollMCEventsMessageTask extends AbstractCallableMessageTask<Void> {
 
-    public static final Permission REQUIRED_PERMISSION = new ManagementPermission("pollMCEvents");
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("pollMCEvents");
 
     public PollMCEventsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

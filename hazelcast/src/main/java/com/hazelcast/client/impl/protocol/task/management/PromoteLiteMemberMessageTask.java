@@ -31,7 +31,7 @@ import java.security.Permission;
 
 public class PromoteLiteMemberMessageTask extends AbstractInvocationMessageTask<Void> {
 
-    public static final Permission REQUIRED_PERMISSION = new ManagementPermission("cluster.promoteLiteMember");
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("cluster.promoteLiteMember");
 
     public PromoteLiteMemberMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

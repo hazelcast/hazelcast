@@ -33,7 +33,7 @@ import java.security.Permission;
 
 public class ChangeClusterVersionMessageTask extends AbstractInvocationMessageTask<RequestParameters> {
 
-    public static final Permission REQUIRED_PERMISSION = new ManagementPermission("cluster.changeVersion");
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("cluster.changeVersion");
 
     public ChangeClusterVersionMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

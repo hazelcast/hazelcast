@@ -31,7 +31,7 @@ import java.security.Permission;
 
 public class ApplyMCConfigMessageTask extends AbstractCallableMessageTask<RequestParameters> {
 
-    public static final Permission REQUIRED_PERMISSION = new ManagementPermission("applyMCConfig");
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("clientfiltering.applyConfig");
 
     public ApplyMCConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

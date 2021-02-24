@@ -32,7 +32,7 @@ import java.security.Permission;
 
 public class UpdateMapConfigMessageTask extends AbstractInvocationMessageTask<RequestParameters> {
 
-    public static final Permission REQUIRED_PERMISSION = new ManagementPermission("map.updateConfig");
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("map.updateConfig");
 
     public UpdateMapConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

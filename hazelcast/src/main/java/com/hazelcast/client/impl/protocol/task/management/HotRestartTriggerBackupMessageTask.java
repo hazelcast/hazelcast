@@ -36,7 +36,7 @@ import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 public class HotRestartTriggerBackupMessageTask
         extends AbstractCallableMessageTask<Void> {
 
-    public static final Permission REQUIRED_PERMISSION = new ManagementPermission("hotrestart.triggerBackup");
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("hotrestart.triggerBackup");
 
     private final Node node;
 

@@ -32,7 +32,7 @@ import java.security.Permission;
 
 public class ClearWanQueuesMessageTask extends AbstractInvocationMessageTask<RequestParameters> {
 
-    public static final Permission REQUIRED_PERMISSION = new ManagementPermission("wan.clearQueues");
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("wan.clearQueues");
 
     public ClearWanQueuesMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

@@ -31,7 +31,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class RemoveCPMemberMessageTask extends AbstractAsyncMessageTask<UUID, Void> {
 
-    public static final Permission REQUIRED_PERMISSION = new ManagementPermission("cluster.removeCPMember");
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("cp.removeCPMember");
 
     public RemoveCPMemberMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

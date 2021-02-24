@@ -28,7 +28,7 @@ import java.security.Permission;
 
 public class GetTimedMemberStateMessageTask extends AbstractCallableMessageTask<Void> {
 
-    public static final Permission REQUIRED_PERMISSION = new ManagementPermission("getTimedMemberState");
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("member.getTimedMemberState");
 
     public GetTimedMemberStateMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

@@ -22,6 +22,9 @@ import java.security.Permission;
  * Hazelcast Permission type used in client protocol actions intended for Management Center operations. It has a similar
  * behavior as the {@link RuntimePermission} - i.e. actions are not used and the permission name can end with a wildcard
  * <code>".*"</code> (e.g. <code>"cluster.*"</code>).
+ * <p>
+ * The {@code "*"} (star character) or {@code null} used as the name means that such permission {@code implies} all other
+ * {@link ManagementPermission} instances.
  */
 public class ManagementPermission extends ClusterPermission {
 

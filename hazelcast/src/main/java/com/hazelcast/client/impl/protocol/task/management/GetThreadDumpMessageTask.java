@@ -31,7 +31,7 @@ import java.security.Permission;
 
 public class GetThreadDumpMessageTask extends AbstractInvocationMessageTask<Boolean> {
 
-    public static final Permission REQUIRED_PERMISSION = new ManagementPermission("member.getThreadDump");
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("member.getThreadDump");
 
     public GetThreadDumpMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

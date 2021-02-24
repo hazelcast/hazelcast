@@ -34,7 +34,7 @@ import static com.hazelcast.client.impl.protocol.codec.MCChangeClusterStateCodec
 
 public class ChangeClusterStateMessageTask extends AbstractInvocationMessageTask<Integer> {
 
-    public static final Permission REQUIRED_PERMISSION = new ManagementPermission("cluster.changeState");
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("cluster.changeState");
 
     public ChangeClusterStateMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

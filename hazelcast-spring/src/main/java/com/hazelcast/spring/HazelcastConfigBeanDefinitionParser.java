@@ -1921,10 +1921,10 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             permissionConfigBuilder.addPropertyValue("type", type);
             NamedNodeMap attributes = node.getAttributes();
             Node nameNode = attributes.getNamedItem("name");
-            String name = nameNode != null ? getTextContent(nameNode) : "*";
+            String name = nameNode != null ? getTextContent(nameNode) : null;
             permissionConfigBuilder.addPropertyValue("name", name);
             Node principalNode = attributes.getNamedItem("principal");
-            String principal = principalNode != null ? getTextContent(principalNode) : "*";
+            String principal = principalNode != null ? getTextContent(principalNode) : null;
             permissionConfigBuilder.addPropertyValue("principal", principal);
             List<String> endpoints = new ManagedList<>();
             List<String> actions = new ManagedList<>();

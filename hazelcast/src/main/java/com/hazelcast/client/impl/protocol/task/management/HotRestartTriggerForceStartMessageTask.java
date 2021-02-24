@@ -29,7 +29,7 @@ import java.security.Permission;
 public class HotRestartTriggerForceStartMessageTask
         extends AbstractCallableMessageTask<Void> {
 
-    public static final Permission REQUIRED_PERMISSION = new ManagementPermission("hotrestart.triggerForceStart");
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("hotrestart.triggerForceStart");
 
     private Node node;
 

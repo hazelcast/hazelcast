@@ -28,7 +28,7 @@ import java.security.Permission;
 
 public class MatchMCConfigMessageTask extends AbstractCallableMessageTask<String> {
 
-    public static final Permission REQUIRED_PERMISSION = new ManagementPermission("matchMCConfig");
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("clientfiltering.matchConfig");
 
     public MatchMCConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

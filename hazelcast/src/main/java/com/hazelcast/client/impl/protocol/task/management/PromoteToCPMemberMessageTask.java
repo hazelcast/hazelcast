@@ -30,7 +30,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class PromoteToCPMemberMessageTask extends AbstractAsyncMessageTask<Void, Void> {
 
-    public static final Permission REQUIRED_PERMISSION = new ManagementPermission("cluster.promoteToCPMember");
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("cp.promoteToCPMember");
 
     public PromoteToCPMemberMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
