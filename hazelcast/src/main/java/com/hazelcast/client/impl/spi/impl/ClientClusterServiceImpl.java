@@ -201,8 +201,8 @@ public class ClientClusterServiceImpl implements ClientClusterService {
                 logger.fine("Resetting the member list version ");
             }
             MemberListSnapshot clusterViewSnapshot = memberListSnapshot.get();
-            //This check is necessary so that `clearMemberListVersion` when handling auth response will not
-            //intervene with client failover logic
+            // This check is necessary so that when handling auth response, it will not
+            // intervene with client failover logic
             if (clusterViewSnapshot != EMPTY_SNAPSHOT) {
                 memberListSnapshot.set(new MemberListSnapshot(0, clusterViewSnapshot.members));
             }
@@ -213,16 +213,24 @@ public class ClientClusterServiceImpl implements ClientClusterService {
      * Clears the member list and fires member removed event for members in the list.
      */
     public void clearMemberList() {
-        List<MembershipEvent> events;
+        List<MembershipEvent> events = null;
         synchronized (clusterViewLock) {
             if (logger.isFineEnabled()) {
                 logger.fine("Resetting the member list ");
             }
-            Collection<Member> prevMembers = memberListSnapshot.get().members.values();
-            memberListSnapshot.set(new MemberListSnapshot(0, new LinkedHashMap<>()));
-            events = detectMembershipEvents(prevMembers, EMPTY_SET);
+            MemberListSnapshot clusterViewSnapshot = this.memberListSnapshot.get();
+            // This check is necessary so that when handling auth response, it will not
+            // intervene with client failover logic
+            if (clusterViewSnapshot != EMPTY_SNAPSHOT) {
+                Collection<Member> prevMembers = clusterViewSnapshot.members.values();
+                this.memberListSnapshot.set(new MemberListSnapshot(0, new LinkedHashMap<>()));
+                events = detectMembershipEvents(prevMembers, EMPTY_SET);
+            }
+
         }
-        fireEvents(events);
+        if (events != null) {
+            fireEvents(events);
+        }
     }
 
     public void reset() {
