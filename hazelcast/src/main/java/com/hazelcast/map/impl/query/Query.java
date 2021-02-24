@@ -30,6 +30,7 @@ import com.hazelcast.projection.Projection;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -57,7 +58,6 @@ public class Query implements IdentifiedDataSerializable, Versioned {
             Projection projection,
             PartitionIdSet partitionIdSet
     ) {
-        checkNotNull(partitionIdSet);
         this.mapName = checkNotNull(mapName);
         this.predicate = checkNotNull(predicate);
         this.iterationType = checkNotNull(iterationType);
@@ -67,7 +67,7 @@ public class Query implements IdentifiedDataSerializable, Versioned {
         if (aggregator != null && projection != null) {
             throw new IllegalArgumentException("It's forbidden to use a Projection with an Aggregator.");
         }
-        this.partitionIdSet = checkNotNull(partitionIdSet);
+        this.partitionIdSet = partitionIdSet;
     }
 
     public String getMapName() {
@@ -106,6 +106,7 @@ public class Query implements IdentifiedDataSerializable, Versioned {
         return projection != null;
     }
 
+    @Nullable
     public PartitionIdSet getPartitionIdSet() {
         return partitionIdSet;
     }

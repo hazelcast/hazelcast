@@ -112,10 +112,10 @@ public class QueryEngineImpl implements QueryEngine {
                 return runOnGivenPartitions(adjustedQuery, adjustedQuery.getPartitionIdSet(), TargetMode.LOCAL_NODE);
             case PARTITION_OWNER:
                 int solePartition = target.partitions().solePartition();
+                adjustedQuery = Query.of(adjustedQuery).partitionIdSet(target.partitions()).build();
                 if (solePartition >= 0) {
                     return runOnGivenPartition(adjustedQuery, solePartition);
                 } else {
-                    adjustedQuery = Query.of(adjustedQuery).partitionIdSet(target.partitions()).build();
                     return runOnGivenPartitions(adjustedQuery, adjustedQuery.getPartitionIdSet(), TargetMode.ALL_NODES);
                 }
             default:
