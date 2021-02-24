@@ -309,16 +309,21 @@ public class QueryEngineImpl implements QueryEngine {
 
         List<Future<Result>> futures = new ArrayList<>(members.size());
         for (Address address : members) {
-            List<Integer> memberPartitions = partitionService.getMemberPartitions(address);
-            int[] targetPartitions = memberPartitions.stream().mapToInt(i -> i).filter(partitionIdSet::contains).toArray();
-
             Operation operation;
-
-            //are we targeting all partitions
-            if (targetPartitions.length == memberPartitions.size()) {
+            if (address == null) {
+                //Operation service will build a meaningful exception that causes a retry.
                 operation = createQueryOperation(query);
             } else {
-                operation = createQueryPartitionsOperation(query, targetPartitions);
+                List<Integer> memberPartitions = partitionService.getMemberPartitions(address);
+                int[] targetPartitions = memberPartitions.stream().mapToInt(i -> i).filter(partitionIdSet::contains)
+                .toArray();
+
+                //are we targeting all partitions
+                if (targetPartitions.length == memberPartitions.size()) {
+                    operation = createQueryOperation(query);
+                } else {
+                    operation = createQueryPartitionsOperation(query, targetPartitions);
+                }
             }
 
             Future<Result> future = operationService.invokeOnTarget(
