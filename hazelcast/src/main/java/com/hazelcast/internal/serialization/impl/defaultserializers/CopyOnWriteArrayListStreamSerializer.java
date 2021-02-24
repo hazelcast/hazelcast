@@ -21,9 +21,9 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.Spliterator;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -47,26 +47,16 @@ public class CopyOnWriteArrayListStreamSerializer<E> extends AbstractCollectionS
     }
 
     @Override
+    @SuppressWarnings("DuplicatedCode")
     public void write(ObjectDataOutput out, CopyOnWriteArrayList<E> collection) throws IOException {
-        Iterator<E> cowIterator = collection.iterator();
-        try {
-            Field snapshot = cowIterator.getClass().getDeclaredField("snapshot");
-            snapshot.setAccessible(true);
-            out.writeInt(((Object[]) snapshot.get(cowIterator)).length);
-        } catch (NoSuchFieldException e) {
-            // If somehow field name was changed in later java releases, because of this catch
-            // code still can execute as before.
-            int size = collection.size();
-            out.writeInt(size);
-        } catch (IllegalAccessException e) {
-            // Code should never reach here.
-            int size = collection.size();
-            out.writeInt(size);
-            e.printStackTrace();
-        }
-
-        while (cowIterator.hasNext()) {
-            out.writeObject(cowIterator.next());
-        }
+        Spliterator<E> cowSplitIterator = collection.spliterator();
+        out.writeInt((int) cowSplitIterator.getExactSizeIfKnown());
+        cowSplitIterator.forEachRemaining(object -> {
+            try {
+                out.writeObject(object);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        });
     }
 }
