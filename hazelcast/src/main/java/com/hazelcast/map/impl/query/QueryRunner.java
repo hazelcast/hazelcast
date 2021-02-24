@@ -224,12 +224,8 @@ public class QueryRunner {
 
         Iterable<QueryableEntry> entries = null;
         Indexes indexes = mapContainer.getIndexes(partitionId);
-        if (indexes != null) {
+        if (indexes != null && !indexes.isGlobal()) {
             entries = indexes.query(predicate, partitions.size());
-            if (entries != null && indexes.isGlobal()) {
-                entries = IterableUtil.filter(entries,
-                        e -> partitionId == HashUtil.hashToIndex(e.getKeyData().getPartitionHash(), partitionCount));
-            }
         }
 
         Result result;
