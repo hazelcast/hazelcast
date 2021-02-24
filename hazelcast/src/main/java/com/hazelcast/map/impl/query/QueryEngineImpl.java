@@ -105,21 +105,21 @@ public class QueryEngineImpl implements QueryEngine {
         Query adjustedQuery = adjustQuery(query);
         switch (target.mode()) {
             case ALL_NODES:
-                adjustedQuery = Query.of(query).partitionIdSet(getAllPartitionIds()).build();
+                adjustedQuery = Query.of(adjustedQuery).partitionIdSet(getAllPartitionIds()).build();
                 return runOnGivenPartitions(adjustedQuery, adjustedQuery.getPartitionIdSet(), TargetMode.ALL_NODES);
             case LOCAL_NODE:
-                adjustedQuery = Query.of(query).partitionIdSet(getLocalPartitionIds()).build();
+                adjustedQuery = Query.of(adjustedQuery).partitionIdSet(getLocalPartitionIds()).build();
                 return runOnGivenPartitions(adjustedQuery, adjustedQuery.getPartitionIdSet(), TargetMode.LOCAL_NODE);
             case PARTITION_OWNER:
                 int solePartition = target.partitions().solePartition();
                 if (solePartition >= 0) {
                     return runOnGivenPartition(adjustedQuery, solePartition);
                 } else {
-                    adjustedQuery = Query.of(query).partitionIdSet(target.partitions()).build();
+                    adjustedQuery = Query.of(adjustedQuery).partitionIdSet(target.partitions()).build();
                     return runOnGivenPartitions(adjustedQuery, adjustedQuery.getPartitionIdSet(), TargetMode.ALL_NODES);
                 }
             default:
-                throw new IllegalArgumentException("Illegal target " + query);
+                throw new IllegalArgumentException("Illegal target " + target);
         }
     }
 
