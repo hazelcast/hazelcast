@@ -129,6 +129,14 @@ public class LikePredicateTest {
         assertFalse(new LikePredicate("this", "sub%string%").isIndexed(queryContext));
     }
 
+    @Test
+    public void likePredicateIsIndexed_whenPercentWildcardIsUsed_andIndexIsSorted() {
+        QueryContext queryContext = mock(QueryContext.class);
+        when(queryContext.getIndex("this")).thenReturn(createIndex(IndexType.SORTED));
+
+        assertTrue(new LikePredicate("this", "sub%").isIndexed(queryContext));
+    }
+
     @NotNull
     private Index createIndex(IndexType indexType) {
         InternalSerializationService mockSerializationService = mock(InternalSerializationService.class);
