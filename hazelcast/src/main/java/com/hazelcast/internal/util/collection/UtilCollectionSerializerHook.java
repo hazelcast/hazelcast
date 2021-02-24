@@ -28,6 +28,7 @@ public class UtilCollectionSerializerHook implements DataSerializerHook {
     public static final int F_ID = FactoryIdHelper.getFactoryId(UTIL_COLLECTION_DS_FACTORY, UTIL_COLLECTION_DS_FACTORY_ID);
 
     public static final int PARTITION_ID_SET = 1;
+    public static final int IMMUTABLE_PARTITION_ID_SET = 2;
 
     @Override
     public int getFactoryId() {
@@ -39,6 +40,8 @@ public class UtilCollectionSerializerHook implements DataSerializerHook {
             switch (typeId) {
                 case PARTITION_ID_SET:
                     return new PartitionIdSet();
+                case IMMUTABLE_PARTITION_ID_SET:
+                    return new ImmutablePartitionIdSet();
                 default:
                     throw new IllegalArgumentException("Undefined type: " + typeId);
             }

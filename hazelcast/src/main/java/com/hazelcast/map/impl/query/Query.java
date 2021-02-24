@@ -57,6 +57,7 @@ public class Query implements IdentifiedDataSerializable, Versioned {
             Projection projection,
             PartitionIdSet partitionIdSet
     ) {
+        checkNotNull(partitionIdSet);
         this.mapName = checkNotNull(mapName);
         this.predicate = checkNotNull(predicate);
         this.iterationType = checkNotNull(iterationType);

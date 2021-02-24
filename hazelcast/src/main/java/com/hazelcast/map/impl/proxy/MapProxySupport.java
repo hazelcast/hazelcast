@@ -42,6 +42,7 @@ import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.IterableUtil;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.internal.util.MutableLong;
+import com.hazelcast.internal.util.SetUtil;
 import com.hazelcast.internal.util.Timer;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.EntryProcessor;
@@ -1385,6 +1386,7 @@ abstract class MapProxySupport<K, V>
                 .iterationType(iterationType)
                 .aggregator(aggregator)
                 .projection(projection)
+                .partitionIdSet(SetUtil.allPartitionIds(getNodeEngine().getPartitionService().getPartitionCount()))
                 .build();
         return queryEngine.execute(query, target);
     }

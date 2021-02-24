@@ -23,6 +23,9 @@ import java.util.Collection;
  */
 public final class ImmutablePartitionIdSet extends PartitionIdSet {
 
+    ImmutablePartitionIdSet() {
+    }
+
     public ImmutablePartitionIdSet(int partitionCount, Collection<Integer> initialPartitionIds) {
         super(partitionCount, initialPartitionIds);
     }
@@ -70,5 +73,10 @@ public final class ImmutablePartitionIdSet extends PartitionIdSet {
     @Override
     public void complement() {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int getClassId() {
+        return UtilCollectionSerializerHook.IMMUTABLE_PARTITION_ID_SET;
     }
 }
