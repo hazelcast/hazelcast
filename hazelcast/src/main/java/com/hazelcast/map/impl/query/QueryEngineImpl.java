@@ -19,7 +19,6 @@ package com.hazelcast.map.impl.query;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
@@ -38,7 +37,6 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -96,17 +94,17 @@ public class QueryEngineImpl implements QueryEngine {
         switch (target.mode()) {
             case ALL_NODES:
                 adjustedQuery = Query.of(query).partitionIdSet(getAllPartitionIds()).build();
-                return runOnGivenPartitions(adjustedQuery, TargetMode.ALL_NODES);
+                return runOnGivenPartitions(adjustedQuery, adjustedQuery.getPartitionIdSet(), TargetMode.ALL_NODES);
             case LOCAL_NODE:
                 adjustedQuery = Query.of(query).partitionIdSet(getLocalPartitionIds()).build();
-                return runOnGivenPartitions(adjustedQuery, TargetMode.LOCAL_NODE);
+                return runOnGivenPartitions(adjustedQuery, adjustedQuery.getPartitionIdSet(), TargetMode.LOCAL_NODE);
             case PARTITION_OWNER:
                 int solePartition = target.partitions().solePartition();
                 if (solePartition >= 0) {
                     return runOnGivenPartition(adjustedQuery, solePartition);
                 } else {
-                    adjustedQuery = Query.of(query).partitionIdSet(target.partitions().bitSetCopy()).build();
-                    return runOnGivenPartitions(adjustedQuery, TargetMode.ALL_NODES);
+                    adjustedQuery = Query.of(query).partitionIdSet(target.partitions()).build();
+                    return runOnGivenPartitions(adjustedQuery, adjustedQuery.getPartitionIdSet(), TargetMode.ALL_NODES);
                 }
             default:
                 throw new IllegalArgumentException("Illegal target " + query);
@@ -127,14 +125,12 @@ public class QueryEngineImpl implements QueryEngine {
     }
 
     // query thread first, fallback to partition thread
-    private Result runOnGivenPartitions(Query query, TargetMode targetMode) {
-        Result result = doRunOnQueryThreads(query, targetMode);
-        BitSet missingPartitions = (BitSet) query.getPartitionIdSet().clone();
-        missingPartitions.andNot(result.getPartitionIds().bitSetCopy());
-        if (missingPartitions.cardinality() > 0) {
-            doRunOnPartitionThreads(query, missingPartitions, result);
+    private Result runOnGivenPartitions(Query query, PartitionIdSet partitions, TargetMode targetMode) {
+        Result result = doRunOnQueryThreads(query, partitions, targetMode);
+        if (isResultFromAnyPartitionMissing(partitions)) {
+            doRunOnPartitionThreads(query, partitions, result);
         }
-        assertAllPartitionsQueried(query.getPartitionIdSet());
+        assertAllPartitionsQueried(partitions);
 
         return result;
     }
@@ -149,10 +145,10 @@ public class QueryEngineImpl implements QueryEngine {
         }
     }
 
-    private Result doRunOnQueryThreads(Query query, TargetMode targetMode) {
+    private Result doRunOnQueryThreads(Query query, PartitionIdSet partitionIds, TargetMode targetMode) {
         Result result = populateResult(query);
         List<Future<Result>> futures = dispatchOnQueryThreads(query, targetMode);
-        addResultsOfPredicate(futures, result, query.getPartitionIdSet(), false);
+        addResultsOfPredicate(futures, result, partitionIds, false);
         return result;
     }
 
@@ -181,7 +177,7 @@ public class QueryEngineImpl implements QueryEngine {
                 queryResultSizeLimiter.getNodeResultLimit(query.getPartitionIdSet().size()));
     }
 
-    private void doRunOnPartitionThreads(Query query, BitSet partitionIds, Result result) {
+    private void doRunOnPartitionThreads(Query query, PartitionIdSet partitionIds, Result result) {
         try {
             List<Future<Result>> futures = dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(
                     query, partitionIds);
@@ -194,7 +190,7 @@ public class QueryEngineImpl implements QueryEngine {
     @SuppressWarnings("unchecked")
     // modifies partitionIds list! Optimization not to allocate an extra collection with collected partitionIds
     private void addResultsOfPredicate(List<Future<Result>> futures, Result result,
-                                       BitSet finishedPartitionIds, boolean rethrowAll) {
+                                       PartitionIdSet unfinishedPartitionIds, boolean rethrowAll) {
         for (Future<Result> future : futures) {
             Result queryResult = null;
 
@@ -212,13 +208,13 @@ public class QueryEngineImpl implements QueryEngine {
             }
             PartitionIdSet queriedPartitionIds = queryResult.getPartitionIds();
             if (queriedPartitionIds != null) {
-                if (!finishedPartitionIds.containsAll(queriedPartitionIds)) {
+                if (!unfinishedPartitionIds.containsAll(queriedPartitionIds)) {
                     // do not take into account results that contain partition IDs already removed from partitionIds
                     // collection as this means that we will count results from a single partition twice
                     // see also https://github.com/hazelcast/hazelcast/issues/6471
                     continue;
                 }
-                finishedPartitionIds.removeAll(queriedPartitionIds);
+                unfinishedPartitionIds.removeAll(queriedPartitionIds);
                 result.combine(queryResult);
             }
         }
@@ -246,27 +242,20 @@ public class QueryEngineImpl implements QueryEngine {
         return retrievalIterationType;
     }
 
-    private BitSet getLocalPartitionIds() {
-        int count = partitionService.getPartitionCount();
-        Address localAddress = nodeEngine.getThisAddress();
-        BitSet res = new BitSet(count);
-        for (int i = 0; i < count; i++) {
-            if (localAddress.equals(partitionService.getPartitionOwnerOrWait(i))) {
-                res.set(i);
-            }
-        }
-        return res;
+    private PartitionIdSet getLocalPartitionIds() {
+        int partitionCount = partitionService.getPartitionCount();
+        List<Integer> memberPartitions = partitionService.getMemberPartitions(nodeEngine.getThisAddress());
+        return new PartitionIdSet(partitionCount, memberPartitions);
     }
 
     // package-private for tests
-    BitSet getAllPartitionIds() {
-        return allPartitionIds(partitionService.getPartitionCount());
+    PartitionIdSet getAllPartitionIds() {
+        int partitionCount = partitionService.getPartitionCount();
+        return allPartitionIds(partitionCount);
     }
 
-    private boolean isResultFromAnyPartitionMissing(BitSet expectedPartitions, BitSet finishedPartitions) {
-        assert finishedPartitions.stream().allMatch(finishedPartition -> expectedPartitions.get(finishedPartition))
-                : "expected: " + expectedPartitions + ", finished: " + finishedPartitions;
-        return !finishedPartitions.equals(expectedPartitions);
+    private boolean isResultFromAnyPartitionMissing(PartitionIdSet unfinishedPartitionIds) {
+        return !unfinishedPartitionIds.isEmpty();
     }
 
     protected QueryResultSizeLimiter getQueryResultSizeLimiter() {
@@ -293,15 +282,15 @@ public class QueryEngineImpl implements QueryEngine {
 
     private List<Future<Result>> dispatchFullQueryOnAllMembersOnQueryThread(Query query) {
         Collection<Address> members;
-        if (query.getPartitionIdSet().cardinality() == partitionService.getPartitionCount()) {
-            members = new HashSet<>();
-            for (PrimitiveIterator.OfInt iterator = query.getPartitionIdSet().stream().iterator(); iterator.hasNext(); ) {
-                members.add(partitionService.getPartitionOwnerOrWait(iterator.next()));
-            }
-        } else {
+        if (query.getPartitionIdSet().size() == partitionService.getPartitionCount()) {
             members = clusterService.getMembers(DATA_MEMBER_SELECTOR).stream()
                     .map(m -> m.getAddress())
                     .collect(Collectors.toList());
+        } else {
+            members = new HashSet<>();
+            for (PrimitiveIterator.OfInt iterator = query.getPartitionIdSet().intIterator(); iterator.hasNext(); ) {
+                members.add(partitionService.getPartitionOwnerOrWait(iterator.next()));
+            }
         }
 
         List<Future<Result>> futures = new ArrayList<>(members.size());
@@ -319,12 +308,12 @@ public class QueryEngineImpl implements QueryEngine {
     }
 
     protected List<Future<Result>> dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(
-            Query query, BitSet partitionIds) {
+            Query query, PartitionIdSet partitionIds) {
         if (shouldSkipPartitionsQuery(partitionIds)) {
             return Collections.emptyList();
         }
         List<Future<Result>> futures = new ArrayList<>(partitionIds.size());
-        partitionIds.stream().iterator().forEachRemaining((IntConsumer) partitionId ->
+        partitionIds.intIterator().forEachRemaining((IntConsumer) partitionId ->
                 futures.add(dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(query, partitionId)));
         return futures;
     }
@@ -343,7 +332,7 @@ public class QueryEngineImpl implements QueryEngine {
         return mapServiceContext.getMapOperationProvider(query.getMapName()).createQueryPartitionOperation(query);
     }
 
-    private static boolean shouldSkipPartitionsQuery(BitSet partitionIds) {
+    private static boolean shouldSkipPartitionsQuery(PartitionIdSet partitionIds) {
         return partitionIds == null || partitionIds.isEmpty();
     }
 }

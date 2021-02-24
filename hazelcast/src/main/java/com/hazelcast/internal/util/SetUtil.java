@@ -19,7 +19,6 @@ package com.hazelcast.internal.util;
 import com.hazelcast.internal.util.collection.ImmutablePartitionIdSet;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 
-import java.util.BitSet;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -63,10 +62,9 @@ public final class SetUtil {
         return new ImmutablePartitionIdSet(partitionCount, partitionIds);
     }
 
-    public static BitSet
-    allPartitionIds(int partitionCount) {
-        BitSet set = new BitSet(partitionCount);
-        set.flip(partitionCount);
+    public static PartitionIdSet allPartitionIds(int partitionCount) {
+        PartitionIdSet set = new PartitionIdSet(partitionCount);
+        set.complement();
         return set;
     }
 }

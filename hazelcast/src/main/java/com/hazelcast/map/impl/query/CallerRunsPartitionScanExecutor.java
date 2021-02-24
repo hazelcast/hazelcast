@@ -21,8 +21,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryableEntriesSegment;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 
-import java.util.BitSet;
-import java.util.PrimitiveIterator;
+import java.util.Collection;
 
 /**
  * Implementation of the {@link PartitionScanExecutor} which executes the partition scan in a sequential-fashion
@@ -37,12 +36,11 @@ public class CallerRunsPartitionScanExecutor implements PartitionScanExecutor {
     }
 
     @Override
-    public void execute(String mapName, Predicate predicate, BitSet partitions, Result result) {
+    public void execute(String mapName, Predicate predicate, Collection<Integer> partitions, Result result) {
         RetryableHazelcastException storedException = null;
-        PrimitiveIterator.OfInt iterator = partitions.stream().iterator();
-        while (iterator.hasNext()) {
+        for (Integer partitionId : partitions) {
             try {
-                partitionScanRunner.run(mapName, predicate, iterator.nextInt(), result);
+                partitionScanRunner.run(mapName, predicate, partitionId, result);
             } catch (RetryableHazelcastException e) {
                 // RetryableHazelcastException are stored and re-thrown later. this is to ensure all partitions
                 // are touched as when the parallel execution was used.

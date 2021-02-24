@@ -16,6 +16,11 @@
 
 package com.hazelcast.internal.util.collection;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
+import java.io.IOException;
 import java.util.AbstractSet;
 import java.util.BitSet;
 import java.util.Collection;
@@ -41,13 +46,15 @@ import java.util.PrimitiveIterator;
  * <p>
  * This class is not thread-safe.
  */
-public class PartitionIdSet extends AbstractSet<Integer> {
+public class PartitionIdSet extends AbstractSet<Integer> implements IdentifiedDataSerializable {
 
     private static final int SIZE_UNKNOWN = -1;
 
-    private final int partitionCount;
-    private final BitSet bitSet;
+    private int partitionCount;
+    private BitSet bitSet;
     private int size = SIZE_UNKNOWN;
+
+    PartitionIdSet() { }
 
     public PartitionIdSet(int partitionCount) {
         this(partitionCount, new BitSet(partitionCount));
@@ -193,10 +200,13 @@ public class PartitionIdSet extends AbstractSet<Integer> {
     }
 
     /**
-     * Return a copy of the internal BitSet.
+     * Intersects this set with the {@code other} set and returns the result as
+     * a new set. Doesn't mutate this or the {@code other} instance.
      */
-    public BitSet bitSetCopy() {
-        return (BitSet) this.bitSet.clone();
+    public PartitionIdSet intersectCopy(PartitionIdSet other) {
+        BitSet newBitSet = bitSetCopy();
+        newBitSet.and(other.bitSet);
+        return new PartitionIdSet(partitionCount, newBitSet);
     }
 
     /**
@@ -261,6 +271,32 @@ public class PartitionIdSet extends AbstractSet<Integer> {
         } else {
             return -1;
         }
+    }
+
+    public BitSet bitSetCopy() {
+        return (BitSet) bitSet.clone();
+    }
+
+    @Override
+    public int getFactoryId() {
+        return UtilCollectionSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return UtilCollectionSerializerHook.PARTITION_ID_SET;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeInt(partitionCount);
+        out.writeObject(bitSet);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        partitionCount = in.readInt();
+        bitSet = in.readObject();
     }
 
     private final class PartitionIdSetIterator

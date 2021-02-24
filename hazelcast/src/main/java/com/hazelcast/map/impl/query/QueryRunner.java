@@ -34,7 +34,6 @@ import com.hazelcast.query.impl.predicates.QueryOptimizer;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 
-import java.util.BitSet;
 import java.util.Collection;
 
 import static com.hazelcast.internal.util.SetUtil.singletonPartitionIdSet;
@@ -124,8 +123,7 @@ public class QueryRunner {
     public Result runIndexOrPartitionScanQueryOnOwnedPartitions(Query query, boolean doPartitionScan) {
         int migrationStamp = getMigrationStamp();
         PartitionIdSet initialPartitions = mapServiceContext.getOrInitCachedMemberPartitions();
-        BitSet actualPartitions = initialPartitions.bitSetCopy();
-        actualPartitions.and(query.getPartitionIdSet());
+        PartitionIdSet actualPartitions = initialPartitions.intersectCopy(query.getPartitionIdSet());
 
         MapContainer mapContainer = mapServiceContext.getMapContainer(query.getMapName());
 
@@ -147,7 +145,7 @@ public class QueryRunner {
             entries = IterableUtil.filter(entries,
                     e -> {
                         int partitionId = HashUtil.hashToIndex(e.getKeyData().getPartitionHash(), partitionCount);
-                        return actualPartitions.get(partitionId);
+                        return actualPartitions.contains(partitionId);
                     });
         }
 
@@ -246,8 +244,8 @@ public class QueryRunner {
         return result;
     }
 
-    private Result createResult(Query query, BitSet partitions) {
-        return query.createResult(serializationService, queryResultSizeLimiter.getNodeResultLimit(partitions.cardinality()));
+    private Result createResult(Query query, Collection<Integer> partitions) {
+        return query.createResult(serializationService, queryResultSizeLimiter.getNodeResultLimit(partitions.size()));
     }
 
     protected Result populateEmptyResult(Query query, Collection<Integer> initialPartitions) {
@@ -256,10 +254,10 @@ public class QueryRunner {
     }
 
     protected Result populateNonEmptyResult(Query query, Iterable<QueryableEntry> entries,
-                                            PartitionIdSet actualPartitions) {
+                                            PartitionIdSet initialPartitions) {
         ResultProcessor processor = resultProcessorRegistry.get(query.getResultType());
-        return processor.populateResult(query, queryResultSizeLimiter.getNodeResultLimit(actualPartitions.size()), entries,
-                actualPartitions);
+        return processor.populateResult(query, queryResultSizeLimiter.getNodeResultLimit(initialPartitions.size()), entries,
+                initialPartitions);
     }
 
     protected Iterable<QueryableEntry> runUsingGlobalIndexSafely(Predicate predicate, MapContainer mapContainer,
@@ -299,7 +297,7 @@ public class QueryRunner {
     }
 
     protected Result runUsingPartitionScanSafely(Query query, Predicate predicate,
-                                                 BitSet partitions, int migrationStamp) {
+                                                 PartitionIdSet partitions, int migrationStamp) {
 
         if (!validateMigrationStamp(migrationStamp)) {
             return null;

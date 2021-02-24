@@ -299,14 +299,18 @@ public class SingleValueBitmapIndexTest extends HazelcastTestSupport {
     @SuppressWarnings("unchecked")
     private void verifyQueries() {
         for (int i = 0; i < actualQueries.length; ++i) {
-            Predicate actualQuery = actualQueries[i];
-            ExpectedQuery expectedQuery = expectedQueries[i];
+            try {
+                Predicate actualQuery = actualQueries[i];
+                ExpectedQuery expectedQuery = expectedQueries[i];
 
-            long before = persons.getLocalMapStats().getIndexStats().values().iterator().next().getQueryCount();
-            Set<Map.Entry<Long, Person>> entries = persons.entrySet(actualQuery);
-            long after = persons.getLocalMapStats().getIndexStats().values().iterator().next().getQueryCount();
-            assertEquals(1, after - before);
-            expectedQuery.verify(entries);
+                long before = persons.getLocalMapStats().getIndexStats().values().iterator().next().getQueryCount();
+                Set<Map.Entry<Long, Person>> entries = persons.entrySet(actualQuery);
+                long after = persons.getLocalMapStats().getIndexStats().values().iterator().next().getQueryCount();
+                assertEquals(1, after - before);
+                expectedQuery.verify(entries);
+            } catch (Throwable t) {
+                throw new AssertionError("Failed at query " + i + ": " + t, t);
+            }
         }
     }
 
