@@ -25,6 +25,7 @@ import com.hazelcast.internal.serialization.impl.portable.InnerPortable;
 import com.hazelcast.internal.serialization.impl.portable.MainPortable;
 import com.hazelcast.internal.serialization.impl.portable.NamedPortable;
 import com.hazelcast.internal.serialization.impl.portable.PortableTest;
+import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.serialization.ClassDefinition;
@@ -163,8 +164,8 @@ public abstract class AbstractGenericRecordTest extends HazelcastTestSupport {
             GenericRecord genericRecord = (GenericRecord) value;
 
             GenericRecord modifiedGenericRecord = genericRecord.newBuilder()
-                                                               .setString("name", "bar")
-                                                               .setInt("myint", 4).build();
+                    .setString("name", "bar")
+                    .setInt("myint", 4).build();
 
             entry.setValue(modifiedGenericRecord);
 
@@ -193,7 +194,7 @@ public abstract class AbstractGenericRecordTest extends HazelcastTestSupport {
             GenericRecord genericRecord = (GenericRecord) value;
 
             GenericRecord modifiedGenericRecord = genericRecord.cloneWithBuilder()
-                                                               .setInt("myint", 4).build();
+                    .setInt("myint", 4).build();
 
             entry.setValue(modifiedGenericRecord);
 
@@ -243,30 +244,53 @@ public abstract class AbstractGenericRecordTest extends HazelcastTestSupport {
     @Test(expected = HazelcastSerializationException.class)
     public void testInconsistentClassDefinition() {
         createCluster();
-        ClassDefinition namedPortableClassDefinition =
-                new ClassDefinitionBuilder(TestSerializationConstants.PORTABLE_FACTORY_ID, TestSerializationConstants.NAMED_PORTABLE)
-                        .addStringField("name").addIntField("myint").build();
-
-        ClassDefinition inConsistentNamedPortableClassDefinition =
-                new ClassDefinitionBuilder(TestSerializationConstants.PORTABLE_FACTORY_ID, TestSerializationConstants.NAMED_PORTABLE)
-                        .addStringField("WrongName").addIntField("myint").build();
-
-
-        GenericRecord namedRecord = GenericRecordBuilder.portable(namedPortableClassDefinition)
-                                                        .setString("name", "foo")
-                                                        .setInt("myint", 123).build();
-
-
-        GenericRecord inConsistentNamedRecord = GenericRecordBuilder.portable(inConsistentNamedPortableClassDefinition)
-                                                                    .setString("WrongName", "foo")
-                                                                    .setInt("myint", 123).build();
-
 
         HazelcastInstance instance = createAccessorInstance(serializationConfig);
         IMap<Object, Object> map = instance.getMap("test");
-        map.put(1, namedRecord);
 
-        map.put(2, inConsistentNamedRecord);
+        BiTuple<GenericRecord, GenericRecord> records = getInconsistentGenericRecords();
+        map.put(1, records.element1);
+        map.put(2, records.element2);
+    }
+
+    @Test
+    public void testInconsistentClassDefinition_whenCheckClassDefErrorsIsFalse() {
+        createCluster();
+
+        SerializationConfig serializationConfig = new SerializationConfig(this.serializationConfig);
+        serializationConfig.setCheckClassDefErrors(false);
+        HazelcastInstance instance = createAccessorInstance(serializationConfig);
+        IMap<Object, Object> map = instance.getMap("test");
+
+        BiTuple<GenericRecord, GenericRecord> records = getInconsistentGenericRecords();
+        map.put(1, records.element1);
+        map.put(2, records.element2);
+    }
+
+    @Test(expected = HazelcastSerializationException.class)
+    public void testInconsistentClassDefinitionOfNestedPortableFields() {
+        createCluster();
+
+        HazelcastInstance instance = createAccessorInstance(serializationConfig);
+        IMap<Object, Object> map = instance.getMap("test");
+
+        BiTuple<GenericRecord, GenericRecord> records = getInconsistentNestedGenericRecords();
+        map.put(1, records.element1);
+        map.put(2, records.element2);
+    }
+
+    @Test
+    public void testInconsistentClassDefinitionOfNestedPortableFields_whenCheckClassDefErrorsIsFalse() {
+        createCluster();
+
+        SerializationConfig serializationConfig = new SerializationConfig(this.serializationConfig);
+        serializationConfig.setCheckClassDefErrors(false);
+        HazelcastInstance instance = createAccessorInstance(serializationConfig);
+        IMap<Object, Object> map = instance.getMap("test");
+
+        BiTuple<GenericRecord, GenericRecord> records = getInconsistentNestedGenericRecords();
+        map.put(1, records.element1);
+        map.put(2, records.element2);
     }
 
     @Nonnull
@@ -333,44 +357,100 @@ public abstract class AbstractGenericRecordTest extends HazelcastTestSupport {
         int i = 0;
         for (NamedPortable namedPortable : inner.nn) {
             GenericRecord namedRecord = GenericRecordBuilder.portable(namedPortableClassDefinition)
-                                                            .setString("name", inner.nn[i].name)
-                                                            .setInt("myint", inner.nn[i].myint).build();
+                    .setString("name", inner.nn[i].name)
+                    .setInt("myint", inner.nn[i].myint).build();
             namedRecords[i++] = namedRecord;
         }
 
         GenericRecord innerRecord = GenericRecordBuilder.portable(innerPortableClassDefinition)
-                                                        .setByteArray("b", inner.bb)
-                                                        .setCharArray("c", inner.cc)
-                                                        .setShortArray("s", inner.ss)
-                                                        .setIntArray("i", inner.ii)
-                                                        .setLongArray("l", inner.ll)
-                                                        .setFloatArray("f", inner.ff)
-                                                        .setDoubleArray("d", inner.dd)
-                                                        .setGenericRecordArray("nn", namedRecords)
-                                                        .setDecimalArray("bigDecimals", inner.bigDecimals)
-                                                        .setTimeArray("localTimes", inner.localTimes)
-                                                        .setDateArray("localDates", inner.localDates)
-                                                        .setTimestampArray("localDateTimes", inner.localDateTimes)
-                                                        .setTimestampWithTimezoneArray("offsetDateTimes", inner.offsetDateTimes)
-                                                        .build();
+                .setByteArray("b", inner.bb)
+                .setCharArray("c", inner.cc)
+                .setShortArray("s", inner.ss)
+                .setIntArray("i", inner.ii)
+                .setLongArray("l", inner.ll)
+                .setFloatArray("f", inner.ff)
+                .setDoubleArray("d", inner.dd)
+                .setGenericRecordArray("nn", namedRecords)
+                .setDecimalArray("bigDecimals", inner.bigDecimals)
+                .setTimeArray("localTimes", inner.localTimes)
+                .setDateArray("localDates", inner.localDates)
+                .setTimestampArray("localDateTimes", inner.localDateTimes)
+                .setTimestampWithTimezoneArray("offsetDateTimes", inner.offsetDateTimes)
+                .build();
 
         return GenericRecordBuilder.portable(mainPortableClassDefinition)
-                                   .setByte("b", expectedPortable.b)
-                                   .setBoolean("bool", expectedPortable.bool)
-                                   .setChar("c", expectedPortable.c)
-                                   .setShort("s", expectedPortable.s)
-                                   .setInt("i", expectedPortable.i)
-                                   .setLong("l", expectedPortable.l)
-                                   .setFloat("f", expectedPortable.f)
-                                   .setDouble("d", expectedPortable.d)
-                                   .setString("str", expectedPortable.str)
-                                   .setGenericRecord("p", innerRecord)
-                                   .setDecimal("bigDecimal", expectedPortable.bigDecimal)
-                                   .setTime("localTime", expectedPortable.localTime)
-                                   .setDate("localDate", expectedPortable.localDate)
-                                   .setTimestamp("localDateTime", expectedPortable.localDateTime)
-                                   .setTimestampWithTimezone("offsetDateTime", expectedPortable.offsetDateTime)
-                                   .build();
+                .setByte("b", expectedPortable.b)
+                .setBoolean("bool", expectedPortable.bool)
+                .setChar("c", expectedPortable.c)
+                .setShort("s", expectedPortable.s)
+                .setInt("i", expectedPortable.i)
+                .setLong("l", expectedPortable.l)
+                .setFloat("f", expectedPortable.f)
+                .setDouble("d", expectedPortable.d)
+                .setString("str", expectedPortable.str)
+                .setGenericRecord("p", innerRecord)
+                .setDecimal("bigDecimal", expectedPortable.bigDecimal)
+                .setTime("localTime", expectedPortable.localTime)
+                .setDate("localDate", expectedPortable.localDate)
+                .setTimestamp("localDateTime", expectedPortable.localDateTime)
+                .setTimestampWithTimezone("offsetDateTime", expectedPortable.offsetDateTime)
+                .build();
+    }
+
+    private BiTuple<GenericRecord, GenericRecord> getInconsistentGenericRecords() {
+        ClassDefinition namedPortableClassDefinition =
+                new ClassDefinitionBuilder(TestSerializationConstants.PORTABLE_FACTORY_ID, TestSerializationConstants.NAMED_PORTABLE)
+                        .addStringField("name").addIntField("myint").build();
+
+        ClassDefinition inConsistentNamedPortableClassDefinition =
+                new ClassDefinitionBuilder(TestSerializationConstants.PORTABLE_FACTORY_ID, TestSerializationConstants.NAMED_PORTABLE)
+                        .addStringField("WrongName").addIntField("myint").build();
+
+        GenericRecord record = GenericRecordBuilder.portable(namedPortableClassDefinition)
+                .setString("name", "foo")
+                .setInt("myint", 123).build();
+
+        GenericRecord inConsistentNamedRecord = GenericRecordBuilder.portable(inConsistentNamedPortableClassDefinition)
+                .setString("WrongName", "foo")
+                .setInt("myint", 123).build();
+
+        return BiTuple.of(record, inConsistentNamedRecord);
+    }
+
+    private BiTuple<GenericRecord, GenericRecord> getInconsistentNestedGenericRecords() {
+        ClassDefinition childCd = new ClassDefinitionBuilder(1, 1)
+                .addIntField("a")
+                .build();
+
+        ClassDefinition inconsistentChildCd = new ClassDefinitionBuilder(1, 1)
+                .addBooleanField("a")
+                .build();
+
+        ClassDefinition namedPortableClassDefinition = new ClassDefinitionBuilder(1, 2)
+                .addStringField("name")
+                .addPortableField("child", childCd)
+                .build();
+
+        ClassDefinition inconsistentNamedPortableClassDefinition = new ClassDefinitionBuilder(1, 2)
+                .addStringField("name")
+                .addPortableField("child", inconsistentChildCd)
+                .build();
+
+        GenericRecord record = GenericRecordBuilder.portable(namedPortableClassDefinition)
+                .setString("name", "foo")
+                .setGenericRecord("child", GenericRecordBuilder.portable(childCd)
+                        .setInt("a", 1)
+                        .build()
+                ).build();
+
+        GenericRecord otherRecord = GenericRecordBuilder.portable(inconsistentNamedPortableClassDefinition)
+                .setString("name", "foo")
+                .setGenericRecord("child", GenericRecordBuilder.portable(inconsistentChildCd)
+                        .setBoolean("a", false)
+                        .build()
+                ).build();
+
+        return BiTuple.of(record, otherRecord);
     }
 
 }
