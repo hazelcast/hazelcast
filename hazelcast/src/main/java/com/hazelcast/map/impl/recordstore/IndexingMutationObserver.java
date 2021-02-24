@@ -160,8 +160,8 @@ public class IndexingMutationObserver<R extends Record> implements MutationObser
             return;
         }
 
-        QueryableEntry queryableEntry = mapContainer.newQueryEntry(toBackingKeyFormat(dataKey),
-                getValueOrCachedValue(record, ss));
+        Object value = getValueOrCachedValue(record, ss);
+        QueryableEntry queryableEntry = mapContainer.newQueryEntry(toBackingKeyFormat(dataKey), value);
         queryableEntry.setRecord(record);
 
         indexes.putEntry(queryableEntry, oldValue, operationSource);

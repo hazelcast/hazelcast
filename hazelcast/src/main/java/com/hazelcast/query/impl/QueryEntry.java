@@ -25,8 +25,8 @@ import com.hazelcast.query.impl.getters.Extractors;
  */
 public class QueryEntry extends QueryableEntry {
 
-    private Data key;
-    private Object value;
+    protected Data key;
+    protected Object value;
 
     public QueryEntry() {
     }

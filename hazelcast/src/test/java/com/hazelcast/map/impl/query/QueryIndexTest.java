@@ -16,10 +16,15 @@
 
 package com.hazelcast.map.impl.query;
 
+import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.PredicateBuilder.EntryObject;
@@ -41,6 +46,7 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -206,5 +212,67 @@ public class QueryIndexTest extends HazelcastTestSupport {
         assertEquals(2, map.values(Predicates.sql("index <> 2")).size());
         assertEquals(3, map.values(Predicates.newPredicateBuilder().getEntryObject().get("name").notEqual("aac")).size());
         assertEquals(2, map.values(Predicates.newPredicateBuilder().getEntryObject().get("index").notEqual(2)).size());
+    }
+
+    @Test
+    public void testIndexDeserializationNoDuplicates() {
+        final int putCount = 5;
+        String mapName = randomMapName();
+        Config config = getConfig();
+        config.getMapConfig(mapName).setInMemoryFormat(InMemoryFormat.BINARY);
+        config.getMapConfig(mapName).setCacheDeserializedValues(CacheDeserializedValues.NEVER);
+        config.getMetricsConfig().setEnabled(false);
+
+        HazelcastInstance instance = createHazelcastInstance(config);
+        IMap<Integer, SerializableObject> map = instance.getMap(mapName);
+
+        map.addIndex(IndexType.HASH, "string");
+        map.addIndex(IndexType.SORTED, "string");
+        map.addIndex(IndexType.BITMAP, "string");
+        for (int idx = 0; idx < putCount; idx++) {
+            map.put(idx, new SerializableObject());
+        }
+
+        // There was a mention that Predicate API was used
+        PredicateBuilder.EntryObject e = Predicates.newPredicateBuilder().getEntryObject();
+        Predicate predicate = e.get("string").isNotNull();
+
+        SerializableObject.flag = true;
+
+        Collection<SerializableObject> values = map.values(predicate);
+        assertEquals(putCount, values.size());
+        assertEquals(putCount, SerializableObject.deserializationCount);
+        SerializableObject.reset();
+    }
+
+    public static class SerializableObject implements DataSerializable {
+        static boolean flag = false;
+        static int serializationCount = 0;
+        static int deserializationCount = 0;
+
+        static void reset() {
+            serializationCount = 0;
+            deserializationCount = 0;
+            flag = false;
+        }
+
+        public String string;
+
+        @SuppressWarnings("checkstyle:RedundantModifier")
+        public SerializableObject() {
+            this.string = randomString();
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            ++serializationCount;
+            out.writeString(string);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            ++deserializationCount;
+            string = in.readString();
+        }
     }
 }
