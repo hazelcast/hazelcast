@@ -30,7 +30,6 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.test.AssertionSinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
-import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
@@ -109,7 +108,7 @@ public class JobSerializerTest extends SimpleTestInClusterSupport {
 
         client().newJob(pipeline, jobConfig()).join();
 
-        IMap<Integer, Value> map = client().getMap(SINK_MAP_NAME);
+        Map<Integer, Value> map = client().getMap(SINK_MAP_NAME);
         assertThat(map).containsExactlyInAnyOrderEntriesOf(
                 ImmutableMap.of(1, new Value(1), 2, new Value(2))
         );
