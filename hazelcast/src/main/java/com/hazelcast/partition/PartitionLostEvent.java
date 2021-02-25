@@ -19,7 +19,7 @@ package com.hazelcast.partition;
 import com.hazelcast.cluster.Address;
 
 /**
- * The event is fired when a primary replica of the partition lost.
+ * The event is fired when a primary replica of the partition is lost.
  * If a backup node crashes when owner of the partition is still alive,
  * a partition lost event won't be fired.
  *
