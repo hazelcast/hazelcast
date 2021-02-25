@@ -22,7 +22,6 @@ import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.internal.util.SetUtil;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -173,10 +172,8 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
     }
 
     private Query buildQuery(Predicate predicate) {
-        Query.QueryBuilder builder = Query.of()
-                .mapName(getDistributedObjectName())
-                .predicate(predicate instanceof PartitionPredicate ? ((PartitionPredicate) predicate).getTarget() : predicate)
-                .partitionIdSet(SetUtil.allPartitionIds(nodeEngine.getPartitionService().getPartitionCount()))
+        Query.QueryBuilder builder = Query.of().mapName(getDistributedObjectName()).predicate(
+                predicate instanceof PartitionPredicate ? ((PartitionPredicate) predicate).getTarget() : predicate)
                 .iterationType(getIterationType());
         if (getAggregator() != null) {
             builder = builder.aggregator(getAggregator());
