@@ -103,7 +103,9 @@ public class QueryOperation extends AbstractNamedOperation implements ReadonlyOp
 
                 // Offload query run on the partition threads.
                 BitSet queryPartitions = localPartitions();
-                queryPartitions.and(query.getPartitionIdSet().bitSetCopy());
+                if (query.getPartitionIdSet() != null) {
+                    queryPartitions.and(query.getPartitionIdSet().bitSetCopy());
+                }
                 if (queryPartitions.cardinality() == 0) {
                     // important to deal with situation of not having any partitions
                     result = queryRunner.populateEmptyResult(query, Collections.emptyList());
