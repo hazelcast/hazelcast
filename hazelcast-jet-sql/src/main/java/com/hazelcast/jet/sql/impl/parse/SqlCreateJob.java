@@ -56,10 +56,11 @@ public class SqlCreateJob extends SqlCreate {
             SqlIdentifier name,
             SqlNodeList options,
             SqlExtendedInsert sqlInsert,
+            boolean replace,
             boolean ifNotExists,
             SqlParserPos pos
     ) {
-        super(OPERATOR, pos, false, ifNotExists);
+        super(OPERATOR, pos, replace, ifNotExists);
 
         this.name = requireNonNull(name, "Name should not be null");
         this.options = requireNonNull(options, "Options should not be null");
@@ -129,6 +130,10 @@ public class SqlCreateJob extends SqlCreate {
 
     @Override
     public void validate(SqlValidator validator, SqlValidatorScope scope) {
+        if (getReplace()) {
+            throw validator.newValidationError(this, RESOURCE.notSupported("OR REPLACE", "CREATE JOB"));
+        }
+
         for (SqlNode option0 : options.getList()) {
             SqlOption option = (SqlOption) option0;
             String key = option.keyString();

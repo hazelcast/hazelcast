@@ -63,27 +63,25 @@ SqlNodeList MappingColumns():
     SqlParserPos pos = getPos();
 
     SqlMappingColumn column;
-    Map<String, SqlNode> columns = new LinkedHashMap<String, SqlNode>();
+    List<SqlNode> columns = new ArrayList<SqlNode>();
 }
 {
     [
         <LPAREN> {  pos = getPos(); }
         column = MappingColumn()
         {
-            columns.put(column.name(), column);
+            columns.add(column);
         }
         (
             <COMMA> column = MappingColumn()
             {
-                if (columns.putIfAbsent(column.name(), column) != null) {
-                   throw SqlUtil.newContextException(getPos(), ParserResource.RESOURCE.duplicateColumn(column.name()));
-                }
+                columns.add(column);
             }
         )*
         <RPAREN>
     ]
     {
-        return new SqlNodeList(columns.values(), pos.plus(getPos()));
+        return new SqlNodeList(columns, pos.plus(getPos()));
     }
 }
 
@@ -240,11 +238,7 @@ SqlCreate SqlCreateJob(Span span, boolean replace) :
     SqlIdentifier name;
     boolean ifNotExists = false;
     SqlNodeList sqlOptions = SqlNodeList.EMPTY;
-    SqlExtendedInsert sqlInsert = null;
-
-    if (replace) {
-        throw SqlUtil.newContextException(getPos(), ParserResource.RESOURCE.notSupported("OR REPLACE", "CREATE JOB"));
-    }
+    SqlExtendedInsert sqlInsert;
 }
 {
     <JOB>
@@ -263,6 +257,7 @@ SqlCreate SqlCreateJob(Span span, boolean replace) :
             name,
             sqlOptions,
             sqlInsert,
+            replace,
             ifNotExists,
             startPos.plus(getPos())
         );
@@ -379,27 +374,25 @@ SqlNodeList SqlOptions():
     Span span;
 
     SqlOption sqlOption;
-    Map<String, SqlNode> sqlOptions = new LinkedHashMap<String, SqlNode>();
+    List<SqlNode> sqlOptions = new ArrayList<SqlNode>();
 }
 {
     <LPAREN> { span = span(); }
     [
         sqlOption = SqlOption()
         {
-            sqlOptions.put(sqlOption.keyString(), sqlOption);
+            sqlOptions.add(sqlOption);
         }
         (
             <COMMA> sqlOption = SqlOption()
             {
-                if (sqlOptions.putIfAbsent(sqlOption.keyString(), sqlOption) != null) {
-                    throw SqlUtil.newContextException(getPos(), ParserResource.RESOURCE.duplicateOption(sqlOption.keyString()));
-                }
+                sqlOptions.add(sqlOption);
             }
         )*
     ]
     <RPAREN>
     {
-        return new SqlNodeList(sqlOptions.values(), span.end(this));
+        return new SqlNodeList(sqlOptions, span.end(this));
     }
 }
 

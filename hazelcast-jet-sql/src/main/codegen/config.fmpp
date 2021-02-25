@@ -37,8 +37,6 @@ data: {
       "com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget"
       "com.hazelcast.sql.impl.QueryException"
       "com.hazelcast.sql.impl.type.QueryDataType"
-      "java.util.LinkedHashMap"
-      "java.util.Map"
       "org.apache.calcite.sql.SqlCreate"
       "org.apache.calcite.sql.SqlDrop"
     ]

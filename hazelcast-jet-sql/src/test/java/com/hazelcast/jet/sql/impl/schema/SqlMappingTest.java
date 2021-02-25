@@ -102,7 +102,19 @@ public class SqlMappingTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_emptyColumnList_then_fails() {
+    public void when_orReplaceAndIfNotExistsUsedTogether_then_fail() {
+        assertThatThrownBy(() -> sqlService.execute("CREATE OR REPLACE MAPPING IF NOT EXISTS t TYPE TestBatch"))
+                .hasMessageContaining("OR REPLACE in conjunction with IF NOT EXISTS not supported");
+    }
+
+    @Test
+    public void when_duplicateColumn_then_fail() {
+        assertThatThrownBy(() -> sqlService.execute("CREATE MAPPING t (a INT, a BIGINT) TYPE TestBatch"))
+                .hasMessageContaining("Column 'a' specified more than once");
+    }
+
+    @Test
+    public void when_emptyColumnList_then_fail() {
         assertThatThrownBy(() -> sqlService.execute("create mapping t () type TestBatch"))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageStartingWith("Encountered \")\" at line 1, column 19.");
@@ -171,6 +183,12 @@ public class SqlMappingTest extends SqlTestSupport {
         sqlService.execute("CREATE MAPPING t2 TYPE teststream");
         sqlService.execute("CREATE MAPPING t3 TYPE TESTSTREAM");
         sqlService.execute("CREATE MAPPING t4 TYPE tEsTsTrEaM");
+    }
+
+    @Test
+    public void when_duplicateOption_then_fail() {
+        assertThatThrownBy(() -> sqlService.execute("CREATE MAPPING t TYPE TestBatch OPTIONS('o'='1', 'o'='2')"))
+                .hasMessageContaining("Option 'o' specified more than once");
     }
 
     @Test

@@ -31,8 +31,10 @@ import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.util.ImmutableNullableList;
 
 import javax.annotation.Nonnull;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.sql.impl.parse.ParserResource.RESOURCE;
@@ -165,8 +167,28 @@ public class SqlCreateMapping extends SqlCreate {
 
     @Override
     public void validate(SqlValidator validator, SqlValidatorScope scope) {
+        if (getReplace() && ifNotExists) {
+            throw validator.newValidationError(this, RESOURCE.orReplaceWithIfNotExistsNotSupported());
+        }
+
         if (!isMappingNameValid(name)) {
             throw validator.newValidationError(name, RESOURCE.mappingIncorrectSchema());
+        }
+
+        Set<String> columnNames = new HashSet<>();
+        for (SqlNode column : columns.getList()) {
+            String name = ((SqlMappingColumn) column).name();
+            if (!columnNames.add(name)) {
+                throw validator.newValidationError(column, RESOURCE.duplicateColumn(name));
+            }
+        }
+
+        Set<String> optionNames = new HashSet<>();
+        for (SqlNode option : options.getList()) {
+            String name = ((SqlOption) option).keyString();
+            if (!optionNames.add(name)) {
+                throw validator.newValidationError(option, RESOURCE.duplicateOption(name));
+            }
         }
     }
 

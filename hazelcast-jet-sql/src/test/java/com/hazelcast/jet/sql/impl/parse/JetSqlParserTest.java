@@ -140,21 +140,6 @@ public class JetSqlParserTest {
     }
 
     @Test
-    public void test_createMappingRequiresUniqueColumnName() {
-        // given
-        String sql = "CREATE MAPPING "
-                + "mapping_name ("
-                + "column_name INT"
-                + ", column_name VARCHAR"
-                + ")"
-                + "TYPE mapping_type";
-
-        // when
-        assertThatThrownBy(() -> parse(sql))
-                .hasMessageContaining("Column 'column_name' specified more than once");
-    }
-
-    @Test
     public void test_createMappingRequiresColumnType() {
         // given
         String sql = "CREATE MAPPING "
@@ -191,22 +176,6 @@ public class JetSqlParserTest {
         // when
         assertThatThrownBy(() -> parse(sql))
                 .hasMessageContaining("Encountered \".\" at line 1, column 41");
-    }
-
-    @Test
-    public void test_createMappingRequiresUniqueOptionKey() {
-        // given
-        String sql = "CREATE MAPPING "
-                + "mapping_name "
-                + "TYPE mapping_type "
-                + "OPTIONS("
-                + "'option.key'='value1'"
-                + ", 'option.key'='value2'"
-                + ")";
-
-        // when
-        assertThatThrownBy(() -> parse(sql))
-                .hasMessageContaining("Option 'option.key' specified more than once");
     }
 
     @Test

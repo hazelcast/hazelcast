@@ -28,11 +28,20 @@ public interface ParserResource {
     @BaseMessage("{0} is not supported for {1}")
     ExInst<SqlValidatorException> notSupported(String option, String statement);
 
+    @BaseMessage("OR REPLACE in conjunction with IF NOT EXISTS not supported")
+    ExInst<SqlValidatorException> orReplaceWithIfNotExistsNotSupported();
+
+    @BaseMessage("The mapping must be created in the \"public\" schema")
+    ExInst<SqlValidatorException> mappingIncorrectSchema();
+
     @BaseMessage("Column ''{0}'' specified more than once")
     ExInst<SqlValidatorException> duplicateColumn(String columnName);
 
     @BaseMessage("Option ''{0}'' specified more than once")
     ExInst<SqlValidatorException> duplicateOption(String optionName);
+
+    @BaseMessage("Mapping does not exist: {0}")
+    ExInst<SqlValidatorException> droppedMappingDoesNotExist(String mappingName);
 
     @BaseMessage("SINK INTO clause is not supported for {0}")
     ExInst<SqlValidatorException> sinkIntoNotSupported(String connectorName);
@@ -40,8 +49,8 @@ public interface ParserResource {
     @BaseMessage("INSERT INTO clause is not supported for {0}, use SINK INTO")
     ExInst<SqlValidatorException> insertIntoNotSupported(String connectorName);
 
-    @BaseMessage("The OR REPLACE option is required for CREATE SNAPSHOT")
-    ExInst<SqlValidatorException> createSnapshotWithoutReplace();
+    @BaseMessage("Writing to top-level fields of type OBJECT not supported")
+    ExInst<SqlValidatorException> insertToTopLevelObject();
 
     @BaseMessage("Unsupported value for {0}: {1}")
     ExInst<SqlValidatorException> processingGuaranteeBadValue(String key, String value);
@@ -52,12 +61,6 @@ public interface ParserResource {
     @BaseMessage("Unknown job option: {0}")
     ExInst<SqlValidatorException> unknownJobOption(String key);
 
-    @BaseMessage("The mapping must be created in the \"public\" schema")
-    ExInst<SqlValidatorException> mappingIncorrectSchema();
-
-    @BaseMessage("Mapping does not exist: {0}")
-    ExInst<SqlValidatorException> droppedMappingDoesNotExist(String mappingName);
-
-    @BaseMessage("Writing to top-level fields of type OBJECT not supported")
-    ExInst<SqlValidatorException> insertToTopLevelObject();
+    @BaseMessage("The OR REPLACE option is required for CREATE SNAPSHOT")
+    ExInst<SqlValidatorException> createSnapshotWithoutReplace();
 }
