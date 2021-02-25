@@ -36,8 +36,8 @@ TYPE type_identifier
 [ OPTIONS ( 'option_name' = 'option_value' [, ...] ) ]
 ```
 
-- `OR REPLACE`: if the mapping already exists, overwrite it; fail
-  otherwise
+- `OR REPLACE`: if the mapping already exists, overwrite it instead
+  of failing
 
 - `EXTERNAL`: an optional keyword, does not affect the semantics
 
