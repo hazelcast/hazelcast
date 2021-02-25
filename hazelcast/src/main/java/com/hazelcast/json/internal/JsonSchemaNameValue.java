@@ -115,13 +115,20 @@ public class JsonSchemaNameValue implements IdentifiedDataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(nameStart);
-        out.writeObject(value);
+        out.writeBoolean(value instanceof JsonSchemaTerminalNode);
+        value.writeData(out);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         nameStart = in.readInt();
-        value = in.readObject();
+        boolean isTerminal = in.readBoolean();
+        if (isTerminal) {
+            value = new JsonSchemaTerminalNode();
+        } else {
+            value = new JsonSchemaStructNode();
+        }
+        value.readData(in);
     }
 
     @Override
