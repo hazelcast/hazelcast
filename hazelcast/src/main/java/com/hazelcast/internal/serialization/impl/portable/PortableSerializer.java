@@ -193,14 +193,6 @@ public final class PortableSerializer implements StreamSerializer<Object> {
 
     private void writePortableGenericRecord(ObjectDataOutput out, PortableGenericRecord record) throws IOException {
         ClassDefinition cd = record.getClassDefinition();
-        if (context.shouldCheckClassDefinitionErrors()) {
-            ClassDefinition existingCd = context.lookupClassDefinition(cd.getFactoryId(), cd.getClassId(), cd.getVersion());
-            if (existingCd != null && !existingCd.equals(cd)) {
-                throw new HazelcastSerializationException("Inconsistent class definition found. New class definition : " + cd
-                        + ", Existing class definition " + existingCd);
-            }
-        }
-        context.registerClassDefinition(cd);
         out.writeInt(cd.getFactoryId());
         out.writeInt(cd.getClassId());
         writePortableGenericRecordInternal(out, record);
@@ -209,6 +201,9 @@ public final class PortableSerializer implements StreamSerializer<Object> {
     @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:CyclomaticComplexity"})
     void writePortableGenericRecordInternal(ObjectDataOutput out, PortableGenericRecord record) throws IOException {
         ClassDefinition cd = record.getClassDefinition();
+        // Class definition compatibility will be checked implicitly on the
+        // register call below.
+        context.registerClassDefinition(cd, context.shouldCheckClassDefinitionErrors());
         out.writeInt(cd.getVersion());
 
         BufferObjectDataOutput output = (BufferObjectDataOutput) out;
