@@ -21,10 +21,15 @@ package com.hazelcast.query.impl;
  * is object. It is up to the user of this class to determine the type of
  * metadata and act accordingly.
  */
-public class Metadata {
+public class Metadata implements JsonMetadata {
 
     private Object keyMeta;
     private Object valueMeta;
+
+    public Metadata(Object keyMeta, Object valueMeta) {
+        this.keyMeta = keyMeta;
+        this.valueMeta = valueMeta;
+    }
 
     public void setKeyMetadata(Object metadata) {
         this.keyMeta = metadata;
@@ -34,10 +39,12 @@ public class Metadata {
         this.valueMeta = metadata;
     }
 
+    @Override
     public Object getKeyMetadata() {
         return this.keyMeta;
     }
 
+    @Override
     public Object getValueMetadata() {
         return this.valueMeta;
     }
