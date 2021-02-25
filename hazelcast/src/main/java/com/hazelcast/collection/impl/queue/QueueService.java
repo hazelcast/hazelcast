@@ -218,8 +218,9 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
             }
         }
 
-        return !migrationData.isEmpty() ?
-                new QueueReplicationOperation(migrationData, event.getPartitionId(), event.getReplicaIndex()) : null;
+        return !migrationData.isEmpty()
+                ? new QueueReplicationOperation(migrationData,
+                event.getPartitionId(), event.getReplicaIndex()) : null;
     }
 
     @Override
