@@ -98,12 +98,12 @@ public class DataRecordFactory implements RecordFactory<Data> {
             }
 
             if (mapConfig.getEvictionConfig().getEvictionPolicy() == EvictionPolicy.RANDOM) {
-                return new CachedSimpleRecord(valueData);
+                return new SimpleRecord<>(valueData);
             }
 
             return new DataRecordWithStats(valueData);
         }
 
-        return new CachedSimpleRecord(valueData);
+        return new SimpleRecord<>(valueData);
     }
 }
