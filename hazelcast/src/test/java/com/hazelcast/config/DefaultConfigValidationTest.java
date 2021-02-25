@@ -17,14 +17,12 @@
 package com.hazelcast.config;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.TestLoggingUtils;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -37,66 +35,67 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
 
+import static org.junit.Assert.assertEquals;
+
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class DefaultConfigValidationTest {
-    private static final ILogger LOGGER;
+public class DefaultConfigValidationTest extends HazelcastTestSupport {
+    private static final ILogger LOGGER = Logger.getLogger(DefaultConfigValidationTest.class);
     static int numberOfTestedConfigs = 0;
 
-    static {
-        TestLoggingUtils.initializeLogging();
-        LOGGER = Logger.getLogger(DefaultConfigValidationTest.class);
-    }
-
     @Test
-    public void validateServerConfiguration() {
-        Tree t = new Tree(new Config());
-        System.out.println("Number of tested configs: " + numberOfTestedConfigs);
+    public void validateServerConfiguration()
+            throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
+        ValidationTree t = new ValidationTree(new Config());
         int numberOfFailedConfigs = 0;
-        for (Node configNode : t.getAllNodes()) {
+        LOGGER.info("Number of tested configs: " + numberOfTestedConfigs);
+
+        for (ConfigNode configNode : t.getAllNodes()) {
             try {
-                Assert.assertEquals(configNode.defaultConfig, configNode.initialConfig);
+                assertEquals(configNode.defaultConfig, configNode.initialConfig);
             } catch (Error e) {
-                System.out.println(configNode.name + " (Child of "
-                        + configNode.parent.name
-                        + ") failed the test.");
-                numberOfFailedConfigs++; //TODO
+                LOGGER.warning(configNode.name + " (Child of " + configNode.parent.name + ") failed the test.");
+                numberOfFailedConfigs++; // TODO
             }
         }
-        System.out.println("Number of failed configs: " + numberOfFailedConfigs);
-        Config config = new Config();
-        System.out.println(config.getSplitBrainProtectionConfig("foo")); //TODO
+        LOGGER.info("Number of failed configs: " + numberOfFailedConfigs);
+        assertEquals(0, numberOfFailedConfigs);
     }
 
     @Test
-    public void validateClientConfiguration() {
-        Tree t = new Tree(new ClientConfig());
-        System.out.println("Number of tested configs: " + numberOfTestedConfigs);
+    public void validateClientConfiguration()
+            throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
+        ValidationTree t = new ValidationTree(new ClientConfig());
         int numberOfFailedConfigs = 0;
-        for (Node configNode : t.getAllNodes()) {
+        LOGGER.info("Number of tested configs: " + numberOfTestedConfigs);
+
+        for (ConfigNode configNode : t.getAllNodes()) {
             try {
-                Assert.assertEquals(configNode.defaultConfig, configNode.initialConfig);
+                assertEquals(configNode.defaultConfig, configNode.initialConfig);
             } catch (Error e) {
+                LOGGER.warning(configNode.name + " (Child of " + configNode.parent.name + ") failed the test.");
                 numberOfFailedConfigs++;
             }
         }
-        System.out.println("Number of failed configs: " + numberOfFailedConfigs);
+        LOGGER.info("Number of failed configs: " + numberOfFailedConfigs);
+        assertEquals(0, numberOfFailedConfigs);
     }
 
-    private static class Tree {
-        Node root;
+    private static class ValidationTree {
+        ConfigNode root;
 
-        Tree(Object config) {
-            this.root = new Node(config, null, null);
+        ValidationTree(Object config)
+                throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
+            this.root = new ConfigNode(config, null, null);
             root.populateChildren();
         }
 
-        public List<Node> getAllNodes() {
-            List<Node> nodes = new ArrayList<>();
-            Queue<Node> queue = new ArrayDeque<>(root.children);
+        public List<ConfigNode> getAllNodes() {
+            List<ConfigNode> nodes = new ArrayList<>();
+            Queue<ConfigNode> queue = new ArrayDeque<>(root.children);
             while (!queue.isEmpty()) {
-                Node curr = queue.poll();
+                ConfigNode curr = queue.poll();
                 queue.addAll(curr.children);
                 nodes.add(curr);
             }
@@ -104,18 +103,19 @@ public class DefaultConfigValidationTest {
         }
     }
 
-    private static class Node {
+    private static class ConfigNode {
         private final Object defaultConfig; // Created with new XXXConfig()
         private final Object initialConfig; // Created with getXXXConfig()
-        private final List<Node> children;
-        private final Node parent; // Used for better logging
+        private final List<ConfigNode> children;
+        private final ConfigNode parent; // Used for better logging
         private final String name; // Used for better logging
 
-        Node(Object defaultConfig, Object initialConfig, Node parent) {
+
+        ConfigNode(Object defaultConfig, Object initialConfig, ConfigNode parent) {
             this(defaultConfig, initialConfig, new ArrayList<>(), parent);
         }
 
-        Node(Object defaultConfig, Object initialConfig, List<Node> children, Node parent) {
+        ConfigNode(Object defaultConfig, Object initialConfig, List<ConfigNode> children, ConfigNode parent) {
             this.defaultConfig = defaultConfig;
             this.initialConfig = initialConfig;
             this.children = children;
@@ -123,25 +123,47 @@ public class DefaultConfigValidationTest {
             this.name = defaultConfig.getClass().getName();
         }
 
-        void populateChildren() {
+        void populateChildren()
+                throws InvocationTargetException, IllegalAccessException, InstantiationException, NoSuchMethodException {
             Class<?> clazz = defaultConfig.getClass();
             for (Method method : clazz.getDeclaredMethods()) {
                 if (method.getName().startsWith("get") && method.getName().endsWith("Config")) {
                     try {
                         method.setAccessible(true);
-                        Node child = null;
+                        ConfigNode child = null;
+                        Object childInitialConfig;
                         if (method.getParameterCount() == 0) {
+                            childInitialConfig = method.invoke(this.defaultConfig);
+                            if (childInitialConfig == null) {
+                                continue;
+                            }
                             Constructor<?> constructor = method.getReturnType().getDeclaredConstructor();
                             constructor.setAccessible(true);
-                            child = new Node(constructor.newInstance(), method.invoke(this.defaultConfig), this);
+                            child = new ConfigNode(constructor.newInstance(), childInitialConfig, this);
                         } else if (method.getParameterCount() == 1) {
+                            String randomString = randomString();
+                            childInitialConfig = method.invoke(this.defaultConfig, randomString);
+                            if (childInitialConfig == null) {
+                                continue;
+                            }
                             Constructor<?> constructor = method.getReturnType().getDeclaredConstructor(String.class);
                             constructor.setAccessible(true);
-                            child = new Node(constructor.newInstance("foo"),
-                                    method.invoke(this.defaultConfig, "foo"), this);
+                            child = new ConfigNode(constructor.newInstance(randomString), childInitialConfig, this);
+                        } else if (method.getParameterCount() == 2) {
+                            // Only QueryCacheConfig enters here
+                            String randomString1 = randomString(); // Map name
+                            String randomString2 = randomString(); // Cache name
+                            childInitialConfig = method.invoke(this.defaultConfig, randomString1, randomString2);
+                            if (childInitialConfig == null) {
+                                continue;
+                            }
+                            Constructor<?> constructor = method.getReturnType().getDeclaredConstructor(String.class);
+                            constructor.setAccessible(true);
+                            child = new ConfigNode(constructor.newInstance(randomString2), childInitialConfig, this);
                         } else {
                             LOGGER.warning(method.getReturnType().getCanonicalName()
-                                    + " (Child of " + name + ") is called from " + method.getName());
+                                    + " (Child of " + name + ") is called from " + method.getName()
+                                    + ". We don't handle more than 2 parameter getters");
                         }
                         if (child != null && child.initialConfig != null) {
                             boolean hasEquals = false;
@@ -160,25 +182,28 @@ public class DefaultConfigValidationTest {
                             }
                         }
                     } catch (NoSuchMethodException e) {
-                        if (!(method.getReturnType() == WanReplicationConfig.class
-                                || method.getReturnType() == RealmConfig.class
-                                || method.getReturnType() == ServiceConfig.class)) {
-                            LOGGER.warning(method.getReturnType().getCanonicalName()
-                                    + " (Child of " + name + ") does not have a suitable constructor.");
-                        }
+                        LOGGER.warning(method.getReturnType().getCanonicalName()
+                                + " (Child of " + name + ") does not have a suitable constructor.");
+                        throw e;
                     } catch (InstantiationException e) {
-                        LOGGER.warning("Error occurred while calling the constructor of "
-                                + method.getReturnType().getCanonicalName() + " (Child of " + name + ")"); //TODO
+                        if (!(method.getReturnType() == SecureStoreConfig.class)) {
+                            LOGGER.warning("Error occurred while calling the constructor of "
+                                    + method.getReturnType().getCanonicalName() + " (Child of " + name + ")");
+                            throw e;
+
+                        }
                     } catch (InvocationTargetException | IllegalAccessException e) {
                         e.printStackTrace();
+                        throw e;
                     }
                 }
             }
             populateGrandChildren();
         }
 
-        void populateGrandChildren() {
-            for (Node child : children) {
+        void populateGrandChildren()
+                throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
+            for (ConfigNode child : children) {
                 child.populateChildren();
             }
         }
