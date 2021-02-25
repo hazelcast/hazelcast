@@ -232,7 +232,7 @@ public final class NioOutboundPipeline
 
     // executes the pipeline. Either on the calling thread or on the owning NIO thread.
     private void executePipeline() {
-         if (writeThroughEnabled && !concurrencyDetection.isDetected()) {
+        if (writeThroughEnabled && !concurrencyDetection.isDetected()) {
             // we are allowed to do a write through, so lets process the request on the calling thread
             try {
                 process();
@@ -245,7 +245,8 @@ public final class NioOutboundPipeline
                 registerOp(OP_WRITE);
                 selectionKey.selector().wakeup();
             } else {
-                owner.addTaskAndWakeup(this);
+                // the owner can be also null during the Pipeline migration, so let's use the helper method
+                ownerAddTaskAndWakeup(this);
             }
         }
     }
