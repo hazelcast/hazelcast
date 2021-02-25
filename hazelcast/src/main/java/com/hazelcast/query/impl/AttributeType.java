@@ -89,7 +89,23 @@ public enum AttributeType {
     /**
      * Portable
      */
-    PORTABLE(TypeConverters.PORTABLE_CONVERTER);
+    PORTABLE(TypeConverters.PORTABLE_CONVERTER),
+    /**
+     * Local Time
+     */
+    SQL_LOCAL_TIME(TypeConverters.LOCAL_TIME_CONVERTER),
+    /**
+     * Local Date
+     */
+    SQL_LOCAL_DATE(TypeConverters.LOCAL_DATE_CONVERTER),
+    /**
+     * Local Date Time
+     */
+    SQL_LOCAL_DATE_TIME(TypeConverters.LOCAL_DATE_TIME_CONVERTER),
+    /**
+     * Offset Date Time
+     */
+    SQL_OFFSET_DATE_TIME(TypeConverters.OFFSET_DATE_TIME_CONVERTER);
 
     private final TypeConverter converter;
 
