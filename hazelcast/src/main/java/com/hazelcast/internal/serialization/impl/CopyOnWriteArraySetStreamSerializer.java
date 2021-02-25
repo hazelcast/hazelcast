@@ -17,9 +17,12 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
+import java.util.Spliterator;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
@@ -40,5 +43,21 @@ public class CopyOnWriteArraySetStreamSerializer<E> extends AbstractCollectionSt
         deserializeEntriesInto(in, size, collection);
 
         return new CopyOnWriteArraySet<>(collection);
+    }
+
+    @Override
+    @SuppressWarnings("DuplicatedCode")
+    public void write(ObjectDataOutput out, CopyOnWriteArraySet<E> collection) throws IOException {
+        Spliterator<E> cowSplitIterator = collection.spliterator();
+        int size = (int) cowSplitIterator.getExactSizeIfKnown();
+        assert size != -1;
+        out.writeInt(size);
+        cowSplitIterator.forEachRemaining(object -> {
+            try {
+                out.writeObject(object);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        });
     }
 }
