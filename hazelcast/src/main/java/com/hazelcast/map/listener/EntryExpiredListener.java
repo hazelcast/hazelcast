@@ -19,17 +19,16 @@ package com.hazelcast.map.listener;
 import com.hazelcast.core.EntryEvent;
 
 /**
- * Listener which is notified after removal of an entry due to the expiration-based-eviction.
- * There are two sources of expiration based eviction, they are max-idle-seconds and time-to-live-seconds.
- *
- * Note that if your listener implements both {@link EntryExpiredListener} and {@link EntryEvictedListener} together,
- * there is a probability that the listener may receive both expiration and eviction events for the same entry. This is because,
- * size-based-eviction removes entries regardless of whether entries expired or not.
+ * Invoked upon expiration-based removal of an entry.
+ * <p>
+ * Expiration-based entry removals can happen in two different ways:
+ * <ul>
+ * <li> time-to-live-seconds based expiration</li>
+ * <li> max-idle-time based expiration</li>
+ * </ul>
  *
  * @param <K> the type of key.
  * @param <V> the type of value.
- *
- * @see EntryEvictedListener
  *
  * @since 3.6
  */
