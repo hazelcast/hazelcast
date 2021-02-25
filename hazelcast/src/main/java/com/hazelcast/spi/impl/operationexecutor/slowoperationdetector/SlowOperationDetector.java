@@ -29,13 +29,12 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
 import static com.hazelcast.spi.properties.ClusterProperty.SLOW_OPERATION_DETECTOR_ENABLED;
 import static com.hazelcast.spi.properties.ClusterProperty.SLOW_OPERATION_DETECTOR_LOG_PURGE_INTERVAL_SECONDS;
 import static com.hazelcast.spi.properties.ClusterProperty.SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS;
 import static com.hazelcast.spi.properties.ClusterProperty.SLOW_OPERATION_DETECTOR_STACK_TRACE_LOGGING_ENABLED;
 import static com.hazelcast.spi.properties.ClusterProperty.SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS;
-import static com.hazelcast.internal.util.EmptyStatement.ignore;
-import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
 import static java.lang.String.format;
 
 /**
@@ -140,6 +139,10 @@ public final class SlowOperationDetector {
         public void run() {
             long lastLogPurge = System.nanoTime();
             while (running) {
+                if (Thread.currentThread().isInterrupted()) {
+                    return;
+                }
+
                 long nowNanos = System.nanoTime();
                 long nowMillis = System.currentTimeMillis();
 
@@ -287,8 +290,8 @@ public final class SlowOperationDetector {
         private void sleepInterval(long nowNanos) {
             try {
                 TimeUnit.NANOSECONDS.sleep(ONE_SECOND_IN_NANOS - (System.nanoTime() - nowNanos));
-            } catch (Exception ignored) {
-                ignore(ignored);
+            } catch (InterruptedException ignored) {
+                Thread.currentThread().interrupt();
             }
         }
 
