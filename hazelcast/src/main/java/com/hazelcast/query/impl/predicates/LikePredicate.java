@@ -37,7 +37,6 @@ public class LikePredicate extends AbstractPredicate implements IndexAwarePredic
     private static final long serialVersionUID = 1L;
 
     protected String expression;
-    private String indexPrefix;
     private transient volatile Pattern pattern;
 
     public LikePredicate() {
@@ -51,9 +50,7 @@ public class LikePredicate extends AbstractPredicate implements IndexAwarePredic
     @Override
     public Set<QueryableEntry> filter(QueryContext queryContext) {
         Index index = queryContext.getIndex(attributeName);
-        if (indexPrefix == null) {
-            indexPrefix = expression.substring(0, expression.length() - 1);
-        }
+        String indexPrefix = expression.substring(0, expression.length() - 1);
         return index.getRecords(indexPrefix, true, indexPrefix + "\uFFFF", false);
     }
 
