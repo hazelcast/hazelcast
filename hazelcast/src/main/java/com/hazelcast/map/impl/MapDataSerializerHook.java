@@ -128,6 +128,7 @@ import com.hazelcast.map.impl.query.Query;
 import com.hazelcast.map.impl.query.QueryEventFilter;
 import com.hazelcast.map.impl.query.QueryOperation;
 import com.hazelcast.map.impl.query.QueryPartitionOperation;
+import com.hazelcast.map.impl.query.QueryPartitionsOperation;
 import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.map.impl.query.ResultSegment;
@@ -480,6 +481,7 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[MERGE_MAP_OPERATION_PROCESSOR] = arg -> new MergeEntryProcessor<>();
         constructors[MAP_ENTRY_REPLACING_PROCESSOR] = arg -> new MapEntryReplacingEntryProcessor<>();
         constructors[LOCAL_RECORD_STORE_STATS] = arg -> new LocalRecordStoreStatsImpl();
+        constructors[QUERY_PARTITIONS] = arg -> new QueryPartitionsOperation();
 
         return new ArrayDataSerializableFactory(constructors);
     }
