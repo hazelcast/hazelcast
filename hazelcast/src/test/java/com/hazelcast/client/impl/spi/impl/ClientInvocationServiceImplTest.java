@@ -18,11 +18,12 @@ package com.hazelcast.client.impl.spi.impl;
 
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.ClientConnection;
-import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.config.Config;
-import com.hazelcast.internal.nio.Bits;
-import com.hazelcast.spi.impl.executionservice.TaskScheduler;
-import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.client.impl.protocol.codec.ClientPingCodec;
+import com.hazelcast.client.impl.protocol.codec.MapSizeCodec;
+import com.hazelcast.client.test.ClientTestSupport;
+import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.spi.exception.RetryableHazelcastException;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -32,122 +33,97 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.concurrent.Callable;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-
-import static com.hazelcast.client.impl.protocol.ClientMessage.CORRELATION_ID_FIELD_OFFSET;
-import static com.hazelcast.client.impl.protocol.ClientMessage.UNFRAGMENTED_MESSAGE;
-import static com.hazelcast.test.HazelcastTestSupport.assertTrueAllTheTime;
-import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ClientInvocationServiceImplTest {
+public class ClientInvocationServiceImplTest extends ClientTestSupport {
 
-    private static final int MOCK_FRAME_LENGTH = CORRELATION_ID_FIELD_OFFSET + Bits.LONG_SIZE_IN_BYTES;
-
-    private ClientInvocationServiceImpl invocationService;
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
     private HazelcastClientInstanceImpl client;
-    private SingleThreadedTaskScheduler taskScheduler;
+
+    @After
+    public void cleanup() {
+        hazelcastFactory.terminateAll();
+    }
 
     @Before
     public void setUp() {
-        client = mock(HazelcastClientInstanceImpl.class, RETURNS_DEEP_STUBS);
-        when(client.getProperties()).thenReturn(new HazelcastProperties(new Config()));
-        taskScheduler = new SingleThreadedTaskScheduler();
-        when(client.getTaskScheduler()).thenReturn(taskScheduler);
-        invocationService = new ClientInvocationServiceImpl(client);
-        when(client.getInvocationService()).thenReturn(invocationService);
-    }
-
-    @After
-    public void tearDown() {
-        invocationService.shutdown();
-        taskScheduler.shutdown();
+        hazelcastFactory.newHazelcastInstance();
+        client = getHazelcastClientInstanceImpl(hazelcastFactory.newHazelcastClient());
     }
 
     @Test
     public void testCleanResourcesTask_rejectsPendingInvocationsWithClosedConnections() {
-        invocationService.start();
+        ClientConnection closedConn = closedConnection();
+        ClientInvocation invocation = new ClientInvocation(client, ClientPingCodec.encodeRequest(), null, closedConn);
 
-        ClientConnection conn = prepareConnection(false);
-        ClientInvocation invocation = prepareInvocation(1);
-        invocation.setSendConnection(conn);
-        invocationService.registerInvocation(invocation, conn);
-
-        ClientInvocationFuture future = invocation.getClientInvocationFuture();
+        ClientInvocationFuture future = invocation.invoke();
         assertTrueEventually(() -> assertTrue(future.isDone() && future.isCompletedExceptionally()));
     }
 
     @Test
     public void testCleanResourcesTask_ignoresPendingInvocationsWithAliveConnections() {
-        invocationService.start();
+        ClientConnection closedConn = closedConnection();
+        ClientInvocation invocation1 = new ClientInvocation(client, ClientPingCodec.encodeRequest(), null, closedConn);
+        ClientInvocationFuture future1 = invocation1.invoke();
 
-        ClientConnection closedConn = prepareConnection(false);
-        ClientInvocation invocation1 = prepareInvocation(1);
-        invocation1.setSendConnection(closedConn);
-        invocationService.registerInvocation(invocation1, closedConn);
+        ClientConnection connection = client.getConnectionManager().getRandomConnection();
+        ClientInvocation invocation2 = new ClientInvocation(client, ClientPingCodec.encodeRequest(), null, connection);
+        ClientInvocationFuture future2 = invocation2.invoke();
 
-        ClientConnection aliveConn = prepareConnection(true);
-        ClientInvocation invocation2 = prepareInvocation(2);
-        invocationService.registerInvocation(invocation2, aliveConn);
-
-        ClientInvocationFuture future1 = invocation1.getClientInvocationFuture();
-        ClientInvocationFuture future2 = invocation2.getClientInvocationFuture();
         assertTrueEventually(() -> assertTrue(future1.isDone() && future1.isCompletedExceptionally()));
         assertTrueAllTheTime(() -> assertFalse(future2.isDone()), 1);
     }
 
-    private ClientInvocation prepareInvocation(long correlationId) {
-        ClientMessage message = ClientMessage.createForEncode();
-        ClientMessage.Frame initialFrame =
-                new ClientMessage.Frame(new byte[MOCK_FRAME_LENGTH], UNFRAGMENTED_MESSAGE);
-        message.add(initialFrame);
-        message.setCorrelationId(correlationId);
-        return new ClientInvocation(client, message, null);
+    @Test
+    public void testInvocation_willNotBeRetried_afterFirstNotify() {
+        ClientConnection connection = client.getConnectionManager().getRandomConnection();
+        ClientInvocation invocation = new ClientInvocation(client, ClientPingCodec.encodeRequest(), null, connection);
+        ClientInvocation spiedInvocation = spy(invocation);
+
+        spiedInvocation.invoke();
+        spiedInvocation.notify(MapSizeCodec.encodeResponse(4));
+        spiedInvocation.notifyException(new RetryableHazelcastException());
+
+        assertTrueAllTheTime(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                verify(spiedInvocation, times(0)).run();
+            }
+        }, 1);
+
     }
 
-    private ClientConnection prepareConnection(boolean alive) {
+    @Test
+    public void testInvocation_willNotBeRetried_afterFirstNotifyException() {
+        ClientConnection connection = client.getConnectionManager().getRandomConnection();
+        ClientInvocation invocation = new ClientInvocation(client, ClientPingCodec.encodeRequest(), null, connection);
+        ClientInvocation spiedInvocation = spy(invocation);
+
+        spiedInvocation.invoke();
+        spiedInvocation.notifyException(new IllegalStateException());
+        spiedInvocation.notifyException(new RetryableHazelcastException());
+
+        assertTrueAllTheTime(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                verify(spiedInvocation, times(0)).run();
+            }
+        }, 1);
+
+    }
+
+    private ClientConnection closedConnection() {
         ClientConnection conn = mock(ClientConnection.class, RETURNS_DEEP_STUBS);
-        when(conn.isAlive()).thenReturn(alive);
+        when(conn.isAlive()).thenReturn(false);
         return conn;
-    }
-
-    private static class SingleThreadedTaskScheduler implements TaskScheduler {
-
-        private final ScheduledExecutorService internalExecutor = Executors.newScheduledThreadPool(1);
-
-        @Override
-        public ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
-            return internalExecutor.schedule(command, delay, unit);
-        }
-
-        @Override
-        public <V> ScheduledFuture<Future<V>> schedule(Callable<V> command, long delay, TimeUnit unit) {
-            return (ScheduledFuture<Future<V>>) internalExecutor.schedule(command, delay, unit);
-        }
-
-        @Override
-        public ScheduledFuture<?> scheduleWithRepetition(Runnable command, long initialDelay, long period, TimeUnit unit) {
-            return internalExecutor.scheduleAtFixedRate(command, initialDelay, period, unit);
-        }
-
-        @Override
-        public void execute(Runnable command) {
-            internalExecutor.execute(command);
-        }
-
-        public void shutdown() {
-            internalExecutor.shutdownNow();
-        }
     }
 }

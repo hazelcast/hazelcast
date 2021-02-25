@@ -239,14 +239,18 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
 
     @Override
     protected void complete(Object response) {
-        clientInvocationFuture.complete(response);
-        invocationService.deRegisterInvocation(clientMessage.getCorrelationId());
+        boolean deregistered = invocationService.deRegisterInvocation(clientMessage.getCorrelationId());
+        if (deregistered) {
+            clientInvocationFuture.complete(response);
+        }
     }
 
     @Override
     protected void completeExceptionally(Throwable t) {
-        clientInvocationFuture.completeExceptionally(t);
-        invocationService.deRegisterInvocation(clientMessage.getCorrelationId());
+        boolean deregistered = invocationService.deRegisterInvocation(clientMessage.getCorrelationId());
+        if (deregistered) {
+            clientInvocationFuture.completeExceptionally(t);
+        }
     }
 
     protected boolean shouldFailOnIndeterminateOperationState() {
@@ -303,7 +307,12 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
     }
 
     private void execute() {
-        invocationService.deRegisterInvocation(clientMessage.getCorrelationId());
+        boolean deregistered = invocationService.deRegisterInvocation(clientMessage.getCorrelationId());
+        if (!deregistered) {
+            //if this is already deregistered by a second thread, it is either retried or completed.
+            //return with noop
+            return;
+        }
         if (invokeCount < MAX_FAST_INVOCATION_COUNT) {
             // fast retry for the first few invocations
             executionService.execute(this);

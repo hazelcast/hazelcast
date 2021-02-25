@@ -254,8 +254,8 @@ public class ClientInvocationServiceImpl implements ClientInvocationService {
         }
     }
 
-    void deRegisterInvocation(long callId) {
-        invocations.remove(callId);
+    boolean deRegisterInvocation(long callId) {
+        return invocations.remove(callId) != null;
     }
 
     ClientInvocation getInvocation(long callId) {
