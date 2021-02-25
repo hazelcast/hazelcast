@@ -106,21 +106,32 @@ public class JsonSchemaNameValue implements IdentifiedDataSerializable {
     @Override
     public String toString() {
         return "JsonSchemaNameValue{"
-            + "nameStart=" + nameStart
-            + ", value=" + value
-            + '}';
+                + "nameStart=" + nameStart
+                + ", value=" + value
+                + '}';
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(nameStart);
-        out.writeObject(value);
+        if (value instanceof JsonSchemaTerminalNode) {
+            out.writeBoolean(true);
+        } else {
+            out.writeBoolean(false);
+        }
+        value.writeData(out);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         nameStart = in.readInt();
-        value = in.readObject();
+        boolean isTerminal = in.readBoolean();
+        if (isTerminal) {
+            value = new JsonSchemaTerminalNode();
+        } else {
+            value = new JsonSchemaStructNode();
+        }
+        value.readData(in);
     }
 
     @Override

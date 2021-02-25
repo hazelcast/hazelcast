@@ -79,10 +79,6 @@ public class JsonSchemaStructNode extends JsonSchemaNode {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        if (!super.equals(o)) {
-            return false;
-        }
-
         JsonSchemaStructNode that = (JsonSchemaStructNode) o;
 
         return inners != null ? inners.equals(that.inners) : that.inners == null;
@@ -98,15 +94,15 @@ public class JsonSchemaStructNode extends JsonSchemaNode {
     @Override
     public String toString() {
         return "JsonSchemaStructNode{"
-            + "inners=" + inners
-            + '}';
+                + "inners=" + inners
+                + '}';
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(inners.size());
         for (JsonSchemaNameValue nameValue : inners) {
-            out.writeObject(nameValue);
+            nameValue.writeData(out);
         }
         // Don't serialize parent node from superclass to avoid cyclic dependency
     }
@@ -116,7 +112,8 @@ public class JsonSchemaStructNode extends JsonSchemaNode {
         int innersSize = in.readInt();
         inners = new ArrayList<>(innersSize);
         for (int i = 0; i < innersSize; ++i) {
-            JsonSchemaNameValue nameValue = in.readObject();
+            JsonSchemaNameValue nameValue = new JsonSchemaNameValue();
+            nameValue.readData(in);
             nameValue.getValue().setParent(this);
             inners.add(nameValue);
         }
