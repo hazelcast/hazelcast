@@ -149,7 +149,7 @@ SHOW [EXTERNAL] MAPPINGS
 - `EXTERNAL`: an optional keyword, doesn't affect the semantics
 
 This command returns the names of existing external mappings. The output
-is a shortcut to this query:
+is a shortcut to this query (though `ORDER BY` is not yet supported):
 
 ```sql
 SELECT mapping_name AS name
