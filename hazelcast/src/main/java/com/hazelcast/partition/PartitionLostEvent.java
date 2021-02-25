@@ -19,7 +19,9 @@ package com.hazelcast.partition;
 import com.hazelcast.cluster.Address;
 
 /**
- * The event that is fired when a partition lost its owner and all backups.
+ * The event is fired when a primary replica of the partition lost.
+ * If a backup node crashes when owner of the partition is still alive,
+ * a partition lost event won't be fired.
  *
  * @see Partition
  * @see PartitionService
@@ -28,7 +30,20 @@ import com.hazelcast.cluster.Address;
 public interface PartitionLostEvent extends PartitionEvent {
 
     /**
-     * Returns the number of lost backups for the partition. 0: the owner, 1: first backup, 2: second backup...
+     * Return the replica index up to which partition replicas are lost
+     * together with the primary replica.
+     * <ul>
+     * <li> 0 means that only the primary replica is lost. In other
+     * words, the node which owns the partition is unreachable, hence
+     * removed from the cluster. If there is a data structure
+     * configured with no backups, its data is lost for this partition.
+     * <li> 1 means that both the primary replica and the first backup
+     * replica are lost. In other words, the partition owner node and
+     * the first backup node have became unreachable. If a data
+     * structure is configured with less than 2 backups, its data is
+     * lost for this partition.
+     * <li>The idea works same for higher backup counts.
+     * </ul>
      */
     int getLostBackupCount();
 
