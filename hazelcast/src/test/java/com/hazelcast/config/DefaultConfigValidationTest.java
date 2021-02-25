@@ -56,7 +56,7 @@ public class DefaultConfigValidationTest extends HazelcastTestSupport {
                 assertEquals(configNode.defaultConfig, configNode.initialConfig);
             } catch (Error e) {
                 LOGGER.warning(configNode.name + " (Child of " + configNode.parent.name + ") failed the test.");
-                numberOfFailedConfigs++; // TODO
+                numberOfFailedConfigs++;
             }
         }
         LOGGER.info("Number of failed configs: " + numberOfFailedConfigs);
