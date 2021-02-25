@@ -174,10 +174,10 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
 
     private Query buildQuery(Predicate predicate) {
         Query.QueryBuilder builder = Query.of()
-                                          .mapName(getDistributedObjectName())
-                                          .predicate(predicate instanceof PartitionPredicate ? ((PartitionPredicate) predicate).getTarget() : predicate)
-                                          .partitionIdSet(SetUtil.allPartitionIds(nodeEngine.getPartitionService().getPartitionCount()))
-                                          .iterationType(getIterationType());
+                .mapName(getDistributedObjectName())
+                .predicate(predicate instanceof PartitionPredicate ? ((PartitionPredicate) predicate).getTarget() : predicate)
+                .partitionIdSet(SetUtil.allPartitionIds(nodeEngine.getPartitionService().getPartitionCount()))
+                .iterationType(getIterationType());
         if (getAggregator() != null) {
             builder = builder.aggregator(getAggregator());
         }
