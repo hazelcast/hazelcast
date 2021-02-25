@@ -132,6 +132,7 @@ import com.hazelcast.map.impl.query.Query;
 import com.hazelcast.map.impl.query.QueryEventFilter;
 import com.hazelcast.map.impl.query.QueryOperation;
 import com.hazelcast.map.impl.query.QueryPartitionOperation;
+import com.hazelcast.map.impl.query.QueryPartitionsOperation;
 import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.map.impl.query.ResultSegment;
