@@ -36,7 +36,7 @@ import static java.lang.System.getenv;
 public class PhoneHome {
 
     private static final String FALSE = "false";
-    private static final String DEFAULT_BASE_PHONE_HOME_URL = "http://phonehome.hazelcast.com/ping";
+    private static final String DEFAULT_BASE_PHONE_HOME_URL = "https://phonehome.hazelcast.com/ping";
     private static final MetricsCollector CLOUD_INFO_COLLECTOR = new CloudInfoCollector();
 
     protected final Node hazelcastNode;
