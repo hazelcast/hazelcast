@@ -28,6 +28,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.hazelcast.query.impl.Indexes.SKIP_PARTITIONS_COUNT_CHECK;
+
 /**
  * Like Predicate
  */
@@ -37,6 +39,7 @@ public class LikePredicate extends AbstractPredicate implements IndexAwarePredic
     private static final long serialVersionUID = 1L;
 
     protected String expression;
+    private String indexPrefix;
     private transient volatile Pattern pattern;
 
     public LikePredicate() {
@@ -50,7 +53,10 @@ public class LikePredicate extends AbstractPredicate implements IndexAwarePredic
     @Override
     public Set<QueryableEntry> filter(QueryContext queryContext) {
         Index index = queryContext.getIndex(attributeName);
-        return index.getRecords(expression, true, expression + "\uFFFF", false);
+        if (indexPrefix == null) {
+            indexPrefix = expression.substring(0, expression.length() - 1);
+        }
+        return index.getRecords(indexPrefix, true, indexPrefix + "\uFFFF", false);
     }
 
     @Override
