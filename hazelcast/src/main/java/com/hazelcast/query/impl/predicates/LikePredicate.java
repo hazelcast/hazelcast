@@ -28,8 +28,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.hazelcast.query.impl.Indexes.SKIP_PARTITIONS_COUNT_CHECK;
-
 /**
  * Like Predicate
  */
