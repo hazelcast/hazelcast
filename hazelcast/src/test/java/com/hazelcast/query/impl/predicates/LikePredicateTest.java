@@ -130,11 +130,22 @@ public class LikePredicateTest {
     }
 
     @Test
+    public void likePredicateIsNotIndexed_whenPercentWildcardIsEscaped() {
+        QueryContext queryContext = mock(QueryContext.class);
+        when(queryContext.getIndex("this")).thenReturn(createIndex(IndexType.SORTED));
+
+        assertFalse(new LikePredicate("this", "sub\\%").isIndexed(queryContext));
+        assertFalse(new LikePredicate("this", "sub\\%string\\%").isIndexed(queryContext));
+    }
+
+    @Test
     public void likePredicateIsIndexed_whenPercentWildcardIsUsed_andIndexIsSorted() {
         QueryContext queryContext = mock(QueryContext.class);
         when(queryContext.getIndex("this")).thenReturn(createIndex(IndexType.SORTED));
 
         assertTrue(new LikePredicate("this", "sub%").isIndexed(queryContext));
+        assertTrue(new LikePredicate("this", "sub\\%string%").isIndexed(queryContext));
+        assertTrue(new LikePredicate("this", "sub\\_string%").isIndexed(queryContext));
     }
 
     @NotNull

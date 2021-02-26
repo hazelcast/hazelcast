@@ -57,11 +57,23 @@ public class LikePredicate extends AbstractPredicate implements IndexAwarePredic
     @Override
     public boolean isIndexed(QueryContext queryContext) {
         Index index = queryContext.getIndex(attributeName);
-        if (index != null && index.isOrdered()) {
-            int firstEntry = expression.indexOf('%');
-            if (firstEntry > 0) {
-                int secondEntry = expression.indexOf('%', firstEntry + 1);
-                return secondEntry == -1;
+        return index != null && index.isOrdered() && expressionCanBeUsedAsIndexPrefix();
+    }
+
+    private boolean expressionCanBeUsedAsIndexPrefix() {
+        boolean escape = false;
+        for (int i = 0; i < expression.length(); i++) {
+            char c = expression.charAt(i);
+            if (c == '\\') {
+                escape = true;
+            } else {
+                if (c == '%' && !escape) {
+                    return i == expression.length() - 1;
+                }
+                if (c == '_' && !escape) {
+                    return false;
+                }
+                escape = false;
             }
         }
         return false;
