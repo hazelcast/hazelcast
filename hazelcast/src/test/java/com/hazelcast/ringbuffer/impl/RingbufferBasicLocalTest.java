@@ -16,11 +16,12 @@
 
 package com.hazelcast.ringbuffer.impl;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
@@ -28,8 +29,16 @@ import org.junit.runner.RunWith;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class RingbufferBasicLocalTest extends RingbufferAbstractTest {
 
-    @Override
-    protected HazelcastInstance[] newInstances(Config config) {
-        return createHazelcastInstanceFactory(1).newInstances(config);
+    private static TestHazelcastInstanceFactory factory
+            = new TestHazelcastInstanceFactory(1);
+
+    @BeforeClass
+    public static void beforeClass() throws Exception {
+        prepare(factory::newInstances);
+    }
+
+    @AfterClass
+    public static void afterClass() throws Exception {
+        factory.terminateAll();
     }
 }
