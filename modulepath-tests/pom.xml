@@ -61,18 +61,6 @@
                     <release>9</release>
                 </configuration>
             </plugin>
-
-            <!-- Disable spotbugs as we have nothing to analyze yet (which makes the plugin unhappy). -->
-            <plugin>
-                <groupId>com.github.spotbugs</groupId>
-                <artifactId>spotbugs-maven-plugin</artifactId>
-                <version>${maven.spotbugs.plugin.version}</version>
-                <executions>
-                    <execution>
-                        <phase>none</phase>
-                    </execution>
-                </executions>
-            </plugin>
         </plugins>
     </build>
 

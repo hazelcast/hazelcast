@@ -776,7 +776,6 @@ public final class Processors {
         return () -> {
             final ResettableSingletonTraverser<R> mainTrav = new ResettableSingletonTraverser<>();
             final ResettableSingletonTraverser<R> evictTrav = new ResettableSingletonTraverser<>();
-            // SpotBugs bug: https://github.com/spotbugs/spotbugs/issues/844
             @SuppressWarnings("UnnecessaryLocalVariable")
             TriFunction<? super S, ? super K, ? super Long, ? extends R> onEvictFnCopy = onEvictFn;
             return new TransformStatefulP<T, K, S, R>(

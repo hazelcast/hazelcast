@@ -1213,7 +1213,6 @@ public final class AggregateOperations {
         checkSerializable(combineAccValuesFn, "combineAccValuesFn");
         checkSerializable(deductAccValueFn, "deductAccValueFn");
 
-        // workaround for spotbugs issue: https://github.com/spotbugs/spotbugs/issues/552
         @SuppressWarnings("UnnecessaryLocalVariable")
         BinaryOperatorEx<A> deductFn = deductAccValueFn;
         return AggregateOperation

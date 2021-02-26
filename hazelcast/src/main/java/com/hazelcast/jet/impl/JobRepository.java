@@ -201,8 +201,6 @@ public class JobRepository {
      * If the upload process fails for any reason, such as being unable to access a resource,
      * uploaded resources are cleaned up.
      */
-    @SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE",
-            justification = "it's a false positive since java 11: https://github.com/spotbugs/spotbugs/issues/756")
     long uploadJobResources(long jobId, JobConfig jobConfig) {
         Map<String, byte[]> tmpMap = new HashMap<>();
         try {
@@ -267,8 +265,6 @@ public class JobRepository {
         return idGenerator.newId();
     }
 
-    @SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE",
-            justification = "it's a false positive since java 11: https://github.com/spotbugs/spotbugs/issues/756")
     private void loadJar(Map<String, byte[]> tmpMap, ResourceConfig rc) throws IOException {
         try (InputStream in = rc.getUrl().openStream()) {
             loadJarFromInputStream(tmpMap, in);

@@ -16,8 +16,6 @@
 
 package com.hazelcast.jet.impl.util;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.ByteArrayOutputStream;
@@ -48,8 +46,6 @@ public final class IOUtil {
      * <p>
      * <strong>Note:</strong> hidden files and directories are ignored
      */
-    @SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE",
-            justification = "it's a false positive since java 11: https://github.com/spotbugs/spotbugs/issues/756")
     public static void packDirectoryIntoZip(@Nonnull Path baseDir, @Nonnull OutputStream destination)
             throws IOException {
         try (
@@ -86,8 +82,6 @@ public final class IOUtil {
      * @param destination the stream to write to
      * @param fileName the name of the file in the destination ZIP
      */
-    @SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE",
-            justification = "it's a false positive since java 11: https://github.com/spotbugs/spotbugs/issues/756")
     public static void packStreamIntoZip(
             @Nonnull InputStream source, @Nonnull OutputStream destination, @Nonnull String fileName
     ) throws IOException {

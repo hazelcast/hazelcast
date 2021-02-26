@@ -171,18 +171,14 @@ Hazelcast has 3 testing profiles:
 * **All Tests**: Type `mvn test -P all-tests` to run all tests serially
   using network.
 
-### Checkstyle and SpotBugs
+### Checkstyle
 
 Hazelcast uses static code analysis tools to check if a Pull Request is
-ready for merge. Run the following commands locally to check if your
-contribution is Checkstyle and SpotBugs compatible.
+ready for merge. Run the following commandslocally to check if your
+contribution is Checkstyle compatible.
 
 ```bash
-mvn clean validate -P checkstyle
-```
-
-```bash
-mvn clean compile -P spotbugs
+mvn clean validate
 ```
 
 ## License

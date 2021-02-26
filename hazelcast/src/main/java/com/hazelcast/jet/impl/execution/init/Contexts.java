@@ -32,7 +32,6 @@ import com.hazelcast.jet.impl.deployment.IMapInputStream;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.IMap;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -242,8 +241,6 @@ public final class Contexts {
             }
         }
 
-        @SuppressFBWarnings(value = "NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE",
-            justification = "SpotBugs bug, ignores requireNonNull() https://github.com/spotbugs/spotbugs/issues/651")
         private void recreateIfExists(@Nonnull String id) {
             File dirFile = tempDirectories.get(id);
             if (dirFile == null) {

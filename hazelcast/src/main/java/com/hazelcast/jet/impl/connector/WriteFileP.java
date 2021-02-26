@@ -250,8 +250,6 @@ public final class WriteFileP<T> implements Processor {
         }
     }
 
-    @SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE",
-            justification = "it's a false positive since java 11: https://github.com/spotbugs/spotbugs/issues/756")
     private void abortUnfinishedTransactions() {
         try (Stream<Path> fileStream = Files.list(directory)) {
             fileStream
