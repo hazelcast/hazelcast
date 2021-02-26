@@ -35,6 +35,7 @@ import com.hazelcast.spi.exception.TargetDisconnectedException;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -48,13 +49,13 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
         implements EventHandler<ClientMessage> {
 
     private static final int INITIAL_MEMBERS_TIMEOUT_SECONDS = 120;
-
+    private static final Set<Member> CLUSTER_SWITCH_EMPTY_MEMBERS = new HashSet<>();
     private final ILogger logger;
     private final HazelcastClientInstanceImpl client;
     private final ClientClusterServiceImpl clusterService;
     private final ClientPartitionServiceImpl partitionService;
     private final ClientConnectionManagerImpl connectionManager;
-    private volatile Set<Member> members;
+    private volatile Set<Member> members = CLUSTER_SWITCH_EMPTY_MEMBERS;
 
     private volatile CountDownLatch initialListFetchedLatch;
     private volatile long lastCorrelationId = -1;
@@ -84,7 +85,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
 
     @Override
     public void handleMemberListEventV10(Collection<Member> initialMembers) {
-        if (members == null) {
+        if (members == CLUSTER_SWITCH_EMPTY_MEMBERS) {
             //this means this is the first time client connected to this cluster.
             members = new LinkedHashSet<Member>();
             members.addAll(initialMembers);
@@ -144,15 +145,19 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
     }
 
     public void clearMemberListOnClusterRestart() {
-        Set<Member> prevMembers = Collections.emptySet();
-        if (!members.isEmpty()) {
-            prevMembers = new LinkedHashSet<Member>(members.size());
-            prevMembers.addAll(members);
-            members.clear();
-        }
+        // This check is necessary so that when handling auth response, it will not
+        // intervene with client failover logic
+        if (members != CLUSTER_SWITCH_EMPTY_MEMBERS) {
+            Set<Member> prevMembers = Collections.emptySet();
+            if (!members.isEmpty()) {
+                prevMembers = new LinkedHashSet<Member>(members.size());
+                prevMembers.addAll(members);
+                members.clear();
+            }
 
-        List<MembershipEvent> events = detectMembershipEvents(prevMembers);
-        fireMembershipEvent(events);
+            List<MembershipEvent> events = detectMembershipEvents(prevMembers);
+            fireMembershipEvent(events);
+        }
     }
 
     void cleanupOnDisconnect() {
@@ -246,6 +251,6 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
     }
 
     void clearMembersOnClusterChange() {
-        members = null;
+        members = CLUSTER_SWITCH_EMPTY_MEMBERS;
     }
 }
