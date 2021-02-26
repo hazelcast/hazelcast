@@ -308,9 +308,9 @@ public class TransactionImpl implements Transaction {
         }
     }
 
-    private void checkTimeout() throws TransactionException {
+    private void checkTimeout() throws TransactionTimedOutException {
         if (startTime + timeoutMillis < currentTimeMillis()) {
-            throw new TransactionException("Transaction is timed-out!");
+            throw new TransactionTimedOutException("Transaction is timed-out!");
         }
     }
 
