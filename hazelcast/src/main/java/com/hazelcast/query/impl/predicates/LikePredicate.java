@@ -49,14 +49,14 @@ public class LikePredicate extends AbstractPredicate implements IndexAwarePredic
 
     @Override
     public Set<QueryableEntry> filter(QueryContext queryContext) {
-        Index index = queryContext.getIndex(attributeName);
+        Index index = queryContext.matchIndex(attributeName, QueryContext.IndexMatchHint.PREFER_ORDERED);
         String indexPrefix = expression.substring(0, expression.length() - 1);
         return index.getRecords(indexPrefix, true, indexPrefix + "\uFFFF", false);
     }
 
     @Override
     public boolean isIndexed(QueryContext queryContext) {
-        Index index = queryContext.getIndex(attributeName);
+        Index index = queryContext.matchIndex(attributeName, QueryContext.IndexMatchHint.PREFER_ORDERED);
         return index != null && index.isOrdered() && expressionCanBeUsedAsIndexPrefix();
     }
 
