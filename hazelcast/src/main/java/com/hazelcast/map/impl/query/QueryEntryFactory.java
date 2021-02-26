@@ -20,7 +20,7 @@ import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.impl.CachedQueryEntry;
-import com.hazelcast.query.impl.QueryEntry;
+import com.hazelcast.query.impl.QuerySerializedEntry;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
 
@@ -41,7 +41,7 @@ public final class QueryEntryFactory {
     public QueryableEntry newEntry(Data key, Object value) {
         switch (cacheDeserializedValues) {
             case NEVER:
-                return new QueryEntry(serializationService, key, value, extractors);
+                return new QuerySerializedEntry(serializationService, key, value, extractors);
             default:
                 return new CachedQueryEntry(serializationService, key, value, extractors);
         }
