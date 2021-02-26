@@ -127,7 +127,7 @@ public class EvictionConfig implements EvictionConfiguration, DataSerializable, 
 
     public EvictionConfig(EvictionConfig config) {
         this.defaultSize = config.defaultSize;
-        this.size = checkPositive(config.size, "Size must be positive number!");
+        this.size = config.size;
         this.maxSizePolicy = checkNotNull(config.maxSizePolicy, "Max-Size policy cannot be null!");
         if (config.evictionPolicy != null) {
             this.evictionPolicy = config.evictionPolicy;
