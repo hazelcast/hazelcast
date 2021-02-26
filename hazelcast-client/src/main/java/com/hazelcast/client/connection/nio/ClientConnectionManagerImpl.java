@@ -699,12 +699,12 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
         private void handleSuccessResult(ClientAuthenticationCodec.ResponseParameters result) {
             connection.setRemoteEndpoint(result.address);
+            if (result.serverHazelcastVersionExist) {
+                connection.setConnectedServerVersion(result.serverHazelcastVersion);
+            }
             if (asOwner) {
                 if (result.partitionCountExist) {
                     clusterPartitionCount = result.partitionCount;
-                }
-                if (result.serverHazelcastVersionExist) {
-                    connection.setConnectedServerVersion(result.serverHazelcastVersion);
                 }
                 if (result.clusterIdExist) {
                     if (clusterId != null && !result.clusterId.equals(clusterId)) {

@@ -49,7 +49,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
         implements EventHandler<ClientMessage> {
 
     private static final int INITIAL_MEMBERS_TIMEOUT_SECONDS = 120;
-    private static final Set<Member> CLUSTER_SWITCH_EMPTY_MEMBERS = new HashSet<>();
+    private static final Set<Member> CLUSTER_SWITCH_EMPTY_MEMBERS = new HashSet<Member>();
     private final ILogger logger;
     private final HazelcastClientInstanceImpl client;
     private final ClientClusterServiceImpl clusterService;
