@@ -27,6 +27,7 @@ import com.hazelcast.client.impl.spi.ClientListenerService;
 import com.hazelcast.client.impl.spi.ClientPartitionService;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.impl.executionservice.TaskScheduler;
@@ -158,10 +159,28 @@ public class ClientInvocationServiceImpl implements ClientInvocationService {
 
     public void start() {
         responseHandlerSupplier.start();
-        TaskScheduler executionService = client.getTaskScheduler();
-        long cleanResourcesMillis = client.getProperties().getPositiveMillisOrDefault(CLEAN_RESOURCES_MILLIS);
-        executionService.scheduleWithRepetition(new CleanResourcesTask(), cleanResourcesMillis,
-                cleanResourcesMillis, MILLISECONDS);
+        if (isBackupAckToClientEnabled) {
+            TaskScheduler executionService = client.getTaskScheduler();
+            long cleanResourcesMillis = client.getProperties().getPositiveMillisOrDefault(CLEAN_RESOURCES_MILLIS);
+            executionService.scheduleWithRepetition(new BackupTimeoutTask(), cleanResourcesMillis,
+                    cleanResourcesMillis, MILLISECONDS);
+        }
+        connectionManager.addConnectionListener(new ConnectionListener<ClientConnection>() {
+            @Override
+            public void connectionAdded(ClientConnection connection) {
+
+            }
+
+            @Override
+            public void connectionRemoved(ClientConnection connection) {
+                for (ClientInvocation invocation : invocations.values()) {
+                    if (invocation.getSendConnection() == connection) {
+                        Exception ex = new TargetDisconnectedException(connection.getCloseReason(), connection.getCloseCause());
+                        invocation.notifyException(ex);
+                    }
+                }
+            }
+        });
     }
 
     @Override
@@ -287,29 +306,12 @@ public class ClientInvocationServiceImpl implements ClientInvocationService {
         return isSmartRoutingEnabled;
     }
 
-    private class CleanResourcesTask implements Runnable {
+    private class BackupTimeoutTask implements Runnable {
         @Override
         public void run() {
             for (ClientInvocation invocation : invocations.values()) {
-                ClientConnection connection = invocation.getSendConnection();
-                if (connection == null) {
-                    continue;
-                }
-
-                if (!connection.isAlive()) {
-                    notifyException(invocation, connection);
-                    continue;
-                }
-
-                if (isBackupAckToClientEnabled) {
-                    invocation.detectAndHandleBackupTimeout(operationBackupTimeoutMillis);
-                }
+                invocation.detectAndHandleBackupTimeout(operationBackupTimeoutMillis);
             }
-        }
-
-        private void notifyException(ClientInvocation invocation, ClientConnection connection) {
-            Exception ex = new TargetDisconnectedException(connection.getCloseReason(), connection.getCloseCause());
-            invocation.notifyException(ex);
         }
     }
 
