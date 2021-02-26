@@ -37,6 +37,10 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -225,6 +229,21 @@ public class SqlOrderByTest extends SqlTestSupport {
             "decimalVal",
             "charVal",
             "varcharVal");
+
+        List<Boolean> orderDirections = new ArrayList<>(fields.size());
+        fields.forEach(entry -> orderDirections.add(true));
+
+        checkSelectWithOrderBy(fields, fields, orderDirections);
+    }
+
+    @Test
+    public void testSelectWithOrderByDefaultTemporalTypes() {
+        List<String> fields = Arrays.asList(
+            "dateVal",
+            "timeVal",
+            "timestampVal",
+            "tsTzOffsetDateTimeVal"
+        );
 
         List<Boolean> orderDirections = new ArrayList<>(fields.size());
         fields.forEach(entry -> orderDirections.add(true));
@@ -753,6 +772,14 @@ public class SqlOrderByTest extends SqlTestSupport {
                     cmp = ((Short) prevFieldValue).compareTo((Short) fieldValue);
                 } else if (fieldValue instanceof BigDecimal) {
                     cmp = ((BigDecimal) prevFieldValue).compareTo((BigDecimal) fieldValue);
+                } else if (fieldValue instanceof LocalTime) {
+                    cmp = ((LocalTime) prevFieldValue).compareTo((LocalTime) fieldValue);
+                } else if (fieldValue instanceof LocalDate) {
+                    cmp = ((LocalDate) prevFieldValue).compareTo((LocalDate) fieldValue);
+                } else if (fieldValue instanceof LocalDateTime) {
+                    cmp = ((LocalDateTime) prevFieldValue).compareTo((LocalDateTime) fieldValue);
+                } else if (fieldValue instanceof OffsetDateTime) {
+                    cmp = ((OffsetDateTime) prevFieldValue).compareTo((OffsetDateTime) fieldValue);
                 } else {
                     fail("Not supported field type " + fieldValue.getClass());
                 }

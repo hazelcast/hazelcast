@@ -17,41 +17,44 @@
 package com.hazelcast.map.impl.record;
 
 import com.hazelcast.config.CacheDeserializedValues;
+import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.map.impl.MapContainer;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
-@RunWith(HazelcastParallelClassRunner.class)
+import java.util.Collection;
+
+import static java.util.Arrays.asList;
+
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ObjectRecordFactoryTest extends AbstractRecordFactoryTest<Object> {
 
-    @Override
-    void newRecordFactory(boolean isStatisticsEnabled,
-                          CacheDeserializedValues cacheDeserializedValues) {
-        MapContainer mapContainer = createMapContainer(isStatisticsEnabled, cacheDeserializedValues);
-        factory = new ObjectRecordFactory(mapContainer, serializationService);
+    @Parameterized.Parameters(name = "perEntryStatsEnabled:{0}, evictionPolicy:{1}, cacheDeserializedValues:{2}")
+    public static Collection<Object[]> parameters() {
+        return asList(new Object[][]{
+                {true, EvictionPolicy.NONE, CacheDeserializedValues.NEVER, ObjectRecordWithStats.class},
+                {true, EvictionPolicy.LFU, CacheDeserializedValues.ALWAYS, ObjectRecordWithStats.class},
+                {false, EvictionPolicy.NONE, CacheDeserializedValues.NEVER, SimpleRecord.class},
+                {false, EvictionPolicy.NONE, CacheDeserializedValues.ALWAYS, SimpleRecord.class},
+                {false, EvictionPolicy.LFU, CacheDeserializedValues.NEVER, SimpleRecordWithLFUEviction.class},
+                {false, EvictionPolicy.LFU, CacheDeserializedValues.ALWAYS, SimpleRecordWithLFUEviction.class},
+                {false, EvictionPolicy.LRU, CacheDeserializedValues.NEVER, SimpleRecordWithLRUEviction.class},
+                {false, EvictionPolicy.LRU, CacheDeserializedValues.ALWAYS, SimpleRecordWithLRUEviction.class},
+                {false, EvictionPolicy.RANDOM, CacheDeserializedValues.NEVER, SimpleRecord.class},
+                {false, EvictionPolicy.RANDOM, CacheDeserializedValues.ALWAYS, SimpleRecord.class},
+        });
     }
 
     @Override
-    Class<?> getRecordClass() {
-        return SimpleRecord.class;
-    }
-
-    @Override
-    Class<?> getRecordWithStatsClass() {
-        return ObjectRecordWithStats.class;
-    }
-
-    @Override
-    Class<?> getCachedRecordClass() {
-        return SimpleRecord.class;
-    }
-
-    @Override
-    Class<?> getCachedRecordWithStatsClass() {
-        return ObjectRecordWithStats.class;
+    protected RecordFactory newRecordFactory() {
+        MapContainer mapContainer = createMapContainer(perEntryStatsEnabled,
+                evictionPolicy, cacheDeserializedValues);
+        return new ObjectRecordFactory(mapContainer, serializationService);
     }
 }

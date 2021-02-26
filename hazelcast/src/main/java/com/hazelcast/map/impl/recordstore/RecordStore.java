@@ -510,7 +510,13 @@ public interface RecordStore<R extends Record> {
      */
     void init();
 
-    MetadataStore getMetadataStore();
+    /**
+     * Gets metadata store associated with the record store.
+     * On the first call it initializes the store so
+     * that the Json metadata store is created only when it is needed.
+     * @return the Json metadata store
+     */
+    JsonMetadataStore getOrCreateMetadataStore();
 
     Storage getStorage();
 

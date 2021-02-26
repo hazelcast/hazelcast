@@ -214,6 +214,14 @@ public final class MapTableUtils {
             return QueryDataType.VARCHAR;
         } else if (converter == TypeConverters.CHAR_CONVERTER) {
             return QueryDataType.VARCHAR_CHARACTER;
+        } else if (converter == TypeConverters.LOCAL_TIME_CONVERTER) {
+            return QueryDataType.TIME;
+        } else if (converter == TypeConverters.LOCAL_DATE_CONVERTER) {
+            return QueryDataType.DATE;
+        } else if (converter == TypeConverters.LOCAL_DATE_TIME_CONVERTER) {
+            return QueryDataType.TIMESTAMP;
+        } else if (converter == TypeConverters.OFFSET_DATE_TIME_CONVERTER) {
+            return QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME;
         } else if (converter == TypeConverters.ENUM_CONVERTER) {
             return QueryDataType.OBJECT;
         } else if (converter == TypeConverters.IDENTITY_CONVERTER) {

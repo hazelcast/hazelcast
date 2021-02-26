@@ -90,7 +90,7 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
         }
     }
 
-     // Runs in operation thread, we can assume that
+    // Runs in operation thread, we can assume that
     // here we have an implicit lock for specific WaitNotifyKey.
     // see javadoc
     @Override
@@ -177,7 +177,7 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
     public void shutdown() {
         logger.finest("Stopping tasks...");
         expirationTaskFuture.cancel(true);
-        expirationExecutor.shutdown();
+        expirationExecutor.shutdownNow();
         for (WaitSet waitSet : waitSetMap.values()) {
             waitSet.onShutdown();
         }

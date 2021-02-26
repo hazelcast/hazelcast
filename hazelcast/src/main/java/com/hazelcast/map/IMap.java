@@ -74,28 +74,6 @@ import java.util.function.Function;
  * {@code entrySet}, return an <b>immutable</b> collection clone of the values.
  * The collection is <b>NOT</b> backed by the map, so changes to the map are
  * <b>NOT</b> reflected in the collection.</li>
- * <li>Since Hazelcast is compiled with Java 1.6, we can't override default
- * methods introduced in later Java versions, nor can we add documentation
- * to them. Methods, including but not limited to {@code computeIfPresent},
- * may behave incorrectly if the value passed to the update function is
- * modified in-place and returned as a result of the invocation.
- * You should create a new value instance and return it as a result.
- * <p>
- * For example, following code fragment will behave incorrectly and will
- * enter an infinite loop:
- * <pre>
- * map.computeIfPresent("key", (key, value) -&gt; {
- *     value.setSomeAttribute("newAttributeValue");
- *     return value;
- * });
- * </pre>
- * It should be replaced with:
- * <pre>
- * map.computeIfPresent("key", (key, value) -&gt; {
- *     return new ObjectWithSomeAttribute("newAttributeValue");
- * });
- * </pre>
- * </li>
  * <li>Be careful while using default interface method implementations from
  * {@link ConcurrentMap} and {@link Map}. Under the hood they are typically
  * implemented as a sequence of more primitive map operations, therefore the

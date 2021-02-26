@@ -14,25 +14,22 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.listener;
-
-import com.hazelcast.core.EntryEvent;
+package com.hazelcast.query.impl;
 
 /**
- * Invoked upon size-based-eviction of an entry.
- *
- * @param <K> the type of key.
- * @param <V> the type of value.
- *
- * @since 3.5
+ * Abstraction of Json metadata that is stored either on-heap or off-heap.
  */
-@FunctionalInterface
-public interface EntryEvictedListener<K, V> extends MapListener {
+public interface JsonMetadata {
 
     /**
-     * Invoked upon eviction of an entry.
-     *
-     * @param event the event invoked when an entry is evicted
+     * Gets the key part of the metadata
+     * @return the metadata's key
      */
-    void entryEvicted(EntryEvent<K, V> event);
+    Object getKeyMetadata();
+
+    /**
+     * Gets the value part of the metadata
+     * @return the metadata's value
+     */
+    Object getValueMetadata();
 }
