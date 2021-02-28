@@ -41,7 +41,6 @@ import com.hazelcast.spi.impl.proxyservice.impl.operations.DistributedObjectDest
 import com.hazelcast.spi.impl.proxyservice.impl.operations.PostJoinProxyOperation;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -282,11 +281,13 @@ public class ProxyServiceImpl
         listeners.clear();
     }
 
-    private static @Nonnull String checkServiceNameNotNull(@Nullable String serviceName) {
+    private static @Nonnull
+    String checkServiceNameNotNull(@Nonnull String serviceName) {
         return checkNotNull(serviceName, "Service name is required!");
     }
 
-    private static @Nonnull String checkObjectNameNotNull(@Nullable String name) {
+    private static @Nonnull
+    String checkObjectNameNotNull(@Nonnull String name) {
         return checkNotNull(name, "Object name is required!");
     }
 }
