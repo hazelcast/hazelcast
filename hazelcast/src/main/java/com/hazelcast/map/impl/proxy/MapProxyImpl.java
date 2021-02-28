@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,12 @@ import com.hazelcast.map.impl.MapEntryReplacingEntryProcessor;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MergeEntryProcessor;
 import com.hazelcast.map.impl.SimpleEntryView;
+import com.hazelcast.map.impl.iterator.MapIterable;
+import com.hazelcast.map.impl.iterator.MapIterator;
+import com.hazelcast.map.impl.iterator.MapPartitionIterable;
+import com.hazelcast.map.impl.iterator.MapQueryIterable;
 import com.hazelcast.map.impl.iterator.MapPartitionIterator;
+import com.hazelcast.map.impl.iterator.MapQueryPartitionIterable;
 import com.hazelcast.map.impl.iterator.MapQueryPartitionIterator;
 import com.hazelcast.map.impl.journal.MapEventJournalReadOperation;
 import com.hazelcast.map.impl.journal.MapEventJournalSubscribeOperation;
@@ -104,7 +109,7 @@ import static java.util.Collections.emptyMap;
  * @param <K> the key type of map.
  * @param <V> the value type of map.
  */
-@SuppressWarnings("checkstyle:classfanoutcomplexity")
+@SuppressWarnings({"checkstyle:classfanoutcomplexity", "checkstyle:ClassDataAbstractionCoupling"})
 public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJournalReader<EventJournalMapEvent<K, V>> {
 
     public MapProxyImpl(String name, MapService mapService, NodeEngine nodeEngine, MapConfig mapConfig) {
@@ -878,7 +883,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     private <R> Collection<R> project(@Nonnull Projection<? super Map.Entry<K, V>, R> projection,
-                                     @Nonnull Predicate<K, V> predicate, Target target) {
+                                      @Nonnull Predicate<K, V> predicate, Target target) {
         checkNotNull(projection, NULL_PROJECTION_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         checkNotPagingPredicate(predicate, "project");
@@ -932,8 +937,9 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
      * @param partitionId    the partition ID which is being iterated
      * @param prefetchValues whether to send values along with keys (if {@code true}) or
      *                       to fetch them lazily when iterating (if {@code false})
-     * @return the iterator for the projected entries
+     * @return an iterator for the entries in the partition
      */
+    @Nonnull
     public Iterator<Entry<K, V>> iterator(int fetchSize, int partitionId, boolean prefetchValues) {
         return new MapPartitionIterator<>(this, fetchSize, partitionId, prefetchValues);
     }
@@ -970,13 +976,17 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
      * @param predicate   the predicate which the entries must match. {@code null} value is not
      *                    allowed
      * @param <R>         the return type
-     * @return the iterator for the projected entries
+     * @return an iterator for the projected entries
      * @throws IllegalArgumentException if the predicate is of type {@link PagingPredicate}
      * @since 3.9
      */
-    public <R> Iterator<R> iterator(int fetchSize, int partitionId,
-                                    Projection<? super Map.Entry<K, V>, R> projection,
-                                    Predicate<K, V> predicate) {
+    @Nonnull
+    public <R> Iterator<R> iterator(
+            int fetchSize,
+            int partitionId,
+            @Nonnull Projection<? super Map.Entry<K, V>, R> projection,
+            @Nonnull Predicate<K, V> predicate
+    ) {
         if (predicate instanceof PagingPredicate) {
             throw new IllegalArgumentException("Paging predicate is not allowed when iterating map by query");
         }
@@ -986,6 +996,100 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         projection = serializationService.toObject(serializationService.toData(projection));
         handleHazelcastInstanceAwareParams(predicate);
         return new MapQueryPartitionIterator<>(this, fetchSize, partitionId, predicate, projection);
+    }
+
+    @Override
+    @Nonnull
+    public Iterator<Entry<K, V>> iterator() {
+        int partitionCount = partitionService.getPartitionCount();
+        return new MapIterator<>(this, partitionCount, false);
+    }
+
+    @Override
+    @Nonnull
+    public Iterator<Entry<K, V>> iterator(int fetchSize) {
+        int partitionCount = partitionService.getPartitionCount();
+        return new MapIterator<>(this, fetchSize, partitionCount, false);
+    }
+
+    /**
+     * Returns an iterable providing an iterator for iterating the result
+     * of the projection on entries in the {@code partitionId} which
+     * satisfy the {@code predicate}.
+     *
+     * @param fetchSize   the size of the batches which will be sent when iterating the data
+     * @param partitionId the partition ID which is being iterated
+     * @param projection  the projection to apply before returning the value. null value is not allowed
+     * @param predicate   the predicate which the entries must match. null value is not allowed
+     * @param <R>         the return type
+     * @return an iterable {@link MapQueryPartitionIterable} for the projected entries
+     */
+    @Nonnull
+    public <R> Iterable<R> iterable(
+            int fetchSize,
+            int partitionId,
+            @Nonnull Projection<? super Map.Entry<K, V>, R> projection,
+            @Nonnull Predicate<K, V> predicate
+    ) {
+        checkNotNull(projection, NULL_PROJECTION_IS_NOT_ALLOWED);
+        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
+        return new MapQueryPartitionIterable<>(this, fetchSize, partitionId, projection, predicate);
+    }
+
+    /**
+     * Returns an iterable for iterating entries in the {@code partitionId}. If
+     * {@code prefetchValues} is {@code true}, values will be sent along with
+     * the keys and no additional data will be fetched when iterating. If
+     * {@code false}, only keys will be sent and values will be fetched when
+     * calling {@code Map.Entry.getValue()} lazily.
+     *
+     * @param fetchSize      the size of the batches which will be fetched when iterating the data
+     * @param partitionId    the partition ID which is being iterated
+     * @param prefetchValues whether to send values along with keys (if true) or to fetch them lazily when iterating (if false)
+     * @return an iterable for the entries in the partition
+     */
+    @Nonnull
+    public Iterable<Entry<K, V>> iterable(int fetchSize, int partitionId, boolean prefetchValues) {
+        return new MapPartitionIterable<>(this, fetchSize, partitionId, prefetchValues);
+    }
+
+    /**
+     * Returns an iterable for iterating the result of the projection on entries
+     * in all of the partitions which satisfy the {@code predicate}.
+     *
+     * @param fetchSize  the size of the batches which will be fetched when iterating the data
+     * @param projection the projection to apply before returning the value. null value is not allowed
+     * @param predicate  the predicate which the entries must match. null value is not allowed
+     * @param <R>        the return type
+     * @return an iterable for the projected entries
+     */
+    @Nonnull
+    public <R> Iterable<R> iterable(
+            int fetchSize,
+            @Nonnull Projection<? super Map.Entry<K, V>, R> projection,
+            @Nonnull Predicate<K, V> predicate
+    ) {
+        checkNotNull(projection, NULL_PROJECTION_IS_NOT_ALLOWED);
+        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
+        int partitionCount = partitionService.getPartitionCount();
+        return new MapQueryIterable<>(this, fetchSize, partitionCount, projection, predicate);
+    }
+
+    /**
+     * Returns an iterable for iterating entries in the all of the partitions. If
+     * {@code prefetchValues} is {@code true}, values will be sent along with
+     * the keys and no additional data will be fetched when iterating. If
+     * {@code false}, only keys will be sent and values will be fetched when
+     * calling {@code Map.Entry.getValue()} lazily.
+     *
+     * @param fetchSize      the size of the batches which will be sent when iterating the data
+     * @param prefetchValues whether to send values along with keys (if true) or to fetch them lazily when iterating (if false)
+     * @return an iterable for the map entries
+     */
+    @Nonnull
+    public Iterable<Entry<K, V>> iterable(int fetchSize, boolean prefetchValues) {
+        int partitionCount = partitionService.getPartitionCount();
+        return new MapIterable<>(this, fetchSize, partitionCount, prefetchValues);
     }
 
     @Override
@@ -1253,7 +1357,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
                     return null;
                 }
             } else {
-                Data result =  putIfAbsentInternal(keyAsData, toData(value), UNSET, TimeUnit.MILLISECONDS, UNSET,
+                Data result = putIfAbsentInternal(keyAsData, toData(value), UNSET, TimeUnit.MILLISECONDS, UNSET,
                         TimeUnit.MILLISECONDS);
                 if (result == null) {
                     return value;

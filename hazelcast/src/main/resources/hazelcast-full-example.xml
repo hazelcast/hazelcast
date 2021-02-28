@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -1028,9 +1028,13 @@
             Data will be stored in the map that uses Hazelcast's High-Density Memory Store feature. This
             option is available only in Hazelcast Enterprise HD.
         * <statistics-enabled>:
-            When you enable it, you can retrieve map entry statistics such as creation time, expiration time,
-            number of hits, key, value, etc. Its default value is true.
-       * "<eviction>":
+            When you enable it, you can have map level statistics such as last access time to map,
+            total number of hits, key, value, etc. Its default value is true.
+        * <per-entry-stats-enabled>:
+            Enable/disable per entry statistics. Its default value is false.
+            When you enable it, you can retrieve entry level statistics such as hits, creation time,
+            last access time, last update time,last stored time.
+        * "<eviction>":
            By default map has no eviction configured. Its <eviction-policy> is NONE.
            To make it work you have to configure it.
            Configuration has the following attributes:
@@ -1296,6 +1300,7 @@
         <in-memory-format>BINARY</in-memory-format>
         <metadata-policy>CREATE_ON_UPDATE</metadata-policy>
         <statistics-enabled>true</statistics-enabled>
+        <per-entry-stats-enabled>false</per-entry-stats-enabled>
         <cache-deserialized-values>ALWAYS</cache-deserialized-values>
         <backup-count>1</backup-count>
         <async-backup-count>0</async-backup-count>
@@ -3587,16 +3592,12 @@
         * <executor-pool-sizer>:
             Defines the number of threads responsible for query execution.
 
-        * <operation-pool-size>
-            Defines the number of threads responsible for network operations processing.
-
         * <statement-timeout-millis>
             Defines the timeout in milliseconds that is applied to queries without an explicit timeout.
 
     -->
     <sql>
         <executor-pool-size>8</executor-pool-size>
-        <operation-pool-size>8</operation-pool-size>
         <statement-timeout-millis>0</statement-timeout-millis>
     </sql>
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,8 +31,8 @@ import static com.hazelcast.internal.util.ConcurrentReferenceHashMap.ReferenceTy
  * A thread-local for {@link BufferPool}.
  *
  * The BufferPoolThreadLocal is not assigned to a static field, but as a member field of the SerializationService-instance.
- * is unlike the common use of a ThreadLocal where it assigned to a static field. The reason behind this is that the BufferPool
- * instance belongs to a specific SerializationService instance (the buffer pool has buffers tied to a particular
+ * It is unlike to the common use of a ThreadLocal where it assigned to a static field. The reason behind this is that the
+ * BufferPool instance belongs to a specific SerializationService instance (the buffer pool has buffers tied to a particular
  * SerializationService instance). By creating a ThreadLocal per SerializationService-instance, we obtain 'BufferPool per thread
  * per SerializationService-instance' semantics.
  *
@@ -79,10 +79,10 @@ import static com.hazelcast.internal.util.ConcurrentReferenceHashMap.ReferenceTy
  */
 public final class BufferPoolThreadLocal {
 
-    private final ThreadLocal<WeakReference<BufferPool>> threadLocal = new ThreadLocal<WeakReference<BufferPool>>();
+    private final ThreadLocal<WeakReference<BufferPool>> threadLocal = new ThreadLocal<>();
     private final InternalSerializationService serializationService;
     private final BufferPoolFactory bufferPoolFactory;
-    private final Map<Thread, BufferPool> strongReferences = new ConcurrentReferenceHashMap<Thread, BufferPool>(WEAK, STRONG);
+    private final Map<Thread, BufferPool> strongReferences = new ConcurrentReferenceHashMap<>(WEAK, STRONG);
     private final Supplier<RuntimeException> notActiveExceptionSupplier;
 
     public BufferPoolThreadLocal(InternalSerializationService serializationService,
@@ -97,7 +97,7 @@ public final class BufferPoolThreadLocal {
         WeakReference<BufferPool> ref = threadLocal.get();
         if (ref == null) {
             BufferPool pool = bufferPoolFactory.create(serializationService);
-            ref = new WeakReference<BufferPool>(pool);
+            ref = new WeakReference<>(pool);
             strongReferences.put(Thread.currentThread(), pool);
             threadLocal.set(ref);
             return pool;

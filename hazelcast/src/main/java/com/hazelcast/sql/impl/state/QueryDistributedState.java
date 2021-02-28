@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,15 @@
 
 package com.hazelcast.sql.impl.state;
 
-import com.hazelcast.sql.impl.worker.QueryFragmentExecutable;
 import com.hazelcast.sql.impl.operation.QueryAbstractExchangeOperation;
+import com.hazelcast.sql.impl.worker.QueryFragmentExecutable;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -87,6 +90,22 @@ public class QueryDistributedState {
             }
         } finally {
             lock.readLock().unlock();
+        }
+    }
+
+    /**
+     * For testing only.
+     */
+    public Set<QueryFragmentExecutable> getFragments() {
+        if (initializedState == null) {
+            return Collections.emptySet();
+        } else {
+            Set<QueryFragmentExecutable> allFragments = Collections.newSetFromMap(new IdentityHashMap<>());
+
+            allFragments.addAll(initializedState.inboundEdgeToFragment.values());
+            allFragments.addAll(initializedState.outboundEdgeToFragment.values());
+
+            return allFragments;
         }
     }
 

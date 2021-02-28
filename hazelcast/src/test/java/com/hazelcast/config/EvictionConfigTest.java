@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ public class EvictionConfigTest {
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(EvictionConfig.class)
-                .allFieldsShouldBeUsedExcept("sizeConfigured")
+                .allFieldsShouldBeUsedExcept("defaultSize")
                 .suppress(Warning.NONFINAL_FIELDS)
                 .withPrefabValues(EvictionConfig.class,
                         new EvictionConfig().setSize(1000).setMaxSizePolicy(ENTRY_COUNT).setEvictionPolicy(LFU),

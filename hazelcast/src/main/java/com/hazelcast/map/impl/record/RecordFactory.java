@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,10 @@
 
 package com.hazelcast.map.impl.record;
 
+import com.hazelcast.internal.cluster.Versions;
+import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.version.Version;
+
 /**
  * Factory for creating records. Created for every partition.
  *
@@ -24,4 +28,15 @@ package com.hazelcast.map.impl.record;
 public interface RecordFactory<T> {
 
     Record<T> newRecord(Object value);
+
+    // RU_COMPAT_4_1
+    default boolean isClusterV41() {
+        Version clusterVersion = geMapContainer().getMapServiceContext()
+                .getNodeEngine().getClusterService().getClusterVersion();
+        return clusterVersion.isUnknownOrLessThan(Versions.V4_2);
+    }
+
+    // RU_COMPAT_4_1
+    MapContainer geMapContainer();
+
 }

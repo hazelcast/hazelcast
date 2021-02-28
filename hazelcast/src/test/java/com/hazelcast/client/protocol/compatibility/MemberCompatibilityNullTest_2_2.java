@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -6625,6 +6625,8 @@ public class MemberCompatibilityNullTest_2_2 {
         assertTrue(isEqual(null, parameters.eventJournalConfig));
         assertTrue(isEqual(null, parameters.merkleTreeConfig));
         assertTrue(isEqual(anInt, parameters.metadataPolicy));
+        assertTrue(parameters.isPerEntryStatsEnabledExists);
+        assertTrue(isEqual(aBoolean, parameters.perEntryStatsEnabled));
     }
 
     @Test

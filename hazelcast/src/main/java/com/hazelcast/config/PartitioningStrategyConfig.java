@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -87,13 +87,13 @@ public class PartitioningStrategyConfig implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(partitioningStrategyClass);
+        out.writeString(partitioningStrategyClass);
         out.writeObject(partitioningStrategy);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        partitioningStrategyClass = in.readUTF();
+        partitioningStrategyClass = in.readString();
         partitioningStrategy = in.readObject();
     }
 

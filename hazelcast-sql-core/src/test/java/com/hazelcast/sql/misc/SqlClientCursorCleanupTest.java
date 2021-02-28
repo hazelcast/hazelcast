@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package com.hazelcast.sql.misc;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
@@ -60,6 +62,8 @@ public class SqlClientCursorCleanupTest extends SqlTestSupport {
     public void before() {
         member = factory.newHazelcastInstance(smallInstanceConfig());
         client = factory.newHazelcastClient(new ClientConfig());
+
+        member.getConfig().addMapConfig(new MapConfig().setName(MAP_NAME).setInMemoryFormat(InMemoryFormat.OBJECT));
     }
 
     @After

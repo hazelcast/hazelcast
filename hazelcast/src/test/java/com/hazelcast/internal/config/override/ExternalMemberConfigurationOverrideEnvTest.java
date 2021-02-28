@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
+import static com.hazelcast.config.RestEndpointGroup.DATA;
+import static com.hazelcast.config.RestEndpointGroup.HOT_RESTART;
 import static com.hazelcast.internal.config.override.ExternalConfigTestUtils.runWithSystemProperty;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -615,6 +617,29 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
         assertEquals("syslogserver.acme.com", config.getAuditlogConfig().getProperty("host"));
         assertEquals("514", config.getAuditlogConfig().getProperty("port"));
         assertEquals("tcp", config.getAuditlogConfig().getProperty("type"));
+    }
+
+    @Test
+    public void shouldHandleRestApiConfig() throws Exception {
+        Config config = new Config();
+
+        withEnvironmentVariable("HZ_NETWORK_RESTAPI_ENABLED", "true")
+          .and("HZ_NETWORK_RESTAPI_ENDPOINTGROUPS_DATA_ENABLED", "true")
+          .and("HZ_NETWORK_RESTAPI_ENDPOINTGROUPS_HOTRESTART_ENABLED", "true")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertTrue(config.getNetworkConfig().getRestApiConfig().isEnabled());
+        assertTrue(config.getNetworkConfig().getRestApiConfig().getEnabledGroups().contains(DATA));
+        assertTrue(config.getNetworkConfig().getRestApiConfig().getEnabledGroups().contains(HOT_RESTART));
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void shouldHandleRestApiConfigInvalidEntry() throws Exception {
+        Config config = new Config();
+
+        withEnvironmentVariable("HZ_NETWORK_RESTAPI_ENABLED", "true")
+          .and("HZ_NETWORK_RESTAPI_ENDPOINTGROUPS_FOO_ENABLED", "true")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
     }
 
     @Test(expected = InvalidConfigurationException.class)

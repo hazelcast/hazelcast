@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -646,6 +646,37 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
         thread.interrupt();
 
         thread.assertFailsEventually(InterruptedException.class);
+    }
+
+    @Test
+    public void test_continues_ownership_changes_does_not_leak_backup_memory() throws InterruptedException {
+        Config config = getConfig();
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        // ownership changes happen on stable
+        // instance and it shouldn't leak memory
+        HazelcastInstance stableInstance = factory.newHazelcastInstance(config);
+
+        String queueName = "itemQueue";
+        IQueue<String> producer = stableInstance.getQueue(queueName);
+
+        // initial offer
+        producer.offer("item");
+        for (int j = 0; j < 5; j++) {
+            // start unreliable instance
+            HazelcastInstance unreliableInstance = factory.newHazelcastInstance(config);
+
+            // consume data in queue
+            IQueue<String> consumer = unreliableInstance.getQueue(queueName);
+            consumer.take();
+
+            // intentional termination, we are not testing graceful shutdown.
+            unreliableInstance.getLifecycleService().terminate();
+
+            producer.offer("item");
+
+            assertEquals("Failed at step :" + j
+                    + " (0 is first step)", 1, producer.size());
+        }
     }
 
     private HazelcastInstance[] createHazelcastInstances() {

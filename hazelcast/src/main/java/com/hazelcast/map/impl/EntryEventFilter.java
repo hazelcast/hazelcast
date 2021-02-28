@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,10 +30,10 @@ import java.io.IOException;
  */
 public class EntryEventFilter implements EventFilter, IdentifiedDataSerializable {
 
-    protected boolean includeValue;
     protected Data key;
+    protected boolean includeValue;
 
-    public EntryEventFilter(boolean includeValue, Data key) {
+    public EntryEventFilter(Data key, boolean includeValue) {
         this.includeValue = includeValue;
         this.key = key;
     }

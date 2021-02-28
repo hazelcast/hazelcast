@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,9 +60,9 @@ public class NamedTaskDecorator<V> extends AbstractTaskDecorator<V>
             throws IOException {
         if (out.getVersion().isGreaterOrEqual(Versions.V4_1)) {
             super.writeData(out);
-            out.writeUTF(name);
+            out.writeString(name);
         } else {
-            out.writeUTF(name);
+            out.writeString(name);
             out.writeObject(delegate);
         }
     }
@@ -72,9 +72,9 @@ public class NamedTaskDecorator<V> extends AbstractTaskDecorator<V>
             throws IOException {
         if (in.getVersion().isGreaterOrEqual(Versions.V4_1)) {
             super.readData(in);
-            name = in.readUTF();
+            name = in.readString();
         } else {
-            name = in.readUTF();
+            name = in.readString();
             delegate = in.readObject();
         }
     }

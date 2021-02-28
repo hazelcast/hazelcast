@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ public interface ICacheInternal<K, V> extends ICache<K, V> {
             throws IllegalArgumentException;
 
     /**
-     * Cluster-wide iterator for {@link ICache}
+     * Iterator for the single specified partition {@link ICache}
      *
      * @param fetchSize      batch fetching size
      * @param partitionId    partition ID of the entries to iterate on
@@ -58,6 +58,16 @@ public interface ICacheInternal<K, V> extends ICache<K, V> {
      * @return iterator for the entries of the partition
      */
     Iterator<Entry<K, V>> iterator(int fetchSize, int partitionId, boolean prefetchValues);
+
+    /**
+     * Iterable for the single specified partition {@link ICache}
+     *
+     * @param fetchSize      batch fetching size
+     * @param partitionId    partition ID of the entries to iterate on
+     * @param prefetchValues prefetch values
+     * @return iterator for the entries of the partition
+     */
+    Iterable<Entry<K, V>> iterable(int fetchSize, int partitionId, boolean prefetchValues);
 
     /**
      * Sets relevant {@link HazelcastCacheManager} to client/server.

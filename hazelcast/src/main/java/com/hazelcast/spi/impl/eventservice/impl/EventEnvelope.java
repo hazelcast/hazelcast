@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,14 +70,14 @@ public final class EventEnvelope implements IdentifiedDataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         UUIDSerializationUtil.writeUUID(out, id);
-        out.writeUTF(serviceName);
+        out.writeString(serviceName);
         IOUtil.writeObject(out, event);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         id = UUIDSerializationUtil.readUUID(in);
-        serviceName = in.readUTF();
+        serviceName = in.readString();
         event = IOUtil.readObject(in);
     }
 

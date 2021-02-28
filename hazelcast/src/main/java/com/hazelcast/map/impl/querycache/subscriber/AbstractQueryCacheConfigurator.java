@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +53,7 @@ public abstract class AbstractQueryCacheConfigurator implements QueryCacheConfig
         for (EntryListenerConfig listenerConfig : config.getEntryListenerConfigs()) {
             MapListener listener = getListener(listenerConfig);
             if (listener != null) {
-                EventFilter filter = new EntryEventFilter(listenerConfig.isIncludeValue(), null);
+                EventFilter filter = new EntryEventFilter(null, listenerConfig.isIncludeValue());
                 eventService.addListener(mapName, cacheId, listener, filter);
             }
         }

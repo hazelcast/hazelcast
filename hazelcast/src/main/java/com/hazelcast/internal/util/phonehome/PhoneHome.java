@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static java.lang.System.getenv;
 public class PhoneHome {
 
     private static final String FALSE = "false";
-    private static final String DEFAULT_BASE_PHONE_HOME_URL = "http://phonehome.hazelcast.com/ping";
+    private static final String DEFAULT_BASE_PHONE_HOME_URL = "https://phonehome.hazelcast.com/ping";
     private static final MetricsCollector CLOUD_INFO_COLLECTOR = new CloudInfoCollector();
 
     protected final Node hazelcastNode;

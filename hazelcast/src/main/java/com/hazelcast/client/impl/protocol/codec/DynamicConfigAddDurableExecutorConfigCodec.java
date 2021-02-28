@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a durable executor configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("ab44138a9a02e22bfc22da925227b55b")
+@Generated("df9f5426ac370b91ac3842e6a2581603")
 public final class DynamicConfigAddDurableExecutorConfigCodec {
     //hex: 0x1B0900
     public static final int REQUEST_MESSAGE_TYPE = 1771776;

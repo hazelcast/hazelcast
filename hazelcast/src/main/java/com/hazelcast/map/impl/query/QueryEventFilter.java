@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,8 +38,8 @@ public class QueryEventFilter extends EntryEventFilter {
     public QueryEventFilter() {
     }
 
-    public QueryEventFilter(boolean includeValue, Data key, Predicate predicate) {
-        super(includeValue, key);
+    public QueryEventFilter(Data key, Predicate predicate, boolean includeValue) {
+        super(key, includeValue);
         this.predicate = predicate;
     }
 

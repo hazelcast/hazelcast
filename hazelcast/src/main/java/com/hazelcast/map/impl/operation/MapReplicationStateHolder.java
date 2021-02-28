@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,9 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.internal.cluster.Versions;
+import com.hazelcast.internal.monitor.LocalRecordStoreStats;
+import com.hazelcast.internal.monitor.impl.LocalRecordStoreStatsImpl;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -32,9 +35,12 @@ import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
+import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadataImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
@@ -55,7 +61,7 @@ import static com.hazelcast.internal.util.MapUtil.isNullOrEmpty;
  * Holder for raw IMap key-value pairs and their metadata.
  */
 // keep this `protected`, extended in another context.
-public class MapReplicationStateHolder implements IdentifiedDataSerializable {
+public class MapReplicationStateHolder implements IdentifiedDataSerializable, Versioned {
 
     // holds recordStore-references of this partitions' maps
     protected transient Map<String, RecordStore<Record>> storesByMapName;
@@ -75,6 +81,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
     protected transient List<MapIndexInfo> mapIndexInfos;
 
     private MapReplicationOperation operation;
+    private Map<String, LocalRecordStoreStats> recordStoreStatsPerMapName;
 
     /**
      * This constructor exists solely for instantiation by {@code MapDataSerializerHook}. The object is not ready to use
@@ -89,7 +96,6 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
 
     void prepare(PartitionContainer container, Collection<ServiceNamespace> namespaces, int replicaIndex) {
         storesByMapName = createHashMap(namespaces.size());
-
         loaded = createHashMap(namespaces.size());
         mapIndexInfos = new ArrayList<>(namespaces.size());
         for (ServiceNamespace namespace : namespaces) {
@@ -142,7 +148,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
         if (!isNullOrEmpty(data)) {
             for (Map.Entry<String, List> dataEntry : data.entrySet()) {
                 String mapName = dataEntry.getKey();
-                List keyRecord = dataEntry.getValue();
+                List keyRecordExpiry = dataEntry.getValue();
                 RecordStore recordStore = operation.getRecordStore(mapName);
                 recordStore.reset();
                 recordStore.setPreMigrationLoadedStatus(loaded.get(mapName));
@@ -170,12 +176,12 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
                 }
 
                 long nowInMillis = Clock.currentTimeMillis();
+                for (int i = 0; i < keyRecordExpiry.size(); i += 3) {
+                    Data dataKey = (Data) keyRecordExpiry.get(i);
+                    Record record = (Record) keyRecordExpiry.get(i + 1);
+                    ExpiryMetadata expiryMetadata = (ExpiryMetadata) keyRecordExpiry.get(i + 2);
 
-                for (int i = 0; i < keyRecord.size(); i += 2) {
-                    Data dataKey = (Data) keyRecord.get(i);
-                    Record record = (Record) keyRecord.get(i + 1);
-
-                    recordStore.putReplicatedRecord(dataKey, record, nowInMillis, populateIndexes);
+                    recordStore.putReplicatedRecord(dataKey, record, expiryMetadata, populateIndexes, nowInMillis);
 
                     if (recordStore.shouldEvict()) {
                         // No need to continue replicating records anymore.
@@ -190,6 +196,15 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
                     Indexes.markPartitionAsIndexed(partitionContainer.getPartitionId(), indexesSnapshot);
                 }
             }
+        }
+
+        for (Map.Entry<String, LocalRecordStoreStats> statsEntry : recordStoreStatsPerMapName.entrySet()) {
+            String mapName = statsEntry.getKey();
+            LocalRecordStoreStats stats = statsEntry.getValue();
+
+            RecordStore recordStore = operation.getRecordStore(mapName);
+            recordStore.setStats(stats);
+
         }
     }
 
@@ -232,7 +247,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
 
         for (Map.Entry<String, RecordStore<Record>> entry : storesByMapName.entrySet()) {
             String mapName = entry.getKey();
-            out.writeUTF(mapName);
+            out.writeString(mapName);
 
             SerializationService ss = getSerializationService(operation.getRecordStore(mapName).getMapContainer());
             RecordStore<Record> recordStore = entry.getValue();
@@ -241,16 +256,21 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
             recordStore.forEach((dataKey, record) -> {
                 try {
                     IOUtil.writeData(out, dataKey);
-                    Records.writeRecord(out, record, ss.toData(record.getValue()));
+                    Records.writeRecord(out, record, ss.toData(record.getValue()),
+                            recordStore.getExpirySystem().getExpiredMetadata(dataKey));
                 } catch (IOException e) {
                     throw ExceptionUtil.rethrow(e);
                 }
             }, operation.getReplicaIndex() != 0, true);
+
+            if (out.getVersion().isGreaterOrEqual(Versions.V4_2)) {
+                recordStore.getStats().writeData(out);
+            }
         }
 
         out.writeInt(loaded.size());
         for (Map.Entry<String, Boolean> loadedEntry : loaded.entrySet()) {
-            out.writeUTF(loadedEntry.getKey());
+            out.writeString(loadedEntry.getKey());
             out.writeBoolean(loadedEntry.getValue());
         }
 
@@ -269,25 +289,33 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         int size = in.readInt();
         data = createHashMap(size);
+        recordStoreStatsPerMapName = createHashMap(size);
 
         for (int i = 0; i < size; i++) {
-            String name = in.readUTF();
+            String name = in.readString();
             int numOfRecords = in.readInt();
-            List keyRecord = new ArrayList<>(numOfRecords * 2);
+            List keyRecordExpiry = new ArrayList<>(numOfRecords * 3);
             for (int j = 0; j < numOfRecords; j++) {
                 Data dataKey = IOUtil.readData(in);
-                Record record = Records.readRecord(in);
+                ExpiryMetadata expiryMetadata = new ExpiryMetadataImpl();
+                Record record = Records.readRecord(in, expiryMetadata);
 
-                keyRecord.add(dataKey);
-                keyRecord.add(record);
+                keyRecordExpiry.add(dataKey);
+                keyRecordExpiry.add(record);
+                keyRecordExpiry.add(expiryMetadata);
             }
-            data.put(name, keyRecord);
+            if (in.getVersion().isGreaterOrEqual(Versions.V4_2)) {
+                LocalRecordStoreStatsImpl stats = new LocalRecordStoreStatsImpl();
+                stats.readData(in);
+                recordStoreStatsPerMapName.put(name, stats);
+            }
+            data.put(name, keyRecordExpiry);
         }
 
         int loadedSize = in.readInt();
         loaded = createHashMap(loadedSize);
         for (int i = 0; i < loadedSize; i++) {
-            loaded.put(in.readUTF(), in.readBoolean());
+            loaded.put(in.readString(), in.readBoolean());
         }
 
         int mapIndexInfoSize = in.readInt();

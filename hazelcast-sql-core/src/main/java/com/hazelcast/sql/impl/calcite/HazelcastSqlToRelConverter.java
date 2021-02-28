@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,11 +24,13 @@ import com.hazelcast.sql.impl.calcite.validate.literal.LiteralUtils;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.impl.type.converter.BigDecimalConverter;
+import com.hazelcast.sql.impl.type.converter.Converter;
+import com.hazelcast.sql.impl.type.converter.Converters;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.prepare.Prepare;
 import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.runtime.CalciteContextException;
 import org.apache.calcite.runtime.Resources;
@@ -42,7 +44,6 @@ import org.apache.calcite.sql2rel.SqlRexConvertletTable;
 import org.apache.calcite.sql2rel.SqlToRelConverter;
 import org.apache.calcite.util.TimeString;
 
-import java.math.BigDecimal;
 import java.time.LocalTime;
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -114,20 +115,26 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
         QueryDataType fromType = HazelcastTypeUtils.toHazelcastType(from.getSqlTypeName());
         QueryDataType toType = HazelcastTypeUtils.toHazelcastType(to.getSqlTypeName());
 
-        Literal literal = LiteralUtils.literal(operand);
+        Literal literal = LiteralUtils.literal(convertedOperand);
 
-        if (literal != null && literal.getTypeName() != NULL) {
-            // There is a bug in RexSimplify that incorrectly converts numeric literals from one numeric type to another.
-            // The problem is located in the RexToLixTranslator.translateLiteral. To perform a conversion, it delegates
-            // to Primitive.number(Number) method, that does a conversion without checking for overflow. For example, the
-            // expression [32767 AS TINYINT] is converted to -1, which is obviously incorrect.
+        if (literal != null && ((RexLiteral) convertedOperand).getTypeName() != NULL) {
+            // There is a bug in RexBuilder.makeCast(). If the operand is a literal, it can directly return a literal with the
+            // desired target type instead of an actual cast, but when doing that it doesn't check for numeric overflow.
+            // For example if this method is converting [128 AS TINYINT] is converted to -1, which is obviously incorrect.
+            // It should have failed.
             // To workaround the problem, we perform the conversion using our converters manually. If the conversion fails,
-            // we throw an error (it would have been thrown at runtime anyway), thus preventing Apache Calcite from entering
-            // the problematic simplification routine.
+            // we throw an error (it would have been thrown if the conversion was performed at runtime anyway), before
+            // delegating to RexBuilder.makeCast().
             // Since this workaround moves conversion errors to the parsing phase, we conduct the conversion check for all
             // types to ensure that we throw consistent error messages for all literal-related conversions errors.
             try {
-                toType.getConverter().convertToSelf(fromType.getConverter(), literal.getValue());
+                // The literal's type might be different from the operand type for example here:
+                //     CAST(CAST(42 AS SMALLINT) AS TINYINT)
+                // The operand of the outer cast is validated as a SMALLINT, however the operand, thanks to the
+                // simplification in RexBuilder.makeCast(), is converted to a literal [42:SMALLINT]. And LiteralUtils converts
+                // this operand to [42:TINYINT] - we have to use the literal's type instead of the validated operand type.
+                QueryDataType actualFromType = HazelcastTypeUtils.toHazelcastType(literal.getTypeName());
+                toType.getConverter().convertToSelf(actualFromType.getConverter(), literal.getValue());
             } catch (Exception e) {
                 throw literalConversionException(validator, call, literal, toType, e);
             }
@@ -155,8 +162,8 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
             // be "true". See CastFunctionIntegrationTest.testApproximateTypeSimplification - it will fail without this fix.
             if (fromType.getTypeFamily().isNumeric()) {
                 if (toType.getTypeFamily().isNumericApproximate()) {
-                    BigDecimal originalValue = ((SqlLiteral) operand).getValueAs(BigDecimal.class);
-                    Object convertedValue = toType.getConverter().convertToSelf(BigDecimalConverter.INSTANCE, originalValue);
+                    Converter converter = Converters.getConverter(literal.getValue().getClass());
+                    Object convertedValue = toType.getConverter().convertToSelf(converter, literal.getValue());
 
                     return getRexBuilder().makeLiteral(convertedValue, to, false);
                 }
@@ -232,6 +239,6 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
 
         CalciteContextException calciteContextError = validator.newValidationError(call, contextError);
 
-        throw QueryException.error(SqlErrorCode.PARSING, calciteContextError.getMessage(), calciteContextError);
+        throw QueryException.error(SqlErrorCode.PARSING, calciteContextError.getMessage(), e);
     }
 }

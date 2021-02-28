@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,7 +81,7 @@ public class ChangeRaftGroupMembershipOp extends RaftReplicateOp implements Inde
         super.writeInternal(out);
         out.writeLong(membersCommitIndex);
         out.writeObject(member);
-        out.writeUTF(membershipChangeMode.toString());
+        out.writeString(membershipChangeMode.toString());
     }
 
     @Override
@@ -89,7 +89,7 @@ public class ChangeRaftGroupMembershipOp extends RaftReplicateOp implements Inde
         super.readInternal(in);
         membersCommitIndex = in.readLong();
         member = in.readObject();
-        membershipChangeMode = MembershipChangeMode.valueOf(in.readUTF());
+        membershipChangeMode = MembershipChangeMode.valueOf(in.readString());
     }
 
     @Override

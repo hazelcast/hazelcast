@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,9 +25,11 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.TemporaryFolder;
 import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 
@@ -46,7 +48,9 @@ import java.net.ServerSocket;
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -78,7 +82,10 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.create
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static java.lang.Integer.min;
 import static java.lang.String.format;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
+import static java.nio.file.StandardOpenOption.CREATE;
+import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -106,6 +113,9 @@ public class IOUtilTest extends HazelcastTestSupport {
 
     @Rule
     public TestName testName = new TestName();
+
+    @Rule
+    public TemporaryFolder tempFolder = new TemporaryFolder();
 
     private final InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
     private final List<File> files = new ArrayList<>();
@@ -786,6 +796,33 @@ public class IOUtilTest extends HazelcastTestSupport {
         assertEquals(expected, actual);
     }
 
+    @Test
+    public void testMove_targetDoesntExist() throws IOException {
+        Path src = tempFolder.newFile("source.txt").toPath();
+        Path target = src.resolveSibling("target.txt");
+
+        assertMoveInternal(src, target, false);
+        assertMoveInternal(target, src, true);
+    }
+
+    @Test
+    public void testMove_targetExist() throws IOException {
+        Path src = tempFolder.newFile("source.txt").toPath();
+        Path target = src.resolveSibling("target.txt");
+        Files.write(target, "foo".getBytes(UTF_8), CREATE);
+        assertMoveInternal(src, target, false);
+        Files.write(src, "bar".getBytes(UTF_8), CREATE);
+        assertMoveInternal(target, src, true);
+    }
+
+    @Test
+    public void testMove_sourceDoesntExist() throws IOException {
+        Path src = tempFolder.newFile("source.txt").toPath();
+        Files.delete(src);
+        Path target = src.resolveSibling("target.txt");
+        Assert.assertThrows(NoSuchFileException.class, () -> IOUtil.move(src, target));
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void testGetPath_whenPathsInvalid() {
         getPath();
@@ -909,5 +946,20 @@ public class IOUtilTest extends HazelcastTestSupport {
             closeResource(is1);
             closeResource(is2);
         }
+    }
+
+    private void assertMoveInternal(Path src, Path target, boolean withTimeout) throws IOException {
+        Files.write(src, "Hazelcast".getBytes(UTF_8), TRUNCATE_EXISTING);
+        if (withTimeout) {
+            IOUtil.moveWithTimeout(src, target, Duration.ofSeconds(2));
+        } else {
+            IOUtil.move(src, target);
+        }
+
+        assertFalse(Files.exists(src));
+        assertTrue(Files.exists(target));
+        List<String> lines = Files.readAllLines(target);
+        assertEquals(1, lines.size());
+        assertEquals("Hazelcast", lines.get(0));
     }
 }

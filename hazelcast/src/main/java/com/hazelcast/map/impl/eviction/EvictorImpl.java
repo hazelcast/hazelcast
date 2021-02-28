@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,12 +19,13 @@ package com.hazelcast.map.impl.eviction;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.partition.IPartitionService;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.LazyEvictableEntryView;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.recordstore.Storage;
-import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.map.impl.recordstore.expiry.ExpiryReason;
 import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -55,12 +56,14 @@ public class EvictorImpl implements Evictor {
     public void evict(RecordStore recordStore, Data excludedKey) {
         assertRunningOnPartitionThread();
 
+        long now = getNow();
+        boolean backup = isBackup(recordStore);
         for (int i = 0; i < batchSize; i++) {
-            EntryView entryView = selectEvictableEntry(recordStore, excludedKey);
+            EntryView entryView = selectEvictableEntry(recordStore, excludedKey, now, backup);
             if (entryView == null) {
                 return;
             }
-            evictEntry(recordStore, entryView);
+            evictEntry(recordStore, entryView, now, backup);
         }
     }
 
@@ -70,13 +73,22 @@ public class EvictorImpl implements Evictor {
     }
 
     @SuppressWarnings("checkstyle:rvcheckcomparetoforspecificreturnvalue")
-    private EntryView selectEvictableEntry(RecordStore recordStore, Data excludedKey) {
+    private EntryView selectEvictableEntry(RecordStore recordStore, Data excludedKey,
+                                           long now, boolean backup) {
         EntryView excluded = null;
         EntryView selected = null;
 
+
         for (EntryView current : getRandomSamples(recordStore)) {
-            if (excludedKey != null && excluded == null
-                    && getDataKeyFromEntryView(current).equals(excludedKey)) {
+            Data dataKey = getDataKeyFromEntryView(current);
+
+            if (recordStore.isExpired(dataKey, now, backup)) {
+                return current;
+            }
+
+            if (excludedKey != null
+                    && excluded == null
+                    && dataKey.equals(excludedKey)) {
                 excluded = current;
                 continue;
             }
@@ -90,19 +102,20 @@ public class EvictorImpl implements Evictor {
         return selected == null ? excluded : selected;
     }
 
-    private void evictEntry(RecordStore recordStore, EntryView selectedEntry) {
-        Record record = getRecordFromEntryView(selectedEntry);
+    private void evictEntry(RecordStore recordStore, EntryView selectedEntry,
+                            long now, boolean backup) {
         Data dataKey = getDataKeyFromEntryView(selectedEntry);
 
         if (recordStore.isLocked(dataKey)) {
             return;
         }
 
-        boolean backup = isBackup(recordStore);
-        recordStore.evict(dataKey, backup);
+        ExpiryReason expiryReason
+                = recordStore.hasExpired(dataKey, now, backup);
+        Object value = recordStore.evict(dataKey, backup);
 
-        if (!backup) {
-            recordStore.doPostEvictionOperations(dataKey, record);
+        if (value != null && !backup) {
+            recordStore.doPostEvictionOperations(dataKey, value, expiryReason);
         }
     }
 

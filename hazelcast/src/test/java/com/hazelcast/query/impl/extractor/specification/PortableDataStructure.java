@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,17 +67,17 @@ public class PortableDataStructure {
         }
 
         public void writePortable(PortableWriter writer) throws IOException {
-            writer.writeUTF("name", name);
+            writer.writeString("name", name);
             writer.writePortable("engine", engine);
             writer.writePortableArray("wheels", wheels);
-            writer.writeUTFArray("model", model);
+            writer.writeStringArray("model", model);
         }
 
         public void readPortable(PortableReader reader) throws IOException {
-            name = reader.readUTF("name");
+            name = reader.readString("name");
             engine = reader.readPortable("engine");
             wheels = reader.readPortableArray("wheels");
-            model = reader.readUTFArray("model");
+            model = reader.readStringArray("model");
         }
 
         @Override
@@ -245,14 +245,14 @@ public class PortableDataStructure {
         }
 
         public void writePortable(PortableWriter writer) throws IOException {
-            writer.writeUTF("name", name);
+            writer.writeString("name", name);
             writer.writePortable("chip", chip);
             writer.writePortableArray("chips", chips);
             writer.writeIntArray("serial", serial);
         }
 
         public void readPortable(PortableReader reader) throws IOException {
-            name = reader.readUTF("name");
+            name = reader.readString("name");
             chip = reader.readPortable("chip");
             chips = reader.readPortableArray("chips");
             serial = reader.readIntArray("serial");

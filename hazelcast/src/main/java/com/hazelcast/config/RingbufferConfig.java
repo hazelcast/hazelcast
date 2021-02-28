@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -406,27 +406,27 @@ public class RingbufferConfig implements IdentifiedDataSerializable, NamedConfig
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeInt(capacity);
         out.writeInt(backupCount);
         out.writeInt(asyncBackupCount);
         out.writeInt(timeToLiveSeconds);
-        out.writeUTF(inMemoryFormat.name());
+        out.writeString(inMemoryFormat.name());
         out.writeObject(ringbufferStoreConfig);
-        out.writeUTF(splitBrainProtectionName);
+        out.writeString(splitBrainProtectionName);
         out.writeObject(mergePolicyConfig);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         capacity = in.readInt();
         backupCount = in.readInt();
         asyncBackupCount = in.readInt();
         timeToLiveSeconds = in.readInt();
-        inMemoryFormat = InMemoryFormat.valueOf(in.readUTF());
+        inMemoryFormat = InMemoryFormat.valueOf(in.readString());
         ringbufferStoreConfig = in.readObject();
-        splitBrainProtectionName = in.readUTF();
+        splitBrainProtectionName = in.readString();
         mergePolicyConfig = in.readObject();
     }
 

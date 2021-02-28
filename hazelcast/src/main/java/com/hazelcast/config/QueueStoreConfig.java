@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -281,8 +281,8 @@ public class QueueStoreConfig implements IdentifiedDataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeBoolean(enabled);
-        out.writeUTF(className);
-        out.writeUTF(factoryClassName);
+        out.writeString(className);
+        out.writeString(factoryClassName);
         out.writeObject(properties);
         out.writeObject(storeImplementation);
         out.writeObject(factoryImplementation);
@@ -291,8 +291,8 @@ public class QueueStoreConfig implements IdentifiedDataSerializable {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         enabled = in.readBoolean();
-        className = in.readUTF();
-        factoryClassName = in.readUTF();
+        className = in.readString();
+        factoryClassName = in.readString();
         properties = in.readObject();
         storeImplementation = in.readObject();
         factoryImplementation = in.readObject();

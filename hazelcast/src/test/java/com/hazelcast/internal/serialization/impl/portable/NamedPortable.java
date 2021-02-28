@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,14 +43,14 @@ public class NamedPortable implements Portable {
 
     @Override
     public void writePortable(PortableWriter writer) throws IOException {
-        writer.writeUTF("name", name);
+        writer.writeString("name", name);
         writer.writeInt("myint", myint);
     }
 
     @Override
     public void readPortable(PortableReader reader) throws IOException {
         myint = reader.readInt("myint");
-        name = reader.readUTF("name");
+        name = reader.readString("name");
     }
 
     @Override

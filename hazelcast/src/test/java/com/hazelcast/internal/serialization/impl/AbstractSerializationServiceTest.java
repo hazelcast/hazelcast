@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -332,13 +332,13 @@ public class AbstractSerializationServiceTest {
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeInt(intField);
-            out.writeUTF(stringField);
+            out.writeString(stringField);
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
             intField = in.readInt();
-            stringField = in.readUTF();
+            stringField = in.readString();
         }
 
         @Override
@@ -438,7 +438,7 @@ public class AbstractSerializationServiceTest {
             if (fail) {
                 throw new RuntimeException();
             } else {
-                out.writeUTF(stringBuffer.toString());
+                out.writeString(stringBuffer.toString());
             }
         }
 
@@ -447,7 +447,7 @@ public class AbstractSerializationServiceTest {
             if (fail) {
                 throw new RuntimeException();
             } else {
-                return new StringBuffer(in.readUTF());
+                return new StringBuffer(in.readString());
             }
         }
     }

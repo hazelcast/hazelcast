@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import java.util.List;
 /**
  * Iterator for iterating map entries in a single partition.
  * The values are fetched in batches.
+ * <p>
  * <b>NOTE</b>
  * The iteration may be done when the map is being mutated or when there are
  * membership changes. The iterator does not reflect the state when it has

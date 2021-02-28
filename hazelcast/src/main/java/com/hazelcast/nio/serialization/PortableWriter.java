@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,8 +57,19 @@ public interface PortableWriter {
      * @param fieldName name of the field
      * @param value     utf string value to be written
      * @throws IOException in case of any exceptional case
+     * @deprecated for the sake of better naming. Use {@link #writeString(String, String)} instead.
      */
+    @Deprecated
     void writeUTF(@Nonnull String fieldName, @Nullable String value) throws IOException;
+
+    /**
+     * Writes an UTF string.
+     *
+     * @param fieldName name of the field
+     * @param value     utf string value to be written
+     * @throws IOException in case of any exceptional case
+     */
+    void writeString(@Nonnull String fieldName, @Nullable String value) throws IOException;
 
     /**
      * Writes a primitive boolean.
@@ -259,8 +270,19 @@ public interface PortableWriter {
      * @param fieldName name of the field
      * @param values    String array to be written
      * @throws IOException in case of any exceptional case
+     * @deprecated for the sake of better naming. Use {@link #writeStringArray(String, String[])} instead.
      */
+    @Deprecated
     void writeUTFArray(@Nonnull String fieldName, @Nullable String[] values) throws IOException;
+
+    /**
+     * Writes a String-array.
+     *
+     * @param fieldName name of the field
+     * @param values    String array to be written
+     * @throws IOException in case of any exceptional case
+     */
+    void writeStringArray(@Nonnull String fieldName, @Nullable String[] values) throws IOException;
 
     /**
      * Writes a an array of Portables.

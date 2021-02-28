@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -162,7 +162,7 @@ public class DiscoveryConfig implements IdentifiedDataSerializable {
         out.writeObject(discoveryStrategyConfigs);
         out.writeObject(discoveryServiceProvider);
         out.writeObject(nodeFilter);
-        out.writeUTF(nodeFilterClass);
+        out.writeString(nodeFilterClass);
     }
 
     @Override
@@ -170,7 +170,7 @@ public class DiscoveryConfig implements IdentifiedDataSerializable {
         discoveryStrategyConfigs = in.readObject();
         discoveryServiceProvider = in.readObject();
         nodeFilter = in.readObject();
-        nodeFilterClass = in.readUTF();
+        nodeFilterClass = in.readString();
     }
 
     @Override

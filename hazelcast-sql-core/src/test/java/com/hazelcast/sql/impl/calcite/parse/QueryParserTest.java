@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.BDDMockito.given;
@@ -81,6 +82,17 @@ public class QueryParserTest {
 
         given(sqlBackend.validator(catalogReader, HazelcastTypeFactory.INSTANCE, conformance)).willReturn(sqlValidator);
         given(jetSqlBackend.validator(catalogReader, HazelcastTypeFactory.INSTANCE, conformance)).willReturn(jetSqlValidator);
+    }
+
+    @Test
+    public void unsupportedKeywordTest() {
+        try {
+            QueryParseResult result = parser.parse("show tables");
+            fail("\"show tables\" did not throw parsing exception");
+        } catch (Exception e) {
+            String message = e.getMessage();
+            assertEquals("Encountered \"show\" at line 1, column 1.", message);
+        }
     }
 
     @Test

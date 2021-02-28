@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -96,14 +96,16 @@ public class RestApiFilter implements TextProtocolFilter {
                 || requestUri.startsWith(HttpCommandProcessor.URI_CLUSTER_NODES_URL)
                 || ("GET".equals(operation) && requestUri.startsWith(HttpCommandProcessor.URI_LICENSE_INFO))
                 || ("GET".equals(operation) && requestUri.startsWith(HttpCommandProcessor.URI_CLUSTER_VERSION_URL))
-                || requestUri.startsWith(HttpCommandProcessor.URI_INSTANCE)) {
+                || requestUri.startsWith(HttpCommandProcessor.URI_INSTANCE)
+                || ("GET".equals(operation) && requestUri.startsWith(HttpCommandProcessor.URI_LOG_LEVEL))) {
             return RestEndpointGroup.CLUSTER_READ;
         }
         if (requestUri.startsWith(HttpCommandProcessor.URI_SHUTDOWN_CLUSTER_URL)
                 || requestUri.startsWith(HttpCommandProcessor.URI_SHUTDOWN_NODE_CLUSTER_URL)
                 || requestUri.startsWith(HttpCommandProcessor.URI_CHANGE_CLUSTER_STATE_URL)
                 || requestUri.startsWith(HttpCommandProcessor.URI_CLUSTER_VERSION_URL)
-                || requestUri.startsWith(HttpCommandProcessor.URI_LICENSE_INFO)) {
+                || requestUri.startsWith(HttpCommandProcessor.URI_LICENSE_INFO)
+                || requestUri.startsWith(HttpCommandProcessor.URI_LOG_LEVEL)) {
             return RestEndpointGroup.CLUSTER_WRITE;
         }
         if (requestUri.startsWith(HttpCommandProcessor.URI_CP_SUBSYSTEM_BASE_URL)) {

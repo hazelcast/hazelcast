@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the current round. A round completes when the count value
  * reaches to 0 and a new round starts afterwards.
  */
-@Generated("8e8a2318aeafc9e119fb90d46876c0f9")
+@Generated("ae45ae9a86f25b5ad57ab7137fa91cf6")
 public final class CountDownLatchGetRoundCodec {
     //hex: 0x0B0500
     public static final int REQUEST_MESSAGE_TYPE = 722176;

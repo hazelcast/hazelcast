@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,13 @@
 
 package com.hazelcast.logging.impl;
 
+import com.hazelcast.auditlog.AuditlogService;
+import com.hazelcast.auditlog.AuditlogTypeIds;
 import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.JetBuildInfo;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.logging.AbstractLogger;
 import com.hazelcast.logging.ILogger;
@@ -29,6 +33,7 @@ import com.hazelcast.logging.LoggerFactory;
 import com.hazelcast.logging.LoggingService;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -40,8 +45,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 public class LoggingServiceImpl implements LoggingService {
 
-    private final CopyOnWriteArrayList<LogListenerRegistration> listeners
-            = new CopyOnWriteArrayList<LogListenerRegistration>();
+    private final CopyOnWriteArrayList<LogListenerRegistration> listeners = new CopyOnWriteArrayList<>();
 
     private final ConcurrentMap<String, ILogger> mapLoggers = new ConcurrentHashMap<>(100);
 
@@ -49,15 +53,19 @@ public class LoggingServiceImpl implements LoggingService {
 
     private final LoggerFactory loggerFactory;
     private final boolean detailsEnabled;
+    private final Node node;
     private final String versionMessage;
 
     private volatile MemberImpl thisMember = new MemberImpl();
     private volatile String thisAddressString = "[LOCAL] ";
     private volatile Level minLevel = Level.OFF;
 
-    public LoggingServiceImpl(String clusterName, String loggingType, BuildInfo buildInfo, boolean detailsEnabled) {
+    private volatile Level levelSet;
+
+    public LoggingServiceImpl(String clusterName, String loggingType, BuildInfo buildInfo, boolean detailsEnabled, Node node) {
         this.loggerFactory = Logger.newLoggerFactory(loggingType);
         this.detailsEnabled = detailsEnabled;
+        this.node = node;
         JetBuildInfo jetBuildInfo = buildInfo.getJetBuildInfo();
         versionMessage = "[" + clusterName + "] ["
                 + (jetBuildInfo != null ? jetBuildInfo.getVersion() : buildInfo.getVersion()) + "] ";
@@ -67,6 +75,83 @@ public class LoggingServiceImpl implements LoggingService {
         this.thisMember = thisMember;
         this.thisAddressString = "[" + thisMember.getAddress().getHost() + "]:"
                 + thisMember.getAddress().getPort() + " ";
+    }
+
+    /**
+     * @return the log level of this logging service previously set by {@link
+     * #setLevel}, or {@code null} if no level was set or it was reset by {@link
+     * #resetLevel}.
+     */
+    public @Nullable Level getLevel() {
+        return levelSet;
+    }
+
+    /**
+     * Sets the levels of all the loggers known to this logger service to
+     * the given level. If a certain logger was already preconfigured with a more
+     * verbose level than the given level, it will be kept at that more verbose
+     * level.
+     * <p>
+     * WARNING: Keep in mind that verbose log levels like {@link Level#FINEST}
+     * may severely affect the performance.
+     *
+     * @param level the level to set.
+     * @throws HazelcastException if the underlying {@link LoggerFactory} doesn't
+     *                            implement {@link InternalLoggerFactory} required
+     *                            for dynamic log level changing.
+     */
+    public void setLevel(@Nonnull Level level) {
+        if (loggerFactory instanceof InternalLoggerFactory) {
+            levelSet = level;
+            ((InternalLoggerFactory) loggerFactory).setLevel(level);
+
+            AuditlogService auditlogService = node.getNodeExtension().getAuditlogService();
+            auditlogService.eventBuilder(AuditlogTypeIds.MEMBER_LOGGING_LEVEL_SET).message("Log level set.").addParameter("level",
+                    level).log();
+        } else {
+            throw new HazelcastException("Logger factory doesn't support dynamic log level changes: " + loggerFactory.getClass());
+        }
+    }
+
+    /**
+     * Parses the given string level into {@link Level} and then sets the level
+     * using {@link #setLevel(Level)}.
+     *
+     * @param level the level to parse, see {@link Level#getName()} for available
+     *              level names.
+     * @throws IllegalArgumentException if the passed string can't be parsed into
+     *                                  a known {@link Level}.
+     */
+    public void setLevel(@Nonnull String level) {
+        Level parsedLevel;
+        try {
+            parsedLevel = Level.parse(level.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(
+                    "Invalid level '" + level + "', known levels are: " + String.join(", ", Level.OFF.getName(),
+                            Level.SEVERE.getName(), Level.WARNING.getName(), Level.INFO.getName(), Level.CONFIG.getName(),
+                            Level.FINE.getName(), Level.FINER.getName(), Level.FINEST.getName()), e);
+        }
+        setLevel(parsedLevel);
+    }
+
+    /**
+     * Resets the levels of all the loggers known to this logging service back
+     * to the default reconfigured values. Basically, undoes all the changes done
+     * by the previous calls to {@link #setLevel(Level)}, if there were any.
+     */
+    public void resetLevel() {
+        if (loggerFactory instanceof InternalLoggerFactory) {
+            if (levelSet != null) {
+                ((InternalLoggerFactory) loggerFactory).resetLevel();
+                levelSet = null;
+
+                AuditlogService auditlogService = node.getNodeExtension().getAuditlogService();
+                auditlogService.eventBuilder(AuditlogTypeIds.MEMBER_LOGGING_LEVEL_RESET).message("Log level reset.").log();
+            }
+        } else {
+            throw new HazelcastException("Logger factory doesn't support dynamic log level changes: " + loggerFactory.getClass());
+        }
     }
 
     @Nonnull

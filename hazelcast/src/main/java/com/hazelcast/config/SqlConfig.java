@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,17 +28,11 @@ public class SqlConfig {
     /** Default number of threads responsible for execution of SQL statements. */
     public static final int DEFAULT_EXECUTOR_POOL_SIZE = -1;
 
-    /** Default number of threads responsible for network operations processing. */
-    public static final int DEFAULT_OPERATION_POOL_SIZE = -1;
-
     /** Default timeout in milliseconds that is applied to statements without explicit timeout. */
     public static final int DEFAULT_STATEMENT_TIMEOUT_MILLIS = 0;
 
     /** Number of threads responsible for execution of SQL statements. */
     private int executorPoolSize = DEFAULT_EXECUTOR_POOL_SIZE;
-
-    /** Number of threads responsible for network operations processing. */
-    private int operationPoolSize = DEFAULT_OPERATION_POOL_SIZE;
 
     /** Timeout in milliseconds that is applied to statements without an explicit timeout. */
     private long statementTimeoutMillis = DEFAULT_STATEMENT_TIMEOUT_MILLIS;
@@ -56,12 +50,12 @@ public class SqlConfig {
      * Sets the number of threads responsible for execution of SQL statements.
      * <p>
      * The default value {@code -1} sets the pool size equal to the number of CPU cores, and should be good enough
-     * for the most workloads.
+     * for most workloads.
      * <p>
      * Setting the value to less than the number of CPU cores will limit the degree of parallelism of the SQL subsystem. This
      * may be beneficial if you would like to prioritize other CPU-intensive workloads on the same machine.
      * <p>
-     * It is not recommended to set the value of this parameter greater than the number of CPU cores because it may decrease
+     * It is not recommended to set the value of this parameter higher than the number of CPU cores because it may decrease
      * the system's overall performance due to excessive context switches.
      * <p>
      * Defaults to {@code -1}.
@@ -75,46 +69,6 @@ public class SqlConfig {
         }
 
         this.executorPoolSize = executorPoolSize;
-
-        return this;
-    }
-
-    /**
-     * Gets the number of threads responsible for network operations processing.
-     *
-     * @return number of threads responsible for network operations processing
-     */
-    public int getOperationPoolSize() {
-        return operationPoolSize;
-    }
-
-    /**
-     * Sets the number of threads responsible for network operations processing.
-     * <p>
-     * When Hazelcast members execute an SQL statement, they send commands to each other over the network to coordinate the
-     * execution. This includes requests to start or stop execution, or a request to process a batch of data. These
-     * commands are processed in a separate operation thread pool, to avoid frequent interruption of running SQL fragments.
-     * <p>
-     * The default value {@code -1} sets the pool size equal to the number of CPU cores, and should be good enough
-     * for the most workloads.
-     * <p>
-     * Setting the value to less than the number of CPU cores may improve the overall performance on machines
-     * with large CPU count, because it will decrease the number of context switches.
-     * <p>
-     * It is not recommended to set the value of this parameter greater than the number of CPU cores because it
-     * may decrease the system's overall performance due to excessive context switches.
-     * <p>
-     * Defaults to {@code -1}.
-     *
-     * @param operationPoolSize number of threads responsible for network operations processing
-     * @return this instance for chaining
-     */
-    public SqlConfig setOperationPoolSize(int operationPoolSize) {
-        if (operationPoolSize < DEFAULT_OPERATION_POOL_SIZE || operationPoolSize == 0) {
-            checkPositive(operationPoolSize, "Operation pool size should be positive or -1: " + operationPoolSize);
-        }
-
-        this.operationPoolSize = operationPoolSize;
 
         return this;
     }
@@ -154,7 +108,6 @@ public class SqlConfig {
     public String toString() {
         return "SqlConfig{"
             + "executorPoolSize=" + executorPoolSize
-            + ", operationPoolSize=" + operationPoolSize
             + ", statementTimeoutMillis=" + statementTimeoutMillis
             + '}';
     }

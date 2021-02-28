@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,14 @@
 package com.hazelcast.spi.impl.proxyservice.impl;
 
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.spi.impl.InitializingObject;
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.spi.impl.InitializingObject;
 
 import java.util.UUID;
+import java.util.concurrent.ForkJoinPool;
 
-public class DistributedObjectFuture {
+public class DistributedObjectFuture
+        implements ForkJoinPool.ManagedBlocker {
 
     private volatile DistributedObject proxy;
     private volatile Throwable error;
@@ -49,16 +51,38 @@ public class DistributedObjectFuture {
             throw ExceptionUtil.rethrow(error);
         }
 
-        boolean interrupted = waitUntilSetAndInitialized();
-
-        if (interrupted) {
+        // Ensure sufficient parallelism if
+        // caller thread is a ForkJoinPool thread
+        try {
+            ForkJoinPool.managedBlock(this);
+        } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+            error = e;
         }
 
         if (proxy != null) {
             return proxy;
         }
+
         throw ExceptionUtil.rethrow(error);
+    }
+
+    @Override
+    public boolean block() throws InterruptedException {
+        if (Thread.currentThread().isInterrupted()
+                || isReleasable()) {
+            return true;
+        }
+        if (waitUntilSetAndInitialized()) {
+            Thread.currentThread().interrupt();
+            return true;
+        }
+        return true;
+    }
+
+    @Override
+    public boolean isReleasable() {
+        return proxy != null;
     }
 
     public UUID getSource() {

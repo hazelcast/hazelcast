@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,6 +51,10 @@ import static com.hazelcast.internal.iteration.IterationPointer.encodePointers;
  * after iteration has started.
  * The iterator will not, however, skip an entry if it has not been changed
  * and will not return an entry twice.
+ *
+ * @param <K> the key type of map.
+ * @param <V> the value type of map.
+ * @param <R> the return type of iterator after the projection
  */
 public class ClientMapQueryPartitionIterator<K, V, R> extends AbstractMapQueryPartitionIterator<K, V, R> {
 

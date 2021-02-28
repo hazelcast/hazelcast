@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -165,14 +165,14 @@ public class MapPredicateJsonMixedTypeTest extends HazelcastTestSupport {
 
         @Override
         public void writePortable(PortableWriter writer) throws IOException {
-            writer.writeUTF("name", this.name);
+            writer.writeString("name", this.name);
             writer.writeInt("age", this.age);
             writer.writeBoolean("onDuty", this.onDuty);
         }
 
         @Override
         public void readPortable(PortableReader reader) throws IOException {
-            this.name = reader.readUTF("name");
+            this.name = reader.readString("name");
             this.age = reader.readInt("age");
             this.onDuty = reader.readBoolean("onDuty");
 

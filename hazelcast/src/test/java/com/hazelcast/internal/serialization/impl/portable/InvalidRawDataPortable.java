@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ class InvalidRawDataPortable extends RawDataPortable {
         writer.writeLong("l", l);
         final ObjectDataOutput output = writer.getRawDataOutput();
         output.writeInt(k);
-        output.writeUTF(s);
+        output.writeString(s);
         writer.writeCharArray("c", c);
         output.writeObject(sds);
         writer.writePortable("p", p);

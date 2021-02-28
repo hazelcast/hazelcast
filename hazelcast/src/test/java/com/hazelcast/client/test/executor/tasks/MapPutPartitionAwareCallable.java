@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,14 +68,14 @@ public class MapPutPartitionAwareCallable<T, P>
     @Override
     public void writeData(ObjectDataOutput out)
             throws IOException {
-        out.writeUTF(mapName);
+        out.writeString(mapName);
         out.writeObject(partitionKey);
     }
 
     @Override
     public void readData(ObjectDataInput in)
             throws IOException {
-        mapName = in.readUTF();
+        mapName = in.readString();
         partitionKey = in.readObject();
     }
 

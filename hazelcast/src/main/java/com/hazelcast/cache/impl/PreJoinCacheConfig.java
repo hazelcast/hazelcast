@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,15 +63,15 @@ public class PreJoinCacheConfig<K, V> extends CacheConfig<K, V> implements Versi
     @Override
     protected void writeKeyValueTypes(ObjectDataOutput out)
             throws IOException {
-        out.writeUTF(getKeyClassName());
-        out.writeUTF(getValueClassName());
+        out.writeString(getKeyClassName());
+        out.writeString(getValueClassName());
     }
 
     @Override
     protected void readKeyValueTypes(ObjectDataInput in)
             throws IOException {
-        setKeyClassName(in.readUTF());
-        setValueClassName(in.readUTF());
+        setKeyClassName(in.readString());
+        setValueClassName(in.readString());
     }
 
     @Override

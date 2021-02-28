@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -119,7 +119,13 @@ public class MorphingPortableReader extends DefaultPortableReader {
     @Override
     @Nullable
     public String readUTF(@Nonnull String fieldName) throws IOException {
-        return readIncompatibleField(fieldName, UTF, super::readUTF);
+        return readString(fieldName);
+    }
+
+    @Override
+    @Nullable
+    public String readString(@Nonnull String fieldName) throws IOException {
+        return readIncompatibleField(fieldName, UTF, super::readString);
     }
 
     @Override
@@ -297,7 +303,13 @@ public class MorphingPortableReader extends DefaultPortableReader {
     @Override
     @Nullable
     public String[] readUTFArray(@Nonnull String fieldName) throws IOException {
-        return readIncompatibleField(fieldName, UTF_ARRAY, super::readUTFArray);
+        return readStringArray(fieldName);
+    }
+
+    @Override
+    @Nullable
+    public String[] readStringArray(@Nonnull String fieldName) throws IOException {
+        return readIncompatibleField(fieldName, UTF_ARRAY, super::readStringArray);
     }
 
     @Override

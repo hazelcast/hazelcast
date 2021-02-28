@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl;
 
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlRowMetadata;
@@ -29,10 +30,10 @@ public class SqlResultImplTest extends SqlTestSupport {
     @Test
     public void test_rowsResult() {
         QueryId queryId = new QueryId(1, 2, 3, 4);
-        SqlRowMetadata metadata = new SqlRowMetadata(singletonList(new SqlColumnMetadata("n", SqlColumnType.INTEGER)));
+        SqlRowMetadata metadata = new SqlRowMetadata(singletonList(new SqlColumnMetadata("n", SqlColumnType.INTEGER, true)));
         QueryState queryState = QueryState.createInitiatorState(queryId, null, null, 0, null, null, metadata,
                 null, System::currentTimeMillis);
-        SqlResultImpl r = SqlResultImpl.createRowsResult(queryState);
+        SqlResultImpl r = SqlResultImpl.createRowsResult(queryState, new DefaultSerializationServiceBuilder().build());
 
         assertEquals(-1, r.updateCount());
         assertEquals(metadata, r.getRowMetadata());

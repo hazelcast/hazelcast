@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -270,7 +270,7 @@ public class TopicConfig implements IdentifiedDataSerializable, NamedConfig {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeBoolean(globalOrderingEnabled);
         out.writeBoolean(statisticsEnabled);
         out.writeBoolean(multiThreadingEnabled);
@@ -279,7 +279,7 @@ public class TopicConfig implements IdentifiedDataSerializable, NamedConfig {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         globalOrderingEnabled = in.readBoolean();
         statisticsEnabled = in.readBoolean();
         multiThreadingEnabled = in.readBoolean();

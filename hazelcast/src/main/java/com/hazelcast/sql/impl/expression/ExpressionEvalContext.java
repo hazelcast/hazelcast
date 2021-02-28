@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql.impl.expression;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
+
 /**
  * Defines expression evaluation context contract for SQL {@link Expression
  * expressions}.
@@ -24,8 +26,13 @@ package com.hazelcast.sql.impl.expression;
  */
 public interface ExpressionEvalContext {
     /**
-     * @param index Argument index.
-     * @return The query argument.
+     * @param index argument index
+     * @return the query argument
      */
     Object getArgument(int index);
+
+    /**
+     * @return serialization service
+     */
+    InternalSerializationService getSerializationService();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static org.junit.Assert.assertEquals;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class NearCacheConfigAccessorTest extends HazelcastTestSupport {
@@ -36,5 +38,25 @@ public class NearCacheConfigAccessorTest extends HazelcastTestSupport {
     @Test
     public void testInitDefaultMaxSizeForOnHeapMaps_whenNull_thenDoNothing() {
         NearCacheConfigAccessor.initDefaultMaxSizeForOnHeapMaps(null);
+    }
+
+    @Test
+    public void testNearCacheConfigEqual_BeforeAndAfterDefaultSizeIsInitialized() {
+        NearCacheConfig config1 = new NearCacheConfig();
+        NearCacheConfig config2 = new NearCacheConfig();
+        NearCacheConfigAccessor.initDefaultMaxSizeForOnHeapMaps(config1);
+
+        assertEquals(config1, config2);
+    }
+
+    @Test
+    public void testEvictionConfigCopy_whenDefaultSizeIsInitialized() {
+        NearCacheConfig config1 = new NearCacheConfig();
+        NearCacheConfigAccessor.initDefaultMaxSizeForOnHeapMaps(config1);
+
+        EvictionConfig evictionConfig = config1.getEvictionConfig();
+        EvictionConfig evictionConfig2 = new EvictionConfig(evictionConfig);
+
+        assertEquals(evictionConfig.getSize(), evictionConfig2.getSize());
     }
 }

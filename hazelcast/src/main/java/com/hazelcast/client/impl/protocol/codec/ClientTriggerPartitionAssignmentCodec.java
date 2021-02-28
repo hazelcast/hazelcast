@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Triggers partition assignment manually on the cluster.
  * Note that Partition based operations triggers this automatically
  */
-@Generated("ee0e4071dfc495c04869e74a1d0f96bf")
+@Generated("5cce0110722572122f0786727f1893ae")
 public final class ClientTriggerPartitionAssignmentCodec {
     //hex: 0x001000
     public static final int REQUEST_MESSAGE_TYPE = 4096;

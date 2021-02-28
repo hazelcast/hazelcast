@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,25 @@
 
 package com.hazelcast.json.internal;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.hazelcast.json.internal.JsonDataSerializerHook.JSON_SCHEMA_STRUCT_NODE;
 
 /**
  * A node that describes either a Json array or Json object.
  */
 public class JsonSchemaStructNode extends JsonSchemaNode {
 
-    private final List<JsonSchemaNameValue> inners = new ArrayList<JsonSchemaNameValue>();
+    private List<JsonSchemaNameValue> inners = new ArrayList<>();
+
+    public JsonSchemaStructNode() {
+        // No-op.
+    }
 
     public JsonSchemaStructNode(JsonSchemaStructNode parent) {
         super(parent);
@@ -89,7 +99,38 @@ public class JsonSchemaStructNode extends JsonSchemaNode {
     @Override
     public String toString() {
         return "JsonSchemaStructNode{"
-                + "inners=" + inners
-                + '}';
+            + "inners=" + inners
+            + '}';
     }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeInt(inners.size());
+        for (int i = 0; i < inners.size(); i++) {
+            out.writeObject(inners.get(i));
+        }
+        // Don't serialize parent node from superclass to avoid cyclic dependency
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        int innersSize = in.readInt();
+        inners = new ArrayList<>(innersSize);
+        for (int i = 0; i < innersSize; ++i) {
+            JsonSchemaNameValue nameValue = in.readObject();
+            nameValue.getValue().setParent(this);
+            inners.add(nameValue);
+        }
+    }
+
+    @Override
+    public int getFactoryId() {
+        return JsonDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return JSON_SCHEMA_STRUCT_NODE;
+    }
+
 }

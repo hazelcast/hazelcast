@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,7 +54,7 @@ public class DynamicConfigPreJoinOperation
         for (IdentifiedDataSerializable config: configs) {
             out.writeObject(config);
         }
-        out.writeUTF(configCheckMode.name());
+        out.writeString(configCheckMode.name());
     }
 
     @Override
@@ -64,7 +64,7 @@ public class DynamicConfigPreJoinOperation
         for (int i = 0; i < size; i++) {
             configs[i] = in.readObject();
         }
-        configCheckMode = ConfigCheckMode.valueOf(in.readUTF());
+        configCheckMode = ConfigCheckMode.valueOf(in.readString());
     }
 
     @Override

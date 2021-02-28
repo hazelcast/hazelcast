@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -280,14 +280,14 @@ public class MultiValueBitmapIndexTest extends HazelcastTestSupport {
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeLong(id);
-            out.writeUTF(stringId);
+            out.writeString(stringId);
             out.writeLongArray(habits);
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
             id = in.readLong();
-            stringId = in.readUTF();
+            stringId = in.readString();
             habits = in.readLongArray();
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import org.apache.calcite.rex.RexTableInputRef;
 import org.apache.calcite.rex.RexVisitorImpl;
 
 /**
- * Visitor that checks whether the given epression is valid for index filter creation.
+ * Visitor that checks whether the given expression is valid for index filter creation.
  * <p>
  * Consider the expression {@code a > exp}. If there is an index on the column {@code [a]}, then
  * it can be used only if the {@code exp} will produce the same result for all rows. That is, it

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,14 +69,14 @@ public class AddInterceptorOperation extends AbstractNamedOperation
     @Override
     public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        id = in.readUTF();
+        id = in.readString();
         mapInterceptor = in.readObject();
     }
 
     @Override
     public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(id);
+        out.writeString(id);
         out.writeObject(mapInterceptor);
     }
 

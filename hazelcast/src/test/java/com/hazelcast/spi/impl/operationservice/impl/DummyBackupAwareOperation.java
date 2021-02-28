@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,7 +81,7 @@ public class DummyBackupAwareOperation extends Operation implements BackupAwareO
         out.writeInt(syncBackupCount);
         out.writeInt(asyncBackupCount);
         out.writeBoolean(returnsResponse);
-        out.writeUTF(backupKey);
+        out.writeString(backupKey);
     }
 
     @Override
@@ -90,6 +90,6 @@ public class DummyBackupAwareOperation extends Operation implements BackupAwareO
         syncBackupCount = in.readInt();
         asyncBackupCount = in.readInt();
         returnsResponse = in.readBoolean();
-        backupKey = in.readUTF();
+        backupKey = in.readString();
     }
 }

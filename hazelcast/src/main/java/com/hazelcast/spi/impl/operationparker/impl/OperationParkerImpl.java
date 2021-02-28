@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,7 +90,7 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
         }
     }
 
-     // Runs in operation thread, we can assume that
+    // Runs in operation thread, we can assume that
     // here we have an implicit lock for specific WaitNotifyKey.
     // see javadoc
     @Override
@@ -177,7 +177,7 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
     public void shutdown() {
         logger.finest("Stopping tasks...");
         expirationTaskFuture.cancel(true);
-        expirationExecutor.shutdown();
+        expirationExecutor.shutdownNow();
         for (WaitSet waitSet : waitSetMap.values()) {
             waitSet.onShutdown();
         }

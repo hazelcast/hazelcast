@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
+import com.hazelcast.internal.config.MergePolicyConfigReadOnly;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -48,8 +49,7 @@ public class CardinalityEstimatorConfig implements IdentifiedDataSerializable, N
     /**
      * The default merge policy used for cardinality estimators
      */
-    public static final MergePolicyConfig DEFAULT_MERGE_POLICY_CONFIG
-            = new MergePolicyConfig(HyperLogLogMergePolicy.class.getSimpleName(), MergePolicyConfig.DEFAULT_BATCH_SIZE);
+    public static final MergePolicyConfig DEFAULT_MERGE_POLICY_CONFIG;
 
     private static final String[] ALLOWED_POLICIES = {
             "com.hazelcast.spi.merge.DiscardMergePolicy", "DiscardMergePolicy",
@@ -57,6 +57,12 @@ public class CardinalityEstimatorConfig implements IdentifiedDataSerializable, N
             "com.hazelcast.spi.merge.PassThroughMergePolicy", "PassThroughMergePolicy",
             "com.hazelcast.spi.merge.PutIfAbsentMergePolicy", "PutIfAbsentMergePolicy",
     };
+
+    static {
+        MergePolicyConfig defaultMergePolicy = new MergePolicyConfig(HyperLogLogMergePolicy.class.getSimpleName(),
+                MergePolicyConfig.DEFAULT_BATCH_SIZE);
+        DEFAULT_MERGE_POLICY_CONFIG = new MergePolicyConfigReadOnly(defaultMergePolicy);
+    }
 
     private String name = "default";
 
@@ -66,7 +72,7 @@ public class CardinalityEstimatorConfig implements IdentifiedDataSerializable, N
 
     private String splitBrainProtectionName;
 
-    private MergePolicyConfig mergePolicyConfig = DEFAULT_MERGE_POLICY_CONFIG;
+    private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig(DEFAULT_MERGE_POLICY_CONFIG);
 
     public CardinalityEstimatorConfig() {
     }
@@ -242,19 +248,19 @@ public class CardinalityEstimatorConfig implements IdentifiedDataSerializable, N
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeInt(backupCount);
         out.writeInt(asyncBackupCount);
-        out.writeUTF(splitBrainProtectionName);
+        out.writeString(splitBrainProtectionName);
         out.writeObject(mergePolicyConfig);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         backupCount = in.readInt();
         asyncBackupCount = in.readInt();
-        splitBrainProtectionName = in.readUTF();
+        splitBrainProtectionName = in.readString();
         mergePolicyConfig = in.readObject();
     }
 

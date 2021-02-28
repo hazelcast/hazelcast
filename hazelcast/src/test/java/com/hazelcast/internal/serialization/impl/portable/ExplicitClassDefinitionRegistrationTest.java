@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,12 +66,12 @@ public class ExplicitClassDefinitionRegistrationTest {
 
         @Override
         public void writePortable(final PortableWriter writer) throws IOException {
-            writer.writeUTF("stringField", stringField);
+            writer.writeString("stringField", stringField);
         }
 
         @Override
         public void readPortable(final PortableReader reader) throws IOException {
-            stringField = reader.readUTF("stringField");
+            stringField = reader.readString("stringField");
         }
 
         @Override
@@ -183,7 +183,7 @@ public class ExplicitClassDefinitionRegistrationTest {
                 .addPortableFactory(MyPortableFactory1.ID, new MyPortableFactory1())
                 .addPortableFactory(MyPortableFactory2.ID, new MyPortableFactory2())
                 .addClassDefinition(new ClassDefinitionBuilder(MyPortableFactory1.ID, MyPortable1.ID)
-                        .addUTFField("stringField")
+                        .addStringField("stringField")
                         .build())
                 .addClassDefinition(new ClassDefinitionBuilder(MyPortableFactory2.ID, MyPortable2.ID)
                         .addIntField("intField")

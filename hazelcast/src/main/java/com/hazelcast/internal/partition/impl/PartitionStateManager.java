@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -103,6 +103,19 @@ public class PartitionStateManager {
         memberGroupFactory = MemberGroupFactoryFactory.newMemberGroupFactory(node.getConfig().getPartitionGroupConfig(),
                 node.getDiscoveryService());
         partitionStateGenerator = new PartitionStateGeneratorImpl();
+    }
+
+    /**
+     * @return {@code true} if there are partitions having {@link
+     * InternalPartitionImpl#isMigrating()} flag set, {@code false} otherwise.
+     */
+    boolean hasMigratingPartitions() {
+        for (int i = 0; i < partitionCount; ++i) {
+            if (partitions[i].isMigrating()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Probe(name = PARTITIONS_METRIC_PARTITION_REPLICA_STATE_MANAGER_LOCAL_PARTITION_COUNT)

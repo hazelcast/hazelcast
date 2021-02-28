@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -98,6 +98,8 @@ public class ClientClusterRestartEventTest {
         });
 
         instance.shutdown();
+        //Allow same addresses to be used to test hot restart correctly
+        hazelcastFactory.cleanup();
         instance = hazelcastFactory.newHazelcastInstance(newConfig());
         Member newMember = instance.getCluster().getLocalMember();
 
@@ -147,7 +149,8 @@ public class ClientClusterRestartEventTest {
                 throw new AssertionError(e);
             }
         });
-
+        //Allow same addresses to be used to test hot restart correctly
+        hazelcastFactory.cleanup();
         Future<HazelcastInstance> f1 = spawn(() -> hazelcastFactory.newHazelcastInstance(newConfig()));
         Future<HazelcastInstance> f2 = spawn(() -> hazelcastFactory.newHazelcastInstance(newConfig()));
 

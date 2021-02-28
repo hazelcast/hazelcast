@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -93,6 +93,10 @@ public abstract class HttpCommandProcessor<T> extends AbstractTextCommandProcess
     public static final String URI_REMOVE_SUFFIX = "/remove";
     public static final String URI_CP_MEMBERS_URL = URI_CP_SUBSYSTEM_BASE_URL + "/members";
     public static final String URI_LOCAL_CP_MEMBER_URL = URI_CP_MEMBERS_URL + "/local";
+
+    // Log Level
+    public static final String URI_LOG_LEVEL = "/hazelcast/rest/log-level";
+    public static final String URI_LOG_LEVEL_RESET = "/hazelcast/rest/log-level/reset";
 
     protected final ILogger logger;
 

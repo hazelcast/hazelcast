@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@
 package com.hazelcast.sql.impl.calcite.validate.operators.predicate;
 
 import com.hazelcast.sql.impl.ParameterConverter;
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
-import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.calcite.validate.param.NumericPrecedenceParameterConverter;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import org.apache.calcite.rel.type.RelDataType;
@@ -112,7 +112,7 @@ public final class HazelcastComparisonPredicateUtils {
             return true;
         }
 
-        boolean valid = bothParametersAreNumeric(highHZType, lowHZType)
+        boolean valid = bothOperandsAreNumeric(highHZType, lowHZType)
                 || bothOperandsAreTemporalAndLowOperandCanBeConvertedToHighOperand(highHZType, lowHZType)
                 || highOperandIsTemporalAndLowOperandIsLiteralOfVarcharType(highHZType, lowHZType, low);
 
@@ -133,7 +133,7 @@ public final class HazelcastComparisonPredicateUtils {
         return true;
     }
 
-    private static boolean bothParametersAreNumeric(QueryDataType highHZType, QueryDataType lowHZType) {
+    private static boolean bothOperandsAreNumeric(QueryDataType highHZType, QueryDataType lowHZType) {
         return (highHZType.getTypeFamily().isNumeric() && lowHZType.getTypeFamily().isNumeric());
     }
 

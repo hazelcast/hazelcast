@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -193,7 +193,6 @@ public abstract class HazelcastTestSupport {
                 .setProperty(ClusterProperty.EVENT_THREAD_COUNT.getName(), "1");
 
         config.getSqlConfig().setExecutorPoolSize(2);
-        config.getSqlConfig().setOperationPoolSize(2);
 
         return config;
     }
@@ -1442,7 +1441,8 @@ public abstract class HazelcastTestSupport {
             if (expectedType.isInstance(actualException)) {
                 return (T) actualException;
             } else {
-                String excMsg = String.format("Unexpected %s exception type thrown", actualException.getClass().getName());
+                String excMsg = String.format("Unexpected %s exception type thrown with message:\n%s",
+                        actualException.getClass().getName(), actualException.getMessage());
                 throw new AssertionFailedError(excMsg);
             }
         }

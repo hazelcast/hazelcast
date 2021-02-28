@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -108,7 +108,7 @@ public class SqlClientService implements SqlService {
             ClientInvocationFuture future = invokeAsync(requestMessage, connection);
 
             future.whenComplete(withTryCatch(logger,
-                    (message, error) -> handleExecuteResponse(connection, res, message, error)));
+                    (message, error) -> handleExecuteResponse(connection, res, message, error))).get();
 
             return res;
         } catch (Exception e) {
@@ -195,7 +195,7 @@ public class SqlClientService implements SqlService {
     /**
      * For testing only.
      */
-    public ClientMessage invokeOnRandomConnection(ClientMessage message) {
+    public Connection getRandomConnection() {
         Connection connection = client.getConnectionManager().getRandomConnection(false);
 
         if (connection == null) {
@@ -205,8 +205,15 @@ public class SqlClientService implements SqlService {
             ));
         }
 
+        return connection;
+    }
+
+    /**
+     * For testing only.
+     */
+    public ClientMessage invokeOnConnection(Connection connection, ClientMessage request) {
         try {
-            return invoke(message, connection);
+            return invoke(request, connection);
         } catch (Exception e) {
             throw rethrow(e);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If this list does not contain the element, it is unchanged.
  * Returns true if this list contained the specified element (or equivalently, if this list changed as a result of the call).
  */
-@Generated("bbfe5e97de2b7ad185bc82c3f8a1ad64")
+@Generated("81211eada3e9c0ca2d0acf3771462f23")
 public final class ListRemoveCodec {
     //hex: 0x050500
     public static final int REQUEST_MESSAGE_TYPE = 328960;

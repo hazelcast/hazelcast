@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -673,7 +673,7 @@ public abstract class Operation implements DataSerializable, Tenantable {
         out.writeShort(flags);
 
         if (isFlagSet(BITMASK_SERVICE_NAME_SET)) {
-            out.writeUTF(serviceName);
+            out.writeString(serviceName);
         }
 
         if (isFlagSet(BITMASK_PARTITION_ID_32_BIT)) {
@@ -719,7 +719,7 @@ public abstract class Operation implements DataSerializable, Tenantable {
         flags = in.readShort();
 
         if (isFlagSet(BITMASK_SERVICE_NAME_SET)) {
-            serviceName = in.readUTF();
+            serviceName = in.readString();
         }
 
         if (isFlagSet(BITMASK_PARTITION_ID_32_BIT)) {
@@ -827,7 +827,7 @@ public abstract class Operation implements DataSerializable, Tenantable {
     /**
      * Cleans up all of the thread context. This method should clear all potential
      * context items, not just the ones set up in {@link #pushThreadContext()}
-     * This acts as a catch-all for any potential class class loader and thread-local
+     * This acts as a catch-all for any potential class loader and thread-local
      * leaks.
      */
     public void clearThreadContext() {

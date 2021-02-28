@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,7 +84,7 @@ public class CreateRaftGroupOp extends MetadataRaftGroupOp implements Indetermin
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(groupName);
+        out.writeString(groupName);
         out.writeInt(members.size());
         for (RaftEndpoint member : members) {
             out.writeObject(member);
@@ -94,7 +94,7 @@ public class CreateRaftGroupOp extends MetadataRaftGroupOp implements Indetermin
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        groupName = in.readUTF();
+        groupName = in.readString();
         int len = in.readInt();
         members = new ArrayList<>(len);
         for (int i = 0; i < len; i++) {

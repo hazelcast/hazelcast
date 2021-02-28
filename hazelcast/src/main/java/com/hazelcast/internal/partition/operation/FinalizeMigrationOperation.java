@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,6 +54,7 @@ public final class FinalizeMigrationOperation extends AbstractPartitionOperation
      * This constructor should not be used to obtain an instance of this class; it exists to fulfill IdentifiedDataSerializable
      * coding conventions.
      */
+    @SuppressWarnings("unused")
     public FinalizeMigrationOperation() {
         migrationInfo = null;
         endpoint = null;
@@ -97,7 +98,6 @@ public final class FinalizeMigrationOperation extends AbstractPartitionOperation
         }
 
         partitionStateManager.clearMigratingFlag(partitionId);
-        partitionService.getMigrationManager().removeActiveMigration(migrationInfo);
         if (success) {
             nodeEngine.onPartitionMigrate(migrationInfo);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -110,7 +110,7 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode implements Ide
     protected void writeData0(ObjectDataOutput out) throws IOException {
         super.writeData0(out);
 
-        out.writeUTF(indexName);
+        out.writeString(indexName);
         out.writeInt(indexComponentCount);
         out.writeObject(indexFilter);
         SerializationUtil.writeList(converterTypes, out);
@@ -121,7 +121,7 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode implements Ide
     protected void readData0(ObjectDataInput in) throws IOException {
         super.readData0(in);
 
-        indexName = in.readUTF();
+        indexName = in.readString();
         indexComponentCount = in.readInt();
         indexFilter = in.readObject();
         converterTypes = SerializationUtil.readList(in);

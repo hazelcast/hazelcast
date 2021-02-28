@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,17 +17,32 @@
 package com.hazelcast.sql.impl.calcite.validate.literal;
 
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.sql.SqlCharStringLiteral;
+import org.apache.calcite.rex.RexLiteral;
+import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
-import org.apache.calcite.sql.SqlNumericLiteral;
 import org.apache.calcite.sql.type.SqlTypeName;
+import org.apache.calcite.util.NlsString;
+
+import static org.apache.calcite.sql.type.SqlTypeName.CHAR_TYPES;
 
 public final class LiteralUtils {
     private LiteralUtils() {
         // No-op
+    }
+
+    public static Literal literal(RexNode node) {
+        if (node.getKind() != SqlKind.LITERAL) {
+            // Not a literal
+            return null;
+        }
+
+        RexLiteral literal = (RexLiteral) node;
+
+        return literal0(node.getType().getSqlTypeName(), literal.getValue());
     }
 
     public static Literal literal(SqlNode node) {
@@ -37,21 +52,31 @@ public final class LiteralUtils {
         }
 
         SqlLiteral literal = (SqlLiteral) node;
+        SqlTypeName typeName = literal.getTypeName();
 
+        Object value = CHAR_TYPES.contains(typeName) ? literal.toValue() : literal.getValue();
+        return literal0(typeName, value);
+    }
+
+    private static Literal literal0(SqlTypeName typeName, Object value) {
         // Do no convert symbols.
-        if (literal.getTypeName() == SqlTypeName.SYMBOL) {
+        if (typeName == SqlTypeName.SYMBOL) {
             return null;
         }
 
-        if (literal instanceof SqlNumericLiteral) {
-            return NumericLiteral.create((SqlNumericLiteral) literal);
+        if (HazelcastTypeUtils.isNumericType(typeName)) {
+            return NumericLiteral.create(typeName, value);
         }
 
-        if (literal instanceof SqlCharStringLiteral) {
-            return new TypedLiteral(literal, literal.getValueAs(String.class), SqlTypeName.VARCHAR);
+        if (CHAR_TYPES.contains(typeName)) {
+            if (value instanceof NlsString) {
+                value = ((NlsString) value).getValue();
+            }
+            assert value instanceof String : value.getClass().getName();
+            return new TypedLiteral(value, SqlTypeName.VARCHAR);
         }
 
-        return new TypedLiteral(literal, literal.getValue(), literal.getTypeName());
+        return new TypedLiteral(value, typeName);
     }
 
     public static SqlTypeName literalTypeName(SqlNode node) {

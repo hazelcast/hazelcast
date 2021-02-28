@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ public class MulticastConfig implements TrustedInterfacesConfigurable<MulticastC
      * Default flag that indicates if the loopback mode
      * is turned on or off.
      */
-    public static final boolean DEFAULT_LOOPBACK_MODE_ENABLED = false;
+    public static final boolean DEFAULT_LOOPBACK_MODE_ENABLED = true;
 
     private static final int MULTICAST_TTL_UPPER_BOUND = 255;
 

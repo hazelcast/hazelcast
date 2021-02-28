@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,14 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -40,7 +42,7 @@ import static com.hazelcast.internal.util.Preconditions.isNotNull;
 /**
  * Contains the configuration for an {@link IMap}.
  */
-public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
+public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versioned {
 
     /**
      * The minimum number of backups
@@ -85,6 +87,10 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
      */
     public static final boolean DEFAULT_STATISTICS_ENABLED = true;
     /**
+     * Default value of whether per entry statistics are enabled or not
+     */
+    public static final boolean DEFAULT_ENTRY_STATS_ENABLED = false;
+    /**
      * Default max size.
      */
     public static final int DEFAULT_MAX_SIZE = Integer.MAX_VALUE;
@@ -101,6 +107,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
 
     private boolean readBackupData;
     private boolean statisticsEnabled = DEFAULT_STATISTICS_ENABLED;
+    private boolean perEntryStatsEnabled = DEFAULT_ENTRY_STATS_ENABLED;
     private int backupCount = DEFAULT_BACKUP_COUNT;
     private int asyncBackupCount = MIN_BACKUP_COUNT;
     private int timeToLiveSeconds = DEFAULT_TTL_SECONDS;
@@ -149,6 +156,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
         this.readBackupData = config.readBackupData;
         this.cacheDeserializedValues = config.cacheDeserializedValues;
         this.statisticsEnabled = config.statisticsEnabled;
+        this.perEntryStatsEnabled = config.perEntryStatsEnabled;
         this.mergePolicyConfig = new MergePolicyConfig(config.mergePolicyConfig);
         this.wanReplicationRef = config.wanReplicationRef != null ? new WanReplicationRef(config.wanReplicationRef) : null;
         this.entryListenerConfigs = new ArrayList<>(config.getEntryListenerConfigs());
@@ -392,10 +400,16 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
     /**
      * Sets the {@link MergePolicyConfig} for this map.
      *
+     * Note that you may need to enable per entry stats
+     * via {@link MapConfig#setPerEntryStatsEnabled}
+     * to see all fields of entry view in your {@link
+     * com.hazelcast.spi.merge.SplitBrainMergePolicy} implementation.
+     *
      * @return the updated map configuration
      */
     public MapConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
-        this.mergePolicyConfig = checkNotNull(mergePolicyConfig, "mergePolicyConfig cannot be null!");
+        this.mergePolicyConfig = checkNotNull(mergePolicyConfig,
+                "mergePolicyConfig cannot be null!");
         return this;
     }
 
@@ -409,13 +423,48 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
     }
 
     /**
-     * Sets statistics to enabled or disabled for this map.
+     * Set to enable/disable map level statistics for this map.
      *
-     * @param statisticsEnabled {@code true} to enable map statistics, {@code false} to disable
+     * This setting is only for map level stats such as last
+     * access time to map, total number of hits etc. For
+     * entry level stats see {@link #perEntryStatsEnabled}
+     *
+     * @param statisticsEnabled {@code true} to
+     *                          enable map statistics, {@code false} to disable
      * @return the current map config instance
+     * @see #setPerEntryStatsEnabled
      */
     public MapConfig setStatisticsEnabled(boolean statisticsEnabled) {
         this.statisticsEnabled = statisticsEnabled;
+        return this;
+    }
+
+    /**
+     * Checks if entry level statistics are enabled for this map.
+     *
+     * @return {@code true} if entry level statistics
+     * are enabled, {@code false} otherwise
+     * @since 4.2
+     */
+    public boolean isPerEntryStatsEnabled() {
+        return perEntryStatsEnabled;
+    }
+
+    /**
+     * Set to enable/disable per entry statistics.
+     * Its default value is {@code false}.
+     *
+     * When you enable per entry stats, you can retrieve entry
+     * level statistics such as hits, creation time, last access
+     * time, last update time, last stored time for an entry.
+     *
+     * @param perEntryStatsEnabled {@code true} to enable
+     *                             entry level statistics, {@code false} to disable
+     * @return the current map config instance
+     * @since 4.2
+     */
+    public MapConfig setPerEntryStatsEnabled(boolean perEntryStatsEnabled) {
+        this.perEntryStatsEnabled = perEntryStatsEnabled;
         return this;
     }
 
@@ -731,6 +780,9 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
         if (statisticsEnabled != that.statisticsEnabled) {
             return false;
         }
+        if (perEntryStatsEnabled != that.perEntryStatsEnabled) {
+            return false;
+        }
         if (!name.equals(that.name)) {
             return false;
         }
@@ -810,6 +862,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
         result = 31 * result + getQueryCacheConfigs().hashCode();
         result = 31 * result + getPartitionLostListenerConfigs().hashCode();
         result = 31 * result + (statisticsEnabled ? 1 : 0);
+        result = 31 * result + (perEntryStatsEnabled ? 1 : 0);
         result = 31 * result + (partitioningStrategyConfig != null ? partitioningStrategyConfig.hashCode() : 0);
         result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
         result = 31 * result + merkleTreeConfig.hashCode();
@@ -843,6 +896,8 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
                 + ", splitBrainProtectionName=" + splitBrainProtectionName
                 + ", queryCacheConfigs=" + queryCacheConfigs
                 + ", cacheDeserializedValues=" + cacheDeserializedValues
+                + ", statisticsEnabled=" + statisticsEnabled
+                + ", entryStatsEnabled=" + perEntryStatsEnabled
                 + '}';
     }
 
@@ -858,7 +913,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeInt(backupCount);
         out.writeInt(asyncBackupCount);
         out.writeInt(timeToLiveSeconds);
@@ -867,9 +922,9 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
         out.writeObject(mapStoreConfig);
         out.writeObject(nearCacheConfig);
         out.writeBoolean(readBackupData);
-        out.writeUTF(cacheDeserializedValues.name());
+        out.writeString(cacheDeserializedValues.name());
         out.writeObject(mergePolicyConfig);
-        out.writeUTF(inMemoryFormat.name());
+        out.writeString(inMemoryFormat.name());
         out.writeObject(wanReplicationRef);
         writeNullableList(entryListenerConfigs, out);
         writeNullableList(partitionLostListenerConfigs, out);
@@ -878,16 +933,20 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
         writeNullableList(queryCacheConfigs, out);
         out.writeBoolean(statisticsEnabled);
         out.writeObject(partitioningStrategyConfig);
-        out.writeUTF(splitBrainProtectionName);
+        out.writeString(splitBrainProtectionName);
         out.writeObject(hotRestartConfig);
         out.writeObject(merkleTreeConfig);
         out.writeObject(eventJournalConfig);
         out.writeShort(metadataPolicy.getId());
+
+        if (out.getVersion().isGreaterOrEqual(Versions.V4_2)) {
+            out.writeBoolean(perEntryStatsEnabled);
+        }
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         backupCount = in.readInt();
         asyncBackupCount = in.readInt();
         timeToLiveSeconds = in.readInt();
@@ -896,9 +955,9 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
         mapStoreConfig = in.readObject();
         nearCacheConfig = in.readObject();
         readBackupData = in.readBoolean();
-        cacheDeserializedValues = CacheDeserializedValues.valueOf(in.readUTF());
+        cacheDeserializedValues = CacheDeserializedValues.valueOf(in.readString());
         mergePolicyConfig = in.readObject();
-        inMemoryFormat = InMemoryFormat.valueOf(in.readUTF());
+        inMemoryFormat = InMemoryFormat.valueOf(in.readString());
         wanReplicationRef = in.readObject();
         entryListenerConfigs = readNullableList(in);
         partitionLostListenerConfigs = readNullableList(in);
@@ -907,10 +966,14 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
         queryCacheConfigs = readNullableList(in);
         statisticsEnabled = in.readBoolean();
         partitioningStrategyConfig = in.readObject();
-        splitBrainProtectionName = in.readUTF();
+        splitBrainProtectionName = in.readString();
         hotRestartConfig = in.readObject();
         merkleTreeConfig = in.readObject();
         eventJournalConfig = in.readObject();
         metadataPolicy = MetadataPolicy.getById(in.readShort());
+
+        if (in.getVersion().isGreaterOrEqual(Versions.V4_2)) {
+            perEntryStatsEnabled = in.readBoolean();
+        }
     }
 }

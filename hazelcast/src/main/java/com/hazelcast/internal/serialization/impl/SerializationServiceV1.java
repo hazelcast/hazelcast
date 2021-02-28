@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -321,7 +321,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         if (isFlagSet(header, IDS_FLAG)) {
             skipBytesSafely(input, FACTORY_AND_CLASS_ID_BYTE_LENGTH);
         } else {
-            input.readUTF();
+            input.readString();
         }
 
         if (isFlagSet(header, EE_FLAG)) {

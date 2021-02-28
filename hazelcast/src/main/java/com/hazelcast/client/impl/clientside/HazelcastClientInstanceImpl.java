@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -844,8 +844,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         logger.info("Clearing local state of the client, because of a cluster restart.");
 
         dispose(onClusterChangeDisposables);
-        //clear the member list version
-        clusterService.clearMemberListVersion();
+        clusterService.clearMemberList();
     }
 
     public void waitForInitialMembershipEvents() {

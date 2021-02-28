@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.internal.monitor.LocalRecordStoreStats;
+import com.hazelcast.internal.monitor.impl.LocalRecordStoreStatsImpl;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.comparators.ValueComparator;
@@ -34,11 +35,16 @@ import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordFactory;
+import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
+import com.hazelcast.map.impl.recordstore.expiry.ExpiryReason;
+import com.hazelcast.map.impl.recordstore.expiry.ExpirySystem;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 import com.hazelcast.wan.impl.CallerProvenance;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -50,6 +56,8 @@ import java.util.function.BiConsumer;
  * Defines a record-store.
  */
 public interface RecordStore<R extends Record> {
+
+    ExpirySystem getExpirySystem();
 
     LocalRecordStoreStats getLocalRecordStoreStats();
 
@@ -80,18 +88,23 @@ public interface RecordStore<R extends Record> {
      * @param provenance origin of call to this method.
      * @return current record after put.
      */
-    R putBackup(Data key, Object value, long ttl, long maxIdle, CallerProvenance provenance);
+    R putBackup(Data key, Object value, long ttl, long maxIdle,
+                long nowOrExpiryTime, CallerProvenance provenance);
 
     /**
      * @return current record after put.
      */
-    R putBackup(Data dataKey, Record record, boolean putTransient, CallerProvenance provenance);
+    R putBackup(Data dataKey, Record record, ExpiryMetadata expiryMetadata,
+                boolean putTransient, CallerProvenance provenance);
+
+    R putBackup(Data dataKey, Record record, long ttl, long maxIdle,
+                long nowOrExpiryTime, CallerProvenance provenance);
 
     /**
      * @return current record after put.
      */
-    R putBackupTxn(Data dataKey, Record newRecord, boolean putTransient,
-                   CallerProvenance provenance, UUID transactionId);
+    R putBackupTxn(Data dataKey, Record newRecord, ExpiryMetadata expiryMetadata,
+                   boolean putTransient, CallerProvenance provenance, UUID transactionId);
 
     /**
      * Does exactly the same thing as {@link #set(Data, Object, long, long)} except the invocation is not counted as
@@ -118,22 +131,15 @@ public interface RecordStore<R extends Record> {
     boolean setTtl(Data key, long ttl, boolean backup);
 
     /**
-     * Checks whether ttl or maxIdle are set on the record.
-     *
-     * @param record the record to be checked
-     * @return {@code true} if ttl or maxIdle are defined on the {@code record}, otherwise {@code false}.
-     */
-    boolean isTtlOrMaxIdleDefined(Record record);
-
-    /**
      * Callback which is called when the record is being accessed from the record or index store.
      * <p>
      * An implementation is not supposed to be thread safe.
      *
-     * @param record the accessed record
-     * @param now    the current time
+     * @param dataKey
+     * @param record  the accessed record
+     * @param now     the current time
      */
-    void accessRecord(Record record, long now);
+    void accessRecord(Data dataKey, Record record, long now);
 
     /**
      * Similar to {@link RecordStore#remove(Data, CallerProvenance)}
@@ -285,7 +291,8 @@ public interface RecordStore<R extends Record> {
      * @return current record after put
      * @see com.hazelcast.map.impl.operation.MapReplicationOperation
      */
-    R putReplicatedRecord(Data dataKey, R record, long nowInMillis, boolean indexesMustBePopulated);
+    R putReplicatedRecord(Data dataKey, R record, ExpiryMetadata expiryMetadata,
+                          boolean indexesMustBePopulated, long now);
 
     void forEach(BiConsumer<Data, R> consumer, boolean backup);
 
@@ -363,6 +370,7 @@ public interface RecordStore<R extends Record> {
 
     boolean containsValue(Object testValue);
 
+    @Nullable
     Object evict(Data key, boolean backup);
 
     /**
@@ -390,9 +398,10 @@ public interface RecordStore<R extends Record> {
      * Do expiration operations.
      *
      * @param percentage of max expirables according to the record store size.
+     * @param now        now in millis
      * @param backup     <code>true</code> if a backup partition, otherwise <code>false</code>.
      */
-    void evictExpiredEntries(int percentage, boolean backup);
+    void evictExpiredEntries(int percentage, long now, boolean backup);
 
     /**
      * @return <code>true</code> if record store has at least one candidate entry
@@ -403,12 +412,14 @@ public interface RecordStore<R extends Record> {
     /**
      * Checks whether a record is expired or not.
      *
-     * @param record the record from record-store.
-     * @param now    current time in millis
-     * @param backup <code>true</code> if a backup partition, otherwise <code>false</code>.
+     * @param dataKey the record from record-store.
+     * @param now     current time in millis
+     * @param backup  <code>true</code> if a backup partition, otherwise <code>false</code>.
      * @return <code>true</code> if the record is expired, <code>false</code> otherwise.
      */
-    boolean isExpired(R record, long now, boolean backup);
+    ExpiryReason hasExpired(Data dataKey, long now, boolean backup);
+
+    boolean isExpired(Data dataKey, long now, boolean backup);
 
     /**
      * Checks whether a key has expired, when
@@ -424,9 +435,11 @@ public interface RecordStore<R extends Record> {
     /**
      * Does post eviction operations like sending events
      *
-     * @param record record to process
+     * @param dataValue    record to process
+     * @param expiryReason
      */
-    void doPostEvictionOperations(Data dataKey, Record record);
+    void doPostEvictionOperations(@Nonnull Data dataKey, @Nonnull Object dataValue,
+                                  @Nonnull ExpiryReason expiryReason);
 
     MapDataStore<Data, Object> getMapDataStore();
 
@@ -450,15 +463,16 @@ public interface RecordStore<R extends Record> {
 
     /**
      * Check if record is reachable according to TTL or idle times.
-     * If not reachable return null.
      *
-     * @param record the record from record-store.
      * @param now    current time in millis
-     * @param backup <code>true</code> if a backup partition, otherwise <code>false</code>.
-     * @return null if evictable.
+     * @param backup <code>true</code> if a backup
+     *               partition, otherwise <code>false</code>.
+     * @return {@code true} if record has been evicted
+     * due to the expiry, otherwise return {@code false}.
      */
-    R getOrNullIfExpired(Data key, R record, long now, boolean backup);
+    boolean evictIfExpired(Data key, long now, boolean backup);
 
+    void evictExpiredEntryAndPublishExpiryEvent(Data key, ExpiryReason expiryReason, boolean backup);
 
     /**
      * Evicts entries from this record-store.
@@ -476,13 +490,13 @@ public interface RecordStore<R extends Record> {
 
     Storage createStorage(RecordFactory<R> recordFactory, InMemoryFormat memoryFormat);
 
-    R createRecord(Data key, Object value, long ttlMillis, long maxIdle, long now);
+    R createRecord(Object value, long ttlMillis, long maxIdle, long now);
 
     /**
      * Creates a new record from a replicated record
      * by making memory format related conversions.
      */
-    R createRecord(Data key, R fromRecord, long nowInMillis);
+    R createRecord(R fromRecord, long nowInMillis);
 
     R loadRecordOrNull(Data key, boolean backup, Address callerAddress);
 
@@ -495,6 +509,14 @@ public interface RecordStore<R extends Record> {
      * Initialize the recordStore after creation
      */
     void init();
+
+    /**
+     * Gets metadata store associated with the record store.
+     * On the first call it initializes the store so
+     * that the Json metadata store is created only when it is needed.
+     * @return the Json metadata store
+     */
+    JsonMetadataStore getOrCreateMetadataStore();
 
     Storage getStorage();
 
@@ -628,4 +650,8 @@ public interface RecordStore<R extends Record> {
     InMemoryFormat getInMemoryFormat();
 
     EvictionPolicy getEvictionPolicy();
+
+    LocalRecordStoreStatsImpl getStats();
+
+    void setStats(LocalRecordStoreStats stats);
 }

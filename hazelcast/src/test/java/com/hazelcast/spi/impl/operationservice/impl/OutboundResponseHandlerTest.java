@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -262,12 +262,12 @@ public class OutboundResponseHandlerTest {
         @Override
         public void writePortable(PortableWriter writer) throws IOException {
             writer.writeInt("no", no);
-            writer.writeUTF("street", street);
+            writer.writeString("street", street);
         }
 
         @Override
         public void readPortable(PortableReader reader) throws IOException {
-            street = reader.readUTF("street");
+            street = reader.readString("street");
             no = reader.readInt("no");
         }
 

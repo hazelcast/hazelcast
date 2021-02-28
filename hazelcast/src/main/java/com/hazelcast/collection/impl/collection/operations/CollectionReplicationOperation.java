@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ public abstract class CollectionReplicationOperation extends Operation implement
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeInt(migrationData.size());
         for (Map.Entry<String, CollectionContainer> entry : migrationData.entrySet()) {
-            out.writeUTF(entry.getKey());
+            out.writeString(entry.getKey());
             CollectionContainer container = entry.getValue();
             out.writeObject(container);
         }

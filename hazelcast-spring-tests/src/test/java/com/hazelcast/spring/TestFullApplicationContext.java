@@ -327,7 +327,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     @Test
     public void testMapConfig() {
         assertNotNull(config);
-        assertEquals(27, config.getMapConfigs().size());
+        assertEquals(28, config.getMapConfigs().size());
 
         MapConfig testMapConfig = config.getMapConfig("testMap");
         assertNotNull(testMapConfig);
@@ -1238,6 +1238,12 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     }
 
     @Test
+    public void testMapPerEntryStats() {
+        MapConfig mapConfig = config.getMapConfig("map-with-per-entry-stats-enabled");
+        assertTrue(mapConfig.isPerEntryStatsEnabled());
+    }
+
+    @Test
     public void testFullQueryCacheConfig() {
         MapConfig mapConfig = config.getMapConfig("map-with-query-cache");
         QueryCacheConfig queryCacheConfig = mapConfig.getQueryCacheConfigs().get(0);
@@ -1311,7 +1317,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
     @Test
     public void testMapEvictionPolicies() {
-        assertEquals(EvictionPolicy.FIFO, config.getMapConfig("fifoEvictionMap").getEvictionConfig().getEvictionPolicy());
         assertEquals(EvictionPolicy.LFU, config.getMapConfig("lfuEvictionMap").getEvictionConfig().getEvictionPolicy());
         assertEquals(EvictionPolicy.LRU, config.getMapConfig("lruEvictionMap").getEvictionConfig().getEvictionPolicy());
         assertEquals(EvictionPolicy.NONE, config.getMapConfig("noneEvictionMap").getEvictionConfig().getEvictionPolicy());
@@ -1320,7 +1325,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
     @Test
     public void testMemberNearCacheEvictionPolicies() {
-        assertEquals(EvictionPolicy.FIFO, getNearCacheEvictionPolicy("fifoNearCacheEvictionMap", config));
         assertEquals(EvictionPolicy.LFU, getNearCacheEvictionPolicy("lfuNearCacheEvictionMap", config));
         assertEquals(EvictionPolicy.LRU, getNearCacheEvictionPolicy("lruNearCacheEvictionMap", config));
         assertEquals(EvictionPolicy.RANDOM, getNearCacheEvictionPolicy("randomNearCacheEvictionMap", config));
@@ -1476,7 +1480,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     public void testSqlConfig() {
         SqlConfig sqlConfig = config.getSqlConfig();
         assertEquals(10, sqlConfig.getExecutorPoolSize());
-        assertEquals(20, sqlConfig.getOperationPoolSize());
         assertEquals(30L, sqlConfig.getStatementTimeoutMillis());
     }
 }

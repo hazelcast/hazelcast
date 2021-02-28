@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,7 +74,7 @@ public class MorphingBasePortable implements Portable {
         writer.writeLong("long", aLong);
         writer.writeFloat("float", aFloat);
         writer.writeDouble("double", aDouble);
-        writer.writeUTF("string", aString);
+        writer.writeString("string", aString);
     }
 
     @Override
@@ -87,6 +87,6 @@ public class MorphingBasePortable implements Portable {
         this.aLong = reader.readLong("long");
         this.aFloat = reader.readFloat("float");
         this.aDouble = reader.readDouble("double");
-        this.aString = reader.readUTF("string");
+        this.aString = reader.readString("string");
     }
 }

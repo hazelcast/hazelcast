@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,6 +49,7 @@ public class ReceiveExecTest extends SqlTestSupport {
             operationHandler,
             queryId,
             edgeId,
+            false,
             rowWidth,
             localMemberId,
             2,
@@ -67,7 +68,7 @@ public class ReceiveExecTest extends SqlTestSupport {
         checkMonotonicBatch(exec.currentBatch(), 0, 0);
 
         // Read non-last batch.
-        inbox.onBatch(new InboundBatch(createMonotonicBatch(0, 10), false, UUID.randomUUID()), 100L);
+        inbox.onBatch(new InboundBatch(createMonotonicBatch(0, 10), 0L, false, UUID.randomUUID()), 100L);
 
         assertEquals(IterationResult.FETCHED, exec.advance());
         checkMonotonicBatch(exec.currentBatch(), 0, 10);
@@ -76,7 +77,7 @@ public class ReceiveExecTest extends SqlTestSupport {
         checkMonotonicBatch(exec.currentBatch(), 10, 0);
 
         // Read last batch, with one stream still opened.
-        inbox.onBatch(new InboundBatch(createMonotonicBatch(10, 20), true, UUID.randomUUID()), 100L);
+        inbox.onBatch(new InboundBatch(createMonotonicBatch(10, 20), 0L, true, UUID.randomUUID()), 100L);
 
         assertEquals(IterationResult.FETCHED, exec.advance());
         checkMonotonicBatch(exec.currentBatch(), 10, 20);
@@ -85,8 +86,8 @@ public class ReceiveExecTest extends SqlTestSupport {
         checkMonotonicBatch(exec.currentBatch(), 30, 0);
 
         // One more last batch, now closing the stream.
-        inbox.onBatch(new InboundBatch(createMonotonicBatch(30, 30), false, UUID.randomUUID()), 100L);
-        inbox.onBatch(new InboundBatch(createMonotonicBatch(60, 40), true, UUID.randomUUID()), 100L);
+        inbox.onBatch(new InboundBatch(createMonotonicBatch(30, 30), 0L, false, UUID.randomUUID()), 100L);
+        inbox.onBatch(new InboundBatch(createMonotonicBatch(60, 40), 0L, true, UUID.randomUUID()), 100L);
 
         assertEquals(IterationResult.FETCHED, exec.advance());
         checkMonotonicBatch(exec.currentBatch(), 30, 30);

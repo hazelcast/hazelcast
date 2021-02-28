@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,8 @@ import com.hazelcast.sql.impl.ClockProvider;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryResultProducer;
-import com.hazelcast.sql.impl.plan.cache.CachedPlanInvalidationCallback;
 import com.hazelcast.sql.impl.plan.Plan;
+import com.hazelcast.sql.impl.plan.cache.CachedPlanInvalidationCallback;
 
 import java.util.Collection;
 import java.util.UUID;
@@ -90,17 +90,34 @@ public class QueryStateRegistry {
      * of these events. This is not a problem, because {@link QueryStateRegistryUpdater} will eventually detect that
      * the query is not longer active on the initiator member.
      *
-     * @param localMemberId Cache local member ID.
-     * @param queryId Query ID.
-     * @param completionCallback Callback that will be invoked when the query is completed.
-     * @return Query state or {@code null} if the query with the given ID is guaranteed to be already completed.
+     * @param localMemberId cached local member ID
+     * @param queryId query ID
+     * @param completionCallback callback that will be invoked when the query is completed
+     * @param cancelled if the query should be created in the cancelled state
+     * @return query state or {@code null} if the query with the given ID is guaranteed to be already completed
      */
     public QueryState onDistributedQueryStarted(
         UUID localMemberId,
         QueryId queryId,
-        QueryStateCompletionCallback completionCallback
+        QueryStateCompletionCallback completionCallback,
+        boolean cancelled
     ) {
-        UUID initiatorMemberId =  queryId.getMemberId();
+        QueryState state = onDistributedQueryStarted0(localMemberId, queryId, completionCallback, cancelled);
+
+        if (state != null) {
+            state.updateLastActivityTime();
+        }
+
+        return state;
+    }
+
+    private QueryState onDistributedQueryStarted0(
+        UUID localMemberId,
+        QueryId queryId,
+        QueryStateCompletionCallback completionCallback,
+        boolean cancelled
+    ) {
+        UUID initiatorMemberId = queryId.getMemberId();
 
         boolean local = localMemberId.equals(initiatorMemberId);
 
@@ -116,6 +133,7 @@ public class QueryStateRegistry {
                     queryId,
                     localMemberId,
                     completionCallback,
+                    cancelled,
                     clockProvider
                 );
 

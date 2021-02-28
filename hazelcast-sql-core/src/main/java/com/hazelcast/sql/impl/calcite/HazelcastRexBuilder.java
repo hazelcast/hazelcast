@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ public final class HazelcastRexBuilder extends RexBuilder {
 
     @Override
     public RexNode makeLiteral(Object value, RelDataType type, boolean allowCast) {
-        // Make sure that numeric literals get the correct return type during the conversion.
+        // Make sure that numeric literals get a correct return type during the conversion.
         // Without this code, Apache Calcite may assign incorrect types to some literals during conversion.
         // For example, new BigDecimal(Long.MAX_VALUE + "1") will receive the BIGINT type.
         // To see the problem in action, you may comment out this code and run CastFunctionIntegrationTest.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,12 +59,12 @@ public class InstanceOfPredicate
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(klass.getName());
+        out.writeString(klass.getName());
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        String klassName = in.readUTF();
+        String klassName = in.readString();
         try {
             klass = ClassLoaderUtil.loadClass(in.getClassLoader(), klassName);
         } catch (ClassNotFoundException e) {

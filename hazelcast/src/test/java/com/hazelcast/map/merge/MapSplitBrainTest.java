@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -121,13 +121,15 @@ public class MapSplitBrainTest extends SplitBrainTestSupport {
                 .setMergePolicyConfig(mergePolicyConfig)
                 .setBackupCount(1)
                 .setAsyncBackupCount(0)
-                .setStatisticsEnabled(false);
+                .setStatisticsEnabled(true)
+                .setPerEntryStatsEnabled(true);
         config.getMapConfig(mapNameB)
                 .setInMemoryFormat(inMemoryFormat)
                 .setMergePolicyConfig(mergePolicyConfig)
                 .setBackupCount(1)
                 .setAsyncBackupCount(0)
-                .setStatisticsEnabled(false);
+                .setStatisticsEnabled(true)
+                .setPerEntryStatsEnabled(true);
         return config;
     }
 

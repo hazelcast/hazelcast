@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,8 +30,9 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapLoader;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.recordstore.JsonMetadataStore;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.query.impl.Metadata;
+import com.hazelcast.query.impl.JsonMetadata;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
@@ -299,7 +300,7 @@ public class JsonMetadataCreationTest extends HazelcastTestSupport {
         return config;
     }
 
-    protected Metadata getMetadata(String mapName, Object key, int replicaIndex) {
+    protected JsonMetadata getMetadata(String mapName, Object key, int replicaIndex) {
         HazelcastInstance[] instances = factory.getAllHazelcastInstances().toArray(new HazelcastInstance[]{null});
         HazelcastInstance instance = factory.getAllHazelcastInstances().iterator().next();
         InternalSerializationService serializationService = getSerializationService(instance);
@@ -308,8 +309,8 @@ public class JsonMetadataCreationTest extends HazelcastTestSupport {
         NodeEngineImpl nodeEngine = getNodeEngineImpl(getBackupInstance(instances, partitionId, replicaIndex));
         MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
         RecordStore recordStore = mapService.getMapServiceContext().getPartitionContainer(partitionId).getRecordStore(mapName);
-        Record record = recordStore.getRecordOrNull(keyData);
-        return record.getMetadata();
+        JsonMetadataStore metadataStore = recordStore.getOrCreateMetadataStore();
+        return metadataStore.get(keyData);
     }
 
     private void assertMetadataCreatedEventually(final String mapName) {
@@ -331,8 +332,9 @@ public class JsonMetadataCreationTest extends HazelcastTestSupport {
             for (int j = 0; j < ENTRY_COUNT; j++) {
                 Record record = mapBackupAccessor.getRecord(createJsonValue("key", j));
                 assertNotNull(record);
-                assertMetadata("Replica index=" + i,
-                        getMetadata(mapName, createJsonValue("key", j), i));
+                HazelcastJsonValue jsonValue = createJsonValue("key", j);
+                JsonMetadata metadata = getMetadata(mapName, jsonValue, i);
+                assertMetadata("Replica index=" + i, metadata);
             }
         }
     }
@@ -352,7 +354,7 @@ public class JsonMetadataCreationTest extends HazelcastTestSupport {
         }
     }
 
-    private void assertMetadata(String msg, Metadata metadata) {
+    private void assertMetadata(String msg, JsonMetadata metadata) {
         assertNotNull(msg, metadata);
         JsonSchemaNode keyNode = (JsonSchemaNode) metadata.getKeyMetadata();
         assertNotNull(keyNode);

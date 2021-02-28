@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -495,7 +495,9 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
                 triedAddresses.addAll(triedAddressesPerAttempt);
                 // If the address provider loads no addresses, then the above loop is not entered
                 // and the lifecycle check is missing, hence we need to repeat the same check at this point.
-                checkClientActive();
+                if (triedAddressesPerAttempt.isEmpty()) {
+                    checkClientActive();
+                }
             } while (waitStrategy.sleep());
         } catch (ClientNotAllowedInClusterException | InvalidConfigurationException e) {
             logger.warning("Stopped trying on the cluster: " + context.getClusterName()

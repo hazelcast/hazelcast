@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1503,9 +1503,12 @@ public final class ClusterProperty {
             = new HazelcastProperty("hazelcast.shutdownhook.policy", "TERMINATE");
 
     /**
-     * XML and system property for setting the hot restart required free space.
-     * By default, hot restart requires at least 15% free HD space.
+     * Since 4.2, there is no effect of setting this property.
+     * HD Memory is automatically aligned for hot restart
+     * starting from that version.
+     * @deprecated since 4.2
      */
+    @Deprecated
     public static final HazelcastProperty HOT_RESTART_FREE_NATIVE_MEMORY_PERCENTAGE
             = new HazelcastProperty("hazelcast.hotrestart.free.native.memory.percentage", 15);
 

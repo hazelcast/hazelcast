@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package com.hazelcast.query.impl;
 import com.hazelcast.core.TypeConverter;
 
 /**
- * Type of Attribute
+ * Type of attribute.
  */
 public enum AttributeType {
     /**
@@ -89,7 +89,23 @@ public enum AttributeType {
     /**
      * Portable
      */
-    PORTABLE(TypeConverters.PORTABLE_CONVERTER);
+    PORTABLE(TypeConverters.PORTABLE_CONVERTER),
+    /**
+     * Local Time
+     */
+    SQL_LOCAL_TIME(TypeConverters.LOCAL_TIME_CONVERTER),
+    /**
+     * Local Date
+     */
+    SQL_LOCAL_DATE(TypeConverters.LOCAL_DATE_CONVERTER),
+    /**
+     * Local Date Time
+     */
+    SQL_LOCAL_DATE_TIME(TypeConverters.LOCAL_DATE_TIME_CONVERTER),
+    /**
+     * Offset Date Time
+     */
+    SQL_OFFSET_DATE_TIME(TypeConverters.OFFSET_DATE_TIME_CONVERTER);
 
     private final TypeConverter converter;
 

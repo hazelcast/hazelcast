@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import java.time.ZonedDateTime;
  */
 public abstract class AbstractTemporalConverter extends Converter {
 
-    protected static final ZoneId DEFAULT_ZONE = ZoneId.systemDefault();
+    public static final ZoneId DEFAULT_ZONE = ZoneId.systemDefault();
 
     protected AbstractTemporalConverter(int id, QueryDataTypeFamily typeFamily) {
         super(id, typeFamily);

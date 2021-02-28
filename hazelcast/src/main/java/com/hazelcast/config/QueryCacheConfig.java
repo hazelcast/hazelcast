@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -458,8 +458,8 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
         out.writeBoolean(includeValue);
         out.writeBoolean(populate);
         out.writeBoolean(coalesce);
-        out.writeUTF(inMemoryFormat.name());
-        out.writeUTF(name);
+        out.writeString(inMemoryFormat.name());
+        out.writeString(name);
         out.writeObject(predicateConfig);
         out.writeObject(evictionConfig);
         writeNullableList(entryListenerConfigs, out);
@@ -474,8 +474,8 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
         includeValue = in.readBoolean();
         populate = in.readBoolean();
         coalesce = in.readBoolean();
-        inMemoryFormat = InMemoryFormat.valueOf(in.readUTF());
-        name = in.readUTF();
+        inMemoryFormat = InMemoryFormat.valueOf(in.readString());
+        name = in.readString();
         predicateConfig = in.readObject();
         evictionConfig = in.readObject();
         entryListenerConfigs = readNullableList(in);

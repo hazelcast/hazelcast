@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,9 +83,9 @@ public class CreateSessionOp extends RaftOp implements IndeterminateOperationSta
         boolean containsEndpointName = (endpointName != null);
         out.writeBoolean(containsEndpointName);
         if (containsEndpointName) {
-            out.writeUTF(endpointName);
+            out.writeString(endpointName);
         }
-        out.writeUTF(endpointType.name());
+        out.writeString(endpointType.name());
     }
 
     @Override
@@ -93,9 +93,9 @@ public class CreateSessionOp extends RaftOp implements IndeterminateOperationSta
         endpoint = in.readObject();
         boolean containsEndpointName = in.readBoolean();
         if (containsEndpointName) {
-            endpointName = in.readUTF();
+            endpointName = in.readString();
         }
-        endpointType = CPSessionOwnerType.valueOf(in.readUTF());
+        endpointType = CPSessionOwnerType.valueOf(in.readString());
     }
 
     @Override

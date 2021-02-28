@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -189,7 +189,7 @@ public class CachePartitionLostListenerTest extends AbstractPartitionLostListene
                 withSettings().extraInterfaces(DataWriter.class));
         cachePartitionEventData.writeData(output);
 
-        verify(output).writeUTF("cacheName");
+        verify(output).writeString("cacheName");
         verify(output).writeInt(1);
     }
 
@@ -199,7 +199,7 @@ public class CachePartitionLostListenerTest extends AbstractPartitionLostListene
 
         ObjectDataInput input = mock(ObjectDataInput.class,
                 withSettings().extraInterfaces(DataReader.class));
-        when(input.readUTF()).thenReturn("cacheName");
+        when(input.readString()).thenReturn("cacheName");
         when(input.readInt()).thenReturn(1);
 
         cachePartitionEventData.readData(input);

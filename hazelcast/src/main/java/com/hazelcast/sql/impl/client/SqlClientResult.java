@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,8 +28,8 @@ import com.hazelcast.sql.impl.SqlRowImpl;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.Row;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nonnull;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -110,7 +110,7 @@ public class SqlClientResult implements SqlResult {
     }
 
     @SuppressFBWarnings("NP_NONNULL_RETURN_VIOLATION")
-    @NotNull
+    @Nonnull
     @Override
     public SqlRowMetadata getRowMetadata() {
         State state = awaitState();
@@ -125,7 +125,7 @@ public class SqlClientResult implements SqlResult {
     }
 
     @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE")
-    @NotNull
+    @Nonnull
     @Override
     public Iterator<SqlRow> iterator() {
         State state = awaitState();

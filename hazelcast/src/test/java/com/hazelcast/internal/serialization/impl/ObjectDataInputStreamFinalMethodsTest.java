@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -293,11 +293,11 @@ public class ObjectDataInputStreamFinalMethodsTest {
         inputStream.init((byteOrder == BIG_ENDIAN ? bytesBE : bytesLE), 0);
 
         inputStream.position(bytesLE.length - 4);
-        String[] theNullArray = in.readUTFArray();
+        String[] theNullArray = in.readStringArray();
         inputStream.position(0);
-        String[] theZeroLenghtArray = in.readUTFArray();
+        String[] theZeroLenghtArray = in.readStringArray();
         inputStream.position(4);
-        String[] bytes = in.readUTFArray();
+        String[] bytes = in.readStringArray();
 
         assertNull(theNullArray);
         assertArrayEquals(new String[0], theZeroLenghtArray);

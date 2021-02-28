@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -168,8 +168,8 @@ public abstract class AbstractMember implements Member {
         version = in.readObject();
         int size = in.readInt();
         for (int i = 0; i < size; i++) {
-            String key = in.readUTF();
-            String value = in.readUTF();
+            String key = in.readString();
+            String value = in.readString();
             attributes.put(key, value);
         }
         addressMap = readNullableMap(in);
@@ -184,8 +184,8 @@ public abstract class AbstractMember implements Member {
         Map<String, String> attributes = new HashMap<>(this.attributes);
         out.writeInt(attributes.size());
         for (Map.Entry<String, String> entry : attributes.entrySet()) {
-            out.writeUTF(entry.getKey());
-            out.writeUTF(entry.getValue());
+            out.writeString(entry.getKey());
+            out.writeString(entry.getValue());
         }
         writeNullableMap(addressMap, out);
     }

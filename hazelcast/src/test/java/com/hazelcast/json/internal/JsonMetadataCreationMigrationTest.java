@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,9 +25,8 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.query.impl.Metadata;
+import com.hazelcast.query.impl.JsonMetadata;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -98,7 +97,7 @@ public class JsonMetadataCreationMigrationTest extends HazelcastTestSupport {
         }
     }
 
-    protected void assertMetadata(Metadata metadata) {
+    protected void assertMetadata(JsonMetadata metadata) {
         assertNotNull(metadata);
         JsonSchemaNode keyNode = (JsonSchemaNode) metadata.getKeyMetadata();
         assertNotNull(keyNode);
@@ -113,7 +112,7 @@ public class JsonMetadataCreationMigrationTest extends HazelcastTestSupport {
         assertTrue(valueChildNode.isTerminal());
     }
 
-    protected Metadata getMetadata(String mapName, Object key, int replicaIndex) {
+    protected JsonMetadata getMetadata(String mapName, Object key, int replicaIndex) {
         HazelcastInstance[] instances = factory.getAllHazelcastInstances().toArray(new HazelcastInstance[] { null });
         HazelcastInstance instance = factory.getAllHazelcastInstances().iterator().next();
         InternalSerializationService serializationService = getSerializationService(instance);
@@ -122,8 +121,7 @@ public class JsonMetadataCreationMigrationTest extends HazelcastTestSupport {
         NodeEngineImpl nodeEngine = getNodeEngineImpl(getBackupInstance(instances, partitionId, replicaIndex));
         MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
         RecordStore recordStore = mapService.getMapServiceContext().getPartitionContainer(partitionId).getRecordStore(mapName);
-        Record record = recordStore.getRecordOrNull(keyData);
-        return record.getMetadata();
+        return recordStore.getOrCreateMetadataStore().get(keyData);
     }
 
     protected Config getConfig() {

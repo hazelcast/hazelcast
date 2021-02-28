@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,6 +69,11 @@ public class QueryCancelOperation extends QueryAbstractIdAwareOperation {
     }
 
     @Override
+    public boolean isSystem() {
+        return true;
+    }
+
+    @Override
     public int getClassId() {
         return SqlDataSerializerHook.OPERATION_CANCEL;
     }
@@ -76,14 +81,14 @@ public class QueryCancelOperation extends QueryAbstractIdAwareOperation {
     @Override
     protected void writeInternal1(ObjectDataOutput out) throws IOException {
         out.writeInt(errorCode);
-        out.writeUTF(errorMessage);
+        out.writeString(errorMessage);
         UUIDSerializationUtil.writeUUID(out, originatingMemberId);
     }
 
     @Override
     protected void readInternal1(ObjectDataInput in) throws IOException {
         errorCode = in.readInt();
-        errorMessage = in.readUTF();
+        errorMessage = in.readString();
         originatingMemberId = UUIDSerializationUtil.readUUID(in);
     }
 }

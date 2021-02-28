@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,6 +53,7 @@ import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
+import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SecurityInterceptorConfig;
@@ -244,7 +245,10 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleQueue(Node node) {
         for (Node queueNode : childElements(node)) {
-            QueueConfig queueConfig = config.getQueueConfig(queueNode.getNodeName());
+            QueueConfig queueConfig = ConfigUtils.getByNameOrNew(
+                                config.getQueueConfigs(),
+                                queueNode.getNodeName(),
+                                QueueConfig.class);
             handleQueueNode(queueNode, queueConfig);
         }
     }
@@ -252,7 +256,10 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleList(Node node) {
         for (Node listNode : childElements(node)) {
-            ListConfig listConfig = config.getListConfig(listNode.getNodeName());
+            ListConfig listConfig = ConfigUtils.getByNameOrNew(
+                                config.getListConfigs(),
+                                listNode.getNodeName(),
+                                ListConfig.class);
             handleListNode(listNode, listConfig);
         }
     }
@@ -260,7 +267,10 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleSet(Node node) {
         for (Node setNode : childElements(node)) {
-            SetConfig setConfig = config.getSetConfig(setNode.getNodeName());
+            SetConfig setConfig = ConfigUtils.getByNameOrNew(
+                                config.getSetConfigs(),
+                                setNode.getNodeName(),
+                                SetConfig.class);
             handleSetNode(setNode, setConfig);
         }
     }
@@ -286,14 +296,22 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleRingbuffer(Node node) {
         for (Node rbNode : childElements(node)) {
-            handleRingBufferNode(rbNode, config.getRingbufferConfig(rbNode.getNodeName()));
+            handleRingBufferNode(rbNode,
+                    ConfigUtils.getByNameOrNew(
+                            config.getRingbufferConfigs(),
+                            rbNode.getNodeName(),
+                            RingbufferConfig.class));
         }
     }
 
     @Override
     protected void handleMap(Node parentNode) throws Exception {
         for (Node mapNode : childElements(parentNode)) {
-            MapConfig mapConfig = config.getMapConfig(mapNode.getNodeName());
+            String name = mapNode.getNodeName();
+            MapConfig mapConfig = ConfigUtils.getByNameOrNew(
+                                config.getMapConfigs(),
+                                name,
+                                MapConfig.class);
             handleMapNode(mapNode, mapConfig);
         }
     }
@@ -301,7 +319,11 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleCache(Node parentNode) throws Exception {
         for (Node cacheNode : childElements(parentNode)) {
-            handleCacheNode(cacheNode, config.getCacheConfig(cacheNode.getNodeName()));
+            handleCacheNode(cacheNode,
+                            ConfigUtils.getByNameOrNew(
+                                config.getCacheConfigs(),
+                                cacheNode.getNodeName(),
+                                CacheSimpleConfig.class));
         }
     }
 
@@ -309,7 +331,10 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     protected void handleSplitBrainProtection(Node node) {
         for (Node splitBrainProtectionNode : childElements(node)) {
             String name = splitBrainProtectionNode.getNodeName();
-            SplitBrainProtectionConfig splitBrainProtectionConfig = config.getSplitBrainProtectionConfig(name);
+            SplitBrainProtectionConfig splitBrainProtectionConfig = ConfigUtils.getByNameOrNew(
+                                config.getSplitBrainProtectionConfigs(),
+                                name,
+                                SplitBrainProtectionConfig.class);
             handleSplitBrainProtectionNode(splitBrainProtectionNode, splitBrainProtectionConfig, name);
         }
     }
@@ -317,8 +342,10 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleFlakeIdGenerator(Node node) {
         for (Node genNode : childElements(node)) {
-            FlakeIdGeneratorConfig genConfig = config
-              .getFlakeIdGeneratorConfig(genNode.getNodeName());
+            FlakeIdGeneratorConfig genConfig = ConfigUtils.getByNameOrNew(
+                                config.getFlakeIdGeneratorConfigs(),
+                                genNode.getNodeName(),
+                                FlakeIdGeneratorConfig.class);
 
             handleFlakeIdGeneratorNode(genNode, genConfig);
         }
@@ -327,7 +354,10 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleExecutor(Node node) throws Exception {
         for (Node executorNode : childElements(node)) {
-            ExecutorConfig executorConfig = config.getExecutorConfig(executorNode.getNodeName());
+            ExecutorConfig executorConfig = ConfigUtils.getByNameOrNew(
+                                config.getExecutorConfigs(),
+                                executorNode.getNodeName(),
+                                ExecutorConfig.class);
             handleViaReflection(executorNode, config, executorConfig);
         }
     }
@@ -335,7 +365,10 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleDurableExecutor(Node node) throws Exception {
         for (Node executorNode : childElements(node)) {
-            DurableExecutorConfig executorConfig = config.getDurableExecutorConfig(executorNode.getNodeName());
+            DurableExecutorConfig executorConfig = ConfigUtils.getByNameOrNew(
+                    config.getDurableExecutorConfigs(),
+                    executorNode.getNodeName(),
+                    DurableExecutorConfig.class);
             handleViaReflection(executorNode, config, executorConfig);
         }
     }
@@ -343,7 +376,10 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleScheduledExecutor(Node node) {
         for (Node executorNode : childElements(node)) {
-            ScheduledExecutorConfig executorConfig = config.getScheduledExecutorConfig(executorNode.getNodeName());
+            ScheduledExecutorConfig executorConfig = ConfigUtils.getByNameOrNew(
+                                config.getScheduledExecutorConfigs(),
+                                executorNode.getNodeName(),
+                                ScheduledExecutorConfig.class);
             handleScheduledExecutorNode(executorNode, executorConfig);
         }
     }
@@ -351,8 +387,10 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleCardinalityEstimator(Node node) {
         for (Node estimatorNode : childElements(node)) {
-            CardinalityEstimatorConfig estimatorConfig = config
-              .getCardinalityEstimatorConfig(estimatorNode.getNodeName());
+            CardinalityEstimatorConfig estimatorConfig = ConfigUtils.getByNameOrNew(
+                    config.getCardinalityEstimatorConfigs(),
+                    estimatorNode.getNodeName(),
+                    CardinalityEstimatorConfig.class);
 
             handleCardinalityEstimatorNode(estimatorNode, estimatorConfig);
         }
@@ -361,8 +399,10 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handlePNCounter(Node node) throws Exception {
         for (Node counterNode : childElements(node)) {
-            PNCounterConfig counterConfig = config
-              .getPNCounterConfig(counterNode.getNodeName());
+            PNCounterConfig counterConfig = ConfigUtils.getByNameOrNew(
+                                config.getPNCounterConfigs(),
+                                counterNode.getNodeName(),
+                                PNCounterConfig.class);
 
             handleViaReflection(counterNode, config, counterConfig);
         }
@@ -371,7 +411,10 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleMultiMap(Node node) {
         for (Node multiMapNode : childElements(node)) {
-            MultiMapConfig multiMapConfig = config.getMultiMapConfig(multiMapNode.getNodeName());
+            MultiMapConfig multiMapConfig = ConfigUtils.getByNameOrNew(
+                                config.getMultiMapConfigs(),
+                                multiMapNode.getNodeName(),
+                                MultiMapConfig.class);
             handleMultiMapNode(multiMapNode, multiMapConfig);
         }
     }
@@ -379,7 +422,10 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleReplicatedMap(Node node) {
         for (Node replicatedMapNode : childElements(node)) {
-            ReplicatedMapConfig replicatedMapConfig = config.getReplicatedMapConfig(replicatedMapNode.getNodeName());
+            ReplicatedMapConfig replicatedMapConfig = ConfigUtils.getByNameOrNew(
+                                config.getReplicatedMapConfigs(),
+                                replicatedMapNode.getNodeName(),
+                                ReplicatedMapConfig.class);
             handleReplicatedMapNode(replicatedMapNode, replicatedMapConfig);
         }
     }

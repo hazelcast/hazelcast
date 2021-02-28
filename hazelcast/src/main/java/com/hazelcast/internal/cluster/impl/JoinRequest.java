@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -95,8 +95,8 @@ public class JoinRequest extends JoinMessage {
         int size = in.readInt();
         attributes = createHashMap(size);
         for (int i = 0; i < size; i++) {
-            String key = in.readUTF();
-            String value = in.readUTF();
+            String key = in.readString();
+            String value = in.readString();
             attributes.put(key, value);
         }
         size = in.readInt();
@@ -116,8 +116,8 @@ public class JoinRequest extends JoinMessage {
         out.writeInt(tryCount);
         out.writeInt(attributes.size());
         for (Map.Entry<String, String> entry : attributes.entrySet()) {
-            out.writeUTF(entry.getKey());
-            out.writeUTF(entry.getValue());
+            out.writeString(entry.getKey());
+            out.writeString(entry.getValue());
         }
         out.writeInt(excludedMemberUuids.size());
         for (UUID uuid : excludedMemberUuids) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -120,6 +120,26 @@ public class OrResultSetTest extends HazelcastTestSupport {
         @Override
         public Data getValueData() {
             return null;
+        }
+
+        @Override
+        public Object getKeyIfPresent() {
+            throw new UnsupportedOperationException("Should not be called.");
+        }
+
+        @Override
+        public Data getKeyDataIfPresent() {
+            throw new UnsupportedOperationException("Should not be called.");
+        }
+
+        @Override
+        public Object getValueIfPresent() {
+            throw new UnsupportedOperationException("Should not be called.");
+        }
+
+        @Override
+        public Data getValueDataIfPresent() {
+            throw new UnsupportedOperationException("Should not be called.");
         }
     }
 }

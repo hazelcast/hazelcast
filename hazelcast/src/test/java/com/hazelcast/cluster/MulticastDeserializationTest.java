@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,8 +74,8 @@ public class MulticastDeserializationTest {
 
     @AfterClass
     public static void cleanup() {
-        TestDeserialized.isDeserialized = false;
         HazelcastInstanceFactory.terminateAll();
+        TestDeserialized.isDeserialized = false;
     }
 
     /**
@@ -136,6 +136,7 @@ public class MulticastDeserializationTest {
         MulticastSocket multicastSocket = null;
         try {
             multicastSocket = new MulticastSocket(MULTICAST_PORT);
+            multicastSocket.setInterface(InetAddress.getByName("127.0.0.1"));
             multicastSocket.setTimeToLive(MULTICAST_TTL);
             InetAddress group = InetAddress.getByName(MULTICAST_GROUP);
             multicastSocket.joinGroup(group);

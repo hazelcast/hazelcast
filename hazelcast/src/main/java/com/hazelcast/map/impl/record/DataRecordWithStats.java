@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,15 +20,14 @@ import com.hazelcast.internal.serialization.Data;
 
 import static com.hazelcast.internal.util.JVMUtil.REFERENCE_COST_IN_BYTES;
 
-public class DataRecordWithStats extends AbstractRecordWithStats<Data> {
+class DataRecordWithStats extends AbstractRecord<Data> {
     protected volatile Data value;
 
-    public DataRecordWithStats() {
+    DataRecordWithStats() {
     }
 
-    public DataRecordWithStats(Data value) {
-        super();
-        this.value = value;
+    DataRecordWithStats(Data value) {
+        setValue(value);
     }
 
     /**
@@ -36,7 +35,8 @@ public class DataRecordWithStats extends AbstractRecordWithStats<Data> {
      */
     @Override
     public long getCost() {
-        return super.getCost() + REFERENCE_COST_IN_BYTES + (value == null ? 0L : value.getHeapCost());
+        return super.getCost() + REFERENCE_COST_IN_BYTES
+                + (value == null ? 0L : value.getHeapCost());
     }
 
     @Override

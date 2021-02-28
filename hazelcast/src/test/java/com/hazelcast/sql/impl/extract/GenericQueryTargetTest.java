@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,10 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.impl.getters.Extractors;
-import com.hazelcast.sql.impl.SqlErrorCode;
+import com.hazelcast.sql.impl.LazyTarget;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -64,11 +65,16 @@ public class GenericQueryTargetTest extends SqlTestSupport {
 
     private void checkTarget(GenericQueryTarget target, TestObject originalObject, Object object) {
         // Set target.
-        target.setTarget(object);
+        if (object instanceof Data) {
+            target.setTarget(null, (Data) object);
+        } else {
+            target.setTarget(object, null);
+        }
 
         // Good top-level extractor.
         QueryExtractor targetExtractor = target.createExtractor(null, QueryDataType.OBJECT);
-        TestObject extractedObject = (TestObject) targetExtractor.get();
+        LazyTarget lazyTarget = (LazyTarget) targetExtractor.get();
+        TestObject extractedObject = (TestObject) (lazyTarget.deserialize(new DefaultSerializationServiceBuilder().build()));
         assertEquals(originalObject.getField(), extractedObject.getField());
         assertEquals(originalObject.getField2(), extractedObject.getField2());
 

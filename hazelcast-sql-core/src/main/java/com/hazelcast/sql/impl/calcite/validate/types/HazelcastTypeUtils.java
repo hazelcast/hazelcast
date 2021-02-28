@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
+import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.type.SqlTypeName;
 
@@ -138,7 +139,18 @@ public final class HazelcastTypeUtils {
      * DECIMAL.
      */
     public static boolean isNumericType(RelDataType type) {
-        switch (type.getSqlTypeName()) {
+        return isNumericType(type.getSqlTypeName());
+    }
+
+    /**
+     * @return {@code true} if the given type is a numeric type, {@code false}
+     * otherwise.
+     * <p>
+     * Numeric types are: TINYINT, SMALLINT, INTEGER, BIGINT, REAL, DOUBLE and
+     * DECIMAL.
+     */
+    public static boolean isNumericType(SqlTypeName typeName) {
+        switch (typeName) {
             case TINYINT:
             case SMALLINT:
             case INTEGER:
@@ -182,7 +194,6 @@ public final class HazelcastTypeUtils {
                 return false;
         }
     }
-
 
     /**
      * @return {@code true} if the given type is an inexact numeric type, {@code false}
@@ -248,5 +259,37 @@ public final class HazelcastTypeUtils {
         QueryDataType hzType = HazelcastTypeUtils.toHazelcastType(typeName);
 
         return hzType.getTypeFamily().getPrecedence();
+    }
+
+    public static boolean canCast(RelDataType sourceType, RelDataType targetType) {
+        if (targetType.equals(sourceType)) {
+            return true;
+        }
+
+        if (sourceType.isStruct() || targetType.isStruct()) {
+            if (sourceType.getSqlTypeName() != SqlTypeName.ROW) {
+                throw new IllegalArgumentException("Unexpected source type: " + sourceType);
+            }
+            if (targetType.getSqlTypeName() != SqlTypeName.ROW) {
+                throw new IllegalArgumentException("Unexpected target type: " + targetType);
+            }
+            int n = targetType.getFieldCount();
+            if (sourceType.getFieldCount() != n) {
+                return false;
+            }
+            for (int i = 0; i < n; ++i) {
+                RelDataTypeField toField = targetType.getFieldList().get(i);
+                RelDataTypeField fromField = sourceType.getFieldList().get(i);
+                if (!canCast(toField.getType(), fromField.getType())) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        QueryDataType queryFrom = toHazelcastType(sourceType.getSqlTypeName());
+        QueryDataType queryTo = toHazelcastType(targetType.getSqlTypeName());
+
+        return queryFrom.getConverter().canConvertTo(queryTo.getTypeFamily());
     }
 }

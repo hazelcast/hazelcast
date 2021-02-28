@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,8 @@ public interface PortableContext {
     ClassDefinition lookupClassDefinition(Data data) throws IOException;
 
     ClassDefinition registerClassDefinition(ClassDefinition cd);
+
+    ClassDefinition registerClassDefinition(ClassDefinition cd, boolean throwOnIncompatibleClassDefinitions);
 
     ClassDefinition lookupOrRegisterClassDefinition(Portable portable) throws IOException;
 

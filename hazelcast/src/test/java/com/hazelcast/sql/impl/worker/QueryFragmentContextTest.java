@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.worker;
 
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.sql.impl.LoggingQueryFragmentScheduleCallback;
 import com.hazelcast.sql.impl.state.QueryStateCallback;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -45,7 +46,12 @@ public class QueryFragmentContextTest {
         LoggingQueryFragmentScheduleCallback fragmentScheduleCallback = new LoggingQueryFragmentScheduleCallback();
         TestStateCallback stateCallback = new TestStateCallback();
 
-        QueryFragmentContext context = new QueryFragmentContext(args, fragmentScheduleCallback, stateCallback);
+        QueryFragmentContext context = new QueryFragmentContext(
+            args,
+            fragmentScheduleCallback,
+            stateCallback,
+            new DefaultSerializationServiceBuilder().build()
+        );
 
         assertSame(args.get(0), context.getArgument(0));
         assertSame(args.get(1), context.getArgument(1));

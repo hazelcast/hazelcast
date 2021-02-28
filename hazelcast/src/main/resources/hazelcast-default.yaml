@@ -1,4 +1,4 @@
-# Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+# Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -211,6 +211,17 @@ hazelcast:
         #              ALWAYS: Always cache deserialized values.
         cache-deserialized-values: INDEX-ONLY
 
+        # Whether map level statistical information (total
+        # hits, memory-cost etc.) should be gathered and stored.
+        statistics-enabled: true
+
+        # Whether statistical information (hits, creation
+        # time, last access time etc.) should be gathered
+        # and stored. You have to enable this if you plan to
+        # implement a custom eviction policy, out-of-the-box
+        # eviction policies work regardless of this setting.
+        per-entry-stats-enabled: false
+
   multimap:
     default:
       backup-count: 1
@@ -326,5 +337,4 @@ hazelcast:
 
   sql:
     executor-pool-size: -1
-    operation-pool-size: -1
     statement-timeout-millis: 0

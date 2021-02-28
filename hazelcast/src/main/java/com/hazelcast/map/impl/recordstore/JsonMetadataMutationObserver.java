@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.MetadataInitializer;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.query.impl.JsonMetadata;
 import com.hazelcast.query.impl.Metadata;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -37,13 +38,16 @@ import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
  */
 public class JsonMetadataMutationObserver implements MutationObserver<Record> {
 
-    private SerializationService serializationService;
-    private MetadataInitializer metadataInitializer;
+    private final SerializationService serializationService;
+    private final MetadataInitializer metadataInitializer;
+    private final JsonMetadataStore metadataStore;
 
     public JsonMetadataMutationObserver(SerializationService serializationService,
-                                        MetadataInitializer metadataInitializer) {
+                                        MetadataInitializer metadataInitializer,
+                                        JsonMetadataStore metadataStore) {
         this.serializationService = serializationService;
         this.metadataInitializer = metadataInitializer;
+        this.metadataStore = metadataStore;
     }
 
     @Override
@@ -59,7 +63,7 @@ public class JsonMetadataMutationObserver implements MutationObserver<Record> {
     @Override
     public void onUpdateRecord(@Nonnull Data key, @Nonnull Record record,
                                Object oldValue, Object newValue, boolean backup) {
-        updateValueMetadataIfNecessary(key, record, oldValue, newValue);
+        updateValueMetadataIfNecessary(key, oldValue, newValue);
     }
 
     @Override
@@ -69,50 +73,54 @@ public class JsonMetadataMutationObserver implements MutationObserver<Record> {
 
     @Override
     public void onRemoveRecord(Data key, Record record) {
-        // no-op
+        metadataStore.remove(key);
     }
 
     @Override
     public void onEvictRecord(Data key, Record record) {
-        // no-op
+        metadataStore.remove(key);
     }
 
     @Override
     public void onReset() {
-        // no-op
+        metadataStore.clear();
     }
 
     @Override
     public void onClear() {
-        // no-op
+        metadataStore.clear();
     }
 
     @Override
     public void onDestroy(boolean isDuringShutdown, boolean internal) {
-        // no-op
+        metadataStore.clear();
     }
 
-    protected Metadata getMetadata(Data dataKey, Record record) {
-        return record.getMetadata();
+    protected JsonMetadata getMetadata(Data dataKey) {
+        return metadataStore.get(dataKey);
     }
 
-    protected void setMetadata(Data dataKey, Record record, Metadata metadata) {
-        record.setMetadata(metadata);
+    protected void setMetadata(Data dataKey, JsonMetadata metadata) {
+        metadataStore.set(dataKey, metadata);
     }
 
-    protected void removeMetadata(Data dataKey, Record record) {
-        record.setMetadata(null);
+    protected void setMetadataValue(Data dataKey, Object metadataValue) {
+        metadataStore.setValue(dataKey, metadataValue);
+    }
+
+    protected void removeMetadata(Data dataKey) {
+        metadataStore.remove(dataKey);
     }
 
     private void onPutInternal(Data dataKey, Record record) {
         Metadata metadata = initializeMetadata(dataKey, record.getValue());
         if (metadata != null) {
-            setMetadata(dataKey, record, metadata);
+            setMetadata(dataKey, metadata);
         }
     }
 
     @SuppressFBWarnings("NP_LOAD_OF_KNOWN_NULL_VALUE")
-    private void updateValueMetadataIfNecessary(Data dataKey, Record record,
+    private void updateValueMetadataIfNecessary(Data dataKey,
                                                 Object oldValue, Object updateValue) {
         Object valueMetadata = null;
         try {
@@ -127,26 +135,8 @@ public class JsonMetadataMutationObserver implements MutationObserver<Record> {
         } catch (Exception e) {
             throw rethrow(e);
         }
-        if (valueMetadata != null) {
-            // There is some valueMetadata. We either set existing record.valueMetadata or create a new one.
-            Metadata existing = getMetadata(dataKey, record);
-            if (existing == null) {
-                existing = new Metadata();
-                setMetadata(dataKey, record, existing);
-            }
-            existing.setValueMetadata(valueMetadata);
-        } else {
-            // Value metadata is empty. We either remove metadata altogether (if keyMetadata is null too)
-            // or set valueMetadata to null.
-            Metadata existing = getMetadata(dataKey, record);
-            if (existing != null) {
-                if (existing.getKeyMetadata() == null) {
-                    removeMetadata(dataKey, record);
-                } else {
-                    existing.setValueMetadata(valueMetadata);
-                }
-            }
-        }
+
+        setMetadataValue(dataKey, valueMetadata);
     }
 
     private Metadata initializeMetadata(Data key, Object value) {
@@ -159,9 +149,7 @@ public class JsonMetadataMutationObserver implements MutationObserver<Record> {
                 valueMetadata = metadataInitializer.createFromObject(value);
             }
             if (keyMetadata != null || valueMetadata != null) {
-                Metadata metadata = new Metadata();
-                metadata.setKeyMetadata(keyMetadata);
-                metadata.setValueMetadata(valueMetadata);
+                Metadata metadata = new Metadata(keyMetadata, valueMetadata);
                 return metadata;
             }
             return null;

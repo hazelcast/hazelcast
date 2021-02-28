@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -182,7 +182,7 @@ public final class TestUtil {
      * @see #isPortAvailable(int)
      */
     public static List<Integer> getAvailablePorts(int basePort, int portCount) {
-        List<Integer> availablePorts = new ArrayList<Integer>();
+        List<Integer> availablePorts = new ArrayList<>();
         int port = basePort;
         for (int i = 0; i < portCount; i++) {
             while (!isPortAvailable(port)) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.GenericRecord;
+import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
@@ -193,14 +194,6 @@ public final class PortableSerializer implements StreamSerializer<Object> {
 
     private void writePortableGenericRecord(ObjectDataOutput out, PortableGenericRecord record) throws IOException {
         ClassDefinition cd = record.getClassDefinition();
-        if (context.shouldCheckClassDefinitionErrors()) {
-            ClassDefinition existingCd = context.lookupClassDefinition(cd.getFactoryId(), cd.getClassId(), cd.getVersion());
-            if (existingCd != null && !existingCd.equals(cd)) {
-                throw new HazelcastSerializationException("Inconsistent class definition found. New class definition : " + cd
-                        + ", Existing class definition " + existingCd);
-            }
-        }
-        context.registerClassDefinition(cd);
         out.writeInt(cd.getFactoryId());
         out.writeInt(cd.getClassId());
         writePortableGenericRecordInternal(out, record);
@@ -209,6 +202,9 @@ public final class PortableSerializer implements StreamSerializer<Object> {
     @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:CyclomaticComplexity"})
     void writePortableGenericRecordInternal(ObjectDataOutput out, PortableGenericRecord record) throws IOException {
         ClassDefinition cd = record.getClassDefinition();
+        // Class definition compatibility will be checked implicitly on the
+        // register call below.
+        context.registerClassDefinition(cd, context.shouldCheckClassDefinitionErrors());
         out.writeInt(cd.getVersion());
 
         BufferObjectDataOutput output = (BufferObjectDataOutput) out;
@@ -217,94 +213,94 @@ public final class PortableSerializer implements StreamSerializer<Object> {
         for (String fieldName : fieldNames) {
             switch (cd.getFieldType(fieldName)) {
                 case PORTABLE:
-                    writer.writeGenericRecord(fieldName, record.readGenericRecord(fieldName));
+                    writer.writeGenericRecord(fieldName, record.getGenericRecord(fieldName));
                     break;
                 case BYTE:
-                    writer.writeByte(fieldName, record.readByte(fieldName));
+                    writer.writeByte(fieldName, record.getByte(fieldName));
                     break;
                 case BOOLEAN:
-                    writer.writeBoolean(fieldName, record.readBoolean(fieldName));
+                    writer.writeBoolean(fieldName, record.getBoolean(fieldName));
                     break;
                 case CHAR:
-                    writer.writeChar(fieldName, record.readChar(fieldName));
+                    writer.writeChar(fieldName, record.getChar(fieldName));
                     break;
                 case SHORT:
-                    writer.writeShort(fieldName, record.readShort(fieldName));
+                    writer.writeShort(fieldName, record.getShort(fieldName));
                     break;
                 case INT:
-                    writer.writeInt(fieldName, record.readInt(fieldName));
+                    writer.writeInt(fieldName, record.getInt(fieldName));
                     break;
                 case LONG:
-                    writer.writeLong(fieldName, record.readLong(fieldName));
+                    writer.writeLong(fieldName, record.getLong(fieldName));
                     break;
                 case FLOAT:
-                    writer.writeFloat(fieldName, record.readFloat(fieldName));
+                    writer.writeFloat(fieldName, record.getFloat(fieldName));
                     break;
                 case DOUBLE:
-                    writer.writeDouble(fieldName, record.readDouble(fieldName));
+                    writer.writeDouble(fieldName, record.getDouble(fieldName));
                     break;
                 case UTF:
-                    writer.writeUTF(fieldName, record.readUTF(fieldName));
+                    writer.writeString(fieldName, record.getString(fieldName));
                     break;
                 case DECIMAL:
-                    writer.writeDecimal(fieldName, record.readDecimal(fieldName));
+                    writer.writeDecimal(fieldName, record.getDecimal(fieldName));
                     break;
                 case TIME:
-                    writer.writeTime(fieldName, record.readTime(fieldName));
+                    writer.writeTime(fieldName, record.getTime(fieldName));
                     break;
                 case DATE:
-                    writer.writeDate(fieldName, record.readDate(fieldName));
+                    writer.writeDate(fieldName, record.getDate(fieldName));
                     break;
                 case TIMESTAMP:
-                    writer.writeTimestamp(fieldName, record.readTimestamp(fieldName));
+                    writer.writeTimestamp(fieldName, record.getTimestamp(fieldName));
                     break;
                 case TIMESTAMP_WITH_TIMEZONE:
-                    writer.writeTimestampWithTimezone(fieldName, record.readTimestampWithTimezone(fieldName));
+                    writer.writeTimestampWithTimezone(fieldName, record.getTimestampWithTimezone(fieldName));
                     break;
                 case PORTABLE_ARRAY:
-                    writer.writeGenericRecordArray(fieldName, record.readGenericRecordArray(fieldName));
+                    writer.writeGenericRecordArray(fieldName, record.getGenericRecordArray(fieldName));
                     break;
                 case BYTE_ARRAY:
-                    writer.writeByteArray(fieldName, record.readByteArray(fieldName));
+                    writer.writeByteArray(fieldName, record.getByteArray(fieldName));
                     break;
                 case BOOLEAN_ARRAY:
-                    writer.writeBooleanArray(fieldName, record.readBooleanArray(fieldName));
+                    writer.writeBooleanArray(fieldName, record.getBooleanArray(fieldName));
                     break;
                 case CHAR_ARRAY:
-                    writer.writeCharArray(fieldName, record.readCharArray(fieldName));
+                    writer.writeCharArray(fieldName, record.getCharArray(fieldName));
                     break;
                 case SHORT_ARRAY:
-                    writer.writeShortArray(fieldName, record.readShortArray(fieldName));
+                    writer.writeShortArray(fieldName, record.getShortArray(fieldName));
                     break;
                 case INT_ARRAY:
-                    writer.writeIntArray(fieldName, record.readIntArray(fieldName));
+                    writer.writeIntArray(fieldName, record.getIntArray(fieldName));
                     break;
                 case LONG_ARRAY:
-                    writer.writeLongArray(fieldName, record.readLongArray(fieldName));
+                    writer.writeLongArray(fieldName, record.getLongArray(fieldName));
                     break;
                 case FLOAT_ARRAY:
-                    writer.writeFloatArray(fieldName, record.readFloatArray(fieldName));
+                    writer.writeFloatArray(fieldName, record.getFloatArray(fieldName));
                     break;
                 case DOUBLE_ARRAY:
-                    writer.writeDoubleArray(fieldName, record.readDoubleArray(fieldName));
+                    writer.writeDoubleArray(fieldName, record.getDoubleArray(fieldName));
                     break;
                 case UTF_ARRAY:
-                    writer.writeUTFArray(fieldName, record.readUTFArray(fieldName));
+                    writer.writeStringArray(fieldName, record.getStringArray(fieldName));
                     break;
                 case DECIMAL_ARRAY:
-                    writer.writeDecimalArray(fieldName, record.readDecimalArray(fieldName));
+                    writer.writeDecimalArray(fieldName, record.getDecimalArray(fieldName));
                     break;
                 case TIME_ARRAY:
-                    writer.writeTimeArray(fieldName, record.readTimeArray(fieldName));
+                    writer.writeTimeArray(fieldName, record.getTimeArray(fieldName));
                     break;
                 case DATE_ARRAY:
-                    writer.writeDateArray(fieldName, record.readDateArray(fieldName));
+                    writer.writeDateArray(fieldName, record.getDateArray(fieldName));
                     break;
                 case TIMESTAMP_ARRAY:
-                    writer.writeTimestampArray(fieldName, record.readTimestampArray(fieldName));
+                    writer.writeTimestampArray(fieldName, record.getTimestampArray(fieldName));
                     break;
                 case TIMESTAMP_WITH_TIMEZONE_ARRAY:
-                    writer.writeTimestampWithTimezoneArray(fieldName, record.readTimestampWithTimezoneArray(fieldName));
+                    writer.writeTimestampWithTimezoneArray(fieldName, record.getTimestampWithTimezoneArray(fieldName));
                     break;
                 default:
                     throw new IllegalStateException("Unexpected field type: " + cd.getFieldType(fieldName));
@@ -340,99 +336,99 @@ public final class PortableSerializer implements StreamSerializer<Object> {
         int version = in.readInt();
         ClassDefinition cd = setupPositionAndDefinition(in, factoryId, classId, version);
         PortableInternalGenericRecord reader = new PortableInternalGenericRecord(this, in, cd, false);
-        GenericRecord.Builder genericRecordBuilder = GenericRecord.Builder.portable(cd);
+        GenericRecordBuilder genericRecordBuilder = GenericRecordBuilder.portable(cd);
         for (String fieldName : cd.getFieldNames()) {
             switch (cd.getFieldType(fieldName)) {
                 case PORTABLE:
-                    genericRecordBuilder.writeGenericRecord(fieldName, reader.readGenericRecord(fieldName));
+                    genericRecordBuilder.setGenericRecord(fieldName, reader.getGenericRecord(fieldName));
                     break;
                 case BYTE:
-                    genericRecordBuilder.writeByte(fieldName, reader.readByte(fieldName));
+                    genericRecordBuilder.setByte(fieldName, reader.getByte(fieldName));
                     break;
                 case BOOLEAN:
-                    genericRecordBuilder.writeBoolean(fieldName, reader.readBoolean(fieldName));
+                    genericRecordBuilder.setBoolean(fieldName, reader.getBoolean(fieldName));
                     break;
                 case CHAR:
-                    genericRecordBuilder.writeChar(fieldName, reader.readChar(fieldName));
+                    genericRecordBuilder.setChar(fieldName, reader.getChar(fieldName));
                     break;
                 case SHORT:
-                    genericRecordBuilder.writeShort(fieldName, reader.readShort(fieldName));
+                    genericRecordBuilder.setShort(fieldName, reader.getShort(fieldName));
                     break;
                 case INT:
-                    genericRecordBuilder.writeInt(fieldName, reader.readInt(fieldName));
+                    genericRecordBuilder.setInt(fieldName, reader.getInt(fieldName));
                     break;
                 case LONG:
-                    genericRecordBuilder.writeLong(fieldName, reader.readLong(fieldName));
+                    genericRecordBuilder.setLong(fieldName, reader.getLong(fieldName));
                     break;
                 case FLOAT:
-                    genericRecordBuilder.writeFloat(fieldName, reader.readFloat(fieldName));
+                    genericRecordBuilder.setFloat(fieldName, reader.getFloat(fieldName));
                     break;
                 case DOUBLE:
-                    genericRecordBuilder.writeDouble(fieldName, reader.readDouble(fieldName));
+                    genericRecordBuilder.setDouble(fieldName, reader.getDouble(fieldName));
                     break;
                 case UTF:
-                    genericRecordBuilder.writeUTF(fieldName, reader.readUTF(fieldName));
+                    genericRecordBuilder.setString(fieldName, reader.getString(fieldName));
                     break;
                 case DECIMAL:
-                    genericRecordBuilder.writeDecimal(fieldName, reader.readDecimal(fieldName));
+                    genericRecordBuilder.setDecimal(fieldName, reader.getDecimal(fieldName));
                     break;
                 case TIME:
-                    genericRecordBuilder.writeTime(fieldName, reader.readTime(fieldName));
+                    genericRecordBuilder.setTime(fieldName, reader.getTime(fieldName));
                     break;
                 case DATE:
-                    genericRecordBuilder.writeDate(fieldName, reader.readDate(fieldName));
+                    genericRecordBuilder.setDate(fieldName, reader.getDate(fieldName));
                     break;
                 case TIMESTAMP:
-                    genericRecordBuilder.writeTimestamp(fieldName, reader.readTimestamp(fieldName));
+                    genericRecordBuilder.setTimestamp(fieldName, reader.getTimestamp(fieldName));
                     break;
                 case TIMESTAMP_WITH_TIMEZONE:
-                    genericRecordBuilder.writeTimestampWithTimezone(fieldName, reader.readTimestampWithTimezone(fieldName));
+                    genericRecordBuilder.setTimestampWithTimezone(fieldName, reader.getTimestampWithTimezone(fieldName));
                     break;
                 case PORTABLE_ARRAY:
-                    genericRecordBuilder.writeGenericRecordArray(fieldName, reader.readGenericRecordArray(fieldName));
+                    genericRecordBuilder.setGenericRecordArray(fieldName, reader.getGenericRecordArray(fieldName));
                     break;
                 case BYTE_ARRAY:
-                    genericRecordBuilder.writeByteArray(fieldName, reader.readByteArray(fieldName));
+                    genericRecordBuilder.setByteArray(fieldName, reader.getByteArray(fieldName));
                     break;
                 case BOOLEAN_ARRAY:
-                    genericRecordBuilder.writeBooleanArray(fieldName, reader.readBooleanArray(fieldName));
+                    genericRecordBuilder.setBooleanArray(fieldName, reader.getBooleanArray(fieldName));
                     break;
                 case CHAR_ARRAY:
-                    genericRecordBuilder.writeCharArray(fieldName, reader.readCharArray(fieldName));
+                    genericRecordBuilder.setCharArray(fieldName, reader.getCharArray(fieldName));
                     break;
                 case SHORT_ARRAY:
-                    genericRecordBuilder.writeShortArray(fieldName, reader.readShortArray(fieldName));
+                    genericRecordBuilder.setShortArray(fieldName, reader.getShortArray(fieldName));
                     break;
                 case INT_ARRAY:
-                    genericRecordBuilder.writeIntArray(fieldName, reader.readIntArray(fieldName));
+                    genericRecordBuilder.setIntArray(fieldName, reader.getIntArray(fieldName));
                     break;
                 case LONG_ARRAY:
-                    genericRecordBuilder.writeLongArray(fieldName, reader.readLongArray(fieldName));
+                    genericRecordBuilder.setLongArray(fieldName, reader.getLongArray(fieldName));
                     break;
                 case FLOAT_ARRAY:
-                    genericRecordBuilder.writeFloatArray(fieldName, reader.readFloatArray(fieldName));
+                    genericRecordBuilder.setFloatArray(fieldName, reader.getFloatArray(fieldName));
                     break;
                 case DOUBLE_ARRAY:
-                    genericRecordBuilder.writeDoubleArray(fieldName, reader.readDoubleArray(fieldName));
+                    genericRecordBuilder.setDoubleArray(fieldName, reader.getDoubleArray(fieldName));
                     break;
                 case UTF_ARRAY:
-                    genericRecordBuilder.writeUTFArray(fieldName, reader.readUTFArray(fieldName));
+                    genericRecordBuilder.setStringArray(fieldName, reader.getStringArray(fieldName));
                     break;
                 case DECIMAL_ARRAY:
-                    genericRecordBuilder.writeDecimalArray(fieldName, reader.readDecimalArray(fieldName));
+                    genericRecordBuilder.setDecimalArray(fieldName, reader.getDecimalArray(fieldName));
                     break;
                 case TIME_ARRAY:
-                    genericRecordBuilder.writeTimeArray(fieldName, reader.readTimeArray(fieldName));
+                    genericRecordBuilder.setTimeArray(fieldName, reader.getTimeArray(fieldName));
                     break;
                 case DATE_ARRAY:
-                    genericRecordBuilder.writeDateArray(fieldName, reader.readDateArray(fieldName));
+                    genericRecordBuilder.setDateArray(fieldName, reader.getDateArray(fieldName));
                     break;
                 case TIMESTAMP_ARRAY:
-                    genericRecordBuilder.writeTimestampArray(fieldName, reader.readTimestampArray(fieldName));
+                    genericRecordBuilder.setTimestampArray(fieldName, reader.getTimestampArray(fieldName));
                     break;
                 case TIMESTAMP_WITH_TIMEZONE_ARRAY:
-                    genericRecordBuilder.writeTimestampWithTimezoneArray(fieldName,
-                            reader.readTimestampWithTimezoneArray(fieldName));
+                    genericRecordBuilder.setTimestampWithTimezoneArray(fieldName,
+                            reader.getTimestampWithTimezoneArray(fieldName));
                     break;
                 default:
                     throw new IllegalStateException("Unexpected value: " + cd.getFieldType(fieldName));

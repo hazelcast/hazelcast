@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -18,21 +18,20 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
            xmlns="http://www.hazelcast.com/schema/client-config"
            elementFormDefault="qualified"
-           targetNamespace="http://www.hazelcast.com/schema/client-config"
-           attributeFormDefault="unqualified">
+           targetNamespace="http://www.hazelcast.com/schema/client-config">
 
     <xs:element name="hazelcast-client-failover">
         <xs:complexType>
-            <xs:choice minOccurs="1" maxOccurs="unbounded">
-                <xs:element name="try-count" type="xs:int" minOccurs="1" maxOccurs="1"/>
-                <xs:element name="clients" type="clients" minOccurs="0" maxOccurs="1"/>
+            <xs:choice maxOccurs="unbounded">
+                <xs:element name="try-count" type="xs:int"/>
+                <xs:element name="clients" type="clients" minOccurs="0"/>
             </xs:choice>
         </xs:complexType>
     </xs:element>
 
     <xs:complexType name="clients">
         <xs:sequence>
-            <xs:element name="client" type="client" minOccurs="1" maxOccurs="unbounded"/>
+            <xs:element name="client" type="client" maxOccurs="unbounded"/>
         </xs:sequence>
     </xs:complexType>
     <xs:complexType name="client">

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -162,7 +162,7 @@ public abstract class BlockingResource<W extends WaitKey> implements DataSeriali
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(groupId);
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeInt(waitKeys.size());
         for (Entry<Object, WaitKeyContainer<W>> e : waitKeys.entrySet()) {
             out.writeObject(e.getKey());
@@ -173,7 +173,7 @@ public abstract class BlockingResource<W extends WaitKey> implements DataSeriali
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         groupId = in.readObject();
-        name = in.readUTF();
+        name = in.readString();
         int count = in.readInt();
         for (int i = 0; i < count; i++) {
             Object key = in.readObject();
