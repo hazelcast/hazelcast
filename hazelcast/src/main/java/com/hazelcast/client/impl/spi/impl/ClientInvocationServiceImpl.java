@@ -158,10 +158,12 @@ public class ClientInvocationServiceImpl implements ClientInvocationService {
 
     public void start() {
         responseHandlerSupplier.start();
-        TaskScheduler executionService = client.getTaskScheduler();
-        long cleanResourcesMillis = client.getProperties().getPositiveMillisOrDefault(CLEAN_RESOURCES_MILLIS);
-        executionService.scheduleWithRepetition(new CleanResourcesTask(), cleanResourcesMillis,
-                cleanResourcesMillis, MILLISECONDS);
+        if (isBackupAckToClientEnabled) {
+            TaskScheduler executionService = client.getTaskScheduler();
+            long cleanResourcesMillis = client.getProperties().getPositiveMillisOrDefault(CLEAN_RESOURCES_MILLIS);
+            executionService.scheduleWithRepetition(new BackupTimeoutTask(), cleanResourcesMillis,
+                    cleanResourcesMillis, MILLISECONDS);
+        }
     }
 
     @Override
@@ -212,6 +214,16 @@ public class ClientInvocationServiceImpl implements ClientInvocationService {
     }
 
     @Override
+    public void onConnectionClose(ClientConnection connection) {
+        for (ClientInvocation invocation : invocations.values()) {
+            if (invocation.getPermissionToNotifyForDeadConnection(connection)) {
+                Exception ex = new TargetDisconnectedException(connection.getCloseReason(), connection.getCloseCause());
+                invocation.notifyExceptionWithOwnedPermission(ex);
+            }
+        }
+    }
+
+    @Override
     public boolean isRedoOperation() {
         return client.getClientConfig().getNetworkConfig().isRedoOperation();
     }
@@ -221,26 +233,28 @@ public class ClientInvocationServiceImpl implements ClientInvocationService {
             throw new HazelcastClientNotActiveException();
         }
 
+        ClientMessage clientMessage = invocation.getClientMessage();
         if (isBackupAckToClientEnabled) {
-            invocation.getClientMessage().getStartFrame().flags |= ClientMessage.BACKUP_AWARE_FLAG;
+            clientMessage.getStartFrame().flags |= ClientMessage.BACKUP_AWARE_FLAG;
         }
 
         registerInvocation(invocation, connection);
 
-        ClientMessage clientMessage = invocation.getClientMessage();
-        if (!writeToConnection(connection, clientMessage)) {
-            if (invocationLogger.isFinestEnabled()) {
-                invocationLogger.finest("Packet not sent to " + connection.getRemoteAddress() + " " + clientMessage);
+        //After this is set, a second thread can notify this invocation
+        //Connection could be closed. From this point on, we need to reacquire the permission to notify if needed.
+        invocation.setSentConnection(connection);
+
+        if (!connection.write(clientMessage)) {
+            if (invocation.getPermissionToNotifyForDeadConnection(connection)) {
+                IOException exception = new IOException("Packet not sent to " + connection.getRemoteAddress() + " "
+                        + clientMessage);
+                invocation.notifyExceptionWithOwnedPermission(exception);
             }
-            return false;
+        } else {
+            invocation.invoked();
         }
 
-        invocation.setSendConnection(connection);
         return true;
-    }
-
-    private boolean writeToConnection(ClientConnection connection, ClientMessage clientMessage) {
-        return connection.write(clientMessage);
     }
 
     // package-visible for tests
@@ -271,7 +285,8 @@ public class ClientInvocationServiceImpl implements ClientInvocationService {
         responseHandlerSupplier.shutdown();
 
         for (ClientInvocation invocation : invocations.values()) {
-            invocation.notifyException(new HazelcastClientNotActiveException());
+            //connection manager and response handler threads are closed at this point.
+            invocation.notifyExceptionWithOwnedPermission(new HazelcastClientNotActiveException());
         }
     }
 
@@ -287,29 +302,12 @@ public class ClientInvocationServiceImpl implements ClientInvocationService {
         return isSmartRoutingEnabled;
     }
 
-    private class CleanResourcesTask implements Runnable {
+    private class BackupTimeoutTask implements Runnable {
         @Override
         public void run() {
             for (ClientInvocation invocation : invocations.values()) {
-                ClientConnection connection = invocation.getSendConnection();
-                if (connection == null) {
-                    continue;
-                }
-
-                if (!connection.isAlive()) {
-                    notifyException(invocation, connection);
-                    continue;
-                }
-
-                if (isBackupAckToClientEnabled) {
-                    invocation.detectAndHandleBackupTimeout(operationBackupTimeoutMillis);
-                }
+                invocation.detectAndHandleBackupTimeout(operationBackupTimeoutMillis);
             }
-        }
-
-        private void notifyException(ClientInvocation invocation, ClientConnection connection) {
-            Exception ex = new TargetDisconnectedException(connection.getCloseReason(), connection.getCloseCause());
-            invocation.notifyException(ex);
         }
     }
 
