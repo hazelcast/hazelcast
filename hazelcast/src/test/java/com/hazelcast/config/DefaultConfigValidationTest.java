@@ -32,6 +32,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Queue;
 
@@ -42,7 +45,16 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class DefaultConfigValidationTest extends HazelcastTestSupport {
     private static final ILogger LOGGER = Logger.getLogger(DefaultConfigValidationTest.class);
-    static int numberOfTestedConfigs = 0;
+    private static final HashMap<String, List<String>> IGNORED_CONFIGS = new HashMap<>();
+    private static final String PREFIX = "com.hazelcast.config.";
+    private static int numberOfTestedConfigs = 0;
+
+    static {
+        IGNORED_CONFIGS.put(PREFIX + "Config", Collections.singletonList(PREFIX + "SplitBrainProtectionConfig"));
+        IGNORED_CONFIGS.put(PREFIX + "MapConfig", Arrays.asList(PREFIX + "EvictionConfig", PREFIX + "MapStoreConfig"));
+        IGNORED_CONFIGS.put(PREFIX + "RingbufferConfig", Collections.singletonList(PREFIX + "RingbufferStoreConfig"));
+        IGNORED_CONFIGS.put(PREFIX + "CardinalityEstimatorConfig", Collections.singletonList(PREFIX + "MergePolicyConfig"));
+    }
 
     @Test
     public void validateServerConfiguration()
@@ -55,8 +67,11 @@ public class DefaultConfigValidationTest extends HazelcastTestSupport {
             try {
                 assertEquals(configNode.defaultConfig, configNode.initialConfig);
             } catch (Error e) {
-                LOGGER.warning(configNode.name + " (Child of " + configNode.parent.name + ") failed the test.");
-                numberOfFailedConfigs++;
+                if (!(IGNORED_CONFIGS.containsKey(configNode.parent.name)
+                        && IGNORED_CONFIGS.get(configNode.parent.name).contains(configNode.name))) {
+                    LOGGER.warning(configNode.name + " (Child of " + configNode.parent.name + ") failed the test.");
+                    numberOfFailedConfigs++;
+                }
             }
         }
         LOGGER.info("Number of failed configs: " + numberOfFailedConfigs);
