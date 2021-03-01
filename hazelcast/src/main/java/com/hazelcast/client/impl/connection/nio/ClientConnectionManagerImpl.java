@@ -704,8 +704,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     void onConnectionClose(ClientConnection connection) {
         Address endpoint = connection.getEndPoint();
+        client.getInvocationService().onConnectionClose(connection);
         UUID memberUuid = connection.getRemoteUuid();
-
         if (endpoint == null) {
             if (logger.isFinestEnabled()) {
                 logger.finest("Destroying " + connection + ", but it has end-point set to null "
@@ -882,9 +882,9 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     private void checkClientStateOnClusterIdChange(ClientConnection connection) {
         if (activeConnections.isEmpty()) {
-            //We only have single connection established
+            // We only have single connection established
             if (failoverConfigProvided) {
-                //If failover is provided, and this single connection is established after failover logic kicks in
+                // If failover is provided, and this single connection is established after failover logic kicks in
                 // (checked via `switchingToNextCluster`), then it is OK to continue. Otherwise, we force the failover logic
                 // to be used by throwing `ClientNotAllowedInClusterException`
                 if (switchingToNextCluster) {
@@ -896,8 +896,17 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 }
             }
         } else {
-            //If there are other connections that means we have a connection to wrong cluster.
-            //We should not stay connected.
+            // If there are other connections that means we have a connection to wrong cluster.
+            // We should not stay connected to this new connection.
+            // Note that in some racy scenarios we might close a connection that we can continue operating on.
+            // In those cases, we rely on the fact that we will reopen the connections and continue. Here is one scenario:
+            // 1. There were 2 members.
+            // 2. The client is connected to the first one.
+            // 3. While the client is trying to open the second connection, both members are restarted.
+            // 4. In this case we will close the connection to the second member, thinking that it is not part of the
+            // cluster we think we are in. We will reconnect to this member, and the connection is closed unnecessarily.
+            // 5. The connection to the first cluster will be gone after that and we will initiate a reconnect to the cluster.
+
             String reason = "Connection does not belong to this cluster";
             connection.close(reason, null);
             throw new IllegalStateException(reason);
@@ -1018,7 +1027,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
         @Override
         public void run() {
-
             if (!client.getLifecycleService().isRunning()) {
                 return;
             }
