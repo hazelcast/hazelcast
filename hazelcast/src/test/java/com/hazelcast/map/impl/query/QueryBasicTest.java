@@ -791,6 +791,37 @@ public class QueryBasicTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testLikePredicate_withAndWithoutIndexOnMap() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance = factory.newHazelcastInstance(getConfig());
+        factory.newHazelcastInstance(getConfig());
+        IMap<Integer, Employee> withIndex = instance.getMap("withIndex");
+        withIndex.addIndex(IndexType.SORTED, "name");
+        IMap<Integer, Employee> withoutIndex = instance.getMap("withoutIndex");
+
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                int employeeId = i * 3 + j;
+                String employeeName = String.format("name%d%d", i, j);
+                Employee employee = new Employee(employeeId, employeeName, "city" + i + j, employeeId, true, employeeId);
+                withIndex.put(employeeId, employee);
+                withoutIndex.put(employeeId, employee);
+            }
+        }
+
+        assertEquals(withIndex.size(), 9);
+        assertEquals(withoutIndex.size(), 9);
+
+        Predicate<Integer, Employee> predicate = Predicates.like("name", "name1%");
+        Collection<Employee> namesByIndex = withIndex.values(predicate);
+        Collection<Employee> namesMapLookup = withoutIndex.values(predicate);
+
+        assertEquals(namesMapLookup.size(), 3);
+        assertEquals(namesByIndex.size(), 3);
+        assertEquals(namesMapLookup, namesByIndex);
+    }
+
+    @Test
     public void testSqlQueryUsing__KeyField() {
         Config config = getConfig();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
