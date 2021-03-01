@@ -20,8 +20,8 @@ import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.internal.util.ConcurrencyDetection;
-import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.internal.util.MutableInteger;
+import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.internal.util.executor.HazelcastManagedThread;
 import com.hazelcast.logging.ILogger;
@@ -38,14 +38,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.ErrorsCodec.EXCEP
 import static com.hazelcast.client.properties.ClientProperty.RESPONSE_THREAD_COUNT;
 import static com.hazelcast.client.properties.ClientProperty.RESPONSE_THREAD_DYNAMIC;
 import static com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher.onOutOfMemory;
-import static com.hazelcast.internal.util.ThreadAffinity.newSystemThreadAffinity;
 import static com.hazelcast.internal.util.HashUtil.hashToIndex;
+import static com.hazelcast.internal.util.ThreadAffinity.newSystemThreadAffinity;
 import static com.hazelcast.spi.impl.operationservice.impl.InboundResponseHandlerSupplier.getIdleStrategy;
 
 /**
  * A {@link Supplier} for {@link Supplier} instance that processes responses for client
  * invocations.
- *
+ * <p>
  * Depending on the configuration the supplier provides:
  * <ol>
  * <li>a on thread ClientResponseHandler (so no offloading to a different thread)</li>
@@ -154,16 +154,16 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
 
         long correlationId = message.getCorrelationId();
 
-        ClientInvocation future = invocationService.getInvocation(correlationId);
-        if (future == null) {
+        ClientInvocation invocation = invocationService.getInvocation(correlationId);
+        if (invocation == null) {
             logger.warning("No call for callId: " + correlationId + ", response: " + message);
             return;
         }
 
         if (EXCEPTION_MESSAGE_TYPE == message.getMessageType()) {
-            future.notifyException(client.getClientExceptionFactory().createException(message));
+            invocation.notifyException(correlationId , client.getClientExceptionFactory().createException(message));
         } else {
-            future.notify(message);
+            invocation.notify(message);
         }
     }
 
@@ -239,7 +239,7 @@ public class ClientResponseHandlerSupplier implements Supplier<Consumer<ClientMe
     }
 
     // dynamically switches between direct processing on io thread and processing on
-    // response thread based on if concurrency is detected
+// response thread based on if concurrency is detected
     class DynamicResponseHandler implements Consumer<ClientMessage> {
         @Override
         public void accept(ClientMessage message) {
