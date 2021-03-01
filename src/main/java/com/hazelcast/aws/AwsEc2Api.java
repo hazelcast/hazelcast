@@ -74,14 +74,8 @@ class AwsEc2Api {
 
     private Map<String, String> filterAttributesDescribeInstances() {
         Filter filter = new Filter();
-        if (isNotEmpty(awsConfig.getTagKey())) {
-            if (isNotEmpty(awsConfig.getTagValue())) {
-                filter.add("tag:" + awsConfig.getTagKey(), awsConfig.getTagValue());
-            } else {
-                filter.add("tag-key", awsConfig.getTagKey());
-            }
-        } else if (isNotEmpty(awsConfig.getTagValue())) {
-            filter.add("tag-value", awsConfig.getTagValue());
+        for (Tag tag : awsConfig.getTags()) {
+            addTagFilter(filter, tag);
         }
 
         if (isNotEmpty(awsConfig.getSecurityGroupName())) {
@@ -90,6 +84,23 @@ class AwsEc2Api {
 
         filter.add("instance-state-name", "running");
         return filter.getFilterAttributes();
+    }
+
+    /**
+     * Adds filter entry to {@link Filter} base on provided {@link Tag}. Follows AWS API recommendations for
+     * filtering EC2 instances using tags.
+     *
+     * @see <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.html#API_DescribeInstances_RequestParameters">
+     *     EC2 Describe Instances - Request Parameters</a>
+     */
+    private void addTagFilter(Filter filter, Tag tag) {
+        if (isNotEmpty(tag.getKey()) && isNotEmpty(tag.getValue())) {
+            filter.add("tag:" + tag.getKey(), tag.getValue());
+        } else if (isNotEmpty(tag.getKey())) {
+            filter.add("tag-key", tag.getKey());
+        } else if (isNotEmpty(tag.getValue())) {
+            filter.add("tag-value", tag.getValue());
+        }
     }
 
     private static Map<String, String> parseDescribeInstances(String xmlResponse) {

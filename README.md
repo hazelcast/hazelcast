@@ -100,7 +100,7 @@ The following properties can be configured (all are optional).
 * `region`: region where Hazelcast members are running; default is the current region
 * `host-header`: `ec2`, `ecs`, or the URL of a EC2/ECS API endpoint; automatically detected by default
 * `security-group-name`: filter to look only for EC2 instances with the given security group
-* `tag-key`, `tag-value`: filter to look only for EC2 Instances with the given `tag-key`/`tag-value`
+* `tag-key`, `tag-value`: filter to look only for EC2 Instances with the given `tag-key`/`tag-value`; multi values supported if comma-separated (e.g. `KeyA,KeyB`); comma-separated values behaves as AND conditions
 * `connection-timeout-seconds`, `read-timeout-seconds`: connection and read timeouts when making a call to AWS API; default to `10`
 * `connection-retries`: number of retries while connecting to AWS API; default to `3`
 * `hz-port`: a range of ports where the plugin looks for Hazelcast members; default is `5701-5708`

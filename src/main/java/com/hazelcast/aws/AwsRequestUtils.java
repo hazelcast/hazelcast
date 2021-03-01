@@ -83,7 +83,9 @@ final class AwsRequestUtils {
     private static String urlEncode(String string) {
         String encoded;
         try {
-            encoded = URLEncoder.encode(string, "UTF-8").replace("+", "%20");
+            encoded = URLEncoder.encode(string, "UTF-8")
+                    .replace("+", "%20")
+                    .replace("*", "%2A");
         } catch (UnsupportedEncodingException e) {
             throw new HazelcastException(e);
         }

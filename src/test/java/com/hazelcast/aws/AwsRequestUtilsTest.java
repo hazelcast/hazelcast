@@ -46,11 +46,12 @@ public class AwsRequestUtilsTest {
         Map<String, String> attributes = new HashMap<>();
         attributes.put("second-attribute", "second-attribute+value");
         attributes.put("attribute", "attribute+value");
+        attributes.put("name", "Name*");
 
         // when
         String result = AwsRequestUtils.canonicalQueryString(attributes);
 
-        assertEquals("attribute=attribute%2Bvalue&second-attribute=second-attribute%2Bvalue", result);
+        assertEquals("attribute=attribute%2Bvalue&name=Name%2A&second-attribute=second-attribute%2Bvalue", result);
     }
 
     @Test

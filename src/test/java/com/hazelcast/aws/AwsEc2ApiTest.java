@@ -65,15 +65,22 @@ public class AwsEc2ApiTest {
     @Before
     public void setUp() {
         given(requestSigner.authHeader(any(), any(), any(), any(), any(), any())).willReturn(AUTHORIZATION_HEADER);
+        awsEc2Api = defaultAwsEc2Api();
+    }
 
+    private AwsEc2Api defaultAwsEc2Api() {
+        return createAwsEc2Api("aws-test-cluster,another-tag-key", "cluster1");
+    }
+
+    private AwsEc2Api createAwsEc2Api(String tagKey, String tagValue) {
         String endpoint = String.format("http://localhost:%s", wireMockRule.port());
         Clock clock = Clock.fixed(Instant.ofEpochMilli(1585909518929L), ZoneId.systemDefault());
         AwsConfig awsConfig = AwsConfig.builder()
-            .setSecurityGroupName("hazelcast")
-            .setTagKey("aws-test-cluster")
-            .setTagValue("cluster1")
-            .build();
-        awsEc2Api = new AwsEc2Api(endpoint, awsConfig, requestSigner, clock);
+                .setSecurityGroupName("hazelcast")
+                .setTagKey(tagKey)
+                .setTagValue(tagValue)
+                .build();
+        return new AwsEc2Api(endpoint, awsConfig, requestSigner, clock);
     }
 
     @Test
@@ -82,9 +89,11 @@ public class AwsEc2ApiTest {
         String requestUrl = "/?Action=DescribeInstances"
             + "&Filter.1.Name=tag%3Aaws-test-cluster"
             + "&Filter.1.Value.1=cluster1"
-            + "&Filter.2.Name=instance.group-name"
-            + "&Filter.2.Value.1=hazelcast"
-            + "&Filter.3.Name=instance-state-name&Filter.3.Value.1=running"
+            + "&Filter.2.Name=tag-key"
+            + "&Filter.2.Value.1=another-tag-key"
+            + "&Filter.3.Name=instance.group-name"
+            + "&Filter.3.Value.1=hazelcast"
+            + "&Filter.4.Name=instance-state-name&Filter.4.Value.1=running"
             + "&Version=2016-11-15";
 
         //language=XML
@@ -145,8 +154,8 @@ public class AwsEc2ApiTest {
     public void describeInstancesNoPublicIpNoInstanceName() {
         // given
         String requestUrl = "/?Action=DescribeInstances"
-            + "&Filter.1.Name=tag%3Aaws-test-cluster"
-            + "&Filter.1.Value.1=cluster1"
+            + "&Filter.1.Name=tag-value"
+            + "&Filter.1.Value.1=some-tag-value"
             + "&Filter.2.Name=instance.group-name"
             + "&Filter.2.Value.1=hazelcast"
             + "&Filter.3.Name=instance-state-name&Filter.3.Value.1=running"
@@ -180,7 +189,7 @@ public class AwsEc2ApiTest {
             .willReturn(aResponse().withStatus(200).withBody(response)));
 
         // when
-        Map<String, String> result = awsEc2Api.describeInstances(CREDENTIALS);
+        Map<String, String> result = createAwsEc2Api(null, "some-tag-value").describeInstances(CREDENTIALS);
 
         // then
         assertEquals(2, result.size());

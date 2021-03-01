@@ -64,11 +64,15 @@ enum AwsProperties {
 
     /**
      * Tag key as specified in the EC2 console. It is used to narrow the members returned by the discovery mechanism.
+     * <p>
+     * Can support multiple tag keys if separated by commas (e.g. {@code "TagKeyA,TagKeyB"}).
      */
     TAG_KEY("tag-key", STRING, true),
 
     /**
      * Tag value as specified in the EC2 console. It is used to narrow the members returned by the discovery mechanism.
+     * <p>
+     * Can support multiple tag values if separated by commas (e.g. {@code "TagValueA,TagValueB"}).
      */
     TAG_VALUE("tag-value", STRING, true),
 

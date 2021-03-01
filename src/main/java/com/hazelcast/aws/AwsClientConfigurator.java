@@ -22,6 +22,7 @@ import com.hazelcast.logging.Logger;
 import java.time.Clock;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -149,8 +150,8 @@ final class AwsClientConfigurator {
 
     private static void logEc2Environment(AwsConfig awsConfig, String region) {
         Map<String, String> filters = new HashMap<>();
-        filters.put("tag-key", awsConfig.getTagKey());
-        filters.put("tag-value", awsConfig.getTagValue());
+        filters.put("tag-key", combineTagKeys(awsConfig.getTags()));
+        filters.put("tag-value", combineTagValues(awsConfig.getTags()));
         filters.put("security-group-name", awsConfig.getSecurityGroupName());
         filters.put("hz-port", awsConfig.getHzPort().toString());
 
@@ -158,6 +159,18 @@ final class AwsClientConfigurator {
             "AWS plugin performing discovery in EC2 environment for region: '%s' filtered by: '%s'",
             region, logFilters(filters))
         );
+    }
+
+    private static String combineTagKeys(List<Tag> tags) {
+        return tags.stream()
+                .map(Tag::getKey)
+                .collect(Collectors.joining(","));
+    }
+
+    private static String combineTagValues(List<Tag> tags) {
+        return tags.stream()
+                .map(Tag::getValue)
+                .collect(Collectors.joining(","));
     }
 
     private static void logEcsEnvironment(AwsConfig awsConfig, String region, String cluster) {
