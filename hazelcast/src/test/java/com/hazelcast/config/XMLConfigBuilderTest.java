@@ -3096,7 +3096,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + SECURITY_END_TAG + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
-        PermissionConfig expected = new PermissionConfig(CONFIG, "*", "dev");
+        PermissionConfig expected = new PermissionConfig(CONFIG, null, "dev");
         expected.getEndpoints().add("127.0.0.1");
         assertPermissionConfig(expected, config);
     }

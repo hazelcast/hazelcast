@@ -164,7 +164,11 @@ public class PermissionConfig implements IdentifiedDataSerializable {
         /**
          * ReplicatedMap
          */
-        REPLICATEDMAP("replicatedmap-permission")
+        REPLICATEDMAP("replicatedmap-permission"),
+        /**
+         * Cluster Management
+         */
+        MANAGEMENT("management-permission"),
         ;
         private final String nodeName;
 

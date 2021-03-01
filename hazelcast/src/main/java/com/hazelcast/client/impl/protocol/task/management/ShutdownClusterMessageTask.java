@@ -23,6 +23,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.security.permission.ManagementPermission;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 
 import java.security.Permission;
@@ -33,6 +34,8 @@ import static com.hazelcast.internal.util.ExceptionUtil.peel;
 import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 
 public class ShutdownClusterMessageTask extends AbstractCallableMessageTask<Void> {
+
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("cluster.shutdown");
 
     public ShutdownClusterMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -74,7 +77,7 @@ public class ShutdownClusterMessageTask extends AbstractCallableMessageTask<Void
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return REQUIRED_PERMISSION;
     }
 
     @Override

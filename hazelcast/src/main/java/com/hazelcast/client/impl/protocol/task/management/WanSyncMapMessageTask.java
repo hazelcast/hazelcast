@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.protocol.codec.MCWanSyncMapCodec.RequestParamet
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.permission.ManagementPermission;
 import com.hazelcast.wan.impl.WanReplicationService;
 import com.hazelcast.wan.impl.WanSyncType;
 
@@ -29,6 +30,8 @@ import java.security.Permission;
 import java.util.UUID;
 
 public class WanSyncMapMessageTask extends AbstractCallableMessageTask<RequestParameters> {
+
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("wan.syncMap");
 
     public WanSyncMapMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -79,7 +82,7 @@ public class WanSyncMapMessageTask extends AbstractCallableMessageTask<RequestPa
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return REQUIRED_PERMISSION;
     }
 
     @Override

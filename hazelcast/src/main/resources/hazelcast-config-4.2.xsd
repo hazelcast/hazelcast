@@ -2692,6 +2692,7 @@
             <xs:element name="ring-buffer-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="reliable-topic-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="replicatedmap-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="management-permission" type="management-permission" minOccurs="0" maxOccurs="unbounded"/>
         </xs:choice>
         <xs:attribute name="on-join-operation" type="permission-on-join-operation" default="RECEIVE"/>
     </xs:complexType>
@@ -2732,6 +2733,19 @@
                     <xs:annotation>
                         <xs:documentation>
                             Name of the permission. Wildcards(*) can be used.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="management-permission">
+        <xs:complexContent>
+            <xs:extension base="base-permission">
+                <xs:attribute name="name" type="xs:string" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Optional name of the permission. Simple wildcard (*) or prefixes (prefix.*) can be used.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>

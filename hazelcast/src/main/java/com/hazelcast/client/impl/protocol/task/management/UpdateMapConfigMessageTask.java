@@ -24,12 +24,16 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.operation.UpdateMapConfigOperation;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.security.permission.ManagementPermission;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
 
 public class UpdateMapConfigMessageTask extends AbstractInvocationMessageTask<RequestParameters> {
+
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("map.updateConfig");
+
     public UpdateMapConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
@@ -69,7 +73,7 @@ public class UpdateMapConfigMessageTask extends AbstractInvocationMessageTask<Re
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return REQUIRED_PERMISSION;
     }
 
     @Override

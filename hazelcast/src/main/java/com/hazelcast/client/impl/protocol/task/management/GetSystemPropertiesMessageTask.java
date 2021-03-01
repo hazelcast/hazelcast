@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.permission.ManagementPermission;
 
 import java.security.Permission;
 import java.util.AbstractMap.SimpleEntry;
@@ -32,6 +33,9 @@ import java.util.Objects;
 import static java.util.stream.Collectors.toList;
 
 public class GetSystemPropertiesMessageTask extends AbstractCallableMessageTask<Void> {
+
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("member.getSystemProperties");
+
     public GetSystemPropertiesMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
@@ -61,7 +65,7 @@ public class GetSystemPropertiesMessageTask extends AbstractCallableMessageTask<
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return REQUIRED_PERMISSION;
     }
 
     @Override
