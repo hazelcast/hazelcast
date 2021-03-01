@@ -292,13 +292,13 @@ public class PartitionIdSet extends AbstractSet<Integer> implements IdentifiedDa
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(partitionCount);
-        out.writeObject(bitSet);
+        out.writeLongArray(bitSet.toLongArray());
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         partitionCount = in.readInt();
-        bitSet = in.readObject();
+        bitSet = BitSet.valueOf(in.readLongArray());
     }
 
     private final class PartitionIdSetIterator
