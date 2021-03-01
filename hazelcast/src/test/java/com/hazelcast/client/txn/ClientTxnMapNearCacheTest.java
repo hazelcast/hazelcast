@@ -120,7 +120,6 @@ public class ClientTxnMapNearCacheTest extends HazelcastTestSupport {
 
     @Test
     public void remove_invalidates_server_side_near_cache() {
-        // update map in a client txn
         TransactionContext context = client.newTransactionContext();
         context.beginTransaction();
         TransactionalMap<Object, Object> txnMap = context.getMap(MAP_NAME);
@@ -140,7 +139,6 @@ public class ClientTxnMapNearCacheTest extends HazelcastTestSupport {
 
     @Test
     public void removeIfSame_invalidates_server_side_near_cache() {
-        // update map in a client txn
         TransactionContext context = client.newTransactionContext();
         context.beginTransaction();
         TransactionalMap<Object, Object> txnMap = context.getMap(MAP_NAME);
@@ -160,7 +158,6 @@ public class ClientTxnMapNearCacheTest extends HazelcastTestSupport {
 
     @Test
     public void replace_invalidates_server_side_near_cache() {
-        // update map in a client txn
         TransactionContext context = client.newTransactionContext();
         context.beginTransaction();
         TransactionalMap<Object, Object> txnMap = context.getMap(MAP_NAME);
@@ -180,7 +177,6 @@ public class ClientTxnMapNearCacheTest extends HazelcastTestSupport {
 
     @Test
     public void replaceIfSame_invalidates_server_side_near_cache() {
-        // update map in a client txn
         TransactionContext context = client.newTransactionContext();
         context.beginTransaction();
         TransactionalMap<Object, Object> txnMap = context.getMap(MAP_NAME);
