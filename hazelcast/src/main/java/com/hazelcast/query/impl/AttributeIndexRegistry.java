@@ -219,6 +219,11 @@ public class AttributeIndexRegistry {
         }
 
         @Override
+        public void putEntry(QueryableEntry entry, Object newValue, Object oldValue, OperationSource operationSource) {
+            throw newUnsupportedException();
+        }
+
+        @Override
         public void removeEntry(Data key, Object value, OperationSource operationSource) {
             throw newUnsupportedException();
         }
@@ -339,6 +344,11 @@ public class AttributeIndexRegistry {
 
         @Override
         public void destroy() {
+            throw newUnsupportedException();
+        }
+
+        @Override
+        public Object extractAttributeValue(Data key, Object value) {
             throw newUnsupportedException();
         }
 

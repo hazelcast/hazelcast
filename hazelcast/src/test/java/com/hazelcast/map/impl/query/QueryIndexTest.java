@@ -218,11 +218,12 @@ public class QueryIndexTest {
         }
     }
 
-    public static class QueryIndexDeserializationTest extends HazelcastTestSupport {
+    public static class QueryIndexNoMultipleDeserializationTest extends HazelcastTestSupport {
 
         @Test
-        public void testIndexDeserializationNoDuplicates() {
+        public void testMultipleIndexesByAttributeDeserialization() {
             final int putCount = 5;
+
             String mapName = randomMapName();
             Config config = getConfig();
             config.getMapConfig(mapName).setInMemoryFormat(InMemoryFormat.BINARY);
@@ -237,14 +238,49 @@ public class QueryIndexTest {
             map.addIndex(IndexType.BITMAP, "string");
             for (int idx = 0; idx < putCount; idx++) {
                 map.put(idx, new SerializableObject());
-                System.out.println("===========");
             }
 
             // There was a mention that Predicate API was used
             PredicateBuilder.EntryObject e = Predicates.newPredicateBuilder().getEntryObject();
             Predicate predicate = e.get("string").isNotNull();
 
-            SerializableObject.flag = true;
+            // Since converter obtains for each new index type, we should mix it with put count
+            assertEquals(putCount, SerializableObject.deserializationCount);
+            SerializableObject.reset();
+
+            Collection<SerializableObject> values = map.values(predicate);
+            assertEquals(putCount, values.size());
+            assertEquals(putCount, SerializableObject.deserializationCount);
+            SerializableObject.reset();
+        }
+
+        @Test
+        public void testSingleIndexByAttributeDeserialization() {
+            final int putCount = 5;
+            final int indexCount = 0;
+
+            String mapName = randomMapName();
+            Config config = getConfig();
+            config.getMapConfig(mapName).setInMemoryFormat(InMemoryFormat.BINARY);
+            config.getMapConfig(mapName).setCacheDeserializedValues(CacheDeserializedValues.NEVER);
+            config.getMetricsConfig().setEnabled(false);
+
+            HazelcastInstance instance = createHazelcastInstance(config);
+            IMap<Integer, SerializableObject> map = instance.getMap(mapName);
+
+            map.addIndex(IndexType.HASH, "string");
+            map.addIndex(IndexType.HASH, "anotherString");
+            for (int idx = 0; idx < putCount; idx++) {
+                map.put(idx, new SerializableObject());
+            }
+
+            // There was a mention that Predicate API was used
+            PredicateBuilder.EntryObject e = Predicates.newPredicateBuilder().getEntryObject();
+            Predicate predicate = e.get("string").isNotNull();
+
+            // Since converter obtains for each new index type, we should mix it with put count
+            assertEquals(putCount + indexCount, SerializableObject.deserializationCount);
+            SerializableObject.reset();
 
             Collection<SerializableObject> values = map.values(predicate);
             assertEquals(putCount, values.size());
@@ -253,34 +289,35 @@ public class QueryIndexTest {
         }
 
         public static class SerializableObject implements DataSerializable {
-            static boolean flag = false;
             static int serializationCount = 0;
             static int deserializationCount = 0;
 
             static void reset() {
                 serializationCount = 0;
                 deserializationCount = 0;
-                flag = false;
             }
 
             public String string;
+            public String anotherString;
 
             @SuppressWarnings("checkstyle:RedundantModifier")
             public SerializableObject() {
                 this.string = randomString();
+                this.anotherString = randomString();
             }
 
             @Override
             public void writeData(ObjectDataOutput out) throws IOException {
                 ++serializationCount;
                 out.writeString(string);
+                out.writeString(anotherString);
             }
 
             @Override
             public void readData(ObjectDataInput in) throws IOException {
                 ++deserializationCount;
-                System.out.println("DESER");
                 string = in.readString();
+                anotherString = in.readString();
             }
         }
     }

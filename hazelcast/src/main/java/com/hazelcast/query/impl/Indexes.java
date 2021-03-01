@@ -283,10 +283,28 @@ public class Indexes {
      */
     public void putEntry(QueryableEntry queryableEntry, Object oldValue, Index.OperationSource operationSource) {
         InternalIndex[] indexes = getIndexes();
+
+        if (indexes.length == 0) {
+            return;
+        }
+
         Throwable exception = null;
+        boolean shouldDeserializeEntry = false;
+        Object newAttributeValue = null;
+        if (queryableEntry instanceof QuerySerializedEntry) {
+            shouldDeserializeEntry = true;
+            newAttributeValue = indexes[0].extractAttributeValue(
+                    queryableEntry.getKeyData(), queryableEntry.getTargetObject(false)
+            );
+        }
+
         for (InternalIndex index : indexes) {
             try {
-                index.putEntry(queryableEntry, oldValue, operationSource);
+                if (!shouldDeserializeEntry) {
+                    index.putEntry(queryableEntry, oldValue, operationSource);
+                } else {
+                    index.putEntry(queryableEntry, newAttributeValue, oldValue, operationSource);
+                }
             } catch (Throwable t) {
                 if (exception == null) {
                     exception = t;

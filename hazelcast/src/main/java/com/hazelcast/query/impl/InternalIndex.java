@@ -17,7 +17,9 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.query.QueryException;
 
 /**
  * Provides the private index API.
@@ -35,6 +37,21 @@ public interface InternalIndex extends Index {
      * @return the canonicalized value.
      */
     Comparable canonicalizeQueryArgumentScalar(Comparable value);
+
+    /**
+     * Saves the given entry into this index,
+     * and does not make deserialization attempt.
+     *
+     *
+     * @param entry           the entry to save.
+     * @param newValue        deserialized new value associated with the entry.
+     * @param oldValue        the previous old value associated with the entry or
+     *                        {@code null} if the entry is new.
+     * @param operationSource the operation source.
+     * @throws QueryException if there were errors while extracting the
+     *                        attribute value from the entry.
+     */
+    void putEntry(QueryableEntry entry, Object newValue, Object oldValue, OperationSource operationSource);
 
     /**
      * Returns {@code true} if the given partition is indexed by this index,
@@ -90,6 +107,15 @@ public interface InternalIndex extends Index {
      * Returns the index stats associated with this index.
      */
     PerIndexStats getPerIndexStats();
+
+    /**
+     * Extracts attribute value associated with this index.
+     *
+     * @param key
+     * @param value
+     * @return deserialized attribute value
+     */
+    Object extractAttributeValue(Data key, Object value);
 
     /**
      * Get monotonically increasing stamp that confirms that the index contains

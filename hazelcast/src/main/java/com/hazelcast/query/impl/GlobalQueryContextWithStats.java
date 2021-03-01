@@ -224,6 +224,11 @@ public class GlobalQueryContextWithStats extends QueryContext {
         }
 
         @Override
+        public void putEntry(QueryableEntry entry, Object newValue, Object oldValue, OperationSource operationSource) {
+            throw new UnsupportedOperationException("Can't put raw object with tracking index.");
+        }
+
+        @Override
         public boolean hasPartitionIndexed(int partitionId) {
             return delegate.hasPartitionIndexed(partitionId);
         }
@@ -251,6 +256,12 @@ public class GlobalQueryContextWithStats extends QueryContext {
         @Override
         public PerIndexStats getPerIndexStats() {
             return delegate.getPerIndexStats();
+        }
+
+        @Override
+        public Object extractAttributeValue(Data key, Object value) {
+            // TODO: temporary. Discuss
+            throw new UnsupportedOperationException("Attribute extraction is not supported for tracking index.");
         }
 
         @Override

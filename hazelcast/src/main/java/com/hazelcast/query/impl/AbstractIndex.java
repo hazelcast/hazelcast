@@ -138,6 +138,21 @@ public abstract class AbstractIndex implements InternalIndex {
     }
 
     @Override
+    public void putEntry(QueryableEntry entry, Object newAttributeValue, Object oldValue, OperationSource operationSource) {
+        long timestamp = stats.makeTimestamp();
+        IndexOperationStats operationStats = stats.createOperationStats();
+
+        if (oldValue == null) {
+            indexStore.insert(newAttributeValue, entry, operationStats);
+            stats.onInsert(timestamp, operationStats, operationSource);
+        } else {
+            Object oldAttributeValue = extractAttributeValue(entry.getKeyData(), oldValue);
+            indexStore.update(oldAttributeValue, newAttributeValue, entry, operationStats);
+            stats.onUpdate(timestamp, operationStats, operationSource);
+        }
+    }
+
+    @Override
     public void removeEntry(Data key, Object value, OperationSource operationSource) {
         long timestamp = stats.makeTimestamp();
         IndexOperationStats operationStats = stats.createOperationStats();
@@ -297,7 +312,7 @@ public abstract class AbstractIndex implements InternalIndex {
         return stats;
     }
 
-    private Object extractAttributeValue(Data key, Object value) {
+    public Object extractAttributeValue(Data key, Object value) {
         if (components.length == 1) {
             return QueryableEntry.extractAttributeValue(extractors, ss, components[0], key, value, null);
         } else {

@@ -22,10 +22,7 @@ import com.hazelcast.query.impl.getters.Extractors;
 
 public class QuerySerializedEntry extends QueryEntry {
 
-    private Object rawKey;
-    private Object rawValue;
-
-    public QuerySerializedEntry(InternalSerializationService serializationService, Data key, Object value, Extractors extractors) {
-        super(serializationService, key, value, extractors);
+    public QuerySerializedEntry(InternalSerializationService iss, Data key, Object value, Extractors extractors) {
+        super(iss, key, value, extractors);
     }
 }
