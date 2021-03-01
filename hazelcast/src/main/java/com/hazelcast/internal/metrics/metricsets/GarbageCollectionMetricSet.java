@@ -70,7 +70,7 @@ public final class GarbageCollectionMetricSet {
         checkNotNull(metricsRegistry, "metricsRegistry");
 
         GcStats stats = new GcStats();
-        metricsRegistry.scheduleAtFixedRate(stats, PUBLISH_FREQUENCY_SECONDS, SECONDS, INFO);
+        metricsRegistry.scheduleAtFixedRate(stats, PUBLISH_FREQUENCY_SECONDS, SECONDS, MANDATORY);
         metricsRegistry.scanAndRegister(stats, "gc");
     }
 
