@@ -209,16 +209,18 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
             int partitionId = partitionService.getPartitionId(StringPartitioningStrategy.getPartitionKey(name));
             QueueContainer container = entry.getValue();
 
-            if (partitionId == event.getPartitionId() && container.getConfig().getTotalBackupCount() >= event.getReplicaIndex()) {
+            if (partitionId == event.getPartitionId()
+                    && container.getConfig().getTotalBackupCount() >= event.getReplicaIndex()) {
+                if (logger.isFinestEnabled()) {
+                    logger.finest(event.toString() + ", " + container.toString());
+                }
                 migrationData.put(name, container);
             }
         }
 
-        if (migrationData.isEmpty()) {
-            return null;
-        } else {
-            return new QueueReplicationOperation(migrationData, event.getPartitionId(), event.getReplicaIndex());
-        }
+        return !migrationData.isEmpty()
+                ? new QueueReplicationOperation(migrationData,
+                event.getPartitionId(), event.getReplicaIndex()) : null;
     }
 
     @Override
