@@ -20,7 +20,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IFunction;
-import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.StaleSequenceException;
@@ -43,6 +42,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Function;
 
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.ringbuffer.OverflowPolicy.FAIL;
@@ -60,20 +60,32 @@ import static org.junit.Assert.fail;
 
 public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
 
-    protected HazelcastInstance[] instances;
-    protected IAtomicLong atomicLong;
-    protected Ringbuffer<String> ringbuffer;
-    private Config config;
-    private HazelcastInstance local;
+    private static Config config;
+    private static HazelcastInstance[] instances;
+    private static HazelcastInstance local;
+    private static HazelcastInstance target;
+
     private String name;
+    private Ringbuffer<String> ringbuffer;
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
     @Before
     public void setup() {
+        name = HazelcastTestSupport.randomNameOwnedBy(target, getTestMethodName());
+        ringbuffer = local.getRingbuffer(name);
+    }
 
-        config = new Config();
+    protected static void prepare(Function<Config, HazelcastInstance[]> instanceCreator) {
+        config = initAndGetConfig();
+        instances = instanceCreator.apply(config);
+        local = instances[0];
+        target = instances[instances.length - 1];
+    }
+
+    public static Config initAndGetConfig() {
+        Config config = smallInstanceConfig();
         config.addRingBufferConfig(new RingbufferConfig("add_overwritingOldData*")
                 .setCapacity(5));
         config.addRingBufferConfig(new RingbufferConfig("add_manyTimesRoundTheRing*")
@@ -115,16 +127,8 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
                 .setCapacity(10));
         config.addRingBufferConfig(new RingbufferConfig("readOne_whenHitsStale_shouldNotBeBlocked*")
                 .setCapacity(10));
-
-        instances = newInstances(config);
-        local = instances[0];
-        HazelcastInstance target = instances[instances.length - 1];
-
-        name = HazelcastTestSupport.randomNameOwnedBy(target, getTestMethodName());
-        ringbuffer = local.getRingbuffer(name);
+        return config;
     }
-
-    protected abstract HazelcastInstance[] newInstances(Config config);
 
     private static List<String> randomList(int size) {
         List<String> items = new ArrayList<>(size);
