@@ -22,6 +22,7 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeField;
+import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlDataTypeSpec;
@@ -85,13 +86,29 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
             targetTypeSpec = SqlTypeUtil.convertTypeToSpec(targetType);
         }
 
-        SqlNode cast = HazelcastSqlOperatorTable.CAST.createCall(SqlParserPos.ZERO, node, targetTypeSpec);
+        SqlNode cast = cast(node, targetTypeSpec);
 
         replaceFn.accept(cast);
 
         validator.deriveType(scope, cast);
 
         return true;
+    }
+
+    private static SqlNode cast(SqlNode node, SqlDataTypeSpec targetTypeSpec) {
+        if (node.getKind() == SqlKind.ARGUMENT_ASSIGNMENT) {
+            // transform name => 'value' into name => cast('value')
+            SqlBasicCall call = (SqlBasicCall) node;
+
+            SqlNode value = call.getOperandList().get(0);
+            SqlNode name = call.getOperandList().get(1);
+
+            SqlNode cast = HazelcastSqlOperatorTable.CAST.createCall(SqlParserPos.ZERO, value, targetTypeSpec);
+
+            return call.getOperator().createCall(SqlParserPos.ZERO, cast, name);
+        } else {
+            return HazelcastSqlOperatorTable.CAST.createCall(SqlParserPos.ZERO, node, targetTypeSpec);
+        }
     }
 
     @Override
