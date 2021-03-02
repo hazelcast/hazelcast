@@ -58,7 +58,7 @@ public class ClientTxnMapNearCacheTest extends HazelcastTestSupport {
     }
 
     private static final String MAP_NAME = "default";
-    private static final int KEY_COUNT = 1_000;
+    private static final int KEY_COUNT = 1000;
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
