@@ -201,6 +201,10 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         this.clientMembershipListener.cleanupOnDisconnect();
     }
 
+    public void clearMemberList() {
+        this.clientMembershipListener.clearMemberListOnClusterRestart();
+    }
+
     public void start() {
         this.clientMembershipListener = new ClientMembershipListener(client);
     }
@@ -263,7 +267,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     public void reset() {
-        clientMembershipListener.clearMembers();
+        clientMembershipListener.clearMembersOnClusterChange();
         synchronized (initialMembershipListenerMutex) {
             members.set(Collections.<Address, Member>emptyMap());
         }
