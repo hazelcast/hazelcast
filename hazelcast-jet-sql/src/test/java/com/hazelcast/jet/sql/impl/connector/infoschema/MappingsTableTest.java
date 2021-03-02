@@ -16,33 +16,42 @@
 
 package com.hazelcast.jet.sql.impl.connector.infoschema;
 
-import com.google.common.collect.ImmutableMap;
-import com.hazelcast.jet.sql.impl.schema.JetTable;
-import com.hazelcast.jet.sql.impl.schema.MappingDefinition;
-import com.hazelcast.sql.impl.schema.Table;
+import com.hazelcast.jet.sql.impl.schema.Mapping;
 import org.junit.Test;
 
 import java.util.List;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class MappingsTableTest {
 
     @Test
-    @SuppressWarnings("ConstantConditions")
     public void test_rows() {
         // given
-        Table table = new JetTable(null, emptyList(), "table-schema", "table-name", null);
-        MappingDefinition definition = new MappingDefinition(table, "table-type", ImmutableMap.of("key", "value"));
-        MappingsTable mappingTable = new MappingsTable("catalog", null, singletonList(definition));
+        Mapping mapping = new Mapping(
+                "table-name",
+                "table-external-name",
+                "table-type",
+                emptyList(),
+                singletonMap("key", "value")
+        );
+
+        MappingsTable mappingTable = new MappingsTable("catalog", null, "table-schema", singletonList(mapping));
 
         // when
         List<Object[]> rows = mappingTable.rows();
 
         // then
-        assertThat(rows)
-                .containsExactly(new Object[]{"catalog", "table-schema", "table-name", "table-type", "{key=value}"});
+        assertThat(rows).containsExactly(new Object[]{
+                "catalog"
+                , "table-schema"
+                , "table-name"
+                , "table-external-name"
+                , "table-type"
+                , "{key=value}"
+        });
     }
 }

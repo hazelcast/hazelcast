@@ -27,13 +27,22 @@ import java.util.List;
  */
 public abstract class InfoSchemaTable extends JetTable {
 
+    private final String catalog;
+
     public InfoSchemaTable(
             List<TableField> fields,
+            String catalog,
             String schemaName,
             String name,
             TableStatistics statistics
     ) {
         super(InfoSchemaConnector.INSTANCE, fields, schemaName, name, statistics);
+
+        this.catalog = catalog;
+    }
+
+    String catalog() {
+        return catalog;
     }
 
     protected abstract List<Object[]> rows();

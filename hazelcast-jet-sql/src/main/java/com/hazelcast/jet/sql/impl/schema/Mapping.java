@@ -77,18 +77,18 @@ public class Mapping implements DataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
-        out.writeUTF(externalName);
-        out.writeUTF(type);
+        out.writeString(name);
+        out.writeString(externalName);
+        out.writeString(type);
         out.writeObject(mappingFields);
         out.writeObject(options);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
-        externalName = in.readUTF();
-        type = in.readUTF();
+        name = in.readString();
+        externalName = in.readString();
+        type = in.readString();
         mappingFields = in.readObject();
         options = in.readObject();
     }

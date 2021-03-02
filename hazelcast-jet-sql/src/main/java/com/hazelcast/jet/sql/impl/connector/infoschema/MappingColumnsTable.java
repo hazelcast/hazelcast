@@ -16,12 +16,14 @@
 
 package com.hazelcast.jet.sql.impl.connector.infoschema;
 
-import com.hazelcast.jet.sql.impl.schema.MappingDefinition;
+import com.hazelcast.jet.sql.impl.schema.Mapping;
+import com.hazelcast.jet.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import static java.util.Arrays.asList;
@@ -38,45 +40,49 @@ public class MappingColumnsTable extends InfoSchemaTable {
             new TableField("table_schema", QueryDataType.VARCHAR, false),
             new TableField("table_name", QueryDataType.VARCHAR, false),
             new TableField("column_name", QueryDataType.VARCHAR, false),
+            new TableField("column_external_name", QueryDataType.VARCHAR, false),
             new TableField("ordinal_position", QueryDataType.INT, false),
             new TableField("is_nullable", QueryDataType.VARCHAR, false),
             new TableField("data_type", QueryDataType.VARCHAR, false)
     );
 
-    private final String catalog;
-    private final List<MappingDefinition> definitions;
+    private final String mappingsSchema;
+    private final Collection<Mapping> mappings;
 
     public MappingColumnsTable(
             String catalog,
             String schemaName,
-            List<MappingDefinition> definitions
+            String mappingsSchema,
+            Collection<Mapping> mappings
     ) {
         super(
                 FIELDS,
+                catalog,
                 schemaName,
                 NAME,
-                new ConstantTableStatistics(definitions.size() * FIELDS.size())
+                new ConstantTableStatistics((long) mappings.size() * FIELDS.size())
         );
 
-        this.catalog = catalog;
-        this.definitions = definitions;
+        this.mappingsSchema = mappingsSchema;
+        this.mappings = mappings;
     }
 
     @Override
     protected List<Object[]> rows() {
-        List<Object[]> rows = new ArrayList<>(definitions.size());
-        for (MappingDefinition definition : definitions) {
-            List<TableField> fields = definition.fields();
+        List<Object[]> rows = new ArrayList<>(mappings.size());
+        for (Mapping mapping : mappings) {
+            List<MappingField> fields = mapping.fields();
             for (int i = 0; i < fields.size(); i++) {
-                TableField field = fields.get(i);
+                MappingField field = fields.get(i);
                 Object[] row = new Object[]{
-                        catalog,
-                        definition.schema(),
-                        definition.name(),
-                        field.getName(),
-                        i,
+                        catalog(),
+                        mappingsSchema,
+                        mapping.name(),
+                        field.name(),
+                        field.externalName(),
+                        i + 1,
                         String.valueOf(true),
-                        field.getType().getTypeFamily().name()
+                        field.type().getTypeFamily().name()
                 };
                 rows.add(row);
             }

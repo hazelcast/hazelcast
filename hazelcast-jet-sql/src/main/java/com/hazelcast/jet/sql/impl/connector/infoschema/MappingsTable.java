@@ -16,13 +16,16 @@
 
 package com.hazelcast.jet.sql.impl.connector.infoschema;
 
-import com.hazelcast.jet.sql.impl.schema.MappingDefinition;
+import com.hazelcast.jet.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 
@@ -37,42 +40,53 @@ public class MappingsTable extends InfoSchemaTable {
             new TableField("mapping_catalog", QueryDataType.VARCHAR, false),
             new TableField("mapping_schema", QueryDataType.VARCHAR, false),
             new TableField("mapping_name", QueryDataType.VARCHAR, false),
+            new TableField("mapping_external_name", QueryDataType.VARCHAR, false),
             new TableField("mapping_type", QueryDataType.VARCHAR, false),
             new TableField("mapping_options", QueryDataType.VARCHAR, false)
     );
 
-    private final String catalog;
-    private final List<MappingDefinition> definitions;
+    private final String mappingsSchema;
+    private final Collection<Mapping> mappings;
 
     public MappingsTable(
             String catalog,
             String schemaName,
-            List<MappingDefinition> definitions
+            String mappingsSchema,
+            Collection<Mapping> mappings
     ) {
         super(
                 FIELDS,
+                catalog,
                 schemaName,
                 NAME,
-                new ConstantTableStatistics(definitions.size())
+                new ConstantTableStatistics(mappings.size())
         );
 
-        this.catalog = catalog;
-        this.definitions = definitions;
+        this.mappingsSchema = mappingsSchema;
+        this.mappings = mappings;
     }
 
     @Override
     protected List<Object[]> rows() {
-        List<Object[]> rows = new ArrayList<>(definitions.size());
-        for (MappingDefinition definition : definitions) {
+        List<Object[]> rows = new ArrayList<>(mappings.size());
+        for (Mapping mapping : mappings) {
             Object[] row = new Object[]{
-                    catalog,
-                    definition.schema(),
-                    definition.name(),
-                    definition.type(),
-                    definition.options()
+                    catalog(),
+                    mappingsSchema,
+                    mapping.name(),
+                    mapping.externalName(),
+                    mapping.type(),
+                    format(mapping.options())
             };
             rows.add(row);
         }
         return rows;
+    }
+
+    private static String format(Map<String, String> options) {
+        return options.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(entry -> entry.getKey() + "=" + entry.getValue())
+                .collect(Collectors.joining(", ", "{", "}"));
     }
 }
