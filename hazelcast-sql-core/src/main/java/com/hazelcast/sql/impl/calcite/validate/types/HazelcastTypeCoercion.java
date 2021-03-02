@@ -103,7 +103,7 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
             SqlNode value = call.getOperandList().get(0);
             SqlNode name = call.getOperandList().get(1);
 
-            SqlNode cast = HazelcastSqlOperatorTable.CAST.createCall(SqlParserPos.ZERO, value, targetTypeSpec);
+            SqlNode cast = cast(value, targetTypeSpec);
 
             return call.getOperator().createCall(SqlParserPos.ZERO, cast, name);
         } else {
