@@ -312,7 +312,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
             }
         }
 
-        executor.scheduleWithFixedDelay(new ConnectionManagementTask(), 1, 1, TimeUnit.SECONDS);
+        executor.scheduleWithFixedDelay(new ConnectToAllClusterMembersTask(), 1, 1, TimeUnit.SECONDS);
     }
 
     protected void startNetworking() {
@@ -1048,10 +1048,9 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
     }
 
     /**
-     * 1) schedules a task to open a connection if there is no connection for the member in the member list
-     * 2) closes a connection if it is no longer in the member list
+     * Schedules a task to open a connection if there is no connection for the member in the member list
      */
-    private class ConnectionManagementTask implements Runnable {
+    private class ConnectToAllClusterMembersTask implements Runnable {
 
         private final Set<UUID> connectingAddresses = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
@@ -1062,12 +1061,8 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
                 return;
             }
 
-            HashSet<UUID> activeConnectionUuids = new HashSet<>(activeConnections.keySet());
-
             for (Member member : client.getClientClusterService().getMemberList()) {
                 UUID uuid = member.getUuid();
-                activeConnectionUuids.remove(uuid);
-
                 if (activeConnections.get(uuid) != null) {
                     continue;
                 }
@@ -1090,15 +1085,6 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
                         connectingAddresses.remove(uuid);
                     }
                 });
-            }
-            //whatever remains in the set should be closed since there is no corresponding member in the member list
-            for (UUID uuidOutsideCurrentMemberlist : activeConnectionUuids) {
-                TcpClientConnection connection = activeConnections.get(uuidOutsideCurrentMemberlist);
-                if (connection != null) {
-                    connection.close(null,
-                            new TargetDisconnectedException("The client has closed the connection to this member,"
-                                    + " after receiving a member left event from the cluster. " + connection));
-                }
             }
         }
     }
