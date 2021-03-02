@@ -40,8 +40,10 @@ public class ClientAutoDetectionDiscoveryTest extends HazelcastTestSupport {
 
     @Test
     public void defaultDiscovery() {
-        Hazelcast.newHazelcastInstance();
-        Hazelcast.newHazelcastInstance();
+        Config config = new Config();
+        disableSetInterfaceIfSolaris(config);
+        Hazelcast.newHazelcastInstance(config);
+        Hazelcast.newHazelcastInstance(config);
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient();
         assertClusterSizeEventually(2, client);

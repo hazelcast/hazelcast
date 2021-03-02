@@ -118,7 +118,9 @@ public final class MulticastService implements Runnable {
             multicastSocket.bind(new InetSocketAddress(multicastConfig.getMulticastPort()));
             multicastSocket.setTimeToLive(multicastConfig.getMulticastTimeToLive());
             try {
-                multicastSocket.setInterface(bindAddress.getInetAddress());
+                if (multicastConfig.isSetInterfaceEnabled()) {
+                    multicastSocket.setInterface(bindAddress.getInetAddress());
+                }
                 if (bindAddress.getInetAddress().isLoopbackAddress()) {
                     // the parameter of the setLoopbackMode method is "disable: true to disable the LoopbackMode"!
                     multicastSocket.setLoopbackMode(! multicastConfig.isLoopbackModeEnabled());

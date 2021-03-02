@@ -171,6 +171,7 @@ public class ClientCacheConfigTest extends HazelcastTestSupport {
 
         try {
             Config config = new Config();
+            disableSetInterfaceIfSolaris(config);
             CacheSimpleConfig cacheSimpleConfig = new CacheSimpleConfig()
                     .setName(CACHE_NAME)
                     .setBackupCount(1); // Be sure that cache put operation is mirrored to backup node

@@ -1683,4 +1683,15 @@ public abstract class HazelcastTestSupport {
             object.destroy();
         }
     }
+
+    public static Config disableSetInterfaceIfSolaris(Config c) {
+        if (isSolaris()) {
+            c.getNetworkConfig().getJoin().getMulticastConfig().setEnableSetInterface(false);
+        }
+        return c;
+    }
+
+    public static boolean isSolaris() {
+        return System.getProperty("os.name").startsWith("SunOS");
+    }
 }

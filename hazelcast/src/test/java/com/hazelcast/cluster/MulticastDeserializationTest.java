@@ -17,8 +17,7 @@
 package com.hazelcast.cluster;
 
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
-import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
-import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
+import static com.hazelcast.test.HazelcastTestSupport.*;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -121,6 +120,7 @@ public class MulticastDeserializationTest {
                 .setMulticastPort(MULTICAST_PORT)
                 .setMulticastGroup(MULTICAST_GROUP)
                 .setMulticastTimeToLive(MULTICAST_TTL);
+        disableSetInterfaceIfSolaris(config);
         return config;
     }
 
@@ -136,7 +136,9 @@ public class MulticastDeserializationTest {
         MulticastSocket multicastSocket = null;
         try {
             multicastSocket = new MulticastSocket(MULTICAST_PORT);
-            multicastSocket.setInterface(InetAddress.getByName("127.0.0.1"));
+            if (!isSolaris()) {
+                multicastSocket.setInterface(InetAddress.getByName("127.0.0.1"));
+            }
             multicastSocket.setTimeToLive(MULTICAST_TTL);
             InetAddress group = InetAddress.getByName(MULTICAST_GROUP);
             multicastSocket.joinGroup(group);

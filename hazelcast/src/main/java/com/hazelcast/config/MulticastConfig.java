@@ -59,6 +59,8 @@ public class MulticastConfig implements TrustedInterfacesConfigurable<MulticastC
      */
     public static final boolean DEFAULT_LOOPBACK_MODE_ENABLED = true;
 
+    public static final boolean DEFAULT_SET_INTERFACE = true;
+
     private static final int MULTICAST_TTL_UPPER_BOUND = 255;
 
     private boolean enabled = DEFAULT_ENABLED;
@@ -74,6 +76,8 @@ public class MulticastConfig implements TrustedInterfacesConfigurable<MulticastC
     private final Set<String> trustedInterfaces = new HashSet<String>();
 
     private boolean loopbackModeEnabled = DEFAULT_LOOPBACK_MODE_ENABLED;
+
+    private boolean enableSetInterface = DEFAULT_SET_INTERFACE;
 
     /**
      * Check if the multicast discovery mechanism has been enabled.
@@ -262,6 +266,26 @@ public class MulticastConfig implements TrustedInterfacesConfigurable<MulticastC
      */
     public MulticastConfig setLoopbackModeEnabled(boolean enabled) {
         this.loopbackModeEnabled = enabled;
+        return this;
+    }
+
+    /**
+     * Check if setInterface is enabled.
+     *
+     * @return {@code true} if setInterface is enabled, {@code false} otherwise
+     */
+    public boolean isSetInterfaceEnabled() {
+        return enableSetInterface;
+    }
+
+    /**
+     * Enables or disables the call to setInterface in multicast setting.
+     *
+     * @param enabled {@code true} to enable setInterface call, {@code false} to disable
+     * @return the updated MulticastConfig
+     */
+    public MulticastConfig setEnableSetInterface(boolean enabled) {
+        this.enableSetInterface = enabled;
         return this;
     }
 
