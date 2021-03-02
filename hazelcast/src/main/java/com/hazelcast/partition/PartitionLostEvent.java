@@ -30,20 +30,9 @@ import com.hazelcast.cluster.Address;
 public interface PartitionLostEvent extends PartitionEvent {
 
     /**
-     * Return the replica index up to which partition replicas are lost
-     * together with the primary replica.
-     * <ul>
-     * <li> 0 means that only the primary replica is lost. In other
-     * words, the node which owns the partition is unreachable, hence
-     * removed from the cluster. If there is a data structure
-     * configured with no backups, its data is lost for this partition.
-     * <li> 1 means that both the primary replica and the first backup
-     * replica are lost. In other words, the partition owner node and
-     * the first backup node have became unreachable. If a data
-     * structure is configured with less than 2 backups, its data is
-     * lost for this partition.
-     * <li>The idea works same for higher backup counts.
-     * </ul>
+     * @return 0 if primary replica is lost,
+     * otherwise returns count of lost backup replicas
+     */
      */
     int getLostBackupCount();
 
