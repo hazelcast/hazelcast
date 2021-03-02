@@ -166,13 +166,16 @@ public interface Record<V> {
     }
 
     default void onAccess(long now) {
+        incrementHits();
+        onAccessSafe(now);
+    }
+
+    default void incrementHits() {
         int hits = getHits();
         if (hits < Integer.MAX_VALUE) {
             // protect against potential overflow
             setHits(hits + 1);
         }
-
-        onAccessSafe(now);
     }
 
     /**

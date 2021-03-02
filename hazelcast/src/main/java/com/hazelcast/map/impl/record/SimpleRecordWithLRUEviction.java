@@ -19,8 +19,12 @@ package com.hazelcast.map.impl.record;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.serialization.Data;
 
+import java.util.concurrent.atomic.AtomicLongFieldUpdater;
+
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
+import static com.hazelcast.internal.util.ConcurrencyUtil.setMax;
 import static com.hazelcast.map.impl.record.RecordReaderWriter.SIMPLE_DATA_RECORD_WITH_LRU_EVICTION_READER_WRITER;
+import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
 /**
  * Used when {@link MapConfig#isPerEntryStatsEnabled()} is {@code false}
@@ -29,7 +33,10 @@ import static com.hazelcast.map.impl.record.RecordReaderWriter.SIMPLE_DATA_RECOR
  * @see SimpleRecordWithLFUEviction
  */
 class SimpleRecordWithLRUEviction<V> extends SimpleRecord<V> {
-    private int lastAccessTime;
+    private static final AtomicLongFieldUpdater<SimpleRecordWithLRUEviction> LAST_ACCESS_TIME =
+            newUpdater(SimpleRecordWithLRUEviction.class, "lastAccessTime");
+
+    private volatile int lastAccessTime;
 
     SimpleRecordWithLRUEviction() {
     }
@@ -45,7 +52,7 @@ class SimpleRecordWithLRUEviction<V> extends SimpleRecord<V> {
 
     @Override
     public void setLastAccessTime(long lastAccessTime) {
-        this.lastAccessTime = stripBaseTime(lastAccessTime);
+        setMax(this, LAST_ACCESS_TIME, stripBaseTime(lastAccessTime));
     }
 
     @Override

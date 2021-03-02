@@ -16,18 +16,24 @@
 
 package com.hazelcast.map.impl.recordstore.expiry;
 
+import java.util.concurrent.atomic.AtomicLongFieldUpdater;
+
+import static com.hazelcast.internal.util.ConcurrencyUtil.setMax;
 import static com.hazelcast.map.impl.record.Record.UNSET;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
 public class ExpiryMetadataImpl implements ExpiryMetadata {
+    private static final AtomicLongFieldUpdater<ExpiryMetadataImpl> EXPIRATION_TIME =
+            newUpdater(ExpiryMetadataImpl.class, "expirationTime");
 
     private int ttl;
     private int maxIdle;
     // RU_COMPAT_4_1
     // No need to set default value of
     // expirationTime to UNSET after version 4.2
-    private int expirationTime = UNSET;
+    private volatile int expirationTime = UNSET;
 
     public ExpiryMetadataImpl() {
     }
@@ -111,9 +117,10 @@ public class ExpiryMetadataImpl implements ExpiryMetadata {
 
     @Override
     public ExpiryMetadata setExpirationTime(long expirationTime) {
-        this.expirationTime = expirationTime == Long.MAX_VALUE
+        long nextExpirationTime = expirationTime == Long.MAX_VALUE
                 ? Integer.MAX_VALUE
                 : stripBaseTime(expirationTime);
+        setMax(this, EXPIRATION_TIME, nextExpirationTime);
         return this;
     }
 

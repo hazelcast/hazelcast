@@ -151,7 +151,9 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         boolean expired = evictIfExpired(key, now, false);
         if (!expired) {
             Record record = storage.get(key);
-            accessRecord(key, record, now);
+            if (record != null) {
+                accessRecord(key, record, now);
+            }
         }
         return expired;
     }

@@ -166,7 +166,7 @@ public enum RecordReaderWriter {
         @Override
         public Record readRecord(ObjectDataInput in,
                                  ExpiryMetadata expiryMetadata) throws IOException {
-            Record record = new SimpleRecordWithLRUEviction();
+            Record record = new SimpleRecordWithLFUEviction();
             record.setValue(readData(in));
             record.setVersion(in.readInt());
             record.setHits(in.readInt());
