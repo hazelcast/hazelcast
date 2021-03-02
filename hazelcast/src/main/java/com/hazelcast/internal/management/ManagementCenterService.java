@@ -23,6 +23,7 @@ import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.dto.ClientBwListDTO;
 import com.hazelcast.internal.management.events.Event;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.executor.ExecutorType;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.RetryableException;
@@ -35,11 +36,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.LongSupplier;
 
 import static com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
 
@@ -48,12 +51,59 @@ import static com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher.inspectOutO
  */
 public class ManagementCenterService {
 
+    static class MCEventStore {
+        private static final long MC_EVENTS_WINDOW_MILLIS = TimeUnit.SECONDS.toMillis(30);
+        private final LongSupplier clock;
+        private volatile long lastMCEventsPollMillis;    
+        private ConcurrentMap<Address, Long> lastAccessTimestamps = new ConcurrentHashMap<>();
+        private final BlockingQueue<Event> mcEvents;
+
+        public MCEventStore(LongSupplier clock, BlockingQueue<Event> mcEvents) {
+            this.clock = clock;
+            this.lastMCEventsPollMillis = clock.getAsLong();
+            this.mcEvents = mcEvents;
+        }
+
+        void log(Event event) {
+            if (clock.getAsLong() - lastMCEventsPollMillis > MC_EVENTS_WINDOW_MILLIS) {
+                // ignore event and clear the queue if the last poll happened a while ago
+                onMCEventWindowExceeded();
+            } else {
+                mcEvents.offer(event);
+            }
+
+        }
+
+        public void onMCEventWindowExceeded() {
+            mcEvents.clear();
+            lastAccessTimestamps.clear();
+        }
+
+        public List<Event> pollMCEvents(Address mcRemoteAddr) {
+            try {
+                if (!lastAccessTimestamps.containsKey(mcRemoteAddr)) {
+                    return new ArrayList<>(mcEvents);
+                } else {
+                    List<Event> recentEvents = new ArrayList<>();
+                    for (Event evt : mcEvents) {
+                        if (evt.getTimestamp() >= lastAccessTimestamps.get(mcRemoteAddr)) {
+                            recentEvents.add(evt);
+                        }
+                    }
+                    return recentEvents;
+                }
+            } finally {
+                lastMCEventsPollMillis = clock.getAsLong();
+                lastAccessTimestamps.put(mcRemoteAddr, lastMCEventsPollMillis);
+            }
+        }
+    }
+
     public static final String SERVICE_NAME = "hz:core:managementCenterService";
 
     private static final int MIN_EVENT_QUEUE_CAPACITY = 1000;
     private static final int EXECUTOR_QUEUE_CAPACITY_PER_THREAD = 1000;
     private static final long TMS_CACHE_TIMEOUT_NANOS = TimeUnit.SECONDS.toNanos(1);
-    private static final long MC_EVENTS_WINDOW_NANOS = TimeUnit.SECONDS.toNanos(30);
 
     private final HazelcastInstanceImpl instance;
     private final ILogger logger;
@@ -61,25 +111,26 @@ public class ManagementCenterService {
     private final AtomicReference<String> tmsJson = new AtomicReference<>();
     private final TimedMemberStateFactory tmsFactory;
     private final AtomicBoolean tmsFactoryInitialized = new AtomicBoolean(false);
-    private final BlockingQueue<Event> mcEvents;
     private final ConsoleCommandHandler commandHandler;
     private final ClientBwListConfigHandler bwListConfigHandler;
+    private final MCEventStore eventStore;
 
     private volatile ManagementCenterEventListener eventListener;
     private volatile String lastMCConfigETag;
     private volatile long lastTMSUpdateNanos;
-    private volatile long lastMCEventsPollNanos = System.nanoTime();
     
-    private ConcurrentMap<Address, Long> lastAccessTimestamps;
-
     public ManagementCenterService(HazelcastInstanceImpl instance) {
+        this(instance, Clock::currentTimeMillis);
+    }
+
+    public ManagementCenterService(HazelcastInstanceImpl instance, LongSupplier clock) {
         this.instance = instance;
         this.logger = instance.node.getLogger(ManagementCenterService.class);
         this.tmsFactory = instance.node.getNodeExtension().createTimedMemberStateFactory(instance);
         int partitionCount = instance.node.getPartitionService().getPartitionCount();
-        this.mcEvents = new LinkedBlockingQueue<>(Math.max(MIN_EVENT_QUEUE_CAPACITY, partitionCount));
         this.commandHandler = new ConsoleCommandHandler(instance);
         this.bwListConfigHandler = new ClientBwListConfigHandler(instance.node.clientEngine);
+        this.eventStore = new MCEventStore(clock, new LinkedBlockingQueue<>(Math.max(MIN_EVENT_QUEUE_CAPACITY, partitionCount)));
         registerExecutor();
     }
 
@@ -136,13 +187,7 @@ public class ManagementCenterService {
      */
     @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
     public void log(Event event) {
-        if (System.nanoTime() - lastMCEventsPollNanos > MC_EVENTS_WINDOW_NANOS) {
-            // ignore event and clear the queue if the last poll happened a while ago
-            onMCEventWindowExceeded();
-        } else {
-            mcEvents.offer(event);
-        }
-
+        eventStore.log(event);
         if (eventListener != null) {
             eventListener.onEventLogged(event);
         }
@@ -150,7 +195,7 @@ public class ManagementCenterService {
 
     // visible for tests
     void onMCEventWindowExceeded() {
-        mcEvents.clear();
+        eventStore.onMCEventWindowExceeded();
     }
 
     // used for tests
@@ -166,10 +211,12 @@ public class ManagementCenterService {
      */
     @Nonnull
     public List<Event> pollMCEvents(Address mcRemoteAddr) {
-        List<Event> polled = new ArrayList<>();
-        mcEvents.drainTo(polled);
-        lastMCEventsPollNanos = System.nanoTime();
-        return polled;
+        return eventStore.pollMCEvents(mcRemoteAddr);
+    }
+    
+    // visible for testing
+    void clear() {
+        eventStore.onMCEventWindowExceeded();
     }
 
     /**

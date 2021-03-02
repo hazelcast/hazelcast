@@ -47,13 +47,17 @@ import static org.junit.Assert.assertSame;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ManagementCenterServiceIntegrationTest extends HazelcastTestSupport {
-    
-    private static final Address MC_REMOTE_ADDR;
+public class ManagementCenterServiceIntegrationTest
+        extends HazelcastTestSupport {
+
+    static final Address MC_1_REMOTE_ADDR;
+
+    static final Address MC_2_REMOTE_ADDR;
 
     static {
         try {
-            MC_REMOTE_ADDR = new Address("localhost", 5703);
+            MC_1_REMOTE_ADDR = new Address("localhost", 5703);
+            MC_2_REMOTE_ADDR = new Address("localhost", 5704);
         } catch (UnknownHostException e) {
             throw new RuntimeException(e);
         }
@@ -74,6 +78,7 @@ public class ManagementCenterServiceIntegrationTest extends HazelcastTestSupport
             ManagementCenterService mcs = getNode(instance).getManagementCenterService();
             assertNotNull(mcs);
             this.mcs = mcs;
+            mcs.clear();
         });
     }
 
@@ -117,14 +122,12 @@ public class ManagementCenterServiceIntegrationTest extends HazelcastTestSupport
 
     @Test
     public void testMCEvents_storesEvents_recentPoll() {
-        mcs.pollMCEvents(MC_REMOTE_ADDR);
-
         TestEvent expectedEvent = new TestEvent();
         mcs.log(expectedEvent);
         mcs.log(new TestEvent());
         mcs.log(new TestEvent());
 
-        List<Event> actualEvents = mcs.pollMCEvents(MC_REMOTE_ADDR);
+        List<Event> actualEvents = mcs.pollMCEvents(MC_1_REMOTE_ADDR);
         assertEquals(3, actualEvents.size());
         assertEquals(expectedEvent, actualEvents.get(0));
     }
@@ -134,23 +137,33 @@ public class ManagementCenterServiceIntegrationTest extends HazelcastTestSupport
         mcs.log(new TestEvent());
         mcs.log(new TestEvent());
 
-        assertEquals(2, mcs.pollMCEvents(MC_REMOTE_ADDR).size());
+        assertEquals(2, mcs.pollMCEvents(MC_1_REMOTE_ADDR).size());
     }
 
     @Test
     public void testMCEvents_clearsEventQueue_noRecentPoll() {
-        mcs.pollMCEvents(MC_REMOTE_ADDR);
         mcs.log(new TestEvent());
         mcs.log(new TestEvent());
 
         mcs.onMCEventWindowExceeded();
-        assertEquals(0, mcs.pollMCEvents(MC_REMOTE_ADDR).size());
+        assertEquals(0, mcs.pollMCEvents(MC_1_REMOTE_ADDR).size());
 
         mcs.log(new TestEvent());
-        assertEquals(1, mcs.pollMCEvents(MC_REMOTE_ADDR).size());
+        assertEquals(1, mcs.pollMCEvents(MC_1_REMOTE_ADDR).size());
     }
 
-    private static class TestEvent implements Event {
+    static class TestEvent
+            implements Event {
+        
+        private final long timestamp;
+        
+        TestEvent() {
+            this(42);
+        }
+        
+        TestEvent(long timestamp) {
+            this.timestamp = timestamp;
+        }
 
         @Override
         public EventMetadata.EventType getType() {
@@ -159,7 +172,7 @@ public class ManagementCenterServiceIntegrationTest extends HazelcastTestSupport
 
         @Override
         public long getTimestamp() {
-            return 42;
+            return timestamp;
         }
 
         @Override
