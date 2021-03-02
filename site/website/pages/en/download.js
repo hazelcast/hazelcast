@@ -164,19 +164,21 @@ function Downloads(props) {
 
         <h3 id="management-center">Management Center</h3>
 
-         <p>Jet Management Center can be used for monitoring the cluster. For instructions on how to download and run it,
-            see the <a href="/docs/enterprise/management-center">installation page</a>.</p>
-         {/*
          <p>
-          You can download Hazelcast Jet Management Center <a href={`https://download.hazelcast.com/hazelcast-jet-management-center/hazelcast-jet-management-center-${latest.version}.tar.gz`}>here</a>.
+           Hazelcast Management Center can be used for monitoring the cluster.
          </p>
-          <p>
-            You can run the Management Center without a license key, but it will only work with a single node cluster.
-          Get a 30-day trial license from <a href="https://hazelcast.com/download">the Hazelcast website</a>.
+
+         <p>
+          Download <a href={`https://download.hazelcast.com/management-center/hazelcast-management-center-${latest.mcVersion}.tar.gz`}>Hazelcast Management Center {latest.mcVersion}</a>
+           &nbsp;(compatible wit Hazelcast Jet {latest.version}).
          </p>
-         <p>  
-          For details about what's included, and minimim requirements please see the <a href="/docs/enterprise/management-center">installation page</a>.
-         </p> */}
+         <p>
+           See the reference Hazelcast Management Center <a href={`https://docs.hazelcast.com/management-center/${latest.mcVersion}/index.html`}>documentation</a>.
+          </p>
+         <p>
+          For instructions on how to download and run Hazelcast Jet Management Center (compatible with Hazelcast Jet 4.3 and earlier),
+          see the <a href="/docs/4.3/enterprise/management-center">installation page</a>.
+         </p>
 
           <h3 id="archive">Past Versions</h3>
           <p>Here you can find previous versions of Hazelcast Jet.</p>
@@ -205,6 +207,12 @@ function Downloads(props) {
                         <a
                           href={`/javadoc/${current.version}`} target="_blank" rel="noreferrer noopener">
                           Javadoc
+                        </a>
+                      </td>
+                      <td>
+                        <a
+                          href={`https://download.hazelcast.com/hazelcast-jet-management-center/hazelcast-jet-management-center-${current.version}.tar.gz`} target="_blank" rel="noreferrer noopener">
+                          Management Center
                         </a>
                       </td>
                     </tr>
