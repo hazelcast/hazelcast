@@ -33,7 +33,6 @@ public interface PartitionLostEvent extends PartitionEvent {
      * @return 0 if primary replica is lost,
      * otherwise returns count of lost backup replicas
      */
-     */
     int getLostBackupCount();
 
     /**
