@@ -1684,4 +1684,8 @@ public abstract class HazelcastTestSupport {
             object.destroy();
         }
     }
+
+    public static boolean isSolaris() {
+        return System.getProperty("os.name").startsWith("SunOS");
+    }
 }
