@@ -128,7 +128,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
 
         HazelcastSqlException error = assertSqlException(client, query());
         assertErrorCode(SqlErrorCode.CONNECTION_PROBLEM, error);
-        assertEquals("Client must be connected to at least one data member to execute SQL queries", error.getMessage());
+        assertEquals("Client is not currently connected to the cluster.", error.getMessage());
     }
 
     @Test
