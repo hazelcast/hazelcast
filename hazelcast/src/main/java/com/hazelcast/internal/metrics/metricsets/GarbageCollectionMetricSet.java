@@ -26,7 +26,6 @@ import java.lang.management.ManagementFactory;
 import java.util.Collections;
 import java.util.Set;
 
-import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.SetUtil.createHashSet;
