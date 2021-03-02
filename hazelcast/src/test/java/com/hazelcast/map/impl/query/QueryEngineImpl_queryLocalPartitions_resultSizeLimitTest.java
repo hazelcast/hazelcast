@@ -52,6 +52,7 @@ public class QueryEngineImpl_queryLocalPartitions_resultSizeLimitTest extends Ha
         Config config = new Config();
         config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "" + PARTITION_COUNT);
         config.setProperty(ClusterProperty.QUERY_RESULT_SIZE_LIMIT.getName(), "" + RESULT_SIZE_LIMIT);
+        config.setProperty(QueryEngineImpl.DISABLE_MIGRATION_FALLBACK.getName(), "true");
 
         HazelcastInstance hz = createHazelcastInstance(config);
         map = hz.getMap(randomName());

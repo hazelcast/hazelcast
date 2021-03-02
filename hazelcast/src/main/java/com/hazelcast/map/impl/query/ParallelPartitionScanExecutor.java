@@ -35,7 +35,7 @@ import static com.hazelcast.internal.util.SetUtil.singletonPartitionIdSet;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
- * Implementation of the {@link PartitionScanExecutor} which executes the partition scan in a parallel-fashion
+ * Implementation of the {@link PartitionScanExecutor} which executes the partition scan in a parallel fashion
  * delegating to the underlying executor.
  */
 public class ParallelPartitionScanExecutor implements PartitionScanExecutor {

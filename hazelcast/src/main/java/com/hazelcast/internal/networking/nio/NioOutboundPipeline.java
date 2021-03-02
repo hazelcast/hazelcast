@@ -88,7 +88,7 @@ public final class NioOutboundPipeline
          * - unscheduled: everything got written
          * - scheduled: new writes got detected
          * - reschedule: pipeline needs to be reprocessed
-         * - blocked (one of the handler wants to stop with the pipeline; one of the usages is TLS handshake
+         * - blocked (one of the handler wants to stop with the pipeline); one of the usages is TLS handshake
          */
         BLOCKED,
         /*
@@ -99,7 +99,7 @@ public final class NioOutboundPipeline
          * - unscheduled: everything got written
          * - scheduled: new writes got detected
          * - reschedule: pipeline needs to be reprocessed
-         * - blocked (one of the handler wants to stop with the pipeline; one of the usages is TLS handshake
+         * - blocked (one of the handler wants to stop with the pipeline); one of the usages is TLS handshake
          */
         RESCHEDULE
     }

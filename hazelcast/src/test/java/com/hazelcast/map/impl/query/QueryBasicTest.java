@@ -83,6 +83,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
     public void testInPredicateWithEmptyArray() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = getConfig();
+        cfg.setProperty(QueryEngineImpl.DISABLE_MIGRATION_FALLBACK.getName(), "true");
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(cfg);
         final IMap<String, Value> map = instance.getMap("default");
         for (int i = 0; i < 10; i++) {

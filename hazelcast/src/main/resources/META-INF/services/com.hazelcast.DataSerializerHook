@@ -59,4 +59,4 @@ com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchDataSerial
 com.hazelcast.internal.metrics.managementcenter.MetricsDataSerializerHook
 com.hazelcast.sql.impl.SqlDataSerializerHook
 com.hazelcast.json.internal.JsonDataSerializerHook
-
+com.hazelcast.internal.util.collection.UtilCollectionSerializerHook

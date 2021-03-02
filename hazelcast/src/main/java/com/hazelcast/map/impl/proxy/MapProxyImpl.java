@@ -697,6 +697,12 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
      * Execute the {@code keySet} operation only on the given {@code
      * partitions}.
      * <p>
+     * Performance note: the query will use non-partitioned indexes. If not all
+     * partitions of a member are in the set, the index will return entries for
+     * all the partitions, but those will be subsequently eliminated. If all
+     * (or most) partitions of a member are in the set, the performance hit is
+     * small.
+     * <p>
      * <b>Warning:</b> {@code partitions} is mutated during the call.
      */
     @SuppressWarnings("unchecked")
@@ -720,6 +726,12 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
      * Execute the {@code entrySet} operation only on the given {@code
      * partitions}.
      * <p>
+     * Performance note: the query will use non-partitioned indexes. If not all
+     * partitions of a member are in the set, the index will return entries for
+     * all the partitions, but those will be subsequently eliminated. If all
+     * (or most) partitions of a member are in the set, the performance hit is
+     * small.
+     * <p>
      * <b>Warning:</b> {@code partitions} is mutated during the call.
      */
     @SuppressWarnings("unchecked")
@@ -742,6 +754,12 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     /**
      * Execute the {@code values} operation only on the given {@code
      * partitions}.
+     * <p>
+     * Performance note: the query will use non-partitioned indexes. If not all
+     * partitions of a member are in the set, the index will return entries for
+     * all the partitions, but those will be subsequently eliminated. If all
+     * (or most) partitions of a member are in the set, the performance hit is
+     * small.
      * <p>
      * <b>Warning:</b> {@code partitions} is mutated during the call.
      */
@@ -874,6 +892,12 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     /**
      * Execute the {@code project} operation only on the given {@code
      * partitions}.
+     * <p>
+     * Performance note: the query will use non-partitioned indexes. If not all
+     * partitions of a member are in the set, the index will return entries for
+     * all the partitions, but those will be subsequently eliminated. If all
+     * (or most) partitions of a member are in the set, the performance hit is
+     * small.
      * <p>
      * <b>Warning:</b> {@code partitions} is mutated during the call.
      */

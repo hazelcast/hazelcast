@@ -266,6 +266,7 @@ public class SingleValueBitmapIndexTest extends HazelcastTestSupport {
     @Override
     protected Config getConfig() {
         Config config = HazelcastTestSupport.smallInstanceConfig();
+        config.setProperty(QueryEngineImpl.DISABLE_MIGRATION_FALLBACK.getName(), "true");
         MapConfig mapConfig = config.getMapConfig("persons");
         mapConfig.addIndexConfig(indexConfig);
         // disable periodic metrics collection (may interfere with the test)
