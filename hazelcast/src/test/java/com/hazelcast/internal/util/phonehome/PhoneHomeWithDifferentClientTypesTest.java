@@ -32,11 +32,13 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
-import static com.hazelcast.internal.util.phonehome.PhoneHomeTestUtil.ClientAuthenticator.authenticate;
-import static com.hazelcast.internal.util.phonehome.PhoneHomeTestUtil.NO_OP;
-import static com.hazelcast.internal.util.phonehome.PhoneHomeTestUtil.getNode;
+import static com.hazelcast.internal.util.phonehome.TestUtil.CLIENT_VERSIONS_SEPARATOR;
+import static com.hazelcast.internal.util.phonehome.TestUtil.CLIENT_VERSIONS_SUFFIX;
+import static com.hazelcast.internal.util.phonehome.TestUtil.CONNECTIONS_CLOSED_SUFFIX;
+import static com.hazelcast.internal.util.phonehome.TestUtil.CONNECTIONS_OPENED_SUFFIX;
+import static com.hazelcast.internal.util.phonehome.TestUtil.TOTAL_CONNECTION_DURATION_SUFFIX;
+import static com.hazelcast.internal.util.phonehome.TestUtil.getNode;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -46,6 +48,7 @@ import static org.junit.Assert.assertTrue;
 public class PhoneHomeWithDifferentClientTypesTest extends HazelcastTestSupport {
 
     private final TestAwareInstanceFactory factory = new TestAwareInstanceFactory();
+    private final TestUtil.DummyClientFactory clientFactory = new TestUtil.DummyClientFactory();
     private Node node;
 
     @Before
@@ -56,114 +59,144 @@ public class PhoneHomeWithDifferentClientTypesTest extends HazelcastTestSupport 
 
     @After
     public void cleanup() {
+        clientFactory.terminateAll();
         factory.terminateAll();
     }
 
     @Test
     public void testSingleMember_withMultipleClients() throws IOException {
-        authenticate(node, UUID.randomUUID(), "4.1", ConnectionType.CPP_CLIENT, NO_OP);
-        authenticate(node, UUID.randomUUID(), "4.2", ConnectionType.CPP_CLIENT, NO_OP);
-        authenticate(node, UUID.randomUUID(), "4.1", ConnectionType.GO_CLIENT, NO_OP);
-        authenticate(node, UUID.randomUUID(), "4.3", ConnectionType.PYTHON_CLIENT, NO_OP);
+        TestUtil.DummyClient cppClient = clientFactory.newClient(ConnectionType.CPP_CLIENT, "4.1");
+        TestUtil.DummyConnection cppConnection = cppClient.connectTo(node);
+        cppConnection.close();
+
+        TestUtil.DummyClient cppClient1 = clientFactory.newClient(ConnectionType.CPP_CLIENT, "4.2");
+        TestUtil.DummyConnection cppConnection1 = cppClient1.connectTo(node);
+        cppConnection1.close();
+
+        TestUtil.DummyClient goClient = clientFactory.newClient(ConnectionType.GO_CLIENT, "4.1");
+        TestUtil.DummyConnection goConnection = goClient.connectTo(node);
+        goConnection.close();
+
+        TestUtil.DummyClient pythonClient = clientFactory.newClient(ConnectionType.PYTHON_CLIENT, "4.3");
+        TestUtil.DummyConnection pythonConnection = pythonClient.connectTo(node);
+        pythonConnection.close();
 
         waitUntilExpectedEndpointCountIsReached(node, 0);
 
-        authenticate(node, UUID.randomUUID(), "4.0", ConnectionType.JAVA_CLIENT, () -> {
-            authenticate(node, UUID.randomUUID(), "4.0.1", ConnectionType.CSHARP_CLIENT, () -> {
-                authenticate(node, UUID.randomUUID(), "4.0.1", ConnectionType.NODEJS_CLIENT, () -> {
-                    authenticate(node, UUID.randomUUID(), "4.0.1", ConnectionType.NODEJS_CLIENT, () -> {
-                        sleepAtLeastMillis(100);
-                        Map<String, String> parameters = getParameters(node);
-                        assertParameters(parameters, PhoneHomeTestUtil.ClientPrefix.CPP, 0, 2, 2, 0, "4.1", "4.2");
-                        assertParameters(parameters, PhoneHomeTestUtil.ClientPrefix.GO, 0, 1, 1, 0, "4.1");
-                        assertParameters(parameters, PhoneHomeTestUtil.ClientPrefix.PYTHON, 0, 1, 1, 0, "4.3");
-                        assertParameters(parameters, PhoneHomeTestUtil.ClientPrefix.JAVA, 1, 1, 0, 100, "4.0");
-                        assertParameters(parameters, PhoneHomeTestUtil.ClientPrefix.CSHARP, 1, 1, 0, 100, "4.0.1");
-                        assertParameters(parameters, PhoneHomeTestUtil.ClientPrefix.NODEJS, 2, 2, 0, 2 * 100, "4.0.1");
-                    });
-                });
-            });
-        });
+        TestUtil.DummyClient javaClient = clientFactory.newClient(ConnectionType.JAVA_CLIENT, "4.0");
+        TestUtil.DummyConnection javaConnection = javaClient.connectTo(node);
 
-        waitUntilExpectedEndpointCountIsReached(node, 0);
+        TestUtil.DummyClient cSharpClient = clientFactory.newClient(ConnectionType.CSHARP_CLIENT, "4.0.1");
+        TestUtil.DummyConnection cSharpConnection = cSharpClient.connectTo(node);
+
+        TestUtil.DummyClient nodeJSClient = clientFactory.newClient(ConnectionType.NODEJS_CLIENT, "4.0.1");
+        TestUtil.DummyConnection nodeJSConnection = nodeJSClient.connectTo(node);
+
+        TestUtil.DummyClient nodeJSClient1 = clientFactory.newClient(ConnectionType.NODEJS_CLIENT, "4.0.1");
+        TestUtil.DummyConnection nodeJSConnection1 = nodeJSClient1.connectTo(node);
+
+        sleepAtLeastMillis(100);
 
         Map<String, String> parameters = getParameters(node);
-        assertParameters(parameters, PhoneHomeTestUtil.ClientPrefix.CPP, 0, 0, 0, 0, "");
-        assertParameters(parameters, PhoneHomeTestUtil.ClientPrefix.GO, 0, 0, 0, 0, "");
-        assertParameters(parameters, PhoneHomeTestUtil.ClientPrefix.PYTHON, 0, 0, 0, 0, "");
-        assertParameters(parameters, PhoneHomeTestUtil.ClientPrefix.JAVA, 0, 0, 1, 0, "4.0");
-        assertParameters(parameters, PhoneHomeTestUtil.ClientPrefix.CSHARP, 0, 0, 1, 0, "4.0.1");
-        assertParameters(parameters, PhoneHomeTestUtil.ClientPrefix.NODEJS, 0, 0, 2, 0, "4.0.1");
+        assertParameters(parameters, TestUtil.ClientPrefix.CPP, 0, 2, 2, 0, "4.1", "4.2");
+        assertParameters(parameters, TestUtil.ClientPrefix.GO, 0, 1, 1, 0, "4.1");
+        assertParameters(parameters, TestUtil.ClientPrefix.PYTHON, 0, 1, 1, 0, "4.3");
+        assertParameters(parameters, TestUtil.ClientPrefix.JAVA, 1, 1, 0, 100, "4.0");
+        assertParameters(parameters, TestUtil.ClientPrefix.CSHARP, 1, 1, 0, 100, "4.0.1");
+        assertParameters(parameters, TestUtil.ClientPrefix.NODEJS, 2, 2, 0, 2 * 100, "4.0.1");
+
+        javaConnection.close();
+        cSharpConnection.close();
+        nodeJSConnection.close();
+        nodeJSConnection1.close();
+
+        waitUntilExpectedEndpointCountIsReached(node, 0);
+
+        parameters = getParameters(node);
+        assertParameters(parameters, TestUtil.ClientPrefix.CPP, 0, 0, 0, 0, "");
+        assertParameters(parameters, TestUtil.ClientPrefix.GO, 0, 0, 0, 0, "");
+        assertParameters(parameters, TestUtil.ClientPrefix.PYTHON, 0, 0, 0, 0, "");
+        assertParameters(parameters, TestUtil.ClientPrefix.JAVA, 0, 0, 1, 0, "4.0");
+        assertParameters(parameters, TestUtil.ClientPrefix.CSHARP, 0, 0, 1, 0, "4.0.1");
+        assertParameters(parameters, TestUtil.ClientPrefix.NODEJS, 0, 0, 2, 0, "4.0.1");
     }
 
     @Test
     public void testMultipleMembers_withMultipleClients() throws IOException {
         HazelcastInstance instance = factory.newHazelcastInstance(smallInstanceConfig());
-        Node node2 = getNode(instance);
+        Node node1 = getNode(instance);
 
-        UUID uuid = UUID.randomUUID();
-        authenticate(node, uuid, "4.0", ConnectionType.PYTHON_CLIENT, NO_OP);
-        authenticate(node2, uuid, "4.0", ConnectionType.PYTHON_CLIENT, NO_OP);
-
-        waitUntilExpectedEndpointCountIsReached(node, 0);
-        waitUntilExpectedEndpointCountIsReached(node2, 0);
-
-        UUID uuid2 = UUID.randomUUID();
-        authenticate(node, uuid2, "4.0", ConnectionType.NODEJS_CLIENT, () -> {
-            authenticate(node2, uuid2, "4.0", ConnectionType.NODEJS_CLIENT, () -> {
-                authenticate(node, UUID.randomUUID(), "4.1", ConnectionType.CPP_CLIENT, NO_OP);
-                authenticate(node2, UUID.randomUUID(), "4.2", ConnectionType.JAVA_CLIENT, NO_OP);
-                sleepAtLeastMillis(100);
-
-                waitUntilExpectedEndpointCountIsReached(node, 1);
-                waitUntilExpectedEndpointCountIsReached(node2, 1);
-
-                Map<String, String> parameters = getParameters(node);
-                assertParameters(parameters, PhoneHomeTestUtil.ClientPrefix.CPP, 0, 1, 1, 0, "4.1");
-                assertParameters(parameters, PhoneHomeTestUtil.ClientPrefix.GO, 0, 0, 0, 0, "");
-                assertParameters(parameters, PhoneHomeTestUtil.ClientPrefix.PYTHON, 0, 1, 1, 0, "4.0");
-                assertParameters(parameters, PhoneHomeTestUtil.ClientPrefix.JAVA, 0, 0, 0, 0, "");
-                assertParameters(parameters, PhoneHomeTestUtil.ClientPrefix.CSHARP, 0, 0, 0, 0, "");
-                assertParameters(parameters, PhoneHomeTestUtil.ClientPrefix.NODEJS, 1, 1, 0, 100, "4.0");
-
-                parameters = getParameters(node2);
-                assertParameters(parameters, PhoneHomeTestUtil.ClientPrefix.CPP, 0, 0, 0, 0, "");
-                assertParameters(parameters, PhoneHomeTestUtil.ClientPrefix.GO, 0, 0, 0, 0, "");
-                assertParameters(parameters, PhoneHomeTestUtil.ClientPrefix.PYTHON, 0, 1, 1, 0, "4.0");
-                assertParameters(parameters, PhoneHomeTestUtil.ClientPrefix.JAVA, 0, 1, 1, 0, "4.2");
-                assertParameters(parameters, PhoneHomeTestUtil.ClientPrefix.CSHARP, 0, 0, 0, 0, "");
-                assertParameters(parameters, PhoneHomeTestUtil.ClientPrefix.NODEJS, 1, 1, 0, 100, "4.0");
-
-            });
-        });
+        TestUtil.DummyClient pythonClient = clientFactory.newClient(ConnectionType.PYTHON_CLIENT, "4.0");
+        TestUtil.DummyConnection pythonConnection = pythonClient.connectTo(node);
+        TestUtil.DummyConnection pythonConnection1 = pythonClient.connectTo(node1);
+        pythonConnection.close();
+        pythonConnection1.close();
 
         waitUntilExpectedEndpointCountIsReached(node, 0);
-        waitUntilExpectedEndpointCountIsReached(node2, 0);
+        waitUntilExpectedEndpointCountIsReached(node1, 0);
+
+        TestUtil.DummyClient nodeJSClient = clientFactory.newClient(ConnectionType.NODEJS_CLIENT, "4.0");
+        TestUtil.DummyConnection nodeJSConnection = nodeJSClient.connectTo(node);
+        TestUtil.DummyConnection nodeJSConnection1 = nodeJSClient.connectTo(node1);
+
+        TestUtil.DummyClient cppClient = clientFactory.newClient(ConnectionType.CPP_CLIENT, "4.1");
+        TestUtil.DummyConnection cppConnection = cppClient.connectTo(node);
+        cppConnection.close();
+
+        TestUtil.DummyClient javaClient = clientFactory.newClient(ConnectionType.JAVA_CLIENT, "4.2");
+        TestUtil.DummyConnection javaConnection = javaClient.connectTo(node1);
+        javaConnection.close();
+
+        sleepAtLeastMillis(100);
+
+        waitUntilExpectedEndpointCountIsReached(node, 1);
+        waitUntilExpectedEndpointCountIsReached(node1, 1);
 
         Map<String, String> parameters = getParameters(node);
-        assertParameters(parameters, PhoneHomeTestUtil.ClientPrefix.CPP, 0, 0, 0, 0, "");
-        assertParameters(parameters, PhoneHomeTestUtil.ClientPrefix.GO, 0, 0, 0, 0, "");
-        assertParameters(parameters, PhoneHomeTestUtil.ClientPrefix.PYTHON, 0, 0, 0, 0, "");
-        assertParameters(parameters, PhoneHomeTestUtil.ClientPrefix.JAVA, 0, 0, 0, 0, "");
-        assertParameters(parameters, PhoneHomeTestUtil.ClientPrefix.CSHARP, 0, 0, 0, 0, "");
-        assertParameters(parameters, PhoneHomeTestUtil.ClientPrefix.NODEJS, 0, 0, 1, 0, "4.0");
+        assertParameters(parameters, TestUtil.ClientPrefix.CPP, 0, 1, 1, 0, "4.1");
+        assertParameters(parameters, TestUtil.ClientPrefix.GO, 0, 0, 0, 0, "");
+        assertParameters(parameters, TestUtil.ClientPrefix.PYTHON, 0, 1, 1, 0, "4.0");
+        assertParameters(parameters, TestUtil.ClientPrefix.JAVA, 0, 0, 0, 0, "");
+        assertParameters(parameters, TestUtil.ClientPrefix.CSHARP, 0, 0, 0, 0, "");
+        assertParameters(parameters, TestUtil.ClientPrefix.NODEJS, 1, 1, 0, 100, "4.0");
 
-        parameters = getParameters(node2);
-        assertParameters(parameters, PhoneHomeTestUtil.ClientPrefix.CPP, 0, 0, 0, 0, "");
-        assertParameters(parameters, PhoneHomeTestUtil.ClientPrefix.GO, 0, 0, 0, 0, "");
-        assertParameters(parameters, PhoneHomeTestUtil.ClientPrefix.PYTHON, 0, 0, 0, 0, "");
-        assertParameters(parameters, PhoneHomeTestUtil.ClientPrefix.JAVA, 0, 0, 0, 0, "");
-        assertParameters(parameters, PhoneHomeTestUtil.ClientPrefix.CSHARP, 0, 0, 0, 0, "");
-        assertParameters(parameters, PhoneHomeTestUtil.ClientPrefix.NODEJS, 0, 0, 1, 0, "4.0");
+        parameters = getParameters(node1);
+        assertParameters(parameters, TestUtil.ClientPrefix.CPP, 0, 0, 0, 0, "");
+        assertParameters(parameters, TestUtil.ClientPrefix.GO, 0, 0, 0, 0, "");
+        assertParameters(parameters, TestUtil.ClientPrefix.PYTHON, 0, 1, 1, 0, "4.0");
+        assertParameters(parameters, TestUtil.ClientPrefix.JAVA, 0, 1, 1, 0, "4.2");
+        assertParameters(parameters, TestUtil.ClientPrefix.CSHARP, 0, 0, 0, 0, "");
+        assertParameters(parameters, TestUtil.ClientPrefix.NODEJS, 1, 1, 0, 100, "4.0");
+
+        nodeJSConnection.close();
+        nodeJSConnection1.close();
+
+        waitUntilExpectedEndpointCountIsReached(node, 0);
+        waitUntilExpectedEndpointCountIsReached(node1, 0);
+
+        parameters = getParameters(node);
+        assertParameters(parameters, TestUtil.ClientPrefix.CPP, 0, 0, 0, 0, "");
+        assertParameters(parameters, TestUtil.ClientPrefix.GO, 0, 0, 0, 0, "");
+        assertParameters(parameters, TestUtil.ClientPrefix.PYTHON, 0, 0, 0, 0, "");
+        assertParameters(parameters, TestUtil.ClientPrefix.JAVA, 0, 0, 0, 0, "");
+        assertParameters(parameters, TestUtil.ClientPrefix.CSHARP, 0, 0, 0, 0, "");
+        assertParameters(parameters, TestUtil.ClientPrefix.NODEJS, 0, 0, 1, 0, "4.0");
+
+        parameters = getParameters(node1);
+        assertParameters(parameters, TestUtil.ClientPrefix.CPP, 0, 0, 0, 0, "");
+        assertParameters(parameters, TestUtil.ClientPrefix.GO, 0, 0, 0, 0, "");
+        assertParameters(parameters, TestUtil.ClientPrefix.PYTHON, 0, 0, 0, 0, "");
+        assertParameters(parameters, TestUtil.ClientPrefix.JAVA, 0, 0, 0, 0, "");
+        assertParameters(parameters, TestUtil.ClientPrefix.CSHARP, 0, 0, 0, 0, "");
+        assertParameters(parameters, TestUtil.ClientPrefix.NODEJS, 0, 0, 1, 0, "4.0");
+
     }
 
     private void waitUntilExpectedEndpointCountIsReached(Node node, int expectedEndpointCount) {
-        assertTrueEventually(() -> {
-            assertEquals(expectedEndpointCount, node.clientEngine.getClientEndpointCount());
-        });
+        assertTrueEventually(() -> assertEquals(expectedEndpointCount, node.clientEngine.getClientEndpointCount()));
     }
 
-    private void assertParameters(Map<String, String> parameters, PhoneHomeTestUtil.ClientPrefix prefix, long activeConnectionCount,
+    private void assertParameters(Map<String, String> parameters, TestUtil.ClientPrefix prefix, long activeConnectionCount,
                                   long openedConnectionCount, long closedConnectionCount, long duration,
                                   String... versions) {
         assertEquals(activeConnectionCount, Long.parseLong(getActiveConnectionCount(parameters, prefix)));
@@ -181,23 +214,23 @@ public class PhoneHomeWithDifferentClientTypesTest extends HazelcastTestSupport 
         return new PhoneHome(node).phoneHome(true);
     }
 
-    private String getActiveConnectionCount(Map<String, String> parameters, PhoneHomeTestUtil.ClientPrefix prefix) {
+    private String getActiveConnectionCount(Map<String, String> parameters, TestUtil.ClientPrefix prefix) {
         return parameters.get(prefix.getPrefix());
     }
 
-    private String getOpenedConnectionCount(Map<String, String> parameters, PhoneHomeTestUtil.ClientPrefix prefix) {
-        return parameters.get(prefix.getPrefix() + "co");
+    private String getOpenedConnectionCount(Map<String, String> parameters, TestUtil.ClientPrefix prefix) {
+        return parameters.get(prefix.getPrefix() + CONNECTIONS_OPENED_SUFFIX);
     }
 
-    private String getClosedConnectionCount(Map<String, String> parameters, PhoneHomeTestUtil.ClientPrefix prefix) {
-        return parameters.get(prefix.getPrefix() + "cc");
+    private String getClosedConnectionCount(Map<String, String> parameters, TestUtil.ClientPrefix prefix) {
+        return parameters.get(prefix.getPrefix() + CONNECTIONS_CLOSED_SUFFIX);
     }
 
-    private String getTotalConnectionDuration(Map<String, String> parameters, PhoneHomeTestUtil.ClientPrefix prefix) {
-        return parameters.get(prefix.getPrefix() + "tcd");
+    private String getTotalConnectionDuration(Map<String, String> parameters, TestUtil.ClientPrefix prefix) {
+        return parameters.get(prefix.getPrefix() + TOTAL_CONNECTION_DURATION_SUFFIX);
     }
 
-    private List<String> getClientVersions(Map<String, String> parameters, PhoneHomeTestUtil.ClientPrefix prefix) {
-        return asList(parameters.get(prefix.getPrefix() + "cv").split(","));
+    private List<String> getClientVersions(Map<String, String> parameters, TestUtil.ClientPrefix prefix) {
+        return asList(parameters.get(prefix.getPrefix() + CLIENT_VERSIONS_SUFFIX).split(CLIENT_VERSIONS_SEPARATOR));
     }
 }

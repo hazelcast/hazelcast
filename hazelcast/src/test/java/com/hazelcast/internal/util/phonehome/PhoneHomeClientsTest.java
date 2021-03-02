@@ -16,8 +16,6 @@
 
 package com.hazelcast.internal.util.phonehome;
 
-import com.hazelcast.client.impl.ClientEndpointStatisticsManagerImpl;
-import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.ConnectionType;
@@ -37,12 +35,14 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
-import static com.hazelcast.internal.util.phonehome.PhoneHomeTestUtil.ClientAuthenticator.authenticate;
-import static com.hazelcast.internal.util.phonehome.PhoneHomeTestUtil.NO_OP;
-import static com.hazelcast.internal.util.phonehome.PhoneHomeTestUtil.getNode;
-import static com.hazelcast.internal.util.phonehome.PhoneHomeTestUtil.getParameters;
+import static com.hazelcast.internal.util.phonehome.TestUtil.CLIENT_VERSIONS_SEPARATOR;
+import static com.hazelcast.internal.util.phonehome.TestUtil.CLIENT_VERSIONS_SUFFIX;
+import static com.hazelcast.internal.util.phonehome.TestUtil.CONNECTIONS_CLOSED_SUFFIX;
+import static com.hazelcast.internal.util.phonehome.TestUtil.CONNECTIONS_OPENED_SUFFIX;
+import static com.hazelcast.internal.util.phonehome.TestUtil.TOTAL_CONNECTION_DURATION_SUFFIX;
+import static com.hazelcast.internal.util.phonehome.TestUtil.getNode;
+import static com.hazelcast.internal.util.phonehome.TestUtil.getParameters;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -52,33 +52,34 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class})
 public class PhoneHomeClientsTest extends HazelcastTestSupport {
 
-    private static final Map<PhoneHomeTestUtil.ClientPrefix, String> PREFIX_TO_CLIENT_TYPE = new HashMap<>(6);
+    private static final Map<TestUtil.ClientPrefix, String> PREFIX_TO_CLIENT_TYPE = new HashMap<>(6);
 
     static {
-        PREFIX_TO_CLIENT_TYPE.put(PhoneHomeTestUtil.ClientPrefix.CPP, ConnectionType.CPP_CLIENT);
-        PREFIX_TO_CLIENT_TYPE.put(PhoneHomeTestUtil.ClientPrefix.CSHARP, ConnectionType.CSHARP_CLIENT);
-        PREFIX_TO_CLIENT_TYPE.put(PhoneHomeTestUtil.ClientPrefix.JAVA, ConnectionType.JAVA_CLIENT);
-        PREFIX_TO_CLIENT_TYPE.put(PhoneHomeTestUtil.ClientPrefix.NODEJS, ConnectionType.NODEJS_CLIENT);
-        PREFIX_TO_CLIENT_TYPE.put(PhoneHomeTestUtil.ClientPrefix.PYTHON, ConnectionType.PYTHON_CLIENT);
-        PREFIX_TO_CLIENT_TYPE.put(PhoneHomeTestUtil.ClientPrefix.GO, ConnectionType.GO_CLIENT);
+        PREFIX_TO_CLIENT_TYPE.put(TestUtil.ClientPrefix.CPP, ConnectionType.CPP_CLIENT);
+        PREFIX_TO_CLIENT_TYPE.put(TestUtil.ClientPrefix.CSHARP, ConnectionType.CSHARP_CLIENT);
+        PREFIX_TO_CLIENT_TYPE.put(TestUtil.ClientPrefix.JAVA, ConnectionType.JAVA_CLIENT);
+        PREFIX_TO_CLIENT_TYPE.put(TestUtil.ClientPrefix.NODEJS, ConnectionType.NODEJS_CLIENT);
+        PREFIX_TO_CLIENT_TYPE.put(TestUtil.ClientPrefix.PYTHON, ConnectionType.PYTHON_CLIENT);
+        PREFIX_TO_CLIENT_TYPE.put(TestUtil.ClientPrefix.GO, ConnectionType.GO_CLIENT);
     }
 
     private final TestAwareInstanceFactory factory = new TestAwareInstanceFactory();
+    private final TestUtil.DummyClientFactory clientFactory = new TestUtil.DummyClientFactory();
     private Node node;
 
     @Parameterized.Parameter
-    public PhoneHomeTestUtil.ClientPrefix clientPrefix;
+    public TestUtil.ClientPrefix clientPrefix;
 
     @Parameterized.Parameters(name = "clientType:{0}")
     public static Collection<Object[]> parameters() {
         return asList(
                 new Object[][]{
-                        {PhoneHomeTestUtil.ClientPrefix.CPP},
-                        {PhoneHomeTestUtil.ClientPrefix.CSHARP},
-                        {PhoneHomeTestUtil.ClientPrefix.GO},
-                        {PhoneHomeTestUtil.ClientPrefix.JAVA},
-                        {PhoneHomeTestUtil.ClientPrefix.NODEJS},
-                        {PhoneHomeTestUtil.ClientPrefix.PYTHON},
+                        {TestUtil.ClientPrefix.CPP},
+                        {TestUtil.ClientPrefix.CSHARP},
+                        {TestUtil.ClientPrefix.GO},
+                        {TestUtil.ClientPrefix.JAVA},
+                        {TestUtil.ClientPrefix.NODEJS},
+                        {TestUtil.ClientPrefix.PYTHON},
                 }
         );
     }
@@ -87,41 +88,44 @@ public class PhoneHomeClientsTest extends HazelcastTestSupport {
     public void setup() {
         HazelcastInstance instance = factory.newHazelcastInstance(smallInstanceConfig());
         node = getNode(instance);
-        ((ClientEngineImpl) node.getClientEngine()).setEndpointStatisticsManager(new ClientEndpointStatisticsManagerImpl());
     }
 
     @After
     public void cleanup() {
+        clientFactory.terminateAll();
         factory.terminateAll();
     }
 
     @Test
     public void testSingleClient_withSingleMember_whenTheClientIsActive() throws IOException {
-        authenticate(node, UUID.randomUUID(), "4.0", getClientType(), () -> {
-            sleepAtLeastMillis(100);
-            assertParameters(node, 1, 1, 0, 100, "4.0");
-        });
+        TestUtil.DummyClient client = clientFactory.newClient(getClientType(), "4.0");
+        client.connectTo(node);
+
+        sleepAtLeastMillis(100);
+        assertParameters(node, 1, 1, 0, 100, "4.0");
     }
 
     @Test
     public void testSingleClient_withMultipleMembers_whenTheClientIsActive() throws IOException {
         HazelcastInstance instance = factory.newHazelcastInstance(smallInstanceConfig());
-        Node node2 = getNode(instance);
-        UUID uuid = UUID.randomUUID();
-        authenticate(node, uuid, "4.0.1", getClientType(), () -> {
-            authenticate(node2, uuid, "4.0.1", getClientType(), () -> {
-                sleepAtLeastMillis(100);
-                assertParameters(node, 1, 1, 0, 100, "4.0.1");
-                assertParameters(node2, 1, 1, 0, 100, "4.0.1");
-            });
-        });
+        Node node1 = getNode(instance);
+
+        TestUtil.DummyClient client = clientFactory.newClient(getClientType(), "4.0.1");
+        client.connectTo(node);
+        client.connectTo(node1);
+
+        sleepAtLeastMillis(100);
+        assertParameters(node, 1, 1, 0, 100, "4.0.1");
+        assertParameters(node1, 1, 1, 0, 100, "4.0.1");
     }
 
     @Test
     public void testSingleClient_withSingleMember_whenTheClientIsShutdown() throws IOException {
-        authenticate(node, UUID.randomUUID(), "4.2-BETA", getClientType(), () -> {
-            sleepAtLeastMillis(100);
-        });
+        TestUtil.DummyClient client = clientFactory.newClient(getClientType(), "4.2-BETA");
+        TestUtil.DummyConnection connection = client.connectTo(node);
+
+        sleepAtLeastMillis(100);
+        connection.close();
         waitUntilExpectedEndpointCountIsReached(node, 0);
         assertParameters(node, 0, 1, 1, 100, "4.2-BETA");
     }
@@ -129,122 +133,138 @@ public class PhoneHomeClientsTest extends HazelcastTestSupport {
     @Test
     public void testSingleClient_withMultipleMembers_whenTheClientIsShutdown() throws IOException {
         HazelcastInstance instance = factory.newHazelcastInstance(smallInstanceConfig());
-        Node node2 = getNode(instance);
-        UUID uuid = UUID.randomUUID();
-        authenticate(node, uuid, "v4.0", getClientType(), () -> {
-            authenticate(node2, uuid, "v4.0", getClientType(), () -> {
-                sleepAtLeastMillis(100);
-            });
-        });
+        Node node1 = getNode(instance);
+
+        TestUtil.DummyClient client = clientFactory.newClient(getClientType(), "v4.0");
+        TestUtil.DummyConnection connection = client.connectTo(node);
+        TestUtil.DummyConnection connection1 = client.connectTo(node1);
+
+        sleepAtLeastMillis(100);
+        connection.close();
+        connection1.close();
         waitUntilExpectedEndpointCountIsReached(node, 0);
-        waitUntilExpectedEndpointCountIsReached(node2, 0);
+        waitUntilExpectedEndpointCountIsReached(node1, 0);
         assertParameters(node, 0, 1, 1, 100, "v4.0");
-        assertParameters(node2, 0, 1, 1, 100, "v4.0");
+        assertParameters(node1, 0, 1, 1, 100, "v4.0");
     }
 
     @Test
     public void testMultipleClients_withSingleMember_whenTheClientsAreActive() throws IOException {
-        authenticate(node, UUID.randomUUID(), "4.1", getClientType(), () -> {
-            authenticate(node, UUID.randomUUID(), "4.1", getClientType(), () -> {
-                sleepAtLeastMillis(90);
-                assertParameters(node, 2, 2, 0, 2 * 90, "4.1");
-            });
-        });
+        TestUtil.DummyClient client = clientFactory.newClient(getClientType(), "4.1");
+        TestUtil.DummyClient client1 = clientFactory.newClient(getClientType(), "4.1");
+        client.connectTo(node);
+        client1.connectTo(node);
+
+        sleepAtLeastMillis(90);
+        assertParameters(node, 2, 2, 0, 2 * 90, "4.1");
     }
 
     @Test
     public void testMultipleClients_withSingleMember_whenTheClientsAreShutdown() throws IOException {
-        authenticate(node, UUID.randomUUID(), "4.0.1", getClientType(), () -> {
-            authenticate(node, UUID.randomUUID(), "4.1", getClientType(), () -> {
-                sleepAtLeastMillis(110);
-            });
-        });
+        TestUtil.DummyClient client = clientFactory.newClient(getClientType(), "4.0.1");
+        TestUtil.DummyClient client1 = clientFactory.newClient(getClientType(), "4.1");
+        TestUtil.DummyConnection connection = client.connectTo(node);
+        TestUtil.DummyConnection connection1 = client1.connectTo(node);
+
+        sleepAtLeastMillis(110);
+        connection.close();
+        connection1.close();
         waitUntilExpectedEndpointCountIsReached(node, 0);
         assertParameters(node, 0, 2, 2, 2 * 110, "4.0.1", "4.1");
     }
 
     @Test
     public void testMultipleClients_withSingleMember_whenSomeClientsAreShutdown() throws IOException {
-        authenticate(node, UUID.randomUUID(), "4.0", getClientType(), NO_OP);
+        TestUtil.DummyClient client = clientFactory.newClient(getClientType(), "4.0");
+        TestUtil.DummyConnection connection = client.connectTo(node);
+
+        connection.close();
         waitUntilExpectedEndpointCountIsReached(node, 0);
-        authenticate(node, UUID.randomUUID(), "4.0", getClientType(), () -> {
-            authenticate(node, UUID.randomUUID(), "4.1", getClientType(), () -> {
-                sleepAtLeastMillis(80);
-                assertParameters(node, 2, 3, 1, 2 * 80, "4.0", "4.1");
-            });
-        });
+
+        TestUtil.DummyClient client1 = clientFactory.newClient(getClientType(), "4.0");
+        client1.connectTo(node);
+        TestUtil.DummyClient client2 = clientFactory.newClient(getClientType(), "4.1");
+        client2.connectTo(node);
+
+        sleepAtLeastMillis(80);
+        assertParameters(node, 2, 3, 1, 2 * 80, "4.0", "4.1");
     }
 
     @Test
     public void testMultipleClients_withMultipleMembers_whenTheClientsAreActive() throws IOException {
         HazelcastInstance instance = factory.newHazelcastInstance(smallInstanceConfig());
-        Node node2 = getNode(instance);
-        UUID uuid = UUID.randomUUID();
-        UUID uuid2 = UUID.randomUUID();
-        authenticate(node, uuid, "4.1", getClientType(), () -> {
-            authenticate(node2, uuid, "4.1", getClientType(), () -> {
-                authenticate(node, uuid2, "4.1", getClientType(), () -> {
-                    authenticate(node2, uuid2, "4.1", getClientType(), () -> {
-                        sleepAtLeastMillis(90);
-                        assertParameters(node, 2, 2, 0, 2 * 90, "4.1");
-                        assertParameters(node2, 2, 2, 0, 2 * 90, "4.1");
-                    });
-                });
-            });
-        });
+        Node node1 = getNode(instance);
+
+        TestUtil.DummyClient client = clientFactory.newClient(getClientType(), "4.1");
+        TestUtil.DummyClient client1 = clientFactory.newClient(getClientType(), "4.1");
+        client.connectTo(node);
+        client.connectTo(node1);
+        client1.connectTo(node);
+        client1.connectTo(node1);
+
+        sleepAtLeastMillis(90);
+        assertParameters(node, 2, 2, 0, 2 * 90, "4.1");
+        assertParameters(node1, 2, 2, 0, 2 * 90, "4.1");
     }
 
     @Test
     public void testMultipleClients_withMultipleMembers_whenTheClientsAreShutdown() throws IOException {
         HazelcastInstance instance = factory.newHazelcastInstance(smallInstanceConfig());
-        Node node2 = getNode(instance);
-        UUID uuid = UUID.randomUUID();
-        UUID uuid2 = UUID.randomUUID();
-        authenticate(node, uuid, "4.0.1", getClientType(), () -> {
-            authenticate(node2, uuid, "4.0.1", getClientType(), () -> {
-                authenticate(node, uuid2, "4.1", getClientType(), () -> {
-                    authenticate(node2, uuid2, "4.1", getClientType(), () -> {
-                        sleepAtLeastMillis(110);
-                    });
-                });
-            });
-        });
+        Node node1 = getNode(instance);
+
+        TestUtil.DummyClient client = clientFactory.newClient(getClientType(), "4.0.1");
+        TestUtil.DummyClient client1 = clientFactory.newClient(getClientType(), "4.1");
+        TestUtil.DummyConnection connection = client.connectTo(node);
+        TestUtil.DummyConnection connection1 = client.connectTo(node1);
+        TestUtil.DummyConnection connection2 = client1.connectTo(node);
+        TestUtil.DummyConnection connection3 = client1.connectTo(node1);
+
+        sleepAtLeastMillis(110);
+        connection.close();
+        connection1.close();
+        connection2.close();
+        connection3.close();
         waitUntilExpectedEndpointCountIsReached(node, 0);
-        waitUntilExpectedEndpointCountIsReached(node2, 0);
+        waitUntilExpectedEndpointCountIsReached(node1, 0);
         assertParameters(node, 0, 2, 2, 2 * 110, "4.0.1", "4.1");
-        assertParameters(node2, 0, 2, 2, 2 * 110, "4.0.1", "4.1");
+        assertParameters(node1, 0, 2, 2, 2 * 110, "4.0.1", "4.1");
     }
 
     @Test
     public void testMultipleClients_withMultipleMembers_whenSomeClientsAreShutdown() throws IOException {
         HazelcastInstance instance = factory.newHazelcastInstance(smallInstanceConfig());
-        Node node2 = getNode(instance);
-        UUID uuid = UUID.randomUUID();
-        UUID uuid2 = UUID.randomUUID();
-        UUID uuid3 = UUID.randomUUID();
-        authenticate(node, uuid, "4.0", getClientType(), NO_OP);
-        authenticate(node2, uuid2, "4.0", getClientType(), NO_OP);
+        Node node1 = getNode(instance);
+
+        TestUtil.DummyClient client = clientFactory.newClient(getClientType(), "4.0");
+        TestUtil.DummyConnection connection = client.connectTo(node);
+        TestUtil.DummyConnection connection1 = client.connectTo(node1);
+
+        connection.close();
+        connection1.close();
         waitUntilExpectedEndpointCountIsReached(node, 0);
-        waitUntilExpectedEndpointCountIsReached(node2, 0);
-        authenticate(node, uuid2, "4.0", getClientType(), () -> {
-            authenticate(node2, uuid2, "4.0", getClientType(), () -> {
-                authenticate(node, uuid3, "4.1", getClientType(), () -> {
-                    authenticate(node2, uuid3, "4.1", getClientType(), () -> {
-                        sleepAtLeastMillis(80);
-                        assertParameters(node, 2, 3, 1, 2 * 80, "4.0", "4.1");
-                        assertParameters(node2, 2, 3, 1, 2 * 80, "4.0", "4.1");
-                    });
-                });
-            });
-        });
+        waitUntilExpectedEndpointCountIsReached(node1, 0);
+
+        TestUtil.DummyClient client1 = clientFactory.newClient(getClientType(), "4.0");
+        TestUtil.DummyClient client2 = clientFactory.newClient(getClientType(), "4.1");
+        client1.connectTo(node);
+        client1.connectTo(node1);
+        client2.connectTo(node);
+        client2.connectTo(node1);
+
+        sleepAtLeastMillis(80);
+        assertParameters(node, 2, 3, 1, 2 * 80, "4.0", "4.1");
+        assertParameters(node1, 2, 3, 1, 2 * 80, "4.0", "4.1");
     }
 
     @Test
     public void testConsecutivePhoneHomes() throws IOException {
-        authenticate(node, UUID.randomUUID(), "4.3", getClientType(), () -> {
-            sleepAtLeastMillis(100);
-            assertParameters(node, 1, 1, 0, 100, "4.3");
-        });
+        TestUtil.DummyClient client = clientFactory.newClient(getClientType(), "4.3");
+        TestUtil.DummyConnection connection = client.connectTo(node);
+
+        sleepAtLeastMillis(100);
+        assertParameters(node, 1, 1, 0, 100, "4.3");
+
+        connection.close();
         waitUntilExpectedEndpointCountIsReached(node, 0);
         assertParameters(node, 0, 0, 1, 0, "4.3");
         assertParameters(node, 0, 0, 0, 0, "");
@@ -253,39 +273,53 @@ public class PhoneHomeClientsTest extends HazelcastTestSupport {
     @Test
     public void testUniSocketClients() throws IOException {
         HazelcastInstance instance = factory.newHazelcastInstance(smallInstanceConfig());
-        Node node2 = getNode(instance);
+        Node node1 = getNode(instance);
 
-        authenticate(node, UUID.randomUUID(), "4.1", getClientType(), NO_OP);
-        authenticate(node2, UUID.randomUUID(), "4.1", getClientType(), NO_OP);
+        TestUtil.DummyClient client = clientFactory.newClient(getClientType(), "4.1");
+        TestUtil.DummyConnection connection = client.connectTo(node);
+        connection.close();
 
-        waitUntilExpectedEndpointCountIsReached(node, 0);
-        waitUntilExpectedEndpointCountIsReached(node2, 0);
-
-        authenticate(node, UUID.randomUUID(), "4.2", getClientType(), () -> {
-            authenticate(node, UUID.randomUUID(), "4.3", getClientType(), () -> {
-                authenticate(node2, UUID.randomUUID(), "4.0.1", getClientType(), () -> {
-                    authenticate(node2, UUID.randomUUID(), "4.1", getClientType(), () -> {
-                        authenticate(node2, UUID.randomUUID(), "4.1", getClientType(), () -> {
-                            sleepAtLeastMillis(100);
-                            assertParameters(node, 5, 3, 1, 2 * 100, "4.1", "4.2", "4.3");
-                            assertParameters(node2, 5, 4, 1, 3 * 100, "4.0.1", "4.1");
-                        });
-                    });
-                });
-            });
-        });
+        TestUtil.DummyClient client1 = clientFactory.newClient(getClientType(), "4.1");
+        TestUtil.DummyConnection connection1 = client1.connectTo(node1);
+        connection1.close();
 
         waitUntilExpectedEndpointCountIsReached(node, 0);
-        waitUntilExpectedEndpointCountIsReached(node2, 0);
+        waitUntilExpectedEndpointCountIsReached(node1, 0);
+
+        TestUtil.DummyClient client2 = clientFactory.newClient(getClientType(), "4.2");
+        TestUtil.DummyConnection connection2 = client2.connectTo(node);
+
+        TestUtil.DummyClient client3 = clientFactory.newClient(getClientType(), "4.3");
+        TestUtil.DummyConnection connection3 = client3.connectTo(node);
+
+        TestUtil.DummyClient client4 = clientFactory.newClient(getClientType(), "4.0.1");
+        TestUtil.DummyConnection connection4 = client4.connectTo(node1);
+
+        TestUtil.DummyClient client5 = clientFactory.newClient(getClientType(), "4.1");
+        TestUtil.DummyConnection connection5 = client5.connectTo(node1);
+
+        TestUtil.DummyClient client6 = clientFactory.newClient(getClientType(), "4.1");
+        TestUtil.DummyConnection connection6 = client6.connectTo(node1);
+
+        sleepAtLeastMillis(100);
+        assertParameters(node, 5, 3, 1, 2 * 100, "4.1", "4.2", "4.3");
+        assertParameters(node1, 5, 4, 1, 3 * 100, "4.0.1", "4.1");
+
+        connection2.close();
+        connection3.close();
+        connection4.close();
+        connection5.close();
+        connection6.close();
+
+        waitUntilExpectedEndpointCountIsReached(node, 0);
+        waitUntilExpectedEndpointCountIsReached(node1, 0);
 
         assertParameters(node, 0, 0, 2, 0, "4.2", "4.3");
-        assertParameters(node2, 0, 0, 3, 0, "4.0.1", "4.1");
+        assertParameters(node1, 0, 0, 3, 0, "4.0.1", "4.1");
     }
 
     private void waitUntilExpectedEndpointCountIsReached(Node node, int expectedEndpointCount) {
-        assertTrueEventually(() -> {
-            assertEquals(expectedEndpointCount, node.clientEngine.getClientEndpointCount());
-        });
+        assertTrueEventually(() -> assertEquals(expectedEndpointCount, node.clientEngine.getClientEndpointCount()));
     }
 
     private void assertParameters(Node node, long activeConnectionCount, long openedConnectionCount,
@@ -311,18 +345,18 @@ public class PhoneHomeClientsTest extends HazelcastTestSupport {
     }
 
     private String getOpenedConnectionCount(Map<String, String> parameters) {
-        return parameters.get(clientPrefix.getPrefix() + "co");
+        return parameters.get(clientPrefix.getPrefix() + CONNECTIONS_OPENED_SUFFIX);
     }
 
     private String getClosedConnectionCount(Map<String, String> parameters) {
-        return parameters.get(clientPrefix.getPrefix() + "cc");
+        return parameters.get(clientPrefix.getPrefix() + CONNECTIONS_CLOSED_SUFFIX);
     }
 
     private String getTotalConnectionDuration(Map<String, String> parameters) {
-        return parameters.get(clientPrefix.getPrefix() + "tcd");
+        return parameters.get(clientPrefix.getPrefix() + TOTAL_CONNECTION_DURATION_SUFFIX);
     }
 
     private List<String> getClientVersions(Map<String, String> parameters) {
-        return asList(parameters.get(clientPrefix.getPrefix() + "cv").split(","));
+        return asList(parameters.get(clientPrefix.getPrefix() + CLIENT_VERSIONS_SUFFIX).split(CLIENT_VERSIONS_SEPARATOR));
     }
 }

@@ -28,6 +28,7 @@ import com.hazelcast.test.Accessors;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
@@ -35,37 +36,95 @@ import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.IS_FINAL_FLAG;
 import static com.hazelcast.client.impl.protocol.ClientMessage.SIZE_OF_FRAME_LENGTH_AND_FLAGS;
 import static com.hazelcast.internal.nio.IOUtil.readFully;
 import static com.hazelcast.internal.nio.Protocols.CLIENT_BINARY;
 
-public class PhoneHomeTestUtil {
-    public static class ClientAuthenticator {
-        public static void authenticate(Node node, UUID clientUUID, String clientVersion,
-                                        String clientType, RunnableEx callback) throws IOException {
-            String clusterName = node.getConfig().getClusterName();
-            ClientMessage request = ClientAuthenticationCodec.encodeRequest(
-                    clusterName, null, null, clientUUID,
-                    clientType, (byte) 1, clientVersion, UUID.randomUUID().toString(), Collections.emptyList());
-            InetSocketAddress address = node.getLocalMember().getSocketAddress(EndpointQualifier.CLIENT);
-            try (Socket socket = new Socket(address.getAddress(), address.getPort())) {
-                try (OutputStream os = socket.getOutputStream(); InputStream is = socket.getInputStream()) {
-                    os.write(CLIENT_BINARY.getBytes(StandardCharsets.UTF_8));
-                    writeClientMessage(os, request);
-                    readResponse(is);
-                    try {
-                        callback.run();
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            }
+public class TestUtil {
+
+    public static final String CONNECTIONS_OPENED_SUFFIX = "co";
+    public static final String CONNECTIONS_CLOSED_SUFFIX = "cc";
+    public static final String TOTAL_CONNECTION_DURATION_SUFFIX = "tcd";
+    public static final String CLIENT_VERSIONS_SUFFIX = "cv";
+    public static final String CLIENT_VERSIONS_SEPARATOR = ",";
+
+    public static class DummyClientFactory {
+        private final Set<DummyClient> clients = Collections.newSetFromMap(new ConcurrentHashMap<>());
+
+        public DummyClient newClient(String clientType, String clientVersion) {
+            DummyClient client = new DummyClient(clientType, clientVersion);
+            clients.add(client);
+            return client;
         }
 
-        private static ClientMessage readResponse(InputStream is) throws IOException {
+        public void terminateAll() {
+            for (DummyClient client : clients) {
+                client.shutdown();
+            }
+            clients.clear();
+        }
+    }
+
+    public static class DummyClient {
+        private final String clientType;
+        private final String clientVersion;
+        private final UUID uuid;
+        private final Set<DummyConnection> connections = Collections.newSetFromMap(new ConcurrentHashMap<>());
+
+        public DummyClient(String clientType, String clientVersion) {
+            this.clientType = clientType;
+            this.clientVersion = clientVersion;
+            this.uuid = UUID.randomUUID();
+        }
+
+        public DummyConnection connectTo(Node node) throws IOException {
+            String clusterName = node.getConfig().getClusterName();
+            ClientMessage request = ClientAuthenticationCodec.encodeRequest(
+                    clusterName, null, null, uuid,
+                    clientType, (byte) 1, clientVersion, uuid.toString(), Collections.emptyList());
+            InetSocketAddress address = node.getLocalMember().getSocketAddress(EndpointQualifier.CLIENT);
+            DummyConnection connection = new DummyConnection(address.getAddress(), address.getPort());
+            connections.add(connection);
+            connection.authenticate(request);
+            return connection;
+        }
+
+        public void shutdown() {
+            for (DummyConnection connection : connections) {
+                try {
+                    connection.close();
+                } catch (IOException ignored) {
+                }
+            }
+            connections.clear();
+        }
+    }
+
+    public static class DummyConnection {
+        private final Socket socket;
+
+        public DummyConnection(InetAddress address, int port) throws IOException {
+            socket = new Socket(address, port);
+        }
+
+        public void close() throws IOException {
+            socket.close();
+        }
+
+        private void authenticate(ClientMessage authenticationRequest) throws IOException {
+            OutputStream os = socket.getOutputStream();
+            InputStream is = socket.getInputStream();
+            os.write(CLIENT_BINARY.getBytes(StandardCharsets.UTF_8));
+            writeClientMessage(os, authenticationRequest);
+            readResponse(is);
+        }
+
+        private ClientMessage readResponse(InputStream is) throws IOException {
             ClientMessage clientMessage = ClientMessage.createForEncode();
             while (true) {
                 ByteBuffer frameSizeBuffer = ByteBuffer.allocate(SIZE_OF_FRAME_LENGTH_AND_FLAGS);
@@ -83,7 +142,7 @@ public class PhoneHomeTestUtil {
             return clientMessage;
         }
 
-        private static void writeClientMessage(OutputStream os, final ClientMessage clientMessage) throws IOException {
+        private void writeClientMessage(OutputStream os, final ClientMessage clientMessage) throws IOException {
             for (ClientMessage.ForwardFrameIterator it = clientMessage.frameIterator(); it.hasNext(); ) {
                 ClientMessage.Frame frame = it.next();
                 os.write(frameAsBytes(frame, !it.hasNext()));
@@ -91,7 +150,7 @@ public class PhoneHomeTestUtil {
             os.flush();
         }
 
-        private static byte[] frameAsBytes(ClientMessage.Frame frame, boolean isLastFrame) {
+        private byte[] frameAsBytes(ClientMessage.Frame frame, boolean isLastFrame) {
             byte[] content = frame.content != null ? frame.content : new byte[0];
             int frameSize = content.length + SIZE_OF_FRAME_LENGTH_AND_FLAGS;
             ByteBuffer buffer = ByteBuffer.allocateDirect(frameSize);
@@ -106,18 +165,12 @@ public class PhoneHomeTestUtil {
             return byteBufferToBytes(buffer);
         }
 
-        private static byte[] byteBufferToBytes(ByteBuffer buffer) {
+        private byte[] byteBufferToBytes(ByteBuffer buffer) {
             buffer.flip();
             byte[] requestBytes = new byte[buffer.limit()];
             buffer.get(requestBytes);
             return requestBytes;
         }
-    }
-
-    public static final PhoneHomeTestUtil.RunnableEx NO_OP = () -> { };
-
-    public interface RunnableEx {
-        void run() throws Exception;
     }
 
     public enum ClientPrefix {
@@ -148,4 +201,5 @@ public class PhoneHomeTestUtil {
         ((ClientEngineImpl) node.getClientEngine()).setEndpointStatisticsManager(new ClientEndpointStatisticsManagerImpl());
         return node;
     }
+
 }
