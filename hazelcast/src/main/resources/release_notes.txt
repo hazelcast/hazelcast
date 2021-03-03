@@ -5,7 +5,7 @@ This document lists the new features, enhancements, fixed issues and, removed or
 1. Enhancements
 
 * Upgraded the versions of Hazelcast’s snakeyaml-engine and Jackson library dependencies to
-eliminate the denial of service vulnerabilities. [#17511]
+eliminate the denial of service vulnerabilities. [#18344]
 
 ==== 3.12.2 - VISA6 ====
 
