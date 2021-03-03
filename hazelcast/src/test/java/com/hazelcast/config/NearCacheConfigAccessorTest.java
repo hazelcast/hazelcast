@@ -24,6 +24,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class NearCacheConfigAccessorTest extends HazelcastTestSupport {
@@ -34,7 +37,25 @@ public class NearCacheConfigAccessorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testInitDefaultMaxSizeForOnHeapMaps_whenNull_thenDoNothing() {
-        NearCacheConfigAccessor.initDefaultMaxSizeForOnHeapMaps(null);
+    public void testCopyInitDefaultMaxSizeForOnHeapMaps_whenNull_thenDoNothing() {
+        NearCacheConfigAccessor.copyWithInitializedDefaultMaxSizeForOnHeapMaps(null);
+    }
+
+    @Test
+    public void testCopyInitDefaultMaxSizeForOnHeapMaps_doesNotChangeOriginal_createsChangedCopy() {
+        NearCacheConfig nearCacheConfig = new NearCacheConfig();
+        NearCacheConfig copy = NearCacheConfigAccessor.copyWithInitializedDefaultMaxSizeForOnHeapMaps(nearCacheConfig);
+
+        assertEquals(copy.getEvictionConfig().getSize(), EvictionConfig.DEFAULT_MAX_ENTRY_COUNT_FOR_ON_HEAP_MAP);
+        assertEquals(nearCacheConfig.getEvictionConfig().getSize(), EvictionConfig.DEFAULT_MAX_ENTRY_COUNT);
+    }
+
+    @Test
+    public void testCopyInitDefaultMaxSizeForOnHeapMaps_doesNotCopy_whenSizeIsConfigured() {
+        NearCacheConfig nearCacheConfig = new NearCacheConfig();
+        nearCacheConfig.setEvictionConfig(new EvictionConfig().setSize(10));
+        NearCacheConfig copy = NearCacheConfigAccessor.copyWithInitializedDefaultMaxSizeForOnHeapMaps(nearCacheConfig);
+
+        assertTrue(nearCacheConfig == copy);
     }
 }
