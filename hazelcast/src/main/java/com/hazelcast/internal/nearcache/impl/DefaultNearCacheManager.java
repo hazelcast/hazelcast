@@ -17,6 +17,7 @@
 package com.hazelcast.internal.nearcache.impl;
 
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.NearCacheConfigAccessor;
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.nearcache.NearCache;
@@ -99,7 +100,8 @@ public class DefaultNearCacheManager implements NearCacheManager {
     }
 
     protected <K, V> NearCache<K, V> createNearCache(String name, NearCacheConfig nearCacheConfig) {
-        return new DefaultNearCache<K, V>(name, nearCacheConfig, serializationService,
+        NearCacheConfig copy = NearCacheConfigAccessor.copyWithInitializedDefaultMaxSizeForOnHeapMaps(nearCacheConfig);
+        return new DefaultNearCache<K, V>(name, copy, serializationService,
                 scheduler, classLoader, properties);
     }
 

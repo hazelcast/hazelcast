@@ -42,7 +42,6 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.config.NearCacheConfigAccessor.initDefaultMaxSizeForOnHeapMaps;
 import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBaseName;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -443,7 +442,6 @@ public class Config {
         name = getBaseName(name);
         MapConfig config = lookupByPattern(configPatternMatcher, mapConfigs, name);
         if (config != null) {
-            initDefaultMaxSizeForOnHeapMaps(config.getNearCacheConfig());
             return config.getAsReadOnly();
         }
         return getMapConfig("default").getAsReadOnly();
