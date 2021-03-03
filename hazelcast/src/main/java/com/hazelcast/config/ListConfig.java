@@ -46,7 +46,4 @@ public class ListConfig extends CollectionConfig<ListConfig> {
                 + super.fieldsToString()
                 + "}";
     }
-
-
-
 }

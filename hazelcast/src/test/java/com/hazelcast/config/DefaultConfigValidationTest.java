@@ -28,7 +28,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -47,61 +46,52 @@ public class DefaultConfigValidationTest extends HazelcastTestSupport {
     private static final ILogger LOGGER = Logger.getLogger(DefaultConfigValidationTest.class);
     private static final HashMap<String, List<String>> IGNORED_CONFIGS = new HashMap<>();
     private static final String PREFIX = "com.hazelcast.config.";
-    private static int numberOfTestedConfigs = 0;
 
     static {
-        IGNORED_CONFIGS.put(PREFIX + "Config", Collections.singletonList(PREFIX + "SplitBrainProtectionConfig"));
         IGNORED_CONFIGS.put(PREFIX + "MapConfig", Arrays.asList(PREFIX + "EvictionConfig", PREFIX + "MapStoreConfig"));
         IGNORED_CONFIGS.put(PREFIX + "RingbufferConfig", Collections.singletonList(PREFIX + "RingbufferStoreConfig"));
         IGNORED_CONFIGS.put(PREFIX + "CardinalityEstimatorConfig", Collections.singletonList(PREFIX + "MergePolicyConfig"));
     }
 
     @Test
-    public void validateServerConfiguration()
-            throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
+    public void validateServerConfiguration() throws Exception {
         ValidationTree t = new ValidationTree(new Config());
         int numberOfFailedConfigs = 0;
-        LOGGER.info("Number of tested configs: " + numberOfTestedConfigs);
 
         for (ConfigNode configNode : t.getAllNodes()) {
             try {
-                assertEquals(configNode.defaultConfig, configNode.initialConfig);
-            } catch (Error e) {
                 if (!(IGNORED_CONFIGS.containsKey(configNode.parent.name)
                         && IGNORED_CONFIGS.get(configNode.parent.name).contains(configNode.name))) {
-                    LOGGER.warning(configNode.name + " (Child of " + configNode.parent.name + ") failed the test.");
-                    numberOfFailedConfigs++;
+                    assertEquals(configNode.defaultConfig, configNode.initialConfig);
                 }
+            } catch (Error e) {
+                LOGGER.severe(configNode.name + " (Child of " + configNode.parent.name + ") failed the test.");
+                numberOfFailedConfigs++;
             }
         }
-        LOGGER.info("Number of failed configs: " + numberOfFailedConfigs);
         assertEquals(0, numberOfFailedConfigs);
     }
 
     @Test
-    public void validateClientConfiguration()
-            throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
+    public void validateClientConfiguration() throws Exception {
         ValidationTree t = new ValidationTree(new ClientConfig());
         int numberOfFailedConfigs = 0;
-        LOGGER.info("Number of tested configs: " + numberOfTestedConfigs);
 
         for (ConfigNode configNode : t.getAllNodes()) {
             try {
                 assertEquals(configNode.defaultConfig, configNode.initialConfig);
             } catch (Error e) {
-                LOGGER.warning(configNode.name + " (Child of " + configNode.parent.name + ") failed the test.");
+                LOGGER.severe(configNode.name + " (Child of " + configNode.parent.name + ") failed the test.");
                 numberOfFailedConfigs++;
             }
         }
-        LOGGER.info("Number of failed configs: " + numberOfFailedConfigs);
         assertEquals(0, numberOfFailedConfigs);
     }
 
     private static class ValidationTree {
         ConfigNode root;
 
-        ValidationTree(Object config)
-                throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
+        ValidationTree(Object config) throws Exception {
             this.root = new ConfigNode(config, null, null);
             root.populateChildren();
         }
@@ -138,8 +128,7 @@ public class DefaultConfigValidationTest extends HazelcastTestSupport {
             this.name = defaultConfig.getClass().getName();
         }
 
-        void populateChildren()
-                throws InvocationTargetException, IllegalAccessException, InstantiationException, NoSuchMethodException {
+        void populateChildren() throws Exception {
             Class<?> clazz = defaultConfig.getClass();
             for (Method method : clazz.getDeclaredMethods()) {
                 if (method.getName().startsWith("get") && method.getName().endsWith("Config")) {
@@ -186,7 +175,6 @@ public class DefaultConfigValidationTest extends HazelcastTestSupport {
                                 if (m.getName().equals("equals") && !m.getDeclaringClass().equals(Object.class)) {
                                     children.add(child);
                                     hasEquals = true;
-                                    numberOfTestedConfigs++;
                                     break;
                                 }
                             }
@@ -207,17 +195,13 @@ public class DefaultConfigValidationTest extends HazelcastTestSupport {
                             throw e;
 
                         }
-                    } catch (InvocationTargetException | IllegalAccessException e) {
-                        e.printStackTrace();
-                        throw e;
                     }
                 }
             }
             populateGrandChildren();
         }
 
-        void populateGrandChildren()
-                throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
+        void populateGrandChildren() throws Exception {
             for (ConfigNode child : children) {
                 child.populateChildren();
             }
