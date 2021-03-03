@@ -1,1 +1,2 @@
 com.hazelcast.client.impl.clientside.DefaultClientExtension
+com.hazelcast.jet.impl.JetClientExtension

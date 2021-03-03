@@ -16,3 +16,4 @@
 
 
 com.hazelcast.instance.impl.DefaultNodeExtension
+com.hazelcast.jet.impl.JetNodeExtension
