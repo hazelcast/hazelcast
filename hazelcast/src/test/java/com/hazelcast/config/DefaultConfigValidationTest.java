@@ -122,7 +122,6 @@ public class DefaultConfigValidationTest extends HazelcastTestSupport {
         private final ConfigNode parent; // Used for better logging
         private final String name; // Used for better logging
 
-
         ConfigNode(Object defaultConfig, Object initialConfig, ConfigNode parent) {
             this(defaultConfig, initialConfig, new ArrayList<>(), parent);
         }
@@ -200,7 +199,6 @@ public class DefaultConfigValidationTest extends HazelcastTestSupport {
                             LOGGER.warning("Error occurred while calling the constructor of "
                                     + method.getReturnType().getCanonicalName() + " (Child of " + name + ")");
                             throw e;
-
                         }
                     }
                 }
