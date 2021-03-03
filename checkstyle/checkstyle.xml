@@ -193,11 +193,9 @@
         <module name="OuterTypeNumber">
             <property name="max" value="2"/>
         </module>
-        <!--
         <module name="MethodCount">
             <property name="maxTotal" value="30"/>
         </module>
-        -->
 
         <!-- Checks for whitespace                               -->
         <!-- See http://checkstyle.sf.net/config_whitespace.html -->
@@ -206,7 +204,7 @@
         <module name="MethodParamPad"/>
         <!-- module name="NoWhitespaceAfter"/ -->
         <!-- module name="NoWhitespaceBefore"/ -->
-        <!--<module name="OperatorWrap"/>-->
+        <module name="OperatorWrap"/>
         <module name="ParenPad"/>
         <module name="TypecastParenPad"/>
         <module name="WhitespaceAfter"/>
@@ -270,6 +268,9 @@
             <property name="ignoreHashCodeMethod" value="true"/>
             <property name="ignoreAnnotation" value="true"/>
             <property name="ignoreNumbers" value="-1, 0, 1, 2, 3"/>
+            <property name="constantWaiverParentToken"
+                      value="ASSIGN, ARRAY_INIT, EXPR, UNARY_PLUS, UNARY_MINUS, TYPECAST, ELIST, LITERAL_NEW,
+                      METHOD_CALL, STAR, DIV, PLUS, MINUS, SL, QUESTION"/>
         </module>
         <module name="EqualsHashCode"/>
         <module name="IllegalInstantiation"/>

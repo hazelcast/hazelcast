@@ -55,6 +55,9 @@ public final class JetDataSerializerHook implements DataSerializerHook {
      */
     public static final int APPLY_VALUE_ENTRY_PROCESSOR = 4;
 
+    /**
+     * Factory ID
+     */
     public static final int FACTORY_ID = FactoryIdHelper.getFactoryId(JET_DS_FACTORY, JET_DS_FACTORY_ID);
 
     @Override

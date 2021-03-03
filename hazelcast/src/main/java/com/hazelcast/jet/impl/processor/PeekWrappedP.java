@@ -163,6 +163,7 @@ public final class PeekWrappedP<T> extends ProcessorWrapper {
         }
 
         @Override
+        @SuppressWarnings("EmptyBlock")
         public void clear() {
             while (poll() != null) { }
         }
