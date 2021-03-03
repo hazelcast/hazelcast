@@ -48,8 +48,15 @@ public class DefaultConfigValidationTest extends HazelcastTestSupport {
     private static final String PREFIX = "com.hazelcast.config.";
 
     static {
+        // By default MapStoreConfig should not be enabled when MapConfig is created. However when using MapStoreConfig
+        // constructor it's logical to expect it's enabled by default.
+        // EvictionConfig takes some default values (such as DEFAULT_MAX_SIZE) inside MapConfig.
         IGNORED_CONFIGS.put(PREFIX + "MapConfig", Arrays.asList(PREFIX + "EvictionConfig", PREFIX + "MapStoreConfig"));
+        // Similar to MapStoreConfig
         IGNORED_CONFIGS.put(PREFIX + "RingbufferConfig", Collections.singletonList(PREFIX + "RingbufferStoreConfig"));
+        // Default MergePolicy is HyperLogLogMergePolicy in CardinalityEstimatorConfig and PutIfAbsentMergePolicy in
+        // MergePolicyConfig. MergePolicyConfig is a general-purpose configuration for handling split-brain healing and
+        // HyperLogLogMergePolicy is the a specific policy for merging our HyperLogLog impl (the CardinalityEstimator)
         IGNORED_CONFIGS.put(PREFIX + "CardinalityEstimatorConfig", Collections.singletonList(PREFIX + "MergePolicyConfig"));
     }
 
