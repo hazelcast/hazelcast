@@ -43,6 +43,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
+
 
 import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
@@ -66,7 +68,7 @@ import static org.mockito.Mockito.when;
 public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
 
     @Rule
-    public WireMockRule wireMockRule = new WireMockRule();
+    public WireMockRule wireMockRule = new WireMockRule(options().jettyHeaderBufferSize(16384));
 
     private Node node;
     private PhoneHome phoneHome;
