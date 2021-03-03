@@ -253,6 +253,7 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
         return mapServiceContext.getMapNearCacheManager().getInvalidator().getMetaDataGenerator();
     }
 
+    @SuppressWarnings("checkstyle:NPathComplexity")
     private void populateIndexes(PartitionMigrationEvent event,
                                  TargetIndexes targetIndexes, String stepName) {
         assert event.getMigrationEndpoint() == DESTINATION;

@@ -110,7 +110,8 @@ public abstract class AbstractIndex implements InternalIndex {
     }
 
     @Override
-    public void putEntry(QueryableEntry newEntry, QueryableEntry oldEntry, QueryableEntry entryToStore, OperationSource operationSource) {
+    public void putEntry(QueryableEntry newEntry, QueryableEntry oldEntry, QueryableEntry entryToStore,
+                         OperationSource operationSource) {
         long timestamp = stats.makeTimestamp();
         IndexOperationStats operationStats = stats.createOperationStats();
 

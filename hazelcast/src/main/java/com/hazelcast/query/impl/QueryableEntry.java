@@ -107,7 +107,7 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
             attributeName = getAttributeName(isKey, attributeName);
             Object target = getTargetObject(isKey);
             Object metadata = getMetadataOrNull(isKey);
-            result =  extractors.extract(target, attributeName, metadata);
+            result = extractors.extract(target, attributeName, metadata);
         }
         if (result instanceof HazelcastJsonValue) {
             return Json.parse(result.toString());
