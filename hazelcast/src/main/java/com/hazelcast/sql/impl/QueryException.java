@@ -68,15 +68,18 @@ public final class QueryException extends HazelcastException {
     }
 
     public static QueryException memberConnection(UUID memberId) {
-        return error(SqlErrorCode.CONNECTION_PROBLEM, "Member cannot be reached: " + memberId).markInvalidate();
+        return error(SqlErrorCode.CONNECTION_PROBLEM, "Cluster topology changed while a query was executed: "
+                + "Member cannot be reached: " + memberId).markInvalidate();
     }
 
     public static QueryException memberConnection(Address address) {
-        return error(SqlErrorCode.CONNECTION_PROBLEM, "Member cannot be reached: " + address).markInvalidate();
+        return error(SqlErrorCode.CONNECTION_PROBLEM, "Cluster topology changed while a query was executed: "
+                + "Member cannot be reached: " + address).markInvalidate();
     }
 
     public static QueryException memberConnection(Collection<UUID> memberIds) {
-        return error(SqlErrorCode.CONNECTION_PROBLEM, "Members cannot be reached: " + memberIds).markInvalidate();
+        return error(SqlErrorCode.CONNECTION_PROBLEM, "Cluster topology changed while a query was executed: "
+                + "Members cannot be reached: " + memberIds).markInvalidate();
     }
 
     public static QueryException clientMemberConnection(UUID clientId) {
