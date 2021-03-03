@@ -90,7 +90,6 @@ public class FalsePredicateTest extends HazelcastTestSupport {
     public void testEqualsAndHashCode() {
         EqualsVerifier.forClass(FalsePredicate.class)
             .suppress(Warning.NONFINAL_FIELDS, Warning.STRICT_INHERITANCE)
-            .allFieldsShouldBeUsed()
             .verify();
     }
 }

@@ -35,7 +35,6 @@ public class NativeMemoryConfigTest {
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(NativeMemoryConfig.class)
-                      .allFieldsShouldBeUsed()
                       .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS)
                       .verify();
     }

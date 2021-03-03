@@ -36,7 +36,6 @@ public class MetricsManagementCenterConfigTest {
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(MetricsManagementCenterConfig.class)
-                      .allFieldsShouldBeUsed()
                       .suppress(Warning.NONFINAL_FIELDS)
                       .verify();
     }

@@ -119,7 +119,6 @@ public class JoinConfigTest extends HazelcastTestSupport {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(JoinConfig.class)
                 .usingGetClass()
-                .allFieldsShouldBeUsed()
                 .suppress(Warning.NONFINAL_FIELDS)
                 .verify();
     }

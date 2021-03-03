@@ -35,7 +35,6 @@ public class RestServerEndpointConfigTest extends HazelcastTestSupport {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(RestServerEndpointConfig.class)
                 .usingGetClass()
-                .allFieldsShouldBeUsed()
                 .suppress(Warning.NONFINAL_FIELDS)
                 .verify();
     }

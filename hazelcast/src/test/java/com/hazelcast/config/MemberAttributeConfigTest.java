@@ -46,7 +46,6 @@ public class MemberAttributeConfigTest extends HazelcastTestSupport {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(MemberAttributeConfig.class)
                 .usingGetClass()
-                .allFieldsShouldBeUsed()
                 .suppress(Warning.NONFINAL_FIELDS)
                 .verify();
     }

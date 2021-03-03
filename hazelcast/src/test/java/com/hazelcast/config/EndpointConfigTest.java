@@ -34,7 +34,6 @@ public class EndpointConfigTest extends HazelcastTestSupport {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(EndpointConfig.class)
                 .usingGetClass()
-                .allFieldsShouldBeUsed()
                 .suppress(Warning.NONFINAL_FIELDS)
                 .verify();
     }

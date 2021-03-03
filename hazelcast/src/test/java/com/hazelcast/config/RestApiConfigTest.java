@@ -35,7 +35,6 @@ public class RestApiConfigTest extends HazelcastTestSupport {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(RestApiConfig.class)
                 .usingGetClass()
-                .allFieldsShouldBeUsed()
                 .suppress(Warning.NONFINAL_FIELDS)
                 .verify();
     }

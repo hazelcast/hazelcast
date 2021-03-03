@@ -36,7 +36,6 @@ public class ClientMetricsConfigTest {
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(ClientMetricsConfig.class)
-                      .allFieldsShouldBeUsed()
                       .suppress(Warning.NONFINAL_FIELDS)
                       .verify();
     }

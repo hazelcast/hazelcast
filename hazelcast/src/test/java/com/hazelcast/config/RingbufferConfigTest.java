@@ -324,7 +324,6 @@ public class RingbufferConfigTest {
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(RingbufferConfig.class)
-                      .allFieldsShouldBeUsed()
                       .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS)
                       .withPrefabValues(RingbufferStoreConfigReadOnly.class,
                               new RingbufferStoreConfigReadOnly(new RingbufferStoreConfig().setClassName("red")),
