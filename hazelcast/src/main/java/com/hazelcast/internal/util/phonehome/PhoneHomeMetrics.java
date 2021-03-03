@@ -50,6 +50,7 @@ public enum PhoneHomeMetrics {
 
     // MAP METRICS
     COUNT_OF_MAPS("mpct"),
+    COUNT_OF_MAPS_ALL_TIME("mpcta"),
     MAP_COUNT_WITH_READ_ENABLED("mpbrct"),
     MAP_COUNT_WITH_MAP_STORE_ENABLED("mpmsct"),
     MAP_COUNT_WITH_ATLEAST_ONE_QUERY_CACHE("mpaoqcct"),
@@ -66,19 +67,30 @@ public enum PhoneHomeMetrics {
 
     //CACHE METRICS
     COUNT_OF_CACHES("cact"),
+    COUNT_OF_CACHES_ALL_TIME("cacta"),
     CACHE_COUNT_WITH_WAN_REPLICATION("cawact"),
 
     //OTHER DISTRIBUTED OBJECTS
     COUNT_OF_SETS("sect"),
+    COUNT_OF_SETS_ALL_TIME("secta"),
     COUNT_OF_QUEUES("quct"),
+    COUNT_OF_QUEUES_ALL_TIME("qucta"),
     COUNT_OF_MULTIMAPS("mmct"),
+    COUNT_OF_MULTIMAPS_ALL_TIME("mmcta"),
     COUNT_OF_LISTS("lict"),
+    COUNT_OF_LISTS_ALL_TIME("licta"),
     COUNT_OF_RING_BUFFERS("rbct"),
+    COUNT_OF_RING_BUFFERS_ALL_TIME("rbcta"),
     COUNT_OF_TOPICS("tpct"),
+    COUNT_OF_TOPICS_ALL_TIME("tpcta"),
     COUNT_OF_REPLICATED_MAPS("rpct"),
+    COUNT_OF_REPLICATED_MAPS_ALL_TIME("rpcta"),
     COUNT_OF_CARDINALITY_ESTIMATORS("cect"),
+    COUNT_OF_CARDINALITY_ESTIMATORS_ALL_TIME("cecta"),
     COUNT_OF_PN_COUNTERS("pncct"),
+    COUNT_OF_PN_COUNTERS_ALL_TIME("pnccta"),
     COUNT_OF_FLAKE_ID_GENERATORS("figct"),
+    COUNT_OF_FLAKE_ID_GENERATORS_ALL_TIME("figcta"),
 
     //CLOUD METRICS
     /*

@@ -15,10 +15,6 @@
  */
 package com.hazelcast.internal.util.phonehome;
 
-import com.hazelcast.cardinality.CardinalityEstimator;
-import com.hazelcast.collection.IList;
-import com.hazelcast.collection.IQueue;
-import com.hazelcast.collection.ISet;
 import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
@@ -30,26 +26,22 @@ import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.WanReplicationRef;
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.crdt.pncounter.PNCounter;
-import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.map.IMap;
-import com.hazelcast.multimap.MultiMap;
-import com.hazelcast.replicatedmap.ReplicatedMap;
-import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.topic.ITopic;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
 import java.lang.management.ManagementFactory;
@@ -57,6 +49,7 @@ import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.RuntimeMXBean;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
 
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.test.Accessors.getNode;
@@ -127,17 +120,9 @@ public class PhoneHomeTest extends HazelcastTestSupport {
 
     @Test
     public void testMapCount() {
-        Map<String, String> parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_MAPS.getRequestParameterName()), "0");
-
-        Map<String, String> map1 = node.hazelcastInstance.getMap("hazelcast");
-        Map<String, String> map2 = node.hazelcastInstance.getMap("phonehome");
-        parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_MAPS.getRequestParameterName()), "2");
-
-        Map<String, String> map3 = node.hazelcastInstance.getMap("maps");
-        parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_MAPS.getRequestParameterName()), "3");
+        testCounts(node.hazelcastInstance::getMap,
+                PhoneHomeMetrics.COUNT_OF_MAPS,
+                PhoneHomeMetrics.COUNT_OF_MAPS_ALL_TIME);
     }
 
     @Test
@@ -302,85 +287,32 @@ public class PhoneHomeTest extends HazelcastTestSupport {
 
     @Test
     public void testSetCount() {
-        Map<String, String> parameters;
-        parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_SETS.getRequestParameterName()), "0");
-
-        ISet<String> set1 = node.hazelcastInstance.getSet("hazelcast");
-        parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_SETS.getRequestParameterName()), "1");
-
-        ISet<Object> set2 = node.hazelcastInstance.getSet("phonehome");
-        parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_SETS.getRequestParameterName()), "2");
-
-        set2.destroy();
-        parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_SETS.getRequestParameterName()), "1");
+        testCounts(node.hazelcastInstance::getSet,
+                PhoneHomeMetrics.COUNT_OF_SETS, PhoneHomeMetrics.COUNT_OF_SETS_ALL_TIME);
     }
 
     @Test
     public void testQueueCount() {
-        Map<String, String> parameters;
-        parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_QUEUES.getRequestParameterName()), "0");
-
-        IQueue<Object> queue1 = node.hazelcastInstance.getQueue("hazelcast");
-        parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_QUEUES.getRequestParameterName()), "1");
-
-        IQueue<String> queue2 = node.hazelcastInstance.getQueue("phonehome");
-        parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_QUEUES.getRequestParameterName()), "2");
-
-        queue2.destroy();
-        parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_QUEUES.getRequestParameterName()), "1");
+        testCounts(node.hazelcastInstance::getQueue,
+                PhoneHomeMetrics.COUNT_OF_QUEUES, PhoneHomeMetrics.COUNT_OF_QUEUES_ALL_TIME);
     }
 
     @Test
     public void testMultimapCount() {
-        Map<String, String> parameters;
-        parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_MULTIMAPS.getRequestParameterName()), "0");
-
-        MultiMap<Object, Object> multimap1 = node.hazelcastInstance.getMultiMap("hazelcast");
-        parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_MULTIMAPS.getRequestParameterName()), "1");
-
-        MultiMap<Object, Object> multimap2 = node.hazelcastInstance.getMultiMap("phonehome");
-        parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_MULTIMAPS.getRequestParameterName()), "2");
+        testCounts(node.hazelcastInstance::getMultiMap,
+                PhoneHomeMetrics.COUNT_OF_MULTIMAPS, PhoneHomeMetrics.COUNT_OF_MULTIMAPS_ALL_TIME);
     }
 
     @Test
     public void testListCount() {
-        Map<String, String> parameters;
-        parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_LISTS.getRequestParameterName()), "0");
-
-        IList<Object> list1 = node.hazelcastInstance.getList("hazelcast");
-        parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_LISTS.getRequestParameterName()), "1");
-
-        IList<Object> list2 = node.hazelcastInstance.getList("phonehome");
-        parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_LISTS.getRequestParameterName()), "2");
+        testCounts(node.hazelcastInstance::getList,
+                PhoneHomeMetrics.COUNT_OF_LISTS, PhoneHomeMetrics.COUNT_OF_LISTS_ALL_TIME);
     }
 
     @Test
     public void testRingBufferCount() {
-        Map<String, String> parameters;
-        parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_RING_BUFFERS.getRequestParameterName()), "0");
-
-        Ringbuffer<Object> ringbuffer1 = node.hazelcastInstance.getRingbuffer("hazelcast");
-        parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_RING_BUFFERS.getRequestParameterName()), "1");
-
-        Ringbuffer<Object> ringbuffer2 = node.hazelcastInstance.getRingbuffer("phonehome");
-        parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_RING_BUFFERS.getRequestParameterName()), "2");
+        testCounts(node.hazelcastInstance::getRingbuffer,
+                PhoneHomeMetrics.COUNT_OF_RING_BUFFERS, PhoneHomeMetrics.COUNT_OF_RING_BUFFERS_ALL_TIME);
     }
 
     @Test
@@ -388,16 +320,25 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         Map<String, String> parameters;
         parameters = phoneHome.phoneHome(true);
         assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_CACHES.getRequestParameterName()), "0");
+        assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_CACHES_ALL_TIME.getRequestParameterName()), "0");
 
         CachingProvider cachingProvider = createServerCachingProvider(node.hazelcastInstance);
         CacheManager cacheManager = cachingProvider.getCacheManager();
         cacheManager.createCache("hazelcast", new CacheConfig<>("hazelcast"));
         parameters = phoneHome.phoneHome(true);
         assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_CACHES.getRequestParameterName()), "1");
+        assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_CACHES_ALL_TIME.getRequestParameterName()), "1");
 
-        cacheManager.createCache("phonehome", new CacheConfig<>("phonehome"));
+        Cache<Object, Object> cache = cacheManager.createCache("phonehome", new CacheConfig<>("phonehome"));
         parameters = phoneHome.phoneHome(true);
         assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_CACHES.getRequestParameterName()), "2");
+        assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_CACHES_ALL_TIME.getRequestParameterName()), "2");
+
+        cacheManager.destroyCache("phonehome");
+        cacheManager.destroyCache("hazelcast");
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_CACHES.getRequestParameterName()), "0");
+        assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_CACHES_ALL_TIME.getRequestParameterName()), "2");
     }
 
     @Test
@@ -420,82 +361,38 @@ public class PhoneHomeTest extends HazelcastTestSupport {
 
     @Test
     public void testTopicCount() {
-        Map<String, String> parameters;
-        parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_TOPICS.getRequestParameterName()), "0");
-
-        ITopic<String> topic1 = node.hazelcastInstance.getTopic("hazelcast");
-        parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_TOPICS.getRequestParameterName()), "1");
-
-        ITopic<String> topic2 = node.hazelcastInstance.getTopic("phonehome");
-        parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_TOPICS.getRequestParameterName()), "2");
+        testCounts(node.hazelcastInstance::getTopic,
+                PhoneHomeMetrics.COUNT_OF_TOPICS, PhoneHomeMetrics.COUNT_OF_TOPICS_ALL_TIME);
 
     }
 
     @Test
     public void testReplicatedMapCount() {
-        Map<String, String> parameters;
-        parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_REPLICATED_MAPS.getRequestParameterName()), "0");
-
-        ReplicatedMap<String, String> replicatedMap1 = node.hazelcastInstance.getReplicatedMap("hazelcast");
-        parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_REPLICATED_MAPS.getRequestParameterName()), "1");
-
-        ReplicatedMap<String, String> replicatedMap2 = node.hazelcastInstance.getReplicatedMap("phonehome");
-        parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_REPLICATED_MAPS.getRequestParameterName()), "2");
-
+        testCounts(node.hazelcastInstance::getReplicatedMap,
+                PhoneHomeMetrics.COUNT_OF_REPLICATED_MAPS, PhoneHomeMetrics.COUNT_OF_REPLICATED_MAPS_ALL_TIME);
     }
 
     @Test
     public void testCardinalityEstimatorMapCount() {
-        Map<String, String> parameters;
-        parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_CARDINALITY_ESTIMATORS.getRequestParameterName()), "0");
-
-        CardinalityEstimator cardinalityEstimator1 = node.hazelcastInstance.getCardinalityEstimator("hazelcast");
-        parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_CARDINALITY_ESTIMATORS.getRequestParameterName()), "1");
-
-        CardinalityEstimator cardinalityEstimator2 = node.hazelcastInstance.getCardinalityEstimator("phonehome");
-        parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_CARDINALITY_ESTIMATORS.getRequestParameterName()), "2");
+        testCounts(node.hazelcastInstance::getCardinalityEstimator,
+                PhoneHomeMetrics.COUNT_OF_CARDINALITY_ESTIMATORS,
+                PhoneHomeMetrics.COUNT_OF_CARDINALITY_ESTIMATORS_ALL_TIME);
 
     }
 
     @Test
     public void testPNCounterCount() {
-        Map<String, String> parameters;
-        parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_PN_COUNTERS.getRequestParameterName()), "0");
-
-        PNCounter pnCounter1 = node.hazelcastInstance.getPNCounter("hazelcast");
-        parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_PN_COUNTERS.getRequestParameterName()), "1");
-
-        PNCounter pnCounter2 = node.hazelcastInstance.getPNCounter("phonehome");
-        parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_PN_COUNTERS.getRequestParameterName()), "2");
+        testCounts(node.hazelcastInstance::getPNCounter,
+                PhoneHomeMetrics.COUNT_OF_PN_COUNTERS,
+                PhoneHomeMetrics.COUNT_OF_PN_COUNTERS_ALL_TIME);
 
     }
 
     @Test
     public void testFlakeIDGeneratorCount() {
-        Map<String, String> parameters;
-        parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_FLAKE_ID_GENERATORS.getRequestParameterName()), "0");
-
-        FlakeIdGenerator flakeIdGenerator1 = node.hazelcastInstance.getFlakeIdGenerator("hazelcast");
-        parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_FLAKE_ID_GENERATORS.getRequestParameterName()), "1");
-
-        FlakeIdGenerator flakeIdGenerator2 = node.hazelcastInstance.getFlakeIdGenerator("phonehome");
-        parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.COUNT_OF_FLAKE_ID_GENERATORS.getRequestParameterName()), "2");
-
+        testCounts(node.hazelcastInstance::getFlakeIdGenerator,
+                PhoneHomeMetrics.COUNT_OF_FLAKE_ID_GENERATORS,
+                PhoneHomeMetrics.COUNT_OF_FLAKE_ID_GENERATORS_ALL_TIME);
     }
 
     @Test
@@ -583,5 +480,29 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         parameters = phoneHome.phoneHome(true);
         assertGreaterOrEquals(PhoneHomeMetrics.AVERAGE_GET_LATENCY_OF_MAPS_USING_MAPSTORE.getRequestParameterName(),
                 Long.parseLong(parameters.get(PhoneHomeMetrics.AVERAGE_GET_LATENCY_OF_MAPS_USING_MAPSTORE.getRequestParameterName())), 200);
+    }
+
+    private void testCounts(Function<String, ? extends DistributedObject> distributedObjectCreateFn,
+                            PhoneHomeMetrics countMetric,
+                            PhoneHomeMetrics totalCountMetric) {
+        Map<String, String> parameters;
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get(countMetric.getRequestParameterName()), "0");
+        assertEquals(parameters.get(totalCountMetric.getRequestParameterName()), "0");
+
+        DistributedObject obj1 = distributedObjectCreateFn.apply("hazelcast");
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get(countMetric.getRequestParameterName()), "1");
+        assertEquals(parameters.get(totalCountMetric.getRequestParameterName()), "1");
+
+        DistributedObject obj2 = distributedObjectCreateFn.apply("phonehome");
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get(countMetric.getRequestParameterName()), "2");
+        assertEquals(parameters.get(totalCountMetric.getRequestParameterName()), "2");
+
+        obj2.destroy();
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get(countMetric.getRequestParameterName()), "1");
+        assertEquals(parameters.get(totalCountMetric.getRequestParameterName()), "2");
     }
 }
