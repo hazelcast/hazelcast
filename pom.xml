@@ -60,7 +60,7 @@
         <maven.source.plugin.version>2.2.1</maven.source.plugin.version>
         <maven.javadoc.plugin.version>3.2.0</maven.javadoc.plugin.version>
         <maven.javadoc.plugin.excludePackageNames>
-            *.impl:*.impl.*:*.internal:*.internal.*:*.operations:*.proxy:*.util:
+            *.impl:*.impl.*:*.internal:*.internal.*:*.operations:*.proxy:
             com.hazelcast.aws.security:*.handlermigration:*.client.connection.nio:
             *.client.console:*.client.protocol.generator:*.cluster.client:
             *.concurrent:*.nio.ascii:*.nio.ssl:*.nio.tcp:*.partition.client:
