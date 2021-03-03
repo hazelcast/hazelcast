@@ -258,14 +258,14 @@ public class EvictionTest extends HazelcastTestSupport {
         Collection<Employee> valuesNullCity = map.values(predicateCityNull);
         Collection<Employee> valuesNotNullCity = map.values(Predicates.equal("city", "cityname"));
         assertEquals(entryCount, valuesNullCity.size() + valuesNotNullCity.size());
-        // check that evaluating the predicate updated the last access time of the returned records
+        // check that evaluating the predicate didn't update the last access time of the returned records
         for (int i = 0; i < entryCount; ++i) {
             EntryView view = map.getEntryView(i);
             assertNotNull(view);
             long lastAccessTime = view.getLastAccessTime();
             long prevLastAccessTime = lastAccessTimes.get(i);
             assertTrue("lastAccessTime=" + lastAccessTime + ", prevLastAccessTime=" + prevLastAccessTime,
-                    lastAccessTime > prevLastAccessTime);
+                    lastAccessTime == prevLastAccessTime);
         }
     }
 
