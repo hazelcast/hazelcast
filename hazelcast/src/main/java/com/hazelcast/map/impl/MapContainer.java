@@ -33,6 +33,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.services.PostJoinAwareService;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.MemoryInfoAccessor;
@@ -177,7 +178,8 @@ public class MapContainer {
         }
 
         RecordStore recordStore = mapServiceContext.getExistingRecordStore(partitionId, name);
-        return recordStore != null && !recordStore.expireOrAccess(keyData);
+        return recordStore != null
+                && !recordStore.isExpired(keyData, Clock.currentTimeMillis(), false);
     }
 
     public final void initEvictor() {

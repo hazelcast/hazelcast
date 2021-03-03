@@ -27,6 +27,7 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
@@ -51,13 +52,13 @@ public class ConcurrencyUtilTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void setMax() {
-        setMax(8, 7);
-        setMax(9, 9);
-        setMax(10, 11);
+    public void setMax_long() {
+        setMax_long(8, 7);
+        setMax_long(9, 9);
+        setMax_long(10, 11);
     }
 
-    private void setMax(long current, long update) {
+    private void setMax_long(long current, long update) {
         LongValue longValue = new LongValue();
         longValue.value = current;
 
@@ -65,6 +66,23 @@ public class ConcurrencyUtilTest extends HazelcastTestSupport {
 
         long max = Math.max(current, update);
         assertEquals(max, longValue.value);
+    }
+
+    @Test
+    public void setMax_integer() {
+        setMax_int(8, 7);
+        setMax_int(9, 9);
+        setMax_int(10, 11);
+    }
+
+    private void setMax_int(int current, int update) {
+        IntegerValue integerValue = new IntegerValue();
+        integerValue.value = current;
+
+        ConcurrencyUtil.setMax(integerValue, IntegerValue.UPDATER, update);
+
+        int max = Math.max(current, update);
+        assertEquals(max, integerValue.value);
     }
 
     @Test
@@ -119,6 +137,13 @@ public class ConcurrencyUtilTest extends HazelcastTestSupport {
         static final AtomicLongFieldUpdater UPDATER = AtomicLongFieldUpdater.newUpdater(LongValue.class, "value");
 
         volatile long value;
+    }
+
+    private static final class IntegerValue {
+
+        static final AtomicIntegerFieldUpdater UPDATER = AtomicIntegerFieldUpdater.newUpdater(IntegerValue.class, "value");
+
+        volatile int value;
     }
 
     private static class IntIntConstructorFunction implements ConstructorFunction<Integer, Integer> {

@@ -67,11 +67,6 @@ class CachedSimpleRecordWithLRUEviction extends CachedSimpleRecord {
 
     @Override
     public void onAccess(long now) {
-        onAccessSafe(now);
-    }
-
-    @Override
-    public void onAccessSafe(long now) {
         setLastAccessTime(now);
     }
 

@@ -19,11 +19,8 @@ package com.hazelcast.map.impl.record;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.serialization.Data;
 
-import java.util.concurrent.atomic.AtomicLongFieldUpdater;
-
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.map.impl.record.RecordReaderWriter.SIMPLE_DATA_RECORD_WITH_LFU_EVICTION_READER_WRITER;
-import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
 /**
  * Used when {@link MapConfig#isPerEntryStatsEnabled()} is {@code false}
@@ -32,9 +29,6 @@ import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
  * @see SimpleRecordWithLRUEviction
  */
 class SimpleRecordWithLFUEviction<V> extends SimpleRecord<V> {
-    private static final AtomicLongFieldUpdater<SimpleRecordWithLFUEviction> HITS =
-            newUpdater(SimpleRecordWithLFUEviction.class, "hits");
-
     private volatile int hits;
 
     SimpleRecordWithLFUEviction() {
@@ -66,20 +60,6 @@ class SimpleRecordWithLFUEviction<V> extends SimpleRecord<V> {
         } else {
             return 0;
         }
-    }
-
-    // multiple threads can update hits:
-    // query threads and partition threads
-    @Override
-    public void incrementHits() {
-        int hits;
-        do {
-            hits = getHits();
-            if (hits == Integer.MAX_VALUE) {
-                break;
-            }
-
-        } while (!HITS.compareAndSet(this, hits, hits + 1));
     }
 
     @Override

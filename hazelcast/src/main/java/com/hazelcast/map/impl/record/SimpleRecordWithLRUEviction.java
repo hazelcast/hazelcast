@@ -19,12 +19,12 @@ package com.hazelcast.map.impl.record;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.serialization.Data;
 
-import java.util.concurrent.atomic.AtomicLongFieldUpdater;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.util.ConcurrencyUtil.setMax;
 import static com.hazelcast.map.impl.record.RecordReaderWriter.SIMPLE_DATA_RECORD_WITH_LRU_EVICTION_READER_WRITER;
-import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
+import static java.util.concurrent.atomic.AtomicIntegerFieldUpdater.newUpdater;
 
 /**
  * Used when {@link MapConfig#isPerEntryStatsEnabled()} is {@code false}
@@ -33,7 +33,7 @@ import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
  * @see SimpleRecordWithLFUEviction
  */
 class SimpleRecordWithLRUEviction<V> extends SimpleRecord<V> {
-    private static final AtomicLongFieldUpdater<SimpleRecordWithLRUEviction> LAST_ACCESS_TIME =
+    private static final AtomicIntegerFieldUpdater<SimpleRecordWithLRUEviction> LAST_ACCESS_TIME =
             newUpdater(SimpleRecordWithLRUEviction.class, "lastAccessTime");
 
     private volatile int lastAccessTime;
@@ -72,20 +72,12 @@ class SimpleRecordWithLRUEviction<V> extends SimpleRecord<V> {
 
     @Override
     public long getCost() {
-        if (value instanceof Data) {
-            return super.getCost() + INT_SIZE_IN_BYTES;
-        } else {
-            return 0;
-        }
+        return value instanceof Data
+                ? super.getCost() + INT_SIZE_IN_BYTES : 0;
     }
 
     @Override
     public void onAccess(long now) {
-        onAccessSafe(now);
-    }
-
-    @Override
-    public void onAccessSafe(long now) {
         setLastAccessTime(now);
     }
 

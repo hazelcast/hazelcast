@@ -18,25 +18,21 @@ package com.hazelcast.map.impl.record;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import java.util.concurrent.atomic.AtomicLongFieldUpdater;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.util.ConcurrencyUtil.setMax;
 import static com.hazelcast.internal.util.JVMUtil.OBJECT_HEADER_SIZE;
 import static com.hazelcast.map.impl.record.RecordReaderWriter.DATA_RECORD_WITH_STATS_READER_WRITER;
-import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
+import static java.util.concurrent.atomic.AtomicIntegerFieldUpdater.newUpdater;
 
 /**
  * @param <V> the type of the value of Record.
  */
 @SuppressWarnings({"checkstyle:methodcount", "VolatileLongOrDoubleField"})
 public abstract class AbstractRecord<V> implements Record<V> {
-    private static final AtomicLongFieldUpdater<AbstractRecord> HITS =
-            newUpdater(AbstractRecord.class, "hits");
-    private static final AtomicLongFieldUpdater<AbstractRecord> LAST_ACCESS_TIME =
+    private static final AtomicIntegerFieldUpdater<AbstractRecord> LAST_ACCESS_TIME =
             newUpdater(AbstractRecord.class, "lastAccessTime");
-    private static final AtomicLongFieldUpdater<AbstractRecord> LAST_UPDATE_TIME =
-            newUpdater(AbstractRecord.class, "lastUpdateTime");
 
     private static final int NUMBER_OF_INTS = 6;
 
@@ -85,7 +81,7 @@ public abstract class AbstractRecord<V> implements Record<V> {
 
     @Override
     public void setLastUpdateTime(long lastUpdateTime) {
-        setMax(this, LAST_UPDATE_TIME, stripBaseTime(lastUpdateTime));
+        this.lastUpdateTime = stripBaseTime(lastUpdateTime);
     }
 
     @Override
@@ -106,20 +102,6 @@ public abstract class AbstractRecord<V> implements Record<V> {
     @Override
     public void setHits(int hits) {
         this.hits = hits;
-    }
-
-    // multiple threads can update hits:
-    // query threads and partition threads
-    @Override
-    public void incrementHits() {
-        int hits;
-        do {
-            hits = getHits();
-            if (hits == Integer.MAX_VALUE) {
-                break;
-            }
-
-        } while (!HITS.compareAndSet(this, hits, hits + 1));
     }
 
     @Override
