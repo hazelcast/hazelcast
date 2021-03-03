@@ -19,7 +19,6 @@ package com.hazelcast.internal.util;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
@@ -86,25 +85,6 @@ public final class ConcurrencyUtil {
     public static <E> void setMax(E obj, AtomicLongFieldUpdater<E> updater, long value) {
         for (; ; ) {
             long current = updater.get(obj);
-            if (current >= value) {
-                return;
-            }
-
-            if (updater.compareAndSet(obj, current, value)) {
-                return;
-            }
-        }
-    }
-
-    /**
-     * Atomically sets the max value.
-     * <p>
-     * If the current value is larger than the provided value, the call is ignored.
-     * So it will not happen that a smaller value will overwrite a larger value.
-     */
-    public static <E> void setMax(E obj, AtomicIntegerFieldUpdater<E> updater, int value) {
-        for (; ; ) {
-            int current = updater.get(obj);
             if (current >= value) {
                 return;
             }
