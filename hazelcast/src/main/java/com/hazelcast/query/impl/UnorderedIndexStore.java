@@ -361,7 +361,7 @@ public class UnorderedIndexStore extends BaseSingleValueIndexStore {
                 Map<Data, QueryableEntry> records = recordMap.get(value);
                 if (records != null) {
                     oldValue = records.remove(indexKey);
-                    if (records.size() == 0) {
+                    if (records.isEmpty()) {
                         recordMap.remove(value);
                     }
                 } else {

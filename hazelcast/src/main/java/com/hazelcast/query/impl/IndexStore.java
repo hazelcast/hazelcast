@@ -18,7 +18,6 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.monitor.impl.IndexOperationStats;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
 
 import java.util.Iterator;
@@ -54,12 +53,13 @@ public interface IndexStore {
      *
      * @param value          the value to insert the entry under.
      * @param entry          the entry to insert.
+     * @param entryToStore
      * @param operationStats the operation stats to update while performing the
      *                       operation.
      * @see Index#putEntry
      * @see IndexOperationStats#onEntryAdded
      */
-    void insert(Object value, QueryableEntry entry, IndexOperationStats operationStats);
+    void insert(Object value, QueryableEntry entry, QueryableEntry entryToStore, IndexOperationStats operationStats);
 
     /**
      * Updates the existing entry mapping in this index by remapping it from the
@@ -71,6 +71,7 @@ public interface IndexStore {
      * @param oldValue       the value to remap the entry from.
      * @param newValue       the new value to remap the entry to.
      * @param entry          the entry to remap.
+     * @param entryToStore
      * @param operationStats the operation stats to update while performing the
      *                       operation.
      * @see #remove
@@ -79,20 +80,20 @@ public interface IndexStore {
      * @see IndexOperationStats#onEntryRemoved
      * @see IndexOperationStats#onEntryAdded
      */
-    void update(Object oldValue, Object newValue, QueryableEntry entry, IndexOperationStats operationStats);
+    void update(Object oldValue, Object newValue, QueryableEntry entry, QueryableEntry entryToStore,
+                IndexOperationStats operationStats);
 
     /**
      * Removes the existing entry mapping in this index.
      *
      * @param value          the value to remove the mapping from.
-     * @param entryKey       the entry key to remove the mapping to.
-     * @param entryValue     the entry value to remove the mapping to.
+     * @param entry
      * @param operationStats the operation stats to update while performing the
      *                       operation.
      * @see Index#removeEntry
      * @see IndexOperationStats#onEntryRemoved
      */
-    void remove(Object value, Data entryKey, Object entryValue, IndexOperationStats operationStats);
+    void remove(Object value, QueryableEntry entry, IndexOperationStats operationStats);
 
     /**
      * Clears the contents of this index by purging all its entries.

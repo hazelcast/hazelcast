@@ -18,7 +18,6 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.core.TypeConverter;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.QueryException;
 
@@ -69,25 +68,26 @@ public interface Index {
     /**
      * Saves the given entry into this index.
      *
-     * @param entry           the entry to save.
-     * @param oldValue        the previous old value associated with the entry or
+     * @param newEntry           the entry to save.
+     * @param oldEntry        the previous old value associated with the entry or
      *                        {@code null} if the entry is new.
+     * @param entryToStore
      * @param operationSource the operation source.
      * @throws QueryException if there were errors while extracting the
      *                        attribute value from the entry.
      */
-    void putEntry(QueryableEntry entry, Object oldValue, OperationSource operationSource);
+    void putEntry(QueryableEntry newEntry, QueryableEntry oldEntry, QueryableEntry entryToStore, OperationSource operationSource);
 
     /**
      * Removes the entry having the given key and the value from this index.
      *
-     * @param key             the key of the entry to remove.
-     * @param value           the value of the entry to remove.
+     *
+     * @param entry
      * @param operationSource the operation source.
      * @throws QueryException if there were errors while extracting the
      *                        attribute value from the entry.
      */
-    void removeEntry(Data key, Object value, OperationSource operationSource);
+    void removeEntry(QueryableEntry entry, OperationSource operationSource);
 
     /**
      * @return {@code true} if this index supports querying only with {@link

@@ -66,8 +66,8 @@ public class IndexFirstComponentDecoratorTest {
         actual = new AttributeIndexRegistry.FirstComponentDecorator(compositeIndex);
 
         for (int i = 0; i < 100; ++i) {
-            expected.putEntry(new Entry(i, i), null, Index.OperationSource.USER);
-            compositeIndex.putEntry(new Entry(i, i), null, Index.OperationSource.USER);
+            expected.putEntry(new Entry(i, i), null, new Entry(i, i), Index.OperationSource.USER);
+            compositeIndex.putEntry(new Entry(i, i), null, new Entry(i, i), Index.OperationSource.USER);
         }
     }
 

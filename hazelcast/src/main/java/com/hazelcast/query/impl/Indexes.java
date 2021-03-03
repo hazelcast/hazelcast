@@ -46,7 +46,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 /**
  * Contains all indexes for a data-structure, e.g. an IMap.
  */
-@SuppressWarnings("checkstyle:finalclass")
+@SuppressWarnings({"checkstyle:finalclass", "rawtypes"})
 public class Indexes {
 
     /**
@@ -56,6 +56,9 @@ public class Indexes {
      */
     public static final int SKIP_PARTITIONS_COUNT_CHECK = -1;
     private static final InternalIndex[] EMPTY_INDEXES = {};
+
+    private static final ThreadLocal<CachedQueryEntry[]> CACHED_ENTRIES =
+            ThreadLocal.withInitial(() -> new CachedQueryEntry[]{new CachedQueryEntry(), new CachedQueryEntry()});
 
     private final boolean global;
     private final boolean usesCachedQueryableEntries;
@@ -80,7 +83,8 @@ public class Indexes {
 
     private Indexes(InternalSerializationService serializationService, IndexCopyBehavior indexCopyBehavior, Extractors extractors,
                     IndexProvider indexProvider, boolean usesCachedQueryableEntries, boolean statisticsEnabled, boolean global,
-                    InMemoryFormat inMemoryFormat, int partitionCount, java.util.function.Predicate resultFilter) {
+                    InMemoryFormat inMemoryFormat, int partitionCount,
+                    java.util.function.Predicate<QueryableEntry> resultFilter) {
         this.global = global;
         this.indexCopyBehavior = indexCopyBehavior;
         this.serializationService = serializationService;
@@ -196,9 +200,7 @@ public class Indexes {
     public void createIndexesFromRecordedDefinitions() {
         definitions.forEach((name, indexConfig) -> {
             addOrGetIndex(indexConfig);
-            definitions.compute(name, (k, v) -> {
-                return indexConfig == v ? null : v;
-            });
+            definitions.compute(name, (k, v) -> indexConfig == v ? null : v);
         });
     }
 
@@ -262,8 +264,6 @@ public class Indexes {
     /**
      * Returns {@code true} if the indexes instance contains either at least one index or its definition,
      * {@code false} otherwise.
-     *
-     * @return
      */
     public boolean haveAtLeastOneIndexOrDefinition() {
         boolean haveAtLeastOneIndexOrDefinition = haveAtLeastOneIndex() || !definitions.isEmpty();
@@ -276,17 +276,49 @@ public class Indexes {
      * Inserts a new queryable entry into this indexes instance or updates the
      * existing one.
      *
-     * @param queryableEntry  the queryable entry to insert or update.
+     * @param entryToStore  the queryable entry to insert or update.
      * @param oldValue        the old entry value to update, {@code null} if
      *                        inserting the new entry.
      * @param operationSource the operation source.
      */
-    public void putEntry(QueryableEntry queryableEntry, Object oldValue, Index.OperationSource operationSource) {
+    public void putEntry(QueryableEntry entryToStore, Object oldValue, Index.OperationSource operationSource) {
+        if (entryToStore instanceof CachedQueryEntry && oldValue == null) {
+            putEntry(entryToStore, null, entryToStore, operationSource);
+            return;
+        }
+
+        CachedQueryEntry[] cachedEntries = CACHED_ENTRIES.get();
+
+        QueryableEntry newEntry;
+        if (entryToStore instanceof CachedQueryEntry) {
+            newEntry = entryToStore;
+        } else {
+            assert entryToStore instanceof QueryEntry;
+            CachedQueryEntry entry = cachedEntries[0];
+            entry.init(serializationService, entryToStore.getKeyData(), entryToStore.getTargetObject(false), extractors);
+            entry.setMetadata(entryToStore.getMetadata());
+            newEntry = entry;
+        }
+
+        QueryableEntry oldEntry;
+        if (oldValue == null) {
+            oldEntry = null;
+        } else {
+            CachedQueryEntry entry = cachedEntries[1];
+            entry.init(serializationService, entryToStore.getKeyData(), oldValue, extractors);
+            oldEntry = entry;
+        }
+
+        putEntry(newEntry, oldEntry, entryToStore, operationSource);
+    }
+
+    public void putEntry(QueryableEntry newEntry, QueryableEntry oldEntry, QueryableEntry entryToStore,
+                         Index.OperationSource operationSource) {
         InternalIndex[] indexes = getIndexes();
         Throwable exception = null;
         for (InternalIndex index : indexes) {
             try {
-                index.putEntry(queryableEntry, oldValue, operationSource);
+                index.putEntry(newEntry, oldEntry, entryToStore, operationSource);
             } catch (Throwable t) {
                 if (exception == null) {
                     exception = t;
@@ -308,9 +340,16 @@ public class Indexes {
      * @param operationSource the operation source.
      */
     public void removeEntry(Data key, Object value, Index.OperationSource operationSource) {
+        CachedQueryEntry entry = CACHED_ENTRIES.get()[0];
+        entry.init(serializationService, key, value, extractors);
+
+        removeEntry(entry, operationSource);
+    }
+
+    public void removeEntry(QueryableEntry entry, Index.OperationSource operationSource) {
         InternalIndex[] indexes = getIndexes();
         for (InternalIndex index : indexes) {
-            index.removeEntry(key, value, operationSource);
+            index.removeEntry(entry, operationSource);
         }
     }
 
