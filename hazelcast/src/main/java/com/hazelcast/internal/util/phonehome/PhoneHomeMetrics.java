@@ -26,6 +26,7 @@ public enum PhoneHomeMetrics {
     JAVA_VERSION_OF_SYSTEM("jvmv"),
     BUILD_VERSION("version"),
     JET_BUILD_VERSION("jetv"),
+    JAVA_CLASSPATH("classpath"),
 
     //CLIENT INFO METRICS
     CLIENTS_WITH_CPP_CONNECTION("ccpp"),

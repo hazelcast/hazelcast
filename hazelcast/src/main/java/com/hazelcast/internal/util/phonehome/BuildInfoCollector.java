@@ -41,6 +41,7 @@ class BuildInfoCollector implements MetricsCollector {
         metricsConsumer.accept(PhoneHomeMetrics.BUILD_VERSION, imdgInfo.getVersion());
         metricsConsumer.accept(PhoneHomeMetrics.JET_BUILD_VERSION,
                 jetInfo == null ? "" : jetInfo.getVersion());
+        metricsConsumer.accept(PhoneHomeMetrics.JAVA_CLASSPATH, System.getProperty("java.class.path"));
     }
 
     /**

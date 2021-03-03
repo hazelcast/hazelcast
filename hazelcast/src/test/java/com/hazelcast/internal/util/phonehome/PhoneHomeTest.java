@@ -86,6 +86,7 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
         OperatingSystemMXBean osMxBean = ManagementFactory.getOperatingSystemMXBean();
         assertEquals(parameters.get(PhoneHomeMetrics.BUILD_VERSION.getRequestParameterName()), BuildInfoProvider.getBuildInfo().getVersion());
+        assertEquals(parameters.get(PhoneHomeMetrics.JAVA_CLASSPATH.getRequestParameterName()), System.getProperty("java.class.path"));
         assertEquals(UUID.fromString(parameters.get(PhoneHomeMetrics.UUID_OF_CLUSTER.getRequestParameterName())), node.getLocalMember().getUuid());
         assertNull(parameters.get("e"));
         assertNull(parameters.get("oem"));
