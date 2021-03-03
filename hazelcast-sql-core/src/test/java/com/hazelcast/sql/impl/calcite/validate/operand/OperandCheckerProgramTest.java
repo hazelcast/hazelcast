@@ -61,11 +61,8 @@ public class OperandCheckerProgramTest {
 
     @Test
     public void test_check() {
-        SqlNode[] operands = new SqlNode[]{
-                SqlLiteral.createCharString("1", ZERO),
-                SqlLiteral.createCharString("2", ZERO)
-        };
-        SqlCallBinding sqlCallBinding = new SqlCallBinding(validator, null, new SqlBasicCall(function, operands, ZERO));
+        SqlCallBinding sqlCallBinding =
+                new SqlCallBinding(validator, null, new SqlBasicCall(function, new SqlNode[0], ZERO));
         HazelcastCallBinding hazelcastBinding = new HazelcastCallBinding(sqlCallBinding);
 
         program.check(hazelcastBinding, false);
@@ -76,7 +73,7 @@ public class OperandCheckerProgramTest {
     }
 
     @Test
-    public void when_namedParametersAreUsed_then_rightCheckersAreUsed() {
+    public void when_namedParametersAreUsed_then_rightCheckersAreApplied() {
         SqlNode[] operands = new SqlNode[]{
                 new SqlBasicCall(
                         ARGUMENT_ASSIGNMENT,
