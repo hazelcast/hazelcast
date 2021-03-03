@@ -17,18 +17,14 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.map.impl.record.Record;
 
-import java.util.AbstractSet;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.Consumer;
 
 import static com.hazelcast.query.impl.AbstractIndex.NULL;
 
@@ -246,87 +242,17 @@ public abstract class BaseIndexStore implements IndexStore {
 
         @Override
         public QueryableEntry get(Object o) {
-            QueryableEntry queryableEntry = delegateMap.get(o);
-            if (queryableEntry != null) {
-                long now = Clock.currentTimeMillis();
-                queryableEntry.getRecord().onAccessSafe(now);
-            }
-            return queryableEntry;
+            return delegateMap.get(o);
         }
 
         @Override
         public Collection<QueryableEntry> values() {
-            long now = Clock.currentTimeMillis();
-            return new ExpirationAwareSet<>(delegateMap.values(), queryableEntry -> queryableEntry.getRecord().onAccessSafe(now));
+            return delegateMap.values();
         }
 
         @Override
         public Set<Entry<Data, QueryableEntry>> entrySet() {
-            long now = Clock.currentTimeMillis();
-            return new ExpirationAwareSet<>(delegateMap.entrySet(), entry -> entry.getValue().getRecord().onAccessSafe(now));
-        }
-
-        private static class ExpirationAwareSet<V> extends AbstractSet<V> {
-
-            private final Collection<V> delegateCollection;
-            private final Consumer<V> recordUpdater;
-
-            ExpirationAwareSet(Collection<V> delegateCollection, Consumer<V> recordUpdater) {
-                this.delegateCollection = delegateCollection;
-                this.recordUpdater = recordUpdater;
-            }
-
-            @Override
-            public int size() {
-                return delegateCollection.size();
-            }
-
-            @Override
-            public Iterator<V> iterator() {
-                return new ExpirationAwareIterator(delegateCollection.iterator());
-            }
-
-            public boolean add(V v) {
-                return delegateCollection.add(v);
-            }
-
-            @Override
-            public boolean remove(Object o) {
-                return delegateCollection.remove(o);
-            }
-
-            @Override
-            public void clear() {
-                delegateCollection.clear();
-            }
-
-            private class ExpirationAwareIterator implements Iterator<V> {
-
-                private final Iterator<V> delegateIterator;
-
-                ExpirationAwareIterator(Iterator<V> iterator) {
-                    this.delegateIterator = iterator;
-                }
-
-                @Override
-                public boolean hasNext() {
-                    return delegateIterator.hasNext();
-                }
-
-                @Override
-                public V next() {
-                    V next = delegateIterator.next();
-                    if (next != null) {
-                        recordUpdater.accept(next);
-                    }
-                    return next;
-                }
-
-                @Override
-                public void remove() {
-                    delegateIterator.remove();
-                }
-            }
+            return delegateMap.entrySet();
         }
     }
 }
