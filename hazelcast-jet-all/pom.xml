@@ -207,8 +207,8 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.hazelcast.jet</groupId>
-            <artifactId>hazelcast-jet-core</artifactId>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
@@ -269,14 +269,6 @@
             <version>${project.version}</version>
             <classifier>tests</classifier>
         </dependency>
-        <dependency>
-            <groupId>com.hazelcast.jet</groupId>
-            <artifactId>hazelcast-jet-core</artifactId>
-            <version>${project.parent.version}</version>
-            <scope>test</scope>
-            <classifier>tests</classifier>
-        </dependency>
-
 
         <!-- Optional dependencies: required for building, optional at run time -->
         <dependency>

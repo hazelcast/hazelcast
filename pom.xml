@@ -32,7 +32,6 @@
         <module>extensions</module>
         <module>hazelcast</module>
         <module>hazelcast-jet-all</module>
-        <module>hazelcast-jet-core</module>
         <module>hazelcast-jet-spring</module>
         <module>hazelcast-jet-sql</module>
         <module>hazelcast-spring</module>
