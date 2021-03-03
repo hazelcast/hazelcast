@@ -22,7 +22,6 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.internal.util.Clock;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.eviction.Evictor;
@@ -143,19 +142,6 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     public boolean isExpired(Data dataKey, long now, boolean backup) {
         return expirySystem.hasExpired(dataKey, now, backup)
                 != NOT_EXPIRED;
-    }
-
-    @Override
-    public boolean expireOrAccess(Data key) {
-        long now = Clock.currentTimeMillis();
-        boolean expired = evictIfExpired(key, now, false);
-        if (!expired) {
-            Record record = storage.get(key);
-            if (record != null) {
-                accessRecord(key, record, now);
-            }
-        }
-        return expired;
     }
 
     @Override
