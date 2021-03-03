@@ -65,7 +65,7 @@ public class LikePredicate extends AbstractPredicate implements IndexAwarePredic
         for (int i = 0; i < expression.length(); i++) {
             char c = expression.charAt(i);
             if (c == '\\') {
-                escape = true;
+                escape = !escape;
             } else {
                 if (c == '%' && !escape) {
                     return i == expression.length() - 1;
