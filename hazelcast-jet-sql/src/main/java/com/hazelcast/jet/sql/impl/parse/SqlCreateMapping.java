@@ -32,6 +32,7 @@ import org.apache.calcite.util.ImmutableNullableList;
 
 import javax.annotation.Nonnull;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -41,7 +42,6 @@ import static com.hazelcast.jet.sql.impl.parse.ParserResource.RESOURCE;
 import static com.hazelcast.jet.sql.impl.schema.MappingCatalog.SCHEMA_NAME_PUBLIC;
 import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.toMap;
 
 public class SqlCreateMapping extends SqlCreate {
 
@@ -97,7 +97,11 @@ public class SqlCreateMapping extends SqlCreate {
     public Map<String, String> options() {
         return options.getList().stream()
                       .map(node -> (SqlOption) node)
-                      .collect(toMap(SqlOption::keyString, SqlOption::valueString));
+                      .collect(
+                              LinkedHashMap::new,
+                              (map, option) -> map.putIfAbsent(option.keyString(), option.valueString()),
+                              Map::putAll
+                      );
     }
 
     public boolean ifNotExists() {
@@ -206,6 +210,6 @@ public class SqlCreateMapping extends SqlCreate {
         return name.names.size() == 1
                 || name.names.size() == 2 && SCHEMA_NAME_PUBLIC.equals(name.names.get(0))
                 || name.names.size() == 3 && CATALOG.equals(name.names.get(0))
-                        && SCHEMA_NAME_PUBLIC.equals(name.names.get(1));
+                && SCHEMA_NAME_PUBLIC.equals(name.names.get(1));
     }
 }

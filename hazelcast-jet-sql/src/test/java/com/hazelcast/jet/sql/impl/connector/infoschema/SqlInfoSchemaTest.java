@@ -73,9 +73,9 @@ public class SqlInfoSchemaTest extends SqlTestSupport {
                                 mappingExternalName,
                                 IMapSqlConnector.TYPE_NAME,
                                 "{"
-                                        + "keyFormat=int"
-                                        + ", valueFormat=java"
-                                        + ", valueJavaClass=" + Value.class.getName()
+                                        + "\"keyFormat\":\"int\""
+                                        + ",\"valueFormat\":\"java\""
+                                        + ",\"valueJavaClass\":\"" + Value.class.getName() + "\""
                                         + "}")
                 )
         );

@@ -51,7 +51,7 @@ public class MappingsTableTest {
                 , "table-name"
                 , "table-external-name"
                 , "table-type"
-                , "{key=value}"
+                , "{\"key\":\"value\"}"
         });
     }
 }

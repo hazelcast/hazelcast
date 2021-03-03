@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.infoschema;
 
+import com.hazelcast.jet.json.JsonUtil;
 import com.hazelcast.jet.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.TableField;
@@ -24,9 +25,8 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
+import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static java.util.Arrays.asList;
 
 /**
@@ -76,17 +76,10 @@ public class MappingsTable extends InfoSchemaTable {
                     mapping.name(),
                     mapping.externalName(),
                     mapping.type(),
-                    format(mapping.options())
+                    uncheckCall(() -> JsonUtil.toJson(mapping.options()))
             };
             rows.add(row);
         }
         return rows;
-    }
-
-    private static String format(Map<String, String> options) {
-        return options.entrySet().stream()
-                .sorted(Map.Entry.comparingByKey())
-                .map(entry -> entry.getKey() + "=" + entry.getValue())
-                .collect(Collectors.joining(", ", "{", "}"));
     }
 }

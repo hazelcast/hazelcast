@@ -28,7 +28,7 @@ import com.hazelcast.sql.impl.schema.TableResolver;
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -88,7 +88,7 @@ public class MappingCatalog implements TableResolver {
                 mapping.externalName(),
                 type,
                 new ArrayList<>(resolvedFields),
-                new HashMap<>(options)
+                new LinkedHashMap<>(options)
         );
     }
 
