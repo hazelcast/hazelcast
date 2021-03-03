@@ -18,11 +18,11 @@ package com.hazelcast.config;
 
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.internal.eviction.EvictionConfiguration;
-import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 import com.hazelcast.internal.eviction.EvictionStrategyType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -30,12 +30,12 @@ import java.io.Serializable;
 import java.util.Objects;
 
 import static com.hazelcast.internal.util.Preconditions.checkHasText;
-import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Configuration for eviction.
- *
+ * <p>
  * You can set a limit for number of
  * entries or total memory cost of entries.
  * <p>
@@ -288,10 +288,10 @@ public class EvictionConfig implements EvictionConfiguration, IdentifiedDataSeri
         EvictionConfig that = (EvictionConfig) o;
 
         return size == that.size
-            && maxSizePolicy == that.maxSizePolicy
-            && evictionPolicy == that.evictionPolicy
-            && Objects.equals(comparatorClassName, that.comparatorClassName)
-            && Objects.equals(comparator, that.comparator);
+                && maxSizePolicy == that.maxSizePolicy
+                && evictionPolicy == that.evictionPolicy
+                && Objects.equals(comparatorClassName, that.comparatorClassName)
+                && Objects.equals(comparator, that.comparator);
     }
 
     @Override
