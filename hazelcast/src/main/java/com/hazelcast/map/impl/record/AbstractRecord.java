@@ -65,7 +65,7 @@ public abstract class AbstractRecord<V> implements Record<V> {
 
     @Override
     public void setLastAccessTime(long lastAccessTime) {
-        this.lastAccessTime = lastStoredTime;
+        this.lastAccessTime = stripBaseTime(lastAccessTime);
     }
 
     @Override
