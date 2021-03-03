@@ -129,10 +129,10 @@ public class PortableGenericRecordQueryTest extends HazelcastTestSupport {
         private int i;
         private int[] ia;
 
-        public ChildPortable() {
+        ChildPortable() {
         }
 
-        public ChildPortable(int i) {
+        ChildPortable(int i) {
             this.i = i;
             this.ia = new int[] {i};
         }
@@ -164,10 +164,10 @@ public class PortableGenericRecordQueryTest extends HazelcastTestSupport {
         private ChildPortable c;
         private String[] sa;
 
-        public ParentPortable() {
+        ParentPortable() {
         }
 
-        public ParentPortable(int i) {
+        ParentPortable(int i) {
             this.c = new ChildPortable(i);
             this.sa = new String[] {String.valueOf(i)};
         }
