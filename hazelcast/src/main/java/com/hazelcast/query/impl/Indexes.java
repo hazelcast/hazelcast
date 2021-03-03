@@ -293,7 +293,6 @@ public class Indexes {
         if (entryToStore instanceof CachedQueryEntry) {
             newEntry = entryToStore;
         } else {
-            assert entryToStore instanceof QueryEntry;
             CachedQueryEntry entry = cachedEntries[0];
             entry.init(serializationService, entryToStore.getKeyData(), entryToStore.getTargetObject(false), extractors);
             entry.setMetadata(entryToStore.getMetadata());
