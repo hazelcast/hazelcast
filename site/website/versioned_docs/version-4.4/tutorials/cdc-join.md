@@ -433,7 +433,6 @@ package org.example;
 import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.cdc.ChangeRecord;
 import com.hazelcast.jet.cdc.RecordPart;
-import com.hazelcast.jet.cdc.impl.ChangeRecordImpl;
 import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.pipeline.StreamStage;
 
@@ -448,7 +447,7 @@ public class Ordering {
                         TimeUnit.SECONDS.toMillis(10),
                         () -> new LongAccumulator(0),
                         (lastSequence, key, record) -> {
-                            long sequence = ((ChangeRecordImpl) record).getSequenceValue();
+                            long sequence = record.sequenceValue();
                             if (lastSequence.get() < sequence) {
                                 lastSequence.set(sequence);
                                 return record;
