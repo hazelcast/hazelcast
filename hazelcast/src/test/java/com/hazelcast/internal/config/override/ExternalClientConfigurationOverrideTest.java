@@ -52,10 +52,10 @@ public class ExternalClientConfigurationOverrideTest extends HazelcastTestSuppor
           .setReconnectMode(ASYNC)
           .setAsyncStart(true);
 
-        withEnvironmentVariable("HZCLIENT_CONNECTIONSTRATEGY_ASYNCSTART", "true")
+        withEnvironmentVariable("HZCLIENT_CONNECTIONSTRATEGY_ASYNCSTART", "false")
           .execute(() -> new ExternalConfigurationOverride().overwriteClientConfig(config));
 
-        assertTrue(config.getConnectionStrategyConfig().isAsyncStart());
+        assertFalse(config.getConnectionStrategyConfig().isAsyncStart());
         assertEquals(ASYNC, config.getConnectionStrategyConfig().getReconnectMode());
     }
 }
