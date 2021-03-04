@@ -22,7 +22,6 @@ import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.map.impl.query.Query;
 import com.hazelcast.map.impl.query.QueryOperation;
 import com.hazelcast.map.impl.query.QueryPartitionOperation;
-import com.hazelcast.map.impl.query.QueryPartitionsOperation;
 import com.hazelcast.map.impl.tx.TxnDeleteOperation;
 import com.hazelcast.map.impl.tx.TxnLockAndGetOperation;
 import com.hazelcast.map.impl.tx.TxnSetOperation;
@@ -258,11 +257,6 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
     @Override
     public MapOperation createQueryPartitionOperation(Query query) {
         return new QueryPartitionOperation(query);
-    }
-
-    @Override
-    public MapOperation createQueryPartitionsOperation(Query query, int[] partitions) {
-        return new QueryPartitionsOperation(query, partitions);
     }
 
     @Override
