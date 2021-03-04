@@ -117,7 +117,9 @@ The `fetch` command must be sent to the query initiator only. There are two reas
 
 The `close` command stops query execution on the member, and releases the associated resources. The request could be sent
 without waiting for the initial response from the `execute` command. If the server-side cursor with the given ID is not found, 
-the command is no-op.
+the special cancellation marker is associated with the query ID. If the `execute` request is received afterward, it is 
+ignored, and the marker is cleared. If the `execute` request is not received during a certain time, the marker is cleared
+to avoid memory leaks.
 
 ```
 request {
