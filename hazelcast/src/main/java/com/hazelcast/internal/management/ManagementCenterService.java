@@ -52,9 +52,9 @@ import static com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher.inspectOutO
 public class ManagementCenterService {
 
     static class MCEventStore {
-        private static final long MC_EVENTS_WINDOW_MILLIS = TimeUnit.SECONDS.toMillis(30);
+        static final long MC_EVENTS_WINDOW_MILLIS = TimeUnit.SECONDS.toMillis(30);
         private final LongSupplier clock;
-        private volatile long lastMCEventsPollMillis;    
+        private volatile long lastMCEventsPollMillis;
         private ConcurrentMap<Address, Long> lastAccessTimestamps = new ConcurrentHashMap<>();
         private final BlockingQueue<Event> mcEvents;
 
@@ -80,21 +80,23 @@ public class ManagementCenterService {
         }
 
         public List<Event> pollMCEvents(Address mcRemoteAddr) {
-            try {
-                if (!lastAccessTimestamps.containsKey(mcRemoteAddr)) {
-                    return new ArrayList<>(mcEvents);
-                } else {
-                    List<Event> recentEvents = new ArrayList<>();
-                    for (Event evt : mcEvents) {
-                        if (evt.getTimestamp() >= lastAccessTimestamps.get(mcRemoteAddr)) {
-                            recentEvents.add(evt);
-                        }
-                    }
-                    return recentEvents;
-                }
-            } finally {
+            Long lastAccessObj = lastAccessTimestamps.get(mcRemoteAddr);
+            if (lastAccessObj == null) {
+                ArrayList<Event> copy = new ArrayList<>(mcEvents);
                 lastMCEventsPollMillis = clock.getAsLong();
                 lastAccessTimestamps.put(mcRemoteAddr, lastMCEventsPollMillis);
+                return copy;
+            } else {
+                long lastAccess = lastAccessTimestamps.get(mcRemoteAddr);
+                List<Event> recentEvents = new ArrayList<>();
+                for (Event evt : mcEvents) {
+                    if (evt.getTimestamp() > lastAccess) {
+                        recentEvents.add(evt);
+                    }
+                }
+                lastMCEventsPollMillis = clock.getAsLong();
+                lastAccessTimestamps.put(mcRemoteAddr, lastMCEventsPollMillis);
+                return recentEvents;
             }
         }
     }
@@ -118,7 +120,7 @@ public class ManagementCenterService {
     private volatile ManagementCenterEventListener eventListener;
     private volatile String lastMCConfigETag;
     private volatile long lastTMSUpdateNanos;
-    
+
     public ManagementCenterService(HazelcastInstanceImpl instance) {
         this(instance, Clock::currentTimeMillis);
     }
@@ -213,7 +215,7 @@ public class ManagementCenterService {
     public List<Event> pollMCEvents(Address mcRemoteAddr) {
         return eventStore.pollMCEvents(mcRemoteAddr);
     }
-    
+
     // visible for testing
     void clear() {
         eventStore.onMCEventWindowExceeded();
@@ -222,17 +224,18 @@ public class ManagementCenterService {
     /**
      * Run console command with internal {@link ConsoleCommandHandler}.
      *
-     * @param command   command string (see {@link ConsoleApp})
-     * @return          command output
+     * @param command command string (see {@link ConsoleApp})
+     * @return command output
      */
-    public String runConsoleCommand(String command) throws InterruptedException {
+    public String runConsoleCommand(String command)
+            throws InterruptedException {
         return commandHandler.handleCommand(command);
     }
 
     /**
      * Returns ETag value of last applied MC config (client B/W list filtering).
      *
-     * @return  last or <code>null</code>
+     * @return last or <code>null</code>
      */
     public String getLastMCConfigETag() {
         return lastMCConfigETag;
@@ -241,8 +244,8 @@ public class ManagementCenterService {
     /**
      * Applies given MC config (client B/W list filtering).
      *
-     * @param eTag          ETag of new config
-     * @param bwListConfig  new config
+     * @param eTag         ETag of new config
+     * @param bwListConfig new config
      */
     public void applyMCConfig(String eTag, ClientBwListDTO bwListConfig) {
         if (eTag.equals(lastMCConfigETag)) {

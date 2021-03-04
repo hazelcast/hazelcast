@@ -17,7 +17,6 @@
 package com.hazelcast.internal.management;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
@@ -34,9 +33,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.net.UnknownHostException;
 import java.util.List;
 
+import static com.hazelcast.internal.management.MCEventStoreTest.MC_1_REMOTE_ADDR;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertEquals;
@@ -49,19 +48,6 @@ import static org.junit.Assert.assertSame;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ManagementCenterServiceIntegrationTest
         extends HazelcastTestSupport {
-
-    static final Address MC_1_REMOTE_ADDR;
-
-    static final Address MC_2_REMOTE_ADDR;
-
-    static {
-        try {
-            MC_1_REMOTE_ADDR = new Address("localhost", 5703);
-            MC_2_REMOTE_ADDR = new Address("localhost", 5704);
-        } catch (UnknownHostException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
     private static final String CLUSTER_NAME = "mc-service-tests";
 
