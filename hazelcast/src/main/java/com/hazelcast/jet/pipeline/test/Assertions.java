@@ -233,6 +233,7 @@ public final class Assertions {
      *             "Job was expected to complete with AssertionCompletedException, but completed with: " + e.getCause(),
      *             errorMsg.contains(AssertionCompletedException.class.getName())
      *     );
+     * }
      * }</pre>
      *
      * <b>Note:</b> This assertions requires that there are no other assertions in the

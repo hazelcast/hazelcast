@@ -103,10 +103,9 @@ public final class JobMetrics implements IdentifiedDataSerializable {
     }
 
     /**
-     * Convenience method for {@link #filter(Predicate<Measurement>)},
-     * returns a new {@link JobMetrics} instance containing only those
-     * {@link Measurement}s which have the specified tag set to the
-     * specified value.
+     * Convenience method for {@link #filter(Predicate)}, returns a new
+     * {@link JobMetrics} instance containing only those {@link Measurement}s
+     * which have the specified tag set to the specified value.
      * <p>
      * For a list of available tag names, see {@link MetricTags}.
      */

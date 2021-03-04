@@ -204,10 +204,11 @@ public class EventTimeMapper<T> {
     }
 
     /**
-     * A lower-level variant of {@link #flatMapEvent(T, int, long)} that
-     * accepts an explicit result of a {@code System.nanoTime()} call. Use this
-     * variant if you're calling it in a hot loop, in order to avoid repeating
-     * the expensive {@code System.nanoTime()} call.
+     * A lower-level variant of {@link #flatMapEvent(Object, int, long)
+     * flatMapEvent(T, int, long)} that accepts an explicit result of a
+     * {@code System.nanoTime()} call. Use this variant if you're calling it in
+     * a hot loop, in order to avoid repeating the expensive
+     * {@code System.nanoTime()} call.
      */
     public Traverser<Object> flatMapEvent(long now, @Nullable T event, int partitionIndex, long nativeEventTime) {
         assert traverser.isEmpty() : "the traverser returned previously not yet drained: remove all " +

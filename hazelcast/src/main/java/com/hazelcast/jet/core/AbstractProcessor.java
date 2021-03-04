@@ -141,7 +141,8 @@ public abstract class AbstractProcessor implements Processor {
      * Subclasses are not required to call this superclass method, it does
      * nothing.
      *
-     * @param context the {@link Context context} associated with this processor
+     * @param context the {@link Processor.Context context} associated with this
+     *                processor
      */
     protected void init(@Nonnull Context context) throws Exception {
     }
