@@ -28,7 +28,6 @@ import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironment
 import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.ASYNC;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
