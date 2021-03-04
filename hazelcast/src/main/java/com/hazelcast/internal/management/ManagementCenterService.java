@@ -33,8 +33,10 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -83,8 +85,7 @@ public class ManagementCenterService {
             Long lastAccessObj = lastAccessTimestamps.get(mcRemoteAddr);
             if (lastAccessObj == null) {
                 ArrayList<Event> copy = new ArrayList<>(mcEvents);
-                lastMCEventsPollMillis = clock.getAsLong();
-                lastAccessTimestamps.put(mcRemoteAddr, lastMCEventsPollMillis);
+                updateLatestAccessStats(mcRemoteAddr);
                 return copy;
             } else {
                 long lastAccess = lastAccessTimestamps.get(mcRemoteAddr);
@@ -94,9 +95,25 @@ public class ManagementCenterService {
                         recentEvents.add(evt);
                     }
                 }
-                lastMCEventsPollMillis = clock.getAsLong();
-                lastAccessTimestamps.put(mcRemoteAddr, lastMCEventsPollMillis);
+                updateLatestAccessStats(mcRemoteAddr);
                 return recentEvents;
+            }
+        }
+
+        private void updateLatestAccessStats(Address mcRemoteAddr) {
+            lastMCEventsPollMillis = clock.getAsLong();
+            lastAccessTimestamps.put(mcRemoteAddr, lastMCEventsPollMillis);
+            OptionalLong maybeOldestAccess = lastAccessTimestamps.values().stream().mapToLong(Long::longValue).min();
+            if (maybeOldestAccess.isPresent()) {
+                long oldestAccess = maybeOldestAccess.getAsLong();
+                Iterator<Event> it = mcEvents.iterator();
+                while (it.hasNext()) {
+                    Event evt = it.next();
+                    if (evt.getTimestamp() >= oldestAccess) {
+                        break;
+                    }
+                    it.remove();
+                }
             }
         }
     }

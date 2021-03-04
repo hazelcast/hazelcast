@@ -71,6 +71,7 @@ public class MCEventStoreTest {
 
     @Test
     public void multipleMCs_canPollSeparately() {
+        eventStore.pollMCEvents(MC_2_REMOTE_ADDR);
         inNextMilli(() -> {
             eventStore.log(testEvent());
             eventStore.log(testEvent());    
@@ -104,6 +105,7 @@ public class MCEventStoreTest {
     
     @Test
     public void elemsReadByAllMCsAreCleared() {
+        eventStore.pollMCEvents(MC_2_REMOTE_ADDR);
         inNextMilli(() -> {
             eventStore.log(testEvent());
             eventStore.log(testEvent());
