@@ -95,8 +95,12 @@ public class MapIndexScanExecTest extends SqlTestSupport {
         instance1 = factory.newHazelcastInstance(getInstanceConfig());
         instance2 = factory.newHazelcastInstance(getInstanceConfig());
 
+        assertClusterSizeEventually(2, instance1, instance2);
+
         IMap<Integer, Integer> map = instance1.getMap(MAP_NAME);
         map.addIndex(new IndexConfig().setName(INDEX_NAME).setType(IndexType.SORTED).addAttribute("this"));
+
+        waitAllForSafeState(instance1, instance2);
     }
 
     @After
