@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.querycache.subscriber;
 
 import com.hazelcast.map.IMapEvent;
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.EventLostEvent;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.EntryEventFilter;
