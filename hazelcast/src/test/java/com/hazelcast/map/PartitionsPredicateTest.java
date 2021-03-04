@@ -16,7 +16,6 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.aggregation.Aggregators;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
@@ -39,12 +38,8 @@ import org.junit.runner.RunWith;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.test.Accessors.getSerializationService;
 import static org.junit.Assert.assertEquals;
@@ -237,59 +232,10 @@ public class PartitionsPredicateTest extends HazelcastTestSupport {
         assertEquals(Predicates.alwaysTrue(), deserialized.getTarget());
     }
 
-
-    @Test
-    public void testPartitionsGetExecutedCorrectNumberOfTimes() {
-         PartitionsPredicate<String, Integer> lessThan10pp = Predicates.partitionsPredicate(partitionKeys,
-                 Predicates.lessThan("this", 10));
-         Map<String, Integer> result = aggMap.aggregate(new CountExecutions(), lessThan10pp);
-
-         assertEquals(20, result.size());
-         //each entry should be executed once for each partition.
-         for (Map.Entry<String, Integer> entry : result.entrySet()) {
-             int partition = local.getPartitionService().getPartition(entry.getKey()).getPartitionId();
-             assertTrue(partition == partitionId1 || partition == partitionId2);
-             assertEquals(1, (int) entry.getValue());
-         }
-
-    }
-
-
     private static class EntryNoop<K, V> implements EntryProcessor<K, V, Integer> {
         @Override
         public Integer process(Map.Entry<K, V> entry) {
             return -1;
-        }
-    }
-
-    private static class CountExecutions implements Aggregator<Map.Entry<String, Integer>, Map<String, Integer>> {
-        private static Map<String, AtomicInteger> counters = new ConcurrentHashMap<>();
-
-        private Map<String, Integer> counts = new HashMap<>();
-
-        @Override
-        public void accumulate(Entry<String, Integer> input) {
-            AtomicInteger counter = counters.computeIfAbsent(input.getKey(), __ -> new AtomicInteger());
-            counts.compute(input.getKey(), (k, v) -> counter.incrementAndGet());
-        }
-
-        @Override
-        public void combine(Aggregator aggregator) {
-            CountExecutions countAggregator = (CountExecutions) aggregator;
-            countAggregator.counts.forEach((key, value) -> {
-                counts.compute(key, (__, current) -> {
-                    if (current == null) {
-                        current = 0;
-                    }
-                    return value + current;
-                });
-            });
-
-        }
-
-        @Override
-        public Map<String, Integer> aggregate() {
-            return counts;
         }
     }
 }
