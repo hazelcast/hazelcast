@@ -128,7 +128,7 @@ response {}
 ```
 
 The server-side resources are cleared automatically when the end of data is reached. Therefore, it is not necessary to send
-the `cancel` command to the member, if the previous `execute` or `fetch` command returned the last page, or an update count.
+the `close` command to the member, if the previous `execute` or `fetch` command returned the last page, or an update count.
   
 ## 3 Limitations
 
