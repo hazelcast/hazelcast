@@ -38,6 +38,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
@@ -59,11 +60,11 @@ public class Indexes {
 
     private final boolean global;
     private final boolean usesCachedQueryableEntries;
-    private final java.util.function.Predicate<QueryableEntry> resultFilter;
     private final IndexesStats stats;
     private final Extractors extractors;
     private final IndexProvider indexProvider;
     private final IndexCopyBehavior indexCopyBehavior;
+    private final Supplier<java.util.function.Predicate<QueryableEntry>> resultFilterFactory;
     private final QueryContextProvider queryContextProvider;
     private final InternalSerializationService serializationService;
 
@@ -78,9 +79,16 @@ public class Indexes {
     private volatile InternalIndex[] indexes = EMPTY_INDEXES;
     private volatile InternalIndex[] compositeIndexes = EMPTY_INDEXES;
 
-    private Indexes(InternalSerializationService serializationService, IndexCopyBehavior indexCopyBehavior, Extractors extractors,
-                    IndexProvider indexProvider, boolean usesCachedQueryableEntries, boolean statisticsEnabled, boolean global,
-                    InMemoryFormat inMemoryFormat, int partitionCount, java.util.function.Predicate resultFilter) {
+    private Indexes(InternalSerializationService serializationService,
+                    IndexCopyBehavior indexCopyBehavior,
+                    Extractors extractors,
+                    IndexProvider indexProvider,
+                    boolean usesCachedQueryableEntries,
+                    boolean statisticsEnabled,
+                    boolean global,
+                    InMemoryFormat inMemoryFormat,
+                    int partitionCount,
+                    Supplier<java.util.function.Predicate<QueryableEntry>> resultFilterFactory) {
         this.global = global;
         this.indexCopyBehavior = indexCopyBehavior;
         this.serializationService = serializationService;
@@ -90,7 +98,7 @@ public class Indexes {
         this.indexProvider = indexProvider == null ? new DefaultIndexProvider() : indexProvider;
         this.queryContextProvider = createQueryContextProvider(this, global, statisticsEnabled);
         this.partitionCount = partitionCount;
-        this.resultFilter = resultFilter;
+        this.resultFilterFactory = resultFilterFactory;
     }
 
     public static void beginPartitionUpdate(InternalIndex[] indexes) {
@@ -367,8 +375,8 @@ public class Indexes {
             queryContext.applyPerQueryStats();
         }
 
-        if (result != null && resultFilter != null) {
-            return IterableUtil.filter(result, resultFilter);
+        if (result != null && resultFilterFactory != null) {
+            return IterableUtil.filter(result, resultFilterFactory.get());
         } else {
             return result;
         }
@@ -495,7 +503,7 @@ public class Indexes {
         private Extractors extractors;
         private IndexProvider indexProvider;
         private InMemoryFormat inMemoryFormat;
-        private java.util.function.Predicate<QueryableEntry> resultFilter;
+        private Supplier<java.util.function.Predicate<QueryableEntry>> resultFilterFactory;
 
         Builder(SerializationService ss, IndexCopyBehavior indexCopyBehavior, InMemoryFormat inMemoryFormat) {
             this.serializationService = checkNotNull((InternalSerializationService) ss, "serializationService cannot be null");
@@ -504,12 +512,15 @@ public class Indexes {
         }
 
         /**
-         * @param filter if filter returns {@code false}, entry
-         *               is filtered out from query result, otherwise it is included.
+         * Set the factory to create filters to filter query result.
+         * If filter returns {@code false}, entry is filtered
+         * out from query result, otherwise it is included.
+         *
+         * @param filterFactory factory to create filters.
          * @return this builder instance
          */
-        public Builder resultFilter(java.util.function.Predicate<QueryableEntry> filter) {
-            this.resultFilter = filter;
+        public Builder resultFilterFactory(Supplier<java.util.function.Predicate<QueryableEntry>> filterFactory) {
+            this.resultFilterFactory = filterFactory;
             return this;
         }
 
@@ -573,9 +584,7 @@ public class Indexes {
         public Indexes build() {
             return new Indexes(serializationService, indexCopyBehavior, extractors,
                     indexProvider, usesCachedQueryableEntries, statsEnabled, global,
-                    inMemoryFormat, partitionCount, resultFilter);
+                    inMemoryFormat, partitionCount, resultFilterFactory);
         }
-
     }
-
 }
