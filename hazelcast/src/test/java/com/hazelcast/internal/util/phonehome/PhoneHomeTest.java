@@ -87,12 +87,42 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         assertEquals(parameters.get(PhoneHomeMetrics.HAZELCAST_DOWNLOAD_ID.getRequestParameterName()), "source");
         assertEquals(parameters.get(PhoneHomeMetrics.CLUSTER_SIZE.getRequestParameterName()), "A");
         assertEquals(parameters.get(PhoneHomeMetrics.CLIENT_ENDPOINT_COUNT.getRequestParameterName()), "A");
-        assertEquals(parameters.get(PhoneHomeMetrics.CLIENTS_WITH_CPP_CONNECTION.getRequestParameterName()), "0");
-        assertEquals(parameters.get(PhoneHomeMetrics.CLIENTS_WITH_CSHARP_CONNECTION.getRequestParameterName()), "0");
-        assertEquals(parameters.get(PhoneHomeMetrics.CLIENTS_WITH_JAVA_CONNECTION.getRequestParameterName()), "0");
-        assertEquals(parameters.get(PhoneHomeMetrics.CLIENTS_WITH_NODEJS_CONNECTION.getRequestParameterName()), "0");
-        assertEquals(parameters.get(PhoneHomeMetrics.CLIENTS_WITH_PYTHON_CONNECTION.getRequestParameterName()), "0");
-        assertEquals(parameters.get(PhoneHomeMetrics.CLIENTS_WITH_GO_CONNECTION.getRequestParameterName()), "0");
+
+        assertEquals(parameters.get(PhoneHomeMetrics.ACTIVE_CPP_CLIENTS_COUNT.getRequestParameterName()), "0");
+        assertEquals(parameters.get(PhoneHomeMetrics.ACTIVE_CSHARP_CLIENTS_COUNT.getRequestParameterName()), "0");
+        assertEquals(parameters.get(PhoneHomeMetrics.ACTIVE_JAVA_CLIENTS_COUNT.getRequestParameterName()), "0");
+        assertEquals(parameters.get(PhoneHomeMetrics.ACTIVE_NODEJS_CLIENTS_COUNT.getRequestParameterName()), "0");
+        assertEquals(parameters.get(PhoneHomeMetrics.ACTIVE_PYTHON_CLIENTS_COUNT.getRequestParameterName()), "0");
+        assertEquals(parameters.get(PhoneHomeMetrics.ACTIVE_GO_CLIENTS_COUNT.getRequestParameterName()), "0");
+
+        assertEquals(parameters.get(PhoneHomeMetrics.OPENED_CPP_CLIENT_CONNECTIONS_COUNT.getRequestParameterName()), "0");
+        assertEquals(parameters.get(PhoneHomeMetrics.OPENED_CSHARP_CLIENT_CONNECTIONS_COUNT.getRequestParameterName()), "0");
+        assertEquals(parameters.get(PhoneHomeMetrics.OPENED_JAVA_CLIENT_CONNECTIONS_COUNT.getRequestParameterName()), "0");
+        assertEquals(parameters.get(PhoneHomeMetrics.OPENED_NODEJS_CLIENT_CONNECTIONS_COUNT.getRequestParameterName()), "0");
+        assertEquals(parameters.get(PhoneHomeMetrics.OPENED_PYTHON_CLIENT_CONNECTIONS_COUNT.getRequestParameterName()), "0");
+        assertEquals(parameters.get(PhoneHomeMetrics.OPENED_GO_CLIENT_CONNECTIONS_COUNT.getRequestParameterName()), "0");
+
+        assertEquals(parameters.get(PhoneHomeMetrics.CLOSED_CPP_CLIENT_CONNECTIONS_COUNT.getRequestParameterName()), "0");
+        assertEquals(parameters.get(PhoneHomeMetrics.CLOSED_CSHARP_CLIENT_CONNECTIONS_COUNT.getRequestParameterName()), "0");
+        assertEquals(parameters.get(PhoneHomeMetrics.CLOSED_JAVA_CLIENT_CONNECTIONS_COUNT.getRequestParameterName()), "0");
+        assertEquals(parameters.get(PhoneHomeMetrics.CLOSED_NODEJS_CLIENT_CONNECTIONS_COUNT.getRequestParameterName()), "0");
+        assertEquals(parameters.get(PhoneHomeMetrics.CLOSED_PYTHON_CLIENT_CONNECTIONS_COUNT.getRequestParameterName()), "0");
+        assertEquals(parameters.get(PhoneHomeMetrics.CLOSED_GO_CLIENT_CONNECTIONS_COUNT.getRequestParameterName()), "0");
+
+        assertEquals(parameters.get(PhoneHomeMetrics.TOTAL_CPP_CLIENT_CONNECTION_DURATION.getRequestParameterName()), "0");
+        assertEquals(parameters.get(PhoneHomeMetrics.TOTAL_CSHARP_CLIENT_CONNECTION_DURATION.getRequestParameterName()), "0");
+        assertEquals(parameters.get(PhoneHomeMetrics.TOTAL_JAVA_CLIENT_CONNECTION_DURATION.getRequestParameterName()), "0");
+        assertEquals(parameters.get(PhoneHomeMetrics.TOTAL_NODEJS_CLIENT_CONNECTION_DURATION.getRequestParameterName()), "0");
+        assertEquals(parameters.get(PhoneHomeMetrics.TOTAL_PYTHON_CLIENT_CONNECTION_DURATION.getRequestParameterName()), "0");
+        assertEquals(parameters.get(PhoneHomeMetrics.TOTAL_GO_CLIENT_CONNECTION_DURATION.getRequestParameterName()), "0");
+
+        assertEquals(parameters.get(PhoneHomeMetrics.CPP_CLIENT_VERSIONS.getRequestParameterName()), "");
+        assertEquals(parameters.get(PhoneHomeMetrics.CSHARP_CLIENT_VERSIONS.getRequestParameterName()), "");
+        assertEquals(parameters.get(PhoneHomeMetrics.JAVA_CLIENT_VERSIONS.getRequestParameterName()), "");
+        assertEquals(parameters.get(PhoneHomeMetrics.NODEJS_CLIENT_VERSIONS.getRequestParameterName()), "");
+        assertEquals(parameters.get(PhoneHomeMetrics.PYTHON_CLIENT_VERSIONS.getRequestParameterName()), "");
+        assertEquals(parameters.get(PhoneHomeMetrics.GO_CLIENT_VERSIONS.getRequestParameterName()), "");
+
         assertEquals(parameters.get(PhoneHomeMetrics.JET_BUILD_VERSION.getRequestParameterName()), "");
         assertFalse(Integer.parseInt(parameters.get(PhoneHomeMetrics.TIME_TAKEN_TO_CLUSTER_UP.getRequestParameterName())) < 0);
         assertNotEquals(parameters.get(PhoneHomeMetrics.UPTIME_OF_RUNTIME_MXBEAN.getRequestParameterName()), "0");
