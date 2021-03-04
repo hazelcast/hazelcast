@@ -136,15 +136,7 @@ the `close` command to the member, if the previous `execute` or `fetch` command 
 
 This section describes limitations of the current implementation
 
-### 3.1 Stickiness
-
-There is no server-side logic to re-route client requests between members. Therefore, the protocol is sticky: `fetch` and 
-`close` commands must be sent to the same member as the prior `execute` command.
-
-We are likely to add missing routing logic in future versions. However, stickiness guarantees the optimal performance. Therefore,
-we will still employ the sticky approach on the best-effort basis even after the limitation is resolved. 
-
-### 3.2 No Support for Lite Members
+### 3.1 No Support for Lite Members
 
 Lite members cannot initiate the SQL queries, and we do not have routing of client requests between members. Therefore, the 
 client cannot send `execute` requests to the lite members. 
