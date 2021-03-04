@@ -66,8 +66,6 @@ public class EvictionConfig implements EvictionConfiguration, DataSerializable, 
      */
     public static final EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionPolicy.LRU;
 
-    private static final int UNSET = -1;
-
     /**
      * Maximum Size Policy
      */
@@ -96,38 +94,46 @@ public class EvictionConfig implements EvictionConfiguration, DataSerializable, 
         FREE_NATIVE_MEMORY_PERCENTAGE
     }
 
-    protected int size = UNSET;
+    protected int size = DEFAULT_MAX_ENTRY_COUNT;
     protected MaxSizePolicy maxSizePolicy = DEFAULT_MAX_SIZE_POLICY;
     protected EvictionPolicy evictionPolicy = DEFAULT_EVICTION_POLICY;
     protected String comparatorClassName;
     protected EvictionPolicyComparator comparator;
+
     protected EvictionConfig readOnly;
-    int defaultSize = DEFAULT_MAX_ENTRY_COUNT;
+
+    /**
+     * Used by the {@link NearCacheConfigAccessor} to initialize the proper default value for on-heap maps.
+     */
+    boolean sizeConfigured;
 
     public EvictionConfig() {
     }
 
     public EvictionConfig(int size, MaxSizePolicy maxSizePolicy, EvictionPolicy evictionPolicy) {
+        this.sizeConfigured = true;
         this.size = checkPositive(size, "Size must be positive number!");
         this.maxSizePolicy = checkNotNull(maxSizePolicy, "Max-Size policy cannot be null!");
         this.evictionPolicy = checkNotNull(evictionPolicy, "Eviction policy cannot be null!");
     }
 
     public EvictionConfig(int size, MaxSizePolicy maxSizePolicy, String comparatorClassName) {
+        this.sizeConfigured = true;
         this.size = checkPositive(size, "Size must be positive number!");
         this.maxSizePolicy = checkNotNull(maxSizePolicy, "Max-Size policy cannot be null!");
         this.comparatorClassName = checkNotNull(comparatorClassName, "Comparator classname cannot be null!");
     }
 
     public EvictionConfig(int size, MaxSizePolicy maxSizePolicy, EvictionPolicyComparator comparator) {
+        this.sizeConfigured = true;
         this.size = checkPositive(size, "Size must be positive number!");
         this.maxSizePolicy = checkNotNull(maxSizePolicy, "Max-Size policy cannot be null!");
         this.comparator = checkNotNull(comparator, "Comparator cannot be null!");
     }
 
     public EvictionConfig(EvictionConfig config) {
-        this.defaultSize = config.defaultSize;
-        this.size = config.size;
+        this.sizeConfigured = true;
+        this.size = checkPositive(config.size, "Size must be positive number!");
         this.maxSizePolicy = checkNotNull(config.maxSizePolicy, "Max-Size policy cannot be null!");
         if (config.evictionPolicy != null) {
             this.evictionPolicy = config.evictionPolicy;
@@ -163,9 +169,6 @@ public class EvictionConfig implements EvictionConfiguration, DataSerializable, 
      * @return the size which is used by the {@link MaxSizePolicy}
      */
     public int getSize() {
-        if (size == UNSET) {
-            return defaultSize;
-        }
         return size;
     }
 
@@ -180,6 +183,7 @@ public class EvictionConfig implements EvictionConfiguration, DataSerializable, 
      * @return this EvictionConfig instance
      */
     public EvictionConfig setSize(int size) {
+        this.sizeConfigured = true;
         this.size = checkPositive(size, "size must be positive number!");
         return this;
     }
@@ -344,7 +348,7 @@ public class EvictionConfig implements EvictionConfiguration, DataSerializable, 
 
         EvictionConfig that = (EvictionConfig) o;
 
-        if (!((size == UNSET && that.size == UNSET) || getSize() == that.getSize())) {
+        if (size != that.size) {
             return false;
         }
         if (maxSizePolicy != that.maxSizePolicy) {
@@ -354,7 +358,7 @@ public class EvictionConfig implements EvictionConfiguration, DataSerializable, 
             return false;
         }
         if (comparatorClassName != null
-                    ? !comparatorClassName.equals(that.comparatorClassName) : that.comparatorClassName != null) {
+                ? !comparatorClassName.equals(that.comparatorClassName) : that.comparatorClassName != null) {
             return false;
         }
         return comparator != null ? comparator.equals(that.comparator) : that.comparator == null;
