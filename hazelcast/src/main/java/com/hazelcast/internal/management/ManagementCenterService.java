@@ -37,6 +37,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalLong;
+import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -57,7 +58,7 @@ public class ManagementCenterService {
         static final long MC_EVENTS_WINDOW_MILLIS = TimeUnit.SECONDS.toMillis(30);
         private final LongSupplier clock;
         private volatile long lastMCEventsPollMillis;
-        private ConcurrentMap<Address, Long> lastAccessTimestamps = new ConcurrentHashMap<>();
+        private final ConcurrentMap<Address, Long> lastAccessTimestamps = new ConcurrentHashMap<>();
         private final BlockingQueue<Event> mcEvents;
 
         public MCEventStore(LongSupplier clock, BlockingQueue<Event> mcEvents) {
@@ -88,7 +89,7 @@ public class ManagementCenterService {
                 updateLatestAccessStats(mcRemoteAddr);
                 return copy;
             } else {
-                long lastAccess = lastAccessTimestamps.get(mcRemoteAddr);
+                long lastAccess = lastAccessObj;
                 List<Event> recentEvents = new ArrayList<>();
                 for (Event evt : mcEvents) {
                     if (evt.getTimestamp() > lastAccess) {
@@ -103,6 +104,9 @@ public class ManagementCenterService {
         private void updateLatestAccessStats(Address mcRemoteAddr) {
             lastMCEventsPollMillis = clock.getAsLong();
             lastAccessTimestamps.put(mcRemoteAddr, lastMCEventsPollMillis);
+            if (mcEvents.isEmpty()) {
+                return;
+            }
             OptionalLong maybeOldestAccess = lastAccessTimestamps.values().stream().mapToLong(Long::longValue).min();
             if (maybeOldestAccess.isPresent()) {
                 long oldestAccess = maybeOldestAccess.getAsLong();
