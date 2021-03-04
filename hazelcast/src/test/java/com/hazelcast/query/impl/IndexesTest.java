@@ -143,19 +143,6 @@ public class IndexesTest {
         return Extractors.newBuilder(serializationService).build();
     }
 
-    /**
-     * Imagine we have only keys and nullable values. And we add index for a field of that nullable object.
-     * When we execute a query on keys, there should be no returned value from indexing service and it does not
-     * throw exception.
-     */
-    @Test
-    public void shouldNotThrowException_withNullValues_whenIndexAddedForValueField() {
-        Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
-        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "name"));
-
-        shouldReturnNull_whenQueryingOnKeys(indexes);
-    }
-
     @Test
     public void shouldNotThrowException_withNullValues_whenNoIndexAdded() {
         Indexes indexes = Indexes.newBuilder(serializationService, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
