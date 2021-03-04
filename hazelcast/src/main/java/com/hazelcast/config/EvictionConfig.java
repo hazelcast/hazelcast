@@ -18,11 +18,11 @@ package com.hazelcast.config;
 
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.internal.eviction.EvictionConfiguration;
+import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 import com.hazelcast.internal.eviction.EvictionStrategyType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -30,12 +30,12 @@ import java.io.Serializable;
 import java.util.Objects;
 
 import static com.hazelcast.internal.util.Preconditions.checkHasText;
-import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 
 /**
  * Configuration for eviction.
- * <p>
+ *
  * You can set a limit for number of
  * entries or total memory cost of entries.
  * <p>
@@ -66,19 +66,24 @@ public class EvictionConfig implements EvictionConfiguration, IdentifiedDataSeri
      */
     public static final EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionPolicy.LRU;
 
-    private static final int UNSET = -1;
-    private MaxSizePolicy maxSizePolicy = DEFAULT_MAX_SIZE_POLICY;
-    private EvictionPolicy evictionPolicy = DEFAULT_EVICTION_POLICY;
-    private String comparatorClassName;
-    private EvictionPolicyComparator comparator;
-    private int size = UNSET;
-    int defaultSize = DEFAULT_MAX_ENTRY_COUNT;
+    protected int size = DEFAULT_MAX_ENTRY_COUNT;
+    protected MaxSizePolicy maxSizePolicy = DEFAULT_MAX_SIZE_POLICY;
+    protected EvictionPolicy evictionPolicy = DEFAULT_EVICTION_POLICY;
+
+    protected String comparatorClassName;
+    protected EvictionPolicyComparator comparator;
+
+    /**
+     * Used by the {@link NearCacheConfigAccessor} to
+     * initialize the proper default value for on-heap maps.
+     */
+    boolean sizeConfigured;
 
     public EvictionConfig() {
     }
 
     public EvictionConfig(EvictionConfig config) {
-        this.defaultSize = config.defaultSize;
+        this.sizeConfigured = true;
         this.size = config.size;
         this.maxSizePolicy = config.maxSizePolicy;
         this.evictionPolicy = config.evictionPolicy;
@@ -95,9 +100,6 @@ public class EvictionConfig implements EvictionConfiguration, IdentifiedDataSeri
      * @return the size which is used by the {@link MaxSizePolicy}
      */
     public int getSize() {
-        if (size == UNSET) {
-            return defaultSize;
-        }
         return size;
     }
 
@@ -114,6 +116,7 @@ public class EvictionConfig implements EvictionConfiguration, IdentifiedDataSeri
      * @return this EvictionConfig instance
      */
     public EvictionConfig setSize(int size) {
+        this.sizeConfigured = true;
         this.size = checkNotNegative(size,
                 "size cannot be a negative number!");
         return this;
@@ -284,11 +287,11 @@ public class EvictionConfig implements EvictionConfiguration, IdentifiedDataSeri
 
         EvictionConfig that = (EvictionConfig) o;
 
-        return ((size == UNSET && that.size == UNSET) || getSize() == that.getSize())
-                && maxSizePolicy == that.maxSizePolicy
-                && evictionPolicy == that.evictionPolicy
-                && Objects.equals(comparatorClassName, that.comparatorClassName)
-                && Objects.equals(comparator, that.comparator);
+        return size == that.size
+            && maxSizePolicy == that.maxSizePolicy
+            && evictionPolicy == that.evictionPolicy
+            && Objects.equals(comparatorClassName, that.comparatorClassName)
+            && Objects.equals(comparator, that.comparator);
     }
 
     @Override

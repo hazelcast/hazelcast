@@ -34,8 +34,8 @@ public final class NearCacheConfigAccessor {
         }
 
         EvictionConfig evictionConfig = nearCacheConfig.getEvictionConfig();
-        if (nearCacheConfig.getInMemoryFormat() != InMemoryFormat.NATIVE) {
-            evictionConfig.defaultSize = MapConfig.DEFAULT_MAX_SIZE;
+        if (nearCacheConfig.getInMemoryFormat() != InMemoryFormat.NATIVE && !evictionConfig.sizeConfigured) {
+            evictionConfig.setSize(MapConfig.DEFAULT_MAX_SIZE);
         }
     }
 }
