@@ -38,27 +38,27 @@ import java.util.List;
  * The iterator will not, however, skip an entry if it has not been changed
  * and will not return an entry twice.
  * For more information on the iterator details, see
- * {@link AbstractCachePartitionsIterator}.
+ * {@link AbstractCacheIterator}.
  */
-public class CachePartitionsIterator<K, V>
-        extends AbstractCachePartitionsIterator<K, V>
+public class CacheIterator<K, V>
+        extends AbstractCacheIterator<K, V>
         implements Iterator<Cache.Entry<K, V>> {
 
     private final SerializationService serializationService;
     private final CacheProxy<K, V> cacheProxy;
 
-    public CachePartitionsIterator(CacheProxy<K, V> cache, boolean prefetchValues) {
+    public CacheIterator(CacheProxy<K, V> cache, boolean prefetchValues) {
         this(cache, DEFAULT_FETCH_SIZE, prefetchValues);
     }
 
-    public CachePartitionsIterator(CacheProxy<K, V> cache, int fetchSize, boolean prefetchValues) {
+    public CacheIterator(CacheProxy<K, V> cache, int fetchSize, boolean prefetchValues) {
         super(cache, cache.getNodeEngine().getPartitionService().getPartitionCount(), fetchSize, prefetchValues);
         this.cacheProxy = cache;
         this.serializationService = cache.getNodeEngine().getSerializationService();
         advance();
     }
 
-    public CachePartitionsIterator(CacheProxy<K, V> cache, int fetchSize, int partitionId, boolean prefetchValues) {
+    public CacheIterator(CacheProxy<K, V> cache, int fetchSize, int partitionId, boolean prefetchValues) {
         super(cache, cache.getNodeEngine().getPartitionService().getPartitionCount(), fetchSize, prefetchValues);
         this.cacheProxy = cache;
         this.serializationService = cache.getNodeEngine().getSerializationService();

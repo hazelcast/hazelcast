@@ -336,7 +336,7 @@ public class IndexTest {
             writer.writeLong("l", l);
             writer.writeFloat("f", f);
             writer.writeDouble("d", d);
-            writer.writeUTF("str", str);
+            writer.writeString("str", str);
         }
 
         public void readPortable(PortableReader reader) throws IOException {
@@ -348,7 +348,7 @@ public class IndexTest {
             l = reader.readLong("l");
             f = reader.readFloat("f");
             d = reader.readDouble("d");
-            str = reader.readUTF("str");
+            str = reader.readString("str");
         }
 
         @Override
@@ -484,6 +484,26 @@ public class IndexTest {
 
         public Record toRecord() {
             return recordFactory.newRecord(attributeValue);
+        }
+
+        @Override
+        public Object getKeyIfPresent() {
+            throw new UnsupportedOperationException("Should not be called.");
+        }
+
+        @Override
+        public Data getKeyDataIfPresent() {
+            throw new UnsupportedOperationException("Should not be called.");
+        }
+
+        @Override
+        public Object getValueIfPresent() {
+            throw new UnsupportedOperationException("Should not be called.");
+        }
+
+        @Override
+        public Data getValueDataIfPresent() {
+            throw new UnsupportedOperationException("Should not be called.");
         }
     }
 

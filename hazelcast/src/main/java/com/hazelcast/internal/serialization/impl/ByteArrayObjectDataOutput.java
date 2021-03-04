@@ -368,7 +368,7 @@ public class ByteArrayObjectDataOutput extends VersionedObjectDataOutput impleme
         writeInt(len);
         if (len > 0) {
             for (String s : strings) {
-                writeUTF(s);
+                writeString(s);
             }
         }
     }

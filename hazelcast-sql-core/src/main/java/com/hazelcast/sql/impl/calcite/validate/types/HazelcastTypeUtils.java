@@ -139,7 +139,18 @@ public final class HazelcastTypeUtils {
      * DECIMAL.
      */
     public static boolean isNumericType(RelDataType type) {
-        switch (type.getSqlTypeName()) {
+        return isNumericType(type.getSqlTypeName());
+    }
+
+    /**
+     * @return {@code true} if the given type is a numeric type, {@code false}
+     * otherwise.
+     * <p>
+     * Numeric types are: TINYINT, SMALLINT, INTEGER, BIGINT, REAL, DOUBLE and
+     * DECIMAL.
+     */
+    public static boolean isNumericType(SqlTypeName typeName) {
+        switch (typeName) {
             case TINYINT:
             case SMALLINT:
             case INTEGER:

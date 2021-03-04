@@ -28,6 +28,7 @@ import java.util.List;
 /**
  * Iterator for iterating map entries in a single partition.
  * The values are fetched in batches.
+ * <p>
  * <b>NOTE</b>
  * The iteration may be done when the map is being mutated or when there are
  * membership changes. The iterator does not reflect the state when it has

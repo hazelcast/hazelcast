@@ -194,14 +194,6 @@ public final class PortableSerializer implements StreamSerializer<Object> {
 
     private void writePortableGenericRecord(ObjectDataOutput out, PortableGenericRecord record) throws IOException {
         ClassDefinition cd = record.getClassDefinition();
-        if (context.shouldCheckClassDefinitionErrors()) {
-            ClassDefinition existingCd = context.lookupClassDefinition(cd.getFactoryId(), cd.getClassId(), cd.getVersion());
-            if (existingCd != null && !existingCd.equals(cd)) {
-                throw new HazelcastSerializationException("Inconsistent class definition found. New class definition : " + cd
-                        + ", Existing class definition " + existingCd);
-            }
-        }
-        context.registerClassDefinition(cd);
         out.writeInt(cd.getFactoryId());
         out.writeInt(cd.getClassId());
         writePortableGenericRecordInternal(out, record);
@@ -210,6 +202,9 @@ public final class PortableSerializer implements StreamSerializer<Object> {
     @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:CyclomaticComplexity"})
     void writePortableGenericRecordInternal(ObjectDataOutput out, PortableGenericRecord record) throws IOException {
         ClassDefinition cd = record.getClassDefinition();
+        // Class definition compatibility will be checked implicitly on the
+        // register call below.
+        context.registerClassDefinition(cd, context.shouldCheckClassDefinitionErrors());
         out.writeInt(cd.getVersion());
 
         BufferObjectDataOutput output = (BufferObjectDataOutput) out;
@@ -245,7 +240,7 @@ public final class PortableSerializer implements StreamSerializer<Object> {
                     writer.writeDouble(fieldName, record.getDouble(fieldName));
                     break;
                 case UTF:
-                    writer.writeUTF(fieldName, record.getString(fieldName));
+                    writer.writeString(fieldName, record.getString(fieldName));
                     break;
                 case DECIMAL:
                     writer.writeDecimal(fieldName, record.getDecimal(fieldName));
@@ -290,7 +285,7 @@ public final class PortableSerializer implements StreamSerializer<Object> {
                     writer.writeDoubleArray(fieldName, record.getDoubleArray(fieldName));
                     break;
                 case UTF_ARRAY:
-                    writer.writeUTFArray(fieldName, record.getStringArray(fieldName));
+                    writer.writeStringArray(fieldName, record.getStringArray(fieldName));
                     break;
                 case DECIMAL_ARRAY:
                     writer.writeDecimalArray(fieldName, record.getDecimalArray(fieldName));

@@ -1074,6 +1074,51 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
+    public void testMapStoreEnabled() {
+        String xml = HAZELCAST_START_TAG
+                + "<map name=\"mymap\">"
+                + "<map-store enabled=\"true\" />"
+                + "</map>"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        MapStoreConfig mapStoreConfig = config.getMapConfig("mymap").getMapStoreConfig();
+
+        assertTrue(mapStoreConfig.isEnabled());
+    }
+
+    @Override
+    @Test
+    public void testMapStoreEnabledIfNotDisabled() {
+        String xml = HAZELCAST_START_TAG
+                + "<map name=\"mymap\">"
+                + "<map-store />"
+                + "</map>"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        MapStoreConfig mapStoreConfig = config.getMapConfig("mymap").getMapStoreConfig();
+
+        assertTrue(mapStoreConfig.isEnabled());
+    }
+
+    @Override
+    @Test
+    public void testMapStoreDisabled() {
+        String xml = HAZELCAST_START_TAG
+                + "<map name=\"mymap\">"
+                + "<map-store enabled=\"false\" />"
+                + "</map>"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        MapStoreConfig mapStoreConfig = config.getMapConfig("mymap").getMapStoreConfig();
+
+        assertFalse(mapStoreConfig.isEnabled());
+    }
+
+    @Override
+    @Test
     public void testMapStoreConfig_writeCoalescing_whenDefault() {
         MapStoreConfig mapStoreConfig = getWriteCoalescingMapStoreConfig(MapStoreConfig.DEFAULT_WRITE_COALESCING, true);
 
@@ -2766,6 +2811,22 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    public void testEmptyUserCodeDeployment() {
+        String xml = HAZELCAST_START_TAG
+                + "<user-code-deployment enabled=\"true\"/>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        UserCodeDeploymentConfig userCodeDeploymentConfig = config.getUserCodeDeploymentConfig();
+        assertTrue(userCodeDeploymentConfig.isEnabled());
+        assertEquals(UserCodeDeploymentConfig.ClassCacheMode.ETERNAL, userCodeDeploymentConfig.getClassCacheMode());
+        assertEquals(UserCodeDeploymentConfig.ProviderMode.LOCAL_AND_CACHED_CLASSES, userCodeDeploymentConfig.getProviderMode());
+        assertNull(userCodeDeploymentConfig.getBlacklistedPrefixes());
+        assertNull(userCodeDeploymentConfig.getWhitelistedPrefixes());
+        assertNull(userCodeDeploymentConfig.getProviderFilter());
+    }
+
+    @Override
     @Test
     public void testCRDTReplicationConfig() {
         final String xml = HAZELCAST_START_TAG
@@ -3035,7 +3096,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + SECURITY_END_TAG + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
-        PermissionConfig expected = new PermissionConfig(CONFIG, "*", "dev");
+        PermissionConfig expected = new PermissionConfig(CONFIG, null, "dev");
         expected.getEndpoints().add("127.0.0.1");
         assertPermissionConfig(expected, config);
     }
@@ -3775,5 +3836,24 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         SqlConfig sqlConfig = config.getSqlConfig();
         assertEquals(10, sqlConfig.getExecutorPoolSize());
         assertEquals(30L, sqlConfig.getStatementTimeoutMillis());
+    }
+
+    @Override
+    protected Config buildMapWildcardConfig() {
+        String xml = HAZELCAST_START_TAG
+                + "<map name=\"map*\">\n"
+                + "  <attributes>\n"
+                + "    <attribute extractor-class-name=\"usercodedeployment.CapitalizingFirstNameExtractor\">name</attribute>\n"
+                + "  </attributes>\n"
+                + "</map>\n"
+                + "<map name=\"mapBackup2*\">\n"
+                + "  <backup-count>2</backup-count>"
+                + "  <attributes>\n"
+                + "    <attribute extractor-class-name=\"usercodedeployment.CapitalizingFirstNameExtractor\">name</attribute>\n"
+                + "  </attributes>\n"
+                + "</map>\n"
+                + HAZELCAST_END_TAG;
+
+        return new InMemoryXmlConfig(xml);
     }
 }

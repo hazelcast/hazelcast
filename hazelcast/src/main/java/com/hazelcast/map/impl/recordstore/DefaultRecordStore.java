@@ -81,7 +81,7 @@ import static com.hazelcast.map.impl.record.Record.UNSET;
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
 
 /**
- * Default implementation of record-store.
+ * Default implementation of a record store.
  */
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
 public class DefaultRecordStore extends AbstractEvictableRecordStore {
@@ -98,6 +98,13 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
      * @see #loadAllFromStore(List, boolean)
      */
     protected final Collection<Future> loadingFutures = new ConcurrentLinkedQueue<>();
+
+    /**
+     * A reference to the Json Metadata store. It is initialized lazily only if the
+     * store is needed.
+     */
+    private JsonMetadataStore metadataStore;
+
     /**
      * The record store may be created with or without triggering the load.
      * This flag guards that the loading on create is invoked not more than
@@ -124,11 +131,23 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         this.recordStoreLoader = createRecordStoreLoader(mapStoreContext);
         this.partitionService = mapServiceContext.getNodeEngine().getPartitionService();
         this.interceptorRegistry = mapContainer.getInterceptorRegistry();
+        initJsonMetadataStore();
+    }
+
+    // Overridden in EE
+    protected void initJsonMetadataStore() {
+        // Forcibly initialize on-heap Json Metadata Store to avoid
+        // lazy initialization and potential race condition.
+        getOrCreateMetadataStore();
     }
 
     @Override
     public MapDataStore<Data, Object> getMapDataStore() {
         return mapDataStore;
+    }
+
+    protected JsonMetadataStore createMetadataStore() {
+        return new JsonMetadataStoreImpl();
     }
 
     @Override
@@ -148,6 +167,20 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
         for (int i = 0; i < dataKeys.size(); i++) {
             mapDataStore.flush(dataKeys.get(i), records.get(i).getValue(), backup);
+        }
+    }
+
+    @Override
+    public JsonMetadataStore getOrCreateMetadataStore() {
+        if (metadataStore == null) {
+            metadataStore = createMetadataStore();
+        }
+        return metadataStore;
+    }
+
+    private void destroyMetadataStore() {
+        if (metadataStore != null) {
+            metadataStore.destroy();
         }
     }
 
@@ -1389,6 +1422,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     private void destroyStorageImmediate(boolean isDuringShutdown, boolean internal) {
         mutationObserver.onDestroy(isDuringShutdown, internal);
         expirySystem.destroy();
+        destroyMetadataStore();
         // Destroy storage in the end
         storage.destroy(isDuringShutdown);
     }

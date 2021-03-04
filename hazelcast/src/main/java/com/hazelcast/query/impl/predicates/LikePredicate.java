@@ -19,8 +19,12 @@ package com.hazelcast.query.impl.predicates;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.BinaryInterface;
+import com.hazelcast.query.impl.Index;
+import com.hazelcast.query.impl.QueryContext;
+import com.hazelcast.query.impl.QueryableEntry;
 
 import java.io.IOException;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -28,7 +32,7 @@ import java.util.regex.Pattern;
  * Like Predicate
  */
 @BinaryInterface
-public class LikePredicate extends AbstractPredicate {
+public class LikePredicate extends AbstractPredicate implements IndexAwarePredicate {
 
     private static final long serialVersionUID = 1L;
 
@@ -41,6 +45,38 @@ public class LikePredicate extends AbstractPredicate {
     public LikePredicate(String attributeName, String expression) {
         super(attributeName);
         this.expression = expression;
+    }
+
+    @Override
+    public Set<QueryableEntry> filter(QueryContext queryContext) {
+        Index index = queryContext.matchIndex(attributeName, QueryContext.IndexMatchHint.PREFER_ORDERED);
+        String indexPrefix = expression.substring(0, expression.length() - 1);
+        return index.getRecords(indexPrefix, true, indexPrefix + "\uFFFF", false);
+    }
+
+    @Override
+    public boolean isIndexed(QueryContext queryContext) {
+        Index index = queryContext.matchIndex(attributeName, QueryContext.IndexMatchHint.PREFER_ORDERED);
+        return index != null && index.isOrdered() && expressionCanBeUsedAsIndexPrefix();
+    }
+
+    private boolean expressionCanBeUsedAsIndexPrefix() {
+        boolean escape = false;
+        for (int i = 0; i < expression.length(); i++) {
+            char c = expression.charAt(i);
+            if (c == '\\') {
+                escape = !escape;
+            } else {
+                if (c == '%' && !escape) {
+                    return i == expression.length() - 1;
+                }
+                if (c == '_' && !escape) {
+                    return false;
+                }
+                escape = false;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -79,13 +115,13 @@ public class LikePredicate extends AbstractPredicate {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
-        out.writeUTF(expression);
+        out.writeString(expression);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
-        expression = in.readUTF();
+        expression = in.readString();
     }
 
     protected int getFlags() {

@@ -59,6 +59,7 @@ public interface PortableWriter {
      * @throws IOException in case of any exceptional case
      * @deprecated for the sake of better naming. Use {@link #writeString(String, String)} instead.
      */
+    @Deprecated
     void writeUTF(@Nonnull String fieldName, @Nullable String value) throws IOException;
 
     /**
@@ -68,7 +69,6 @@ public interface PortableWriter {
      * @param value     utf string value to be written
      * @throws IOException in case of any exceptional case
      */
-    @Deprecated
     void writeString(@Nonnull String fieldName, @Nullable String value) throws IOException;
 
     /**

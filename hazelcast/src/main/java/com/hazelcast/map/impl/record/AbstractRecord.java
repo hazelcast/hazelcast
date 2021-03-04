@@ -105,25 +105,6 @@ public abstract class AbstractRecord<V> implements Record<V> {
     }
 
     @Override
-    public Object getCachedValueUnsafe() {
-        return Record.NOT_CACHED;
-    }
-
-    @Override
-    public boolean casCachedValue(Object expectedValue, Object newValue) {
-        return true;
-    }
-
-    @Override
-    public final long getSequence() {
-        return UNSET;
-    }
-
-    @Override
-    public final void setSequence(long sequence) {
-    }
-
-    @Override
     public long getLastStoredTime() {
         if (lastStoredTime == UNSET) {
             return 0L;

@@ -144,7 +144,7 @@ public class AnIdentifiedDataSerializable implements IdentifiedDataSerializable 
         dataOutput.writeFloat(f);
         dataOutput.writeInt(i);
         dataOutput.writeLong(l);
-        dataOutput.writeUTF(str);
+        dataOutput.writeString(str);
 
         dataOutput.writeBooleanArray(booleans);
         dataOutput.writeByteArray(bytes);
@@ -194,7 +194,7 @@ public class AnIdentifiedDataSerializable implements IdentifiedDataSerializable 
         f = dataInput.readFloat();
         i = dataInput.readInt();
         l = dataInput.readLong();
-        str = dataInput.readUTF();
+        str = dataInput.readString();
 
         booleans = dataInput.readBooleanArray();
         bytes = dataInput.readByteArray();
@@ -204,7 +204,7 @@ public class AnIdentifiedDataSerializable implements IdentifiedDataSerializable 
         floats = dataInput.readFloatArray();
         ints = dataInput.readIntArray();
         longs = dataInput.readLongArray();
-        strings = dataInput.readUTFArray();
+        strings = dataInput.readStringArray();
 
         booleansNull = dataInput.readBooleanArray();
         bytesNull = dataInput.readByteArray();
@@ -214,7 +214,7 @@ public class AnIdentifiedDataSerializable implements IdentifiedDataSerializable 
         floatsNull = dataInput.readFloatArray();
         intsNull = dataInput.readIntArray();
         longsNull = dataInput.readLongArray();
-        stringsNull = dataInput.readUTFArray();
+        stringsNull = dataInput.readStringArray();
 
         byteSize = dataInput.readByte();
         bytesFully = new byte[byteSize];

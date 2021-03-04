@@ -82,15 +82,15 @@ public class GetResultOperation<V>
     protected void writeInternal(ObjectDataOutput out)
             throws IOException {
         super.writeInternal(out);
-        out.writeUTF(taskName);
-        out.writeUTF(handler.toUrn());
+        out.writeString(taskName);
+        out.writeString(handler.toUrn());
     }
 
     @Override
     protected void readInternal(ObjectDataInput in)
             throws IOException {
         super.readInternal(in);
-        this.taskName = in.readUTF();
-        this.handler = ScheduledTaskHandler.of(in.readUTF());
+        this.taskName = in.readString();
+        this.handler = ScheduledTaskHandler.of(in.readString());
     }
 }

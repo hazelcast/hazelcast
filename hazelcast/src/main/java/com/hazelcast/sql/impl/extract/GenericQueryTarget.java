@@ -43,14 +43,9 @@ public class GenericQueryTarget implements QueryTarget, GenericTargetAccessor {
     }
 
     @Override
-    public void setTarget(Object object) {
-        if (object instanceof Data) {
-            serialized = (Data) object;
-            deserialized = null;
-        } else {
-            serialized = null;
-            deserialized = object;
-        }
+    public void setTarget(Object target, Data targetData) {
+        serialized = targetData;
+        deserialized = target;
 
         targetWithObjectTypeForDirectAccess = null;
         targetForFieldAccess = null;

@@ -208,13 +208,13 @@ public class BitmapIndexOptions implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(uniqueKey);
+        out.writeString(uniqueKey);
         out.writeInt(uniqueKeyTransformation.getId());
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        uniqueKey = in.readUTF();
+        uniqueKey = in.readString();
         uniqueKeyTransformation = UniqueKeyTransformation.fromId(in.readInt());
     }
 

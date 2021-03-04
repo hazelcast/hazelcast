@@ -280,4 +280,13 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
         return Util.last(names);
     }
+
+    /**
+     * Returns whether the validated node returns an infinite number of rows.
+     *
+     * @throws IllegalStateException if called before the node is validated.
+     */
+    public boolean isInfiniteRows() {
+        return false;
+    }
 }

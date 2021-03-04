@@ -76,7 +76,7 @@ public class UpdateRaftGroupMembersCmd extends RaftGroupCmd implements Identifie
             out.writeObject(member);
         }
         out.writeObject(member);
-        out.writeUTF(mode.name());
+        out.writeString(mode.name());
     }
 
     @Override
@@ -89,7 +89,7 @@ public class UpdateRaftGroupMembersCmd extends RaftGroupCmd implements Identifie
         }
         this.members = members;
         this.member = in.readObject();
-        this.mode = MembershipChangeMode.valueOf(in.readUTF());
+        this.mode = MembershipChangeMode.valueOf(in.readString());
     }
 
     @Override

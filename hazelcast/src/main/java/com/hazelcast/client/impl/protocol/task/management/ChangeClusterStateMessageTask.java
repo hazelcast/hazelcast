@@ -24,6 +24,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.operation.ChangeClusterStateOperation;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.permission.ManagementPermission;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
@@ -32,6 +33,8 @@ import java.security.Permission;
 import static com.hazelcast.client.impl.protocol.codec.MCChangeClusterStateCodec.decodeRequest;
 
 public class ChangeClusterStateMessageTask extends AbstractInvocationMessageTask<Integer> {
+
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("cluster.changeState");
 
     public ChangeClusterStateMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -70,7 +73,7 @@ public class ChangeClusterStateMessageTask extends AbstractInvocationMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return REQUIRED_PERMISSION;
     }
 
     @Override

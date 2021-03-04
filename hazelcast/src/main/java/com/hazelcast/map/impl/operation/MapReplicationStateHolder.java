@@ -247,7 +247,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
 
         for (Map.Entry<String, RecordStore<Record>> entry : storesByMapName.entrySet()) {
             String mapName = entry.getKey();
-            out.writeUTF(mapName);
+            out.writeString(mapName);
 
             SerializationService ss = getSerializationService(operation.getRecordStore(mapName).getMapContainer());
             RecordStore<Record> recordStore = entry.getValue();
@@ -270,7 +270,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
 
         out.writeInt(loaded.size());
         for (Map.Entry<String, Boolean> loadedEntry : loaded.entrySet()) {
-            out.writeUTF(loadedEntry.getKey());
+            out.writeString(loadedEntry.getKey());
             out.writeBoolean(loadedEntry.getValue());
         }
 
@@ -292,7 +292,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
         recordStoreStatsPerMapName = createHashMap(size);
 
         for (int i = 0; i < size; i++) {
-            String name = in.readUTF();
+            String name = in.readString();
             int numOfRecords = in.readInt();
             List keyRecordExpiry = new ArrayList<>(numOfRecords * 3);
             for (int j = 0; j < numOfRecords; j++) {
@@ -315,7 +315,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
         int loadedSize = in.readInt();
         loaded = createHashMap(loadedSize);
         for (int i = 0; i < loadedSize; i++) {
-            loaded.put(in.readUTF(), in.readBoolean());
+            loaded.put(in.readString(), in.readBoolean());
         }
 
         int mapIndexInfoSize = in.readInt();

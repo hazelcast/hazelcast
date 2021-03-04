@@ -55,10 +55,14 @@ public abstract class AbstractClientCachePartitionIteratorTest extends Hazelcast
         factory.terminateAll();
     }
 
+    private <T> Iterator<Cache.Entry<T, T>> getIterator(ICacheInternal<T, T> cache) {
+        return cache.iterator(10, 1, prefetchValues);
+    }
+
     @Test
     public void test_HasNext_Returns_False_On_EmptyPartition() throws Exception {
         ICacheInternal<Integer, Integer> cache = getCacheProxy();
-        Iterator<Cache.Entry<Integer, Integer>> iterator = cache.iterator(10, 1, prefetchValues);
+        Iterator<Cache.Entry<Integer, Integer>> iterator = getIterator(cache);
         assertFalse(iterator.hasNext());
     }
 
@@ -70,7 +74,7 @@ public abstract class AbstractClientCachePartitionIteratorTest extends Hazelcast
         String value = randomString();
         cache.put(key, value);
 
-        Iterator<Cache.Entry<String, String>> iterator = cache.iterator(10, 1, prefetchValues);
+        Iterator<Cache.Entry<String, String>> iterator = getIterator(cache);
         assertTrue(iterator.hasNext());
     }
 
@@ -82,7 +86,7 @@ public abstract class AbstractClientCachePartitionIteratorTest extends Hazelcast
         String value = randomString();
         cache.put(key, value);
 
-        Iterator<Cache.Entry<String, String>> iterator = cache.iterator(10, 1, prefetchValues);
+        Iterator<Cache.Entry<String, String>> iterator = getIterator(cache);
         Cache.Entry entry = iterator.next();
         assertEquals(value, entry.getValue());
     }
@@ -95,7 +99,7 @@ public abstract class AbstractClientCachePartitionIteratorTest extends Hazelcast
         String value = randomString();
         cache.put(key, value);
 
-        Iterator<Cache.Entry<String, String>> iterator = cache.iterator(10, 1, prefetchValues);
+        Iterator<Cache.Entry<String, String>> iterator = getIterator(cache);
         Cache.Entry entry = iterator.next();
         assertEquals(value, entry.getValue());
         boolean hasNext = iterator.hasNext();
@@ -108,10 +112,10 @@ public abstract class AbstractClientCachePartitionIteratorTest extends Hazelcast
         String value = randomString();
         int count = 1000;
         for (int i = 0; i < count; i++) {
-            String key = generateKeyForPartition(server, 42);
+            String key = generateKeyForPartition(server, 1);
             cache.put(key, value);
         }
-        Iterator<Cache.Entry<String, String>> iterator = cache.iterator(10, 42, prefetchValues);
+        Iterator<Cache.Entry<String, String>> iterator = getIterator(cache);
         for (int i = 0; i < count; i++) {
             Cache.Entry entry = iterator.next();
             assertEquals(value, entry.getValue());

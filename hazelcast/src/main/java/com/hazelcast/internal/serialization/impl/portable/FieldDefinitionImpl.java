@@ -16,28 +16,41 @@
 
 package com.hazelcast.internal.serialization.impl.portable;
 
+import com.hazelcast.internal.serialization.SerializableByConvention;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
 
-public class FieldDefinitionImpl implements FieldDefinition {
+import java.io.IOException;
 
-    private final int index;
-    private final String fieldName;
-    private final FieldType type;
-    private final int classId;
-    private final int factoryId;
-    private final int version;
+import static com.hazelcast.internal.serialization.SerializableByConvention.Reason.PUBLIC_API;
+
+@SerializableByConvention(PUBLIC_API)
+public class FieldDefinitionImpl implements FieldDefinition, DataSerializable {
+
+    private int index;
+    private String fieldName;
+    private FieldType type;
+    private int factoryId;
+    private int classId;
+    private int version;
+
+    @SuppressWarnings("unused")
+    private FieldDefinitionImpl() {
+    }
 
     public FieldDefinitionImpl(int index, String fieldName, FieldType type, int version) {
         this(index, fieldName, type, 0, 0, version);
     }
 
     public FieldDefinitionImpl(int index, String fieldName, FieldType type, int factoryId, int classId, int version) {
-        this.classId = classId;
         this.type = type;
         this.fieldName = fieldName;
         this.index = index;
         this.factoryId = factoryId;
+        this.classId = classId;
         this.version = version;
     }
 
@@ -72,6 +85,26 @@ public class FieldDefinitionImpl implements FieldDefinition {
     }
 
     @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeInt(index);
+        out.writeString(fieldName);
+        out.writeByte(type.getId());
+        out.writeInt(factoryId);
+        out.writeInt(classId);
+        out.writeInt(version);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        index = in.readInt();
+        fieldName = in.readString();
+        type = FieldType.get(in.readByte());
+        factoryId = in.readInt();
+        classId = in.readInt();
+        version = in.readInt();
+    }
+
+    @Override
     @SuppressWarnings("checkstyle:npathcomplexity")
     public boolean equals(Object o) {
         if (this == o) {
@@ -85,10 +118,10 @@ public class FieldDefinitionImpl implements FieldDefinition {
         if (index != that.index) {
             return false;
         }
-        if (classId != that.classId) {
+        if (factoryId != that.factoryId) {
             return false;
         }
-        if (factoryId != that.factoryId) {
+        if (classId != that.classId) {
             return false;
         }
         if (version != that.version) {
@@ -105,8 +138,8 @@ public class FieldDefinitionImpl implements FieldDefinition {
         int result = index;
         result = 31 * result + (fieldName != null ? fieldName.hashCode() : 0);
         result = 31 * result + (type != null ? type.hashCode() : 0);
-        result = 31 * result + classId;
         result = 31 * result + factoryId;
+        result = 31 * result + classId;
         result = 31 * result + version;
         return result;
     }
@@ -117,8 +150,8 @@ public class FieldDefinitionImpl implements FieldDefinition {
                 + "index=" + index
                 + ", fieldName='" + fieldName + '\''
                 + ", type=" + type
-                + ", classId=" + classId
                 + ", factoryId=" + factoryId
+                + ", classId=" + classId
                 + ", version=" + version
                 + '}';
     }

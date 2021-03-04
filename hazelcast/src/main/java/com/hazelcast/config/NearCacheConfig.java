@@ -389,7 +389,7 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeInt(timeToLiveSeconds);
         out.writeInt(maxIdleSeconds);
         out.writeBoolean(invalidateOnChange);
@@ -402,7 +402,7 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         timeToLiveSeconds = in.readInt();
         maxIdleSeconds = in.readInt();
         invalidateOnChange = in.readBoolean();

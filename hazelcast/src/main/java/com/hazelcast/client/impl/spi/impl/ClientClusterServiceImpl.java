@@ -61,6 +61,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static java.util.Collections.EMPTY_SET;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableSet;
 
@@ -209,11 +210,35 @@ public class ClientClusterServiceImpl
                 logger.fine("Resetting the member list version ");
             }
             MemberListSnapshot clusterViewSnapshot = memberListSnapshot.get();
-            //This check is necessary so that `clearMemberListVersion` when handling auth response will not
-            //intervene with client failover logic
+            // This check is necessary so that when handling auth response, it will not
+            // intervene with client failover logic
             if (clusterViewSnapshot != EMPTY_SNAPSHOT) {
                 memberListSnapshot.set(new MemberListSnapshot(0, clusterViewSnapshot.members));
             }
+        }
+    }
+
+    /**
+     * Clears the member list and fires member removed event for members in the list.
+     */
+    public void clearMemberList() {
+        List<MembershipEvent> events = null;
+        synchronized (clusterViewLock) {
+            if (logger.isFineEnabled()) {
+                logger.fine("Resetting the member list ");
+            }
+            MemberListSnapshot clusterViewSnapshot = this.memberListSnapshot.get();
+            // This check is necessary so that when handling auth response, it will not
+            // intervene with client failover logic
+            if (clusterViewSnapshot != EMPTY_SNAPSHOT) {
+                Collection<Member> prevMembers = clusterViewSnapshot.members.values();
+                this.memberListSnapshot.set(new MemberListSnapshot(0, new LinkedHashMap<>()));
+                events = detectMembershipEvents(prevMembers, EMPTY_SET);
+            }
+
+        }
+        if (events != null) {
+            fireEvents(events);
         }
     }
 

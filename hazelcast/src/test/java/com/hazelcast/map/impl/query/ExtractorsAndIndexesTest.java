@@ -68,6 +68,7 @@ public class ExtractorsAndIndexesTest extends HazelcastTestSupport {
         config.getNativeMemoryConfig().setEnabled(true);
 
         config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "1");
+        config.setProperty(QueryEngineImpl.DISABLE_MIGRATION_FALLBACK.getName(), "true");
         HazelcastInstance instance = createHazelcastInstance(config);
 
         IMap<Integer, Person> map = instance.getMap(mapName);

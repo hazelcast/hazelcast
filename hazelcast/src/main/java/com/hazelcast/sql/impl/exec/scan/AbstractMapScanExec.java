@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.exec.scan;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.sql.impl.SqlErrorCode;
@@ -52,8 +53,7 @@ public abstract class AbstractMapScanExec extends AbstractExec {
     protected final List<QueryDataType> fieldTypes;
     protected final List<Integer> projects;
     protected final Expression<Boolean> filter;
-
-    private final InternalSerializationService serializationService;
+    protected final InternalSerializationService serializationService;
 
     private int migrationStamp;
     private KeyValueIterator recordIterator;
@@ -104,7 +104,12 @@ public abstract class AbstractMapScanExec extends AbstractExec {
         currentRows = null;
 
         while (recordIterator.tryAdvance()) {
-            Row row = prepareRow(recordIterator.getKey(), recordIterator.getValue());
+            Row row = prepareRow(
+                recordIterator.getKey(),
+                recordIterator.getKeyData(),
+                recordIterator.getValue(),
+                recordIterator.getValueData()
+            );
 
             if (row != null) {
                 if (currentRows == null) {
@@ -165,12 +170,14 @@ public abstract class AbstractMapScanExec extends AbstractExec {
      * 1) Check filter
      * 2) Extract projections
      *
-     * @param rawKey Key (data or object)
-     * @param rawValue Value (data or object)
+     * @param rawKey key as object, might be null
+     * @param rawKeyData key as data, might be null
+     * @param rawValue value as object, might be null
+     * @param rawValueData value as data, might be null
      * @return Row that is ready for processing by parent operators or {@code null} if the row hasn't passed the filter.
      */
-    protected Row prepareRow(Object rawKey, Object rawValue) {
-        row.setKeyValue(rawKey, rawValue);
+    protected Row prepareRow(Object rawKey, Data rawKeyData, Object rawValue, Data rawValueData) {
+        row.setKeyValue(rawKey, rawKeyData, rawValue, rawValueData);
 
         // Filter.
         if (filter != null && TernaryLogic.isNotTrue(filter.evalTop(row, ctx))) {

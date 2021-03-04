@@ -786,7 +786,7 @@ public class SqlBasicTest extends SqlTestSupport {
             out.writeObject(decimalVal);
 
             out.writeChar(charVal);
-            out.writeUTF(varcharVal);
+            out.writeString(varcharVal);
 
             out.writeObject(dateVal);
             out.writeObject(timeVal);
@@ -817,7 +817,7 @@ public class SqlBasicTest extends SqlTestSupport {
             decimalVal = in.readObject();
 
             charVal = in.readChar();
-            varcharVal = in.readUTF();
+            varcharVal = in.readString();
 
             dateVal = in.readObject();
             timeVal = in.readObject();
@@ -944,11 +944,11 @@ public class SqlBasicTest extends SqlTestSupport {
             writer.writeDouble(portableFieldName("doubleVal"), doubleVal);
 
             writer.writeChar(portableFieldName("charVal"), charVal);
-            writer.writeUTF(portableFieldName("varcharVal"), varcharVal);
+            writer.writeString(portableFieldName("varcharVal"), varcharVal);
 
             writer.writePortable(portableFieldName("portableVal"), portableVal);
 
-            writer.writeUTF(portableFieldName("nullVal"), null);
+            writer.writeString(portableFieldName("nullVal"), null);
         }
 
         @Override
@@ -963,10 +963,10 @@ public class SqlBasicTest extends SqlTestSupport {
             doubleVal = reader.readDouble(portableFieldName("doubleVal"));
 
             charVal = reader.readChar(portableFieldName("charVal"));
-            varcharVal = reader.readUTF(portableFieldName("varcharVal"));
+            varcharVal = reader.readString(portableFieldName("varcharVal"));
 
             portableVal = reader.readPortable(portableFieldName("portableVal"));
-            nullVal = reader.readUTF(portableFieldName("nullVal"));
+            nullVal = reader.readString(portableFieldName("nullVal"));
         }
     }
 

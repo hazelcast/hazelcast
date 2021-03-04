@@ -75,7 +75,7 @@ public class ClassData implements IdentifiedDataSerializable {
         out.writeByteArray(mainClassDefinition);
         out.writeInt(innerClassDefinitions.size());
         for (Map.Entry<String, byte[]> entry : innerClassDefinitions.entrySet()) {
-            out.writeUTF(entry.getKey());
+            out.writeString(entry.getKey());
             out.writeByteArray(entry.getValue());
         }
     }
@@ -86,7 +86,7 @@ public class ClassData implements IdentifiedDataSerializable {
         int size = in.readInt();
         innerClassDefinitions = new HashMap<String, byte[]>();
         for (int i = 0; i < size; i++) {
-            innerClassDefinitions.put(in.readUTF(), in.readByteArray());
+            innerClassDefinitions.put(in.readString(), in.readByteArray());
         }
     }
 }

@@ -750,12 +750,10 @@ hazelcast:
             - all
       set:
         - name: "*"
-          principal: "*"
           actions:
             - all
       cardinality-estimator:
         - name: "*"
-          principal: "*"
           actions:
             - all
       scheduled-executor:
@@ -765,19 +763,16 @@ hazelcast:
             - all
       atomic-long:
         - name: "*"
-          principal: "*"
           actions:
             - all
       atomic-reference:
         - name: "*"
-          principal: "*"
           actions:
             - all
       transaction:
         principal: deployer
       pn-counter:
         - name: "*"
-          principal: "*"
           actions:
             - all
       semaphore:
@@ -792,7 +787,6 @@ hazelcast:
             - all
       durable-executor-service:
         - name: "*"
-          principal: "*"
           actions:
             - all
       map:
@@ -807,27 +801,22 @@ hazelcast:
             - read
       flake-id-generator:
         - name: "*"
-          principal: "*"
           actions:
             - all
       topic:
         - name: "*"
-          principal: "*"
           actions:
             - all
       multimap:
         - name: "*"
-          principal: "*"
           actions:
             - all
       cache:
         - name: "*"
-          principal: "*"
           actions:
             - all
       lock:
         - name: "*"
-          principal: "*"
           actions:
             - all
       queue:
@@ -836,12 +825,10 @@ hazelcast:
             - all
       list:
         - name: "*"
-          principal: "*"
           actions:
             - all
       executor-service:
         - name: "*"
-          principal: "*"
           actions:
             - all
       ring-buffer:
@@ -851,14 +838,14 @@ hazelcast:
             - all
       replicatedmap:
         - name: "*"
-          principal: "*"
           actions:
             - all
       reliable-topic:
         - name: "*"
-          principal: "*"
           actions:
             - all
+      management:
+        - principal: "mcadmin"
     client-block-unmapped-actions: true
 
   member-attributes:

@@ -26,6 +26,7 @@ import com.hazelcast.config.WanQueueFullBehavior;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.permission.ManagementPermission;
 import com.hazelcast.wan.impl.AddWanConfigResult;
 import com.hazelcast.wan.impl.WanReplicationService;
 
@@ -35,6 +36,9 @@ import static com.hazelcast.config.WanBatchPublisherConfig.DEFAULT_ACKNOWLEDGE_T
 import static com.hazelcast.config.WanBatchPublisherConfig.DEFAULT_QUEUE_FULL_BEHAVIOUR;
 
 public class AddWanBatchPublisherConfigMessageTask extends AbstractCallableMessageTask<RequestParameters> {
+
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("wan.addBatchPublisherConfig");
+
     public AddWanBatchPublisherConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
@@ -83,7 +87,7 @@ public class AddWanBatchPublisherConfigMessageTask extends AbstractCallableMessa
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return REQUIRED_PERMISSION;
     }
 
     @Override

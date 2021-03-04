@@ -399,6 +399,7 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         checkValue0(sql(literal(1), TINYINT), TINYINT, (byte) 1);
         checkValue0(sql(literal(Byte.MIN_VALUE), TINYINT), TINYINT, Byte.MIN_VALUE);
         checkValue0(sql(literal(Byte.MAX_VALUE), TINYINT), TINYINT, Byte.MAX_VALUE);
+        checkFailure0(sql(literal(128), TINYINT), PARSING, "Numeric overflow while converting SMALLINT to TINYINT");
 
         checkValue0(sql(literal(1), SMALLINT), SMALLINT, (short) 1);
         checkValue0(sql(literal(1), INTEGER), INTEGER, 1);
@@ -1078,6 +1079,15 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         checkValue0(sql("null", TIMESTAMP), TIMESTAMP, null);
         checkValue0(sql("null", TIMESTAMP_WITH_TIME_ZONE), TIMESTAMP_WITH_TIME_ZONE, null);
         checkValue0(sql("null", OBJECT), OBJECT, null);
+    }
+
+    @Test
+    public void testNestedCastsOfLiterals() {
+        // tests for https://github.com/hazelcast/hazelcast/issues/18155
+        put(1);
+        checkFailure0(sql("CAST(128 AS INTEGER)", TINYINT), PARSING, "Numeric overflow while converting SMALLINT to TINYINT");
+        checkFailure0(sql("CAST(128 AS SMALLINT)", TINYINT), PARSING, "Numeric overflow while converting SMALLINT to TINYINT");
+        checkValue0(sql("CAST(42 AS SMALLINT)", TINYINT), TINYINT, (byte) 42);
     }
 
     @Test

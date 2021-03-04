@@ -25,12 +25,16 @@ import com.hazelcast.internal.config.MapConfigReadOnly;
 import com.hazelcast.internal.management.operation.GetMapConfigOperation;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.security.permission.ManagementPermission;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
 
 public class GetMapConfigMessageTask extends AbstractInvocationMessageTask<String> {
+
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("map.getConfig");
+
     public GetMapConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
@@ -81,7 +85,7 @@ public class GetMapConfigMessageTask extends AbstractInvocationMessageTask<Strin
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return REQUIRED_PERMISSION;
     }
 
     @Override

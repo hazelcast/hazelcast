@@ -38,8 +38,8 @@ public class QueryEventFilter extends EntryEventFilter {
     public QueryEventFilter() {
     }
 
-    public QueryEventFilter(boolean includeValue, Data key, Predicate predicate) {
-        super(includeValue, key);
+    public QueryEventFilter(Data key, Predicate predicate, boolean includeValue) {
+        super(key, includeValue);
         this.predicate = predicate;
     }
 

@@ -142,14 +142,14 @@ public final class Address implements IdentifiedDataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(port);
         out.write(type);
-        out.writeUTF(host);
+        out.writeString(host);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         port = in.readInt();
         type = in.readByte();
-        host = in.readUTF();
+        host = in.readString();
     }
 
     @Override

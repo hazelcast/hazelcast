@@ -33,7 +33,7 @@ public interface RecordFactory<T> {
     default boolean isClusterV41() {
         Version clusterVersion = geMapContainer().getMapServiceContext()
                 .getNodeEngine().getClusterService().getClusterVersion();
-        return clusterVersion.isEqualTo(Versions.V4_1);
+        return clusterVersion.isUnknownOrLessThan(Versions.V4_2);
     }
 
     // RU_COMPAT_4_1

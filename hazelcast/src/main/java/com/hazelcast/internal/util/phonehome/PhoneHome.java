@@ -36,7 +36,7 @@ import static java.lang.System.getenv;
 public class PhoneHome {
 
     private static final String FALSE = "false";
-    private static final String DEFAULT_BASE_PHONE_HOME_URL = "http://phonehome.hazelcast.com/ping";
+    private static final String DEFAULT_BASE_PHONE_HOME_URL = "https://phonehome.hazelcast.com/ping";
     private static final MetricsCollector CLOUD_INFO_COLLECTOR = new CloudInfoCollector();
 
     protected final Node hazelcastNode;
@@ -63,10 +63,7 @@ public class PhoneHome {
     }
 
     public void check() {
-        if (!hazelcastNode.getProperties().getBoolean(ClusterProperty.PHONE_HOME_ENABLED)) {
-            return;
-        }
-        if (FALSE.equals(getenv("HZ_PHONE_HOME_ENABLED"))) {
+        if (!isPhoneHomeEnabled(hazelcastNode)) {
             return;
         }
         try {
@@ -112,5 +109,12 @@ public class PhoneHome {
             }
         }
         return parameterCreator;
+    }
+
+    public static boolean isPhoneHomeEnabled(Node node) {
+        if (!node.getProperties().getBoolean(ClusterProperty.PHONE_HOME_ENABLED)) {
+            return false;
+        }
+        return !FALSE.equals(getenv("HZ_PHONE_HOME_ENABLED"));
     }
 }

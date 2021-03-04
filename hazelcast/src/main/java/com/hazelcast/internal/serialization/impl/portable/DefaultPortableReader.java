@@ -226,7 +226,7 @@ public class DefaultPortableReader implements PortableReader {
         try {
             int pos = readPosition(fieldName, FieldType.UTF);
             in.position(pos);
-            return in.readUTF();
+            return in.readString();
         } finally {
             in.position(currentPos);
         }

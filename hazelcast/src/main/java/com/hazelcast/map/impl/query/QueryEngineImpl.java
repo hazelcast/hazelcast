@@ -35,16 +35,19 @@ import com.hazelcast.query.impl.predicates.PagingPredicateImpl;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.PrimitiveIterator;
-import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.function.IntConsumer;
+import java.util.stream.Collectors;
 
+import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.SetUtil.allPartitionIds;
 import static java.util.Collections.singletonList;
@@ -59,11 +62,20 @@ import static java.util.Collections.singletonList;
  * <p>
  * Top level-query actors:
  * <ul>
- * <li>QueryEngine orchestrates the queries and  merging the result</li>
- * <li>QueryRunner -&gt; runs the query logic in the calling thread (so like evaluates the predicates and asks the index)</li>
+ *     <li>QueryEngine orchestrates the queries and merging the result
+ *     <li>QueryRunner -&gt; runs the query logic in the calling thread (so like evaluates the predicates and asks the index)
  * </ul>
  */
 public class QueryEngineImpl implements QueryEngine {
+
+    /**
+     * Used only for tests to disable the fallback to partition operations. We
+     * had issues when the fallback fixed the results in the normal case and
+     * the much worsened performance went unnoticed. (E.g.
+     * https://github.com/hazelcast/hazelcast/issues/18240).
+     */
+    public static final HazelcastProperty DISABLE_MIGRATION_FALLBACK =
+            new HazelcastProperty(QueryEngineImpl.class.getName() + ".disableMigrationFallback", false);
 
     private final MapServiceContext mapServiceContext;
     private final NodeEngine nodeEngine;
@@ -73,6 +85,7 @@ public class QueryEngineImpl implements QueryEngine {
     private final OperationService operationService;
     private final ClusterService clusterService;
     private final ResultProcessorRegistry resultProcessorRegistry;
+    private final boolean disableMigrationFallback;
 
     public QueryEngineImpl(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
@@ -83,6 +96,7 @@ public class QueryEngineImpl implements QueryEngine {
         this.operationService = nodeEngine.getOperationService();
         this.clusterService = nodeEngine.getClusterService();
         this.resultProcessorRegistry = mapServiceContext.getResultProcessorRegistry();
+        this.disableMigrationFallback = nodeEngine.getProperties().getBoolean(DISABLE_MIGRATION_FALLBACK);
     }
 
     @SuppressWarnings("unchecked")
@@ -91,18 +105,21 @@ public class QueryEngineImpl implements QueryEngine {
         Query adjustedQuery = adjustQuery(query);
         switch (target.mode()) {
             case ALL_NODES:
-                return runOnGivenPartitions(adjustedQuery, getAllPartitionIds(), TargetMode.ALL_NODES);
+                adjustedQuery = Query.of(adjustedQuery).partitionIdSet(getAllPartitionIds()).build();
+                return runOnGivenPartitions(adjustedQuery, adjustedQuery.getPartitionIdSet(), TargetMode.ALL_NODES);
             case LOCAL_NODE:
-                return runOnGivenPartitions(adjustedQuery, getLocalPartitionIds(), TargetMode.LOCAL_NODE);
+                adjustedQuery = Query.of(adjustedQuery).partitionIdSet(getLocalPartitionIds()).build();
+                return runOnGivenPartitions(adjustedQuery, adjustedQuery.getPartitionIdSet(), TargetMode.LOCAL_NODE);
             case PARTITION_OWNER:
                 int solePartition = target.partitions().solePartition();
+                adjustedQuery = Query.of(adjustedQuery).partitionIdSet(target.partitions()).build();
                 if (solePartition >= 0) {
                     return runOnGivenPartition(adjustedQuery, solePartition);
                 } else {
-                    return runOnGivenPartitions(adjustedQuery, target.partitions(), TargetMode.ALL_NODES);
+                    return runOnGivenPartitions(adjustedQuery, adjustedQuery.getPartitionIdSet(), TargetMode.ALL_NODES);
                 }
             default:
-                throw new IllegalArgumentException("Illegal target " + query);
+                throw new IllegalArgumentException("Illegal target " + target);
         }
     }
 
@@ -122,8 +139,10 @@ public class QueryEngineImpl implements QueryEngine {
     // query thread first, fallback to partition thread
     private Result runOnGivenPartitions(Query query, PartitionIdSet partitions, TargetMode targetMode) {
         Result result = doRunOnQueryThreads(query, partitions, targetMode);
-        if (isResultFromAnyPartitionMissing(partitions)) {
-            doRunOnPartitionThreads(query, partitions, result);
+        if (!disableMigrationFallback) {
+            if (isResultFromAnyPartitionMissing(partitions)) {
+                doRunOnPartitionThreads(query, partitions, result);
+            }
         }
         assertAllPartitionsQueried(partitions);
 
@@ -141,15 +160,15 @@ public class QueryEngineImpl implements QueryEngine {
     }
 
     private Result doRunOnQueryThreads(Query query, PartitionIdSet partitionIds, TargetMode targetMode) {
-        Result result = populateResult(query, partitionIds);
-        List<Future<Result>> futures = dispatchOnQueryThreads(query, partitionIds, targetMode);
+        Result result = populateResult(query);
+        List<Future<Result>> futures = dispatchOnQueryThreads(query, targetMode);
         addResultsOfPredicate(futures, result, partitionIds, false);
         return result;
     }
 
-    private List<Future<Result>> dispatchOnQueryThreads(Query query, PartitionIdSet partitionIds, TargetMode targetMode) {
+    private List<Future<Result>> dispatchOnQueryThreads(Query query, TargetMode targetMode) {
         try {
-            return dispatchFullQueryOnQueryThread(query, partitionIds, targetMode);
+            return dispatchFullQueryOnQueryThread(query, targetMode);
         } catch (Throwable t) {
             if (!(t instanceof HazelcastException)) {
                 // these are programmatic errors that needs to be visible
@@ -167,9 +186,9 @@ public class QueryEngineImpl implements QueryEngine {
         return Collections.emptyList();
     }
 
-    private Result populateResult(Query query, PartitionIdSet partitionIds) {
+    private Result populateResult(Query query) {
         return resultProcessorRegistry.get(query.getResultType()).populateResult(query,
-                queryResultSizeLimiter.getNodeResultLimit(partitionIds.size()));
+                queryResultSizeLimiter.getNodeResultLimit(query.getPartitionIdSet().size()));
     }
 
     private void doRunOnPartitionThreads(Query query, PartitionIdSet partitionIds, Result result) {
@@ -185,7 +204,7 @@ public class QueryEngineImpl implements QueryEngine {
     @SuppressWarnings("unchecked")
     // modifies partitionIds list! Optimization not to allocate an extra collection with collected partitionIds
     private void addResultsOfPredicate(List<Future<Result>> futures, Result result,
-                                       PartitionIdSet finishedPartitionIds, boolean rethrowAll) {
+                                       PartitionIdSet unfinishedPartitionIds, boolean rethrowAll) {
         for (Future<Result> future : futures) {
             Result queryResult = null;
 
@@ -203,13 +222,13 @@ public class QueryEngineImpl implements QueryEngine {
             }
             PartitionIdSet queriedPartitionIds = queryResult.getPartitionIds();
             if (queriedPartitionIds != null) {
-                if (!finishedPartitionIds.containsAll(queriedPartitionIds)) {
+                if (!unfinishedPartitionIds.containsAll(queriedPartitionIds)) {
                     // do not take into account results that contain partition IDs already removed from partitionIds
                     // collection as this means that we will count results from a single partition twice
                     // see also https://github.com/hazelcast/hazelcast/issues/6471
                     continue;
                 }
-                finishedPartitionIds.removeAll(queriedPartitionIds);
+                unfinishedPartitionIds.removeAll(queriedPartitionIds);
                 result.combine(queryResult);
             }
         }
@@ -249,22 +268,18 @@ public class QueryEngineImpl implements QueryEngine {
         return allPartitionIds(partitionCount);
     }
 
-    private boolean isResultFromAnyPartitionMissing(PartitionIdSet finishedPartitionIds) {
-        return !finishedPartitionIds.isEmpty();
+    private boolean isResultFromAnyPartitionMissing(PartitionIdSet unfinishedPartitionIds) {
+        return !unfinishedPartitionIds.isEmpty();
     }
 
     protected QueryResultSizeLimiter getQueryResultSizeLimiter() {
         return queryResultSizeLimiter;
     }
 
-    protected List<Future<Result>> dispatchFullQueryOnQueryThread(
-            Query query,
-            PartitionIdSet partitionIdSet,
-            TargetMode targetMode
-    ) {
+    protected List<Future<Result>> dispatchFullQueryOnQueryThread(Query query, TargetMode targetMode) {
         switch (targetMode) {
             case ALL_NODES:
-                return dispatchFullQueryOnAllMembersOnQueryThread(query, partitionIdSet);
+                return dispatchFullQueryOnAllMembersOnQueryThread(query);
             case LOCAL_NODE:
                 return dispatchFullQueryOnLocalMemberOnQueryThread(query);
             default:
@@ -279,10 +294,17 @@ public class QueryEngineImpl implements QueryEngine {
         return singletonList(result);
     }
 
-    private List<Future<Result>> dispatchFullQueryOnAllMembersOnQueryThread(Query query, PartitionIdSet partitionIdSet) {
-        Set<Address> members = new HashSet<>();
-        for (PrimitiveIterator.OfInt iterator = partitionIdSet.intIterator(); iterator.hasNext(); ) {
-            members.add(partitionService.getPartitionOwner(iterator.next()));
+    private List<Future<Result>> dispatchFullQueryOnAllMembersOnQueryThread(Query query) {
+        Collection<Address> members;
+        if (query.getPartitionIdSet().size() == partitionService.getPartitionCount()) {
+            members = clusterService.getMembers(DATA_MEMBER_SELECTOR).stream()
+                    .map(m -> m.getAddress())
+                    .collect(Collectors.toList());
+        } else {
+            members = new HashSet<>();
+            for (PrimitiveIterator.OfInt iterator = query.getPartitionIdSet().intIterator(); iterator.hasNext(); ) {
+                members.add(partitionService.getPartitionOwnerOrWait(iterator.next()));
+            }
         }
 
         List<Future<Result>> futures = new ArrayList<>(members.size());

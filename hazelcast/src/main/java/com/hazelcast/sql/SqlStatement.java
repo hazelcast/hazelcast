@@ -260,7 +260,7 @@ public final class SqlStatement {
      * <p>
      * Only positive values are allowed.
      * <p>
-     * The default value is expected to work well for the most workloads. A bigger buffer size may give you a slight performance
+     * The default value is expected to work well for most workloads. A bigger buffer size may give you a slight performance
      * boost for queries with large result sets at the cost of increased memory consumption.
      * <p>
      * Defaults to {@value #DEFAULT_CURSOR_BUFFER_SIZE}.

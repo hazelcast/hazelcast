@@ -37,6 +37,10 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -81,6 +85,8 @@ public class SqlOrderByTest extends SqlTestSupport {
     private static final String MAP_BINARY = "map_binary";
 
     private static final int DATA_SET_SIZE = 4096;
+    private static final int DATA_SET_MAX_POSITIVE = DATA_SET_SIZE / 2 ;
+
     private static final SqlTestInstanceFactory FACTORY = SqlTestInstanceFactory.create();
 
     private static List<HazelcastInstance> members;
@@ -132,16 +138,16 @@ public class SqlOrderByTest extends SqlTestSupport {
         Random r = ThreadLocalRandom.current();
         int nextNullValue = Math.max(1, r.nextInt(5));
         int nextSameValues = Math.max(1, r.nextInt(5));
-        int skipFirstEntries = 20;
-        long idx = 0;
-        while (idx < DATA_SET_SIZE) {
-            if (idx % nextNullValue == 0 && idx >= skipFirstEntries) {
+        long idx = Math.negateExact(DATA_SET_MAX_POSITIVE);
+        int skipFirstPositiveEntries = 20;
+        while (idx < DATA_SET_MAX_POSITIVE) {
+            if (idx % nextNullValue == 0 && idx >= skipFirstPositiveEntries) {
                 data.put(key(idx++), value());
                 nextNullValue = Math.max(1, r.nextInt(5));
-            } else if (idx % nextSameValues == 0 && idx >= skipFirstEntries) {
+            } else if (idx % nextSameValues == 0 && idx >= skipFirstPositiveEntries) {
                 int sameValuesCount = r.nextInt(5);
                 long value = idx;
-                while (sameValuesCount > 0 && idx < DATA_SET_SIZE) {
+                while (sameValuesCount > 0 && idx < DATA_SET_MAX_POSITIVE) {
                     data.put(key(idx++), value(value));
                     sameValuesCount--;
                 }
@@ -223,6 +229,21 @@ public class SqlOrderByTest extends SqlTestSupport {
             "decimalVal",
             "charVal",
             "varcharVal");
+
+        List<Boolean> orderDirections = new ArrayList<>(fields.size());
+        fields.forEach(entry -> orderDirections.add(true));
+
+        checkSelectWithOrderBy(fields, fields, orderDirections);
+    }
+
+    @Test
+    public void testSelectWithOrderByDefaultTemporalTypes() {
+        List<String> fields = Arrays.asList(
+            "dateVal",
+            "timeVal",
+            "timestampVal",
+            "tsTzOffsetDateTimeVal"
+        );
 
         List<Boolean> orderDirections = new ArrayList<>(fields.size());
         fields.forEach(entry -> orderDirections.add(true));
@@ -318,6 +339,19 @@ public class SqlOrderByTest extends SqlTestSupport {
         String intValField = "intVal";
         String realValField = "realVal";
         addIndex(Arrays.asList(intValField), SORTED);
+        addIndex(Arrays.asList(realValField), SORTED);
+
+        String sql = "SELECT " + intValField + ", " + realValField + " FROM " + mapName()
+            + " WHERE " + intValField + " = 1 ORDER BY " + realValField;
+
+        assertSqlResultOrdered(sql, Arrays.asList(realValField), Arrays.asList(false), 1);
+    }
+
+    @Test
+    public void testSelectWithOrderByAndWhereNotIndexedField() {
+        IMap<Object, AbstractPojo> map = getTarget().getMap(mapName());
+        String intValField = "intVal";
+        String realValField = "realVal";
         addIndex(Arrays.asList(realValField), SORTED);
 
         String sql = "SELECT " + intValField + ", " + realValField + " FROM " + mapName()
@@ -751,6 +785,14 @@ public class SqlOrderByTest extends SqlTestSupport {
                     cmp = ((Short) prevFieldValue).compareTo((Short) fieldValue);
                 } else if (fieldValue instanceof BigDecimal) {
                     cmp = ((BigDecimal) prevFieldValue).compareTo((BigDecimal) fieldValue);
+                } else if (fieldValue instanceof LocalTime) {
+                    cmp = ((LocalTime) prevFieldValue).compareTo((LocalTime) fieldValue);
+                } else if (fieldValue instanceof LocalDate) {
+                    cmp = ((LocalDate) prevFieldValue).compareTo((LocalDate) fieldValue);
+                } else if (fieldValue instanceof LocalDateTime) {
+                    cmp = ((LocalDateTime) prevFieldValue).compareTo((LocalDateTime) fieldValue);
+                } else if (fieldValue instanceof OffsetDateTime) {
+                    cmp = ((OffsetDateTime) prevFieldValue).compareTo((OffsetDateTime) fieldValue);
                 } else {
                     fail("Not supported field type " + fieldValue.getClass());
                 }

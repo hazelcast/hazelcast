@@ -113,8 +113,23 @@ public class NoOpClientEngine implements ClientEngine {
     }
 
     @Override
-    public Map<String, Integer> getConnectedClientStats() {
+    public Map<String, Long> getActiveClientsInCluster() {
         return emptyMap();
+    }
+
+    @Override
+    public Map<String, ClientEndpointStatisticsSnapshot> getEndpointStatisticsSnapshots() {
+        return emptyMap();
+    }
+
+    @Override
+    public void onEndpointAuthenticated(ClientEndpoint endpoint) {
+
+    }
+
+    @Override
+    public void onEndpointDestroyed(ClientEndpoint endpoint) {
+
     }
 
     @Override

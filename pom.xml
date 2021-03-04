@@ -58,9 +58,9 @@
         <maven.compiler.plugin.version>2.5.1</maven.compiler.plugin.version>
         <maven.jar.plugin.version>2.4</maven.jar.plugin.version>
         <maven.source.plugin.version>2.2.1</maven.source.plugin.version>
-        <maven.javadoc.plugin.version>3.1.0</maven.javadoc.plugin.version>
+        <maven.javadoc.plugin.version>3.2.0</maven.javadoc.plugin.version>
         <maven.javadoc.plugin.excludePackageNames>
-            *.impl:*.impl.*:*.internal:*.internal.*:*.operations:*.proxy:*.util:
+            *.impl:*.impl.*:*.internal:*.internal.*:*.operations:*.proxy:
             com.hazelcast.aws.security:*.handlermigration:*.client.connection.nio:
             *.client.console:*.client.protocol.generator:*.cluster.client:
             *.concurrent:*.nio.ascii:*.nio.ssl:*.nio.tcp:*.partition.client:
@@ -82,22 +82,22 @@
         <maven.sonar.plugin.version>3.6.0.1398</maven.sonar.plugin.version>
         <maven.jacoco.plugin.version>0.8.6</maven.jacoco.plugin.version>
         <maven.failsafe.plugin.version>2.22.2</maven.failsafe.plugin.version>
-        <maven.cobertura.plugin.version>2.6</maven.cobertura.plugin.version>
+        <maven.cobertura.plugin.version>2.7</maven.cobertura.plugin.version>
         <maven.enforcer.plugin.version>3.0.0-M2</maven.enforcer.plugin.version>
 
         <log4j.version>1.2.17</log4j.version>
 
-        <log4j2.version>2.13.3</log4j2.version>
+        <log4j2.version>2.14.0</log4j2.version>
         <slf4j.api.version>1.7.30</slf4j.api.version>
 
-        <jackson.version>2.11.2</jackson.version>
-        <junit.version>4.13.1</junit.version>
+        <jackson.version>2.12.1</jackson.version>
+        <junit.version>4.13.2</junit.version>
         <hamcrest.version>2.2</hamcrest.version>
         <mockito.version>3.6.0</mockito.version>
-        <powermock.version>2.0.7</powermock.version>
-        <bytebuddy.version>1.10.18</bytebuddy.version>
+        <powermock.version>2.0.9</powermock.version>
+        <bytebuddy.version>1.10.21</bytebuddy.version>
         <reflections.version>0.9.10</reflections.version>
-        <jmh.version>1.21</jmh.version>
+        <jmh.version>1.27</jmh.version>
         <commons-lang3.version>3.11</commons-lang3.version>
         <felix.utils.version>1.11.6</felix.utils.version>
         <findbugs.annotations.version>3.0.1u2</findbugs.annotations.version>
@@ -772,7 +772,7 @@
                     <plugin>
                         <groupId>org.sonatype.plugins</groupId>
                         <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <version>1.6.3</version>
+                        <version>1.6.8</version>
                         <extensions>true</extensions>
                         <configuration>
                             <serverId>release-repository</serverId>

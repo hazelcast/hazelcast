@@ -98,6 +98,8 @@ public class ClientClusterRestartEventTest {
         });
 
         instance.shutdown();
+        //Allow same addresses to be used to test hot restart correctly
+        hazelcastFactory.cleanup();
         instance = hazelcastFactory.newHazelcastInstance(newConfig());
         Member newMember = instance.getCluster().getLocalMember();
 
@@ -147,7 +149,8 @@ public class ClientClusterRestartEventTest {
                 throw new AssertionError(e);
             }
         });
-
+        //Allow same addresses to be used to test hot restart correctly
+        hazelcastFactory.cleanup();
         Future<HazelcastInstance> f1 = spawn(() -> hazelcastFactory.newHazelcastInstance(newConfig()));
         Future<HazelcastInstance> f2 = spawn(() -> hazelcastFactory.newHazelcastInstance(newConfig()));
 

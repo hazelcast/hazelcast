@@ -176,11 +176,6 @@ public class MapContainer {
             ThreadUtil.assertRunningOnPartitionThread();
         }
 
-        if (!partitionService.isPartitionOwner(partitionId)) {
-            // throw entry out if it is not owned by this local node.
-            return false;
-        }
-
         RecordStore recordStore = mapServiceContext.getExistingRecordStore(partitionId, name);
         return recordStore != null && !recordStore.expireOrAccess(keyData);
     }
@@ -467,6 +462,19 @@ public class MapContainer {
         public Data apply(Object input) {
             SerializationService ss = mapStoreContext.getSerializationService();
             return ss.toData(input, partitioningStrategy);
+        }
+    }
+
+    public boolean isUseCachedDeserializedValuesEnabled(int partitionId) {
+        CacheDeserializedValues cacheDeserializedValues = getMapConfig().getCacheDeserializedValues();
+        switch (cacheDeserializedValues) {
+            case NEVER:
+                return false;
+            case ALWAYS:
+                return true;
+            default:
+                //if index exists then cached value is already set -> let's use it
+                return getIndexes(partitionId).haveAtLeastOneIndex();
         }
     }
 }

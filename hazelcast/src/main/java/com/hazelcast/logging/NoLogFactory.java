@@ -16,18 +16,37 @@
 
 package com.hazelcast.logging;
 
+import com.hazelcast.logging.impl.InternalLogger;
+import com.hazelcast.logging.impl.InternalLoggerFactory;
+
+import javax.annotation.Nonnull;
 import java.util.logging.Level;
 
-public class NoLogFactory implements LoggerFactory {
+public class NoLogFactory implements LoggerFactory, InternalLoggerFactory {
 
     private final ILogger noLogger = new NoLogger();
+
+    @Override
+    public void setLevel(@Nonnull Level level) {
+        // do nothing
+    }
+
+    @Override
+    public void resetLevel() {
+        // do nothing
+    }
 
     @Override
     public ILogger getLogger(String name) {
         return noLogger;
     }
 
-    static class NoLogger implements ILogger {
+    static class NoLogger implements ILogger, InternalLogger {
+
+        @Override
+        public void setLevel(Level level) {
+            // do noting
+        }
 
         @Override
         public void finest(String message) {

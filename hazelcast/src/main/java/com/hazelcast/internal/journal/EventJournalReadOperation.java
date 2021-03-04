@@ -164,7 +164,7 @@ public abstract class EventJournalReadOperation<T, J> extends Operation
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeInt(minSize);
         out.writeInt(maxSize);
         out.writeLong(startSequence);
@@ -173,7 +173,7 @@ public abstract class EventJournalReadOperation<T, J> extends Operation
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        name = in.readUTF();
+        name = in.readString();
         minSize = in.readInt();
         maxSize = in.readInt();
         startSequence = in.readLong();

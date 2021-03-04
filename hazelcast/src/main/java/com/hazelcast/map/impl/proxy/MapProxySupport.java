@@ -19,7 +19,9 @@ package com.hazelcast.map.impl.proxy;
 import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.EntryListenerConfig;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
@@ -78,6 +80,7 @@ import com.hazelcast.projection.Projection;
 import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.IndexUtils;
+import com.hazelcast.query.impl.predicates.TruePredicate;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
 import com.hazelcast.spi.impl.InitializingObject;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
@@ -120,6 +123,7 @@ import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSe
 import static com.hazelcast.internal.util.IterableUtil.nullToEmpty;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.MapUtil.toIntSize;
+import static com.hazelcast.internal.util.Preconditions.checkFalse;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
 import static com.hazelcast.internal.util.ThreadUtil.getThreadId;
@@ -1150,16 +1154,16 @@ abstract class MapProxySupport<K, V>
     }
 
     public UUID addLocalEntryListenerInternal(Object listener) {
-        return mapServiceContext.addLocalEventListener(listener, name);
+        return addLocalEntryListenerInternal(listener, TruePredicate.INSTANCE, null, true);
     }
 
     public UUID addLocalEntryListenerInternal(Object listener, Predicate predicate, Data key, boolean includeValue) {
-        EventFilter eventFilter = new QueryEventFilter(includeValue, key, predicate);
+        EventFilter eventFilter = new QueryEventFilter(key, predicate, includeValue);
         return mapServiceContext.addLocalEventListener(listener, eventFilter, name);
     }
 
     protected UUID addEntryListenerInternal(Object listener, Data key, boolean includeValue) {
-        EventFilter eventFilter = new EntryEventFilter(includeValue, key);
+        EventFilter eventFilter = new EntryEventFilter(key, includeValue);
         return mapServiceContext.addEventListener(listener, eventFilter, name);
     }
 
@@ -1167,7 +1171,7 @@ abstract class MapProxySupport<K, V>
                                             Predicate predicate,
                                             @Nullable Data key,
                                             boolean includeValue) {
-        EventFilter eventFilter = new QueryEventFilter(includeValue, key, predicate);
+        EventFilter eventFilter = new QueryEventFilter(key, predicate, includeValue);
         return mapServiceContext.addEventListener(listener, eventFilter, name);
     }
 
@@ -1298,6 +1302,8 @@ abstract class MapProxySupport<K, V>
     @Override
     public void addIndex(IndexConfig indexConfig) {
         checkNotNull(indexConfig, "Index config cannot be null.");
+        checkFalse(isNativeMemoryAndBitmapIndexingEnabled(indexConfig.getType()),
+                "BITMAP indexes are not supported by NATIVE storage");
 
         IndexConfig indexConfig0 = IndexUtils.validateAndNormalize(name, indexConfig);
 
@@ -1309,6 +1315,11 @@ abstract class MapProxySupport<K, V>
         } catch (Throwable t) {
             throw rethrow(t);
         }
+    }
+
+    protected boolean isNativeMemoryAndBitmapIndexingEnabled(IndexType indexType) {
+        InMemoryFormat mapStoreConfig = mapConfig.getInMemoryFormat();
+        return mapStoreConfig == InMemoryFormat.NATIVE && indexType == IndexType.BITMAP;
     }
 
     @Override

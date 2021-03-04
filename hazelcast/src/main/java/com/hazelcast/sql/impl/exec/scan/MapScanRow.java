@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.exec.scan;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.sql.impl.extract.QueryExtractor;
@@ -72,12 +73,14 @@ public final class MapScanRow implements Row {
     /**
      * Set current key and value.
      *
-     * @param rawKey Key (object or data).
-     * @param rawValue Value (object or data).
+     * @param rawKey key, might be null
+     * @param rawKeyData key data, might be null
+     * @param rawValue value as object, might be null
+     * @param rawValueData value as data, might be null
      */
-    public void setKeyValue(Object rawKey, Object rawValue) {
-        keyTarget.setTarget(rawKey);
-        valueTarget.setTarget(rawValue);
+    public void setKeyValue(Object rawKey, Data rawKeyData, Object rawValue, Data rawValueData) {
+        keyTarget.setTarget(rawKey, rawKeyData);
+        valueTarget.setTarget(rawValue, rawValueData);
     }
 
     @SuppressWarnings("unchecked")

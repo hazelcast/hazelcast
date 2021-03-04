@@ -203,6 +203,7 @@ public class MultiValueBitmapIndexTest extends HazelcastTestSupport {
     @Override
     protected Config getConfig() {
         Config config = HazelcastTestSupport.smallInstanceConfig();
+        config.setProperty(QueryEngineImpl.DISABLE_MIGRATION_FALLBACK.getName(), "true");
         MapConfig mapConfig = config.getMapConfig("persons");
         mapConfig.addIndexConfig(indexConfig);
         // disable periodic metrics collection (may interfere with the test)
@@ -280,14 +281,14 @@ public class MultiValueBitmapIndexTest extends HazelcastTestSupport {
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeLong(id);
-            out.writeUTF(stringId);
+            out.writeString(stringId);
             out.writeLongArray(habits);
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
             id = in.readLong();
-            stringId = in.readUTF();
+            stringId = in.readString();
             habits = in.readLongArray();
         }
 

@@ -59,7 +59,7 @@ public class MapAddEntryListenerToKeyMessageTask
 
     @Override
     protected EventFilter getEventFilter() {
-        EntryEventFilter eventFilter = new EntryEventFilter(parameters.includeValue, parameters.key);
+        EntryEventFilter eventFilter = new EntryEventFilter(parameters.key, parameters.includeValue);
         return new EventListenerFilter(parameters.listenerFlags, eventFilter);
     }
 

@@ -17,8 +17,8 @@
 package com.hazelcast.core;
 
 /**
- * Implementations of this interface define a certain type conversation.
- * Conversation can happen from any kind of {@link java.lang.Comparable}
+ * Implementations of this interface define a certain type conversion.
+ * Conversion can happen from any kind of {@link java.lang.Comparable}
  * type to another.
  * <p>
  * Implementations of TypeConverter need to be fully thread-safe and
@@ -29,8 +29,8 @@ package com.hazelcast.core;
 public interface TypeConverter {
 
     /**
-     * Compares a {@link java.lang.Comparable} typed value to another one.
-     * Since TypeConverters are not statically typed itself the developer
+     * Compares a {@link java.lang.Comparable}-typed value to another.
+     * Since TypeConverters are not statically typed themselves, the developer
      * needs to take care of correct usage of input and output types.
      *
      * @param value the value to be converted

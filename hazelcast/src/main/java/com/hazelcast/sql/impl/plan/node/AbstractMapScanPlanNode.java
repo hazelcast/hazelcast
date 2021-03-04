@@ -108,7 +108,7 @@ public abstract class AbstractMapScanPlanNode extends ZeroInputPlanNode {
 
     @Override
     protected void writeData0(ObjectDataOutput out) throws IOException {
-        out.writeUTF(mapName);
+        out.writeString(mapName);
         out.writeObject(keyDescriptor);
         out.writeObject(valueDescriptor);
         SerializationUtil.writeList(fieldPaths, out);
@@ -119,7 +119,7 @@ public abstract class AbstractMapScanPlanNode extends ZeroInputPlanNode {
 
     @Override
     protected void readData0(ObjectDataInput in) throws IOException {
-        mapName = in.readUTF();
+        mapName = in.readString();
         keyDescriptor = in.readObject();
         valueDescriptor = in.readObject();
         fieldPaths = SerializationUtil.readList(in);

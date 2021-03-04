@@ -262,12 +262,12 @@ public class OutboundResponseHandlerTest {
         @Override
         public void writePortable(PortableWriter writer) throws IOException {
             writer.writeInt("no", no);
-            writer.writeUTF("street", street);
+            writer.writeString("street", street);
         }
 
         @Override
         public void readPortable(PortableReader reader) throws IOException {
-            street = reader.readUTF("street");
+            street = reader.readString("street");
             no = reader.readInt("no");
         }
 

@@ -39,12 +39,12 @@ public class SortPhysicalRel extends Sort implements PhysicalRel {
         RelTraitSet traits,
         RelNode child,
         RelCollation collation,
-        boolean preSortedInput,
+        boolean requiresSort,
         RexNode offset,
         RexNode fetch
     ) {
         super(cluster, traits, child, collation, offset, fetch);
-        this.requiresSort = preSortedInput;
+        this.requiresSort = requiresSort;
     }
 
     public boolean requiresSort() {

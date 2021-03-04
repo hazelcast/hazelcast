@@ -88,7 +88,7 @@ public class SyncReplicatedMapDataOperation<K, V> extends AbstractSerializableOp
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeLong(version);
         out.writeInt(recordSet.size());
         for (RecordMigrationInfo record : recordSet) {
@@ -98,7 +98,7 @@ public class SyncReplicatedMapDataOperation<K, V> extends AbstractSerializableOp
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         version = in.readLong();
         int size = in.readInt();
         recordSet = createHashSet(size);

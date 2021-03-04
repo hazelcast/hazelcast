@@ -43,6 +43,8 @@ import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 import com.hazelcast.wan.impl.CallerProvenance;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -368,6 +370,7 @@ public interface RecordStore<R extends Record> {
 
     boolean containsValue(Object testValue);
 
+    @Nullable
     Object evict(Data key, boolean backup);
 
     /**
@@ -435,8 +438,8 @@ public interface RecordStore<R extends Record> {
      * @param dataValue    record to process
      * @param expiryReason
      */
-    void doPostEvictionOperations(Data dataKey, Object dataValue,
-                                  ExpiryReason expiryReason);
+    void doPostEvictionOperations(@Nonnull Data dataKey, @Nonnull Object dataValue,
+                                  @Nonnull ExpiryReason expiryReason);
 
     MapDataStore<Data, Object> getMapDataStore();
 
@@ -507,7 +510,13 @@ public interface RecordStore<R extends Record> {
      */
     void init();
 
-    MetadataStore getMetadataStore();
+    /**
+     * Gets metadata store associated with the record store.
+     * On the first call it initializes the store so
+     * that the Json metadata store is created only when it is needed.
+     * @return the Json metadata store
+     */
+    JsonMetadataStore getOrCreateMetadataStore();
 
     Storage getStorage();
 

@@ -49,6 +49,8 @@ public class HttpHeadCommandProcessor extends HttpCommandProcessor<HttpHeadComma
             handleHealthcheck(command);
         } else if (uri.startsWith(URI_CLUSTER_VERSION_URL)) {
             command.send200();
+        } else if (uri.startsWith(URI_LOG_LEVEL)) {
+            command.send200();
         } else {
             command.send404();
         }

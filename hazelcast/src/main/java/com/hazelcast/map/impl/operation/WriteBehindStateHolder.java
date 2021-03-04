@@ -146,7 +146,7 @@ public class WriteBehindStateHolder implements IdentifiedDataSerializable {
 
         out.writeInt(delayedEntries.size());
         for (Map.Entry<String, List<DelayedEntry>> entry : delayedEntries.entrySet()) {
-            out.writeUTF(entry.getKey());
+            out.writeString(entry.getKey());
             List<DelayedEntry> delayedEntryList = entry.getValue();
             out.writeInt(delayedEntryList.size());
 
@@ -167,7 +167,7 @@ public class WriteBehindStateHolder implements IdentifiedDataSerializable {
 
         out.writeInt(flushSequences.size());
         for (Map.Entry<String, Queue<WriteBehindStore.Sequence>> entry : flushSequences.entrySet()) {
-            out.writeUTF(entry.getKey());
+            out.writeString(entry.getKey());
             Queue<WriteBehindStore.Sequence> queue = entry.getValue();
             out.writeInt(queue.size());
             for (WriteBehindStore.Sequence sequence : queue) {
@@ -178,7 +178,7 @@ public class WriteBehindStateHolder implements IdentifiedDataSerializable {
 
         out.writeInt(reservationsByTxnIdPerMap.size());
         for (Map.Entry<String, Map<UUID, Long>> entry : reservationsByTxnIdPerMap.entrySet()) {
-            out.writeUTF(entry.getKey());
+            out.writeString(entry.getKey());
             Map<UUID, Long> reservationsByTxnId = entry.getValue();
             out.writeInt(reservationsByTxnId.size());
             for (Map.Entry<UUID, Long> counterByTxnId : reservationsByTxnId.entrySet()) {
@@ -195,7 +195,7 @@ public class WriteBehindStateHolder implements IdentifiedDataSerializable {
         delayedEntries = createHashMap(size);
 
         for (int i = 0; i < size; i++) {
-            String mapName = in.readUTF();
+            String mapName = in.readString();
             int listSize = in.readInt();
             List<DelayedEntry> delayedEntriesList = new ArrayList<>(listSize);
             for (int j = 0; j < listSize; j++) {
@@ -219,7 +219,7 @@ public class WriteBehindStateHolder implements IdentifiedDataSerializable {
         int expectedSize = in.readInt();
         flushSequences = createHashMap(expectedSize);
         for (int i = 0; i < expectedSize; i++) {
-            String mapName = in.readUTF();
+            String mapName = in.readString();
             int setSize = in.readInt();
             Queue<WriteBehindStore.Sequence> queue = new ArrayDeque<>(setSize);
             for (int j = 0; j < setSize; j++) {
@@ -231,7 +231,7 @@ public class WriteBehindStateHolder implements IdentifiedDataSerializable {
         int mapCount = in.readInt();
         reservationsByTxnIdPerMap = mapCount == 0 ? Collections.emptyMap() : new HashMap<>(mapCount);
         for (int i = 0; i < mapCount; i++) {
-            String mapName = in.readUTF();
+            String mapName = in.readString();
             int numOfCounters = in.readInt();
             Map<UUID, Long> counterByTxnId = createHashMap(numOfCounters);
             for (int j = 0; j < numOfCounters; j++) {

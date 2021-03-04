@@ -211,7 +211,7 @@ public class Node {
 
         String loggingType = properties.getString(LOGGING_TYPE);
         boolean detailsEnabled = properties.getBoolean(LOGGING_ENABLE_DETAILS);
-        loggingService = new LoggingServiceImpl(config.getClusterName(), loggingType, buildInfo, detailsEnabled);
+        loggingService = new LoggingServiceImpl(config.getClusterName(), loggingType, buildInfo, detailsEnabled, this);
         MetricsConfigHelper.overrideMemberMetricsConfig(staticConfig, getLogger(MetricsConfigHelper.class));
 
         checkAdvancedNetworkConfig(config);
@@ -824,7 +824,7 @@ public class Node {
         JoinConfig join = getActiveMemberNetworkConfig(config).getJoin();
         join.verify();
 
-        if (shouldUseMulticastJoiner(join)) {
+        if (shouldUseMulticastJoiner(join) && multicastService != null) {
             logger.info("Using Multicast discovery");
             return new MulticastJoiner(this);
         } else if (join.getTcpIpConfig().isEnabled()) {

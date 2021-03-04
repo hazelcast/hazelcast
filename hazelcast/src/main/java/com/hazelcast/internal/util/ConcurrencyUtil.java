@@ -47,7 +47,7 @@ public final class ConcurrencyUtil {
 
     // Default executor for async callbacks: ForkJoinPool.commonPool() or a thread-per-task executor when
     // the common pool does not support parallelism
-    public static final Executor DEFAULT_ASYNC_EXECUTOR;
+    private static Executor defaultAsyncExecutor;
 
     static {
         Executor asyncExecutor;
@@ -56,15 +56,29 @@ public final class ConcurrencyUtil {
         } else {
             asyncExecutor = command -> new Thread(command).start();
         }
-        DEFAULT_ASYNC_EXECUTOR = asyncExecutor;
+        defaultAsyncExecutor = asyncExecutor;
     }
 
     private ConcurrencyUtil() {
     }
 
     /**
+     * WARNING this method should not be called from static context.
+     */
+    public static Executor getDefaultAsyncExecutor() {
+        return defaultAsyncExecutor;
+    }
+
+    /**
+     * Used by AbstractHazelcastClassRunner to override default executor.
+     */
+    public static void setDefaultAsyncExecutor(Executor executor) {
+        defaultAsyncExecutor = executor;
+    }
+
+    /**
      * Atomically sets the max value.
-     *
+     * <p>
      * If the current value is larger than the provided value, the call is ignored.
      * So it will not happen that a smaller value will overwrite a larger value.
      */

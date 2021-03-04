@@ -23,6 +23,7 @@ import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.operation.ClearWanQueuesOperation;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.permission.ManagementPermission;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.wan.impl.WanReplicationService;
@@ -30,6 +31,9 @@ import com.hazelcast.wan.impl.WanReplicationService;
 import java.security.Permission;
 
 public class ClearWanQueuesMessageTask extends AbstractInvocationMessageTask<RequestParameters> {
+
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("wan.clearQueues");
+
     public ClearWanQueuesMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
@@ -62,7 +66,7 @@ public class ClearWanQueuesMessageTask extends AbstractInvocationMessageTask<Req
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return REQUIRED_PERMISSION;
     }
 
     @Override

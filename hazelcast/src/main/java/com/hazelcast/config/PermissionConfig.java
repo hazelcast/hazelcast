@@ -164,7 +164,11 @@ public class PermissionConfig implements IdentifiedDataSerializable {
         /**
          * ReplicatedMap
          */
-        REPLICATEDMAP("replicatedmap-permission")
+        REPLICATEDMAP("replicatedmap-permission"),
+        /**
+         * Cluster Management
+         */
+        MANAGEMENT("management-permission"),
         ;
         private final String nodeName;
 
@@ -253,36 +257,36 @@ public class PermissionConfig implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(type.getNodeName());
-        out.writeUTF(name);
+        out.writeString(type.getNodeName());
+        out.writeString(name);
         if (StringUtil.isNullOrEmptyAfterTrim(principal)) {
-            out.writeUTF("*");
+            out.writeString("*");
         } else {
-            out.writeUTF(principal);
+            out.writeString(principal);
         }
 
         out.writeInt(endpoints.size());
         for (String endpoint : endpoints) {
-            out.writeUTF(endpoint);
+            out.writeString(endpoint);
         }
 
         out.writeInt(actions.size());
         for (String action : actions) {
-            out.writeUTF(action);
+            out.writeString(action);
         }
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        type = PermissionType.getType(in.readUTF());
-        name = in.readUTF();
-        principal = in.readUTF();
+        type = PermissionType.getType(in.readString());
+        name = in.readString();
+        principal = in.readString();
 
         int endpointsSize = in.readInt();
         if (endpointsSize != 0) {
             Set<String> endpoints = createHashSet(endpointsSize);
             for (int i = 0; i < endpointsSize; i++) {
-                endpoints.add(in.readUTF());
+                endpoints.add(in.readString());
             }
             this.endpoints = endpoints;
         }
@@ -291,7 +295,7 @@ public class PermissionConfig implements IdentifiedDataSerializable {
         if (actionsSize != 0) {
             Set<String> actions = createHashSet(actionsSize);
             for (int i = 0; i < actionsSize; i++) {
-                actions.add(in.readUTF());
+                actions.add(in.readString());
             }
             this.actions = actions;
         }

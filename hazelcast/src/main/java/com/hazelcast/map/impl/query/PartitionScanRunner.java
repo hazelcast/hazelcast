@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.query;
 
-import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.iteration.IterationPointer;
@@ -100,7 +99,7 @@ public class PartitionScanRunner {
 
                 queryEntry.init(ss, key, value, extractors);
                 queryEntry.setRecord(record);
-                queryEntry.setMetadata(recordStore.getMetadataStore().get(key));
+                queryEntry.setMetadata(recordStore.getOrCreateMetadataStore().get(key));
 
                 if (predicate.apply(queryEntry)
                         && compareAnchor(pagingPredicate, queryEntry, nearestAnchorEntry)) {
@@ -167,15 +166,6 @@ public class PartitionScanRunner {
     }
 
     protected boolean isUseCachedDeserializedValuesEnabled(MapContainer mapContainer, int partitionId) {
-        CacheDeserializedValues cacheDeserializedValues = mapContainer.getMapConfig().getCacheDeserializedValues();
-        switch (cacheDeserializedValues) {
-            case NEVER:
-                return false;
-            case ALWAYS:
-                return true;
-            default:
-                //if index exists then cached value is already set -> let's use it
-                return mapContainer.getIndexes(partitionId).haveAtLeastOneIndex();
-        }
+        return mapContainer.isUseCachedDeserializedValuesEnabled(partitionId);
     }
 }

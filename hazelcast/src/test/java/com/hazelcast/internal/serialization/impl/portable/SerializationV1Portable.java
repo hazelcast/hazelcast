@@ -106,7 +106,7 @@ public class SerializationV1Portable implements Portable {
         out.writeLong("6", aLong);
         out.writeFloat("7", aFloat);
         out.writeDouble("8", aDouble);
-        out.writeUTF("9", string);
+        out.writeString("9", string);
 
         out.writeByteArray("a1", bytes);
         out.writeBooleanArray("a2", booleans);
@@ -116,7 +116,7 @@ public class SerializationV1Portable implements Portable {
         out.writeLongArray("a6", longs);
         out.writeFloatArray("a7", floats);
         out.writeDoubleArray("a8", doubles);
-        out.writeUTFArray("a9", strings);
+        out.writeStringArray("a9", strings);
 
         if (innerPortable == null) {
             out.writeNullPortable("p", INNER_PORTABLE.getFactoryId(), INNER_PORTABLE.getClassId());
@@ -144,7 +144,7 @@ public class SerializationV1Portable implements Portable {
         this.aLong = in.readLong("6");
         this.aFloat = in.readFloat("7");
         this.aDouble = in.readDouble("8");
-        this.string = in.readUTF("9");
+        this.string = in.readString("9");
 
         this.bytes = in.readByteArray("a1");
         this.booleans = in.readBooleanArray("a2");
@@ -154,7 +154,7 @@ public class SerializationV1Portable implements Portable {
         this.longs = in.readLongArray("a6");
         this.floats = in.readFloatArray("a7");
         this.doubles = in.readDoubleArray("a8");
-        this.strings = in.readUTFArray("a9");
+        this.strings = in.readStringArray("a9");
 
         this.innerPortable = in.readPortable("p");
 

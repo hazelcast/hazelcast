@@ -106,7 +106,7 @@ public class MapGetInvalidationMetaDataOperation extends Operation implements Id
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeInt(namePartitionSequenceList.size());
             for (Map.Entry<String, List<Map.Entry<Integer, Long>>> entry : namePartitionSequenceList.entrySet()) {
-                out.writeUTF(entry.getKey());
+                out.writeString(entry.getKey());
                 out.writeInt(entry.getValue().size());
                 for (Map.Entry<Integer, Long> seqEntry : entry.getValue()) {
                     out.writeInt(seqEntry.getKey());
@@ -127,7 +127,7 @@ public class MapGetInvalidationMetaDataOperation extends Operation implements Id
             int size1 = in.readInt();
             namePartitionSequenceList = new HashMap<>(size1);
             for (int i = 0; i < size1; i++) {
-                String name = in.readUTF();
+                String name = in.readString();
                 int size2 = in.readInt();
                 List<Map.Entry<Integer, Long>> innerList = new ArrayList<>(size2);
                 for (int j = 0; j < size2; j++) {
@@ -202,7 +202,7 @@ public class MapGetInvalidationMetaDataOperation extends Operation implements Id
         out.writeInt(mapNames.size());
 
         for (String mapName : mapNames) {
-            out.writeUTF(mapName);
+            out.writeString(mapName);
         }
     }
 
@@ -214,7 +214,7 @@ public class MapGetInvalidationMetaDataOperation extends Operation implements Id
 
         List<String> mapNames = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
-            mapNames.add(in.readUTF());
+            mapNames.add(in.readString());
         }
 
         this.mapNames = mapNames;

@@ -16,6 +16,9 @@
 
 package com.hazelcast.map.impl.query;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
@@ -55,7 +58,10 @@ public class MapKeySetTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        instance = createHazelcastInstance();
+        Config config = regularInstanceConfig();
+        config.setProperty(QueryEngineImpl.DISABLE_MIGRATION_FALLBACK.getName(), "true");
+        config.getMapConfig("indexed").addIndexConfig(new IndexConfig(IndexType.SORTED, "this"));
+        instance = createHazelcastInstance(config);
         map = instance.getMap(randomName());
         serializationService = getSerializationService(instance);
     }
@@ -118,6 +124,29 @@ public class MapKeySetTest extends HazelcastTestSupport {
         }
 
         Set<String> result = ((MapProxyImpl<String, String>) map).keySet(Predicates.alwaysTrue(), partitionSubset);
+        assertEquals(matchingKeys, result);
+    }
+
+    @Test
+    public void whenSelectingPartitionSubset_withIndex() {
+        PartitionIdSet partitionSubset = new PartitionIdSet(4, asList(1, 3));
+        Set<String> matchingKeys = new HashSet<>();
+        map = instance.getMap("indexed");
+        for (int i = 0; i < 5; i++) {
+            String key = generateKeyForPartition(instance, i);
+            map.put(key, key);
+            if (partitionSubset.contains(i)) {
+                matchingKeys.add(key);
+            }
+        }
+
+        // "" is sorted before any non-null string - internally all items from all partitions are added
+        // to the result (because the index is global), but there's a code that eliminates partitions not
+        // in the subset - this test aims to test that code
+        Predicate<String, String> predicate = Predicates.greaterThan("this", "");
+        Set<String> result =
+                ((MapProxyImpl<String, String>) map).keySet(predicate, partitionSubset);
+        assertEquals(2, result.size());
         assertEquals(matchingKeys, result);
     }
 

@@ -16,6 +16,11 @@
 
 package com.hazelcast.internal.util.collection;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
+import java.io.IOException;
 import java.util.AbstractSet;
 import java.util.BitSet;
 import java.util.Collection;
@@ -39,16 +44,18 @@ import java.util.PrimitiveIterator;
  * This set's {@link PartitionIdSet#iterator() iterator} is a view of the actual
  * set, so any changes on the set will be reflected in the iterator and vice versa.
  * <p>
- * This class is not thread-safe. Even if used as immutable, surprisingly,
- * the {@link #size()} method mutates the state and is not thread-safe.
+ * This class is not thread-safe.
  */
-public class PartitionIdSet extends AbstractSet<Integer> {
+public class PartitionIdSet extends AbstractSet<Integer> implements IdentifiedDataSerializable {
 
     private static final int SIZE_UNKNOWN = -1;
 
-    private final int partitionCount;
-    private final BitSet bitSet;
+    private int partitionCount;
+    private BitSet bitSet;
     private int size = SIZE_UNKNOWN;
+
+    // for deserialization
+    PartitionIdSet() { }
 
     public PartitionIdSet(int partitionCount) {
         this(partitionCount, new BitSet(partitionCount));
@@ -89,16 +96,16 @@ public class PartitionIdSet extends AbstractSet<Integer> {
 
     /**
      * Return the number of partitions in the set.
-     * <p>
-     * The method mutates the state of this instance.
      */
     @Override
     public int size() {
-        if (size == SIZE_UNKNOWN) {
-            size = bitSet.cardinality();
+        int s = size;
+        if (s == SIZE_UNKNOWN) {
+            s = bitSet.cardinality();
+            size = s;
         }
 
-        return size;
+        return s;
     }
 
     private void resetSize() {
@@ -195,6 +202,16 @@ public class PartitionIdSet extends AbstractSet<Integer> {
     }
 
     /**
+     * Intersects this set with the {@code other} set and returns the result as
+     * a new set. Doesn't mutate this or the {@code other} instance.
+     */
+    public PartitionIdSet intersectCopy(PartitionIdSet other) {
+        BitSet newBitSet = bitSetCopy();
+        newBitSet.and(other.bitSet);
+        return new PartitionIdSet(partitionCount, newBitSet);
+    }
+
+    /**
      * Mutates this {@code PartitionIdSet} so it contains the union of this and {@code other}'s
      * partition IDs.
      */
@@ -256,6 +273,32 @@ public class PartitionIdSet extends AbstractSet<Integer> {
         } else {
             return -1;
         }
+    }
+
+    public BitSet bitSetCopy() {
+        return (BitSet) bitSet.clone();
+    }
+
+    @Override
+    public int getFactoryId() {
+        return UtilCollectionSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return UtilCollectionSerializerHook.PARTITION_ID_SET;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeInt(partitionCount);
+        out.writeLongArray(bitSet.toLongArray());
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        partitionCount = in.readInt();
+        bitSet = BitSet.valueOf(in.readLongArray());
     }
 
     private final class PartitionIdSetIterator

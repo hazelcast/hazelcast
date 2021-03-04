@@ -83,14 +83,14 @@ public class CacheGetConfigOperation extends AbstractNamedOperation implements I
     protected void writeInternal(ObjectDataOutput out)
             throws IOException {
         super.writeInternal(out);
-        out.writeUTF(simpleName);
+        out.writeString(simpleName);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in)
             throws IOException {
         super.readInternal(in);
-        simpleName = in.readUTF();
+        simpleName = in.readString();
     }
 
     @Override

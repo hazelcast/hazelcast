@@ -250,13 +250,13 @@ public class MapProjectionTest extends HazelcastTestSupport {
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeDouble(age);
-            out.writeUTF(state);
+            out.writeString(state);
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
             age = in.readDouble();
-            state = in.readUTF();
+            state = in.readString();
         }
     }
 

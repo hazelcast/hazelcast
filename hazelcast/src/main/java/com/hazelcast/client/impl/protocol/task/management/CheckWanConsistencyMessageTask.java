@@ -22,12 +22,16 @@ import com.hazelcast.client.impl.protocol.codec.MCCheckWanConsistencyCodec.Reque
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.permission.ManagementPermission;
 import com.hazelcast.wan.impl.WanReplicationService;
 
 import java.security.Permission;
 import java.util.UUID;
 
 public class CheckWanConsistencyMessageTask extends AbstractCallableMessageTask<RequestParameters> {
+
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("wan.checkConsistency");
+
     public CheckWanConsistencyMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
@@ -55,7 +59,7 @@ public class CheckWanConsistencyMessageTask extends AbstractCallableMessageTask<
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return REQUIRED_PERMISSION;
     }
 
     @Override

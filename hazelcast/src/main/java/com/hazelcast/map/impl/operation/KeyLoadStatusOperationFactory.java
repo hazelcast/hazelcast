@@ -46,13 +46,13 @@ public class KeyLoadStatusOperationFactory extends AbstractMapOperationFactory {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeObject(exception);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         exception = in.readObject();
     }
 

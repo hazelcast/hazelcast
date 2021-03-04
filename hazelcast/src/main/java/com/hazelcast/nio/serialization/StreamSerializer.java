@@ -19,6 +19,7 @@ package com.hazelcast.nio.serialization;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 
 /**
@@ -65,7 +66,7 @@ public interface StreamSerializer<T> extends Serializer {
      * @throws IOException in case of failure to write
      */
 
-    void write(ObjectDataOutput out, T object) throws IOException;
+    void write(@Nonnull ObjectDataOutput out, @Nonnull T object) throws IOException;
 
     /**
      * Reads object from objectDataInputStream
@@ -74,5 +75,6 @@ public interface StreamSerializer<T> extends Serializer {
      * @return read object
      * @throws IOException in case of failure to read
      */
-    T read(ObjectDataInput in) throws IOException;
+    @Nonnull
+    T read(@Nonnull ObjectDataInput in) throws IOException;
 }
