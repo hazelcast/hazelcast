@@ -16,7 +16,7 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.config.MemberAttributeConfigReadOnly;
+import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -27,24 +27,13 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.HashMap;
-
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class MemberAttributeConfigTest extends HazelcastTestSupport {
-
-    /**
-     * Test method for {@link MemberAttributeConfigReadOnly#setAttributes(java.util.Map)} .
-     */
-    @Test(expected = java.lang.UnsupportedOperationException.class)
-    public void testReadOnlyMemberAttributeConfigSetAttributes() {
-        new MemberAttributeConfigReadOnly(new MemberAttributeConfig()).setAttributes(new HashMap<>());
-    }
-
+public class RaftAlgorithmConfigTest extends HazelcastTestSupport {
     @Test
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
-        EqualsVerifier.forClass(MemberAttributeConfig.class)
+        EqualsVerifier.forClass(RaftAlgorithmConfig.class)
                 .usingGetClass()
                 .allFieldsShouldBeUsed()
                 .suppress(Warning.NONFINAL_FIELDS)
