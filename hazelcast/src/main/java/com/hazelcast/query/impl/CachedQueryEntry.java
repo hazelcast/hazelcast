@@ -221,9 +221,10 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> implements Iden
 
     @Override
     public int getClassId() {
-        // we are intentionally deserializing as LazyMapEntry
-        // which is actually a subclass of this
-        // TODO: write reasoning behind this
+        // We are intentionally deserializing CachedQueryEntry as LazyMapEntry
+        // LazyMapEntry is actually a subclass of CacheQueryEntry.
+        // If this sounds surprising, convoluted or just plain wrong
+        // then you are not wrong. Please see commit message for reasoning.
         return MapDataSerializerHook.LAZY_MAP_ENTRY;
     }
 }
