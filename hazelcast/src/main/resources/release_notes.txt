@@ -6,7 +6,7 @@ This document lists the new features, enhancements, fixed issues and, removed or
 when a member with Hot Restart Persistence is restarted. [#18268]
 * Fixed an issue where the Near Cache configuration of a map in client
 was not the same after the client is recreated with the
-same client failover configuration. [#18166]
+same client failover configuration. [#18356]
 * Fixed an issue that prohibited Hazelcast from being used as Tomcat session manager
 when it is also deployed in a web application context:
 When a client application that uses Hazelcast tries to connect to the Hazelcast cluster and this
