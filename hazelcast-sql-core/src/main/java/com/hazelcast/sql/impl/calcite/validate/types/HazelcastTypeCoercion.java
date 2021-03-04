@@ -58,7 +58,7 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
 
     @Override
     public boolean coerceOperandType(SqlValidatorScope scope, SqlCall call, int index, RelDataType targetType) {
-        SqlNode operand = call.getOperandList().get(index);
+        SqlNode operand = call.operand(index);
         return coerceNode(scope, operand, targetType, cast -> call.setOperand(index, cast));
     }
 

@@ -35,7 +35,7 @@ public abstract class AbstractOperandChecker implements OperandChecker {
     public boolean check(HazelcastCallBinding callBinding, boolean throwOnFailure, int operandIndex) {
         HazelcastSqlValidator validator = callBinding.getValidator();
 
-        SqlNode operand = callBinding.getCall().getOperandList().get(operandIndex);
+        SqlNode operand = callBinding.getCall().operand(operandIndex);
 
         // Handle parameter
         if (operand.getKind() == SqlKind.DYNAMIC_PARAM) {
