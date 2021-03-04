@@ -26,11 +26,14 @@ import java.util.Properties;
 import java.util.function.BiConsumer;
 
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
+import static java.lang.Math.min;
 
 /**
  * Collects metadata about this instance
  */
 class BuildInfoCollector implements MetricsCollector {
+
+    private static final int CLASSPATH_MAX_LENGTH = 10_000;
 
     @Override
     public void forEachMetric(Node node, BiConsumer<PhoneHomeMetrics, String> metricsConsumer) {
@@ -41,6 +44,11 @@ class BuildInfoCollector implements MetricsCollector {
         metricsConsumer.accept(PhoneHomeMetrics.BUILD_VERSION, imdgInfo.getVersion());
         metricsConsumer.accept(PhoneHomeMetrics.JET_BUILD_VERSION,
                 jetInfo == null ? "" : jetInfo.getVersion());
+        String classpath = System.getProperty("java.class.path");
+        if (classpath != null) {
+            metricsConsumer.accept(PhoneHomeMetrics.JAVA_CLASSPATH,
+                    classpath.substring(0, min(CLASSPATH_MAX_LENGTH, classpath.length())));
+        }
     }
 
     /**
