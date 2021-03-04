@@ -91,8 +91,6 @@ public interface MapOperationProvider {
 
     MapOperation createQueryPartitionOperation(Query query);
 
-    MapOperation createQueryPartitionsOperation(Query query, int[] partitions);
-
     /**
      * Creates an operation to load entry values for the provided {@code keys} on
      * the partition owner.
