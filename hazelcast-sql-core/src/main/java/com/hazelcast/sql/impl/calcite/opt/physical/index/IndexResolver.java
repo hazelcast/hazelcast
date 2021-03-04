@@ -170,7 +170,7 @@ public final class IndexResolver {
         );
 
         if (candidates.isEmpty()) {
-            return Collections.emptyList();
+            return fullScanRelsMap.values();
         }
 
         List<RelNode> rels = new ArrayList<>(supportedIndexes.size());
