@@ -18,9 +18,7 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.MapUtil;
-import com.hazelcast.map.impl.record.Record;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -172,7 +170,7 @@ public abstract class BaseIndexStore implements IndexStore {
                 return map;
             }
 
-            return isExpirable() ? new ExpirationAwareHashMapDelegate(map) : map;
+            return map;
         }
     }
 
@@ -184,83 +182,10 @@ public abstract class BaseIndexStore implements IndexStore {
                 return map;
             }
 
-            Map<Data, QueryableEntry> newMap = new HashMap<>(map);
-            return isExpirable() ? new ExpirationAwareHashMapDelegate(newMap) : newMap;
+            return new HashMap<>(map);
         }
 
     }
 
-    /**
-     * This delegating Map updates the {@link Record}'s access time on every
-     * {@link QueryableEntry} retrieved through the {@link Map#entrySet()},
-     * {@link Map#get} or {@link Map#values()}.
-     */
-    protected static final class ExpirationAwareHashMapDelegate implements Map<Data, QueryableEntry> {
 
-        private final Map<Data, QueryableEntry> delegateMap;
-
-        ExpirationAwareHashMapDelegate(Map<Data, QueryableEntry> map) {
-            this.delegateMap = map;
-        }
-
-        @Override
-        public int size() {
-            return delegateMap.size();
-        }
-
-        @Override
-        public boolean isEmpty() {
-            return delegateMap.isEmpty();
-        }
-
-        @Override
-        public boolean containsKey(Object o) {
-            return delegateMap.containsKey(o);
-        }
-
-        @Override
-        public boolean containsValue(Object o) {
-            return delegateMap.containsValue(o);
-        }
-
-        @Override
-        public QueryableEntry put(Data data, QueryableEntry queryableEntry) {
-            return delegateMap.put(data, queryableEntry);
-        }
-
-        @Override
-        public QueryableEntry remove(Object o) {
-            return delegateMap.remove(o);
-        }
-
-        @Override
-        public void putAll(Map<? extends Data, ? extends QueryableEntry> map) {
-            delegateMap.putAll(map);
-        }
-
-        @Override
-        public void clear() {
-            delegateMap.clear();
-        }
-
-        @Override
-        public Set<Data> keySet() {
-            return delegateMap.keySet();
-        }
-
-        @Override
-        public QueryableEntry get(Object o) {
-            return delegateMap.get(o);
-        }
-
-        @Override
-        public Collection<QueryableEntry> values() {
-            return delegateMap.values();
-        }
-
-        @Override
-        public Set<Entry<Data, QueryableEntry>> entrySet() {
-            return delegateMap.entrySet();
-        }
-    }
 }
