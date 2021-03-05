@@ -37,7 +37,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalLong;
-import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -73,6 +72,7 @@ public class ManagementCenterService {
                 onMCEventWindowExceeded();
             } else {
                 mcEvents.offer(event);
+                System.out.println("offer -> " + mcEvents.size());
             }
 
         }
@@ -92,11 +92,13 @@ public class ManagementCenterService {
                 long lastAccess = lastAccessObj;
                 List<Event> recentEvents = new ArrayList<>();
                 for (Event evt : mcEvents) {
-                    if (evt.getTimestamp() > lastAccess) {
+                    if (evt.getTimestamp() >= lastAccess) {
                         recentEvents.add(evt);
                     }
                 }
                 updateLatestAccessStats(mcRemoteAddr);
+                System.out.println(mcEvents.size());
+                System.out.println("RET " + mcRemoteAddr + " -- " + recentEvents.size());
                 return recentEvents;
             }
         }
@@ -110,6 +112,9 @@ public class ManagementCenterService {
             OptionalLong maybeOldestAccess = lastAccessTimestamps.values().stream().mapToLong(Long::longValue).min();
             if (maybeOldestAccess.isPresent()) {
                 long oldestAccess = maybeOldestAccess.getAsLong();
+//                if (lastMCEventsPollMillis - oldestAccess < MC_EVENTS_WINDOW_MILLIS) {
+//                    return;
+//                }
                 Iterator<Event> it = mcEvents.iterator();
                 while (it.hasNext()) {
                     Event evt = it.next();
