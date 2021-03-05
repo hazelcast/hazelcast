@@ -133,8 +133,6 @@ public final class BitmapIndexStore extends BaseIndexStore {
 
             takeWriteLock();
             try {
-                markIndexStoreExpirableIfNecessary(entry);
-
                 if (internalKeys != null) {
                     // long-to-long remapping
 
@@ -158,8 +156,6 @@ public final class BitmapIndexStore extends BaseIndexStore {
 
             takeWriteLock();
             try {
-                markIndexStoreExpirableIfNecessary(entry);
-
                 long internalKey = internalKeyCounter++;
                 long replaced = internalObjectKeys.put(key, internalKey);
                 assert replaced == NO_KEY;
@@ -187,8 +183,6 @@ public final class BitmapIndexStore extends BaseIndexStore {
 
             takeWriteLock();
             try {
-                markIndexStoreExpirableIfNecessary(entry);
-
                 if (internalKeys != null) {
                     // long-to-long remapping
 
@@ -219,8 +213,6 @@ public final class BitmapIndexStore extends BaseIndexStore {
 
             takeWriteLock();
             try {
-                markIndexStoreExpirableIfNecessary(entry);
-
                 long internalKey = internalObjectKeys.getValue(key);
                 if (internalKey == NO_KEY) {
                     // see https://github.com/hazelcast/hazelcast/issues/17342#issuecomment-680840612

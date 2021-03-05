@@ -59,7 +59,6 @@ public class UnorderedIndexStore extends BaseSingleValueIndexStore {
 
     @Override
     Object insertInternal(Comparable value, QueryableEntry record) {
-        markIndexStoreExpirableIfNecessary(record);
         return addFunctor.invoke(value, record);
     }
 
@@ -170,10 +169,10 @@ public class UnorderedIndexStore extends BaseSingleValueIndexStore {
 
     @Override
     public Iterator<QueryableEntry> getSqlRecordIterator(
-        Comparable from,
-        boolean fromInclusive,
-        Comparable to,
-        boolean toInclusive
+            Comparable from,
+            boolean fromInclusive,
+            Comparable to,
+            boolean toInclusive
     ) {
         throw new UnsupportedOperationException();
     }

@@ -39,14 +39,6 @@ public abstract class BaseIndexStore implements IndexStore {
 
     private final CopyFunctor<Data, QueryableEntry> resultCopyFunctor;
 
-    /**
-     * {@code true} if this index store has at least one candidate entry
-     * for expiration (idle or tll), otherwise {@code false}.
-     * <p>
-     * The field is updated on every update of the index.
-     */
-    private volatile boolean isIndexStoreExpirable;
-
     BaseIndexStore(IndexCopyBehavior copyOn, boolean enableGlobalLock) {
         if (copyOn == IndexCopyBehavior.COPY_ON_WRITE || copyOn == IndexCopyBehavior.NEVER) {
             resultCopyFunctor = new PassThroughFunctor();
@@ -140,10 +132,6 @@ public abstract class BaseIndexStore implements IndexStore {
     }
 
     void markIndexStoreExpirableIfNecessary(QueryableEntry record) {
-        // StoreAdapter is not set in plenty of internal unit tests
-        if (record.getStoreAdapter() != null) {
-            isIndexStoreExpirable = record.getStoreAdapter().isExpirable();
-        }
     }
 
     interface CopyFunctor<A, B> {
