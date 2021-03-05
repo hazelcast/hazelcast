@@ -373,7 +373,7 @@ public final class BitmapIndexStore extends BaseIndexStore {
             QueryableEntry entry = iterator.next();
             map.put(entry.getKeyData(), entry);
         }
-        return isExpirable() && !map.isEmpty() ? new ExpirationAwareHashMapDelegate(map) : map;
+        return map;
     }
 
     private long extractLongKey(Data entryKey, Object entryValue) {
