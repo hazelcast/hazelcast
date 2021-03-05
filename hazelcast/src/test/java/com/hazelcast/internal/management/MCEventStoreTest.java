@@ -157,17 +157,18 @@ public class MCEventStoreTest {
 
     @Test
     public void disconnectRecognized_after30secInactivity() {
-        logEvent();
         inNextMilli(() -> {
-            assertPolledEventCount(1, MC_1_REMOTE_ADDR);
-            assertPolledEventCount(1, MC_2_REMOTE_ADDR);
-            assertPolledEventCount(1, MC_3_REMOTE_ADDR);
+            assertPolledEventCount(0, MC_1_REMOTE_ADDR);
+            assertPolledEventCount(0, MC_2_REMOTE_ADDR);
+            assertPolledEventCount(0, MC_3_REMOTE_ADDR);
         });
         logEvent();
+        inNextMilli(() -> {
+            assertPolledEventCount(1, MC_3_REMOTE_ADDR);
+        });
         clock.now += TimeUnit.SECONDS.toMillis(15);
         inNextMilli(() ->{
             assertPolledEventCount(1, MC_1_REMOTE_ADDR);
-            assertPolledEventCount(1, MC_2_REMOTE_ADDR);
         });
         inNextMilli(() -> {
             logEvent();
@@ -178,12 +179,20 @@ public class MCEventStoreTest {
         logEvent();
         inNextMilli(() -> {
             assertPolledEventCount(4, MC_1_REMOTE_ADDR);
-            assertPolledEventCount(4, MC_2_REMOTE_ADDR);
+            // reads all 5 events, since its last-access TS is already cleared during previous read
             assertPolledEventCount(5, MC_3_REMOTE_ADDR);
         });
     }
 
-    @Test @Ignore
+    /**
+     * Runs 50 threads in parallel, each thread performs 1000 tasks. Each task is one of:
+     *  - logging 800 events
+     *  - or polling as MC_1
+     *  - or polling as MC_2
+     *  
+     * The test fails if any of the threads throw {@link java.util.ConcurrentModificationException} (or any other exception).  
+     */
+    @Test
     public void stressTest()
             throws InterruptedException {
         Runnable[] tasks = new Runnable[]{

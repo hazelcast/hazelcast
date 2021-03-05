@@ -72,7 +72,6 @@ public class ManagementCenterService {
                 onMCEventWindowExceeded();
             } else {
                 mcEvents.offer(event);
-                System.out.println("offer -> " + mcEvents.size());
             }
 
         }
@@ -82,6 +81,11 @@ public class ManagementCenterService {
             lastAccessTimestamps.clear();
         }
 
+        /**
+         * @param mcRemoteAddr the address of the calling MC instance.
+         * @return the events which were added to the queue since this MC last polled, or all known events if the MC polls for the
+         * first time.
+         */
         public List<Event> pollMCEvents(Address mcRemoteAddr) {
             Long lastAccessObj = lastAccessTimestamps.get(mcRemoteAddr);
             if (lastAccessObj == null) {
@@ -97,12 +101,16 @@ public class ManagementCenterService {
                     }
                 }
                 updateLatestAccessStats(mcRemoteAddr);
-                System.out.println(mcEvents.size());
-                System.out.println("RET " + mcRemoteAddr + " -- " + recentEvents.size());
                 return recentEvents;
             }
         }
 
+        /**
+         * Updates {@link #lastMCEventsPollMillis} to the current time, removes old entries from {@link #lastAccessTimestamps}
+         * and removes the entries of {@link #mcEvents} that are already read by all known MCs.
+         *
+         * @param mcRemoteAddr
+         */
         private void updateLatestAccessStats(Address mcRemoteAddr) {
             lastMCEventsPollMillis = clock.getAsLong();
             lastAccessTimestamps.put(mcRemoteAddr, lastMCEventsPollMillis);
@@ -112,9 +120,7 @@ public class ManagementCenterService {
             OptionalLong maybeOldestAccess = lastAccessTimestamps.values().stream().mapToLong(Long::longValue).min();
             if (maybeOldestAccess.isPresent()) {
                 long oldestAccess = maybeOldestAccess.getAsLong();
-//                if (lastMCEventsPollMillis - oldestAccess < MC_EVENTS_WINDOW_MILLIS) {
-//                    return;
-//                }
+                cleanUpLastAccessTimestamps(oldestAccess);
                 Iterator<Event> it = mcEvents.iterator();
                 while (it.hasNext()) {
                     Event evt = it.next();
@@ -123,6 +129,19 @@ public class ManagementCenterService {
                     }
                     it.remove();
                 }
+            }
+        }
+
+        /**
+         * Removes the entries from {@link #lastAccessTimestamps} which record accesses older than
+         * {@link #MC_EVENTS_WINDOW_MILLIS}.
+         *
+         * @param oldestAccess
+         */
+        private void cleanUpLastAccessTimestamps(long oldestAccess) {
+            if (lastMCEventsPollMillis - oldestAccess > MC_EVENTS_WINDOW_MILLIS) {
+                lastAccessTimestamps.entrySet().removeIf(
+                        entry -> lastMCEventsPollMillis - entry.getValue() > MC_EVENTS_WINDOW_MILLIS);
             }
         }
     }
