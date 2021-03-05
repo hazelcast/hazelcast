@@ -17,13 +17,13 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.internal.util.MapUtil;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import static com.hazelcast.internal.util.MapUtil.isNullOrEmpty;
 import static com.hazelcast.query.impl.AbstractIndex.NULL;
 
 /**
@@ -138,10 +138,6 @@ public abstract class BaseIndexStore implements IndexStore {
         }
     }
 
-    boolean isExpirable() {
-        return isIndexStoreExpirable;
-    }
-
     interface CopyFunctor<A, B> {
 
         Map<A, B> invoke(Map<A, B> map);
@@ -154,30 +150,19 @@ public abstract class BaseIndexStore implements IndexStore {
 
     }
 
-    private class PassThroughFunctor implements CopyFunctor<Data, QueryableEntry> {
+    private static class PassThroughFunctor implements CopyFunctor<Data, QueryableEntry> {
 
         @Override
         public Map<Data, QueryableEntry> invoke(Map<Data, QueryableEntry> map) {
-            if (MapUtil.isNullOrEmpty(map)) {
-                return map;
-            }
-
             return map;
         }
     }
 
-    private class CopyInputFunctor implements CopyFunctor<Data, QueryableEntry> {
+    private static class CopyInputFunctor implements CopyFunctor<Data, QueryableEntry> {
 
         @Override
         public Map<Data, QueryableEntry> invoke(Map<Data, QueryableEntry> map) {
-            if (MapUtil.isNullOrEmpty(map)) {
-                return map;
-            }
-
-            return new HashMap<>(map);
+            return isNullOrEmpty(map) ? map : new HashMap<>(map);
         }
-
     }
-
-
 }
