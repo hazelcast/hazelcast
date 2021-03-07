@@ -60,7 +60,7 @@ public class ManagementCenterService {
         private final ConcurrentMap<Address, Long> lastAccessTimestamps = new ConcurrentHashMap<>();
         private final BlockingQueue<Event> mcEvents;
 
-        public MCEventStore(LongSupplier clock, BlockingQueue<Event> mcEvents) {
+        MCEventStore(LongSupplier clock, BlockingQueue<Event> mcEvents) {
             this.clock = clock;
             this.lastMCEventsPollMillis = clock.getAsLong();
             this.mcEvents = mcEvents;
@@ -76,7 +76,7 @@ public class ManagementCenterService {
 
         }
 
-        public void onMCEventWindowExceeded() {
+        void onMCEventWindowExceeded() {
             mcEvents.clear();
             lastAccessTimestamps.clear();
         }

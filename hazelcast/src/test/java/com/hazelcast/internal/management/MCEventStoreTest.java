@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.internal.management;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -7,7 +23,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -72,7 +87,7 @@ public class MCEventStoreTest {
         clock.now++;
         r.run();
     }
-    
+
     private void logEvent() {
         eventStore.log(new ManagementCenterServiceIntegrationTest.TestEvent(clock.now));
     }
@@ -81,7 +96,7 @@ public class MCEventStoreTest {
     public void before() {
         clock = new FakeClock();
         queue = new LinkedBlockingQueue<>();
-        eventStore = new ManagementCenterService.MCEventStore(clock, queue);
+        eventStore = new ManagementCenterService.úMCEventStore(clock, queue);
     }
 
     @Test
@@ -140,7 +155,7 @@ public class MCEventStoreTest {
             assertEquals(0, queue.size());
         });
     }
-    
+
     @Test
     public void sameMilliEvent_reportedInNextPoll() {
         assertPolledEventCount(0, MC_1_REMOTE_ADDR);
@@ -167,7 +182,7 @@ public class MCEventStoreTest {
             assertPolledEventCount(1, MC_3_REMOTE_ADDR);
         });
         clock.now += TimeUnit.SECONDS.toMillis(15);
-        inNextMilli(() ->{
+        inNextMilli(() -> {
             assertPolledEventCount(1, MC_1_REMOTE_ADDR);
         });
         inNextMilli(() -> {
@@ -186,11 +201,11 @@ public class MCEventStoreTest {
 
     /**
      * Runs 50 threads in parallel, each thread performs 1000 tasks. Each task is one of:
-     *  - logging 800 events
-     *  - or polling as MC_1
-     *  - or polling as MC_2
-     *  
-     * The test fails if any of the threads throw {@link java.util.ConcurrentModificationException} (or any other exception).  
+     * - logging 800 events
+     * - or polling as MC_1
+     * - or polling as MC_2
+     * <p>
+     * The test fails if any of the threads throw {@link java.util.ConcurrentModificationException} (or any other exception).
      */
     @Test
     public void stressTest()
@@ -214,8 +229,9 @@ public class MCEventStoreTest {
                     thrownByThreads.add(exc);
                 })
                 .build();
-        
-        int threadCount = 50, taskCount = 1000;
+
+        int threadCount = 50;
+        int taskCount = 1000;
         List<Thread> threads = IntStream.range(0, threadCount)
                 .mapToObj(i -> IntStream.range(0, taskCount)
                         .mapToObj(j -> tasks[Math.abs(random.nextInt()) % tasks.length])

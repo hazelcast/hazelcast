@@ -140,13 +140,13 @@ public class ManagementCenterServiceIntegrationTest
 
     static class TestEvent
             implements Event {
-        
+
         private final long timestamp;
-        
+
         TestEvent() {
             this(42);
         }
-        
+
         TestEvent(long timestamp) {
             this.timestamp = timestamp;
         }
