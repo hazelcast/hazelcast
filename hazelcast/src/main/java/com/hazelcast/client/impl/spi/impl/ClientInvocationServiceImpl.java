@@ -27,7 +27,6 @@ import com.hazelcast.client.impl.spi.ClientListenerService;
 import com.hazelcast.client.impl.spi.ClientPartitionService;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.impl.executionservice.TaskScheduler;
@@ -165,7 +164,6 @@ public class ClientInvocationServiceImpl implements ClientInvocationService {
             executionService.scheduleWithRepetition(new BackupTimeoutTask(), cleanResourcesMillis,
                     cleanResourcesMillis, MILLISECONDS);
         }
-        connectionManager.addConnectionListener(new ConnectionRemovedListener());
     }
 
     @Override
@@ -216,6 +214,16 @@ public class ClientInvocationServiceImpl implements ClientInvocationService {
     }
 
     @Override
+    public void onConnectionClose(ClientConnection connection) {
+        for (ClientInvocation invocation : invocations.values()) {
+            if (invocation.getPermissionToNotifyForDeadConnection(connection)) {
+                Exception ex = new TargetDisconnectedException(connection.getCloseReason(), connection.getCloseCause());
+                invocation.notifyExceptionWithOwnedPermission(ex);
+            }
+        }
+    }
+
+    @Override
     public boolean isRedoOperation() {
         return client.getClientConfig().getNetworkConfig().isRedoOperation();
     }
@@ -235,7 +243,6 @@ public class ClientInvocationServiceImpl implements ClientInvocationService {
         //After this is set, a second thread can notify this invocation
         //Connection could be closed. From this point on, we need to reacquire the permission to notify if needed.
         invocation.setSentConnection(connection);
-
 
         if (!connection.write(clientMessage)) {
             if (invocation.getPermissionToNotifyForDeadConnection(connection)) {
@@ -300,23 +307,6 @@ public class ClientInvocationServiceImpl implements ClientInvocationService {
         public void run() {
             for (ClientInvocation invocation : invocations.values()) {
                 invocation.detectAndHandleBackupTimeout(operationBackupTimeoutMillis);
-            }
-        }
-    }
-
-    private class ConnectionRemovedListener implements ConnectionListener<ClientConnection> {
-        @Override
-        public void connectionAdded(ClientConnection connection) {
-
-        }
-
-        @Override
-        public void connectionRemoved(ClientConnection connection) {
-            for (ClientInvocation invocation : invocations.values()) {
-                if (invocation.getPermissionToNotifyForDeadConnection(connection)) {
-                    Exception ex = new TargetDisconnectedException(connection.getCloseReason(), connection.getCloseCause());
-                    invocation.notifyExceptionWithOwnedPermission(ex);
-                }
             }
         }
     }
