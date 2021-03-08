@@ -116,8 +116,8 @@ execution fails (see
 ## Restarting
 
 It's also possible to simply restart a job without suspending and
-resuming in one atomic action. This can be useful when you want to have
-finer grained control on when the job should be scaled. For example, if
+resuming in one step. This can be useful when you want to have
+finer-grained control on when the job should be scaled. For example, if
 you have auto-scaling off and are adding 3 nodes to a cluster you can
 manually restart at the desired point to have the jobs utilizing all of
 the new nodes. This can be achieved with the `restart <job_name_or_id>`

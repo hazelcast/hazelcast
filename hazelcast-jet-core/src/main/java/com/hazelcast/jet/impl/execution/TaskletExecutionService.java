@@ -87,8 +87,8 @@ public class TaskletExecutionService {
     private final Counter blockingWorkerCount = MwCounter.newMwCounter();
     private volatile boolean isShutdown;
     private final Object lock = new Object();
-    private volatile IdleStrategy idlerCooperative;
-    private volatile IdleStrategy idlerNonCooperative;
+    private final IdleStrategy idlerCooperative;
+    private final IdleStrategy idlerNonCooperative;
 
     public TaskletExecutionService(NodeEngineImpl nodeEngine, int threadCount, HazelcastProperties properties) {
         hzExecutionService = nodeEngine.getExecutionService();
@@ -180,7 +180,7 @@ public class TaskletExecutionService {
     ) {
         @SuppressWarnings("unchecked")
         final List<TaskletTracker>[] trackersByThread = new List[cooperativeWorkers.length];
-        Arrays.setAll(trackersByThread, i -> new ArrayList());
+        Arrays.setAll(trackersByThread, i -> new ArrayList<>());
         List<? extends Future<?>> futures = tasklets
                 .stream()
                 .map(tasklet -> hzExecutionService.submit(TASKLET_INIT_CLOSE_EXECUTOR_NAME, () ->
@@ -429,7 +429,7 @@ public class TaskletExecutionService {
     private final class ExecutionTracker {
 
         final NonCompletableFuture future = new NonCompletableFuture();
-        volatile List<Future> blockingFutures = emptyList();
+        volatile List<Future<?>> blockingFutures = emptyList();
 
         private final AtomicInteger completionLatch;
         private final AtomicReference<Throwable> executionException = new AtomicReference<>();

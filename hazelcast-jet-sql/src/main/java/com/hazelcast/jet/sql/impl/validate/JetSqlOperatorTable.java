@@ -25,7 +25,6 @@ import com.hazelcast.jet.sql.impl.connector.generator.SeriesGeneratorTableFuncti
 import com.hazelcast.jet.sql.impl.connector.generator.StreamGeneratorTableFunction;
 import com.hazelcast.jet.sql.impl.schema.JetDynamicTableFunction;
 import com.hazelcast.jet.sql.impl.schema.JetSqlUserDefinedTableFunction;
-import com.hazelcast.jet.sql.impl.validate.operators.HazelcastArgumentAssignmentOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.HazelcastCollectionTableOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.HazelcastRowOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.HazelcastValuesOperator;
@@ -41,6 +40,7 @@ import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlSpecialOperator;
 import org.apache.calcite.sql.SqlSyntax;
 import org.apache.calcite.sql.fun.SqlMapValueConstructor;
+import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.type.FamilyOperandTypeChecker;
 import org.apache.calcite.sql.type.InferTypes;
@@ -62,7 +62,14 @@ public final class JetSqlOperatorTable extends ReflectiveSqlOperatorTable {
     public static final SqlSpecialOperator VALUES = new HazelcastValuesOperator();
     public static final SqlSpecialOperator ROW = new HazelcastRowOperator();
     public static final SqlSpecialOperator COLLECTION_TABLE = new HazelcastCollectionTableOperator("TABLE");
-    public static final SqlSpecialOperator ARGUMENT_ASSIGNMENT = new HazelcastArgumentAssignmentOperator();
+
+    // We use an operator that doesn't implement the HazelcastOperandTypeCheckerAware interface.
+    // The reason is that HazelcastOperandTypeCheckerAware.prepareBinding() gets the operand type for
+    // all operands, but in case of this operator we must not get it for the argument name operand, it's
+    // an SQL identifier and Calcite tries to resolve it as a column name. The other parameter accepts
+    // ANY type so there's no need for this
+    public static final SqlSpecialOperator ARGUMENT_ASSIGNMENT = SqlStdOperatorTable.ARGUMENT_ASSIGNMENT;
+
     // TODO [viliam] this seems to work, but it doesn't extend the hz-specific classes
     public static final SqlMapValueConstructor MAP_VALUE_CONSTRUCTOR = new SqlMapValueConstructor();
 
