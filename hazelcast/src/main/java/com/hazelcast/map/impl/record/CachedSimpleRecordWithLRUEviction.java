@@ -31,7 +31,7 @@ import static com.hazelcast.map.impl.record.RecordReaderWriter.SIMPLE_DATA_RECOR
  * @see CachedSimpleRecordWithLFUEviction
  */
 class CachedSimpleRecordWithLRUEviction extends CachedSimpleRecord {
-    private int lastAccessTime;
+    private volatile int lastAccessTime;
 
     CachedSimpleRecordWithLRUEviction(Data value) {
         super(value);
@@ -67,11 +67,6 @@ class CachedSimpleRecordWithLRUEviction extends CachedSimpleRecord {
 
     @Override
     public void onAccess(long now) {
-        onAccessSafe(now);
-    }
-
-    @Override
-    public void onAccessSafe(long now) {
         setLastAccessTime(now);
     }
 

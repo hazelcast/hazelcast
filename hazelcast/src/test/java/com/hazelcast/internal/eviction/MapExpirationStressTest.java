@@ -16,10 +16,15 @@
 
 package com.hazelcast.internal.eviction;
 
+import com.hazelcast.aggregation.Aggregators;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
+import com.hazelcast.map.impl.query.QueryEngineImpl;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.OverridePropertyRule;
@@ -36,11 +41,14 @@ import org.junit.runner.RunWith;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.map.impl.eviction.MapClearExpiredRecordsTask.PROP_TASK_PERIOD_SECONDS;
 import static com.hazelcast.test.OverridePropertyRule.set;
 import static com.hazelcast.test.backup.TestBackupUtils.assertBackupSizeEventually;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(NightlyTest.class)
@@ -51,8 +59,9 @@ public class MapExpirationStressTest extends HazelcastTestSupport {
 
     protected final String mapName = "test";
 
-    private static final int CLUSTER_SIZE = 5;
-    private static final int KEY_RANGE = 100000;
+    private static final int CLUSTER_SIZE = 3;
+    private static final int KEY_RANGE = 10_000;
+    private static final int THREAD_COUNT = Math.min(Runtime.getRuntime().availableProcessors(), 5);
 
     private HazelcastInstance[] instances = new HazelcastInstance[CLUSTER_SIZE];
     private TestHazelcastInstanceFactory factory;
@@ -64,6 +73,7 @@ public class MapExpirationStressTest extends HazelcastTestSupport {
     @Before
     public void setup() {
         Config config = getConfig();
+        config.setProperty(QueryEngineImpl.DISABLE_MIGRATION_FALLBACK.getName(), "true");
         config.addMapConfig(getMapConfig());
         factory = createHazelcastInstanceFactory(CLUSTER_SIZE);
         for (int i = 0; i < CLUSTER_SIZE; i++) {
@@ -74,30 +84,36 @@ public class MapExpirationStressTest extends HazelcastTestSupport {
     protected MapConfig getMapConfig() {
         MapConfig mapConfig = new MapConfig();
         mapConfig.setName(mapName);
-        mapConfig.setMaxIdleSeconds(2);
+        mapConfig.setMaxIdleSeconds(3);
         mapConfig.setBackupCount(CLUSTER_SIZE - 1);
+        mapConfig.addIndexConfig(new IndexConfig(IndexType.SORTED, "this"));
+        mapConfig.addIndexConfig(new IndexConfig(IndexType.SORTED, "__key"));
         return mapConfig;
     }
 
     @Test
-    public void test() throws InterruptedException {
+    public void operations_run_without_exception() throws InterruptedException {
         assertClusterSize(CLUSTER_SIZE, instances);
-        List<Thread> list = new ArrayList<>();
-        for (int i = 0; i < CLUSTER_SIZE; i++) {
-            list.add(new Thread(new TestRunner(instances[i].getMap(mapName), done)));
+
+        AtomicInteger exceptionCount = new AtomicInteger();
+        List<Thread> threads = new ArrayList<>();
+        for (int i = 0; i < THREAD_COUNT; i++) {
+            IMap map = instances[random.nextInt(CLUSTER_SIZE)].getMap(mapName);
+            threads.add(new Thread(new TestRunner(map, done, exceptionCount)));
         }
 
-        for (Thread thread : list) {
+        for (Thread thread : threads) {
             thread.start();
         }
 
         sleepAtLeastSeconds(DURATION_SECONDS);
 
         done.set(true);
-        for (Thread thread : list) {
+        for (Thread thread : threads) {
             thread.join();
         }
 
+        assertEquals("Found exceptions", 0, exceptionCount.get());
         assertRecords(instances);
     }
 
@@ -114,18 +130,30 @@ public class MapExpirationStressTest extends HazelcastTestSupport {
     }
 
     protected void doOp(IMap map) {
-        int op = random.nextInt(3);
+        int op = random.nextInt(7);
         int key = random.nextInt(KEY_RANGE);
         int val = random.nextInt(KEY_RANGE);
         switch (op) {
             case 0:
-                map.put(key, val);
+                map.set(key, val, 1, TimeUnit.SECONDS);
                 break;
             case 1:
                 map.remove(key);
                 break;
             case 2:
-                map.get(key);
+                map.setTtl(key, 1, TimeUnit.SECONDS);
+                break;
+            case 3:
+                map.aggregate(Aggregators.count(), Predicates.greaterThan("this", val));
+                break;
+            case 4:
+                map.aggregate(Aggregators.count(), Predicates.greaterThan("__key", key));
+                break;
+            case 5:
+                map.evict(key);
+                break;
+            case 6:
+                map.values(Predicates.alwaysTrue());
                 break;
             default:
                 map.get(key);
@@ -136,16 +164,23 @@ public class MapExpirationStressTest extends HazelcastTestSupport {
     class TestRunner implements Runnable {
         private IMap map;
         private AtomicBoolean done;
+        private AtomicInteger exceptionCount;
 
-        TestRunner(IMap map, AtomicBoolean done) {
+        TestRunner(IMap map, AtomicBoolean done, AtomicInteger exceptionCount) {
             this.map = map;
             this.done = done;
+            this.exceptionCount = exceptionCount;
         }
 
         @Override
         public void run() {
-            while (!done.get()) {
-                doOp(map);
+            try {
+                while (!done.get()) {
+                    doOp(map);
+                }
+            } catch (Throwable e) {
+                exceptionCount.incrementAndGet();
+                throw e;
             }
         }
     }

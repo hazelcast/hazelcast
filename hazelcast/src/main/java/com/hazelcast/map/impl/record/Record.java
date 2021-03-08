@@ -165,22 +165,21 @@ public interface Record<V> {
         return diff;
     }
 
+    /**
+     * An implementation must be thread safe if the
+     * record might be accessed from multiple threads.
+     */
     default void onAccess(long now) {
+        incrementHits();
+        setLastAccessTime(now);
+    }
+
+    default void incrementHits() {
         int hits = getHits();
         if (hits < Integer.MAX_VALUE) {
             // protect against potential overflow
             setHits(hits + 1);
         }
-
-        onAccessSafe(now);
-    }
-
-    /**
-     * An implementation must be thread safe if the
-     * record might be accessed from multiple threads.
-     */
-    default void onAccessSafe(long now) {
-        setLastAccessTime(now);
     }
 
     default void onUpdate(long now) {
