@@ -25,6 +25,7 @@ import com.hazelcast.map.impl.wan.WanMapEntryView;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.query.impl.CachedQueryEntry;
 import com.hazelcast.query.impl.predicates.BoundedRangePredicate;
 import com.hazelcast.query.impl.predicates.CompositeEqualPredicate;
 import com.hazelcast.query.impl.predicates.CompositeRangePredicate;
@@ -191,7 +192,7 @@ public class DataSerializableConventionsTest {
                     int factoryId = instance.getFactoryId();
                     int typeId = instance.getClassId();
                     if (factoryToTypeId.containsEntry(factoryId, typeId)) {
-                        fail("Factory-Type ID pair {" + factoryId + ", " + typeId + "} from " + klass.toString() + " is already"
+                        fail("Factory-Type ID pair {" + factoryId + ", " + typeId + "} from " + klass + " is already"
                                 + " registered in another type.");
                     } else {
                         factoryToTypeId.put(factoryId, typeId);
@@ -368,6 +369,7 @@ public class DataSerializableConventionsTest {
         whiteList.add(CompositeEqualPredicate.class);
         whiteList.add(EvaluatePredicate.class);
         whiteList.add(Converter.class);
+        whiteList.add(CachedQueryEntry.class);
         try {
             // these can't be accessed through the meta class since they are private
             whiteList.add(Class.forName("com.hazelcast.query.impl.predicates.CompositeIndexVisitor$Output"));
