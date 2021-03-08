@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector.generator;
 
 import com.hazelcast.jet.sql.SqlTestSupport;
+import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
 import org.junit.BeforeClass;
@@ -52,6 +53,30 @@ public class SqlStreamGeneratorTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_generateStreamArgumentExpression() {
+        assertRowsEventuallyInAnyOrder(
+                "SELECT * FROM TABLE(GENERATE_STREAM(CAST(CAST('50' AS INTEGER) + 50 AS INT)))",
+                asList(
+                        new Row(0L),
+                        new Row(1L),
+                        new Row(2L)
+                )
+        );
+    }
+
+    @Test
+    public void test_generateStreamNamedArguments() {
+        assertRowsEventuallyInAnyOrder(
+                "SELECT * FROM TABLE(GENERATE_STREAM(rate => 50 + 50))",
+                asList(
+                        new Row(0L),
+                        new Row(1L),
+                        new Row(2L)
+                )
+        );
+    }
+
+    @Test
     public void test_generateStreamFilterAndProject() {
         assertRowsEventuallyInAnyOrder(
                 "SELECT v * 2 FROM TABLE(GENERATE_STREAM(100)) WHERE v > 0 AND v < 5",
@@ -77,5 +102,25 @@ public class SqlStreamGeneratorTest extends SqlTestSupport {
     public void when_rateIsNegative_then_throws() {
         assertThatThrownBy(() -> sqlService.execute("SELECT * FROM TABLE(GENERATE_STREAM(-1))"))
                 .hasMessageContaining("rate cannot be less than zero");
+    }
+
+    @Test
+    public void when_coercionIsRequired_then_throws() {
+        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM TABLE(GENERATE_STREAM('100'))"))
+                .hasMessageContaining("consider adding an explicit CAST");
+    }
+
+    @Test
+    public void test_nullArgument() {
+        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM TABLE(GENERATE_STREAM(null))"))
+                .hasMessage("rate cannot be null");
+    }
+
+    @Test
+    public void when_notInFromClause_then_throws() {
+        IMap<Integer, Integer> map = instance().getMap("m");
+        map.put(42, 43);
+        assertThatThrownBy(() -> sqlService.execute("SELECT GENERATE_STREAM(null) FROM m"))
+                .hasMessage("unexpected SQL type: ROW");
     }
 }

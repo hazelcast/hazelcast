@@ -38,10 +38,6 @@ import static java.util.Collections.singletonList;
 
 class SeriesSqlConnector implements SqlConnector {
 
-    static final String OPTION_START = "start";
-    static final String OPTION_STOP = "stop";
-    static final String OPTION_STEP = "step";
-
     static final SeriesSqlConnector INSTANCE = new SeriesSqlConnector();
 
     private static final String TYPE_NAME = "Series";
@@ -82,7 +78,7 @@ class SeriesSqlConnector implements SqlConnector {
 
     @Nonnull
     @SuppressWarnings("SameParameterValue")
-    static SeriesTable createTable(String schemaName, String name, int start, int stop, int step) {
+    static SeriesTable createTable(String schemaName, String name, Integer start, Integer stop, Integer step) {
         return new SeriesTable(INSTANCE, FIELDS, schemaName, name, start, stop, step);
     }
 

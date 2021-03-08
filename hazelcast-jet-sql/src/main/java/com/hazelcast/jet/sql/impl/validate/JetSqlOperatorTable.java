@@ -23,8 +23,8 @@ import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastSumAggFunction;
 import com.hazelcast.jet.sql.impl.connector.file.FileTableFunction;
 import com.hazelcast.jet.sql.impl.connector.generator.SeriesGeneratorTableFunction;
 import com.hazelcast.jet.sql.impl.connector.generator.StreamGeneratorTableFunction;
+import com.hazelcast.jet.sql.impl.schema.JetDynamicTableFunction;
 import com.hazelcast.jet.sql.impl.schema.JetSqlUserDefinedTableFunction;
-import com.hazelcast.jet.sql.impl.schema.JetTableFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.HazelcastArgumentAssignmentOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.HazelcastCollectionTableOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.HazelcastRowOperator;
@@ -61,13 +61,10 @@ public final class JetSqlOperatorTable extends ReflectiveSqlOperatorTable {
 
     public static final SqlSpecialOperator VALUES = new HazelcastValuesOperator();
     public static final SqlSpecialOperator ROW = new HazelcastRowOperator();
-    public static final SqlSpecialOperator COLLECTION_TABLE =
-            new HazelcastCollectionTableOperator("TABLE");
-    public static final SqlSpecialOperator ARGUMENT_ASSIGNMENT =
-            new HazelcastArgumentAssignmentOperator();
+    public static final SqlSpecialOperator COLLECTION_TABLE = new HazelcastCollectionTableOperator("TABLE");
+    public static final SqlSpecialOperator ARGUMENT_ASSIGNMENT = new HazelcastArgumentAssignmentOperator();
     // TODO [viliam] this seems to work, but it doesn't extend the hz-specific classes
-    public static final SqlMapValueConstructor MAP_VALUE_CONSTRUCTOR =
-            new SqlMapValueConstructor();
+    public static final SqlMapValueConstructor MAP_VALUE_CONSTRUCTOR = new SqlMapValueConstructor();
 
     public static final SqlFunction SUM = new HazelcastSumAggFunction();
     public static final SqlFunction COUNT = new HazelcastCountAggFunction();
@@ -75,14 +72,13 @@ public final class JetSqlOperatorTable extends ReflectiveSqlOperatorTable {
     public static final SqlFunction MIN = new HazelcastMinMaxAggFunction(SqlKind.MIN);
     public static final SqlFunction MAX = new HazelcastMinMaxAggFunction(SqlKind.MAX);
 
+    public static final SqlFunction GENERATE_SERIES = new SeriesGeneratorTableFunction();
+    public static final SqlFunction GENERATE_STREAM = new StreamGeneratorTableFunction();
+
     public static final SqlFunction CSV_FILE = from(FileTableFunction.CSV, "CSV_FILE");
     public static final SqlFunction JSON_FILE = from(FileTableFunction.JSON, "JSON_FILE");
     public static final SqlFunction AVRO_FILE = from(FileTableFunction.AVRO, "AVRO_FILE");
     public static final SqlFunction PARQUET_FILE = from(FileTableFunction.PARQUET, "PARQUET_FILE");
-    public static final SqlFunction GENERATE_SERIES =
-            from(SeriesGeneratorTableFunction.GENERATE_SERIES, "GENERATE_SERIES");
-    public static final SqlFunction GENERATE_STREAM =
-            from(StreamGeneratorTableFunction.GENERATE_STREAM, "GENERATE_STREAM");
 
     private static final JetSqlOperatorTable INSTANCE = new JetSqlOperatorTable();
 
@@ -97,7 +93,7 @@ public final class JetSqlOperatorTable extends ReflectiveSqlOperatorTable {
         return INSTANCE;
     }
 
-    static SqlUserDefinedTableFunction from(JetTableFunction function, String name) {
+    static SqlUserDefinedTableFunction from(JetDynamicTableFunction function, String name) {
         RelDataTypeFactory typeFactory = HazelcastTypeFactory.INSTANCE;
 
         List<RelDataType> types = new ArrayList<>();

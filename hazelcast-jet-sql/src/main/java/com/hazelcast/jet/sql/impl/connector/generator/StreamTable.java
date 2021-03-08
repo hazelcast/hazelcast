@@ -38,37 +38,40 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 class StreamTable extends JetTable {
 
-    private final int rate;
+    private final Integer rate;
 
     StreamTable(
             SqlConnector sqlConnector,
             List<TableField> fields,
             String schemaName,
             String name,
-            int rate
+            Integer rate
     ) {
         super(sqlConnector, fields, schemaName, name, new ConstantTableStatistics(Integer.MAX_VALUE));
-
-        if (rate < 0) {
-            throw QueryException.error("rate cannot be less than zero");
-        }
 
         this.rate = rate;
     }
 
     StreamSource<Object[]> items(Expression<Boolean> predicate, List<Expression<?>> projections) {
+        if (rate == null) {
+            throw QueryException.error("rate cannot be null");
+        }
+        if (rate < 0) {
+            throw QueryException.error("rate cannot be less than zero");
+        }
+
         int rate = this.rate;
         return SourceBuilder
                 .stream("stream", ctx -> {
                     InternalSerializationService serializationService = ((ProcSupplierCtx) ctx).serializationService();
                     SimpleExpressionEvalContext context = new SimpleExpressionEvalContext(serializationService);
-                    return new StreamGenerator(rate, predicate, projections, context);
+                    return new DataGenerator(rate, predicate, projections, context);
                 })
-                .fillBufferFn(StreamGenerator::fillBuffer)
+                .fillBufferFn(DataGenerator::fillBuffer)
                 .build();
     }
 
-    private static final class StreamGenerator {
+    private static final class DataGenerator {
 
         private static final int MAX_BATCH_SIZE = 1024;
         private static final long NANOS_PER_MICRO = MICROSECONDS.toNanos(1);
@@ -82,7 +85,7 @@ class StreamTable extends JetTable {
 
         private long sequence;
 
-        private StreamGenerator(
+        private DataGenerator(
                 int rate,
                 Expression<Boolean> predicate,
                 List<Expression<?>> projections,

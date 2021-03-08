@@ -17,7 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector.file;
 
 import com.hazelcast.internal.util.UuidUtil;
-import com.hazelcast.jet.sql.impl.schema.JetTableFunction;
+import com.hazelcast.jet.sql.impl.schema.JetDynamicTableFunction;
 import com.hazelcast.jet.sql.impl.schema.JetTableFunctionParameter;
 import com.hazelcast.jet.sql.impl.schema.MappingField;
 import com.hazelcast.jet.sql.impl.schema.UnknownStatistic;
@@ -42,7 +42,7 @@ import static com.hazelcast.jet.sql.impl.connector.file.FileSqlConnector.OPTION_
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 
-public final class FileTableFunction extends JetTableFunction {
+public final class FileTableFunction extends JetDynamicTableFunction {
 
     public static final FileTableFunction CSV = new FileTableFunction(CSV_FORMAT, asList(
             new JetTableFunctionParameter(0, OPTION_PATH, SqlTypeName.VARCHAR, true),

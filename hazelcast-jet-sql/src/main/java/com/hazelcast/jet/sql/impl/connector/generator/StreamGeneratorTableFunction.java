@@ -17,46 +17,66 @@
 package com.hazelcast.jet.sql.impl.connector.generator;
 
 import com.hazelcast.internal.util.UuidUtil;
-import com.hazelcast.jet.sql.impl.schema.JetTableFunction;
-import com.hazelcast.jet.sql.impl.schema.JetTableFunctionParameter;
+import com.hazelcast.jet.sql.impl.schema.JetSpecificTableFunction;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTableStatistic;
-import org.apache.calcite.schema.FunctionParameter;
-import org.apache.calcite.sql.type.SqlTypeName;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
+import com.hazelcast.sql.impl.calcite.validate.operand.OperandCheckerProgram;
+import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
+import com.hazelcast.sql.impl.calcite.validate.operators.ReplaceUnknownOperandTypeInference;
+import org.apache.calcite.sql.SqlOperandCountRange;
+import org.apache.calcite.sql.type.SqlOperandCountRanges;
 
 import java.util.List;
 
-import static com.hazelcast.jet.sql.impl.connector.generator.StreamSqlConnector.OPTION_RATE;
 import static java.util.Collections.singletonList;
+import static org.apache.calcite.sql.type.SqlTypeName.INTEGER;
 
-public final class StreamGeneratorTableFunction extends JetTableFunction {
-
-    public static final StreamGeneratorTableFunction GENERATE_STREAM = new StreamGeneratorTableFunction();
+public final class StreamGeneratorTableFunction extends JetSpecificTableFunction {
 
     private static final String SCHEMA_NAME_STREAM = "stream";
+    private static final String FUNCTION_NAME = "GENERATE_STREAM";
+    private static final List<String> PARAM_NAMES = singletonList("rate");
 
-    private static final List<FunctionParameter> PARAMETERS = singletonList(
-            new JetTableFunctionParameter(0, OPTION_RATE, SqlTypeName.INTEGER, true)
-    );
-
-    private StreamGeneratorTableFunction() {
-        super(StreamSqlConnector.INSTANCE);
+    public StreamGeneratorTableFunction() {
+        super(
+                FUNCTION_NAME,
+                binding -> toTable(0).getRowType(binding.getTypeFactory()),
+                new ReplaceUnknownOperandTypeInference(INTEGER),
+                StreamSqlConnector.INSTANCE
+        );
     }
 
     @Override
-    public List<FunctionParameter> getParameters() {
-        return PARAMETERS;
+    public List<String> getParamNames() {
+        return PARAM_NAMES;
     }
 
     @Override
-    protected HazelcastTable toTable(List<Object> arguments) {
-        int rate = (Integer) arguments.get(0);
+    public SqlOperandCountRange getOperandCountRange() {
+        return SqlOperandCountRanges.of(1);
+    }
+
+    @Override
+    protected boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure) {
+        return new OperandCheckerProgram(
+                TypedOperandChecker.INTEGER
+        ).check(binding, throwOnFailure);
+    }
+
+    @Override
+    public HazelcastTable toTable(List<Object> arguments) {
+        Integer rate = (Integer) arguments.get(0);
+
+        return toTable(rate);
+    }
+
+    private static HazelcastTable toTable(Integer rate) {
         StreamTable table = StreamSqlConnector.createTable(SCHEMA_NAME_STREAM, randomName(), rate);
-
         return new HazelcastTable(table, new HazelcastTableStatistic(Integer.MAX_VALUE));
     }
 
     private static String randomName() {
-        return "stream_" + UuidUtil.newUnsecureUuidString().replace('-', '_');
+        return SCHEMA_NAME_STREAM + "_" + UuidUtil.newUnsecureUuidString().replace('-', '_');
     }
 }

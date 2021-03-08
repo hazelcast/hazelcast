@@ -17,46 +17,87 @@
 package com.hazelcast.jet.sql.impl.connector.generator;
 
 import com.hazelcast.internal.util.UuidUtil;
-import com.hazelcast.jet.sql.impl.schema.JetTableFunction;
-import com.hazelcast.jet.sql.impl.schema.JetTableFunctionParameter;
+import com.hazelcast.jet.sql.impl.schema.JetSpecificTableFunction;
+import com.hazelcast.jet.sql.impl.validate.ValidationUtil;
+import com.hazelcast.jet.sql.impl.validate.operand.NamedOperandCheckerProgram;
+import com.hazelcast.jet.sql.impl.validate.operators.HazelcastOperandTypeInference;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTableStatistic;
-import org.apache.calcite.schema.FunctionParameter;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
+import com.hazelcast.sql.impl.calcite.validate.operand.OperandCheckerProgram;
+import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
+import com.hazelcast.sql.impl.calcite.validate.operators.ReplaceUnknownOperandTypeInference;
+import org.apache.calcite.sql.SqlOperandCountRange;
+import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import org.apache.calcite.sql.type.SqlTypeName;
 
 import java.util.List;
 
-import static com.hazelcast.jet.sql.impl.connector.generator.SeriesSqlConnector.OPTION_START;
-import static com.hazelcast.jet.sql.impl.connector.generator.SeriesSqlConnector.OPTION_STEP;
-import static com.hazelcast.jet.sql.impl.connector.generator.SeriesSqlConnector.OPTION_STOP;
 import static java.util.Arrays.asList;
+import static org.apache.calcite.sql.type.SqlTypeName.INTEGER;
 
-public final class SeriesGeneratorTableFunction extends JetTableFunction {
-
-    public static final SeriesGeneratorTableFunction GENERATE_SERIES = new SeriesGeneratorTableFunction();
+public final class SeriesGeneratorTableFunction extends JetSpecificTableFunction {
 
     private static final String SCHEMA_NAME_SERIES = "series";
+    private static final String FUNCTION_NAME = "GENERATE_SERIES";
+    private static final List<String> PARAM_NAMES = asList("start", "stop", "step");
 
-    private static final List<FunctionParameter> PARAMETERS = asList(
-            new JetTableFunctionParameter(0, OPTION_START, SqlTypeName.INTEGER, true),
-            new JetTableFunctionParameter(1, OPTION_STOP, SqlTypeName.INTEGER, true),
-            new JetTableFunctionParameter(2, OPTION_STEP, SqlTypeName.INTEGER, false)
-    );
-
-    private SeriesGeneratorTableFunction() {
-        super(SeriesSqlConnector.INSTANCE);
+    public SeriesGeneratorTableFunction() {
+        super(
+                FUNCTION_NAME,
+                binding -> toTable(0, 0, 1).getRowType(binding.getTypeFactory()),
+                new HazelcastOperandTypeInference(
+                        new SqlTypeName[]{INTEGER, INTEGER, INTEGER},
+                        new ReplaceUnknownOperandTypeInference(INTEGER)
+                ),
+                SeriesSqlConnector.INSTANCE
+        );
     }
 
     @Override
-    public List<FunctionParameter> getParameters() {
-        return PARAMETERS;
+    public List<String> getParamNames() {
+        return PARAM_NAMES;
     }
 
     @Override
-    protected HazelcastTable toTable(List<Object> arguments) {
-        int start = (Integer) arguments.get(0);
-        int stop = (Integer) arguments.get(1);
-        int step = arguments.get(2) != null ? (Integer) arguments.get(2) : 1;
+    public SqlOperandCountRange getOperandCountRange() {
+        return SqlOperandCountRanges.between(2, 3);
+    }
+
+    @Override
+    protected boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure) {
+        if (ValidationUtil.hasAssignment(binding.getCall())) {
+            return new NamedOperandCheckerProgram(
+                    TypedOperandChecker.INTEGER,
+                    TypedOperandChecker.INTEGER,
+                    TypedOperandChecker.INTEGER
+            ).check(binding, throwOnFailure);
+        } else if (binding.getOperandCount() == 3) {
+            return new OperandCheckerProgram(
+                    TypedOperandChecker.INTEGER,
+                    TypedOperandChecker.INTEGER,
+                    TypedOperandChecker.INTEGER
+            ).check(binding, throwOnFailure);
+        } else {
+            assert binding.getOperandCount() == 2;
+
+            return new OperandCheckerProgram(
+                    TypedOperandChecker.INTEGER,
+                    TypedOperandChecker.INTEGER
+            ).check(binding, throwOnFailure);
+        }
+    }
+
+    @Override
+    public HazelcastTable toTable(List<Object> arguments) {
+        Integer start = (Integer) arguments.get(0);
+        Integer stop = (Integer) arguments.get(1);
+        Integer step = arguments.get(2) != null ? (Integer) arguments.get(2) : 1;
+
+        return toTable(start, stop, step);
+    }
+
+    private static HazelcastTable toTable(Integer start, Integer stop, Integer step) {
         SeriesTable table = SeriesSqlConnector.createTable(
                 SCHEMA_NAME_SERIES,
                 randomName(),
@@ -68,6 +109,6 @@ public final class SeriesGeneratorTableFunction extends JetTableFunction {
     }
 
     private static String randomName() {
-        return "series_" + UuidUtil.newUnsecureUuidString().replace('-', '_');
+        return SCHEMA_NAME_SERIES + "_" + UuidUtil.newUnsecureUuidString().replace('-', '_');
     }
 }

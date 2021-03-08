@@ -16,27 +16,22 @@
 
 package com.hazelcast.jet.sql.impl.validate;
 
-import com.hazelcast.jet.sql.SqlTestSupport;
-import com.hazelcast.sql.SqlService;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.apache.calcite.sql.SqlCall;
+import org.apache.calcite.sql.SqlKind;
+import org.apache.calcite.sql.SqlNode;
 
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+public final class ValidationUtil {
 
-public class UDFTypeCoercionTest extends SqlTestSupport {
-
-    private static SqlService sqlService;
-
-    @BeforeClass
-    public static void setUpClass() {
-        initialize(1, null);
-        sqlService = instance().getSql();
+    private ValidationUtil() {
     }
 
-    @Test
-    public void test_typeCoercion() {
-        assertThatThrownBy(() ->
-                sqlService.execute("SELECT * FROM TABLE(GENERATE_SERIES(0, " + (Integer.MAX_VALUE + 1L) + "))")
-        ).hasMessageContaining("Expected: INTEGER, actual: CAST");
+    public static boolean hasAssignment(SqlCall call) {
+        for (SqlNode operand : call.getOperandList()) {
+            if (operand != null
+                    && operand.getKind() == SqlKind.ARGUMENT_ASSIGNMENT) {
+                return true;
+            }
+        }
+        return false;
     }
 }

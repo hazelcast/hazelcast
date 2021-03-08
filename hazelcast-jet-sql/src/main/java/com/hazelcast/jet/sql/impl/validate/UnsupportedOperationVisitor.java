@@ -141,6 +141,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
 
         // Table functions
         SUPPORTED_KINDS.add(SqlKind.COLLECTION_TABLE);
+        SUPPORTED_KINDS.add(SqlKind.ARGUMENT_ASSIGNMENT);
 
         // Supported operators
         SUPPORTED_OPERATORS = new HashSet<>();
@@ -184,14 +185,15 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_OPERATORS.add(SqlShowStatement.SHOW_MAPPINGS);
         SUPPORTED_OPERATORS.add(SqlShowStatement.SHOW_JOBS);
 
+        SUPPORTED_OPERATORS.add(JetSqlOperatorTable.GENERATE_SERIES);
+        SUPPORTED_OPERATORS.add(JetSqlOperatorTable.GENERATE_STREAM);
+
         // Supported functions
         SUPPORTED_FUNCTIONS = new HashSet<>();
         SUPPORTED_FUNCTIONS.add(JetSqlOperatorTable.CSV_FILE);
         SUPPORTED_FUNCTIONS.add(JetSqlOperatorTable.JSON_FILE);
         SUPPORTED_FUNCTIONS.add(JetSqlOperatorTable.AVRO_FILE);
         SUPPORTED_FUNCTIONS.add(JetSqlOperatorTable.PARQUET_FILE);
-        SUPPORTED_FUNCTIONS.add(JetSqlOperatorTable.GENERATE_SERIES);
-        SUPPORTED_FUNCTIONS.add(JetSqlOperatorTable.GENERATE_STREAM);
     }
 
     private UnsupportedOperationVisitor() {

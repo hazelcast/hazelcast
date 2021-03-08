@@ -16,17 +16,21 @@
 
 package com.hazelcast.jet.sql.impl.validate.operators;
 
-import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
-import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastSpecialOperator;
+import org.apache.calcite.sql.SqlAsOperator;
+import org.apache.calcite.sql.SqlCall;
+import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlKind;
+import org.apache.calcite.sql.SqlWriter;
 import org.apache.calcite.sql.type.InferTypes;
+import org.apache.calcite.sql.type.OperandTypes;
 import org.apache.calcite.sql.type.ReturnTypes;
 
 /**
  * Hazelcast equivalent of {@link
  * org.apache.calcite.sql.fun.SqlArgumentAssignmentOperator}.
  */
-public class HazelcastArgumentAssignmentOperator extends HazelcastSpecialOperator {
+@SuppressWarnings("JavadocReference")
+public class HazelcastArgumentAssignmentOperator extends SqlAsOperator {
 
     private static final int PRECEDENCE = 20;
 
@@ -37,11 +41,21 @@ public class HazelcastArgumentAssignmentOperator extends HazelcastSpecialOperato
                 PRECEDENCE,
                 true,
                 ReturnTypes.ARG0,
-                InferTypes.RETURN_TYPE);
+                InferTypes.RETURN_TYPE,
+                OperandTypes.ANY_ANY
+        );
     }
 
     @Override
-    protected boolean checkOperandTypes(HazelcastCallBinding callBinding, boolean throwOnFailure) {
+    public void unparse(SqlWriter writer, SqlCall call, int leftPrec, int rightPrec) {
+        // Arguments are held in reverse order to be consistent with base class (AS).
+        call.operand(1).unparse(writer, leftPrec, getLeftPrec());
+        writer.keyword(getName());
+        call.operand(0).unparse(writer, getRightPrec(), rightPrec);
+    }
+
+    @Override
+    public final boolean checkOperandTypes(SqlCallBinding callBinding, boolean throwOnFailure) {
         return true;
     }
 }

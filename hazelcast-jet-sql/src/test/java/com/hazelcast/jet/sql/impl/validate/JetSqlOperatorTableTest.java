@@ -17,7 +17,7 @@
 package com.hazelcast.jet.sql.impl.validate;
 
 import com.google.common.collect.ImmutableMap;
-import com.hazelcast.jet.sql.impl.schema.JetTableFunction;
+import com.hazelcast.jet.sql.impl.schema.JetDynamicTableFunction;
 import com.hazelcast.jet.sql.impl.schema.JetTableFunctionParameter;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
@@ -58,7 +58,7 @@ public class JetSqlOperatorTableTest {
     private static final RelDataTypeFactory TYPE_FACTORY = HazelcastTypeFactory.INSTANCE;
 
     @Mock
-    private JetTableFunction tableFunction;
+    private JetDynamicTableFunction tableFunction;
 
     @Before
     public void setUp() {

@@ -47,15 +47,13 @@ import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
 
 public final class JetSqlUserDefinedTableFunction extends SqlUserDefinedTableFunction {
 
-    private final JetTableFunction function;
-
     public JetSqlUserDefinedTableFunction(
             SqlIdentifier opName,
             SqlReturnTypeInference returnTypeInference,
             SqlOperandTypeInference operandTypeInference,
             SqlOperandTypeChecker operandTypeChecker,
             List<RelDataType> parameterTypes,
-            JetTableFunction function
+            JetDynamicTableFunction function
     ) {
         super(opName, returnTypeInference, operandTypeInference, operandTypeChecker, parameterTypes, function);
 
@@ -63,12 +61,6 @@ public final class JetSqlUserDefinedTableFunction extends SqlUserDefinedTableFun
             SqlTypeName type = parameterType.getSqlTypeName();
             checkTrue(type == INTEGER || type == VARCHAR || type == MAP, "Unsupported type: " + type);
         }
-
-        this.function = function;
-    }
-
-    public boolean isStreaming() {
-        return function.isStream();
     }
 
     @Override
