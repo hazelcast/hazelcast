@@ -161,4 +161,11 @@ public class SqlSeriesGeneratorTest extends SqlTestSupport {
         assertThatThrownBy(() -> sqlService.execute("SELECT GENERATE_SERIES(null, null) FROM m"))
                 .hasMessage("unexpected SQL type: ROW");
     }
+
+    @Test
+    public void when_unknownIdentifier_then_throws() {
+        assertThatThrownBy(() -> sqlService.execute(
+                "SELECT * FROM TABLE(GENERATE_SERIES(\"start\" => 0, stop => 1, non_existing => 0))"
+        )).hasMessageContaining("Unknown argument name 'non_existing'");
+    }
 }

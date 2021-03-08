@@ -18,6 +18,8 @@ package com.hazelcast.jet.sql.impl.connector.generator;
 
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.sql.impl.schema.JetSpecificTableFunction;
+import com.hazelcast.jet.sql.impl.validate.ValidationUtil;
+import com.hazelcast.jet.sql.impl.validate.operand.NamedOperandCheckerProgram;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTableStatistic;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
@@ -59,9 +61,15 @@ public final class StreamGeneratorTableFunction extends JetSpecificTableFunction
 
     @Override
     protected boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure) {
-        return new OperandCheckerProgram(
-                TypedOperandChecker.INTEGER
-        ).check(binding, throwOnFailure);
+        if (ValidationUtil.hasAssignment(binding.getCall())) {
+            return new NamedOperandCheckerProgram(
+                    TypedOperandChecker.INTEGER
+            ).check(binding, throwOnFailure);
+        } else {
+            return new OperandCheckerProgram(
+                    TypedOperandChecker.INTEGER
+            ).check(binding, throwOnFailure);
+        }
     }
 
     @Override

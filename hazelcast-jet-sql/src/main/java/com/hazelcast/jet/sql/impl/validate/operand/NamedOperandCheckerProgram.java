@@ -23,6 +23,9 @@ import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.SqlUtil;
+
+import static com.hazelcast.jet.sql.impl.validate.ValidatorResource.RESOURCE;
 
 public class NamedOperandCheckerProgram {
 
@@ -35,17 +38,16 @@ public class NamedOperandCheckerProgram {
     public boolean check(HazelcastCallBinding callBinding, boolean throwOnFailure) {
         boolean res = true;
 
-        SqlFunction operator = (SqlFunction) callBinding.getCall().getOperator();
-        for (int i = 0; i < operator.getParamNames().size(); i++) {
-            String paramName = operator.getParamNames().get(i);
+        SqlCall call = callBinding.getCall();
+        SqlFunction operator = (SqlFunction) call.getOperator();
+        for (int i = 0; i < call.operandCount(); i++) {
+            SqlNode operand = call.operand(i);
+            assert operand.getKind() == SqlKind.ARGUMENT_ASSIGNMENT;
 
-            int index = findOperandIndex(callBinding, paramName);
-            if (index == -1) {
-                // delegate missing arguments validation to the operator
-                continue;
-            }
+            SqlIdentifier id = ((SqlCall) operand).operand(1);
+            OperandChecker checker = findOperandChecker(id, operator);
 
-            res &= checkers[i].check(callBinding, false, index);
+            res &= checker.check(callBinding, false, i);
         }
 
         if (!res && throwOnFailure) {
@@ -55,19 +57,14 @@ public class NamedOperandCheckerProgram {
         return res;
     }
 
-    private int findOperandIndex(HazelcastCallBinding callBinding, String paramName) {
-        SqlCall call = callBinding.getCall();
-
-        for (int i = 0; i < call.getOperandList().size(); i++) {
-            SqlNode operand = call.getOperandList().get(i);
-            assert operand.getKind() == SqlKind.ARGUMENT_ASSIGNMENT;
-
-            SqlIdentifier id = ((SqlCall) operand).operand(1);
-            if (id.getSimple().equals(paramName)) {
-                return i;
+    private OperandChecker findOperandChecker(SqlIdentifier identifier, SqlFunction operator) {
+        String name = identifier.getSimple();
+        for (int i = 0; i < operator.getParamNames().size(); i++) {
+            String paramName = operator.getParamNames().get(i);
+            if (paramName.equals(name)) {
+                return checkers[i];
             }
         }
-
-        return -1;
+        throw SqlUtil.newContextException(identifier.getParserPosition(), RESOURCE.unknownArgumentName(name));
     }
 }

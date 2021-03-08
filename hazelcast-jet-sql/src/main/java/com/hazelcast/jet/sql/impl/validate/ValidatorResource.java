@@ -21,7 +21,7 @@ import org.apache.calcite.runtime.Resources.BaseMessage;
 import org.apache.calcite.runtime.Resources.ExInst;
 import org.apache.calcite.sql.validate.SqlValidatorException;
 
-interface ValidatorResource {
+public interface ValidatorResource {
 
     ValidatorResource RESOURCE = Resources.create(ValidatorResource.class);
 
@@ -42,4 +42,7 @@ interface ValidatorResource {
 
     @BaseMessage("You must use CREATE JOB statement for a streaming DML query")
     ExInst<SqlValidatorException> mustUseCreateJob();
+
+    @BaseMessage("Unknown argument name ''{0}''")
+    ExInst<SqlValidatorException> unknownArgumentName(String name);
 }
