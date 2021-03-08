@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators.common;
 
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlFunction;
@@ -23,6 +24,8 @@ import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.SqlOperandTypeInference;
 import org.apache.calcite.sql.type.SqlReturnTypeInference;
+
+import java.util.List;
 
 import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference.wrap;
 
@@ -40,6 +43,11 @@ public abstract class HazelcastFunction extends SqlFunction implements Hazelcast
         SqlFunctionCategory category
     ) {
         super(name, kind, wrap(returnTypeInference), operandTypeInference, null, category);
+    }
+
+    @Override
+    public List<String> getParamNames() {
+        throw QueryException.error(getName() + " does not support named parameters");
     }
 
     @Override
