@@ -96,7 +96,7 @@ public class MCEventStoreTest {
     public void before() {
         clock = new FakeClock();
         queue = new LinkedBlockingQueue<>();
-        eventStore = new ManagementCenterService.úMCEventStore(clock, queue);
+        eventStore = new ManagementCenterService.MCEventStore(clock, queue);
     }
 
     @Test
