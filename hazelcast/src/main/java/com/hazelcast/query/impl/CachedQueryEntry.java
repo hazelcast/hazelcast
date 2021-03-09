@@ -173,6 +173,12 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> implements Iden
             }
         } else {
             if (valueObject == null) {
+                if (valueData == null) {
+                    // Query Cache depends on this behaviour when its caching of
+                    // values is off.
+                    return null;
+                }
+
                 if (valueData.isPortable() || valueData.isJson()) {
                     targetObject = valueData;
                 } else {
