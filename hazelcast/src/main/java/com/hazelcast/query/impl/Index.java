@@ -66,28 +66,35 @@ public interface Index {
     TypeConverter getConverter();
 
     /**
-     * Saves the given entry into this index.
+     * Saves an entry into this index.
      *
-     * @param newEntry           the entry to save.
-     * @param oldEntry        the previous old value associated with the entry or
-     *                        {@code null} if the entry is new.
-     * @param entryToStore
+     * @param newEntry        the new entry from which new attribute values
+     *                        should be read.
+     * @param oldEntry        the previous old entry from which old attribute
+     *                        values should be read; or {@code null} if there is
+     *                        no old entry.
+     * @param entryToStore    the entry that should be stored in this index; it
+     *                        might differ from the passed {@code newEntry}: for
+     *                        instance, {@code entryToStore} might be optimized
+     *                        specifically for storage, while {@code newEntry}
+     *                        and {@code oldEntry} are always optimized for
+     *                        attribute values extraction.
      * @param operationSource the operation source.
      * @throws QueryException if there were errors while extracting the
      *                        attribute value from the entry.
      */
-    void putEntry(QueryableEntry newEntry, QueryableEntry oldEntry, QueryableEntry entryToStore, OperationSource operationSource);
+    void putEntry(CachedQueryEntry newEntry, CachedQueryEntry oldEntry, QueryableEntry entryToStore,
+                  OperationSource operationSource);
 
     /**
-     * Removes the entry having the given key and the value from this index.
+     * Removes the given entry from this index.
      *
-     *
-     * @param entry
+     * @param entry           the entry to remove.
      * @param operationSource the operation source.
      * @throws QueryException if there were errors while extracting the
      *                        attribute value from the entry.
      */
-    void removeEntry(QueryableEntry entry, OperationSource operationSource);
+    void removeEntry(CachedQueryEntry entry, OperationSource operationSource);
 
     /**
      * @return {@code true} if this index supports querying only with {@link

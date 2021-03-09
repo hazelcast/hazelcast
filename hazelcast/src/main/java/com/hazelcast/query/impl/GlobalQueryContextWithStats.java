@@ -119,13 +119,13 @@ public class GlobalQueryContextWithStats extends QueryContext {
         }
 
         @Override
-        public void putEntry(QueryableEntry newEntry, QueryableEntry oldEntry, QueryableEntry entryToStore,
+        public void putEntry(CachedQueryEntry newEntry, CachedQueryEntry oldEntry, QueryableEntry entryToStore,
                              OperationSource operationSource) {
             delegate.putEntry(newEntry, oldEntry, entryToStore, operationSource);
         }
 
         @Override
-        public void removeEntry(QueryableEntry entry, OperationSource operationSource) {
+        public void removeEntry(CachedQueryEntry entry, OperationSource operationSource) {
             delegate.removeEntry(entry, operationSource);
         }
 

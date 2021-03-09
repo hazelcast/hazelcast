@@ -102,7 +102,8 @@ public class AddIndexOperation extends MapOperation
             Object value = Records.getValueOrCachedValue(record, serializationService);
             QueryableEntry<?, ?> queryEntry = mapContainer.newQueryEntry(dataKey, value);
             queryEntry.setRecord(record);
-            QueryableEntry<?, ?> newEntry = cachedEntry == null ? queryEntry : cachedEntry.init(dataKey, value);
+            CachedQueryEntry<?, ?> newEntry =
+                    cachedEntry == null ? (CachedQueryEntry<?, ?>) queryEntry : cachedEntry.init(dataKey, value);
             index.putEntry(newEntry, null, queryEntry, Index.OperationSource.USER);
         }, false);
 

@@ -112,7 +112,7 @@ public final class BitmapIndexStore extends BaseIndexStore {
 
     @SuppressWarnings("unchecked")
     @Override
-    public void insert(Object value, QueryableEntry entry, QueryableEntry entryToStore, IndexOperationStats operationStats) {
+    public void insert(Object value, CachedQueryEntry entry, QueryableEntry entryToStore, IndexOperationStats operationStats) {
         if (value == NonTerminalJsonValue.INSTANCE) {
             return;
         }
@@ -160,7 +160,7 @@ public final class BitmapIndexStore extends BaseIndexStore {
 
     @SuppressWarnings("unchecked")
     @Override
-    public void update(Object oldValue, Object newValue, QueryableEntry entry, QueryableEntry entryToStore,
+    public void update(Object oldValue, Object newValue, CachedQueryEntry entry, QueryableEntry entryToStore,
                        IndexOperationStats operationStats) {
         if (oldValue == NonTerminalJsonValue.INSTANCE) {
             insert(newValue, entry, entryToStore, operationStats);
@@ -223,7 +223,7 @@ public final class BitmapIndexStore extends BaseIndexStore {
 
     @SuppressWarnings("unchecked")
     @Override
-    public void remove(Object value, QueryableEntry entry, IndexOperationStats operationStats) {
+    public void remove(Object value, CachedQueryEntry entry, IndexOperationStats operationStats) {
         if (value == NonTerminalJsonValue.INSTANCE) {
             return;
         }

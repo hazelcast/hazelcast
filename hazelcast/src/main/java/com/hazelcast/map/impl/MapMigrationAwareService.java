@@ -294,7 +294,8 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
                 if (value != null) {
                     QueryableEntry queryEntry = mapContainer.newQueryEntry(key, value);
                     queryEntry.setRecord(record);
-                    QueryableEntry<?, ?> newEntry = cachedEntry == null ? queryEntry : cachedEntry.init(key, value);
+                    CachedQueryEntry<?, ?> newEntry =
+                            cachedEntry == null ? (CachedQueryEntry<?, ?>) queryEntry : cachedEntry.init(key, value);
                     indexes.putEntry(newEntry, null, queryEntry, Index.OperationSource.SYSTEM);
                 }
             }, false);
@@ -329,11 +330,11 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
 
             Indexes.beginPartitionUpdate(indexesSnapshot);
 
-            CachedQueryEntry<?, ?> cachedEntry = new CachedQueryEntry<>(serializationService, mapContainer.getExtractors());
+            CachedQueryEntry<?, ?> entry = new CachedQueryEntry<>(serializationService, mapContainer.getExtractors());
             recordStore.forEach((key, record) -> {
                 Object value = Records.getValueOrCachedValue(record, serializationService);
-                cachedEntry.init(key, value);
-                indexes.removeEntry(cachedEntry, Index.OperationSource.SYSTEM);
+                entry.init(key, value);
+                indexes.removeEntry(entry, Index.OperationSource.SYSTEM);
             }, false);
 
             Indexes.markPartitionAsUnindexed(event.getPartitionId(), indexesSnapshot);

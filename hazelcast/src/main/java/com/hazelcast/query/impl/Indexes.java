@@ -273,45 +273,60 @@ public class Indexes {
     }
 
     /**
-     * Inserts a new queryable entry into this indexes instance or updates the
-     * existing one.
+     * Inserts a new entry into this indexes instance or updates an existing one.
+     * <p>
+     * Consider using {@link #putEntry(CachedQueryEntry, CachedQueryEntry,
+     * QueryableEntry, Index.OperationSource)} for repetitive insertions/updates.
      *
-     * @param entryToStore  the queryable entry to insert or update.
+     * @param entryToStore    the queryable entry to insert or update.
      * @param oldValue        the old entry value to update, {@code null} if
-     *                        inserting the new entry.
+     *                        inserting a new entry.
      * @param operationSource the operation source.
      */
     public void putEntry(QueryableEntry entryToStore, Object oldValue, Index.OperationSource operationSource) {
         if (entryToStore instanceof CachedQueryEntry && oldValue == null) {
-            putEntry(entryToStore, null, entryToStore, operationSource);
+            putEntry((CachedQueryEntry) entryToStore, null, entryToStore, operationSource);
             return;
         }
 
         CachedQueryEntry[] cachedEntries = CACHED_ENTRIES.get();
 
-        QueryableEntry newEntry;
+        CachedQueryEntry newEntry;
         if (entryToStore instanceof CachedQueryEntry) {
-            newEntry = entryToStore;
+            newEntry = (CachedQueryEntry) entryToStore;
         } else {
-            CachedQueryEntry entry = cachedEntries[0];
-            entry.init(serializationService, entryToStore.getKeyData(), entryToStore.getTargetObject(false), extractors);
-            entry.setMetadata(entryToStore.getMetadata());
-            newEntry = entry;
+            newEntry = cachedEntries[0];
+            newEntry.init(serializationService, entryToStore.getKeyData(), entryToStore.getTargetObject(false), extractors);
         }
 
-        QueryableEntry oldEntry;
+        CachedQueryEntry oldEntry;
         if (oldValue == null) {
             oldEntry = null;
         } else {
-            CachedQueryEntry entry = cachedEntries[1];
-            entry.init(serializationService, entryToStore.getKeyData(), oldValue, extractors);
-            oldEntry = entry;
+            oldEntry = cachedEntries[1];
+            oldEntry.init(serializationService, entryToStore.getKeyData(), oldValue, extractors);
         }
 
         putEntry(newEntry, oldEntry, entryToStore, operationSource);
     }
 
-    public void putEntry(QueryableEntry newEntry, QueryableEntry oldEntry, QueryableEntry entryToStore,
+    /**
+     * Inserts a new entry into this indexes instance or updates an existing one.
+     *
+     * @param newEntry        the new entry from which new attribute values
+     *                        should be read.
+     * @param oldEntry        the previous old entry from which old attribute
+     *                        values should be read; or {@code null} if there is
+     *                        no old entry.
+     * @param entryToStore    the entry that should be stored in this indexes
+     *                        instance; it might differ from the passed {@code
+     *                        newEntry}: for instance, {@code entryToStore} might
+     *                        be optimized specifically for storage, while {@code
+     *                        newEntry} and {@code oldEntry} are always optimized
+     *                        for attribute values extraction.
+     * @param operationSource the operation source.
+     */
+    public void putEntry(CachedQueryEntry newEntry, CachedQueryEntry oldEntry, QueryableEntry entryToStore,
                          Index.OperationSource operationSource) {
         InternalIndex[] indexes = getIndexes();
         Throwable exception = null;
@@ -331,10 +346,13 @@ public class Indexes {
     }
 
     /**
-     * Removes the entry from this indexes instance identified by the given key
+     * Removes an entry from this indexes instance identified by the given key
      * and value.
+     * <p>
+     * Consider using {@link #removeEntry(CachedQueryEntry, Index.OperationSource)}
+     * for repetitive removals.
      *
-     * @param key             the key if the entry to remove.
+     * @param key             the key of the entry to remove.
      * @param value           the value of the entry to remove.
      * @param operationSource the operation source.
      */
@@ -345,7 +363,13 @@ public class Indexes {
         removeEntry(entry, operationSource);
     }
 
-    public void removeEntry(QueryableEntry entry, Index.OperationSource operationSource) {
+    /**
+     * Removes the given entry from this indexes instance.
+     *
+     * @param entry           the entry to remove.
+     * @param operationSource the operation source.
+     */
+    public void removeEntry(CachedQueryEntry entry, Index.OperationSource operationSource) {
         InternalIndex[] indexes = getIndexes();
         for (InternalIndex index : indexes) {
             index.removeEntry(entry, operationSource);

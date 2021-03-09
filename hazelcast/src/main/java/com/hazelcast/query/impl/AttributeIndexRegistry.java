@@ -213,13 +213,13 @@ public class AttributeIndexRegistry {
         }
 
         @Override
-        public void putEntry(QueryableEntry newEntry, QueryableEntry oldEntry, QueryableEntry entryToStore,
+        public void putEntry(CachedQueryEntry newEntry, CachedQueryEntry oldEntry, QueryableEntry entryToStore,
                              OperationSource operationSource) {
             throw newUnsupportedException();
         }
 
         @Override
-        public void removeEntry(QueryableEntry entry, OperationSource operationSource) {
+        public void removeEntry(CachedQueryEntry entry, OperationSource operationSource) {
             throw newUnsupportedException();
         }
 

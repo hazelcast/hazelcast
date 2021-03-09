@@ -146,11 +146,11 @@ public class IndexingMutationObserver<R extends Record> implements MutationObser
 
         Indexes.beginPartitionUpdate(indexesSnapshot);
 
-        CachedQueryEntry<?, ?> cachedEntry = new CachedQueryEntry<>(ss, mapContainer.getExtractors());
+        CachedQueryEntry<?, ?> entry = new CachedQueryEntry<>(ss, mapContainer.getExtractors());
         recordStore.forEach((BiConsumer<Data, Record>) (dataKey, record) -> {
             Object value = getValueOrCachedValue(record, ss);
-            cachedEntry.init(dataKey, value);
-            indexes.removeEntry(cachedEntry, Index.OperationSource.SYSTEM);
+            entry.init(dataKey, value);
+            indexes.removeEntry(entry, Index.OperationSource.SYSTEM);
         }, false);
 
         Indexes.markPartitionAsUnindexed(partitionId, indexesSnapshot);

@@ -117,8 +117,8 @@ public class IndexTest {
         testIt(false);
     }
 
-    private QueryRecord newRecord(Object key, final Comparable attributeValue) {
-        return new QueryRecord(toData(key), attributeValue);
+    private CachedQueryEntry<?, ?> newRecord(Object key, final Comparable<?> attributeValue) {
+        return new CachedQueryEntry<>(ss, toData(key), attributeValue, newExtractor());
     }
 
     @Test
@@ -424,89 +424,6 @@ public class IndexTest {
         }
     }
 
-    class QueryRecord extends QueryableEntry {
-
-        Data key;
-        Comparable attributeValue;
-
-        QueryRecord(Data key, Comparable attributeValue) {
-            this.key = key;
-            this.attributeValue = attributeValue;
-        }
-
-        @Override
-        public Comparable getAttributeValue(String attributeName) throws QueryException {
-            return attributeValue;
-        }
-
-        @Override
-        public Object getTargetObject(boolean key) {
-            return key ? true : attributeValue;
-        }
-
-        public Data getKeyData() {
-            return key;
-        }
-
-        public Data getValueData() {
-            return null;
-        }
-
-        public long getCreationTime() {
-            return 0;
-        }
-
-        public long getLastAccessTime() {
-            return 0;
-        }
-
-        public Object getKey() {
-            return key;
-        }
-
-        public Object getValue() {
-            return attributeValue;
-        }
-
-        public Object setValue(Object value) {
-            return null;
-        }
-
-        public void changeAttribute(Comparable newAttributeValue) {
-            this.attributeValue = newAttributeValue;
-        }
-
-        public void writeData(ObjectDataOutput out) throws IOException {
-        }
-
-        public void readData(ObjectDataInput in) throws IOException {
-        }
-
-        public Record toRecord() {
-            return recordFactory.newRecord(attributeValue);
-        }
-
-        @Override
-        public Object getKeyIfPresent() {
-            throw new UnsupportedOperationException("Should not be called.");
-        }
-
-        @Override
-        public Data getKeyDataIfPresent() {
-            throw new UnsupportedOperationException("Should not be called.");
-        }
-
-        @Override
-        public Object getValueIfPresent() {
-            throw new UnsupportedOperationException("Should not be called.");
-        }
-
-        @Override
-        public Data getValueDataIfPresent() {
-            throw new UnsupportedOperationException("Should not be called.");
-        }
-    }
-
     private void testIt(boolean ordered) {
         IndexType type = ordered ? IndexType.SORTED : IndexType.HASH;
 
@@ -523,16 +440,16 @@ public class IndexTest {
 
         assertEquals(0, index.getRecords(0L).size());
         assertEquals(0, index.getRecords(0L, true, 1000L, true).size());
-        QueryRecord record5 = newRecord(5L, 55L);
+        CachedQueryEntry<?, ?> record5 = newRecord(5L, 55L);
         index.putEntry(record5, null, record5, Index.OperationSource.USER);
         assertEquals(Collections.<QueryableEntry>singleton(record5), index.getRecords(55L));
 
-        QueryRecord record6 = newRecord(6L, 66L);
+        CachedQueryEntry<?, ?> record6 = newRecord(6L, 66L);
         index.putEntry(record6, null, record6, Index.OperationSource.USER);
 
         assertEquals(Collections.<QueryableEntry>singleton(record6), index.getRecords(66L));
 
-        QueryRecord newRecord5 = newRecord(5L, 555L);
+        CachedQueryEntry<?, ?> newRecord5 = newRecord(5L, 555L);
         index.putEntry(newRecord5, record5, newRecord5, Index.OperationSource.USER);
         record5 = newRecord5;
 
@@ -543,7 +460,7 @@ public class IndexTest {
         assertEquals(2, index.getRecords(55L, true, 555L, true).size());
         assertEquals(2, index.getRecords(66L, true, 555L, true).size());
         assertEquals(1, index.getRecords(555L, true, 555L, true).size());
-        QueryRecord record50 = newRecord(50L, 555L);
+        CachedQueryEntry<?, ?> record50 = newRecord(50L, 555L);
         index.putEntry(record50, null, record50, Index.OperationSource.USER);
         assertEquals(new HashSet<QueryableEntry>(asList(record5, record50)), index.getRecords(555L));
 

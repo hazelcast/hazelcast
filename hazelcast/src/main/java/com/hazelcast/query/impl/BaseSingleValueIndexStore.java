@@ -79,7 +79,7 @@ public abstract class BaseSingleValueIndexStore extends BaseIndexStore {
     }
 
     @Override
-    public final void insert(Object value, QueryableEntry entry, QueryableEntry entryToStore,
+    public final void insert(Object value, CachedQueryEntry entry, QueryableEntry entryToStore,
                              IndexOperationStats operationStats) {
         takeWriteLock();
         try {
@@ -90,7 +90,7 @@ public abstract class BaseSingleValueIndexStore extends BaseIndexStore {
     }
 
     @Override
-    public final void update(Object oldValue, Object newValue, QueryableEntry entry, QueryableEntry entryToStore,
+    public final void update(Object oldValue, Object newValue, CachedQueryEntry entry, QueryableEntry entryToStore,
                              IndexOperationStats operationStats) {
         takeWriteLock();
         try {
@@ -103,7 +103,7 @@ public abstract class BaseSingleValueIndexStore extends BaseIndexStore {
     }
 
     @Override
-    public final void remove(Object value, QueryableEntry entry, IndexOperationStats operationStats) {
+    public final void remove(Object value, CachedQueryEntry entry, IndexOperationStats operationStats) {
         takeWriteLock();
         try {
             unwrapAndRemoveFromIndex(value, entry.getKeyData(), operationStats);
