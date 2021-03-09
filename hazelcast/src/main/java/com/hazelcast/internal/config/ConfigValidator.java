@@ -245,7 +245,8 @@ public final class ConfigValidator {
             return;
         }
         if (config.getNetworkConfig().getSymmetricEncryptionConfig().isEnabled()) {
-            logger.warning("Symmetric encryption is deprecated and will be removed in a future version. Consider using TLS instead.");
+            logger.warning("Symmetric encryption is deprecated and will be removed in a future version. "
+                    + "Consider using TLS instead.");
         }
     }
 
@@ -642,7 +643,7 @@ public final class ConfigValidator {
      * is {@link InMemoryFormat#NATIVE} and index configurations include {@link IndexType#BITMAP}.
      *
      * @param inMemoryFormat supplied inMemoryFormat
-     * @param indexConfigs {@link List} of {@link IndexConfig}
+     * @param indexConfigs   {@link List} of {@link IndexConfig}
      */
     private static void checkNotBitmapIndexWhenNativeMemory(InMemoryFormat inMemoryFormat, List<IndexConfig> indexConfigs) {
         if (inMemoryFormat == NATIVE) {
