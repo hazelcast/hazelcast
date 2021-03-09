@@ -73,6 +73,7 @@ public class AwsDiscoveryStrategy
     private final Map<String, String> memberMetadata = new HashMap<>();
 
     private boolean isKnownExceptionAlreadyLogged;
+    private boolean isEmptyAddressListAlreadyLogged;
 
     AwsDiscoveryStrategy(Map<String, Comparable> properties) {
         super(LOGGER, properties);
@@ -208,9 +209,10 @@ public class AwsDiscoveryStrategy
         return Collections.emptyList();
     }
 
-    private static void logResult(Map<String, String> addresses) {
-        if (addresses.isEmpty()) {
+    private void logResult(Map<String, String> addresses) {
+        if (addresses.isEmpty() && !isEmptyAddressListAlreadyLogged) {
             LOGGER.warning("No IP addresses found! Starting standalone.");
+            isEmptyAddressListAlreadyLogged = true;
         }
 
         LOGGER.fine(String.format("Found the following (private => public) addresses: %s", addresses));
