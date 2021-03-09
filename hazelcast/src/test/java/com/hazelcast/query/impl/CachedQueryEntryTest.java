@@ -149,10 +149,10 @@ public class CachedQueryEntryTest extends QueryEntryTest {
     }
 
     @Test(expected = NullPointerException.class)
-    public void testGetTargetObject_givenInstanceIsNotInitialized_whenKeyFlagIsFalse_thenThrowNPE() {
+    public void testGetTargetObject_givenInstanceIsNotInitialized_whenKeyFlagIsTrue_thenThrowNPE() {
         QueryableEntry entry = createEntry();
 
-        entry.getTargetObject(false);
+        entry.getTargetObject(true);
     }
 
     @Test
