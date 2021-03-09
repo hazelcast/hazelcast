@@ -22,6 +22,7 @@ import org.apache.http.HttpHost;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
+import org.testcontainers.utility.DockerImageName;
 
 import java.util.function.Supplier;
 
@@ -29,7 +30,8 @@ import static com.hazelcast.jet.elastic.ElasticClients.client;
 
 public final class ElasticSupport {
 
-    public static final String ELASTICSEARCH_IMAGE = "elasticsearch:7.10.1";
+    public static final DockerImageName ELASTICSEARCH_IMAGE = DockerImageName.parse("elasticsearch:7.10.1")
+            .asCompatibleSubstituteFor("docker.elastic.co/elasticsearch/elasticsearch");
     public static final int PORT = 9200;
 
     // Elastic container takes long time to start up, reusing the container for speedup

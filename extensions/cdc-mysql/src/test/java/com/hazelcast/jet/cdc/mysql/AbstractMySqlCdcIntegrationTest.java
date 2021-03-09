@@ -24,6 +24,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.experimental.categories.Category;
 import org.testcontainers.containers.MySQLContainer;
+import org.testcontainers.utility.DockerImageName;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -34,9 +35,12 @@ import static org.testcontainers.containers.MySQLContainer.MYSQL_PORT;
 @Category({IgnoreInJenkinsOnWindows.class})
 public abstract class AbstractMySqlCdcIntegrationTest extends AbstractCdcIntegrationTest {
 
+    private static final DockerImageName DOCKER_IMAGE = DockerImageName.parse("debezium/example-mysql:1.3")
+            .asCompatibleSubstituteFor("mysql");
+
     @Rule
     public MySQLContainer<?> mysql = namedTestContainer(
-            new MySQLContainer<>("debezium/example-mysql:1.3")
+            new MySQLContainer<>(DOCKER_IMAGE)
                     .withUsername("mysqluser")
                     .withPassword("mysqlpw")
     );
