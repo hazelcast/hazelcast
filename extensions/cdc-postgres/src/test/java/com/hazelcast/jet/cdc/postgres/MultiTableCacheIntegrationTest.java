@@ -28,9 +28,9 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.pipeline.StreamStage;
 import com.hazelcast.map.EntryProcessor;
-import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 
+import javax.annotation.Nonnull;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -145,12 +145,12 @@ public class MultiTableCacheIntegrationTest extends AbstractPostgresCdcIntegrati
                         (TriFunction<Sequence, RecordPart, Long, ChangeRecord>) (sequence, recordPart, aLong) -> null);
     }
 
-    @NotNull
+    @Nonnull
     private static Map<Integer, OrdersOfCustomer> getIMapContent(JetInstance jet, String name) {
         return new HashMap<>(jet.getMap(name));
     }
 
-    @NotNull
+    @Nonnull
     private static Map<Integer, OrdersOfCustomer> toMap(OrdersOfCustomer... ordersOfCustomers) {
         return Arrays.stream(ordersOfCustomers).collect(Collectors.toMap(
                 orders -> orders.getCustomer().getId(), Function.identity()));

@@ -26,13 +26,13 @@ import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.test.annotation.NightlyTest;
-import org.jetbrains.annotations.NotNull;
 import org.junit.Assume;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 
+import javax.annotation.Nonnull;
 import java.sql.Connection;
 import java.sql.Statement;
 import java.util.Arrays;
@@ -118,7 +118,7 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
         }
     }
 
-    @NotNull
+    @Nonnull
     private StreamSource<ChangeRecord> mySqlSource(MySQLContainer<?> container) {
         return DebeziumCdcSources.debezium("mysql",
                         "io.debezium.connector.mysql.MySqlConnector")

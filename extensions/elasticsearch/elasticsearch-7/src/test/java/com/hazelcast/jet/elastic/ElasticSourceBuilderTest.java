@@ -21,8 +21,9 @@ import com.hazelcast.jet.pipeline.BatchSource;
 import org.apache.http.HttpHost;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.client.RestClient;
-import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
+
+import javax.annotation.Nonnull;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -36,7 +37,7 @@ public class ElasticSourceBuilderTest {
         assertThat(source.name()).isEqualTo("elasticSource");
     }
 
-    @NotNull
+    @Nonnull
     private ElasticSourceBuilder<Object> builderWithRequiredParams() {
         return new ElasticSourceBuilder<>()
                 .clientFn(() -> RestClient.builder(new HttpHost("localhost")))

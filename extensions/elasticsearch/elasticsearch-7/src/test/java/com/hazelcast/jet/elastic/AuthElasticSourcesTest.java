@@ -28,10 +28,11 @@ import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.client.ResponseException;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.search.SearchHit;
-import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Test;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
+
+import javax.annotation.Nonnull;
 
 import static com.hazelcast.jet.elastic.ElasticClients.client;
 import static com.hazelcast.jet.elastic.ElasticSupport.PORT;
@@ -96,7 +97,7 @@ public class AuthElasticSourcesTest extends BaseElasticTest {
                 .hasStackTraceContaining("missing authentication credentials");
     }
 
-    @NotNull
+    @Nonnull
     private BatchSource<String> elasticSource(SupplierEx<RestClientBuilder> clientFn) {
         return ElasticSources.builder()
                              .clientFn(clientFn)
