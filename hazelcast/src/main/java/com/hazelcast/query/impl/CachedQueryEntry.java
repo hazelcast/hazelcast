@@ -18,8 +18,14 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.query.impl.getters.Extractors;
+
+import java.io.IOException;
 
 /**
  * Entry of the Query.
@@ -27,7 +33,7 @@ import com.hazelcast.query.impl.getters.Extractors;
  * @param <K> key
  * @param <V> value
  */
-public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> {
+public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> implements IdentifiedDataSerializable {
 
     protected Data keyData;
     protected Data valueData;
@@ -205,4 +211,29 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> {
         return keyData.hashCode();
     }
 
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeObject(getKey());
+        out.writeObject(getValue());
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        keyObject = in.readObject();
+        valueObject = in.readObject();
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        // We are intentionally deserializing CachedQueryEntry as LazyMapEntry
+        // LazyMapEntry is actually a subclass of CacheQueryEntry.
+        // If this sounds surprising, convoluted or just plain wrong
+        // then you are not wrong. Please see commit message for reasoning.
+        return MapDataSerializerHook.LAZY_MAP_ENTRY;
+    }
 }

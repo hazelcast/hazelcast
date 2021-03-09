@@ -99,6 +99,9 @@ public class SessionAwareSemaphoreProxy extends ClientProxy implements ISemaphor
                 sessionManager.releaseSession(this.groupId, sessionId, permits);
                 throw new IllegalStateException("Semaphore[" + objectName + "] not acquired because the acquire call "
                         + "on the CP group is cancelled, possibly because of another indeterminate call from the same thread.");
+            } catch (RuntimeException e) {
+                sessionManager.releaseSession(this.groupId, sessionId, permits);
+                throw e;
             }
         }
     }
@@ -147,6 +150,9 @@ public class SessionAwareSemaphoreProxy extends ClientProxy implements ISemaphor
             } catch (WaitKeyCancelledException e) {
                 sessionManager.releaseSession(this.groupId, sessionId, permits);
                 return false;
+            } catch (RuntimeException e) {
+                sessionManager.releaseSession(this.groupId, sessionId, permits);
+                throw e;
             }
         }
     }
@@ -204,6 +210,9 @@ public class SessionAwareSemaphoreProxy extends ClientProxy implements ISemaphor
                 return count;
             } catch (SessionExpiredException e) {
                 sessionManager.invalidateSession(this.groupId, sessionId);
+            } catch (RuntimeException e) {
+                sessionManager.releaseSession(this.groupId, sessionId, DRAIN_SESSION_ACQ_COUNT);
+                throw e;
             }
         }
     }

@@ -33,6 +33,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.services.PostJoinAwareService;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.MemoryInfoAccessor;
@@ -63,6 +64,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 import static com.hazelcast.config.ConsistencyCheckStrategy.MERKLE_TREES;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
@@ -160,14 +163,29 @@ public class MapContainer {
                 .indexProvider(mapServiceContext.getIndexProvider(mapConfig))
                 .usesCachedQueryableEntries(mapConfig.getCacheDeserializedValues() != CacheDeserializedValues.NEVER)
                 .partitionCount(partitionCount)
-                .resultFilter(this::hasNotExpired).build();
+                .resultFilterFactory(new IndexResultFilterFactory()).build();
+    }
+
+    private class IndexResultFilterFactory implements Supplier<Predicate<QueryableEntry>> {
+
+        @Override
+        public Predicate<QueryableEntry> get() {
+            return new Predicate<QueryableEntry>() {
+                private long nowInMillis = Clock.currentTimeMillis();
+
+                @Override
+                public boolean test(QueryableEntry queryableEntry) {
+                    return MapContainer.this.hasNotExpired(queryableEntry, nowInMillis);
+                }
+            };
+        }
     }
 
     /**
      * @return {@code true} if queryableEntry has
      * not expired, otherwise returns {@code false}
      */
-    private boolean hasNotExpired(QueryableEntry queryableEntry) {
+    private boolean hasNotExpired(QueryableEntry queryableEntry, long now) {
         Data keyData = queryableEntry.getKeyData();
         IPartitionService partitionService = mapServiceContext.getNodeEngine().getPartitionService();
         int partitionId = partitionService.getPartitionId(keyData);
@@ -177,7 +195,8 @@ public class MapContainer {
         }
 
         RecordStore recordStore = mapServiceContext.getExistingRecordStore(partitionId, name);
-        return recordStore != null && !recordStore.expireOrAccess(keyData);
+        return recordStore != null
+                && !recordStore.isExpired(keyData, now, false);
     }
 
     public final void initEvictor() {

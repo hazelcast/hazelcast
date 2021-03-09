@@ -63,10 +63,7 @@ public class PhoneHome {
     }
 
     public void check() {
-        if (!hazelcastNode.getProperties().getBoolean(ClusterProperty.PHONE_HOME_ENABLED)) {
-            return;
-        }
-        if (FALSE.equals(getenv("HZ_PHONE_HOME_ENABLED"))) {
+        if (!isPhoneHomeEnabled(hazelcastNode)) {
             return;
         }
         try {
@@ -112,5 +109,12 @@ public class PhoneHome {
             }
         }
         return parameterCreator;
+    }
+
+    public static boolean isPhoneHomeEnabled(Node node) {
+        if (!node.getProperties().getBoolean(ClusterProperty.PHONE_HOME_ENABLED)) {
+            return false;
+        }
+        return !FALSE.equals(getenv("HZ_PHONE_HOME_ENABLED"));
     }
 }

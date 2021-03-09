@@ -29,7 +29,7 @@ import static com.hazelcast.map.impl.record.RecordReaderWriter.SIMPLE_DATA_RECOR
  * @see SimpleRecordWithLFUEviction
  */
 class SimpleRecordWithLRUEviction<V> extends SimpleRecord<V> {
-    private int lastAccessTime;
+    private volatile int lastAccessTime;
 
     SimpleRecordWithLRUEviction() {
     }
@@ -65,20 +65,12 @@ class SimpleRecordWithLRUEviction<V> extends SimpleRecord<V> {
 
     @Override
     public long getCost() {
-        if (value instanceof Data) {
-            return super.getCost() + INT_SIZE_IN_BYTES;
-        } else {
-            return 0;
-        }
+        return value instanceof Data
+                ? super.getCost() + INT_SIZE_IN_BYTES : 0;
     }
 
     @Override
     public void onAccess(long now) {
-        onAccessSafe(now);
-    }
-
-    @Override
-    public void onAccessSafe(long now) {
         setLastAccessTime(now);
     }
 

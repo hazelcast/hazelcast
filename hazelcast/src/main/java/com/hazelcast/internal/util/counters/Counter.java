@@ -39,6 +39,15 @@ public interface Counter {
     void set(long value);
 
     /**
+     * Sets the current value of the counter
+     * and returns the old value.
+     *
+     * @param newValue the new value.
+     * @return the old value of the counter.
+     */
+    long getAndSet(long newValue);
+
+    /**
      * Increments the counter by one.
      * @return the new counter state
      */

@@ -29,7 +29,7 @@ import static com.hazelcast.map.impl.record.RecordReaderWriter.SIMPLE_DATA_RECOR
  * @see SimpleRecordWithLRUEviction
  */
 class SimpleRecordWithLFUEviction<V> extends SimpleRecord<V> {
-    private int hits;
+    private volatile int hits;
 
     SimpleRecordWithLFUEviction() {
     }
@@ -59,15 +59,6 @@ class SimpleRecordWithLFUEviction<V> extends SimpleRecord<V> {
             return super.getCost() + INT_SIZE_IN_BYTES;
         } else {
             return 0;
-        }
-    }
-
-    @Override
-    public void onAccess(long now) {
-        int hits = getHits();
-        if (hits < Integer.MAX_VALUE) {
-            // protect against potential overflow
-            setHits(hits + 1);
         }
     }
 

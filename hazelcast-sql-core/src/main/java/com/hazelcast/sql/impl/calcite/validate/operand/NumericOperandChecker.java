@@ -32,7 +32,7 @@ public final class NumericOperandChecker implements OperandChecker {
     @Override
     public boolean check(HazelcastCallBinding binding, boolean throwOnFailure, int index) {
         // Resolve a numeric checker for the operand
-        SqlNode operand = binding.operand(index);
+        SqlNode operand = binding.getCall().operand(index);
 
         RelDataType operandType = binding.getValidator().deriveType(binding.getScope(), operand);
 

@@ -348,6 +348,19 @@ public class SqlOrderByTest extends SqlTestSupport {
     }
 
     @Test
+    public void testSelectWithOrderByAndWhereNotIndexedField() {
+        IMap<Object, AbstractPojo> map = getTarget().getMap(mapName());
+        String intValField = "intVal";
+        String realValField = "realVal";
+        addIndex(Arrays.asList(realValField), SORTED);
+
+        String sql = "SELECT " + intValField + ", " + realValField + " FROM " + mapName()
+            + " WHERE " + intValField + " = 1 ORDER BY " + realValField;
+
+        assertSqlResultOrdered(sql, Arrays.asList(realValField), Arrays.asList(false), 1);
+    }
+
+    @Test
     public void testSelectWithOrderByAndWhere2Conditions() {
         IMap<Object, AbstractPojo> map = getTarget().getMap(mapName());
         String intValField = "intVal";

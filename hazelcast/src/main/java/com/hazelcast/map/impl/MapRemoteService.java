@@ -27,7 +27,6 @@ import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 
 import java.util.UUID;
 
-import static com.hazelcast.config.NearCacheConfigAccessor.initDefaultMaxSizeForOnHeapMaps;
 import static com.hazelcast.internal.config.ConfigValidator.checkMapConfig;
 import static com.hazelcast.internal.config.ConfigValidator.checkNearCacheConfig;
 
@@ -56,7 +55,6 @@ class MapRemoteService implements RemoteService {
                 mapServiceContext.getNodeEngine().getProperties(), nodeEngine.getLogger(MapConfig.class));
 
         if (mapConfig.isNearCacheEnabled()) {
-            initDefaultMaxSizeForOnHeapMaps(mapConfig.getNearCacheConfig());
             checkNearCacheConfig(name, mapConfig.getNearCacheConfig(), config.getNativeMemoryConfig(), false);
             return new NearCachedMapProxyImpl(name, mapServiceContext.getService(), nodeEngine, mapConfig);
         } else {

@@ -331,7 +331,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
             }
         }
 
-        executor.scheduleWithFixedDelay(new ConnectionManagementTask(), 1, 1, TimeUnit.SECONDS);
+        executor.scheduleWithFixedDelay(new ConnectToAllClusterMembersTask(), 1, 1, TimeUnit.SECONDS);
     }
 
     protected void startNetworking() {
@@ -735,9 +735,9 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
     }
 
     void onConnectionClose(TcpClientConnection connection) {
+        client.getInvocationService().onConnectionClose(connection);
         Address endpoint = connection.getRemoteAddress();
         UUID memberUuid = connection.getRemoteUuid();
-
         if (endpoint == null) {
             if (logger.isFinestEnabled()) {
                 logger.finest("Destroying " + connection + ", but it has end-point set to null "
@@ -951,9 +951,9 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
 
     private void checkClientStateOnClusterIdChange(TcpClientConnection connection) {
         if (activeConnections.isEmpty()) {
-            //We only have single connection established
+            // We only have single connection established
             if (failoverConfigProvided) {
-                //If failover is provided, and this single connection is established after failover logic kicks in
+                // If failover is provided, and this single connection is established after failover logic kicks in
                 // (checked via `switchingToNextCluster`), then it is OK to continue. Otherwise, we force the failover logic
                 // to be used by throwing `ClientNotAllowedInClusterException`
                 if (switchingToNextCluster) {
@@ -965,8 +965,17 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
                 }
             }
         } else {
-            //If there are other connections that means we have a connection to wrong cluster.
-            //We should not stay connected.
+            // If there are other connections that means we have a connection to wrong cluster.
+            // We should not stay connected to this new connection.
+            // Note that in some racy scenarios we might close a connection that we can continue operating on.
+            // In those cases, we rely on the fact that we will reopen the connections and continue. Here is one scenario:
+            // 1. There were 2 members.
+            // 2. The client is connected to the first one.
+            // 3. While the client is trying to open the second connection, both members are restarted.
+            // 4. In this case we will close the connection to the second member, thinking that it is not part of the
+            // cluster we think we are in. We will reconnect to this member, and the connection is closed unnecessarily.
+            // 5. The connection to the first cluster will be gone after that and we will initiate a reconnect to the cluster.
+
             String reason = "Connection does not belong to this cluster";
             connection.close(reason, null);
             throw new IllegalStateException(reason);
@@ -1079,26 +1088,20 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
     }
 
     /**
-     * 1) schedules a task to open a connection if there is no connection for the member in the member list
-     * 2) closes a connection if it is no longer in the member list
+     * Schedules a task to open a connection if there is no connection for the member in the member list
      */
-    private class ConnectionManagementTask implements Runnable {
+    private class ConnectToAllClusterMembersTask implements Runnable {
 
         private final Set<UUID> connectingAddresses = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
         @Override
         public void run() {
-
             if (!client.getLifecycleService().isRunning()) {
                 return;
             }
 
-            HashSet<UUID> activeConnectionUuids = new HashSet<>(activeConnections.keySet());
-
             for (Member member : client.getClientClusterService().getMemberList()) {
                 UUID uuid = member.getUuid();
-                activeConnectionUuids.remove(uuid);
-
                 if (activeConnections.get(uuid) != null) {
                     continue;
                 }
@@ -1121,15 +1124,6 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
                         connectingAddresses.remove(uuid);
                     }
                 });
-            }
-            //whatever remains in the set should be closed since there is no corresponding member in the member list
-            for (UUID uuidOutsideCurrentMemberlist : activeConnectionUuids) {
-                TcpClientConnection connection = activeConnections.get(uuidOutsideCurrentMemberlist);
-                if (connection != null) {
-                    connection.close(null,
-                            new TargetDisconnectedException("The client has closed the connection to this member,"
-                                    + " after receiving a member left event from the cluster. " + connection));
-                }
             }
         }
     }

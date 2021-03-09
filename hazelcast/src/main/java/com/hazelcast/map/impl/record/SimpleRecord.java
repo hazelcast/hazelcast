@@ -88,11 +88,6 @@ class SimpleRecord<V> implements Record<V> {
     }
 
     @Override
-    public void onAccessSafe(long now) {
-        // NOP
-    }
-
-    @Override
     public void onStore() {
         // NOP
     }

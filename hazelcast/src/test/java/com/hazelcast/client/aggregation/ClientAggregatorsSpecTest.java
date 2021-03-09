@@ -19,6 +19,7 @@ package com.hazelcast.client.aggregation;
 import com.hazelcast.aggregation.AggregatorsSpecTest;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
@@ -42,7 +43,7 @@ public class ClientAggregatorsSpecTest extends AggregatorsSpecTest {
     private TestHazelcastFactory factory;
 
     @Override
-    protected <K, V> IMap<K, V> getMapWithNodeCount(int nodeCount, boolean parallelAccumulation) {
+    protected <K, V> IMap<K, V> getMapWithNodeCount(int nodeCount, boolean parallelAccumulation, boolean useIndex) {
         if (nodeCount < 1) {
             throw new IllegalArgumentException("node count < 1");
         }
@@ -50,6 +51,10 @@ public class ClientAggregatorsSpecTest extends AggregatorsSpecTest {
         MapConfig mapConfig = new MapConfig()
                 .setName("aggr")
                 .setInMemoryFormat(inMemoryFormat);
+
+        if (useIndex) {
+            mapConfig.addIndexConfig(new IndexConfig(IndexConfig.DEFAULT_TYPE, "fieldWeCanQuery"));
+        }
 
         Config config = new Config()
                 .setProperty(PARTITION_COUNT.getName(), String.valueOf(nodeCount))

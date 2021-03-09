@@ -25,17 +25,10 @@ import java.util.Comparator;
 public final class Comparables {
 
     /**
-     * Provides the same comparision logic as {@link #compare} does, but in a
+     * Provides the same comparison logic as {@link #compare} does, but in a
      * form of a {@link Comparator}.
      */
-    public static final Comparator<Comparable> COMPARATOR = new Comparator<Comparable>() {
-
-        @Override
-        public int compare(Comparable lhs, Comparable rhs) {
-            return Comparables.compare(lhs, rhs);
-        }
-
-    };
+    public static final Comparator<Comparable> COMPARATOR = Comparables::compare;
 
     private Comparables() {
     }

@@ -57,11 +57,7 @@ class CachedSimpleRecordWithLFUEviction extends CachedSimpleRecord {
 
     @Override
     public void onAccess(long now) {
-        int hits = getHits();
-        if (hits < Integer.MAX_VALUE) {
-            // protect against potential overflow
-            setHits(hits + 1);
-        }
+        incrementHits();
     }
 
     @Override

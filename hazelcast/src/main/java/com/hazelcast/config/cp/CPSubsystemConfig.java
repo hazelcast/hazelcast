@@ -31,6 +31,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.File;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -102,6 +103,7 @@ import static com.hazelcast.internal.util.Preconditions.checkTrue;
  * @see CPMember
  * @see CPSession
  */
+@SuppressWarnings("checkstyle:MethodCount")
 public class CPSubsystemConfig {
 
     /**
@@ -130,7 +132,7 @@ public class CPSubsystemConfig {
      * group members, a larger CP group means more replication overhead, and
      * memory consumption as well. The current maximum CP group size limit
      * offers a sufficient degree of fault tolerance for CP Subsystem usages.
-     *
+     * <p>
      * See {@link #groupSize}
      */
     public static final int MAX_GROUP_SIZE = 7;
@@ -383,7 +385,7 @@ public class CPSubsystemConfig {
      * after its last session heartbeat.
      *
      * @return the duration for a CP session to be kept alive
-     *         after its last session heartbeat
+     * after its last session heartbeat
      */
     public int getSessionTimeToLiveSeconds() {
         return sessionTimeToLiveSeconds;
@@ -406,7 +408,7 @@ public class CPSubsystemConfig {
      * heartbeats.
      *
      * @return the interval for the periodically-committed CP session
-     *         heartbeats
+     * heartbeats
      */
     public int getSessionHeartbeatIntervalSeconds() {
         return sessionHeartbeatIntervalSeconds;
@@ -428,7 +430,7 @@ public class CPSubsystemConfig {
      * CP member from CP Subsystem
      *
      * @return the duration to wait before automatically removing a missing
-     *         CP member from the CP Subsystem
+     * CP member from the CP Subsystem
      */
     public int getMissingCPMemberAutoRemovalSeconds() {
         return missingCPMemberAutoRemovalSeconds;
@@ -451,7 +453,7 @@ public class CPSubsystemConfig {
      * result of an API call becomes indeterminate.
      *
      * @return the value to determine if CP Subsystem calls will fail when
-     *         result of an API call becomes indeterminate
+     * result of an API call becomes indeterminate
      */
     public boolean isFailOnIndeterminateOperationState() {
         return failOnIndeterminateOperationState;
@@ -502,7 +504,6 @@ public class CPSubsystemConfig {
      * Can be an absolute or relative path to the node startup directory.
      *
      * @param baseDir base directory
-     *
      * @return this config instance
      */
     public CPSubsystemConfig setBaseDir(File baseDir) {
@@ -517,7 +518,7 @@ public class CPSubsystemConfig {
      * CP data restore process before this timeout duration.
      *
      * @return the timeout duration for CP members to restore their data from
-     *         stable storage
+     * stable storage
      */
     public int getDataLoadTimeoutSeconds() {
         return dataLoadTimeoutSeconds;
@@ -530,7 +531,6 @@ public class CPSubsystemConfig {
      *
      * @param dataLoadTimeoutSeconds the timeout duration for CP members to
      *                               restore their data from stable storage
-     *
      * @return this config instance
      */
     public CPSubsystemConfig setDataLoadTimeoutSeconds(int dataLoadTimeoutSeconds) {
@@ -544,7 +544,7 @@ public class CPSubsystemConfig {
      * implementation
      *
      * @return configuration options for Hazelcast's Raft consensus algorithm
-     *         implementation
+     * implementation
      */
     public RaftAlgorithmConfig getRaftAlgorithmConfig() {
         return raftAlgorithmConfig;
@@ -675,5 +675,35 @@ public class CPSubsystemConfig {
                 + sessionHeartbeatIntervalSeconds + ", missingCPMemberAutoRemovalSeconds=" + missingCPMemberAutoRemovalSeconds
                 + ", failOnIndeterminateOperationState=" + failOnIndeterminateOperationState + ", raftAlgorithmConfig="
                 + raftAlgorithmConfig + ", semaphoreConfigs=" + semaphoreConfigs + ", lockConfigs=" + lockConfigs + '}';
+    }
+
+    @Override
+    @SuppressWarnings("checkstyle:CyclomaticComplexity")
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        CPSubsystemConfig that = (CPSubsystemConfig) o;
+        return cpMemberCount == that.cpMemberCount && groupSize == that.groupSize
+                && sessionTimeToLiveSeconds == that.sessionTimeToLiveSeconds
+                && sessionHeartbeatIntervalSeconds == that.sessionHeartbeatIntervalSeconds
+                && missingCPMemberAutoRemovalSeconds == that.missingCPMemberAutoRemovalSeconds
+                && failOnIndeterminateOperationState == that.failOnIndeterminateOperationState
+                && persistenceEnabled == that.persistenceEnabled && dataLoadTimeoutSeconds == that.dataLoadTimeoutSeconds
+                && Objects.equals(baseDir, that.baseDir)
+                && Objects.equals(raftAlgorithmConfig, that.raftAlgorithmConfig)
+                && Objects.equals(semaphoreConfigs, that.semaphoreConfigs)
+                && Objects.equals(lockConfigs, that.lockConfigs)
+                && Objects.equals(configPatternMatcher, that.configPatternMatcher);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(cpMemberCount, groupSize, sessionTimeToLiveSeconds, sessionHeartbeatIntervalSeconds,
+                missingCPMemberAutoRemovalSeconds, failOnIndeterminateOperationState, persistenceEnabled, baseDir,
+                dataLoadTimeoutSeconds, raftAlgorithmConfig, semaphoreConfigs, lockConfigs, configPatternMatcher);
     }
 }

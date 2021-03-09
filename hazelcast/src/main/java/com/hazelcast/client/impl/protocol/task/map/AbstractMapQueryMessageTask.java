@@ -152,7 +152,7 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
                 Future future = operationService.createInvocationBuilder(SERVICE_NAME,
                         createQueryOperation(query, mapServiceContext),
                         member.getAddress())
-                                                .invoke();
+                        .invoke();
                 futures.add(future);
             } catch (Throwable t) {
                 if (!(t instanceof HazelcastException)) {
