@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Starts execution of an SQL query (as of 4.2).
  */
-@Generated("d8c3f13a7296528e1b592cae764c2b14")
+@Generated("c3c4e935e21343204a66d1bde457d072")
 public final class SqlExecuteCodec {
     //hex: 0x210400
     public static final int REQUEST_MESSAGE_TYPE = 2163712;
@@ -106,7 +106,7 @@ public final class SqlExecuteCodec {
         encodeByte(initialFrame.content, REQUEST_EXPECTED_RESULT_TYPE_FIELD_OFFSET, expectedResultType);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, sql);
-        ListMultiFrameCodec.encode(clientMessage, parameters, DataCodec::encode);
+        ListMultiFrameCodec.encodeContainsNullable(clientMessage, parameters, DataCodec::encode);
         CodecUtil.encodeNullable(clientMessage, schema, StringCodec::encode);
         SqlQueryIdCodec.encode(clientMessage, queryId);
         return clientMessage;
@@ -120,7 +120,7 @@ public final class SqlExecuteCodec {
         request.cursorBufferSize = decodeInt(initialFrame.content, REQUEST_CURSOR_BUFFER_SIZE_FIELD_OFFSET);
         request.expectedResultType = decodeByte(initialFrame.content, REQUEST_EXPECTED_RESULT_TYPE_FIELD_OFFSET);
         request.sql = StringCodec.decode(iterator);
-        request.parameters = ListMultiFrameCodec.decode(iterator, DataCodec::decode);
+        request.parameters = ListMultiFrameCodec.decodeContainsNullable(iterator, DataCodec::decode);
         request.schema = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         request.queryId = SqlQueryIdCodec.decode(iterator);
         return request;
