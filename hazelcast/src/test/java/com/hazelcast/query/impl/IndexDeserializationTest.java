@@ -21,6 +21,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
+import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -76,6 +77,7 @@ public class IndexDeserializationTest extends HazelcastTestSupport {
         config.getMapConfig("map")
                 .setInMemoryFormat(inMemoryFormat)
                 .setCacheDeserializedValues(cacheDeserializedValues)
+                .setMetadataPolicy(MetadataPolicy.OFF)
                 .addIndexConfig(new IndexConfig(IndexType.HASH, "v1"))
                 .addIndexConfig(new IndexConfig(IndexType.SORTED, "v2"))
                 .addIndexConfig(new IndexConfig(IndexType.BITMAP, "v3"));
@@ -84,9 +86,9 @@ public class IndexDeserializationTest extends HazelcastTestSupport {
 
     @Test
     public void testDeserialization() {
-        Record.deserializationCount.set(0);
-
         IMap<Integer, Record> map = createHazelcastInstance().getMap("map");
+
+        Record.deserializationCount.set(0);
         for (int i = 0; i < ENTRY_COUNT; ++i) {
             map.put(i, new Record(i));
         }
@@ -95,6 +97,27 @@ public class IndexDeserializationTest extends HazelcastTestSupport {
         assertEquals(3, map.getLocalMapStats().getIndexStats().size());
         for (LocalIndexStats indexStats : map.getLocalMapStats().getIndexStats().values()) {
             assertEquals(ENTRY_COUNT, indexStats.getInsertCount());
+        }
+
+        Record.deserializationCount.set(0);
+        for (int i = 0; i < ENTRY_COUNT; ++i) {
+            map.set(i, new Record(i));
+        }
+        assertEquals(inMemoryFormat == InMemoryFormat.OBJECT ? ENTRY_COUNT : ENTRY_COUNT * 2, Record.deserializationCount.get());
+        assertEquals(3, map.getLocalMapStats().getIndexStats().size());
+        for (LocalIndexStats indexStats : map.getLocalMapStats().getIndexStats().values()) {
+            assertEquals(ENTRY_COUNT, indexStats.getUpdateCount());
+        }
+
+        Record.deserializationCount.set(0);
+        for (int i = 0; i < ENTRY_COUNT; ++i) {
+            map.delete(i);
+        }
+        assertEquals(inMemoryFormat == InMemoryFormat.OBJECT
+                || cacheDeserializedValues != CacheDeserializedValues.NEVER ? 0 : ENTRY_COUNT, Record.deserializationCount.get());
+        assertEquals(3, map.getLocalMapStats().getIndexStats().size());
+        for (LocalIndexStats indexStats : map.getLocalMapStats().getIndexStats().values()) {
+            assertEquals(ENTRY_COUNT, indexStats.getRemoveCount());
         }
     }
 
