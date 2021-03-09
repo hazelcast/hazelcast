@@ -119,6 +119,7 @@ import static com.hazelcast.instance.impl.NodeShutdownHelper.shutdownNodeByFirin
 import static com.hazelcast.internal.cluster.impl.MulticastService.createMulticastService;
 import static com.hazelcast.internal.config.AliasedDiscoveryConfigUtils.allUsePublicAddress;
 import static com.hazelcast.internal.config.ConfigValidator.checkAdvancedNetworkConfig;
+import static com.hazelcast.internal.config.ConfigValidator.warnForUsageOfDeprecatedSymmetricEncryption;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.FutureUtil.waitWithDeadline;
@@ -250,6 +251,7 @@ public class Node {
 
             serializationService = nodeExtension.createSerializationService();
             securityContext = config.getSecurityConfig().isEnabled() ? nodeExtension.getSecurityContext() : null;
+            warnForUsageOfDeprecatedSymmetricEncryption(config, logger);
             nodeEngine = new NodeEngineImpl(this);
             config.setConfigurationService(nodeEngine.getConfigurationService());
             config.onSecurityServiceUpdated(getSecurityService());

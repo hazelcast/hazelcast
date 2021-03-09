@@ -240,6 +240,15 @@ public final class ConfigValidator {
         }
     }
 
+    public static void warnForUsageOfDeprecatedSymmetricEncryption(Config config, ILogger logger) {
+        if (config.getNetworkConfig() == null || config.getNetworkConfig().getSymmetricEncryptionConfig() == null) {
+            return;
+        }
+        if (config.getNetworkConfig().getSymmetricEncryptionConfig().isEnabled()) {
+            logger.warning("Symmetric encryption is deprecated and may be vulnerable to security problems. Consider TLS instead");
+        }
+    }
+
     @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity",
             "checkstyle:booleanexpressioncomplexity"})
     public static void checkAdvancedNetworkConfig(Config config) {
