@@ -307,7 +307,7 @@ public final class StringUtil {
                 //ok, apparently this is not a JavaBean getter, better leave it untouched
                 return getterName;
             }
-            propertyName = toLowerCase(firstChar) + propertyName.substring(1, propertyName.length());
+            propertyName = toLowerCase(firstChar) + propertyName.substring(1);
         }
         return propertyName;
     }
