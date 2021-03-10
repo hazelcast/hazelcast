@@ -131,6 +131,21 @@ Thank you for your valuable contributions!
 
 None.
 
+** Hazelcast Jet 4.3.1 **
+
+1. Fixes
+
+[avro] Update Apache Commons Compress to 1.20 (#2953)
+[avro] Update avro version to 1.10.1 (#2937)
+[cdc] Update MySQL Connector to 8.0.20 (#2953)
+[core] Update Jackson version to 2.11.4 (#2938)
+[elasticsearch] Update ElasticSearch-6 to 6.8.14 (#2946)
+[elasticsearch] Update ElasticSearch-7 to 7.10.2 (#2945, #2956)
+[elasticsearch] Update Snakeyaml version to 1.26 (#2949)
+[hadoop] Update Apache Httpclient to 4.5.13 (#2953)
+[hadoop] Update Guava to 30.1-jre (#2953)
+[kafka] Update Kafka to 2.2.2 (#2948)
+[s3] Update Netty version to 4.1.59.Final (#2943)
 
 ** Hazelcast Jet 4.3 **
 
