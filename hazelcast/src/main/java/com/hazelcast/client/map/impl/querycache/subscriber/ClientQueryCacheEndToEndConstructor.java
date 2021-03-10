@@ -28,7 +28,6 @@ import com.hazelcast.map.impl.querycache.subscriber.InternalQueryCache;
 import com.hazelcast.map.impl.querycache.subscriber.QueryCacheEndToEndConstructor;
 import com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest;
 
-import java.util.AbstractMap;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -94,15 +93,18 @@ public class ClientQueryCacheEndToEndConstructor extends AbstractQueryCacheEndTo
     }
 
     private static void prepopulate(InternalQueryCache queryCache, List<Data> result) {
-        Iterator<Map.Entry<Data, Data>> iterator = new ListAsMapIterator(result.iterator());
+        Iterator<Map.Entry<Data, Data>> iterator = new CachedEntryIterator(result.iterator());
         queryCache.prepopulate(iterator);
     }
 
-    private static final class ListAsMapIterator implements Iterator<Map.Entry<Data, Data>> {
+    // Adapts an Iterator<List<Data>> of keys as an Iterator<Map.Entry<Data, Data>> of KVs with null value
+    private static final class CachedEntryIterator implements Iterator<Map.Entry<Data, Data>> {
         private final Iterator<Data> keyIterator;
+        private final MutableEntry mutableEntry;
 
-        ListAsMapIterator(Iterator<Data> keyIterator) {
+        CachedEntryIterator(Iterator<Data> keyIterator) {
             this.keyIterator = keyIterator;
+            this.mutableEntry = new MutableEntry();
         }
 
         @Override
@@ -112,7 +114,34 @@ public class ClientQueryCacheEndToEndConstructor extends AbstractQueryCacheEndTo
 
         @Override
         public Map.Entry<Data, Data> next() {
-            return new AbstractMap.SimpleEntry<>(keyIterator.next(), null);
+            return mutableEntry.setKey(keyIterator.next());
+        }
+    }
+
+    private static final class MutableEntry implements Map.Entry<Data, Data> {
+        private Data key;
+
+        MutableEntry() {
+        }
+
+        @Override
+        public Data getKey() {
+            return key;
+        }
+
+        @Override
+        public Data getValue() {
+            return null;
+        }
+
+        @Override
+        public Data setValue(Data value) {
+            throw new UnsupportedOperationException();
+        }
+
+        public MutableEntry setKey(Data key) {
+            this.key = key;
+            return this;
         }
     }
 }

@@ -116,7 +116,7 @@ class DefaultQueryCacheRecordStore implements QueryCacheRecordStore {
         CachedQueryEntry newEntry = new CachedQueryEntry(serializationService, extractors);
         CachedQueryEntry oldEntry = new CachedQueryEntry(serializationService, extractors);
         while (entryIterator.hasNext()) {
-            if (cache.size() > maxCapacity) {
+            if (cache.size() == maxCapacity) {
                 break;
             }
             Map.Entry<Data, Data> entry = entryIterator.next();
