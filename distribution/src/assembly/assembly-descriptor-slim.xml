@@ -29,10 +29,11 @@
             <useProjectArtifact>false</useProjectArtifact>
             <includes>
                 <include>com.hazelcast:hazelcast</include>
-                <include>com.hazelcast.jet:hazelcast-jet</include>
                 <include>com.hazelcast.jet:hazelcast-jet-sql</include>
                 <include>org.apache.logging.log4j:*</include>
                 <include>org.slf4j:*</include>
+                <include>info.picocli:picocli</include>
+                <include>org.jline:*</include>
             </includes>
             <outputDirectory>lib</outputDirectory>
             <outputFileNameMapping>${artifact.artifactId}-${artifact.baseVersion}.${artifact.extension}</outputFileNameMapping>

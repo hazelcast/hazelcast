@@ -83,8 +83,8 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.hazelcast.jet</groupId>
-            <artifactId>hazelcast-jet</artifactId>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast</artifactId>
             <version>${project.parent.version}</version>
             <scope>provided</scope>
         </dependency>

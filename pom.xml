@@ -31,7 +31,6 @@
     <modules>
         <module>extensions</module>
         <module>hazelcast</module>
-        <module>hazelcast-jet-all</module>
         <module>hazelcast-jet-sql</module>
         <module>hazelcast-spring</module>
         <module>hazelcast-spring-tests</module>
@@ -258,6 +257,16 @@
                 </includes>
             </resource>
         </resources>
+
+        <!-- ignore the testjob module -->
+        <testResources>
+            <testResource>
+                <directory>src/test/resources</directory>
+                <excludes>
+                    <exclude>com/hazelcast/jet/server/testjob/**</exclude>
+                </excludes>
+            </testResource>
+        </testResources>
 
         <plugins>
             <plugin>

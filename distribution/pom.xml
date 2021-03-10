@@ -89,14 +89,25 @@
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
-            <artifactId>hazelcast-jet</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-sql</artifactId>
             <version>${project.version}</version>
             <classifier>jar-with-dependencies</classifier>
+        </dependency>
+        <!-- JetCommandLine dependencies-->
+        <dependency>
+            <groupId>info.picocli</groupId>
+            <artifactId>picocli</artifactId>
+            <version>${picocli.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jline</groupId>
+            <artifactId>jline-terminal</artifactId>
+            <version>${jline.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jline</groupId>
+            <artifactId>jline-reader</artifactId>
+            <version>${jline.version}</version>
         </dependency>
         <!-- Logging -->
         <dependency>

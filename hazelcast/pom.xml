@@ -131,6 +131,7 @@
                                     !com.hazelcast.*,
                                     !com.fasterxml.jackson.*,
                                     !org.snakeyaml.*,
+                                    !io.github.classgraph.*,
                                     sun.misc;resolution:=optional,
                                     javax.cache;resolution:=optional,
                                     javax.cache.*;resolution:=optional,
@@ -243,6 +244,10 @@
                             <artifactSet>
                                 <includes>
                                     <include>com.fasterxml.jackson.core:jackson-core</include>
+                                    <include>com.fasterxml.jackson.core:jackson-databind</include>
+                                    <include>com.fasterxml.jackson.jr:jackson-jr-objects</include>
+                                    <include>com.fasterxml.jackson.jr:jackson-jr-annotation-support</include>
+                                    <include>com.fasterxml.jackson.dataformat:jackson-dataformat-csv</include>
                                     <include>org.snakeyaml:snakeyaml-engine</include>
                                     <include>io.github.classgraph:classgraph</include>
                                 </includes>
@@ -251,6 +256,13 @@
                                 <relocation>
                                     <pattern>com.fasterxml.jackson</pattern>
                                     <shadedPattern>${relocation.root}.com.fasterxml.jackson</shadedPattern>
+                                    <excludes>
+                                        <!--
+                                        The annotation package is excluded so the relocated classes are
+                                        able to process non-relocated annotations, which are used by the users.
+                                        -->
+                                        <exclude>com.fasterxml.jackson.annotation.*</exclude>
+                                    </excludes>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.snakeyaml</pattern>
