@@ -26,7 +26,6 @@ import org.junit.experimental.categories.Category;
 import org.testcontainers.containers.MySQLContainer;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 
@@ -43,7 +42,7 @@ public abstract class AbstractMySqlCdcIntegrationTest extends AbstractCdcIntegra
     );
 
     @Before
-    public void ignoreOnJdk15() throws SQLException {
+    public void ignoreOnJdk15() {
         Assume.assumeFalse("https://github.com/hazelcast/hazelcast-jet/issues/2623",
                 System.getProperty("java.version").startsWith("15"));
     }
@@ -60,12 +59,20 @@ public abstract class AbstractMySqlCdcIntegrationTest extends AbstractCdcIntegra
 
     protected void createDb(String database) throws SQLException {
         String jdbcUrl = "jdbc:mysql://" + mysql.getContainerIpAddress() + ":" + mysql.getMappedPort(MYSQL_PORT) + "/";
-        try (Connection connection = DriverManager.getConnection(jdbcUrl, "root", "mysqlpw")) {
+        try (Connection connection = getMySqlConnection(jdbcUrl, "root", "mysqlpw")) {
             Statement statement = connection.createStatement();
             statement.addBatch("CREATE DATABASE " + database);
             statement.addBatch("GRANT ALL PRIVILEGES ON " + database + ".* TO 'mysqluser'@'%'");
             statement.executeBatch();
         }
+    }
+
+    static Connection getConnection(MySQLContainer<?> mysql, String database) throws SQLException {
+        return getMySqlConnection(
+                mysql.withDatabaseName(database).getJdbcUrl(),
+                mysql.getUsername(),
+                mysql.getPassword()
+        );
     }
 
 }

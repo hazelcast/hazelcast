@@ -31,7 +31,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -157,8 +156,7 @@ public class PostgresCdcListenBeforeExistsIntegrationTest extends AbstractPostgr
     }
 
     private void createTableWithData(String schema, String table) throws SQLException {
-        try (Connection connection = DriverManager.getConnection(postgres.getJdbcUrl(),
-                postgres.getUsername(), postgres.getPassword())) {
+        try (Connection connection = getConnection(postgres)) {
             Statement statement = connection.createStatement();
             statement.addBatch("SET search_path TO " + schema);
             statement.addBatch("CREATE TABLE " + table + " (\n"
@@ -188,8 +186,7 @@ public class PostgresCdcListenBeforeExistsIntegrationTest extends AbstractPostgr
         }
         insertSql.append(")");
 
-        try (Connection connection = DriverManager.getConnection(postgres.getJdbcUrl(), postgres.getUsername(),
-                postgres.getPassword())) {
+        try (Connection connection = getConnection(postgres)) {
             connection.setSchema(schema);
             Statement statement = connection.createStatement();
             statement.addBatch("SET search_path TO " + schema);
@@ -199,8 +196,7 @@ public class PostgresCdcListenBeforeExistsIntegrationTest extends AbstractPostgr
     }
 
     private void addColumnToTable(String schema, String table, String column) throws SQLException {
-        try (Connection connection = DriverManager.getConnection(postgres.getJdbcUrl(), postgres.getUsername(),
-                postgres.getPassword())) {
+        try (Connection connection = getConnection(postgres)) {
             Statement statement = connection.createStatement();
             statement.addBatch("SET search_path TO " + schema);
             statement.addBatch("ALTER TABLE " + table + " ADD COLUMN " + column + " VARCHAR(255);");
@@ -233,8 +229,7 @@ public class PostgresCdcListenBeforeExistsIntegrationTest extends AbstractPostgr
 
     private void assertReplicationSlotActive() {
         assertTrueEventually(() -> {
-            try (Connection connection = DriverManager.getConnection(postgres.getJdbcUrl(), postgres.getUsername(),
-                    postgres.getPassword())) {
+            try (Connection connection = getConnection(postgres)) {
                 PreparedStatement preparedStatement = connection.prepareStatement(
                         "select * from pg_replication_slots where slot_name = ? and database = ?");
                 preparedStatement.setString(1, REPLICATION_SLOT_NAME);

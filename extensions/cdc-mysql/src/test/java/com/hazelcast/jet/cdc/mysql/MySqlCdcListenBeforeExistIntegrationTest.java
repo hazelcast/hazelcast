@@ -31,7 +31,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Arrays;
@@ -149,8 +148,7 @@ public class MySqlCdcListenBeforeExistIntegrationTest extends AbstractMySqlCdcIn
     }
 
     private void createTableWithData(String database, String table) throws SQLException {
-        try (Connection connection = DriverManager.getConnection(mysql.withDatabaseName(database).getJdbcUrl(),
-                mysql.getUsername(), mysql.getPassword())) {
+        try (Connection connection = getConnection(mysql, database)) {
             Statement statement = connection.createStatement();
             statement.addBatch("CREATE TABLE " + table + " (\n"
                             + "  id INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,\n"
@@ -177,16 +175,14 @@ public class MySqlCdcListenBeforeExistIntegrationTest extends AbstractMySqlCdcIn
             statement.append(", '").append(val3).append("'");
         }
         statement.append(")");
-        try (Connection connection = DriverManager.getConnection(mysql.withDatabaseName(database).getJdbcUrl(),
-                mysql.getUsername(), mysql.getPassword())) {
+        try (Connection connection = getConnection(mysql, database)) {
             connection.createStatement().execute(statement.toString());
 
         }
     }
 
     private void addColumnToTable(String database, String table, String column) throws SQLException {
-        try (Connection connection = DriverManager.getConnection(mysql.withDatabaseName(database).getJdbcUrl(),
-                mysql.getUsername(), mysql.getPassword())) {
+        try (Connection connection = getConnection(mysql, database)) {
             connection.createStatement()
                     .execute("ALTER TABLE " + table + " ADD COLUMN " + column + " VARCHAR(255);");
         }

@@ -32,7 +32,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -282,8 +281,7 @@ public class MySqlCdcWhiteBlackListIntegrationTest extends AbstractMySqlCdcInteg
     private void createDbWithData(int dbSuffix) throws SQLException {
         String database = DB_PREFIX + dbSuffix;
         createDb(database);
-        try (Connection connection = DriverManager.getConnection(mysql.withDatabaseName(database).getJdbcUrl(),
-                mysql.getUsername(), mysql.getPassword())) {
+        try (Connection connection = getConnection(mysql, database)) {
             int dbId = dbSuffix * 1000;
             for (int i = 0; i < 3; i++) {
                 String table = "table" + i;
@@ -313,8 +311,7 @@ public class MySqlCdcWhiteBlackListIntegrationTest extends AbstractMySqlCdcInteg
 
     private void executeStatementsOnDb(int dbSuffix) throws SQLException {
         String database = DB_PREFIX + dbSuffix;
-        try (Connection connection = DriverManager.getConnection(mysql.withDatabaseName(database).getJdbcUrl(),
-                mysql.getUsername(), mysql.getPassword())) {
+        try (Connection connection = getConnection(mysql, database)) {
             int id = dbSuffix * 1000 + 1;
             Statement statement = connection.createStatement();
             statement.addBatch("UPDATE table0 SET value_1='new_" + database + "_table0_val1_0' WHERE id=" + id);

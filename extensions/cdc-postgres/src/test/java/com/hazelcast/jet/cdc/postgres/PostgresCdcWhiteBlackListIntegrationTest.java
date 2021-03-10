@@ -32,7 +32,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -283,8 +282,7 @@ public class PostgresCdcWhiteBlackListIntegrationTest extends AbstractPostgresCd
     private void createSchemaWithData(int schemaSuffix) throws SQLException {
         String schema = SCHEMA_PREFIX + schemaSuffix;
         createSchema(schema);
-        try (Connection connection = DriverManager.getConnection(postgres.getJdbcUrl(), postgres.getUsername(),
-                postgres.getPassword())) {
+        try (Connection connection = getConnection(postgres)) {
             int dbId = schemaSuffix * 1000;
             for (int i = 0; i < 3; i++) {
                 String table = "table" + i;
@@ -316,8 +314,7 @@ public class PostgresCdcWhiteBlackListIntegrationTest extends AbstractPostgresCd
 
     private void executeStatementsOnSchema(int schemaSuffix) throws SQLException {
         String schema = SCHEMA_PREFIX + schemaSuffix;
-        try (Connection connection = DriverManager.getConnection(postgres.getJdbcUrl(), postgres.getUsername(),
-                postgres.getPassword())) {
+        try (Connection connection = getConnection(postgres)) {
             int id = schemaSuffix * 1000 + 1;
             Statement statement = connection.createStatement();
             statement.addBatch("SET search_path TO " + schema);

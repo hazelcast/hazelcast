@@ -41,7 +41,6 @@ import org.junit.experimental.categories.Category;
 
 import javax.annotation.Nonnull;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -431,8 +430,7 @@ public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTe
     }
 
     private String getConfirmedFlushLsn() throws SQLException {
-        try (Connection connection = DriverManager.getConnection(postgres.getJdbcUrl(),
-                postgres.getUsername(), postgres.getPassword())) {
+        try (Connection connection = getConnection(postgres)) {
             PreparedStatement preparedStatement = connection.prepareStatement(
                     "select * from pg_replication_slots where slot_name = ? and database = ?");
             preparedStatement.setString(1, REPLICATION_SLOT_NAME);

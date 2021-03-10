@@ -49,7 +49,6 @@ import org.testcontainers.containers.ToxiproxyContainer;
 
 import javax.annotation.Nonnull;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Arrays;
@@ -58,6 +57,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 
 import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.cdc.postgres.AbstractPostgresCdcIntegrationTest.getConnection;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -371,8 +371,7 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
     }
 
     private static void insertRecords(PostgreSQLContainer<?> postgres, int... ids) throws SQLException {
-        try (Connection connection = DriverManager.getConnection(postgres.getJdbcUrl(), postgres.getUsername(),
-                postgres.getPassword())) {
+        try (Connection connection = getConnection(postgres)) {
             connection.setSchema("inventory");
             connection.setAutoCommit(false);
             Statement statement = connection.createStatement();

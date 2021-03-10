@@ -48,7 +48,6 @@ import org.testcontainers.containers.Network;
 import org.testcontainers.containers.ToxiproxyContainer;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Arrays;
@@ -365,8 +364,7 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
     }
 
     private static void insertRecords(MySQLContainer<?> mysql, int... ids) throws SQLException {
-        try (Connection connection = DriverManager.getConnection(mysql.withDatabaseName("inventory").getJdbcUrl(),
-                mysql.getUsername(), mysql.getPassword())) {
+        try (Connection connection = AbstractMySqlCdcIntegrationTest.getConnection(mysql, "inventory")) {
             connection.setAutoCommit(false);
             Statement statement = connection.createStatement();
             for (int id : ids) {

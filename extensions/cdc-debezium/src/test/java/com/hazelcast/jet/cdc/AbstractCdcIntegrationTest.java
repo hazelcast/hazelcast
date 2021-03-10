@@ -34,9 +34,13 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 
 import javax.annotation.Nonnull;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -157,6 +161,19 @@ public class AbstractCdcIntegrationTest extends JetTestSupport {
                 .replaceAll("\\[|\\]|\\/| ", "_");
             createContainerCmd.withName(source + "___" + randomName());
         });
+    }
+
+    protected static Connection getMySqlConnection(String url, String user, String password) throws SQLException {
+        Properties properties = new Properties();
+        properties.put("user", user);
+        properties.put("password", password);
+        properties.put("useSSL", "false");
+
+        return DriverManager.getConnection(url, properties);
+    }
+
+    protected static Connection getPostgreSqlConnection(String url, String user, String password) throws SQLException {
+        return DriverManager.getConnection(url, user, password);
     }
 
 }

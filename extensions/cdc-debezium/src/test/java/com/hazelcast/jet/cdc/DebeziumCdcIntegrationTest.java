@@ -34,7 +34,6 @@ import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.Statement;
 import java.util.Arrays;
 import java.util.List;
@@ -98,7 +97,7 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
             assertEqualsEventually(() -> jet.getMap("results").size(), 4);
 
             //when
-            try (Connection connection = DriverManager.getConnection(container.withDatabaseName("inventory").getJdbcUrl(),
+            try (Connection connection = getMySqlConnection(container.withDatabaseName("inventory").getJdbcUrl(),
                     container.getUsername(), container.getPassword())) {
                 Statement statement = connection.createStatement();
                 statement.addBatch("UPDATE customers SET first_name='Anne Marie' WHERE id=1004");
@@ -278,7 +277,7 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
             assertEqualsEventually(() -> jet.getMap("results").size(), 4);
 
             //when
-            try (Connection connection = DriverManager.getConnection(container.getJdbcUrl(), container.getUsername(),
+            try (Connection connection = getPostgreSqlConnection(container.getJdbcUrl(), container.getUsername(),
                     container.getPassword())) {
                 connection.setSchema("inventory");
                 Statement statement = connection.createStatement();
