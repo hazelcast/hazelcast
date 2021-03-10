@@ -112,6 +112,6 @@ public abstract class AbstractMergePolicyValidatorIntegrationTest extends Hazelc
     void expectedMapStatisticsDisabledException(MergePolicyConfig mergePolicyConfig) {
         expectedException.expect(InvalidConfigurationException.class);
         expectedException.expectMessage(containsString(mergePolicyConfig.getPolicy()));
-        expectedException.expectMessage(containsString("map statistics"));
+        expectedException.expectMessage(containsString("perEntryStatsEnabled field of map-config"));
     }
 }

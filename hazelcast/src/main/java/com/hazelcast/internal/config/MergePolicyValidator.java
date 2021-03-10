@@ -18,8 +18,11 @@ package com.hazelcast.internal.config;
 
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.spi.merge.MergingExpirationTime;
+import com.hazelcast.spi.merge.MergingCreationTime;
+import com.hazelcast.spi.merge.MergingHits;
+import com.hazelcast.spi.merge.MergingLastAccessTime;
 import com.hazelcast.spi.merge.MergingLastStoredTime;
+import com.hazelcast.spi.merge.MergingLastUpdateTime;
 import com.hazelcast.spi.merge.MergingValue;
 import com.hazelcast.spi.merge.MergingView;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
@@ -42,19 +45,20 @@ public final class MergePolicyValidator {
 
     /**
      * Checks the merge policy configuration
-     * of the given {@link MapConfig}.
+     * aligns with {@link MapConfig}.
      *
-     * @param mapConfig           the {@link MapConfig}
-     * @param mergePolicyProvider the {@link
-     *                            SplitBrainMergePolicyProvider} to resolve merge policy classes
+     * @param mapConfig            the {@link MapConfig}
+     * @param mergePolicyClassName class name of merge policy
+     * @param mergePolicyProvider  the {@link
+     *                             SplitBrainMergePolicyProvider} to resolve merge policy classes
      */
-    static void checkMapMergePolicy(MapConfig mapConfig,
-                                    SplitBrainMergePolicyProvider mergePolicyProvider) {
-        String mergePolicyClassName = mapConfig.getMergePolicyConfig().getPolicy();
+    public static void checkMapMergePolicy(MapConfig mapConfig,
+                                           String mergePolicyClassName,
+                                           SplitBrainMergePolicyProvider mergePolicyProvider) {
         SplitBrainMergePolicy mergePolicyInstance = mergePolicyProvider.getMergePolicy(mergePolicyClassName);
         List<Class> requiredMergeTypes =
                 checkSplitBrainMergePolicy(SplitBrainMergeTypes.MapMergeTypes.class, mergePolicyInstance);
-        if (!mapConfig.isStatisticsEnabled() && requiredMergeTypes != null) {
+        if (!mapConfig.isPerEntryStatsEnabled() && requiredMergeTypes != null) {
             checkMapMergePolicyWhenStatisticsAreDisabled(mergePolicyClassName, requiredMergeTypes);
         }
     }
@@ -70,10 +74,13 @@ public final class MergePolicyValidator {
                                                                      List<Class> requiredMergeTypes) {
         for (Class<?> requiredMergeType : requiredMergeTypes) {
             if (MergingLastStoredTime.class.isAssignableFrom(requiredMergeType)
-                    || MergingExpirationTime.class.isAssignableFrom(requiredMergeType)) {
+                    || MergingCreationTime.class.isAssignableFrom(requiredMergeType)
+                    || MergingHits.class.isAssignableFrom(requiredMergeType)
+                    || MergingLastUpdateTime.class.isAssignableFrom(requiredMergeType)
+                    || MergingLastAccessTime.class.isAssignableFrom(requiredMergeType)) {
                 throw new InvalidConfigurationException("The merge policy " + mergePolicyClass
                         + " requires the merge type " + requiredMergeType.getName()
-                        + ", which is just provided if the map statistics are enabled.");
+                        + ", which is just provided if perEntryStatsEnabled field of map-config is true.");
             }
         }
     }
