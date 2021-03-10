@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.OperationTimeoutException;
+import com.hazelcast.cp.internal.exception.CannotRemoveCPMemberException;
 import com.hazelcast.internal.util.RootCauseMatcher;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
@@ -29,7 +30,8 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.hamcrest.Matcher;
 import org.hamcrest.core.IsNull;
-import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -64,6 +66,8 @@ public class ClientInvocation_ExceptionTest extends HazelcastTestSupport {
                 // RuntimeException with no constructor accepting a Throwable cause
                 new Object[]{JOIN_INTERNAL, new IllegalThreadStateException("message"), IllegalThreadStateException.class,
                         IsNull.nullValue(Throwable.class)},
+                new Object[]{JOIN_INTERNAL, new CannotRemoveCPMemberException("message"), CannotRemoveCPMemberException.class,
+                        IsNull.nullValue(Throwable.class)},
                 // OperationTimeoutException: OperationTimeoutException is only expected to be
                 // thrown with a local stack trace; this test is about verifying the exception remains unwrapped
                 new Object[]{JOIN_INTERNAL, new OperationTimeoutException("message"), OperationTimeoutException.class,
@@ -86,6 +90,8 @@ public class ClientInvocation_ExceptionTest extends HazelcastTestSupport {
                 // RuntimeException with no constructor accepting a Throwable cause
                 new Object[]{JOIN, new IllegalThreadStateException("message"), CompletionException.class,
                         new RootCauseMatcher(IllegalThreadStateException.class, "message")},
+                new Object[]{JOIN, new CannotRemoveCPMemberException("message"), CompletionException.class,
+                        new RootCauseMatcher(CannotRemoveCPMemberException.class, "message")},
                 // OperationTimeoutException is wrapped in CompletionException
                 new Object[]{JOIN, new OperationTimeoutException("message"), CompletionException.class,
                         new RootCauseMatcher(OperationTimeoutException.class, "message")},
@@ -106,6 +112,8 @@ public class ClientInvocation_ExceptionTest extends HazelcastTestSupport {
                 // RuntimeException with no constructor accepting a Throwable cause
                 new Object[]{GET, new IllegalThreadStateException("message"), ExecutionException.class,
                         new RootCauseMatcher(IllegalThreadStateException.class, "message")},
+                new Object[]{GET, new CannotRemoveCPMemberException("message"), ExecutionException.class,
+                        new RootCauseMatcher(CannotRemoveCPMemberException.class, "message")},
                 // OperationTimeoutException is wrapped in ExecutionException
                 new Object[]{GET, new OperationTimeoutException("message"), ExecutionException.class,
                         new RootCauseMatcher(OperationTimeoutException.class, "message")},
@@ -137,18 +145,22 @@ public class ClientInvocation_ExceptionTest extends HazelcastTestSupport {
     @Rule
     public ExpectedException expected = ExpectedException.none();
 
-    TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    static TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    static HazelcastInstance client;
 
-    @After
-    public void tearDown() {
+    @BeforeClass
+    public static void init() {
+        hazelcastFactory.newHazelcastInstance();
+        client = hazelcastFactory.newHazelcastClient();
+    }
+
+    @AfterClass
+    public static void tearDown() {
         hazelcastFactory.terminateAll();
     }
 
     @Test
     public void test() throws Exception {
-
-        hazelcastFactory.newHazelcastInstance();
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         IExecutorService executorService = client.getExecutorService("test");
 
         InternalCompletableFuture f = (InternalCompletableFuture) executorService.submit(new ExceptionThrowingCallable(exception));

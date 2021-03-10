@@ -28,7 +28,7 @@ public class CannotRemoveCPMemberException extends HazelcastException {
     private static final long serialVersionUID = -3631327013406551312L;
 
     public CannotRemoveCPMemberException(String message) {
-        super(message, null);
+        super(message);
     }
 
 }
