@@ -21,12 +21,10 @@ import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.json.NonTerminalJsonValue;
 import com.hazelcast.internal.monitor.impl.IndexOperationStats;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.collection.Long2LongHashMap;
 import com.hazelcast.internal.util.collection.Object2LongHashMap;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.bitmap.Bitmap;
-import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.getters.MultiResult;
 import com.hazelcast.query.impl.predicates.AndPredicate;
 import com.hazelcast.query.impl.predicates.EqualPredicate;
@@ -40,8 +38,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-
-import static com.hazelcast.query.impl.QueryableEntry.extractAttributeValue;
 
 /**
  * The store of bitmap indexes.
@@ -72,8 +68,6 @@ public final class BitmapIndexStore extends BaseIndexStore {
     }
 
     private final String keyAttribute;
-    private final InternalSerializationService serializationService;
-    private final Extractors extractors;
 
     private final Bitmap<QueryableEntry> bitmap = new Bitmap<>();
     // maps user-provided long keys to long bitmap keys
@@ -82,12 +76,10 @@ public final class BitmapIndexStore extends BaseIndexStore {
     private final Object2LongHashMap internalObjectKeys;
     private long internalKeyCounter;
 
-    public BitmapIndexStore(IndexConfig config, InternalSerializationService serializationService, Extractors extractors) {
+    public BitmapIndexStore(IndexConfig config) {
         super(IndexCopyBehavior.NEVER, true);
 
         this.keyAttribute = config.getBitmapIndexOptions().getUniqueKey();
-        this.serializationService = serializationService;
-        this.extractors = extractors;
 
         switch (config.getBitmapIndexOptions().getUniqueKeyTransformation()) {
             case OBJECT:
@@ -120,7 +112,7 @@ public final class BitmapIndexStore extends BaseIndexStore {
 
     @SuppressWarnings("unchecked")
     @Override
-    public void insert(Object value, QueryableEntry entry, IndexOperationStats operationStats) {
+    public void insert(Object value, CachedQueryEntry entry, QueryableEntry entryToStore, IndexOperationStats operationStats) {
         if (value == NonTerminalJsonValue.INSTANCE) {
             return;
         }
@@ -144,7 +136,7 @@ public final class BitmapIndexStore extends BaseIndexStore {
                     throw makeNegativeKeyException(key);
                 }
 
-                bitmap.insert(values, key, entry, operationStats);
+                bitmap.insert(values, key, entryToStore, operationStats);
             } finally {
                 releaseWriteLock();
             }
@@ -159,7 +151,7 @@ public final class BitmapIndexStore extends BaseIndexStore {
                 long internalKey = internalKeyCounter++;
                 long replaced = internalObjectKeys.put(key, internalKey);
                 assert replaced == NO_KEY;
-                bitmap.insert(values, internalKey, entry, operationStats);
+                bitmap.insert(values, internalKey, entryToStore, operationStats);
             } finally {
                 releaseWriteLock();
             }
@@ -168,9 +160,10 @@ public final class BitmapIndexStore extends BaseIndexStore {
 
     @SuppressWarnings("unchecked")
     @Override
-    public void update(Object oldValue, Object newValue, QueryableEntry entry, IndexOperationStats operationStats) {
+    public void update(Object oldValue, Object newValue, CachedQueryEntry entry, QueryableEntry entryToStore,
+                       IndexOperationStats operationStats) {
         if (oldValue == NonTerminalJsonValue.INSTANCE) {
-            insert(newValue, entry, operationStats);
+            insert(newValue, entry, entryToStore, operationStats);
             return;
         }
 
@@ -191,7 +184,7 @@ public final class BitmapIndexStore extends BaseIndexStore {
                         // see https://github.com/hazelcast/hazelcast/issues/17342#issuecomment-680840612
                         internalKey = internalKeyCounter++;
                         internalKeys.put(key, internalKey);
-                        bitmap.insert(newValues, internalKey, entry, operationStats);
+                        bitmap.insert(newValues, internalKey, entryToStore, operationStats);
                         return;
                     } else {
                         key = internalKey;
@@ -200,7 +193,7 @@ public final class BitmapIndexStore extends BaseIndexStore {
                     throw makeNegativeKeyException(key);
                 }
 
-                bitmap.update(oldValues, newValues, key, entry, operationStats);
+                bitmap.update(oldValues, newValues, key, entryToStore, operationStats);
             } finally {
                 releaseWriteLock();
             }
@@ -218,9 +211,9 @@ public final class BitmapIndexStore extends BaseIndexStore {
                     // see https://github.com/hazelcast/hazelcast/issues/17342#issuecomment-680840612
                     internalKey = internalKeyCounter++;
                     internalObjectKeys.put(key, internalKey);
-                    bitmap.insert(newValues, internalKey, entry, operationStats);
+                    bitmap.insert(newValues, internalKey, entryToStore, operationStats);
                 } else {
-                    bitmap.update(oldValues, newValues, internalKey, entry, operationStats);
+                    bitmap.update(oldValues, newValues, internalKey, entryToStore, operationStats);
                 }
             } finally {
                 releaseWriteLock();
@@ -230,7 +223,7 @@ public final class BitmapIndexStore extends BaseIndexStore {
 
     @SuppressWarnings("unchecked")
     @Override
-    public void remove(Object value, Data entryKey, Object entryValue, IndexOperationStats operationStats) {
+    public void remove(Object value, CachedQueryEntry entry, IndexOperationStats operationStats) {
         if (value == NonTerminalJsonValue.INSTANCE) {
             return;
         }
@@ -238,7 +231,7 @@ public final class BitmapIndexStore extends BaseIndexStore {
         if (internalObjectKeys == null) {
             // no remapping or long-to-long remapping
 
-            long key = extractLongKey(entryKey, entryValue);
+            long key = extractLongKey(entry);
             Iterator values = makeIterator(value);
 
             takeWriteLock();
@@ -264,7 +257,7 @@ public final class BitmapIndexStore extends BaseIndexStore {
         } else {
             // object-to-long remapping
 
-            Object key = extractObjectKey(entryKey, entryValue);
+            Object key = extractObjectKey(entry);
             Iterator values = makeIterator(value);
 
             takeWriteLock();
@@ -412,19 +405,9 @@ public final class BitmapIndexStore extends BaseIndexStore {
         return map;
     }
 
-    private long extractLongKey(Data entryKey, Object entryValue) {
-        Object key = extractAttributeValue(extractors, serializationService, keyAttribute, entryKey, entryValue, null);
-        return extractLongKey(key);
-    }
-
     private long extractLongKey(QueryableEntry entry) {
         Object key = entry.getAttributeValue(keyAttribute);
         return extractLongKey(key);
-    }
-
-    private Object extractObjectKey(Data entryKey, Object entryValue) {
-        Object key = extractAttributeValue(extractors, serializationService, keyAttribute, entryKey, entryValue, null);
-        return extractObjectKey(key);
     }
 
     private Object extractObjectKey(QueryableEntry entry) {

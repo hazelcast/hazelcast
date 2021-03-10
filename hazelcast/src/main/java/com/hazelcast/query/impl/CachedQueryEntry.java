@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -44,18 +44,27 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> implements Iden
     public CachedQueryEntry() {
     }
 
-    public CachedQueryEntry(InternalSerializationService ss,
-                            Data key, Object value, Extractors extractors) {
+    public CachedQueryEntry(SerializationService ss, Data key, Object value, Extractors extractors) {
         init(ss, key, value, extractors);
     }
 
+    public CachedQueryEntry(SerializationService ss, Extractors extractors) {
+        this.serializationService = ss;
+        this.extractors = extractors;
+    }
+
+    public CachedQueryEntry<K, V> init(SerializationService ss, Data key, Object value, Extractors extractors) {
+        this.serializationService = ss;
+        this.extractors = extractors;
+        return init(key, value);
+    }
+
     @SuppressWarnings("unchecked")
-    public CachedQueryEntry<K, V> init(InternalSerializationService ss,
-                                       Data key, Object value, Extractors extractors) {
+    public CachedQueryEntry<K, V> init(Data key, Object value) {
         if (key == null) {
             throw new IllegalArgumentException("keyData cannot be null");
         }
-        this.serializationService = ss;
+
         this.keyData = key;
         this.keyObject = null;
 
@@ -66,7 +75,7 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> implements Iden
             this.valueObject = (V) value;
             this.valueData = null;
         }
-        this.extractors = extractors;
+
         return this;
     }
 
@@ -164,6 +173,12 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> implements Iden
             }
         } else {
             if (valueObject == null) {
+                if (valueData == null) {
+                    // Query Cache depends on this behaviour when its caching of
+                    // values is off.
+                    return null;
+                }
+
                 if (valueData.isPortable() || valueData.isJson()) {
                     targetObject = valueData;
                 } else {

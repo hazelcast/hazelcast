@@ -18,10 +18,13 @@ package com.hazelcast.map.impl.querycache.subscriber;
 
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.query.impl.getters.Extractors;
 
+import java.util.Iterator;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -36,11 +39,15 @@ public interface InternalQueryCache<K, V> extends QueryCache<K, V> {
     void set(K key, V value, EntryEventType eventType);
 
     /**
-     * Used during initial population of query cache.
-     * Initially fetched data from cluster will be
-     * written to query cache by the help of this method.
+     * Populate query cache with initial set of entries as {@link Data}.
+     * Triggers an {@link EntryEventType#ADDED ADDED} event for each entry that
+     * is added to the query cache. Note that not all events may be added
+     * to the query cache if the query cache is configured with an eviction
+     * policy with a maximum {@code ENTRY_COUNT}.
+     *
+     * @param entries key-value pairs iterator.
      */
-    void prepopulate(K key, V value);
+    void prepopulate(Iterator<Map.Entry<Data, Data>> entries);
 
     void delete(Object key, EntryEventType eventType);
 

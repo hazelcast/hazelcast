@@ -20,7 +20,7 @@ import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.query.QueryException;
@@ -43,7 +43,7 @@ import static com.hazelcast.query.impl.TypeConverters.NULL_CONVERTER;
  */
 public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, V> {
 
-    protected InternalSerializationService serializationService;
+    protected SerializationService serializationService;
     protected Extractors extractors;
 
     protected Record record;
@@ -107,7 +107,7 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
             attributeName = getAttributeName(isKey, attributeName);
             Object target = getTargetObject(isKey);
             Object metadata = getMetadataOrNull(isKey);
-            result = extractAttributeValueFromTargetObject(extractors, attributeName, target, metadata);
+            result = extractors.extract(target, attributeName, metadata);
         }
         if (result instanceof HazelcastJsonValue) {
             return Json.parse(result.toString());
@@ -128,35 +128,6 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
         return null;
     }
 
-    /**
-     * Static version of the extractAttributeValue() method used when the caller does not have
-     * an instance of the QueryableEntry, but is in possession of key and value.
-     */
-    static Object extractAttributeValue(Extractors extractors, InternalSerializationService serializationService,
-                                        String attributeName, Data key, Object value, Object metadata) throws QueryException {
-        Object result = extractAttributeValueIfAttributeQueryConstant(serializationService, attributeName, key, value);
-        if (result == null) {
-            boolean isKey = startsWithKeyConstant(attributeName);
-            attributeName = getAttributeName(isKey, attributeName);
-            Object target = isKey ? key : value;
-            result = extractAttributeValueFromTargetObject(extractors, attributeName, target, metadata);
-        }
-        return result;
-    }
-
-    /**
-     * Static version of the extractAttributeValueIfAttributeQueryConstant() method that needs key and value upfront.
-     */
-    private static Object extractAttributeValueIfAttributeQueryConstant(InternalSerializationService serializationService,
-                                                                        String attributeName, Data key, Object value) {
-        if (KEY_ATTRIBUTE_NAME.value().equals(attributeName)) {
-            return serializationService.toObject(key);
-        } else if (THIS_ATTRIBUTE_NAME.value().equals(attributeName)) {
-            return value instanceof Data ? serializationService.toObject(value) : value;
-        }
-        return null;
-    }
-
     private static boolean startsWithKeyConstant(String attributeName) {
         return attributeName.startsWith(KEY_ATTRIBUTE_NAME.value() + ".");
     }
@@ -167,11 +138,6 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
         } else {
             return attributeName;
         }
-    }
-
-    private static Object extractAttributeValueFromTargetObject(Extractors extractors,
-                                                                String attributeName, Object target, Object metadata) {
-        return extractors.extract(target, attributeName, metadata);
     }
 
     /**

@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.MapDataSerializerHook;
@@ -23,6 +24,7 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.query.impl.CachedQueryEntry;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.query.impl.Indexes;
@@ -34,6 +36,8 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 
 import java.io.IOException;
+
+import static com.hazelcast.config.CacheDeserializedValues.NEVER;
 
 public class AddIndexOperation extends MapOperation
         implements PartitionAwareOperation, MutatingOperation, BackupAwareOperation {
@@ -91,11 +95,16 @@ public class AddIndexOperation extends MapOperation
 
         index.beginPartitionUpdate();
 
+        CacheDeserializedValues cacheDeserializedValues = mapContainer.getMapConfig().getCacheDeserializedValues();
+        CachedQueryEntry<?, ?> cachedEntry = cacheDeserializedValues == NEVER ? new CachedQueryEntry<>(serializationService,
+                mapContainer.getExtractors()) : null;
         recordStore.forEach((dataKey, record) -> {
             Object value = Records.getValueOrCachedValue(record, serializationService);
-            QueryableEntry queryEntry = mapContainer.newQueryEntry(dataKey, value);
+            QueryableEntry<?, ?> queryEntry = mapContainer.newQueryEntry(dataKey, value);
             queryEntry.setRecord(record);
-            index.putEntry(queryEntry, null, Index.OperationSource.USER);
+            CachedQueryEntry<?, ?> newEntry =
+                    cachedEntry == null ? (CachedQueryEntry<?, ?>) queryEntry : cachedEntry.init(dataKey, value);
+            index.putEntry(newEntry, null, queryEntry, Index.OperationSource.USER);
         }, false);
 
         index.markPartitionAsIndexed(partitionId);

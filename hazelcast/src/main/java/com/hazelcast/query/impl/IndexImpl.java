@@ -50,7 +50,7 @@ public class IndexImpl extends AbstractIndex {
             case HASH:
                 return new UnorderedIndexStore(copyBehavior);
             case BITMAP:
-                return new BitmapIndexStore(config, ss, extractors);
+                return new BitmapIndexStore(config);
             default:
                 throw new IllegalArgumentException("unexpected index type: " + config.getType());
         }
