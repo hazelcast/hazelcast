@@ -20,15 +20,17 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ContinuousQueryMadePublishableCodec;
 import com.hazelcast.client.impl.protocol.codec.ContinuousQueryPublisherCreateCodec;
 import com.hazelcast.client.impl.protocol.codec.ContinuousQueryPublisherCreateWithValueCodec;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.querycache.InvokerWrapper;
 import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfo;
 import com.hazelcast.map.impl.querycache.subscriber.AbstractQueryCacheEndToEndConstructor;
 import com.hazelcast.map.impl.querycache.subscriber.InternalQueryCache;
 import com.hazelcast.map.impl.querycache.subscriber.QueryCacheEndToEndConstructor;
 import com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest;
-import com.hazelcast.internal.serialization.Data;
 
+import java.util.AbstractMap;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -88,22 +90,29 @@ public class ClientQueryCacheEndToEndConstructor extends AbstractQueryCacheEndTo
     }
 
     private static void prepopulate(InternalQueryCache queryCache, Collection<Map.Entry<Data, Data>> result) {
-        for (Map.Entry<Data, Data> entry : result) {
-            if (queryCache.reachedMaxCapacity()) {
-                break;
-            }
-
-            queryCache.prepopulate(entry.getKey(), entry.getValue());
-        }
+        queryCache.prepopulate(result.iterator());
     }
 
     private static void prepopulate(InternalQueryCache queryCache, List<Data> result) {
-        for (Data key : result) {
-            if (queryCache.reachedMaxCapacity()) {
-                break;
-            }
+        Iterator<Map.Entry<Data, Data>> iterator = new ListAsMapIterator(result.iterator());
+        queryCache.prepopulate(iterator);
+    }
 
-            queryCache.prepopulate(key, null);
+    private static final class ListAsMapIterator implements Iterator<Map.Entry<Data, Data>> {
+        private final Iterator<Data> keyIterator;
+
+        ListAsMapIterator(Iterator<Data> keyIterator) {
+            this.keyIterator = keyIterator;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return keyIterator.hasNext();
+        }
+
+        @Override
+        public Map.Entry<Data, Data> next() {
+            return new AbstractMap.SimpleEntry<>(keyIterator.next(), null);
         }
     }
 }
