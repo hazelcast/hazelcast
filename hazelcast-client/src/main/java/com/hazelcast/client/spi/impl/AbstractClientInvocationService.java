@@ -37,7 +37,6 @@ import com.hazelcast.util.function.Consumer;
 
 import java.io.IOException;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -173,7 +172,7 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
         return connection.write(clientMessage);
     }
 
-    private void registerInvocation(ClientInvocation clientInvocation) {
+    void registerInvocation(ClientInvocation clientInvocation) {
         short protocolVersion = client.getProtocolVersion();
 
         ClientMessage clientMessage = clientInvocation.getClientMessage();
@@ -209,10 +208,7 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
 
         @Override
         public void run() {
-            Iterator<Map.Entry<Long, ClientInvocation>> iter = invocations.entrySet().iterator();
-            while (iter.hasNext()) {
-                Map.Entry<Long, ClientInvocation> entry = iter.next();
-                ClientInvocation invocation = entry.getValue();
+            for (ClientInvocation invocation : invocations.values()) {
                 ClientConnection connection = invocation.getSendConnection();
                 if (connection == null) {
                     continue;
@@ -222,9 +218,9 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
                     continue;
                 }
 
-                iter.remove();
-
-                notifyException(invocation, connection);
+                if (deRegisterCallId(invocation.getClientMessage().getCorrelationId()) != null) {
+                    notifyException(invocation, connection);
+                }
             }
         }
 
