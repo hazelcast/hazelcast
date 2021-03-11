@@ -163,7 +163,8 @@ public class MapContainer {
                 .indexProvider(mapServiceContext.getIndexProvider(mapConfig))
                 .usesCachedQueryableEntries(mapConfig.getCacheDeserializedValues() != CacheDeserializedValues.NEVER)
                 .partitionCount(partitionCount)
-                .resultFilterFactory(new IndexResultFilterFactory()).build();
+                .resultFilterFactory(new IndexResultFilterFactory())
+                .build();
     }
 
     private class IndexResultFilterFactory implements Supplier<Predicate<QueryableEntry>> {

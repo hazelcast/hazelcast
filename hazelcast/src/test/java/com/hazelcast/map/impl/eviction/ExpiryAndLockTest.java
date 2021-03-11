@@ -16,8 +16,13 @@
 
 package com.hazelcast.map.impl.eviction;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.map.IMap;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -26,20 +31,28 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ExpirationManagerTimeoutTest extends HazelcastTestSupport {
+public class ExpiryAndLockTest extends HazelcastTestSupport {
+
+    @Override
+    protected Config getConfig() {
+        return smallInstanceConfig();
+    }
 
     @Test
     public void locking_does_not_cause_expired_keys_live_forever() {
         final String KEY = "key";
 
-        final HazelcastInstance node = createHazelcastInstance();
+        final HazelcastInstance node = createHazelcastInstance(getConfig());
         try {
             IMap<String, String> map = node.getMap("test");
             // after 1 second entry should be evicted
@@ -60,5 +73,27 @@ public class ExpirationManagerTimeoutTest extends HazelcastTestSupport {
         } finally {
             node.shutdown();
         }
+    }
+
+    @Test
+    public void locked_keys_are_reachable_over_index_after_they_expired() {
+        Config config = getConfig();
+        config.getMapConfig("default")
+                .setTimeToLiveSeconds(2)
+                .addIndexConfig(new IndexConfig(IndexType.SORTED, "this"));
+        HazelcastInstance node = createHazelcastInstance(config);
+        IMap<Integer, Integer> indexedMap = node.getMap("indexed");
+
+        int keyCount = 1_000;
+        for (int i = 0; i < keyCount; i++) {
+            indexedMap.set(i, i);
+            indexedMap.lock(i);
+        }
+
+        assertTrueAllTheTime(() -> {
+            Set<Map.Entry<Integer, Integer>> entries = indexedMap.entrySet(Predicates.sql("this >= 0"));
+            int entrySetSize = CollectionUtil.isEmpty(entries) ? 0 : entries.size();
+            assertEquals(keyCount, entrySetSize);
+        }, 5);
     }
 }
