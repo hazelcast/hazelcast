@@ -53,6 +53,7 @@ import java.util.function.Function;
 
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.test.Accessors.getNode;
+import static java.lang.Math.min;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -79,7 +80,11 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
         OperatingSystemMXBean osMxBean = ManagementFactory.getOperatingSystemMXBean();
         assertEquals(parameters.get(PhoneHomeMetrics.BUILD_VERSION.getRequestParameterName()), BuildInfoProvider.getBuildInfo().getVersion());
-        assertEquals(parameters.get(PhoneHomeMetrics.JAVA_CLASSPATH.getRequestParameterName()), System.getProperty("java.class.path"));
+        String expectedCP = System.getProperty("java.class.path");
+        assertEquals(
+                parameters.get(PhoneHomeMetrics.JAVA_CLASSPATH.getRequestParameterName()),
+                expectedCP.substring(0, min(expectedCP.length(), BuildInfoCollector.CLASSPATH_MAX_LENGTH))
+        );
         assertEquals(UUID.fromString(parameters.get(PhoneHomeMetrics.UUID_OF_CLUSTER.getRequestParameterName())), node.getLocalMember().getUuid());
         assertNull(parameters.get("e"));
         assertNull(parameters.get("oem"));
@@ -124,7 +129,7 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         assertEquals(parameters.get(PhoneHomeMetrics.PYTHON_CLIENT_VERSIONS.getRequestParameterName()), "");
         assertEquals(parameters.get(PhoneHomeMetrics.GO_CLIENT_VERSIONS.getRequestParameterName()), "");
 
-        assertEquals(parameters.get(PhoneHomeMetrics.JET_BUILD_VERSION.getRequestParameterName()), "");
+        assertEquals(parameters.get(PhoneHomeMetrics.JET_BUILD_VERSION.getRequestParameterName()), BuildInfoProvider.getBuildInfo().getVersion());
         assertFalse(Integer.parseInt(parameters.get(PhoneHomeMetrics.TIME_TAKEN_TO_CLUSTER_UP.getRequestParameterName())) < 0);
         assertNotEquals(parameters.get(PhoneHomeMetrics.UPTIME_OF_RUNTIME_MXBEAN.getRequestParameterName()), "0");
         assertNotEquals(parameters.get(PhoneHomeMetrics.UPTIME_OF_RUNTIME_MXBEAN.getRequestParameterName()), parameters.get(PhoneHomeMetrics.TIME_TAKEN_TO_CLUSTER_UP.getRequestParameterName()));
