@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
+import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -26,7 +27,8 @@ import java.util.concurrent.CompletableFuture;
  * caller is about to shut down. The master should request termination of all
  * jobs running on caller and then the caller will actually shut down.
  */
-public class NotifyMemberShutdownOperation extends AsyncOperation implements AllowedDuringPassiveState {
+public class NotifyMemberShutdownOperation extends AsyncOperation implements UrgentSystemOperation,
+        AllowedDuringPassiveState {
 
     public NotifyMemberShutdownOperation() {
     }

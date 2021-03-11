@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
+import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -24,7 +25,7 @@ import java.util.concurrent.CompletableFuture;
  * Sent from the member that initiates a cluster state change to the master.
  * When the operation completes, all jobs have been terminated.
  */
-public class PrepareForPassiveClusterOperation extends AsyncOperation {
+public class PrepareForPassiveClusterOperation extends AsyncOperation implements UrgentSystemOperation {
 
     public PrepareForPassiveClusterOperation() {
     }
