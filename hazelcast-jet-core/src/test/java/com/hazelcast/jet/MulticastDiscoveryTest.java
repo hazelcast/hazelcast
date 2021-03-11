@@ -17,6 +17,7 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
@@ -44,6 +45,7 @@ import static org.junit.Assert.assertEquals;
 public class MulticastDiscoveryTest extends JetTestSupport {
 
     private static final String UNABLE_TO_CONNECT_MESSAGE = "Unable to connect";
+    private static final int CLUSTER_CONNECTION_TIMEOUT = 20_000;
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
@@ -110,7 +112,10 @@ public class MulticastDiscoveryTest extends JetTestSupport {
 
         expectedException.expect(IllegalStateException.class);
         expectedException.expectMessage(UNABLE_TO_CONNECT_MESSAGE);
-        Jet.newJetClient();
+
+        ClientConfig clientConfig = JetClientConfig.load();
+        configureTimeout(clientConfig);
+        Jet.newJetClient(clientConfig);
     }
 
     @Test
@@ -122,7 +127,10 @@ public class MulticastDiscoveryTest extends JetTestSupport {
 
         expectedException.expect(IllegalStateException.class);
         expectedException.expectMessage(UNABLE_TO_CONNECT_MESSAGE);
-        HazelcastClient.newHazelcastClient();
+
+        ClientConfig clientConfig = ClientConfig.load();
+        configureTimeout(clientConfig);
+        HazelcastClient.newHazelcastClient(clientConfig);
     }
 
     /**
@@ -138,5 +146,12 @@ public class MulticastDiscoveryTest extends JetTestSupport {
             networkConfig.addAddress(address.getHost() + ":" + address.getPort());
         }
         return jetClientConfig;
+    }
+
+    private void configureTimeout(ClientConfig clientConfig) {
+        // override default indefinite cluster connection timeout
+        clientConfig.getConnectionStrategyConfig()
+                .getConnectionRetryConfig()
+                .setClusterConnectTimeoutMillis(CLUSTER_CONNECTION_TIMEOUT);
     }
 }
