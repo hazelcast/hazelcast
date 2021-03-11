@@ -56,18 +56,18 @@ public class ManagementCenterService {
     static class MCEventStore {
         static final long MC_EVENTS_WINDOW_MILLIS = TimeUnit.SECONDS.toMillis(30);
         private final LongSupplier clock;
-        private volatile long lastMCEventsPollMillis;
+        private volatile long mostRecentAccessTimestamp;
         private final ConcurrentMap<Address, Long> lastAccessTimestamps = new ConcurrentHashMap<>();
         private final BlockingQueue<Event> mcEvents;
 
         MCEventStore(LongSupplier clock, BlockingQueue<Event> mcEvents) {
             this.clock = clock;
-            this.lastMCEventsPollMillis = clock.getAsLong();
+            this.mostRecentAccessTimestamp = clock.getAsLong();
             this.mcEvents = mcEvents;
         }
 
         void log(Event event) {
-            if (clock.getAsLong() - lastMCEventsPollMillis > MC_EVENTS_WINDOW_MILLIS) {
+            if (clock.getAsLong() - mostRecentAccessTimestamp > MC_EVENTS_WINDOW_MILLIS) {
                 // ignore event and clear the queue if the last poll happened a while ago
                 onMCEventWindowExceeded();
             } else {
@@ -88,32 +88,31 @@ public class ManagementCenterService {
          */
         public List<Event> pollMCEvents(Address mcRemoteAddr) {
             Long lastAccessObj = lastAccessTimestamps.get(mcRemoteAddr);
+            List<Event> events;
             if (lastAccessObj == null) {
-                ArrayList<Event> copy = new ArrayList<>(mcEvents);
-                updateLatestAccessStats(mcRemoteAddr);
-                return copy;
+                events = new ArrayList<>(mcEvents);
             } else {
                 long lastAccess = lastAccessObj;
-                List<Event> recentEvents = new ArrayList<>();
+                events = new ArrayList<>();
                 for (Event evt : mcEvents) {
                     if (evt.getTimestamp() >= lastAccess) {
-                        recentEvents.add(evt);
+                        events.add(evt);
                     }
                 }
-                updateLatestAccessStats(mcRemoteAddr);
-                return recentEvents;
             }
+            updateLatestAccessStats(mcRemoteAddr);
+            return events;
         }
 
         /**
-         * Updates {@link #lastMCEventsPollMillis} to the current time, removes old entries from {@link #lastAccessTimestamps}
+         * Updates {@link #mostRecentAccessTimestamp} to the current time, removes old entries from {@link #lastAccessTimestamps}
          * and removes the entries of {@link #mcEvents} that are already read by all known MCs.
          *
          * @param mcRemoteAddr
          */
         private void updateLatestAccessStats(Address mcRemoteAddr) {
-            lastMCEventsPollMillis = clock.getAsLong();
-            lastAccessTimestamps.put(mcRemoteAddr, lastMCEventsPollMillis);
+            mostRecentAccessTimestamp = clock.getAsLong();
+            lastAccessTimestamps.put(mcRemoteAddr, mostRecentAccessTimestamp);
             if (mcEvents.isEmpty()) {
                 return;
             }
@@ -139,9 +138,9 @@ public class ManagementCenterService {
          * @param oldestAccess
          */
         private void cleanUpLastAccessTimestamps(long oldestAccess) {
-            if (lastMCEventsPollMillis - oldestAccess > MC_EVENTS_WINDOW_MILLIS) {
+            if (mostRecentAccessTimestamp - oldestAccess > MC_EVENTS_WINDOW_MILLIS) {
                 lastAccessTimestamps.entrySet().removeIf(
-                        entry -> lastMCEventsPollMillis - entry.getValue() > MC_EVENTS_WINDOW_MILLIS);
+                        entry -> mostRecentAccessTimestamp - entry.getValue() > MC_EVENTS_WINDOW_MILLIS);
             }
         }
     }
