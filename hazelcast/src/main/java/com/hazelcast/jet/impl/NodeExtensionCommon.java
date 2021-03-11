@@ -94,7 +94,9 @@ class NodeExtensionCommon {
     }
 
     void afterStart() {
-        jetService.getJobCoordinationService().startScanningForJobs();
+        if (node.isRunning()) {
+            jetService.getJobCoordinationService().startScanningForJobs();
+        }
     }
 
     void beforeClusterStateChange(ClusterState requestedState) {
