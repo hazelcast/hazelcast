@@ -620,6 +620,10 @@
                     <groupId>org.apache.activemq</groupId>
                     <artifactId>artemis-jms-client-all</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>javax.servlet</groupId>
+                    <artifactId>servlet-api</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
 
