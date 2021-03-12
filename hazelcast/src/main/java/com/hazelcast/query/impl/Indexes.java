@@ -173,6 +173,16 @@ public class Indexes {
         converterCache.invalidate(index);
 
         indexes = indexesByName.values().toArray(EMPTY_INDEXES);
+        /**
+         * Sort indexes by creation timestamp. Some high-level
+         * sub-systems like HD SQL optimizer may need the oldest index that has the most
+         * chances to be completely constructed and being usable for queries.
+         */
+        Arrays.sort(indexes, (o1, o2) -> {
+            final long ts1 = o1.getPerIndexStats().getCreationTime();
+            final long ts2 = o2.getPerIndexStats().getCreationTime();
+            return Long.compare(ts1, ts2);
+        });
         if (index.getComponents().length > 1) {
             InternalIndex[] oldCompositeIndexes = compositeIndexes;
             InternalIndex[] newCompositeIndexes = Arrays.copyOf(oldCompositeIndexes, oldCompositeIndexes.length + 1);
@@ -644,8 +654,8 @@ public class Indexes {
          */
         public Indexes build() {
             return new Indexes(serializationService, indexCopyBehavior, extractors,
-                    indexProvider, usesCachedQueryableEntries, statsEnabled, global,
-                    inMemoryFormat, partitionCount, resultFilterFactory);
+                indexProvider, usesCachedQueryableEntries, statsEnabled, global,
+                inMemoryFormat, partitionCount, resultFilterFactory);
         }
     }
 }
