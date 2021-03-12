@@ -151,7 +151,11 @@ public class SplitBrainProtectionOperationTest {
         Iterator<DataSerializerHook> hooks = ServiceLoader.iterator(DataSerializerHook.class, FACTORY_ID, classLoader);
         while (hooks.hasNext()) {
             DataSerializerHook hook = hooks.next();
-            LOGGER.info("Testing " + hook.getClass().getSimpleName() + "...");
+            String simpleClassName = hook.getClass().getName();
+            if (simpleClassName.startsWith("com.hazelcast.jet")) {
+                break; //todo: https://hazelcast.atlassian.net/browse/PLAT-151
+            }
+            LOGGER.info("Testing " + simpleClassName + "...");
             DataSerializableFactory factory = hook.createFactory();
             int typeId = 0;
             while (true) {
