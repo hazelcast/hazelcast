@@ -90,6 +90,8 @@ public class HazelcastCallBinding extends SqlCallBinding {
 
             if (calciteType.getSqlTypeName() == SqlTypeName.NULL) {
                 typeName = validator.getUnknownType().toString();
+            } else if (SqlTypeName.INTERVAL_TYPES.contains(calciteType.getSqlTypeName())) {
+                typeName = calciteType.getSqlTypeName().toString();
             } else {
                 QueryDataType hazelcastType = HazelcastTypeUtils.toHazelcastType(calciteType.getSqlTypeName());
 

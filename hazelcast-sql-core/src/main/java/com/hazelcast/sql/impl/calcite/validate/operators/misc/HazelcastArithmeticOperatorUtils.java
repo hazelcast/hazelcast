@@ -16,13 +16,18 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators.misc;
 
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
 import com.hazelcast.sql.impl.calcite.validate.operand.OperandCheckerProgram;
 import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
-import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastIntegerType;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlKind;
+import org.apache.calcite.sql.type.SqlTypeName;
+
+import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils.isIntervalType;
+import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils.isNumericType;
+import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils.isTemporalType;
 
 public final class HazelcastArithmeticOperatorUtils {
     private HazelcastArithmeticOperatorUtils() {
@@ -33,7 +38,11 @@ public final class HazelcastArithmeticOperatorUtils {
         RelDataType firstType = binding.getOperandType(0);
         RelDataType secondType = binding.getOperandType(1);
 
-        if (!HazelcastTypeUtils.isNumericType(firstType) || !HazelcastTypeUtils.isNumericType(secondType)) {
+        if (isTemporalType(firstType) || isTemporalType(secondType)) {
+            return checkTemporalOperands(binding, throwOnFailure, kind, firstType, secondType);
+        }
+
+        if (!isNumericType(firstType) || !isNumericType(secondType)) {
             return fail(binding, throwOnFailure);
         }
 
@@ -80,6 +89,53 @@ public final class HazelcastArithmeticOperatorUtils {
             checker,
             checker
         ).check(binding, throwOnFailure);
+    }
+
+    /**
+     * Check numeric operation with temporal operands. We allow only for {@code TEMPORAL+INTERVAL}, {@code TEMPORAL-INTERVAL}
+     * and {@code INTERVAL+TEMPORAL} overloads. DATE operands are coerced to TIMESTAMP.
+     */
+    private static boolean checkTemporalOperands(
+        HazelcastCallBinding binding,
+        boolean throwOnFailure,
+        SqlKind kind,
+        RelDataType firstType,
+        RelDataType secondType
+    ) {
+        if (isTemporalType(firstType)) {
+            // TEMPORAL + INTERVAL or TEMPORAL - INTERVAL.
+            if (isIntervalType(secondType) && (kind == SqlKind.PLUS || kind == SqlKind.MINUS)) {
+                return new OperandCheckerProgram(
+                    TypedOperandChecker.forType(convertToTimestampIfNeeded(binding, firstType)),
+                    TypedOperandChecker.forType(secondType)
+                ).check(binding, throwOnFailure);
+            }
+        } else {
+            // INTERVAL + TEMPORAL
+            assert isTemporalType(secondType);
+
+            if (isIntervalType(firstType) && kind == SqlKind.PLUS) {
+                return new OperandCheckerProgram(
+                    TypedOperandChecker.forType(firstType),
+                    TypedOperandChecker.forType(convertToTimestampIfNeeded(binding, secondType))
+                ).check(binding, throwOnFailure);
+            }
+        }
+
+        return fail(binding, throwOnFailure);
+    }
+
+    /**
+     * Convert the given temporal type to timestamp.
+     */
+    private static RelDataType convertToTimestampIfNeeded(HazelcastCallBinding binding, RelDataType type) {
+        assert isTemporalType(type);
+
+        if (type.getSqlTypeName() == SqlTypeName.DATE) {
+            return HazelcastTypeUtils.createType(binding.getTypeFactory(), SqlTypeName.TIMESTAMP, type.isNullable());
+        } else {
+            return type;
+        }
     }
 
     private static boolean fail(HazelcastCallBinding binding, boolean throwOnFailure) {

@@ -21,6 +21,7 @@ import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.sql.SqlIntervalLiteral;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
@@ -74,6 +75,10 @@ public final class LiteralUtils {
             }
             assert value instanceof String : value.getClass().getName();
             return new TypedLiteral(value, SqlTypeName.VARCHAR);
+        }
+
+        if (value instanceof SqlIntervalLiteral.IntervalValue) {
+            return new IntervalLiteral((SqlIntervalLiteral.IntervalValue) value, typeName);
         }
 
         return new TypedLiteral(value, typeName);

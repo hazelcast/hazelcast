@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.calcite.parse;
 
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
 import org.apache.calcite.runtime.CalciteContextException;
@@ -248,6 +249,10 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
     @Override
     public Void visit(SqlLiteral literal) {
         SqlTypeName typeName = literal.getTypeName();
+
+        if (HazelcastTypeUtils.isIntervalType(typeName)) {
+            return null;
+        }
 
         switch (typeName) {
             case BOOLEAN:

@@ -151,7 +151,7 @@ public abstract class ArithmeticOperatorIntegrationTest extends ExpressionTestSu
         return "SELECT " + operand1 + " " + operator() + " " + operand2 + " FROM map";
     }
 
-    protected String signatureError(SqlColumnType type1, SqlColumnType type2) {
+    protected String signatureError(Object type1, Object type2) {
         return signatureErrorOperator(operator(), type1, type2);
     }
 
