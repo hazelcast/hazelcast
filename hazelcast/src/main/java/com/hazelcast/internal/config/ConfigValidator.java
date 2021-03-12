@@ -140,7 +140,8 @@ public final class ConfigValidator {
 
         checkMapEvictionConfig(mapConfig.getEvictionConfig());
         checkMapMaxSizePolicyPerInMemoryFormat(mapConfig);
-        checkMapMergePolicy(mapConfig, mergePolicyProvider);
+        checkMapMergePolicy(mapConfig,
+                mapConfig.getMergePolicyConfig().getPolicy(), mergePolicyProvider);
     }
 
     static void checkMapMaxSizePolicyPerInMemoryFormat(MapConfig mapConfig) {
@@ -633,7 +634,7 @@ public final class ConfigValidator {
      * is {@link InMemoryFormat#NATIVE} and index configurations include {@link IndexType#BITMAP}.
      *
      * @param inMemoryFormat supplied inMemoryFormat
-     * @param indexConfigs {@link List} of {@link IndexConfig}
+     * @param indexConfigs   {@link List} of {@link IndexConfig}
      */
     private static void checkNotBitmapIndexWhenNativeMemory(InMemoryFormat inMemoryFormat, List<IndexConfig> indexConfigs) {
         if (inMemoryFormat == NATIVE) {
