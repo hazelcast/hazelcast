@@ -89,8 +89,11 @@ public class EndpointConfig implements NamedConfig {
      * Gets the {@link SymmetricEncryptionConfig}. The value can be {@code null} which means that no symmetric encryption should
      * be used.
      *
+     * @deprecated since 4.2
+     *
      * @return the SymmetricEncryptionConfig
      */
+    @Deprecated
     public SymmetricEncryptionConfig getSymmetricEncryptionConfig() {
         return symmetricEncryptionConfig;
     }
@@ -98,10 +101,13 @@ public class EndpointConfig implements NamedConfig {
     /**
      * Sets the {@link SymmetricEncryptionConfig}. The value can be {@code null} if no symmetric encryption should be used.
      *
+     * @deprecated since 4.2
+     *
      * @param symmetricEncryptionConfig the SymmetricEncryptionConfig to set
      * @return the updated NetworkConfig
      * @see #getSymmetricEncryptionConfig()
      */
+    @Deprecated
     public EndpointConfig setSymmetricEncryptionConfig(SymmetricEncryptionConfig symmetricEncryptionConfig) {
         this.symmetricEncryptionConfig = symmetricEncryptionConfig;
         return this;

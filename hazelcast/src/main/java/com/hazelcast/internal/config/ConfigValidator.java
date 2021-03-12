@@ -241,6 +241,32 @@ public final class ConfigValidator {
         }
     }
 
+    public static void warnForUsageOfDeprecatedSymmetricEncryption(Config config, ILogger logger) {
+        String warn = "Symmetric encryption is deprecated and will be removed in a future version. Consider using TLS instead.";
+        boolean usesAdvancedNetworkConfig = config.getAdvancedNetworkConfig().isEnabled();
+
+        if (config.getNetworkConfig() != null
+                && config.getNetworkConfig().getSymmetricEncryptionConfig() != null
+                && config.getNetworkConfig().getSymmetricEncryptionConfig().isEnabled()
+                && !usesAdvancedNetworkConfig) {
+                logger.warning(warn);
+        }
+
+        if (config.getAdvancedNetworkConfig() != null
+                && config.getAdvancedNetworkConfig().getEndpointConfigs() != null
+                && usesAdvancedNetworkConfig) {
+            for (EndpointConfig endpointConfig : config.getAdvancedNetworkConfig().getEndpointConfigs().values()) {
+                if (endpointConfig.getSymmetricEncryptionConfig() != null
+                        && endpointConfig.getSymmetricEncryptionConfig().isEnabled()) {
+                    logger.warning(warn);
+
+                    // Write error message once if more than one endpoint use symmetric encryption
+                    break;
+                }
+            }
+        }
+    }
+
     @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity",
             "checkstyle:booleanexpressioncomplexity"})
     public static void checkAdvancedNetworkConfig(Config config) {
