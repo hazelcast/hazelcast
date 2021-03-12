@@ -86,6 +86,7 @@ public class FailOnTimeoutStatement extends Statement {
             thread.interrupt();
             return e;
         } catch (ExecutionException e) {
+            // test failed; have caller re-throw the exception thrown by the test
             return e.getCause();
         } catch (TimeoutException e) {
             return createTimeoutException(thread);
