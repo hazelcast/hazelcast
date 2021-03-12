@@ -82,7 +82,8 @@ public class FailOnTimeoutStatement extends Statement {
                 return task.get();
             }
         } catch (InterruptedException e) {
-            // caller will re-throw; no need to call Thread.interrupt()
+            // propagate interrupt
+            thread.interrupt();
             return e;
         } catch (ExecutionException e) {
             // test failed; have caller re-throw the exception thrown by the test
