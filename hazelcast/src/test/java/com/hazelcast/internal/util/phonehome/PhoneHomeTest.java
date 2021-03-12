@@ -156,7 +156,7 @@ public class PhoneHomeTest extends HazelcastTestSupport {
 
     @Test
     public void testMapCount() {
-        testCounts(node.hazelcastInstance::getMap,
+        testCounts(node.hazelcastInstance::getMap, 6,
                 PhoneHomeMetrics.COUNT_OF_MAPS,
                 PhoneHomeMetrics.COUNT_OF_MAPS_ALL_TIME);
     }
@@ -323,31 +323,31 @@ public class PhoneHomeTest extends HazelcastTestSupport {
 
     @Test
     public void testSetCount() {
-        testCounts(node.hazelcastInstance::getSet,
+        testCounts(node.hazelcastInstance::getSet, 0,
                 PhoneHomeMetrics.COUNT_OF_SETS, PhoneHomeMetrics.COUNT_OF_SETS_ALL_TIME);
     }
 
     @Test
     public void testQueueCount() {
-        testCounts(node.hazelcastInstance::getQueue,
+        testCounts(node.hazelcastInstance::getQueue, 0,
                 PhoneHomeMetrics.COUNT_OF_QUEUES, PhoneHomeMetrics.COUNT_OF_QUEUES_ALL_TIME);
     }
 
     @Test
     public void testMultimapCount() {
-        testCounts(node.hazelcastInstance::getMultiMap,
+        testCounts(node.hazelcastInstance::getMultiMap, 0,
                 PhoneHomeMetrics.COUNT_OF_MULTIMAPS, PhoneHomeMetrics.COUNT_OF_MULTIMAPS_ALL_TIME);
     }
 
     @Test
     public void testListCount() {
-        testCounts(node.hazelcastInstance::getList,
+        testCounts(node.hazelcastInstance::getList, 0,
                 PhoneHomeMetrics.COUNT_OF_LISTS, PhoneHomeMetrics.COUNT_OF_LISTS_ALL_TIME);
     }
 
     @Test
     public void testRingBufferCount() {
-        testCounts(node.hazelcastInstance::getRingbuffer,
+        testCounts(node.hazelcastInstance::getRingbuffer, 0,
                 PhoneHomeMetrics.COUNT_OF_RING_BUFFERS, PhoneHomeMetrics.COUNT_OF_RING_BUFFERS_ALL_TIME);
     }
 
@@ -397,20 +397,20 @@ public class PhoneHomeTest extends HazelcastTestSupport {
 
     @Test
     public void testTopicCount() {
-        testCounts(node.hazelcastInstance::getTopic,
+        testCounts(node.hazelcastInstance::getTopic, 0,
                 PhoneHomeMetrics.COUNT_OF_TOPICS, PhoneHomeMetrics.COUNT_OF_TOPICS_ALL_TIME);
 
     }
 
     @Test
     public void testReplicatedMapCount() {
-        testCounts(node.hazelcastInstance::getReplicatedMap,
+        testCounts(node.hazelcastInstance::getReplicatedMap, 0,
                 PhoneHomeMetrics.COUNT_OF_REPLICATED_MAPS, PhoneHomeMetrics.COUNT_OF_REPLICATED_MAPS_ALL_TIME);
     }
 
     @Test
     public void testCardinalityEstimatorMapCount() {
-        testCounts(node.hazelcastInstance::getCardinalityEstimator,
+        testCounts(node.hazelcastInstance::getCardinalityEstimator, 0,
                 PhoneHomeMetrics.COUNT_OF_CARDINALITY_ESTIMATORS,
                 PhoneHomeMetrics.COUNT_OF_CARDINALITY_ESTIMATORS_ALL_TIME);
 
@@ -418,7 +418,7 @@ public class PhoneHomeTest extends HazelcastTestSupport {
 
     @Test
     public void testPNCounterCount() {
-        testCounts(node.hazelcastInstance::getPNCounter,
+        testCounts(node.hazelcastInstance::getPNCounter, 0,
                 PhoneHomeMetrics.COUNT_OF_PN_COUNTERS,
                 PhoneHomeMetrics.COUNT_OF_PN_COUNTERS_ALL_TIME);
 
@@ -426,7 +426,7 @@ public class PhoneHomeTest extends HazelcastTestSupport {
 
     @Test
     public void testFlakeIDGeneratorCount() {
-        testCounts(node.hazelcastInstance::getFlakeIdGenerator,
+        testCounts(node.hazelcastInstance::getFlakeIdGenerator, 1,
                 PhoneHomeMetrics.COUNT_OF_FLAKE_ID_GENERATORS,
                 PhoneHomeMetrics.COUNT_OF_FLAKE_ID_GENERATORS_ALL_TIME);
     }
@@ -519,26 +519,26 @@ public class PhoneHomeTest extends HazelcastTestSupport {
     }
 
     private void testCounts(Function<String, ? extends DistributedObject> distributedObjectCreateFn,
-                            PhoneHomeMetrics countMetric,
+                            int initial, PhoneHomeMetrics countMetric,
                             PhoneHomeMetrics totalCountMetric) {
         Map<String, String> parameters;
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(countMetric.getRequestParameterName()), "0");
-        assertEquals(parameters.get(totalCountMetric.getRequestParameterName()), "0");
+        assertEquals(parameters.get(countMetric.getRequestParameterName()), Integer.toString(initial));
+        assertEquals(parameters.get(totalCountMetric.getRequestParameterName()), Integer.toString(initial));
 
         DistributedObject obj1 = distributedObjectCreateFn.apply("hazelcast");
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(countMetric.getRequestParameterName()), "1");
-        assertEquals(parameters.get(totalCountMetric.getRequestParameterName()), "1");
+        assertEquals(parameters.get(countMetric.getRequestParameterName()), Integer.toString(initial + 1));
+        assertEquals(parameters.get(totalCountMetric.getRequestParameterName()), Integer.toString(initial + 1));
 
         DistributedObject obj2 = distributedObjectCreateFn.apply("phonehome");
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(countMetric.getRequestParameterName()), "2");
-        assertEquals(parameters.get(totalCountMetric.getRequestParameterName()), "2");
+        assertEquals(parameters.get(countMetric.getRequestParameterName()), Integer.toString(initial + 2));
+        assertEquals(parameters.get(totalCountMetric.getRequestParameterName()), Integer.toString(initial + 2));
 
         obj2.destroy();
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(countMetric.getRequestParameterName()), "1");
-        assertEquals(parameters.get(totalCountMetric.getRequestParameterName()), "2");
+        assertEquals(parameters.get(countMetric.getRequestParameterName()), Integer.toString(initial + 1));
+        assertEquals(parameters.get(totalCountMetric.getRequestParameterName()), Integer.toString(initial + 2));
     }
 }

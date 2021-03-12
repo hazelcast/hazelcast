@@ -27,6 +27,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.services.CoreService;
 import com.hazelcast.internal.services.PostJoinAwareService;
 import com.hazelcast.internal.util.IterationType;
+import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -51,8 +52,10 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
+import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
@@ -200,10 +203,15 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
         for (int i = 0; i < partitionCount; i++) {
             PartitionContainer container = context.getPartitionContainer(i);
 
-            ConcurrentMap<String, RecordStore> maps = container.getMaps();
+            Map<String, ?> maps = container.getMaps().entrySet().stream()
+                    .filter(e -> !e.getKey().startsWith(JobRepository.INTERNAL_JET_OBJECTS_PREFIX))
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
             assertTrue("record stores not empty", maps.isEmpty());
 
-            ConcurrentMap<String, Indexes> indexes = container.getIndexes();
+            Map<String, Indexes> indexes = container.getIndexes()
+                    .entrySet().stream()
+                    .filter(e -> !e.getKey().startsWith(JobRepository.INTERNAL_JET_OBJECTS_PREFIX))
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
             assertTrue("indexes not empty", indexes.isEmpty());
         }
     }

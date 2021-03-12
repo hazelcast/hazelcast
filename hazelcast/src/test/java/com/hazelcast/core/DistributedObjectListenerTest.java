@@ -16,6 +16,7 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -29,6 +30,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -50,7 +52,10 @@ public class DistributedObjectListenerTest extends HazelcastTestSupport {
             public void run() throws Exception {
                 Assert.assertEquals(1, EventCountListener.createdCount.get());
                 Assert.assertEquals(1, EventCountListener.destroyedCount.get());
-                Collection<DistributedObject> distributedObjects = instance.getDistributedObjects();
+                Collection<DistributedObject> distributedObjects = instance.getDistributedObjects()
+                        .stream()
+                        .filter(obj -> !obj.getName().startsWith(JobRepository.INTERNAL_JET_OBJECTS_PREFIX))
+                        .collect(Collectors.toList());
                 Assert.assertTrue(distributedObjects.isEmpty());
             }
         };
