@@ -27,6 +27,7 @@ import java.io.StringWriter;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.invoke.WrongMethodTypeException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
@@ -223,6 +224,7 @@ public final class ExceptionUtil {
      * @param cause          cause to be set to the exception
      * @return {@code null} if can not find a constructor as described above, otherwise returns newly constructed exception
      */
+    @SuppressWarnings("checkstyle:npathcomplexity")
     public static <T extends Throwable> T tryCreateExceptionWithMessageAndCause(Class<? extends Throwable> exceptionClass,
                                                                                 String message, @Nullable Throwable cause) {
         MethodHandle constructor;
@@ -230,27 +232,39 @@ public final class ExceptionUtil {
             constructor = LOOKUP.findConstructor(exceptionClass, MT_INIT_STRING_THROWABLE);
             T clone = (T) constructor.invokeWithArguments(message, cause);
             return clone;
-        } catch (Throwable ignored) {
+        } catch (ClassCastException | WrongMethodTypeException
+                | IllegalAccessException | SecurityException | NoSuchMethodException ignored) {
+        } catch (Throwable t) {
+            throw new RuntimeException("Exception creation failed ", t);
         }
         try {
             constructor = LOOKUP.findConstructor(exceptionClass, MT_INIT_THROWABLE);
             T clone = (T) constructor.invokeWithArguments(cause);
             return clone;
-        } catch (Throwable ignored) {
+        } catch (ClassCastException | WrongMethodTypeException
+                | IllegalAccessException | SecurityException | NoSuchMethodException ignored) {
+        } catch (Throwable t) {
+            throw new RuntimeException("Exception creation failed ", t);
         }
         try {
             constructor = LOOKUP.findConstructor(exceptionClass, MT_INIT_STRING);
             T clone = (T) constructor.invokeWithArguments(message);
             clone.initCause(cause);
             return clone;
-        } catch (Throwable ignored) {
+        } catch (ClassCastException | WrongMethodTypeException
+                | IllegalAccessException | SecurityException | NoSuchMethodException ignored) {
+        } catch (Throwable t) {
+            throw new RuntimeException("Exception creation failed ", t);
         }
         try {
             constructor = LOOKUP.findConstructor(exceptionClass, MT_INIT);
             T clone = (T) constructor.invokeWithArguments();
             clone.initCause(cause);
             return clone;
-        } catch (Throwable ignored) {
+        } catch (ClassCastException | WrongMethodTypeException
+                | IllegalAccessException | SecurityException | NoSuchMethodException ignored) {
+        } catch (Throwable t) {
+            throw new RuntimeException("Exception creation failed ", t);
         }
         return null;
     }

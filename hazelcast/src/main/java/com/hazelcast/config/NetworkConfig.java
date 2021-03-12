@@ -297,7 +297,9 @@ public class NetworkConfig {
      * be used.
      *
      * @return the SymmetricEncryptionConfig
+     * @deprecated since 4.2
      */
+    @Deprecated
     public SymmetricEncryptionConfig getSymmetricEncryptionConfig() {
         return symmetricEncryptionConfig;
     }
@@ -308,7 +310,9 @@ public class NetworkConfig {
      * @param symmetricEncryptionConfig the SymmetricEncryptionConfig to set
      * @return the updated NetworkConfig
      * @see #getSymmetricEncryptionConfig()
+     * @deprecated since 4.2
      */
+    @Deprecated
     public NetworkConfig setSymmetricEncryptionConfig(final SymmetricEncryptionConfig symmetricEncryptionConfig) {
         this.symmetricEncryptionConfig = symmetricEncryptionConfig;
         return this;

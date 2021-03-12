@@ -21,7 +21,6 @@ import com.hazelcast.config.IndexType;
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.monitor.impl.IndexOperationStats;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -111,7 +110,8 @@ public abstract class AbstractIndex implements InternalIndex {
     }
 
     @Override
-    public void putEntry(QueryableEntry entry, Object oldValue, OperationSource operationSource) {
+    public void putEntry(CachedQueryEntry newEntry, CachedQueryEntry oldEntry, QueryableEntry entryToStore,
+                         OperationSource operationSource) {
         long timestamp = stats.makeTimestamp();
         IndexOperationStats operationStats = stats.createOperationStats();
 
@@ -123,27 +123,27 @@ public abstract class AbstractIndex implements InternalIndex {
          * and this causes to class cast exceptions.
          */
         if (converterIsUnassignedOrTransient(converter)) {
-            converter = obtainConverter(entry);
+            converter = obtainConverter(newEntry);
         }
 
-        Object newAttributeValue = extractAttributeValue(entry.getKeyData(), entry.getTargetObject(false));
-        if (oldValue == null) {
-            indexStore.insert(newAttributeValue, entry, operationStats);
+        Object newAttributeValue = extractAttributeValue(newEntry);
+        if (oldEntry == null) {
+            indexStore.insert(newAttributeValue, newEntry, entryToStore, operationStats);
             stats.onInsert(timestamp, operationStats, operationSource);
         } else {
-            Object oldAttributeValue = extractAttributeValue(entry.getKeyData(), oldValue);
-            indexStore.update(oldAttributeValue, newAttributeValue, entry, operationStats);
+            Object oldAttributeValue = extractAttributeValue(oldEntry);
+            indexStore.update(oldAttributeValue, newAttributeValue, newEntry, entryToStore, operationStats);
             stats.onUpdate(timestamp, operationStats, operationSource);
         }
     }
 
     @Override
-    public void removeEntry(Data key, Object value, OperationSource operationSource) {
+    public void removeEntry(CachedQueryEntry entry, OperationSource operationSource) {
         long timestamp = stats.makeTimestamp();
         IndexOperationStats operationStats = stats.createOperationStats();
 
-        Object attributeValue = extractAttributeValue(key, value);
-        indexStore.remove(attributeValue, key, value, operationStats);
+        Object attributeValue = extractAttributeValue(entry);
+        indexStore.remove(attributeValue, entry, operationStats);
         stats.onRemove(timestamp, operationStats, operationSource);
     }
 
@@ -297,15 +297,15 @@ public abstract class AbstractIndex implements InternalIndex {
         return stats;
     }
 
-    private Object extractAttributeValue(Data key, Object value) {
+    private Object extractAttributeValue(QueryableEntry entry) {
         if (components.length == 1) {
-            return QueryableEntry.extractAttributeValue(extractors, ss, components[0], key, value, null);
+            return entry.getAttributeValue(components[0]);
         } else {
             Comparable[] valueComponents = new Comparable[components.length];
             for (int i = 0; i < components.length; ++i) {
                 String attribute = components[i];
 
-                Object extractedValue = QueryableEntry.extractAttributeValue(extractors, ss, attribute, key, value, null);
+                Object extractedValue = entry.getAttributeValue(attribute);
                 if (extractedValue instanceof MultiResult) {
                     throw new IllegalStateException(
                             "Collection/array attributes are not supported by composite indexes: " + attribute);

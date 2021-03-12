@@ -79,32 +79,34 @@ public abstract class BaseSingleValueIndexStore extends BaseIndexStore {
     }
 
     @Override
-    public final void insert(Object value, QueryableEntry queryableEntry, IndexOperationStats operationStats) {
+    public final void insert(Object value, CachedQueryEntry entry, QueryableEntry entryToStore,
+                             IndexOperationStats operationStats) {
         takeWriteLock();
         try {
-            unwrapAndInsertToIndex(value, queryableEntry, operationStats);
+            unwrapAndInsertToIndex(value, entryToStore, operationStats);
         } finally {
             releaseWriteLock();
         }
     }
 
     @Override
-    public final void update(Object oldValue, Object newValue, QueryableEntry entry, IndexOperationStats operationStats) {
+    public final void update(Object oldValue, Object newValue, CachedQueryEntry entry, QueryableEntry entryToStore,
+                             IndexOperationStats operationStats) {
         takeWriteLock();
         try {
             Data indexKey = entry.getKeyData();
             unwrapAndRemoveFromIndex(oldValue, indexKey, operationStats);
-            unwrapAndInsertToIndex(newValue, entry, operationStats);
+            unwrapAndInsertToIndex(newValue, entryToStore, operationStats);
         } finally {
             releaseWriteLock();
         }
     }
 
     @Override
-    public final void remove(Object value, Data entryKey, Object entryValue, IndexOperationStats operationStats) {
+    public final void remove(Object value, CachedQueryEntry entry, IndexOperationStats operationStats) {
         takeWriteLock();
         try {
-            unwrapAndRemoveFromIndex(value, entryKey, operationStats);
+            unwrapAndRemoveFromIndex(value, entry.getKeyData(), operationStats);
         } finally {
             releaseWriteLock();
         }

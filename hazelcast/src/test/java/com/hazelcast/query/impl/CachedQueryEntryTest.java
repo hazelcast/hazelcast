@@ -31,6 +31,7 @@ import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -149,10 +150,17 @@ public class CachedQueryEntryTest extends QueryEntryTest {
     }
 
     @Test(expected = NullPointerException.class)
-    public void testGetTargetObject_givenInstanceIsNotInitialized_whenKeyFlagIsFalse_thenThrowNPE() {
+    public void testGetTargetObject_givenInstanceIsNotInitialized_whenKeyFlagIsTrue_thenThrowNPE() {
         QueryableEntry entry = createEntry();
 
-        entry.getTargetObject(false);
+        entry.getTargetObject(true);
+    }
+
+    @Test
+    public void testGetTargetObject_givenInstanceIsNotInitialized_whenKeyFlagIsFalse_thenReturnNull() {
+        QueryableEntry entry = createEntry();
+
+        assertNull(entry.getTargetObject(false));
     }
 
     @Test

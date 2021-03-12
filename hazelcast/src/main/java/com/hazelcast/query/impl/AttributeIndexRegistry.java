@@ -19,7 +19,6 @@ package com.hazelcast.query.impl;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.query.Predicate;
 
@@ -214,12 +213,13 @@ public class AttributeIndexRegistry {
         }
 
         @Override
-        public void putEntry(QueryableEntry entry, Object oldValue, OperationSource operationSource) {
+        public void putEntry(CachedQueryEntry newEntry, CachedQueryEntry oldEntry, QueryableEntry entryToStore,
+                             OperationSource operationSource) {
             throw newUnsupportedException();
         }
 
         @Override
-        public void removeEntry(Data key, Object value, OperationSource operationSource) {
+        public void removeEntry(CachedQueryEntry entry, OperationSource operationSource) {
             throw newUnsupportedException();
         }
 

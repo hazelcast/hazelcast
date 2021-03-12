@@ -19,7 +19,6 @@ package com.hazelcast.query.impl;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.query.Predicate;
 
@@ -120,13 +119,14 @@ public class GlobalQueryContextWithStats extends QueryContext {
         }
 
         @Override
-        public void putEntry(QueryableEntry entry, Object oldValue, OperationSource operationSource) {
-            delegate.putEntry(entry, oldValue, operationSource);
+        public void putEntry(CachedQueryEntry newEntry, CachedQueryEntry oldEntry, QueryableEntry entryToStore,
+                             OperationSource operationSource) {
+            delegate.putEntry(newEntry, oldEntry, entryToStore, operationSource);
         }
 
         @Override
-        public void removeEntry(Data key, Object value, OperationSource operationSource) {
-            delegate.removeEntry(key, value, operationSource);
+        public void removeEntry(CachedQueryEntry entry, OperationSource operationSource) {
+            delegate.removeEntry(entry, operationSource);
         }
 
         @Override

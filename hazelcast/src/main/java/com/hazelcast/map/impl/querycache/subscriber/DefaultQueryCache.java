@@ -49,6 +49,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -88,8 +89,9 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
     }
 
     @Override
-    public void prepopulate(K key, V value) {
-        setInternal(key, value, EntryEventType.ADDED, false);
+    public void prepopulate(Iterator<Map.Entry<Data, Data>> entries) {
+        recordStore.addBatch(entries, (entry, oldRecord) -> publishEntryEvent(context, mapName, cacheId,
+                entry.getKey(), entry.getValue(), oldRecord, EntryEventType.ADDED, extractors));
     }
 
     /**
@@ -465,13 +467,15 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
 
         InternalSerializationService serializationService = context.getSerializationService();
 
+        CachedQueryEntry<?, ?> newEntry = new CachedQueryEntry<>(serializationService, extractors);
         Set<Map.Entry<Data, QueryCacheRecord>> entries = recordStore.entrySet();
         for (Map.Entry<Data, QueryCacheRecord> entry : entries) {
             Data keyData = entry.getKey();
             QueryCacheRecord record = entry.getValue();
             Object value = record.getValue();
             QueryEntry queryable = new QueryEntry(serializationService, keyData, value, extractors);
-            indexes.putEntry(queryable, null, Index.OperationSource.USER);
+            newEntry.init(keyData, value);
+            indexes.putEntry(newEntry, null, queryable, Index.OperationSource.USER);
         }
     }
 

@@ -16,11 +16,13 @@
 
 package com.hazelcast.map.impl.querycache.subscriber;
 
-import com.hazelcast.map.impl.querycache.subscriber.record.QueryCacheRecord;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.map.impl.querycache.subscriber.record.QueryCacheRecord;
 
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
 
 /**
  * Common contract for implementations which store {@link QueryCacheRecord}.
@@ -30,6 +32,17 @@ public interface QueryCacheRecordStore {
     QueryCacheRecord add(Data keyData, Data valueData);
 
     QueryCacheRecord addWithoutEvictionCheck(Data keyData, Data valueData);
+
+    /**
+     * Adds entries from the given {@code entryIterator}. For each entry
+     * that is successfully added, the given {@code postProcessor} is invoked
+     * with the added entry and the old {@link QueryCacheRecord} that was
+     * replaced as arguments. Depending on the query cache's eviction
+     * configuration, it is possible that not all entries from the
+     * iterator will be added to the record store.
+     */
+    void addBatch(Iterator<Map.Entry<Data, Data>> entryIterator,
+                  BiConsumer<Map.Entry<Data, Data>, QueryCacheRecord> postProcessor);
 
     QueryCacheRecord get(Data keyData);
 

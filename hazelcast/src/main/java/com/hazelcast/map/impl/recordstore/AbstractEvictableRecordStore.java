@@ -139,9 +139,8 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     }
 
     @Override
-    public boolean isExpired(Data dataKey, long now, boolean backup) {
-        return expirySystem.hasExpired(dataKey, now, backup)
-                != NOT_EXPIRED;
+    public boolean isExpired(Data key, long now, boolean backup) {
+         return hasExpired(key, now, backup) != NOT_EXPIRED;
     }
 
     @Override
