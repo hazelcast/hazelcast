@@ -63,6 +63,8 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
             return cloneSplitBrainProtectionFunctionImplementation(thisConfigObject, otherConfigClass);
         }
 
+        // RU_COMPAT_4_1
+        // since empty constructor is added this could be reverted in later versions
         Object otherConfigObject;
         if (thisConfigClass.getName().equals("com.hazelcast.config.JavaKeyStoreSecureStoreConfig")) {
             otherConfigObject = cloneJavaKeyStoreConfig(thisConfigObject, otherConfigClass);
@@ -262,6 +264,8 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
         return splitBrainProtectionFunctionInterface.isAssignableFrom(klass);
     }
 
+    // RU_COMPAT_4_1
+    // since empty constructor is added this could be reverted in later versions
     private static Object cloneJavaKeyStoreConfig(Object javaKeyStoreConfig, Class<?> targetClass) throws Exception {
         File path = getFieldValueReflectively(javaKeyStoreConfig, "path");
         Constructor<?> constructor = targetClass.getConstructor(File.class);
