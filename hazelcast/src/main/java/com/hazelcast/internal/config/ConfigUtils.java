@@ -138,18 +138,17 @@ public final class ConfigUtils {
         T config = configs.get(name);
         if (config != null) {
             return config;
-        } else {
-            try {
-                config = constructReflectively(clazz);
-                config.setName(name);
-                configs.put(name, config);
-                return config;
-            } catch (NoSuchMethodException | InstantiationException
-                    | IllegalAccessException | InvocationTargetException e) {
-                LOGGER.severe("Could not create class " + clazz.getName());
-                assert false;
-                return null;
-            }
+        }
+        try {
+            config = constructReflectively(clazz);
+            config.setName(name);
+            configs.put(name, config);
+            return config;
+        } catch (NoSuchMethodException | InstantiationException
+                | IllegalAccessException | InvocationTargetException e) {
+            LOGGER.severe("Could not create class " + clazz.getName());
+            assert false;
+            return null;
         }
     }
 

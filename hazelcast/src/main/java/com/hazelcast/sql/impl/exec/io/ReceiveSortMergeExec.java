@@ -97,9 +97,8 @@ public class ReceiveSortMergeExec extends AbstractExec {
 
             return done ? IterationResult.FETCHED_DONE : IterationResult.WAIT;
         } else {
-            RowBatch batch = new ListRowBatch(rows);
 
-            curBatch = batch;
+            curBatch = new ListRowBatch(rows);
 
             return done ? IterationResult.FETCHED_DONE : IterationResult.FETCHED;
         }

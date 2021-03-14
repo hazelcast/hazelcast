@@ -119,9 +119,8 @@ public class SqlClientResult implements SqlResult {
 
         if (iterator == null) {
             throw new IllegalStateException("This result contains only update count");
-        } else {
-            return iterator.rowMetadata;
         }
+        return iterator.rowMetadata;
     }
 
     @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE")

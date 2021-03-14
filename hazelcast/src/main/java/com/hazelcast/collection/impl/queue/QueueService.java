@@ -184,8 +184,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     }
 
     public QueueContainer getExistingContainerOrNull(String name) {
-        QueueContainer container = containerMap.get(name);
-        return container != null ? container : null;
+        return containerMap.get(name);
     }
 
     public void addContainer(String name, QueueContainer container) {

@@ -171,8 +171,7 @@ public class EncryptionReplacer extends AbstractPbeReplacer {
                 : loadPropertiesFromConfig(new FileInputStream(xmlPath));
         replacer.init(properties);
         String encrypted = replacer.encrypt(args[0], iterations);
-        String variable = "$" + replacer.getPrefix() + "{" + encrypted + "}";
-        return variable;
+        return "$" + replacer.getPrefix() + "{" + encrypted + "}";
     }
 
     private static Properties loadPropertiesFromConfig(FileInputStream fileInputStream) throws Exception {
