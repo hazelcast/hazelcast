@@ -39,7 +39,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.LongSupplier;
 import java.util.stream.IntStream;
 
-import static com.hazelcast.internal.management.ManagementCenterService.MCEventStore.MC_EVENTS_WINDOW_NANOS;
+import static com.hazelcast.internal.management.ManagementCenterService.MCEventStore.MC_EVENTS_WINDOW_MILLIS;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 
@@ -84,7 +84,7 @@ public class MCEventStoreTest {
         assertEquals(expectedEventCount, eventStore.pollMCEvents(mcRemoteAddress).size());
     }
 
-    void inNextNano(Runnable r) {
+    void inNextMilli(Runnable r) {
         clock.now++;
         r.run();
     }
@@ -103,39 +103,39 @@ public class MCEventStoreTest {
     @Test
     public void multipleMCs_canPollSeparately() {
         assertPolledEventCount(0, MC_2_REMOTE_ADDR);
-        inNextNano(() -> {
+        inNextMilli(() -> {
             logEvent();
             logEvent();
         });
-        inNextNano(() -> {
+        inNextMilli(() -> {
             assertPolledEventCount(2, MC_1_REMOTE_ADDR);
             assertPolledEventCount(2, MC_2_REMOTE_ADDR);
             assertPolledEventCount(0, MC_1_REMOTE_ADDR);
             assertPolledEventCount(0, MC_2_REMOTE_ADDR);
         });
         logEvent();
-        inNextNano(() -> {
+        inNextMilli(() -> {
             assertPolledEventCount(1, MC_1_REMOTE_ADDR);
         });
-        inNextNano(() -> {
+        inNextMilli(() -> {
             logEvent();
             assertPolledEventCount(1, MC_1_REMOTE_ADDR);
             assertPolledEventCount(2, MC_2_REMOTE_ADDR);
         });
-        inNextNano(() -> {
+        inNextMilli(() -> {
             logEvent();
             logEvent();
         });
-        clock.now += MC_EVENTS_WINDOW_NANOS;
+        clock.now += MC_EVENTS_WINDOW_MILLIS;
         logEvent();
-        inNextNano(() -> {
+        inNextMilli(() -> {
             assertPolledEventCount(0, MC_1_REMOTE_ADDR);
             assertPolledEventCount(0, MC_2_REMOTE_ADDR);
         });
-        inNextNano(() -> {
+        inNextMilli(() -> {
             assertPolledEventCount(0, MC_1_REMOTE_ADDR);
         });
-        inNextNano(() -> {
+        inNextMilli(() -> {
             logEvent();
             assertPolledEventCount(1, MC_1_REMOTE_ADDR);
             assertPolledEventCount(1, MC_2_REMOTE_ADDR);
@@ -145,12 +145,12 @@ public class MCEventStoreTest {
     @Test
     public void elemsReadByAllMCsAreCleared() {
         eventStore.pollMCEvents(MC_2_REMOTE_ADDR);
-        inNextNano(() -> {
+        inNextMilli(() -> {
             logEvent();
             logEvent();
         });
-        clock.now += MC_EVENTS_WINDOW_NANOS;
-        inNextNano(() -> {
+        clock.now += MC_EVENTS_WINDOW_MILLIS;
+        inNextMilli(() -> {
             assertPolledEventCount(2, MC_1_REMOTE_ADDR);
             assertPolledEventCount(2, MC_2_REMOTE_ADDR);
             assertEquals(0, queue.size());
@@ -161,39 +161,39 @@ public class MCEventStoreTest {
     public void sameMilliEvent_reportedInNextPoll() {
         assertPolledEventCount(0, MC_1_REMOTE_ADDR);
         logEvent();
-        inNextNano(() -> {
+        inNextMilli(() -> {
             assertPolledEventCount(1, MC_1_REMOTE_ADDR);
             logEvent();
             logEvent();
         });
-        inNextNano(() -> {
+        inNextMilli(() -> {
             assertPolledEventCount(2, MC_1_REMOTE_ADDR);
         });
     }
 
     @Test
     public void disconnectRecognized_after30secInactivity() {
-        inNextNano(() -> {
+        inNextMilli(() -> {
             assertPolledEventCount(0, MC_1_REMOTE_ADDR);
             assertPolledEventCount(0, MC_2_REMOTE_ADDR);
             assertPolledEventCount(0, MC_3_REMOTE_ADDR);
         });
         logEvent();
-        inNextNano(() -> {
+        inNextMilli(() -> {
             assertPolledEventCount(1, MC_3_REMOTE_ADDR);
         });
-        clock.now += TimeUnit.SECONDS.toNanos(15);
-        inNextNano(() -> {
+        clock.now += TimeUnit.SECONDS.toMillis(15);
+        inNextMilli(() -> {
             assertPolledEventCount(1, MC_1_REMOTE_ADDR);
         });
-        inNextNano(() -> {
+        inNextMilli(() -> {
             logEvent();
             logEvent();
         });
-        clock.now += TimeUnit.SECONDS.toNanos(15);
+        clock.now += TimeUnit.SECONDS.toMillis(15);
         logEvent();
         logEvent();
-        inNextNano(() -> {
+        inNextMilli(() -> {
             assertPolledEventCount(4, MC_1_REMOTE_ADDR);
             // reads all 5 events, since its last-access TS is already cleared during previous read
             assertPolledEventCount(5, MC_3_REMOTE_ADDR);
@@ -215,11 +215,11 @@ public class MCEventStoreTest {
         Runnable[] tasks = new Runnable[]{
                 () -> {
                     for (int i = 0; i < 800; ++i) {
-                        inNextNano(() -> logEvent());
+                        inNextMilli(() -> logEvent());
                     }
                 },
-                () -> inNextNano(() -> eventStore.pollMCEvents(MC_1_REMOTE_ADDR)),
-                () -> inNextNano(() -> eventStore.pollMCEvents(MC_2_REMOTE_ADDR))
+                () -> inNextMilli(() -> eventStore.pollMCEvents(MC_1_REMOTE_ADDR)),
+                () -> inNextMilli(() -> eventStore.pollMCEvents(MC_2_REMOTE_ADDR))
         };
         Random random = new Random();
 

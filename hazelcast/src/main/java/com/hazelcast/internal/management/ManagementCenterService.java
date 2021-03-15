@@ -53,7 +53,7 @@ import static com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher.inspectOutO
 public class ManagementCenterService {
 
     static class MCEventStore {
-        static final long MC_EVENTS_WINDOW_NANOS = TimeUnit.SECONDS.toNanos(30);
+        static final long MC_EVENTS_WINDOW_MILLIS = TimeUnit.SECONDS.toMillis(30);
         private final LongSupplier clock;
         private volatile long mostRecentAccessTimestamp;
         private final ConcurrentMap<Address, Long> lastAccessTimestamps = new ConcurrentHashMap<>();
@@ -66,7 +66,7 @@ public class ManagementCenterService {
         }
 
         void log(Event event) {
-            if (clock.getAsLong() - mostRecentAccessTimestamp > MC_EVENTS_WINDOW_NANOS) {
+            if (clock.getAsLong() - mostRecentAccessTimestamp > MC_EVENTS_WINDOW_MILLIS) {
                 // ignore event and clear the queue if the last poll happened a while ago
                 onMCEventWindowExceeded();
             } else {
@@ -131,14 +131,14 @@ public class ManagementCenterService {
 
         /**
          * Removes the entries from {@link #lastAccessTimestamps} which record accesses older than
-         * {@link #MC_EVENTS_WINDOW_NANOS}.
+         * {@link #MC_EVENTS_WINDOW_MILLIS}.
          *
          * @param oldestAccess
          */
         private void cleanUpLastAccessTimestamps(long oldestAccess) {
-            if (mostRecentAccessTimestamp - oldestAccess > MC_EVENTS_WINDOW_NANOS) {
+            if (mostRecentAccessTimestamp - oldestAccess > MC_EVENTS_WINDOW_MILLIS) {
                 lastAccessTimestamps.entrySet().removeIf(
-                        entry -> mostRecentAccessTimestamp - entry.getValue() > MC_EVENTS_WINDOW_NANOS);
+                        entry -> mostRecentAccessTimestamp - entry.getValue() > MC_EVENTS_WINDOW_MILLIS);
             }
         }
     }
@@ -164,7 +164,7 @@ public class ManagementCenterService {
     private volatile long lastTMSUpdateNanos;
 
     public ManagementCenterService(HazelcastInstanceImpl instance) {
-        this(instance, System::nanoTime);
+        this(instance, System::currentTimeMillis);
     }
 
     public ManagementCenterService(HazelcastInstanceImpl instance, LongSupplier clock) {
