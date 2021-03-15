@@ -23,7 +23,6 @@ import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.dto.ClientBwListDTO;
 import com.hazelcast.internal.management.events.Event;
-import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.executor.ExecutorType;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.RetryableException;
@@ -54,7 +53,7 @@ import static com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher.inspectOutO
 public class ManagementCenterService {
 
     static class MCEventStore {
-        static final long MC_EVENTS_WINDOW_MILLIS = TimeUnit.SECONDS.toMillis(30);
+        static final long MC_EVENTS_WINDOW_NANOS = TimeUnit.SECONDS.toNanos(30);
         private final LongSupplier clock;
         private volatile long mostRecentAccessTimestamp;
         private final ConcurrentMap<Address, Long> lastAccessTimestamps = new ConcurrentHashMap<>();
@@ -67,13 +66,12 @@ public class ManagementCenterService {
         }
 
         void log(Event event) {
-            if (clock.getAsLong() - mostRecentAccessTimestamp > MC_EVENTS_WINDOW_MILLIS) {
+            if (clock.getAsLong() - mostRecentAccessTimestamp > MC_EVENTS_WINDOW_NANOS) {
                 // ignore event and clear the queue if the last poll happened a while ago
                 onMCEventWindowExceeded();
             } else {
                 mcEvents.offer(event);
             }
-
         }
 
         void onMCEventWindowExceeded() {
@@ -133,14 +131,14 @@ public class ManagementCenterService {
 
         /**
          * Removes the entries from {@link #lastAccessTimestamps} which record accesses older than
-         * {@link #MC_EVENTS_WINDOW_MILLIS}.
+         * {@link #MC_EVENTS_WINDOW_NANOS}.
          *
          * @param oldestAccess
          */
         private void cleanUpLastAccessTimestamps(long oldestAccess) {
-            if (mostRecentAccessTimestamp - oldestAccess > MC_EVENTS_WINDOW_MILLIS) {
+            if (mostRecentAccessTimestamp - oldestAccess > MC_EVENTS_WINDOW_NANOS) {
                 lastAccessTimestamps.entrySet().removeIf(
-                        entry -> mostRecentAccessTimestamp - entry.getValue() > MC_EVENTS_WINDOW_MILLIS);
+                        entry -> mostRecentAccessTimestamp - entry.getValue() > MC_EVENTS_WINDOW_NANOS);
             }
         }
     }
@@ -166,7 +164,7 @@ public class ManagementCenterService {
     private volatile long lastTMSUpdateNanos;
 
     public ManagementCenterService(HazelcastInstanceImpl instance) {
-        this(instance, Clock::currentTimeMillis);
+        this(instance, System::nanoTime);
     }
 
     public ManagementCenterService(HazelcastInstanceImpl instance, LongSupplier clock) {
