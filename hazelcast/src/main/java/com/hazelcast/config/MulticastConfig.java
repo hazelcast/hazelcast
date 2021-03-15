@@ -58,7 +58,10 @@ public class MulticastConfig implements TrustedInterfacesConfigurable<MulticastC
      * is turned on or off.
      */
     public static final boolean DEFAULT_LOOPBACK_MODE_ENABLED = true;
-
+    /**
+     * Default flag that indicates if the setInterface method
+     * is called or not.
+     */
     public static final boolean DEFAULT_SET_INTERFACE = true;
 
     private static final int MULTICAST_TTL_UPPER_BOUND = 255;

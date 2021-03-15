@@ -17,7 +17,10 @@
 package com.hazelcast.cluster;
 
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
-import static com.hazelcast.test.HazelcastTestSupport.*;
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
+import static com.hazelcast.test.HazelcastTestSupport.disableSetInterfaceIfSolaris;
+import static com.hazelcast.test.HazelcastTestSupport.isSolaris;
+import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
