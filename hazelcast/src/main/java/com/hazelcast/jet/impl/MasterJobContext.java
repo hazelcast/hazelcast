@@ -882,7 +882,7 @@ public class MasterJobContext {
     /**
      * Specific type of edge to be used when restoring snapshots
      */
-    private static class SnapshotRestoreEdge extends Edge {
+    public static class SnapshotRestoreEdge extends Edge {
 
         SnapshotRestoreEdge(Vertex source, int sourceOrdinal, Vertex destination, int destOrdinal) {
             super(source, sourceOrdinal, destination, destOrdinal);

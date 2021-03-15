@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.internal.nio.Bits;
+import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.internal.util.HashUtil;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.config.ProcessingGuarantee;
@@ -271,6 +272,7 @@ public abstract class XaSinkProcessorBase implements Processor {
         }
     }
 
+    @BinaryInterface
     private static final class XaTransactionId extends SerializableXID implements TransactionId {
 
         /**
