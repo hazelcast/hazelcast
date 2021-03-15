@@ -28,7 +28,7 @@
 
         <jdk.version>1.8</jdk.version>
 
-        <hazelcast.version>4.1.1</hazelcast.version>
+        <hazelcast.version>4.1.2</hazelcast.version>
 
         <junit.version>4.13.2</junit.version>
         <mockito.version>1.10.19</mockito.version>
