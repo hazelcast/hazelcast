@@ -33,6 +33,7 @@ import com.hazelcast.sql.impl.expression.ParameterExpression;
 import com.hazelcast.sql.impl.expression.math.AbsFunction;
 import com.hazelcast.sql.impl.expression.math.DivideFunction;
 import com.hazelcast.sql.impl.expression.math.DoubleFunction;
+import com.hazelcast.sql.impl.expression.math.DoubleBiFunction;
 import com.hazelcast.sql.impl.expression.math.FloorCeilFunction;
 import com.hazelcast.sql.impl.expression.math.MinusFunction;
 import com.hazelcast.sql.impl.expression.math.MultiplyFunction;
@@ -180,7 +181,9 @@ public class SqlDataSerializerHook implements DataSerializerHook {
 
     public static final int LAZY_TARGET = 65;
 
-    public static final int LEN = LAZY_TARGET + 1;
+    public static final int EXPRESSION_DOUBLE_DOUBLE = 66;
+
+    public static final int LEN = EXPRESSION_DOUBLE_DOUBLE + 1;
 
     @Override
     public int getFactoryId() {
@@ -274,6 +277,7 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[EXPRESSION_REMAINDER] = arg -> new RemainderFunction<>();
 
         constructors[LAZY_TARGET] = arg -> new LazyTarget();
+        constructors[EXPRESSION_DOUBLE_DOUBLE] = arg -> new DoubleBiFunction();
 
         return new ArrayDataSerializableFactory(constructors);
     }
