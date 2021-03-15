@@ -70,6 +70,10 @@ import static org.apache.calcite.sql.type.SqlTypeName.TIME;
  * literals and casts with more precise types assigned during the validation.
  */
 public class HazelcastSqlToRelConverter extends SqlToRelConverter {
+
+    private static final SqlIntervalQualifier INTERVAL_YEAR_MONTH = new SqlIntervalQualifier(YEAR, MONTH, SqlParserPos.ZERO);
+    private static final SqlIntervalQualifier INTERVAL_DAY_SECOND = new SqlIntervalQualifier(DAY, SECOND, SqlParserPos.ZERO);
+
     /** See {@link #convertCall(SqlNode, Blackboard)} for more information. */
     private final Set<SqlNode> callSet = Collections.newSetFromMap(new IdentityHashMap<>());
 
@@ -117,11 +121,11 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
             SqlTypeFamily family = type.getSqlTypeName().getFamily();
 
             if (family == SqlTypeFamily.INTERVAL_YEAR_MONTH) {
-                type = typeFactory.createSqlIntervalType(new SqlIntervalQualifier(YEAR, MONTH, SqlParserPos.ZERO));
+                type = typeFactory.createSqlIntervalType(INTERVAL_YEAR_MONTH);
             } else {
                 assert family == SqlTypeFamily.INTERVAL_DAY_TIME;
 
-                type = typeFactory.createSqlIntervalType(new SqlIntervalQualifier(DAY, SECOND, SqlParserPos.ZERO));
+                type = typeFactory.createSqlIntervalType(INTERVAL_DAY_SECOND);
             }
         } else {
             value = literal.getValue();

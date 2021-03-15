@@ -81,6 +81,8 @@ public final class BinaryOperatorOperandTypeInference implements SqlOperandTypeI
         // If there is an operand with an unresolved type, set it to the known type.
         if (unknownTypeOperandIndex != -1) {
             if (SqlTypeName.INTERVAL_TYPES.contains(knownType.getSqlTypeName())) {
+                // If there is an interval on the one side, assume that the other side is a timestamp,
+                // because this is the only viable overload.
                 operandTypes[unknownTypeOperandIndex] = createType(binding.getTypeFactory(), SqlTypeName.TIMESTAMP, true);
             } else {
                 operandTypes[unknownTypeOperandIndex] = knownType;
