@@ -65,7 +65,6 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
 
     @Override
     Object insertInternal(Comparable value, QueryableEntry record) {
-        markIndexStoreExpirableIfNecessary(record);
         return addFunctor.invoke(value, record);
     }
 

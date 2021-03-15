@@ -16,9 +16,9 @@
 
 package com.hazelcast.map.impl.recordstore;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.StoreAdapter;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationexecutor.impl.PartitionOperationThread;
 
 /**
@@ -38,15 +38,12 @@ public class RecordStoreAdapter implements StoreAdapter<Record> {
         ensureCallingFromPartitionOperationThread();
 
         record = recordStore.getOrNullIfExpired(key, record, now, backup);
-        if (record == null) {
-            // free memory of expired record
-            recordStore.disposeDeferredBlocks();
-            return true;
+        if (record != null) {
+            return false;
         }
-
-        // not expired record, update access info
-        recordStore.accessRecord(record, now);
-        return false;
+        // free memory of expired record
+        recordStore.disposeDeferredBlocks();
+        return true;
     }
 
     @Override
