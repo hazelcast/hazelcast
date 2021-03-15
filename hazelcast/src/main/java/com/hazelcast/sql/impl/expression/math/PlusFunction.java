@@ -92,7 +92,7 @@ public final class PlusFunction<T> extends BiExpressionWithType<T> implements Id
         QueryDataTypeFamily family = resultType.getTypeFamily();
 
         if (family.isTemporal()) {
-            return (T) evamTemporal(left, right, family);
+            return (T) evalTemporal(left, right, family);
         }
 
         return (T) evalNumeric((Number) left, (Number) right, family);
@@ -124,7 +124,7 @@ public final class PlusFunction<T> extends BiExpressionWithType<T> implements Id
         }
     }
 
-    private static Object evamTemporal(Object left, Object right, QueryDataTypeFamily family) {
+    private static Object evalTemporal(Object left, Object right, QueryDataTypeFamily family) {
         switch (family) {
             case TIME:
             case TIMESTAMP:

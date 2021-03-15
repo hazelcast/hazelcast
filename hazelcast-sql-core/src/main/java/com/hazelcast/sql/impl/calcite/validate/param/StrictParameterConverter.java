@@ -21,8 +21,8 @@ import com.hazelcast.sql.impl.type.converter.Converter;
 import org.apache.calcite.sql.parser.SqlParserPos;
 
 public class StrictParameterConverter extends AbstractParameterConverter {
-    public StrictParameterConverter(int ordinal, SqlParserPos parserPos, QueryDataType type) {
-        super(ordinal, parserPos, type);
+    public StrictParameterConverter(int ordinal, SqlParserPos parserPos, QueryDataType targetType) {
+        super(ordinal, parserPos, targetType);
     }
 
     @Override
