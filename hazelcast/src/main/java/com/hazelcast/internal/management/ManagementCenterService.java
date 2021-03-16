@@ -57,6 +57,7 @@ public class ManagementCenterService {
         private final LongSupplier clock;
         private volatile long mostRecentAccessTimestamp;
         private final ConcurrentMap<Address, Long> lastAccessTimestamps = new ConcurrentHashMap<>();
+        private final ConcurrentMap<Address, Integer> eventsReceivedInSameMillisec = new ConcurrentHashMap<>();
         private final BlockingQueue<Event> mcEvents;
 
         MCEventStore(LongSupplier clock, BlockingQueue<Event> mcEvents) {
@@ -65,6 +66,7 @@ public class ManagementCenterService {
             this.mcEvents = mcEvents;
         }
 
+        @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
         void log(Event event) {
             if (clock.getAsLong() - mostRecentAccessTimestamp > MC_EVENTS_WINDOW_MILLIS) {
                 // ignore event and clear the queue if the last poll happened a while ago
@@ -86,19 +88,29 @@ public class ManagementCenterService {
          */
         public List<Event> pollMCEvents(Address mcRemoteAddr) {
             Long lastAccessObj = lastAccessTimestamps.get(mcRemoteAddr);
+            mostRecentAccessTimestamp = clock.getAsLong();
             List<Event> events;
             if (lastAccessObj == null) {
                 events = new ArrayList<>(mcEvents);
             } else {
+                Integer receivedInSameMsWrapper = eventsReceivedInSameMillisec.get(mcRemoteAddr);
+                int receivedInSameMs = receivedInSameMsWrapper == null ? 0 : receivedInSameMsWrapper;
                 long lastAccess = lastAccessObj;
-                events = new ArrayList<>();
+                events = new ArrayList<>(mcEvents.size());
                 for (Event evt : mcEvents) {
                     if (evt.getTimestamp() >= lastAccess) {
-                        events.add(evt);
+                        if (receivedInSameMs-- <= 0) {
+                            events.add(evt);
+                        }
                     }
                 }
             }
             updateLatestAccessStats(mcRemoteAddr);
+            int sameMilliEvents = 0;
+            for (int i = events.size() - 1; i >= 0 && events.get(i).getTimestamp() >= mostRecentAccessTimestamp; --i) {
+                ++sameMilliEvents;
+            }
+            eventsReceivedInSameMillisec.put(mcRemoteAddr, sameMilliEvents);
             return events;
         }
 
@@ -109,7 +121,6 @@ public class ManagementCenterService {
          * @param mcRemoteAddr
          */
         private void updateLatestAccessStats(Address mcRemoteAddr) {
-            mostRecentAccessTimestamp = clock.getAsLong();
             lastAccessTimestamps.put(mcRemoteAddr, mostRecentAccessTimestamp);
             if (mcEvents.isEmpty()) {
                 return;
@@ -229,7 +240,6 @@ public class ManagementCenterService {
      * <p>
      * Events are used by Management Center to show the user what happens when on a cluster member.
      */
-    @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
     public void log(Event event) {
         eventStore.log(event);
         if (eventListener != null) {

@@ -161,13 +161,22 @@ public class MCEventStoreTest {
     public void sameMilliEvent_reportedInNextPoll() {
         assertPolledEventCount(0, MC_1_REMOTE_ADDR);
         logEvent();
+        logEvent();
         inNextMilli(() -> {
-            assertPolledEventCount(1, MC_1_REMOTE_ADDR);
+            logEvent();
+            logEvent();
+            assertPolledEventCount(4, MC_1_REMOTE_ADDR);
+            logEvent();
             logEvent();
             logEvent();
         });
         inNextMilli(() -> {
-            assertPolledEventCount(2, MC_1_REMOTE_ADDR);
+            logEvent();
+            logEvent();
+        });
+        inNextMilli(() -> {
+            // 3 of these were reported in the same MS as the previous poll, 2 of them later
+            assertPolledEventCount(5, MC_1_REMOTE_ADDR);
         });
     }
 
@@ -215,7 +224,7 @@ public class MCEventStoreTest {
         Runnable[] tasks = new Runnable[]{
                 () -> {
                     for (int i = 0; i < 800; ++i) {
-                        inNextMilli(() -> logEvent());
+                        inNextMilli(this::logEvent);
                     }
                 },
                 () -> inNextMilli(() -> eventStore.pollMCEvents(MC_1_REMOTE_ADDR)),
