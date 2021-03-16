@@ -16,13 +16,61 @@
 
 package com.hazelcast.logging;
 
+import com.hazelcast.internal.util.ConcurrentReferenceHashMap;
 import com.hazelcast.logging.impl.InternalLogger;
+import org.jetbrains.annotations.NotNull;
 
+import java.util.Iterator;
+import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
+import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 public class StandardLoggerFactory extends LoggerFactorySupport implements LoggerFactory {
+
+    final ConcurrentMap<Handler, Level> handlerLevels = new ConcurrentReferenceHashMap<>(100);
+
+    @Override
+    public void setLevel(@NotNull Level level) {
+        super.setLevel(level);
+
+        for (ILogger logger : mapLoggers.values()) {
+            Logger javaLogger = ((StandardLogger) logger).logger;
+            do {
+                for (Handler handler : javaLogger.getHandlers()) {
+                    Level currentLevel = handlerLevels.computeIfAbsent(handler,
+                            h -> h.getLevel().intValue() <= level.intValue() ? null : h.getLevel());
+                    if (currentLevel != null) {
+                        handler.setLevel(level);
+                    }
+                }
+
+                if (!javaLogger.getUseParentHandlers()) {
+                    break;
+                }
+
+                javaLogger = javaLogger.getParent();
+            } while (javaLogger != null);
+        }
+    }
+
+    @Override
+    public void resetLevel() {
+        Iterator<Map.Entry<Handler, Level>> iterator = handlerLevels.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<Handler, Level> entry = iterator.next();
+
+            Handler handler = entry.getKey();
+            Level level = entry.getValue();
+            handler.setLevel(level);
+
+            iterator.remove();
+        }
+
+        super.resetLevel();
+    }
 
     @Override
     protected ILogger createLogger(String name) {

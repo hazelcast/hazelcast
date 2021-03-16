@@ -35,6 +35,7 @@ import java.util.logging.Logger;
 
 import static com.hazelcast.test.IsolatedLoggingRule.LOGGING_TYPE_JDK;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -72,17 +73,35 @@ public class JdkLoggerLevelChangeTest extends HazelcastTestSupport {
         loggingService.setLevel(Level.OFF);
         logger.severe("foo");
         assertEquals(2, handler.hits);
+        assertHandlers(Level.OFF);
 
         loggingService.setLevel(Level.FINEST);
         logger.finest("foo");
         assertEquals(3, handler.hits);
+        assertHandlers(Level.FINEST);
 
         loggingService.resetLevel();
         logger.finest("foo");
         assertEquals(3, handler.hits);
+        assertHandlers(Level.INFO);
 
         logger.severe("foo");
         assertEquals(4, handler.hits);
+    }
+
+    private static void assertHandlers(Level level) {
+        Logger logger = Logger.getLogger(JdkLoggerLevelChangeTest.class.getName());
+        do {
+            for (Handler handler : logger.getHandlers()) {
+                assertTrue(handler.getLevel().intValue() <= level.intValue());
+            }
+
+            if (!logger.getUseParentHandlers()) {
+                break;
+            }
+
+            logger = logger.getParent();
+        } while (logger != null);
     }
 
     private static class TestHandler extends Handler {
