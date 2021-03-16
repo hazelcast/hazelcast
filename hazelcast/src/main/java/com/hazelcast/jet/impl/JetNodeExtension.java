@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.instance.impl.DefaultNodeExtension;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.instance.impl.NodeExtensionCommon;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JetConfig;

@@ -139,7 +139,7 @@ public class JetService implements ManagedService, MembershipAwareService, LiveO
      * Tells master to gracefully shut terminate jobs on this member. Blocks
      * until all are down.
      */
-    void shutDownJobs() {
+    public void shutDownJobs() {
         if (shutdownFuture.compareAndSet(null, new CompletableFuture<>())) {
             notifyMasterWeAreShuttingDown(shutdownFuture.get());
         }
@@ -244,7 +244,7 @@ public class JetService implements ManagedService, MembershipAwareService, LiveO
         return getJobExecutionService().getClassLoader(getJobConfig(jobId), jobId);
     }
 
-    void handlePacket(Packet packet) {
+    public void handlePacket(Packet packet) {
         try {
             networking.handle(packet);
         } catch (IOException e) {
@@ -295,7 +295,7 @@ public class JetService implements ManagedService, MembershipAwareService, LiveO
     }
 
     @Nullable
-    JetSqlCoreBackend getSqlCoreBackend() {
+    public JetSqlCoreBackend getSqlCoreBackend() {
         return sqlCoreBackend;
     }
 }

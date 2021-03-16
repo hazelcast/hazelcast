@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl;
+package com.hazelcast.instance.impl;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.instance.JetBuildInfo;
-import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JetConfig;
+import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.operation.PrepareForPassiveClusterOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -42,13 +42,13 @@ import static com.hazelcast.jet.impl.JobRepository.JOB_METRICS_MAP_NAME;
 import static com.hazelcast.jet.impl.JobRepository.JOB_RESULTS_MAP_NAME;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
-class NodeExtensionCommon {
-    private static final String JET_LOGO =
-            "\to  o   O  o---o o--o o      o-o   O   o-o  o-O-o     o--o  o      O  o-O-o o--o  o-o  o--o  o   o \n" +
-            "\t|  |  / \\    /  |    |     /     / \\ |       |       |   | |     / \\   |   |    o   o |   | |\\ /| \n" +
-            "\tO--O o---o -O-  O-o  |    O     o---o o-o    |       O--o  |    o---o  |   O-o  |   | O-Oo  | O | \n" +
-            "\t|  | |   | /    |    |     \\    |   |    |   |       |     |    |   |  |   |    o   o |  \\  |   | \n" +
-            "\to  o o   oo---o o--o O---o  o-o o   oo--o    o       o     O---oo   o  o   o     o-o  o   o o   o";
+public class NodeExtensionCommon {
+    private static final String JET_LOGO
+            = "\to  o   O  o---o o--o o      o-o   O   o-o  o-O-o     o--o  o      O  o-O-o o--o  o-o  o--o  o   o \n"
+            + "\t|  |  / \\    /  |    |     /     / \\ |       |       |   | |     / \\   |   |    o   o |   | |\\ /| \n"
+            + "\tO--O o---o -O-  O-o  |    O     o---o o-o    |       O--o  |    o---o  |   O-o  |   | O-Oo  | O | \n"
+            + "\t|  | |   | /    |    |     \\    |   |    |   |       |     |    |   |  |   |    o   o |  \\  |   | \n"
+            + "\to  o o   oo---o o--o O---o  o-o o   oo--o    o       o     O---oo   o  o   o     o-o  o   o o   o";
 
     private static final String COPYRIGHT_LINE = "Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.";
 
@@ -56,13 +56,13 @@ class NodeExtensionCommon {
     private final ILogger logger;
     private final JetService jetService;
 
-    NodeExtensionCommon(Node node, JetService jetService) {
+    public NodeExtensionCommon(Node node, JetService jetService) {
         this.node = node;
         this.logger = node.getLogger(getClass().getName());
         this.jetService = jetService;
     }
 
-    void beforeStart() {
+    public void beforeStart() {
         Config config = node.config.getStaticConfig();
         JetConfig jetConfig = config.getJetConfig();
 
@@ -85,21 +85,21 @@ class NodeExtensionCommon {
                 .addMapConfig(resultsMapConfig)
                 .addMapConfig(metricsMapConfig);
         // TODO we should move this to enterprise node extension
-        if (jetConfig.getInstanceConfig().isLosslessRestartEnabled() &&
-                !config.getHotRestartPersistenceConfig().isEnabled()) {
-            logger.warning("Lossless Restart is enabled but Hot Restart is disabled. Auto-enabling Hot Restart. " +
-                    "The following path will be used: " + config.getHotRestartPersistenceConfig().getBaseDir());
+        if (jetConfig.getInstanceConfig().isLosslessRestartEnabled()
+                && !config.getHotRestartPersistenceConfig().isEnabled()) {
+            logger.warning("Lossless Restart is enabled but Hot Restart is disabled. Auto-enabling Hot Restart. "
+                    + "The following path will be used: " + config.getHotRestartPersistenceConfig().getBaseDir());
             config.getHotRestartPersistenceConfig().setEnabled(true);
         }
     }
 
-    void afterStart() {
+    public void afterStart() {
         if (node.isRunning()) {
             jetService.getJobCoordinationService().startScanningForJobs();
         }
     }
 
-    void beforeClusterStateChange(ClusterState requestedState) {
+    public void beforeClusterStateChange(ClusterState requestedState) {
         if (requestedState != PASSIVE) {
             return;
         }
@@ -114,27 +114,43 @@ class NodeExtensionCommon {
         }
     }
 
-    void onClusterStateChange(ClusterState ignored) {
+    public void onClusterStateChange(ClusterState ignored) {
         jetService.getJobCoordinationService().clusterChangeDone();
     }
 
-    void beforeShutdown(boolean terminate) {
+    public void beforeShutdown(boolean terminate) {
         if (!terminate) {
             jetService.shutDownJobs();
         }
     }
 
-    void handlePacket(Packet packet) {
+    public void handlePacket(Packet packet) {
         jetService.handlePacket(packet);
     }
 
-    void printNodeInfo(ILogger log, String addToProductName) {
+    public void printNodeInfo(ILogger log, String addToProductName) {
         log.info(versionAndAddressMessage(addToProductName));
         log.info(imdgVersionMessage());
         log.info(clusterNameMessage());
         log.fine(serializationVersionMessage());
         log.info('\n' + JET_LOGO);
         log.info(COPYRIGHT_LINE);
+    }
+
+    public Map<String, Object> createExtensionServices() {
+        Map<String, Object> extensionServices = new HashMap<>();
+
+        extensionServices.put(JetService.SERVICE_NAME, jetService);
+
+        if (jetService.getSqlCoreBackend() != null) {
+            extensionServices.put(JetSqlCoreBackend.SERVICE_NAME, jetService.getSqlCoreBackend());
+        }
+
+        return extensionServices;
+    }
+
+    public JetInstance getJetInstance() {
+        return jetService.getJetInstance();
     }
 
     private String versionAndAddressMessage(@Nonnull String addToName) {
@@ -144,8 +160,8 @@ class NodeExtensionCommon {
         if (!revision.isEmpty()) {
             build += " - " + revision;
         }
-        return "Hazelcast Jet" + addToName + ' ' + jetBuildInfo.getVersion() +
-                " (" + build + ") starting at " + node.getThisAddress();
+        return "Hazelcast Jet" + addToName + ' ' + jetBuildInfo.getVersion()
+                + " (" + build + ") starting at " + node.getThisAddress();
     }
 
     private String imdgVersionMessage() {
@@ -163,22 +179,6 @@ class NodeExtensionCommon {
 
     private String clusterNameMessage() {
         return "Cluster name: " + node.getConfig().getClusterName();
-    }
-
-    Map<String, Object> createExtensionServices() {
-        Map<String, Object> extensionServices = new HashMap<>();
-
-        extensionServices.put(JetService.SERVICE_NAME, jetService);
-
-        if (jetService.getSqlCoreBackend() != null) {
-            extensionServices.put(JetSqlCoreBackend.SERVICE_NAME, jetService.getSqlCoreBackend());
-        }
-
-        return extensionServices;
-    }
-
-    JetInstance getJetInstance() {
-        return jetService.getJetInstance();
     }
 
 }

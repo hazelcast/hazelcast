@@ -177,7 +177,7 @@ public class JobCoordinationService {
         return jobRepository;
     }
 
-    void startScanningForJobs() {
+    public void startScanningForJobs() {
         ExecutionService executionService = nodeEngine.getExecutionService();
         HazelcastProperties properties = nodeEngine.getProperties();
         maxJobScanPeriodInMillis = properties.getMillis(JOB_SCAN_PERIOD);
@@ -306,7 +306,7 @@ public class JobCoordinationService {
         }).thenCompose(identity());
     }
 
-    void clusterChangeDone() {
+    public void clusterChangeDone() {
         synchronized (lock) {
             isClusterEnteringPassiveState = false;
         }
