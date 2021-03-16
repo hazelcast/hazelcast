@@ -90,7 +90,8 @@ public class ManagementCenterService {
          */
         public List<Event> pollMCEvents(Address mcRemoteAddr) {
             Long lastAccessObj = lastAccessTimestamps.get(mcRemoteAddr);
-            long pollStartedAt = mostRecentAccessTimestamp = clock.getAsLong();
+            mostRecentAccessTimestamp = clock.getAsLong();
+            long pollStartedAt = mostRecentAccessTimestamp;
             List<Event> events;
             if (lastAccessObj == null) {
                 System.out.println("null -> ");
@@ -147,7 +148,7 @@ public class ManagementCenterService {
                 }
             }
         }
-        
+
         /**
          * Removes the entries from {@link #lastAccessTimestamps} which record accesses older than
          * {@link #MC_EVENTS_WINDOW_MILLIS}. Also removes the entry from {@link #eventsReceivedInSameMillisec} with the same key.
