@@ -42,7 +42,7 @@ import static com.hazelcast.jet.impl.JobRepository.JOB_METRICS_MAP_NAME;
 import static com.hazelcast.jet.impl.JobRepository.JOB_RESULTS_MAP_NAME;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
-public class NodeExtensionCommon {
+public class JetExtension {
     private static final String JET_LOGO
             = "\to  o   O  o---o o--o o      o-o   O   o-o  o-O-o     o--o  o      O  o-O-o o--o  o-o  o--o  o   o \n"
             + "\t|  |  / \\    /  |    |     /     / \\ |       |       |   | |     / \\   |   |    o   o |   | |\\ /| \n"
@@ -56,7 +56,7 @@ public class NodeExtensionCommon {
     private final ILogger logger;
     private final JetService jetService;
 
-    public NodeExtensionCommon(Node node, JetService jetService) {
+    public JetExtension(Node node, JetService jetService) {
         this.node = node;
         this.logger = node.getLogger(getClass().getName());
         this.jetService = jetService;
@@ -65,6 +65,11 @@ public class NodeExtensionCommon {
     public void beforeStart() {
         Config config = node.config.getStaticConfig();
         JetConfig jetConfig = config.getJetConfig();
+
+        if (jetConfig.getInstanceConfig().isLosslessRestartEnabled()) {
+            throw new UnsupportedOperationException("Lossless Restart is not available in the open-source version of "
+                    + "Hazelcast Jet");
+        }
 
         MapConfig internalMapConfig = new MapConfig(INTERNAL_JET_OBJECTS_PREFIX + '*')
                 .setBackupCount(jetConfig.getInstanceConfig().getBackupCount())
