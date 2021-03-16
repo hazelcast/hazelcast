@@ -62,6 +62,7 @@ public class JetService implements ManagedService, MembershipAwareService, LiveO
     public static final int MAX_PARALLEL_ASYNC_OPS = 1000;
 
     private static final int NOTIFY_MEMBER_SHUTDOWN_DELAY = 5;
+    private static final int SHUTDOWN_JOBS_MAX_WAIT_SECONDS = 10;
 
     private NodeEngineImpl nodeEngine;
     private final ILogger logger;
@@ -143,10 +144,14 @@ public class JetService implements ManagedService, MembershipAwareService, LiveO
         if (shutdownFuture.compareAndSet(null, new CompletableFuture<>())) {
             notifyMasterWeAreShuttingDown(shutdownFuture.get());
         }
-        shutdownFuture.get().join();
-
-        assert jobExecutionService.numberOfExecutions() == 0
-                : "numberOfExecutions should be zero, but is " + jobExecutionService.numberOfExecutions();
+        try {
+            CompletableFuture<Void> future = shutdownFuture.get();
+            future.get(SHUTDOWN_JOBS_MAX_WAIT_SECONDS, SECONDS);
+            assert jobExecutionService.numberOfExecutions() == 0
+                    : "numberOfExecutions should be zero, but is " + jobExecutionService.numberOfExecutions();
+        } catch (Exception e) {
+            logger.severe("Shutdown jobs timeout", e);
+        }
     }
 
     private void notifyMasterWeAreShuttingDown(CompletableFuture<Void> future) {
