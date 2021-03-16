@@ -406,7 +406,7 @@ public class MinusOperatorIntegrationTest extends ArithmeticOperatorIntegrationT
         putAndCheckValue(date, sql(null, "INTERVAL '1' SECOND"), TIMESTAMP, null);
         putAndCheckFailure(date, sql("INTERVAL '1' SECOND", null), PARSING, signatureError("INTERVAL_SECOND", TIMESTAMP));
 
-        // Check null values when one side is temporal type. Since we cannot deduce the type of the other hand, we fail.
+        // Check null values when one side is temporal type. Since we cannot deduce the type of the other side, we fail.
         putAndCheckFailure(date, sql("this", null), PARSING, signatureError(DATE, DATE));
         putAndCheckFailure(date, sql(null, "this"), PARSING, signatureError(DATE, DATE));
 
@@ -443,7 +443,7 @@ public class MinusOperatorIntegrationTest extends ArithmeticOperatorIntegrationT
         putAndCheckValue(time, sql(null, "INTERVAL '1' SECOND"), TIMESTAMP, null);
         putAndCheckFailure(time, sql("INTERVAL '1' SECOND", null), PARSING, signatureError("INTERVAL_SECOND", TIMESTAMP));
 
-        // Check null values when one side is temporal type. Since we cannot deduce the type of the other hand, we fail.
+        // Check null values when one side is temporal type. Since we cannot deduce the type of the other side, we fail.
         putAndCheckFailure(time, sql("this", null), PARSING, signatureError(TIME, TIME));
         putAndCheckFailure(time, sql(null, "this"), PARSING, signatureError(TIME, TIME));
 
@@ -479,7 +479,7 @@ public class MinusOperatorIntegrationTest extends ArithmeticOperatorIntegrationT
         putAndCheckValue(timestamp, sql(null, "INTERVAL '1' SECOND"), TIMESTAMP, null);
         putAndCheckFailure(timestamp, sql("INTERVAL '1' SECOND", null), PARSING, signatureError("INTERVAL_SECOND", TIMESTAMP));
 
-        // Check null values when one side is temporal type. Since we cannot deduce the type of the other hand, we fail.
+        // Check null values when one side is temporal type. Since we cannot deduce the type of the other side, we fail.
         putAndCheckFailure(timestamp, sql("this", null), PARSING, signatureError(TIMESTAMP, TIMESTAMP));
         putAndCheckFailure(timestamp, sql(null, "this"), PARSING, signatureError(TIMESTAMP, TIMESTAMP));
 
@@ -516,7 +516,7 @@ public class MinusOperatorIntegrationTest extends ArithmeticOperatorIntegrationT
         putAndCheckValue(timestamp, sql(null, "INTERVAL '1' SECOND"), TIMESTAMP, null);
         putAndCheckFailure(timestamp, sql("INTERVAL '1' SECOND", null), PARSING, signatureError("INTERVAL_SECOND", TIMESTAMP));
 
-        // Check null values when one side is temporal type. Since we cannot deduce the type of the other hand, we fail.
+        // Check null values when one side is temporal type. Since we cannot deduce the type of the other side, we fail.
         putAndCheckFailure(timestamp, sql("this", null), PARSING,
             signatureError(TIMESTAMP_WITH_TIME_ZONE, TIMESTAMP_WITH_TIME_ZONE));
         putAndCheckFailure(timestamp, sql(null, "this"), PARSING,
