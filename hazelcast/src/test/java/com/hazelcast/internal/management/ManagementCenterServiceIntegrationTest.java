@@ -134,7 +134,7 @@ public class ManagementCenterServiceIntegrationTest
         mcs.onMCEventWindowExceeded();
         assertEquals(0, mcs.pollMCEvents(MC_1_REMOTE_ADDR).size());
 
-        mcs.log(new TestEvent());
+        mcs.log(new TestEvent(System.currentTimeMillis()));
         assertEquals(1, mcs.pollMCEvents(MC_1_REMOTE_ADDR).size());
     }
 

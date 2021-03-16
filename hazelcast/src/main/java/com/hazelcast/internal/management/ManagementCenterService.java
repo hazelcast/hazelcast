@@ -34,6 +34,7 @@ import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.concurrent.BlockingQueue;
@@ -79,6 +80,7 @@ public class ManagementCenterService {
         void onMCEventWindowExceeded() {
             mcEvents.clear();
             lastAccessTimestamps.clear();
+            eventsReceivedInSameMillisec.clear();
         }
 
         /**
@@ -88,9 +90,10 @@ public class ManagementCenterService {
          */
         public List<Event> pollMCEvents(Address mcRemoteAddr) {
             Long lastAccessObj = lastAccessTimestamps.get(mcRemoteAddr);
-            mostRecentAccessTimestamp = clock.getAsLong();
+            long pollStartedAt = mostRecentAccessTimestamp = clock.getAsLong();
             List<Event> events;
             if (lastAccessObj == null) {
+                System.out.println("null -> ");
                 events = new ArrayList<>(mcEvents);
             } else {
                 Integer receivedInSameMsWrapper = eventsReceivedInSameMillisec.get(mcRemoteAddr);
@@ -98,14 +101,18 @@ public class ManagementCenterService {
                 long lastAccess = lastAccessObj;
                 events = new ArrayList<>(mcEvents.size());
                 for (Event evt : mcEvents) {
+                    System.out.println("check evt " + evt.getTimestamp() + " >= " + lastAccess);
                     if (evt.getTimestamp() >= lastAccess) {
+                        System.out.println("ts passed...");
                         if (receivedInSameMs-- <= 0) {
+                            System.out.println("recvMillis passed... ");
+                            System.out.println("add: " + evt);
                             events.add(evt);
                         }
                     }
                 }
             }
-            updateLatestAccessStats(mcRemoteAddr);
+            updateLatestAccessStats(mcRemoteAddr, pollStartedAt);
             int sameMilliEvents = 0;
             for (int i = events.size() - 1; i >= 0 && events.get(i).getTimestamp() >= mostRecentAccessTimestamp; --i) {
                 ++sameMilliEvents;
@@ -119,16 +126,17 @@ public class ManagementCenterService {
          * and removes the entries of {@link #mcEvents} that are already read by all known MCs.
          *
          * @param mcRemoteAddr
+         * @param pollStartedAt
          */
-        private void updateLatestAccessStats(Address mcRemoteAddr) {
-            lastAccessTimestamps.put(mcRemoteAddr, mostRecentAccessTimestamp);
+        private void updateLatestAccessStats(Address mcRemoteAddr, long pollStartedAt) {
+            lastAccessTimestamps.put(mcRemoteAddr, pollStartedAt);
             if (mcEvents.isEmpty()) {
                 return;
             }
             OptionalLong maybeOldestAccess = lastAccessTimestamps.values().stream().mapToLong(Long::longValue).min();
             if (maybeOldestAccess.isPresent()) {
                 long oldestAccess = maybeOldestAccess.getAsLong();
-                cleanUpLastAccessTimestamps(oldestAccess);
+                cleanUpLastAccessTimestamps(oldestAccess, pollStartedAt);
                 Iterator<Event> it = mcEvents.iterator();
                 while (it.hasNext()) {
                     Event evt = it.next();
@@ -139,17 +147,24 @@ public class ManagementCenterService {
                 }
             }
         }
-
+        
         /**
          * Removes the entries from {@link #lastAccessTimestamps} which record accesses older than
-         * {@link #MC_EVENTS_WINDOW_MILLIS}.
+         * {@link #MC_EVENTS_WINDOW_MILLIS}. Also removes the entry from {@link #eventsReceivedInSameMillisec} with the same key.
          *
          * @param oldestAccess
+         * @param pollStartedAt
          */
-        private void cleanUpLastAccessTimestamps(long oldestAccess) {
-            if (mostRecentAccessTimestamp - oldestAccess > MC_EVENTS_WINDOW_MILLIS) {
-                lastAccessTimestamps.entrySet().removeIf(
-                        entry -> mostRecentAccessTimestamp - entry.getValue() > MC_EVENTS_WINDOW_MILLIS);
+        private void cleanUpLastAccessTimestamps(long oldestAccess, long pollStartedAt) {
+            if (pollStartedAt - oldestAccess > MC_EVENTS_WINDOW_MILLIS) {
+                Iterator<Map.Entry<Address, Long>> it = lastAccessTimestamps.entrySet().iterator();
+                while (it.hasNext()) {
+                    Map.Entry<Address, Long> entry = it.next();
+                    if (pollStartedAt - entry.getValue() > MC_EVENTS_WINDOW_MILLIS) {
+                        it.remove();
+                        eventsReceivedInSameMillisec.remove(entry.getKey());
+                    }
+                }
             }
         }
     }
