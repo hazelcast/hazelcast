@@ -1,25 +1,59 @@
-You can also see the Release Notes document at http://docs.hazelcast.org/docs/release-notes/.
+You can also see the Release Notes document at https://docs.hazelcast.org/docs/rn/.
+
+Release 4.2
+
+(See https://docs.hazelcast.org/docs/rn/#bc-42 for Breaking Changes in IMDG 4.2)
+
+- Added support of SQL sorting feature. 
+- Added support of partition grouping mechanism in the Hazelcast discovery plugin for Kubernetes (NODE_AWARE partition grouping).
+- Added support of partition grouping mechanism in the Hazelcast discovery plugin for AWS (PLACEMENT_AWARE partition grouping.
+- Added support of changing Hazelcast log levels without restarting cluster members.
+- Introduced a configuration option (`per-entry-stats-enabled`) for retrieving per-entry statistics of a map, which is disabled by default.
+- Added the ability to override Hazelcast's built-in serializers.
+- Added the serialization support of `java.util.Optional`.
+
+Release 4.1
+
+(See https://docs.hazelcast.org/docs/rn/#bc-41 for Breaking Changes in IMDG 4.1)
+
+- Implemented the SQL engine that supports map scans, index scans, projections and filters.
+- Introduced the automatic detection of the cloud environment where Hazelcast IMDG is running on (Kubernetes, AWS, GCP or Azure).
+- Enabled overriding the configuration entries of your cluster without changing the declarative configuration files (XML/YAML).
+- Hazelcast now writes a file on a Hazelcast member startup at the configured location. This file contains metadata about the member such as version, product name and process ID, and it is not deleted on the member shutdown.
+- Introduced security audit logging which allows observing some important cluster events.
+- Introduced properties to be configured to detect and resolve the partial network issues among the Hazelcast IMDG members.
+- Parallelized the partition replica migrations so that the time needed for rebalancing the partitions after adding or removing a member to/from a cluster is reduced.
+- Added membership and group availability listeners for CP Subsystem. Also, added support for publishing CP Subsystem and CP data structure statistics via Metrics. - Added support for accessing domain objects without domain classes (GenericRecord).
+- Introduced the CPU thread affinity; threads can have affinity for particular CPUs and using this you have a better control on the latency and a better throughput.
+- Introduced the restriction of the source IP addresses from which the Management Center operations are allowed.
+- Added support for the queues with comparators (Priority Queue).
+- Added statistics for scheduled and durable executor services, and for the executor of offloaded entry processors to be monitored by Management Center.
+- Introduced support for Kerberos authentication protocol which is one of the standard solutions for single-sign-on.
+- Added support for multiple mounting directories in the persistent memory configuration and also thread affinity for NVMs (Non-Volatile Main Memories).
+- Introduced the WAN throttling mechanism; this prevents the WAN consumers from getting overloaded by the WAN producers if transferring the WAN events takes less time than processing them in the target cluster.
 
 Release 4.0
 
-- Added support for persistent memory, such as Intel® Optane™ DC.
-- Provided a framework and implementation to encrypt data in Hot Restart stores.
-- Added support for X.509 certificate authentication.
-- Introduced out of the box LDAP configuration module.
-- Implemented persistency for Hazelcast’s CP subsystem.
-- Introduced CP subsystem development mode.
-- Introduced bitmap indexes.
-- Separated the WAN replication configuration into built-in and custom WAN publishers.
-- Added tracking of WAN synchronization events.
-- Improved the JAAS authentication mechanism and security configuration.
-- Added Javadoc for Hazelcast IMDG Enterprise Edition.
-- Added HTTPS support for the cluster.sh and healthcheck.sh scripts.
-- Introduced custom time-to-live  for MapLoader.
-- Introduced friendly names (Moby naming) for the Hazelcast instances to be shown in the Hazelcast Management Center.
-- Improved the clients’ performance by eliminating the sync backup wait.
+(See https://docs.hazelcast.org/docs/rn/#bc-40 for Breaking Changes in IMDG 4.0)
+
+- Added support for persistent memory, such as Intel® Optane™ DC, to be used by Hazelcast’s High-Density Memory Store feature.
+- Provided a framework and implementation to encrypt data in Hot Restart stores ("at rest") for data held in distributed structures.
+- Added support for credential retrieval by the members from the X.509 certificates configured on the clients.
+- Added support of out-of-the-box LDAP Configuration.
+- Implemented persistency for Hazelcast CP subsystem.
+- Introduced CP Subsystem development mode, i.e., UNSAFE mode for the CP data structures.
+- Introduced bitmap indexes to significantly lower index memory usage for low-cardinality columns.
+- Separated WAN Publisher configuration into two configuration elements: batch-publisher and custom-publisher.
+- Management Center, logs and diagnostics now report the progress of a WAN synchronization.
+- Introduced improvements in the JAAS Authentication Mechanism and Security configurations.
+- cluster.sh and healthcheck.sh scripts now use HTTPS.
+- Introduced the EntryStore and EntryLoader interfaces (adding custom expiration support for MapStore).
+- Introduced friendly names (Moby naming) for the Hazelcast instances to be shown in the Hazelcast Management Center. 
+- Improved the client performance by eliminating the sync backup wait from the client and sending the backup ACK to the client.
 - Introduced the ownerless client mechanism.
-- Added JSON support for REST API.
-- Breaking changes/removed features: See https://docs.hazelcast.org/docs/rn/
+- Optimized the client performace for the single thread sending requests.
+- Added JSON support (HazelcastJsonValue) for REST API.
+
 
 Release 3.12
 
