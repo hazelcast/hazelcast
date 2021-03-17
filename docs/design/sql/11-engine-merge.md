@@ -356,6 +356,33 @@ public class JetImdgBenchmark {
 }
 ```
 
+### Performance of short-running queries
+
+Historically, Jet focused on large batch and stream processing.
+Therefore the job initialization time wasn't a concern. To bring the
+performance of very short jobs on par with IMDG, we need to implement
+the following:
+
+- Finish the [light job
+prototype](https://github.com/viliam-durina/hazelcast-jet/tree/light-job).
+It merges the `init`, `execute` and `complete` operations into one. This
+won't be trivial because various new races will appear, but it's
+possible. We might do it only for non-fault-tolerant jobs.
+
+- Add a _light job_ mode that will not persist the job metadata in any
+IMap, that will not use the `JetClassLoader`. The operation of the
+coordinator will not require any remote calls except for forwarding the
+work to members.
+
+- Enable any member to coordinate the job, not just the master member.
+With this, queries submitted from a non-master member will not have
+additional hop to the master.
+
+- Add plan caching, dynamic parameter support.
+
+After these changes I expect the performance to be comparable also for
+short-running queries.
+
 ## Conclusion
 
 The engines are quite similar and functionally both can support all
