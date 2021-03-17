@@ -211,14 +211,22 @@ IMDG engine.
 To compare the engines we designed a benchmark with substantial number
 of items, 1M in our case. To make the comparison fair, we also used
 local parallelism of 1 for Jet because operator parallelism isn't
-implemented in IMDG engine.
+implemented in IMDG engine. We've also set the partition count to 2
+because Jet off-loads the map reading to partition threads so it
+benefits from more parallelism than what's currently implemented in
+IMDG.
 
 We ran the benchmark on two AWS `c5.xlarge` members.
 
 | Cluster type | Time |
 | --- | ---: |
-| IMDG | 737ms |
-| Jet | 175ms |
+| IMDG | 847ms |
+| Jet | 290ms |
+
+We understand that this benchmark has quite low value because it doesn't
+directly measure the processing performance of each of the engines
+because the engines use a very different way to read IMaps, but we think
+it indicates that the engines are in the same arena.
 
 Benchmark code:
 ```java
