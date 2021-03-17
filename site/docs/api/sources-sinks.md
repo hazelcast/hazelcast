@@ -4,7 +4,7 @@ description: Birds-eye view of all pre-defined sources available in Jet.
 ---
 
 Hazelcast Jet comes out of the box with many different sources and sinks
-that you can work with, that are also referred to as _connectors_.
+that you can work with, these are also referred to as _connectors_.
 
 ## Unified File Connector API
 
