@@ -29,6 +29,7 @@ import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastDescOpera
 import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastUnaryOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastAndOrPredicate;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastComparisonPredicate;
+import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastInPredicate;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastIsTrueFalseNullPredicate;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastNotPredicate;
 import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastConcatOperator;
@@ -43,6 +44,7 @@ import org.apache.calcite.sql.SqlBinaryOperator;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlKind;
+import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlPostfixOperator;
 import org.apache.calcite.sql.SqlPrefixOperator;
@@ -78,6 +80,8 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
     public static final SqlBinaryOperator AND = HazelcastAndOrPredicate.AND;
     public static final SqlBinaryOperator OR = HazelcastAndOrPredicate.OR;
     public static final SqlPrefixOperator NOT = new HazelcastNotPredicate();
+    public static final SqlBinaryOperator IN = HazelcastInPredicate.IN;
+    public static final SqlBinaryOperator NOT_IN = HazelcastInPredicate.NOT_IN;
 
     //#endregion
 
@@ -207,6 +211,11 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
             rewriteCall(call);
 
             return super.visit(call);
+        }
+
+        @Override
+        public Void visit(SqlNodeList nodeList) {
+            return super.visit(nodeList);
         }
 
         private void rewriteCall(SqlCall call) {

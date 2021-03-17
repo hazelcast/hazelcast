@@ -31,6 +31,7 @@ import org.apache.calcite.sql.SqlIntervalLiteral;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlNumericLiteral;
 import org.apache.calcite.sql.SqlOperatorTable;
 import org.apache.calcite.sql.SqlSelect;
@@ -147,11 +148,16 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
     @Override
     public void validateCall(SqlCall call, SqlValidatorScope scope) {
+        if (call.getKind() == SqlKind.IN || call.getKind() == SqlKind.NOT_IN) {
+            List<SqlNode> operandList = call.getOperandList();
+            assert operandList.size() == 2;
+            super.validateCall(call, scope);
+        }
+
         // Enforce type derivation for all calls before validation. Calcite may
         // skip it if a call has a fixed type, for instance AND always has
         // BOOLEAN type, so operands may end up having no validated type.
         deriveType(scope, call);
-
         super.validateCall(call, scope);
     }
 

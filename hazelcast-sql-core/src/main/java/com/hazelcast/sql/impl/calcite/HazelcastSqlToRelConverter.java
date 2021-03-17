@@ -95,6 +95,8 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
             return convertLiteral((SqlLiteral) node, blackboard.getTypeFactory());
         } else if (node.getKind() == SqlKind.CAST) {
             return convertCast((SqlCall) node, blackboard);
+//        } else if (node.getKind() == SqlKind.IN) {
+//            return convertIn(node, blackboard);
         } else if (node instanceof SqlCall) {
             return convertCall(node, blackboard);
         }
@@ -205,6 +207,17 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
         // Delegate to Apache Calcite.
         return getRexBuilder().makeCast(to, convertedOperand);
     }
+
+    /**
+     * This method overrides Apache Calcite approach to convert
+     * IN operator to chain of disjunctive comparison predicates.
+     * @see org.apache.calcite.sql2rel.SqlToRelConverter#substituteSubQuery
+     * @see org.apache.calcite.sql2rel.SqlToRelConverter#convertInToOr
+     *
+     */
+//    private RexNode convertIn(SqlNode call, Blackboard blackboard) {
+//        return null;
+//    }
 
     /**
      * This method overcomes a bug in Apache Calcite that ignores previously resolved return types of the expression

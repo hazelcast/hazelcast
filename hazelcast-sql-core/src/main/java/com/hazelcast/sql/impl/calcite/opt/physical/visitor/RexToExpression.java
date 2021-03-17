@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.calcite.opt.physical.visitor;
 
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastInPredicate;
 import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastLikeOperator;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
@@ -42,6 +43,7 @@ import com.hazelcast.sql.impl.expression.predicate.AndPredicate;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonMode;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonPredicate;
 import com.hazelcast.sql.impl.expression.predicate.IsFalsePredicate;
+import com.hazelcast.sql.impl.expression.predicate.InPredicate;
 import com.hazelcast.sql.impl.expression.predicate.IsNotFalsePredicate;
 import com.hazelcast.sql.impl.expression.predicate.IsNotNullPredicate;
 import com.hazelcast.sql.impl.expression.predicate.IsNotTruePredicate;
@@ -277,6 +279,12 @@ public final class RexToExpression {
                     trimFlag.getLeft() == 1,
                     trimFlag.getRight() == 1
                 );
+
+            case IN:
+            case NOT_IN:
+                assert operands.length == 2;
+                negated = ((HazelcastInPredicate) operator).isNegated();
+                return InPredicate.create(operands[0], operands[1], negated);
 
             case OTHER:
                 if (operator == HazelcastSqlOperatorTable.CONCAT) {
