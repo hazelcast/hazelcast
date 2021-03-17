@@ -94,7 +94,6 @@ public class ManagementCenterService {
             long pollStartedAt = mostRecentAccessTimestamp;
             List<Event> events;
             if (lastAccessObj == null) {
-                System.out.println("null -> ");
                 events = new ArrayList<>(mcEvents);
             } else {
                 Integer receivedInSameMsWrapper = eventsReceivedInSameMillisec.get(mcRemoteAddr);
@@ -102,12 +101,8 @@ public class ManagementCenterService {
                 long lastAccess = lastAccessObj;
                 events = new ArrayList<>(mcEvents.size());
                 for (Event evt : mcEvents) {
-                    System.out.println("check evt " + evt.getTimestamp() + " >= " + lastAccess);
                     if (evt.getTimestamp() >= lastAccess) {
-                        System.out.println("ts passed...");
                         if (receivedInSameMs-- <= 0) {
-                            System.out.println("recvMillis passed... ");
-                            System.out.println("add: " + evt);
                             events.add(evt);
                         }
                     }
