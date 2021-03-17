@@ -49,7 +49,7 @@ Apache License, Version 2.0
   Flogger System Backend:0.5.1
   Google Logger:0.5.1
   Guava InternalFutureFailureAccess and InternalFutures:1.0.1
-  Guava: Google Core Libraries for Java:29.0-jre
+  Guava: Google Core Libraries for Java:30.1-jre
   Guava ListenableFuture only:9999.0-empty-to-avoid-conflict-with-guava
   Google HTTP Client Library for Java:1.36.0
   Jackson 2 extensions to the Google HTTP Client Library for Java.:1.36.0
@@ -191,7 +191,7 @@ GPL2 w/ CPE
   Java Architecture for XML Binding:2.2.11
 MIT License
   Checker Qual:2.5.3
-  Checker Qual:2.11.1
+  Checker Qual:3.5.0
   Animal Sniffer Annotations:1.18
   SLF4J API Module:1.7.28
 The Go license

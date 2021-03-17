@@ -33,7 +33,7 @@ Apache License, Version 2.0
   Gson:2.8.6
   error-prone annotations:2.3.4
   Guava InternalFutureFailureAccess and InternalFutures:1.0.1
-  Guava: Google Core Libraries for Java:29.0-jre
+  Guava: Google Core Libraries for Java:30.1-jre
   Guava ListenableFuture only:9999.0-empty-to-avoid-conflict-with-guava
   J2ObjC Annotations:1.3
   Nimbus JOSE+JWT:7.9
@@ -152,7 +152,7 @@ GPL2 w/ CPE
   jersey-core:1.19
   Java Architecture for XML Binding:2.2.11
 MIT License
-  Checker Qual:2.11.1
+  Checker Qual:3.5.0
   SLF4J API Module:1.7.28
 The Go license
   re2j:1.1
