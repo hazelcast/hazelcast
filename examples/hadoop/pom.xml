@@ -20,9 +20,6 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>hazelcast-jet-examples-hadoop</artifactId>
-    <properties>
-        <parquet.version>1.10.1</parquet.version>
-    </properties>
 
     <parent>
         <groupId>com.hazelcast.jet.examples</groupId>
