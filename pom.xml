@@ -129,7 +129,7 @@
         <jackson.version>2.11.2</jackson.version>
         <snakeyaml.engine.version>1.0</snakeyaml.engine.version>
         <affinity.version>3.2.3</affinity.version>
-        <aws.sdk.version>1.11.934</aws.sdk.version>
+        <aws.sdk.version>1.11.976</aws.sdk.version>
 
         <!-- test dependencies -->
         <activemq.version>5.15.11</activemq.version>

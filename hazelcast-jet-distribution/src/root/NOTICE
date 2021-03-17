@@ -20,10 +20,10 @@ Copyright (c) 2008-2021 Hazelcast, Inc. All rights reserved.
 This product includes the following libraries with the following licenses:
 
 Apache License, Version 2.0
-  AWS SDK for Java - Bundle:1.11.934
-  AWS SDK for Java - Core:1.11.934
-  AWS Java SDK for Amazon Kinesis:1.11.934
-  JMES Path Query library:1.11.934
+  AWS SDK for Java - Bundle:1.11.976
+  AWS SDK for Java - Core:1.11.976
+  AWS Java SDK for Amazon Kinesis:1.11.976
+  JMES Path Query library:1.11.976
   HPPC Collections:0.7.1
   Jackson-annotations:2.11.2
   Jackson-core:2.11.2
