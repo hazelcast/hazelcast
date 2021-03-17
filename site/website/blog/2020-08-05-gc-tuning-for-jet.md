@@ -13,6 +13,7 @@ This post is a part of a series:
 - [Part 2 (batch workload benchmark)](/blog/2020/06/09/jdk-gc-benchmarks-part2)
 - [Part 3 (low-latency benchmark)](/blog/2020/06/23/jdk-gc-benchmarks-rematch)
 - Part 4 (you are here)
+- [Part 5 (billion events per second)](/blog/2021/03/17/billion-events-per-second)
 
 In Part 3 we showed that a modern JVM running live stream aggregation
 can achieve a 99.99% latency lower than 10 milliseconds. The focus of
@@ -113,8 +114,8 @@ identical to the previous round,
 is the complete source code.
 
 We determined how many threads the given GC uses, set the size of the
-Jet thread pool to 16
-([c5.4xlarge](https://aws.amazon.com/ec2/instance-types/c5/) vCPUs)
+Jet thread pool to 16 (=
+[c5.4xlarge](https://aws.amazon.com/ec2/instance-types/c5/) vCPU count)
 minus that value and then did some trial-and-error runs to find the
 optimum. G1 uses 3 threads, so we gave Jet 13\. ZGC uses just 2 threads,
 but we found Jet to perform a bit better with 13 instead of the

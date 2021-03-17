@@ -13,6 +13,8 @@ This post is a part of a series:
 - Part 2 (you are here)
 - [Part 3 (low-latency benchmark)](/blog/2020/06/23/jdk-gc-benchmarks-rematch)
 - [Part 4 (concurrent GC with green threads)](/blog/2020/08/05/gc-tuning-for-jet)
+- [Part 5 (billion events per second)](/blog/2021/03/17/billion-events-per-second)
+
 
 ## Batch Pipeline Benchmark
 
