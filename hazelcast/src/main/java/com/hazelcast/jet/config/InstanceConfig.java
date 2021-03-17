@@ -17,6 +17,7 @@
 package com.hazelcast.jet.config;
 
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.jet.Job;
 
 import javax.annotation.Nonnull;
@@ -45,7 +46,7 @@ public class InstanceConfig {
 
     private static final long SCALE_UP_DELAY_MILLIS_DEFAULT = SECONDS.toMillis(10);
 
-    private int cooperativeThreadCount = Runtime.getRuntime().availableProcessors();
+    private int cooperativeThreadCount = RuntimeAvailableProcessors.get();
     private int flowControlPeriodMs = DEFAULT_FLOW_CONTROL_PERIOD_MS;
     private int backupCount = DEFAULT_BACKUP_COUNT;
     private long scaleUpDelayMillis = SCALE_UP_DELAY_MILLIS_DEFAULT;

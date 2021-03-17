@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl.execution;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.internal.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.internal.util.concurrent.IdleStrategy;
 import com.hazelcast.internal.util.counters.Counter;
@@ -93,7 +94,7 @@ public class TaskletExecutionService {
     public TaskletExecutionService(NodeEngineImpl nodeEngine, int threadCount, HazelcastProperties properties) {
         hzExecutionService = nodeEngine.getExecutionService();
         hzExecutionService.register(TASKLET_INIT_CLOSE_EXECUTOR_NAME,
-                Runtime.getRuntime().availableProcessors(), Integer.MAX_VALUE, CACHED);
+                RuntimeAvailableProcessors.get(), Integer.MAX_VALUE, CACHED);
         this.hzInstanceName = nodeEngine.getHazelcastInstance().getName();
         this.cooperativeWorkers = new CooperativeWorker[threadCount];
         this.cooperativeThreadPool = new Thread[threadCount];
