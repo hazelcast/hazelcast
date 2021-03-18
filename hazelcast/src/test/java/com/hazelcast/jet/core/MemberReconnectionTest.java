@@ -58,7 +58,8 @@ public class MemberReconnectionTest extends JetTestSupport {
             // assert that the job was restarted
             assertJobRunningEventually(inst1, job, executionId);
         } finally {
-            Hazelcast.shutdownAll();
+            inst1.getHazelcastInstance().getLifecycleService().terminate();
+            inst2.getHazelcastInstance().getLifecycleService().terminate();
         }
     }
 }
