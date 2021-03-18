@@ -150,11 +150,15 @@ queue types can block waiting for locks.
 
 ### Backpressure
 
+The mechanism in both engines is very similar: senders have a budget,
+receivers periodically update it.
+
 In Jet, backpressure between local processors is handled by using
 fixed-capacity queues - if a processor can't add more, it will back off.
 Items sent between processors on different members is handled using
 approach similar to RWIN in TCP: the receiver regularly communicates how
-many items it was able to process and the sender must not send more.
+many items it was able to process and the sender must not send more. The
+rwin values for all jobs are sent in one packet, in a compact structure.
 
 In IMDG, a pair of a sender and a receiver agrees on the initial number
 of bytes (aka "credits") that the sender may send to the receiver. With
@@ -184,6 +188,12 @@ IMDG engine exploits the load-balancing features of `ForkJoinPool` and
 doesn't suffer from the above issues. If limits to the number of items
 processed before returning is added, no issue from load imbalance is
 expected.
+
+### Memory Management
+
+Neither of the engines currently implements memory management. The
+design of memory management in both engines will be conceptually
+similar.
 
 ### Idle CPU load issue
 
