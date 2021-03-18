@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.calcite.validate;
 
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastAbsFunction;
+import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastDoubleBiFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastDoubleFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastFloorCeilFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastRandFunction;
@@ -128,6 +129,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
     public static final SqlFunction ACOS = new HazelcastDoubleFunction("ACOS");
     public static final SqlFunction ASIN = new HazelcastDoubleFunction("ASIN");
     public static final SqlFunction ATAN = new HazelcastDoubleFunction("ATAN");
+    public static final SqlFunction ATAN2 = new HazelcastDoubleBiFunction("ATAN2");
     public static final SqlFunction EXP = new HazelcastDoubleFunction("EXP");
     public static final SqlFunction LN = new HazelcastDoubleFunction("LN");
     public static final SqlFunction LOG10 = new HazelcastDoubleFunction("LOG10");
