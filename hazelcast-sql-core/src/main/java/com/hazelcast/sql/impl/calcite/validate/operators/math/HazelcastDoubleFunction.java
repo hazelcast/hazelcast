@@ -16,17 +16,17 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators.math;
 
-import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
-import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastFunction;
+import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.operators.ReplaceUnknownOperandTypeInference;
+import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastFunction;
 import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
 
-import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;
+import static org.apache.calcite.sql.type.SqlTypeName.DOUBLE;
 
 /**
  * Function that accepts a DOUBLE argument and produces a DOUBLE result.
@@ -37,7 +37,7 @@ public class HazelcastDoubleFunction extends HazelcastFunction {
             name,
             SqlKind.OTHER_FUNCTION,
             ReturnTypes.DOUBLE_NULLABLE,
-            new ReplaceUnknownOperandTypeInference(BIGINT),
+            new ReplaceUnknownOperandTypeInference(DOUBLE),
             SqlFunctionCategory.NUMERIC
         );
     }
