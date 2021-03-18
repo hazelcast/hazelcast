@@ -77,7 +77,7 @@ public final class LifecycleEvent {
         MERGE_FAILED,
 
         /**
-         * Fired when a client is connected to the member.
+         * Fired when a client is connected to the cluster.
          */
         CLIENT_CONNECTED,
 
