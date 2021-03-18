@@ -1346,6 +1346,11 @@ public class MembershipManager {
 
         @Override
         public void run() {
+            assert clusterService.isMaster() : "Mastership claim accepted without setting this member as master in "
+                    + "local";
+            assert clusterService.getClusterJoinManager().isMastershipClaimInProgress() : "Mastership claim accepted "
+                    + "without having the claim set in local";
+
             try {
                 innerRun();
             } catch (Throwable e) {
