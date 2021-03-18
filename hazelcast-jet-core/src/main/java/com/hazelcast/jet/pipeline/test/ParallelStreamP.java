@@ -21,6 +21,7 @@ import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.AppendableTraverser;
 import com.hazelcast.jet.core.EventTimeMapper;
 import com.hazelcast.jet.core.EventTimePolicy;
+import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
 
@@ -59,6 +60,8 @@ public class ParallelStreamP<T> extends AbstractProcessor {
     private final List<? extends GeneratorFunction<T>> generators;
     private List<GeneratorFunction<T>> assignedGenerators;
 
+    private ILogger logger;
+
     /**
      * Creates a processor that generates items using its assigned
      * generator functions. This processor picks its generator functions
@@ -88,6 +91,8 @@ public class ParallelStreamP<T> extends AbstractProcessor {
                 .filter(i -> i % totalParallelism == globalProcessorIndex)
                 .mapToObj(generators::get)
                 .collect(toList());
+
+        logger = context.logger();
     }
 
     @Override
@@ -96,7 +101,7 @@ public class ParallelStreamP<T> extends AbstractProcessor {
         try {
             emitEvents();
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.severe(e);
         }
         return false;
     }
