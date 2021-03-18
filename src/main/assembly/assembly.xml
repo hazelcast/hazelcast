@@ -73,7 +73,14 @@
             <outputDirectory>/license/</outputDirectory>
             <includes>
                 <include>*license.txt</include>
-                <include>notice.txt</include>
+            </includes>
+        </fileSet>
+
+        <fileSet>
+            <directory>hazelcast-all/target</directory>
+            <outputDirectory>/license/</outputDirectory>
+            <includes>
+                <include>THIRD-PARTY.txt</include>
             </includes>
         </fileSet>
 
