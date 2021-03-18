@@ -497,7 +497,7 @@ public abstract class AbstractProcessor implements Processor {
      * all defined output ordinals.
      */
     @Nonnull
-    @SuppressFBWarnings("NP_NULL_PARAM_DEREF_NONVIRTUAL") // possible spotbugs bug
+    @SuppressFBWarnings(value = "NP_NULL_PARAM_DEREF_NONVIRTUAL", justification = "possible spotbugs bug")
     protected final <T, R> FlatMapper<T, R> flatMapper(
             @Nonnull Function<? super T, ? extends Traverser<? extends R>> mapper
     ) {

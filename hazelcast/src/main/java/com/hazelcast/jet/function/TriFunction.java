@@ -25,6 +25,10 @@ import java.io.Serializable;
  * Represents a three-arity function that accepts three arguments and
  * produces a result.
  *
+ * @param <T0> the type of the first argument to the function
+ * @param <T1> the type of the second argument to the function
+ * @param <T2> the type of the third argument to the function
+ * @param <R>  the type of the result of the function
  * @since 3.0
  */
 @FunctionalInterface

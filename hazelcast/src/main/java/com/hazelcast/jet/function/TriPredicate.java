@@ -29,6 +29,9 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * Represents a predicate which accepts three arguments. This
  * is the three-arity specialization of {@link Predicate}.
  *
+ * @param <T> the type of the first argument to the predicate
+ * @param <U> the type of the second argument to the predicate
+ * @param <V> the type of the third argument to the predicate
  * @since 3.0
  */
 @FunctionalInterface

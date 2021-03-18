@@ -52,12 +52,14 @@ import java.util.stream.Collectors;
  */
 public final class Measurement implements IdentifiedDataSerializable {
 
-    private Map<String, String> tags; //tag name -> tag value
+    // tag name -> tag value
+    private Map<String, String> tags;
     private String metric;
     private long value;
     private long timestamp;
 
-    Measurement() { //needed for deserialization
+    // needed for deserialization
+    Measurement() {
     }
 
     private Measurement(String metric, long value, long timestamp, @Nonnull Map<String, String> tags) {

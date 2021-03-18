@@ -31,7 +31,14 @@ import java.math.BigInteger;
  * Hazelcast serializer hooks for the classes in the {@code
  * com.hazelcast.jet.accumulator} package. This is not a public-facing API.
  */
-class AccumulatorSerializerHooks {
+final class AccumulatorSerializerHooks {
+
+    /**
+     * Private constructor
+     */
+    private AccumulatorSerializerHooks() {
+    }
+
     public static final class LongAccHook implements SerializerHook<LongAccumulator> {
 
         @Override
