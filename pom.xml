@@ -116,7 +116,7 @@
         <prometheus.version>0.13.0</prometheus.version>
         <hadoop.version>3.3.0</hadoop.version>
         <spring.version>4.3.0.RELEASE</spring.version>
-        <avro.version>1.9.2</avro.version>
+        <avro.version>1.10.2</avro.version>
         <parquet.version>1.11.1</parquet.version>
         <scala.version>2.12</scala.version>
         <zookeeper.version>3.5.8</zookeeper.version>

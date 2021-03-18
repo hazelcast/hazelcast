@@ -120,10 +120,10 @@ Apache License, Version 2.0
   Apache Log4j:1.2.17
   ASM based accessors helper used by json-smart:1.2
   JSON Small and Fast Parser:2.3
-  Apache Avro:1.9.2
-  Apache Avro IPC:1.9.2
-  Apache Avro IPC Jetty:1.9.2
-  Apache Avro Mapred API:1.9.2
+  Apache Avro:1.10.2
+  Apache Avro IPC:1.10.2
+  Apache Avro IPC Jetty:1.10.2
+  Apache Avro Mapred API:1.10.2
   Calcite Core:1.23.0
   Calcite Linq4j:1.23.0
   Apache Calcite Avatica:1.16.0
@@ -198,7 +198,7 @@ Apache License, Version 2.0
   Apache Parquet Format Structures:1.11.1
   Apache Parquet Hadoop:1.11.1
   Apache Parquet Jackson:1.11.1
-  Apache Velocity - Engine:2.2
+  Apache Velocity - Engine:2.3
   Apache Yetus - Audience Annotations:0.12.0
   Jackson:1.9.13
   Data Mapper for Jackson:1.9.13
@@ -314,6 +314,8 @@ MIT License
   Checker Qual:3.5.0
   Animal Sniffer Annotations:1.18
   SLF4J API Module:1.7.28
+Public Domain
+  XZ for Java:1.8
 Public Domain, per Creative Commons CC0
   HdrHistogram:2.1.9
 The GNU General Public License, v2 with FOSS exception

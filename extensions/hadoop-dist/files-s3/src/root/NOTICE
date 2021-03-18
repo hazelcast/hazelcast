@@ -50,10 +50,10 @@ Apache License, Version 2.0
   Apache Log4j:1.2.17
   ASM based accessors helper used by json-smart:1.2
   JSON Small and Fast Parser:2.3
-  Apache Avro:1.9.2
-  Apache Avro IPC:1.9.2
-  Apache Avro IPC Jetty:1.9.2
-  Apache Avro Mapred API:1.9.2
+  Apache Avro:1.10.2
+  Apache Avro IPC:1.10.2
+  Apache Avro IPC Jetty:1.10.2
+  Apache Avro Mapred API:1.10.2
   Apache Commons Compress:1.19
   Apache Commons Configuration:2.1.1
   Apache Commons Lang:3.7
@@ -100,7 +100,7 @@ Apache License, Version 2.0
   Apache Parquet Format Structures:1.11.1
   Apache Parquet Hadoop:1.11.1
   Apache Parquet Jackson:1.11.1
-  Apache Velocity - Engine:2.2
+  Apache Velocity - Engine:2.3
   Apache Yetus - Audience Annotations:0.12.0
   Jetty :: Asynchronous HTTP Client:9.4.20.v20190813
   Jetty :: Http Utility:9.4.20.v20190813
@@ -154,6 +154,8 @@ GPL2 w/ CPE
 MIT License
   Checker Qual:3.5.0
   SLF4J API Module:1.7.28
+Public Domain
+  XZ for Java:1.8
 The Go license
   re2j:1.1
 

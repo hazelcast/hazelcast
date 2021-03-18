@@ -50,6 +50,9 @@ public class AvroQueryTarget implements QueryTarget {
     }
 
     private static Object extractValue(GenericRecord record, String path) {
+        if (!record.hasField(path)) {
+            return null;
+        }
         Object value = record.get(path);
         if (value instanceof Utf8) {
             return ((Utf8) value).toString();
