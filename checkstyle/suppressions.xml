@@ -378,4 +378,7 @@
     <!-- module-info.java -->
     <suppress checks="" files="[\\/]module-info"/>
 
+    <suppress checks="FileLength" files="src[\\/]main[\\/]java[\\/]com[\\/]hazelcast[\\/]jet[\\/]aggregate[\\/]AggregateOperations"/>
+    <suppress checks="CyclomaticComplexity" files="src[\\/]main[\\/]java[\\/]com[\\/]hazelcast[\\/]jet[\\/]config[\\/]JobConfig"/>
+
 </suppressions>
