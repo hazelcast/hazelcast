@@ -177,8 +177,10 @@ final class ElasticSourceP<T> extends AbstractProcessor {
                 }
 
                 TotalHits totalHits = hits.getTotalHits();
-                logger.fine("Initialized scroll with scrollId " + scrollId + ", total results " +
-                        totalHits.relation + ", " + totalHits.value);
+                if (totalHits != null) {
+                    logger.fine("Initialized scroll with scrollId " + scrollId + ", total results " +
+                            totalHits.relation + ", " + totalHits.value);
+                }
             } catch (Exception e) {
                 throw new JetException("Could not execute SearchRequest to Elastic", e);
             }

@@ -33,37 +33,37 @@ Apache License, Version 2.0
   Apache Commons Logging:1.2
   Joda-Time:2.10.1
   Apache HttpAsyncClient:4.1.2
-  Apache HttpClient:4.5.12
+  Apache HttpClient:4.5.13
   Apache HttpCore:4.4.13
   Apache HttpCore NIO:4.4.5
   Apache Log4j API:2.13.3
-  Lucene Common Analyzers:7.4.0
-  Lucene Memory:7.4.0
-  Lucene Core:7.4.0
-  Lucene Grouping:7.4.0
-  Lucene Highlighter:7.4.0
-  Lucene Join:7.4.0
-  Lucene Memory:7.4.0
-  Lucene Miscellaneous:7.4.0
-  Lucene Queries:7.4.0
-  Lucene QueryParsers:7.4.0
-  Lucene Sandbox:7.4.0
-  Lucene Spatial:7.4.0
-  Lucene Spatial Extras:7.4.0
-  Lucene Spatial 3D:7.4.0
-  Lucene Suggest:7.4.0
-  server:6.4.0
-  cli:6.4.0
-  core:6.4.0
-  secure-sm:6.4.0
-  x-content:6.4.0
-  Elastic JNA Distribution:4.5.1
-  rest:6.4.0
-  rest-high-level:6.4.0
-  aggs-matrix-stats:6.4.0
-  lang-mustache:6.4.0
-  parent-join:6.4.0
-  rank-eval:6.4.0
+  Lucene Common Analyzers:7.7.3
+  Lucene Memory:7.7.3
+  Lucene Core:7.7.3
+  Lucene Grouping:7.7.3
+  Lucene Highlighter:7.7.3
+  Lucene Join:7.7.3
+  Lucene Memory:7.7.3
+  Lucene Miscellaneous:7.7.3
+  Lucene Queries:7.7.3
+  Lucene QueryParsers:7.7.3
+  Lucene Sandbox:7.7.3
+  Lucene Spatial:7.7.3
+  Lucene Spatial Extras:7.7.3
+  Lucene Spatial 3D:7.7.3
+  Lucene Suggest:7.7.3
+  server:6.8.14
+  cli:6.8.14
+  core:6.8.14
+  secure-sm:6.8.14
+  x-content:6.8.14
+  Elastic JNA Distribution:5.5.0
+  rest:6.8.14
+  rest-high-level:6.8.14
+  aggs-matrix-stats:6.8.14
+  lang-mustache:6.8.14
+  parent-join:6.8.14
+  rank-eval:6.8.14
   SnakeYAML:1.17
 MIT License
   JOpt Simple:5.0.2

@@ -29,7 +29,7 @@ import static com.hazelcast.jet.elastic.ElasticClients.client;
 
 public final class ElasticSupport {
 
-    public static final String ELASTICSEARCH_IMAGE = "elasticsearch:7.7.0";
+    public static final String ELASTICSEARCH_IMAGE = "elasticsearch:7.10.1";
     public static final int PORT = 9200;
 
     // Elastic container takes long time to start up, reusing the container for speedup

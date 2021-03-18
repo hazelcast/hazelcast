@@ -24,7 +24,7 @@ Apache License, Version 2.0
   AWS SDK for Java - Core:1.11.976
   AWS Java SDK for Amazon Kinesis:1.11.976
   JMES Path Query library:1.11.976
-  HPPC Collections:0.7.1
+  HPPC Collections:0.8.1
   Jackson-annotations:2.11.2
   Jackson-core:2.11.2
   jackson-databind:2.11.2
@@ -40,7 +40,7 @@ Apache License, Version 2.0
   Jackson module: JAXB Annotations:2.11.2
   Woodstox:5.0.3
   mysql-binlog-connector-java:0.20.1
-  compiler:0.9.3
+  compiler:0.9.6
   JCIP Annotations under Apache License:1.0-1
   Google Android Annotations Library:4.1.1.4
   Google APIs Client Library for Java:1.30.10
@@ -102,16 +102,16 @@ Apache License, Version 2.0
   io.grpc:grpc-protobuf:1.34.0
   io.grpc:grpc-protobuf-lite:1.34.0
   io.grpc:grpc-stub:1.34.0
-  Netty/Buffer:4.1.39.Final
-  Netty/Codec:4.1.39.Final
-  Netty/Codec/HTTP:4.1.39.Final
-  Netty/Codec/HTTP2:4.1.39.Final
-  Netty/Common:4.1.39.Final
-  Netty/Handler:4.1.39.Final
-  Netty/Resolver:4.1.39.Final
-  Netty/Transport:4.1.39.Final
-  Netty/Transport/Native/Epoll:4.1.39.Final
-  Netty/Transport/Native/Unix/Common:4.1.39.Final
+  Netty/Buffer:4.1.59.Final
+  Netty/Codec:4.1.59.Final
+  Netty/Codec/HTTP:4.1.59.Final
+  Netty/Codec/HTTP2:4.1.59.Final
+  Netty/Common:4.1.59.Final
+  Netty/Handler:4.1.59.Final
+  Netty/Resolver:4.1.59.Final
+  Netty/Transport:4.1.59.Final
+  Netty/Transport/Native/Epoll:4.1.59.Final
+  Netty/Transport/Native/Unix/Common:4.1.59.Final
   OpenCensus:0.24.0
   OpenCensus:0.24.0
   perfmark:perfmark-api:0.19.0
@@ -152,12 +152,12 @@ Apache License, Version 2.0
   Apache Hadoop shaded Protobuf 3.7:1.0.0
   htrace-core4:4.1.0-incubating
   Apache HttpAsyncClient:4.1.4
-  Apache HttpClient:4.5.12
+  Apache HttpClient:4.5.13
   Apache HttpCore:4.4.13
-  Apache HttpCore NIO:4.4.11
-  Apache Kafka:2.2.0
-  Apache Kafka:2.2.0
-  Apache Kafka:2.2.0
+  Apache HttpCore NIO:4.4.12
+  Apache Kafka:2.2.2
+  Apache Kafka:2.2.2
+  Apache Kafka:2.2.2
   Kerby-kerb Admin:1.0.1
   Kerby-kerb Client:1.0.1
   Kerby-kerb Common:1.0.1
@@ -176,21 +176,20 @@ Apache License, Version 2.0
   Apache Log4j API:2.13.3
   Apache Log4j Core:2.13.3
   Apache Log4j SLF4J Binding:2.13.3
-  Lucene Common Analyzers:8.0.0
-  Lucene Memory:8.0.0
-  Lucene Core:8.0.0
-  Lucene Grouping:8.0.0
-  Lucene Highlighter:8.0.0
-  Lucene Join:8.0.0
-  Lucene Memory:8.0.0
-  Lucene Miscellaneous:8.0.0
-  Lucene Queries:8.0.0
-  Lucene QueryParsers:8.0.0
-  Lucene Sandbox:8.0.0
-  Lucene Spatial:8.0.0
-  Lucene Spatial Extras:8.0.0
-  Lucene Spatial 3D:8.0.0
-  Lucene Suggest:8.0.0
+  Lucene Common Analyzers:8.7.0
+  Lucene Memory:8.7.0
+  Lucene Core:8.7.0
+  Lucene Grouping:8.7.0
+  Lucene Highlighter:8.7.0
+  Lucene Join:8.7.0
+  Lucene Memory:8.7.0
+  Lucene Miscellaneous:8.7.0
+  Lucene Queries:8.7.0
+  Lucene QueryParsers:8.7.0
+  Lucene Sandbox:8.7.0
+  Lucene Spatial Extras:8.7.0
+  Lucene Spatial 3D:8.7.0
+  Lucene Suggest:8.7.0
   Apache Parquet Avro:1.11.1
   Apache Parquet Column:1.11.1
   Apache Parquet Common:1.11.1
@@ -203,37 +202,37 @@ Apache License, Version 2.0
   Jackson:1.9.13
   Data Mapper for Jackson:1.9.13
   org.conscrypt:conscrypt-openjdk-uber:2.5.1
-  Jetty :: Asynchronous HTTP Client:9.4.20.v20190813
-  Jetty :: Http Utility:9.4.20.v20190813
-  Jetty :: IO Utility:9.4.20.v20190813
-  Jetty :: Security:9.4.20.v20190813
-  Jetty :: Server Core:9.4.20.v20190813
-  Jetty :: Servlet Handling:9.4.20.v20190813
-  Jetty :: Utilities:9.4.20.v20190813
-  Jetty :: Utilities :: Ajax(JSON):9.4.20.v20190813
-  Jetty :: XML utilities:9.4.20.v20190813
-  Jetty :: Websocket :: API:9.4.20.v20190813
-  Jetty :: Websocket :: Client:9.4.20.v20190813
-  Jetty :: Websocket :: Common:9.4.20.v20190813
-  server:7.0.0
-  elasticsearch-cli:7.0.0
-  core:7.0.0
-  elasticsearch-geo:7.0.0
-  secure-sm:7.0.0
-  x-content:7.0.0
-  Elastic JNA Distribution:4.5.1
-  rest:7.0.0
-  rest-high-level:7.0.0
-  aggs-matrix-stats:7.0.0
-  lang-mustache:7.0.0
-  parent-join:7.0.0
-  rank-eval:7.0.0
+  Jetty :: Asynchronous HTTP Client:9.4.38.v20210224
+  Jetty :: Http Utility:9.4.38.v20210224
+  Jetty :: IO Utility:9.4.38.v20210224
+  Jetty :: Security:9.4.38.v20210224
+  Jetty :: Server Core:9.4.38.v20210224
+  Jetty :: Servlet Handling:9.4.38.v20210224
+  Jetty :: Utilities:9.4.38.v20210224
+  Jetty :: Utilities :: Ajax(JSON):9.4.38.v20210224
+  Jetty :: Websocket :: API:9.4.38.v20210224
+  Jetty :: Websocket :: Client:9.4.38.v20210224
+  Jetty :: Websocket :: Common:9.4.38.v20210224
+  server:7.10.0
+  elasticsearch-cli:7.10.0
+  elasticsearch-core:7.10.0
+  elasticsearch-geo:7.10.0
+  elasticsearch-secure-sm:7.10.0
+  elasticsearch-x-content:7.10.0
+  Elastic JNA Distribution:5.5.0
+  rest:7.10.0
+  rest-high-level:7.10.0
+  aggs-matrix-stats:7.10.0
+  lang-mustache:7.10.0
+  mapper-extras:7.10.0
+  parent-join:7.10.0
+  rank-eval:7.10.0
   jansi:1.18
   LZ4 and xxHash:1.5.0
   SnakeYAML Engine:1.0
-  wildfly-openssl:1.0.7.Final
+  wildfly-openssl:1.1.3.Final
   snappy-java:1.1.7.2
-  SnakeYAML:1.17
+  SnakeYAML:1.26
   AWS Java SDK :: Annotations:2.8.3
   AWS Java SDK :: HTTP Clients :: Apache:2.8.3
   AWS Java SDK :: Auth:2.8.3
@@ -286,18 +285,17 @@ Eclipse Distribution License - v 1.0
   JavaBeans Activation Framework API jar:1.2.1
   jakarta.xml.bind-api:2.3.2
 Eclipse Public License - Version 1.0
-  Jetty :: Asynchronous HTTP Client:9.4.20.v20190813
-  Jetty :: Http Utility:9.4.20.v20190813
-  Jetty :: IO Utility:9.4.20.v20190813
-  Jetty :: Security:9.4.20.v20190813
-  Jetty :: Server Core:9.4.20.v20190813
-  Jetty :: Servlet Handling:9.4.20.v20190813
-  Jetty :: Utilities:9.4.20.v20190813
-  Jetty :: Utilities :: Ajax(JSON):9.4.20.v20190813
-  Jetty :: XML utilities:9.4.20.v20190813
-  Jetty :: Websocket :: API:9.4.20.v20190813
-  Jetty :: Websocket :: Client:9.4.20.v20190813
-  Jetty :: Websocket :: Common:9.4.20.v20190813
+  Jetty :: Asynchronous HTTP Client:9.4.38.v20210224
+  Jetty :: Http Utility:9.4.38.v20210224
+  Jetty :: IO Utility:9.4.38.v20210224
+  Jetty :: Security:9.4.38.v20210224
+  Jetty :: Server Core:9.4.38.v20210224
+  Jetty :: Servlet Handling:9.4.38.v20210224
+  Jetty :: Utilities:9.4.38.v20210224
+  Jetty :: Utilities :: Ajax(JSON):9.4.38.v20210224
+  Jetty :: Websocket :: API:9.4.38.v20210224
+  Jetty :: Websocket :: Client:9.4.38.v20210224
+  Jetty :: Websocket :: Common:9.4.38.v20210224
 GNU General Public License, version 2 (GPL2), with the classpath exception
   Checker Qual:2.5.3
 GPL2 w/ CPE
@@ -319,7 +317,7 @@ Public Domain
 Public Domain, per Creative Commons CC0
   HdrHistogram:2.1.9
 The GNU General Public License, v2 with FOSS exception
-  MySQL Connector/J:8.0.16
+  MySQL Connector/J:8.0.20
 The Go license
   re2j:1.1
 

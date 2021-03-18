@@ -111,11 +111,10 @@
             <groupId>org.elasticsearch.client</groupId>
             <artifactId>elasticsearch-rest-high-level-client</artifactId>
             <!--
-            Supports Elastic server 6.4.0 and higher
-            Older versions differ by quite a lot in the API, this seems like
-            a reasonable compromise
+            Supports Elastic server 6.8.14 and higher
+            because of security vulnerabilities see #2906
             -->
-            <version>6.4.0</version>
+            <version>6.8.14</version>
         </dependency>
 
         <!-- TEST -->

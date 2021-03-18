@@ -156,7 +156,7 @@ public class ElasticSourcePTest {
 
     @Test
     public void given_singleHit_when_runProcessor_then_produceSingleHit() throws Exception {
-        SearchHit hit = new SearchHit(0, "id-0", new Text("ignored"), emptyMap());
+        SearchHit hit = new SearchHit(0, "id-0", new Text("ignored"), emptyMap(), emptyMap());
         hit.sourceRef(new BytesArray(HIT_SOURCE));
         when(response.getHits()).thenReturn(new SearchHits(new SearchHit[]{hit}, new TotalHits(1, EQUAL_TO), Float.NaN));
 
@@ -171,12 +171,12 @@ public class ElasticSourcePTest {
 
     @Test
     public void givenMultipleResults_when_runProcessor_then_useScrollIdInFollowupScrollRequest() throws Exception {
-        SearchHit hit = new SearchHit(0, "id-0", new Text("ignored"), emptyMap());
+        SearchHit hit = new SearchHit(0, "id-0", new Text("ignored"), emptyMap(), emptyMap());
         hit.sourceRef(new BytesArray(HIT_SOURCE));
         when(response.getHits()).thenReturn(new SearchHits(new SearchHit[]{hit}, new TotalHits(3, EQUAL_TO), Float.NaN));
 
         SearchResponse response2 = mock(SearchResponse.class);
-        SearchHit hit2 = new SearchHit(1, "id-1", new Text("ignored"), emptyMap());
+        SearchHit hit2 = new SearchHit(1, "id-1", new Text("ignored"), emptyMap(), emptyMap());
         hit2.sourceRef(new BytesArray(HIT_SOURCE2));
         when(response2.getHits()).thenReturn(new SearchHits(new SearchHit[]{hit2}, new TotalHits(3, EQUAL_TO), Float.NaN));
 
@@ -198,7 +198,7 @@ public class ElasticSourcePTest {
 
     @Test
     public void when_runProcessorWithOptionsFn_then_shouldUseOptionsFnForScrollRequest() throws Exception {
-        SearchHit hit = new SearchHit(0, "id-0", new Text("ignored"), emptyMap());
+        SearchHit hit = new SearchHit(0, "id-0", new Text("ignored"), emptyMap(), emptyMap());
         hit.sourceRef(new BytesArray(HIT_SOURCE));
         when(response.getHits()).thenReturn(new SearchHits(new SearchHit[]{hit}, new TotalHits(1, EQUAL_TO), Float.NaN));
 

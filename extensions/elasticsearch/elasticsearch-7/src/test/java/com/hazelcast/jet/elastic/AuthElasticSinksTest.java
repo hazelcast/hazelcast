@@ -94,7 +94,7 @@ public class AuthElasticSinksTest extends BaseElasticTest {
 
         assertThatThrownBy(() -> submitJob(p))
                 .hasRootCauseInstanceOf(ElasticsearchStatusException.class)
-                .hasStackTraceContaining("failed to authenticate user [elastic]");
+                .hasStackTraceContaining("unable to authenticate user [elastic]");
     }
 
     @Test
