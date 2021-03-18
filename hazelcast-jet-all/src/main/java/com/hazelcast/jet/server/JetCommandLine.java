@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.server;
 
+import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.client.config.YamlClientConfigBuilder;
@@ -31,7 +32,6 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.instance.JetBuildInfo;
 import com.hazelcast.internal.util.FutureUtil;
-import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
@@ -42,7 +42,6 @@ import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.JetBootstrap;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.jet.impl.JobSummary;
-import com.hazelcast.jet.impl.config.ConfigProvider;
 import com.hazelcast.jet.server.JetCommandLine.JetVersionProvider;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnMetadata;
@@ -155,11 +154,11 @@ public class JetCommandLine implements Runnable {
     private List<String> addresses;
 
     @Option(names = {"-n", "--cluster-name"},
-        description = "[DEPRECATED] The cluster name to use when connecting to the cluster " +
-            "specified by the <addresses> parameter. Use --targets instead.",
-        defaultValue = "jet",
-        showDefaultValue = Visibility.ALWAYS,
-        order = 2
+            description = "[DEPRECATED] The cluster name to use when connecting to the cluster " +
+                    "specified by the <addresses> parameter. Use --targets instead.",
+            defaultValue = "jet",
+            showDefaultValue = Visibility.ALWAYS,
+            order = 2
     )
     private String clusterName;
 
@@ -176,35 +175,13 @@ public class JetCommandLine implements Runnable {
     }
 
     public static void main(String[] args) {
-        runCommandLine(Jet::newJetClient, System.out, System.err, true, args);
-    }
-
-    static void runCommandLine(
-            Function<ClientConfig, JetInstance> jetClientFn,
-            PrintStream out, PrintStream err,
-            boolean shouldExit,
-            String[] args
-    ) {
-        CommandLine cmd = new CommandLine(new JetCommandLine(jetClientFn, out, err));
-        cmd.getSubcommands().get("submit").setStopAtPositional(true);
-
-        String jetVersion = getBuildInfo().getJetBuildInfo().getVersion();
-        cmd.getCommandSpec().usageMessage().header("Hazelcast Jet " + jetVersion);
-
-        if (args.length == 0) {
-            cmd.usage(out);
-        } else {
-            DefaultExceptionHandler<List<Object>> excHandler =
-                    new ExceptionHandler<List<Object>>().useErr(err).useAnsi(Ansi.AUTO);
-            if (shouldExit) {
-                excHandler.andExit(1);
-            }
-            List<Object> parsed = cmd.parseWithHandlers(new RunAll().useOut(out).useAnsi(Ansi.AUTO), excHandler, args);
-            // only top command was executed
-            if (parsed != null && parsed.size() == 1) {
-                cmd.usage(out);
-            }
-        }
+        runCommandLine(
+                config -> HazelcastClient.newHazelcastClient(config).getJetInstance(),
+                System.out,
+                System.err,
+                true,
+                args
+        );
     }
 
     @Override
@@ -640,7 +617,7 @@ public class JetCommandLine implements Runnable {
             c.setClusterName(clusterName);
             return c;
         } else {
-            config = ConfigProvider.locateAndGetClientConfig();
+            config = ClientConfig.load();
         }
 
         if (targetsMixin.getTargets() != null) {
@@ -679,6 +656,137 @@ public class JetCommandLine implements Runnable {
         LogManager.getLogManager().getLogger("").setLevel(logLevel);
     }
 
+    private void printf(String format, Object... objects) {
+        out.printf(format + "%n", objects);
+    }
+
+    private void println(String msg) {
+        out.println(msg);
+    }
+
+    private void executeSqlCmd(
+            JetInstance jet,
+            String command,
+            Terminal terminal,
+            AtomicReference<SqlResult> activeSqlResult
+    ) {
+        PrintWriter out = terminal.writer();
+        try (SqlResult sqlResult = jet.getSql().execute(command)) {
+            activeSqlResult.set(sqlResult);
+
+            // if it's a result with an update count, just print it
+            if (sqlResult.updateCount() != -1) {
+                String message = new AttributedStringBuilder()
+                        .style(AttributedStyle.BOLD.foreground(PRIMARY_COLOR))
+                        .append("OK")
+                        .toAnsi();
+                out.println(message);
+                return;
+            }
+            SqlRowMetadata rowMetadata = sqlResult.getRowMetadata();
+            int[] colWidths = determineColumnWidths(rowMetadata);
+            Alignment[] alignments = determineAlignments(rowMetadata);
+
+            // this is a result with rows. Print the header and rows, watch for concurrent cancellation
+            printMetadataInfo(rowMetadata, colWidths, alignments, out);
+
+            int rowCount = 0;
+            for (SqlRow row : sqlResult) {
+                rowCount++;
+                printRow(row, colWidths, alignments, out);
+            }
+
+            // bottom line after all the rows
+            printSeparatorLine(sqlResult.getRowMetadata().getColumnCount(), colWidths, out);
+
+            String message = new AttributedStringBuilder()
+                    .style(AttributedStyle.BOLD.foreground(PRIMARY_COLOR))
+                    .append(String.valueOf(rowCount))
+                    .append(" row(s) selected")
+                    .toAnsi();
+            out.println(message);
+        } catch (HazelcastSqlException e) {
+            // the query failed to execute
+            String errorPrompt = new AttributedStringBuilder()
+                    .style(AttributedStyle.BOLD.foreground(PRIMARY_COLOR))
+                    .append(e.getMessage())
+                    .toAnsi();
+            out.println(errorPrompt);
+        }
+    }
+
+    private String sqlStartingPrompt(JetInstance jet) {
+        JetClientInstanceImpl client = (JetClientInstanceImpl) jet;
+        HazelcastClientInstanceImpl hazelcastClient = client.getHazelcastClient();
+        ClientClusterService clientClusterService = hazelcastClient.getClientClusterService();
+        MCClusterMetadata clusterMetadata =
+                FutureUtil.getValue(getClusterMetadata(hazelcastClient, clientClusterService.getMasterMember()));
+        Cluster cluster = client.getCluster();
+        Set<Member> members = cluster.getMembers();
+        String versionString = "Hazelcast Platform " + clusterMetadata.getMemberVersion();
+        return new AttributedStringBuilder()
+                .style(AttributedStyle.BOLD.foreground(PRIMARY_COLOR))
+                .append("Connected to ")
+                .append(versionString)
+                .append(" at ")
+                .append(members.iterator().next().getAddress().toString())
+                .append(" (+")
+                .append(String.valueOf(members.size() - 1))
+                .append(" more)\n")
+                .append("Type 'help' for instructions")
+                .toAnsi();
+    }
+
+    private String helpPrompt(JetInstance jet) {
+        JetClientInstanceImpl client = (JetClientInstanceImpl) jet;
+        HazelcastClientInstanceImpl hazelcastClient = client.getHazelcastClient();
+        ClientClusterService clientClusterService = hazelcastClient.getClientClusterService();
+        AttributedStringBuilder builder = new AttributedStringBuilder()
+                .style(AttributedStyle.BOLD.foreground(PRIMARY_COLOR))
+                .append("Available Commands:\n")
+                .append("  clear    Clears the terminal screen\n")
+                .append("  exit     Exits from the SQL console\n")
+                .append("  help     Provides information about available commands\n")
+                .append("  history  Shows the command history of the current session\n")
+                .append("Hints:\n")
+                .append("  Semicolon completes a query\n")
+                .append("  Ctrl+C cancels a streaming query\n")
+                .append("  https://docs.hazelcast.com/");
+        return builder.toAnsi();
+    }
+
+    private enum Alignment {
+        LEFT, RIGHT
+    }
+
+    static void runCommandLine(
+            Function<ClientConfig, JetInstance> jetClientFn,
+            PrintStream out, PrintStream err,
+            boolean shouldExit,
+            String[] args
+    ) {
+        CommandLine cmd = new CommandLine(new JetCommandLine(jetClientFn, out, err));
+        cmd.getSubcommands().get("submit").setStopAtPositional(true);
+
+        String jetVersion = getBuildInfo().getJetBuildInfo().getVersion();
+        cmd.getCommandSpec().usageMessage().header("Hazelcast Jet " + jetVersion);
+
+        if (args.length == 0) {
+            cmd.usage(out);
+        } else {
+            DefaultExceptionHandler<List<Object>> excHandler =
+                    new ExceptionHandler<List<Object>>().useErr(err).useAnsi(Ansi.AUTO);
+            if (shouldExit) {
+                excHandler.andExit(1);
+            }
+            List<Object> parsed = cmd.parseWithHandlers(new RunAll().useOut(out).useAnsi(Ansi.AUTO), excHandler, args);
+            // only top command was executed
+            if (parsed != null && parsed.size() == 1) {
+                cmd.usage(out);
+            }
+        }
+    }
+
     private static Job getJob(JetInstance jet, String nameOrId) {
         Job job = jet.getJob(nameOrId);
         if (job == null) {
@@ -688,14 +796,6 @@ public class JetCommandLine implements Runnable {
             }
         }
         return job;
-    }
-
-    private void printf(String format, Object... objects) {
-        out.printf(format + "%n", objects);
-    }
-
-    private void println(String msg) {
-        out.println(msg);
     }
 
     /**
@@ -735,6 +835,172 @@ public class JetCommandLine implements Runnable {
 
     private static boolean isActive(JobStatus status) {
         return status != JobStatus.FAILED && status != JobStatus.COMPLETED;
+    }
+
+    private static int[] determineColumnWidths(SqlRowMetadata metadata) {
+        int colCount = metadata.getColumnCount();
+        int[] colWidths = new int[colCount];
+        for (int i = 0; i < colCount; i++) {
+            SqlColumnMetadata colMetadata = metadata.getColumn(i);
+            SqlColumnType type = colMetadata.getType();
+            String colName = colMetadata.getName();
+            switch (type) {
+                case BOOLEAN:
+                    colWidths[i] = determineColumnWidth(colName, SQLCliConstants.BOOLEAN_FORMAT_LENGTH);
+                    break;
+                case DATE:
+                    colWidths[i] = determineColumnWidth(colName, SQLCliConstants.DATE_FORMAT_LENGTH);
+                    break;
+                case TIMESTAMP_WITH_TIME_ZONE:
+                    colWidths[i] = determineColumnWidth(colName, SQLCliConstants.TIMESTAMP_WITH_TIME_ZONE_FORMAT_LENGTH);
+                    break;
+                case DECIMAL:
+                    colWidths[i] = determineColumnWidth(colName, SQLCliConstants.DECIMAL_FORMAT_LENGTH);
+                    break;
+                case REAL:
+                    colWidths[i] = determineColumnWidth(colName, SQLCliConstants.REAL_FORMAT_LENGTH);
+                    break;
+                case DOUBLE:
+                    colWidths[i] = determineColumnWidth(colName, SQLCliConstants.DOUBLE_FORMAT_LENGTH);
+                    break;
+                case INTEGER:
+                    colWidths[i] = determineColumnWidth(colName, SQLCliConstants.INTEGER_FORMAT_LENGTH);
+                    break;
+                case NULL:
+                    colWidths[i] = determineColumnWidth(colName, SQLCliConstants.NULL_FORMAT_LENGTH);
+                    break;
+                case TINYINT:
+                    colWidths[i] = determineColumnWidth(colName, SQLCliConstants.TINYINT_FORMAT_LENGTH);
+                    break;
+                case SMALLINT:
+                    colWidths[i] = determineColumnWidth(colName, SQLCliConstants.SMALLINT_FORMAT_LENGTH);
+                    break;
+                case TIMESTAMP:
+                    colWidths[i] = determineColumnWidth(colName, SQLCliConstants.TIMESTAMP_FORMAT_LENGTH);
+                    break;
+                case BIGINT:
+                    colWidths[i] = determineColumnWidth(colName, SQLCliConstants.BIGINT_FORMAT_LENGTH);
+                    break;
+                case VARCHAR:
+                    colWidths[i] = determineColumnWidth(colName, SQLCliConstants.VARCHAR_FORMAT_LENGTH);
+                    break;
+                case OBJECT:
+                    colWidths[i] = determineColumnWidth(colName, SQLCliConstants.OBJECT_FORMAT_LENGTH);
+                    break;
+                default:
+                    throw new UnsupportedOperationException(type.toString());
+            }
+        }
+        return colWidths;
+    }
+
+    private static int determineColumnWidth(String header, int typeLength) {
+        return Math.max(Math.min(header.length(), SQLCliConstants.VARCHAR_FORMAT_LENGTH), typeLength);
+    }
+
+    private static Alignment[] determineAlignments(SqlRowMetadata metadata) {
+        int colCount = metadata.getColumnCount();
+        Alignment[] alignments = new Alignment[colCount];
+        for (int i = 0; i < colCount; i++) {
+            SqlColumnMetadata colMetadata = metadata.getColumn(i);
+            SqlColumnType type = colMetadata.getType();
+            String colName = colMetadata.getName();
+            switch (type) {
+                case BIGINT:
+                case DECIMAL:
+                case DOUBLE:
+                case INTEGER:
+                case REAL:
+                case SMALLINT:
+                case TINYINT:
+                    alignments[i] = Alignment.RIGHT;
+                    break;
+                case BOOLEAN:
+                case DATE:
+                case NULL:
+                case OBJECT:
+                case TIMESTAMP:
+                case VARCHAR:
+                case TIMESTAMP_WITH_TIME_ZONE:
+                default:
+                    alignments[i] = Alignment.LEFT;
+            }
+        }
+        return alignments;
+    }
+
+    private static void printMetadataInfo(SqlRowMetadata metadata, int[] colWidths,
+                                          Alignment[] alignments, PrintWriter out) {
+        int colCount = metadata.getColumnCount();
+        printSeparatorLine(colCount, colWidths, out);
+        AttributedStringBuilder builder = new AttributedStringBuilder()
+                .style(AttributedStyle.BOLD.foreground(SECONDARY_COLOR));
+        builder.append("|");
+        for (int i = 0; i < colCount; i++) {
+            String colName = metadata.getColumn(i).getName();
+            colName = sanitize(colName, colWidths[i]);
+            builder.style(AttributedStyle.BOLD.foreground(PRIMARY_COLOR));
+            appendAligned(colWidths[i], colName, alignments[i], builder);
+            builder.style(AttributedStyle.BOLD.foreground(SECONDARY_COLOR));
+            builder.append('|');
+        }
+        out.println(builder.toAnsi());
+        printSeparatorLine(colCount, colWidths, out);
+        out.flush();
+    }
+
+    private static void printRow(SqlRow row, int[] colWidths, Alignment[] alignments, PrintWriter out) {
+        AttributedStringBuilder builder = new AttributedStringBuilder()
+                .style(AttributedStyle.BOLD.foreground(SECONDARY_COLOR));
+        builder.append("|");
+        int columnCount = row.getMetadata().getColumnCount();
+        for (int i = 0; i < columnCount; i++) {
+            String colString = row.getObject(i) != null ? sanitize(row.getObject(i).toString(), colWidths[i]) : "NULL";
+            builder.style(AttributedStyle.BOLD.foreground(PRIMARY_COLOR));
+            appendAligned(colWidths[i], colString, alignments[i], builder);
+            builder.style(AttributedStyle.BOLD.foreground(SECONDARY_COLOR));
+            builder.append('|');
+        }
+        out.println(builder.toAnsi());
+        out.flush();
+    }
+
+    private static String sanitize(String s, int width) {
+        s = s.replace("\n", "\\n");
+        if (s.length() > width) {
+            s = s.substring(0, width - 1) + "\u2026";
+        }
+        return s;
+    }
+
+    private static void appendAligned(int width, String s, Alignment alignment, AttributedStringBuilder builder) {
+        int padding = width - s.length();
+        assert padding >= 0;
+
+        if (alignment == Alignment.RIGHT) {
+            appendPadding(builder, padding, ' ');
+        }
+        builder.append(s);
+        if (alignment == Alignment.LEFT) {
+            appendPadding(builder, padding, ' ');
+        }
+    }
+
+    private static void appendPadding(AttributedStringBuilder builder, int length, char paddingChar) {
+        for (int i = 0; i < length; i++) {
+            builder.append(paddingChar);
+        }
+    }
+
+    private static void printSeparatorLine(int colSize, int[] colWidths, PrintWriter out) {
+        AttributedStringBuilder builder = new AttributedStringBuilder()
+                .style(AttributedStyle.BOLD.foreground(SECONDARY_COLOR));
+        builder.append('+');
+        for (int i = 0; i < colSize; i++) {
+            appendPadding(builder, colWidths[i], '-');
+            builder.append('+');
+        }
+        out.println(builder.toAnsi());
     }
 
     public static class JetVersionProvider implements IVersionProvider {
@@ -959,274 +1225,6 @@ public class JetCommandLine implements Runnable {
 
     }
 
-    private void executeSqlCmd(
-            JetInstance jet,
-            String command,
-            Terminal terminal,
-            AtomicReference<SqlResult> activeSqlResult
-    ) {
-        PrintWriter out = terminal.writer();
-        try (SqlResult sqlResult = jet.getSql().execute(command)) {
-            activeSqlResult.set(sqlResult);
-
-            // if it's a result with an update count, just print it
-            if (sqlResult.updateCount() != -1) {
-                String message = new AttributedStringBuilder()
-                        .style(AttributedStyle.BOLD.foreground(PRIMARY_COLOR))
-                        .append("OK")
-                        .toAnsi();
-                out.println(message);
-                return;
-            }
-            SqlRowMetadata rowMetadata = sqlResult.getRowMetadata();
-            int[] colWidths = determineColumnWidths(rowMetadata);
-            Alignment[] alignments = determineAlignments(rowMetadata);
-
-            // this is a result with rows. Print the header and rows, watch for concurrent cancellation
-            printMetadataInfo(rowMetadata, colWidths, alignments, out);
-
-            int rowCount = 0;
-            for (SqlRow row : sqlResult) {
-                rowCount++;
-                printRow(row, colWidths, alignments, out);
-            }
-
-            // bottom line after all the rows
-            printSeparatorLine(sqlResult.getRowMetadata().getColumnCount(), colWidths, out);
-
-            String message = new AttributedStringBuilder()
-                    .style(AttributedStyle.BOLD.foreground(PRIMARY_COLOR))
-                    .append(String.valueOf(rowCount))
-                    .append(" row(s) selected")
-                    .toAnsi();
-            out.println(message);
-        } catch (HazelcastSqlException e) {
-            // the query failed to execute
-            String errorPrompt = new AttributedStringBuilder()
-                    .style(AttributedStyle.BOLD.foreground(PRIMARY_COLOR))
-                    .append(e.getMessage())
-                    .toAnsi();
-            out.println(errorPrompt);
-        }
-    }
-
-    private static int[] determineColumnWidths(SqlRowMetadata metadata) {
-        int colCount = metadata.getColumnCount();
-        int[] colWidths = new int[colCount];
-        for (int i = 0; i < colCount; i++) {
-            SqlColumnMetadata colMetadata = metadata.getColumn(i);
-            SqlColumnType type = colMetadata.getType();
-            String colName = colMetadata.getName();
-            switch (type) {
-                case BOOLEAN:
-                    colWidths[i] = determineColumnWidth(colName, SQLCliConstants.BOOLEAN_FORMAT_LENGTH);
-                    break;
-                case DATE:
-                    colWidths[i] = determineColumnWidth(colName, SQLCliConstants.DATE_FORMAT_LENGTH);
-                    break;
-                case TIMESTAMP_WITH_TIME_ZONE:
-                    colWidths[i] = determineColumnWidth(colName, SQLCliConstants.TIMESTAMP_WITH_TIME_ZONE_FORMAT_LENGTH);
-                    break;
-                case DECIMAL:
-                    colWidths[i] = determineColumnWidth(colName, SQLCliConstants.DECIMAL_FORMAT_LENGTH);
-                    break;
-                case REAL:
-                    colWidths[i] = determineColumnWidth(colName, SQLCliConstants.REAL_FORMAT_LENGTH);
-                    break;
-                case DOUBLE:
-                    colWidths[i] = determineColumnWidth(colName, SQLCliConstants.DOUBLE_FORMAT_LENGTH);
-                    break;
-                case INTEGER:
-                    colWidths[i] = determineColumnWidth(colName, SQLCliConstants.INTEGER_FORMAT_LENGTH);
-                    break;
-                case NULL:
-                    colWidths[i] = determineColumnWidth(colName, SQLCliConstants.NULL_FORMAT_LENGTH);
-                    break;
-                case TINYINT:
-                    colWidths[i] = determineColumnWidth(colName, SQLCliConstants.TINYINT_FORMAT_LENGTH);
-                    break;
-                case SMALLINT:
-                    colWidths[i] = determineColumnWidth(colName, SQLCliConstants.SMALLINT_FORMAT_LENGTH);
-                    break;
-                case TIMESTAMP:
-                    colWidths[i] = determineColumnWidth(colName, SQLCliConstants.TIMESTAMP_FORMAT_LENGTH);
-                    break;
-                case BIGINT:
-                    colWidths[i] = determineColumnWidth(colName, SQLCliConstants.BIGINT_FORMAT_LENGTH);
-                    break;
-                case VARCHAR:
-                    colWidths[i] = determineColumnWidth(colName, SQLCliConstants.VARCHAR_FORMAT_LENGTH);
-                    break;
-                case OBJECT:
-                    colWidths[i] = determineColumnWidth(colName, SQLCliConstants.OBJECT_FORMAT_LENGTH);
-                    break;
-                default:
-                    throw new UnsupportedOperationException(type.toString());
-            }
-        }
-        return colWidths;
-    }
-
-    private static int determineColumnWidth(String header, int typeLength) {
-        return Math.max(Math.min(header.length(), SQLCliConstants.VARCHAR_FORMAT_LENGTH), typeLength);
-    }
-
-    private static Alignment[] determineAlignments(SqlRowMetadata metadata) {
-        int colCount = metadata.getColumnCount();
-        Alignment[] alignments = new Alignment[colCount];
-        for (int i = 0; i < colCount; i++) {
-            SqlColumnMetadata colMetadata = metadata.getColumn(i);
-            SqlColumnType type = colMetadata.getType();
-            String colName = colMetadata.getName();
-            switch (type) {
-                case BIGINT:
-                case DECIMAL:
-                case DOUBLE:
-                case INTEGER:
-                case REAL:
-                case SMALLINT:
-                case TINYINT:
-                    alignments[i] = Alignment.RIGHT;
-                    break;
-                case BOOLEAN:
-                case DATE:
-                case NULL:
-                case OBJECT:
-                case TIMESTAMP:
-                case VARCHAR:
-                case TIMESTAMP_WITH_TIME_ZONE:
-                default:
-                    alignments[i] = Alignment.LEFT;
-            }
-        }
-        return alignments;
-    }
-
-    private static void printMetadataInfo(SqlRowMetadata metadata, int[] colWidths,
-                                          Alignment[] alignments, PrintWriter out) {
-        int colCount = metadata.getColumnCount();
-        printSeparatorLine(colCount, colWidths, out);
-        AttributedStringBuilder builder = new AttributedStringBuilder()
-                .style(AttributedStyle.BOLD.foreground(SECONDARY_COLOR));
-        builder.append("|");
-        for (int i = 0; i < colCount; i++) {
-            String colName = metadata.getColumn(i).getName();
-            colName = sanitize(colName, colWidths[i]);
-            builder.style(AttributedStyle.BOLD.foreground(PRIMARY_COLOR));
-            appendAligned(colWidths[i], colName, alignments[i], builder);
-            builder.style(AttributedStyle.BOLD.foreground(SECONDARY_COLOR));
-            builder.append('|');
-        }
-        out.println(builder.toAnsi());
-        printSeparatorLine(colCount, colWidths, out);
-        out.flush();
-    }
-
-    private static void printRow(SqlRow row, int[] colWidths, Alignment[] alignments, PrintWriter out) {
-        AttributedStringBuilder builder = new AttributedStringBuilder()
-                .style(AttributedStyle.BOLD.foreground(SECONDARY_COLOR));
-        builder.append("|");
-        int columnCount = row.getMetadata().getColumnCount();
-        for (int i = 0; i < columnCount; i++) {
-            String colString = row.getObject(i) != null ? sanitize(row.getObject(i).toString(), colWidths[i]) : "NULL";
-            builder.style(AttributedStyle.BOLD.foreground(PRIMARY_COLOR));
-            appendAligned(colWidths[i], colString, alignments[i], builder);
-            builder.style(AttributedStyle.BOLD.foreground(SECONDARY_COLOR));
-            builder.append('|');
-        }
-        out.println(builder.toAnsi());
-        out.flush();
-    }
-
-    private static String sanitize(String s, int width) {
-        s = s.replace("\n", "\\n");
-        if (s.length() > width) {
-            s = s.substring(0, width - 1) + "\u2026";
-        }
-        return s;
-    }
-
-    private static void appendAligned(int width, String s, Alignment alignment, AttributedStringBuilder builder) {
-        int padding = width - s.length();
-        assert padding >= 0;
-
-        if (alignment == Alignment.RIGHT) {
-            appendPadding(builder, padding, ' ');
-        }
-        builder.append(s);
-        if (alignment == Alignment.LEFT) {
-            appendPadding(builder, padding, ' ');
-        }
-    }
-
-    private static void appendPadding(AttributedStringBuilder builder, int length, char paddingChar) {
-        for (int i = 0; i < length; i++) {
-            builder.append(paddingChar);
-        }
-    }
-
-    private static void printSeparatorLine(int colSize, int[] colWidths, PrintWriter out) {
-        AttributedStringBuilder builder = new AttributedStringBuilder()
-                .style(AttributedStyle.BOLD.foreground(SECONDARY_COLOR));
-        builder.append('+');
-        for (int i = 0; i < colSize; i++) {
-            appendPadding(builder, colWidths[i], '-');
-            builder.append('+');
-        }
-        out.println(builder.toAnsi());
-    }
-
-    private String sqlStartingPrompt(JetInstance jet) {
-        JetClientInstanceImpl client = (JetClientInstanceImpl) jet;
-        HazelcastClientInstanceImpl hazelcastClient = client.getHazelcastClient();
-        ClientClusterService clientClusterService = hazelcastClient.getClientClusterService();
-        MCClusterMetadata clusterMetadata =
-                FutureUtil.getValue(getClusterMetadata(hazelcastClient, clientClusterService.getMasterMember()));
-        Cluster cluster = client.getCluster();
-        Set<Member> members = cluster.getMembers();
-        String versionString = clusterMetadata.getJetVersion() != null
-                ? "Hazelcast Jet " + clusterMetadata.getJetVersion()
-                : "Hazelcast IMDG " + clusterMetadata.getMemberVersion();
-        return new AttributedStringBuilder()
-                .style(AttributedStyle.BOLD.foreground(PRIMARY_COLOR))
-                .append("Connected to ")
-                .append(versionString)
-                .append(" at ")
-                .append(members.iterator().next().getAddress().toString())
-                .append(" (+")
-                .append(String.valueOf(members.size() - 1))
-                .append(" more)\n")
-                .append("Type 'help' for instructions")
-                .toAnsi();
-    }
-
-    private String helpPrompt(JetInstance jet) {
-        JetClientInstanceImpl client = (JetClientInstanceImpl) jet;
-        HazelcastClientInstanceImpl hazelcastClient = client.getHazelcastClient();
-        ClientClusterService clientClusterService = hazelcastClient.getClientClusterService();
-        MCClusterMetadata clusterMetadata =
-                FutureUtil.getValue(getClusterMetadata(hazelcastClient, clientClusterService.getMasterMember()));
-        String jetVersion = clusterMetadata.getJetVersion();
-        AttributedStringBuilder builder = new AttributedStringBuilder()
-                .style(AttributedStyle.BOLD.foreground(PRIMARY_COLOR))
-                .append("Available Commands:\n")
-                .append("  clear    Clears the terminal screen\n")
-                .append("  exit     Exits from the SQL console\n")
-                .append("  help     Provides information about available commands\n")
-                .append("  history  Shows the command history of the current session\n")
-                .append("Hints:\n")
-                .append("  Semicolon completes a query\n");
-        if (jetVersion != null) {
-            // connected to a Jet cluster
-            builder.append("  Ctrl+C cancels a streaming query\n")
-                   .append("  https://jet-start.sh/docs/sql/intro");
-        } else {
-            // connected to an IMDG cluster
-            builder.append("  https://docs.hazelcast.org/docs/latest/manual/html-single/#sql");
-        }
-        return builder.toAnsi();
-    }
-
     private static class SQLCliConstants {
 
         static final Set<String> COMMAND_SET = new HashSet<>(Arrays.asList("clear", "exit", "help", "history"));
@@ -1248,9 +1246,5 @@ public class JetCommandLine implements Runnable {
         static final Integer TIMESTAMP_FORMAT_LENGTH = 19;
         static final Integer TIMESTAMP_WITH_TIME_ZONE_FORMAT_LENGTH = 25;
         static final Integer VARCHAR_FORMAT_LENGTH = 20; // it has normally unlimited precision
-    }
-
-    private enum Alignment {
-        LEFT, RIGHT
     }
 }

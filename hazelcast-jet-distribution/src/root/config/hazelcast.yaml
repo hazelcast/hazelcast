@@ -2,7 +2,7 @@ hazelcast:
   # The name of the cluster. All members of a single cluster must have the
   # same cluster name configured and a client connecting to this cluster
   # must use it as well.
-  cluster-name: jet
+  cluster-name: dev
   network:
     port:
       # The preferred port number where the Jet instance will listen. The

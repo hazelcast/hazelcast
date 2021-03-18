@@ -19,10 +19,10 @@ package com.hazelcast.jet.server;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.collection.IList;
+import com.hazelcast.config.Config;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.JobStatus;
@@ -104,10 +104,10 @@ public class JetCommandLineTest extends JetTestSupport {
 
     @Before
     public void before() {
-        JetConfig cfg = new JetConfig();
-        cfg.getHazelcastConfig().getMapConfig(SOURCE_NAME).getEventJournalConfig().setEnabled(true);
+        Config cfg = new Config();
+        cfg.getMapConfig(SOURCE_NAME).getEventJournalConfig().setEnabled(true);
         String clusterName = randomName();
-        cfg.getHazelcastConfig().setClusterName(clusterName);
+        cfg.setClusterName(clusterName);
         jet = createJetMember(cfg);
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setClusterName(clusterName);
@@ -653,8 +653,8 @@ public class JetCommandLineTest extends JetTestSupport {
     private Job newJob(String jobName) {
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.mapJournal(SOURCE_NAME, START_FROM_OLDEST))
-         .withoutTimestamps()
-         .writeTo(Sinks.list(SINK_NAME));
+                .withoutTimestamps()
+                .writeTo(Sinks.list(SINK_NAME));
         Job job = jet.newJob(p, new JobConfig().setName(jobName));
         assertJobStatusEventually(job, JobStatus.RUNNING);
         return job;

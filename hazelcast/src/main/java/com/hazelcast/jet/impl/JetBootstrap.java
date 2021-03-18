@@ -21,6 +21,7 @@ import com.hazelcast.collection.IList;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.JoinConfig;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.jet.Jet;
@@ -86,7 +87,7 @@ public final class JetBootstrap {
     // supplier should be set only once
     private static ConcurrentMemoizingSupplier<BootstrappedJetProxy> supplier;
 
-    private static final ILogger LOGGER = Logger.getLogger(Jet.class.getName());
+    private static final ILogger LOGGER = Logger.getLogger(Hazelcast.class.getName());
     private static final AtomicBoolean LOGGING_CONFIGURED = new AtomicBoolean(false);
     private static final int JOB_START_CHECK_INTERVAL_MILLIS = 1_000;
     private static final EnumSet<JobStatus> STARTUP_STATUSES = EnumSet.of(NOT_RUNNING, STARTING);
@@ -229,14 +230,13 @@ public final class JetBootstrap {
         configureLogging();
         LOGGER.info("Bootstrapped instance requested but application wasn't called from jet submit script. " +
                 "Creating a standalone Jet instance instead.");
-        JetConfig config = locateAndGetJetConfig();
-        Config hzConfig = config.getHazelcastConfig();
+        Config config = Config.load();
 
         // turn off all discovery to make sure node doesn't join any existing cluster
-        hzConfig.setProperty("hazelcast.wait.seconds.before.join", "0");
-        hzConfig.getAdvancedNetworkConfig().setEnabled(false);
+        config.setProperty("hazelcast.wait.seconds.before.join", "0");
+        config.getAdvancedNetworkConfig().setEnabled(false);
 
-        JoinConfig join = hzConfig.getNetworkConfig().getJoin();
+        JoinConfig join = config.getNetworkConfig().getJoin();
         join.getAutoDetectionConfig().setEnabled(false);
         join.getMulticastConfig().setEnabled(false);
         join.getTcpIpConfig().setEnabled(false);
@@ -246,7 +246,7 @@ public final class JetBootstrap {
         join.getKubernetesConfig().setEnabled(false);
         join.getEurekaConfig().setEnabled(false);
         join.setDiscoveryConfig(new DiscoveryConfig());
-        return Jet.newJetInstance(config);
+        return Hazelcast.getOrCreateHazelcastInstance(config).getJetInstance();
     }
 
     public static void configureLogging() {
