@@ -632,7 +632,7 @@ public class RebalanceBatchStageTest extends PipelineTestSupport {
     }
 
     private void assertSingleStageAggregation() {
-        DAG dag = p.toDag();
+        DAG dag =  p.toDag();
         try {
             Edge srcToAggregate = dag.getOutboundEdges("items").get(0);
             assertTrue("Outbound edge after rebalancing must be distributed", srcToAggregate.isDistributed());
@@ -646,7 +646,7 @@ public class RebalanceBatchStageTest extends PipelineTestSupport {
     }
 
     private void assertTwoStageGlobalAggregation(int i) {
-        DAG dag = p.toDag();
+        DAG dag =  p.toDag();
         try {
             Edge srcToAggregate = dag.getOutboundEdges("items" + (i == 1 ? "" : "-" + i)).get(0);
             assertNull("Rebalanced edge to global aggregation must be unicast", srcToAggregate.getPartitioner());

@@ -172,7 +172,7 @@ public class GracefulShutdownTest extends JetTestSupport {
                  .setClassName(BlockingMapStore.class.getName())
                  .setEnabled(true);
         Config config = instances[0].getHazelcastInstance().getConfig();
-        ((DynamicConfigurationAwareConfig)config).getStaticConfig().addMapConfig(mapConfig);
+        ((DynamicConfigurationAwareConfig) config).getStaticConfig().addMapConfig(mapConfig);
         BlockingMapStore.shouldBlock = false;
         BlockingMapStore.wasBlocked = false;
 

@@ -310,7 +310,7 @@ public class StreamStageTest extends PipelineStreamTestSupport {
 
     private void assertVertexCount(DAG dag, int expectedCount) {
         int[] count = {0};
-        dag.iterator().forEachRemaining(v -> count[0]++);
+         dag.iterator().forEachRemaining(v -> count[0]++);
         assertEquals("unexpected vertex count in DAG:\n" + dag.toDotString(), expectedCount, count[0]);
     }
 

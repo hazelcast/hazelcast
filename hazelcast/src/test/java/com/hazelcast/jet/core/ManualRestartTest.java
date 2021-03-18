@@ -147,7 +147,7 @@ public class ManualRestartTest extends JetTestSupport {
                  .setClassName(FailingMapStore.class.getName())
                  .setEnabled(true);
         Config config = instances[0].getHazelcastInstance().getConfig();
-        ((DynamicConfigurationAwareConfig)config).getStaticConfig().addMapConfig(mapConfig);
+        ((DynamicConfigurationAwareConfig) config).getStaticConfig().addMapConfig(mapConfig);
         FailingMapStore.fail = false;
         FailingMapStore.failed = false;
 
