@@ -29,6 +29,10 @@
     <artifactId>hazelcast-distribution</artifactId>
     <packaging>pom</packaging>
 
+    <properties>
+        <main.basedir>${maven.multiModuleProjectDirectory}</main.basedir>
+    </properties>
+
     <build>
         <plugins>
             <plugin>

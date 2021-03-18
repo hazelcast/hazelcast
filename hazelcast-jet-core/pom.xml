@@ -49,6 +49,7 @@
 
 
         <!-- needed for CheckStyle -->
+        <main.basedir>${maven.multiModuleProjectDirectory}</main.basedir>
         <!--suppress UnresolvedMavenProperty -->
         <checkstyle.headerLocation>${maven.multiModuleProjectDirectory}/checkstyle/ClassHeaderApache.txt</checkstyle.headerLocation>
         <!--suppress UnresolvedMavenProperty -->
