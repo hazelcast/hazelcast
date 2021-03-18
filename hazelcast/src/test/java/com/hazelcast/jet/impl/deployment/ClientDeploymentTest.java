@@ -19,7 +19,6 @@ package com.hazelcast.jet.impl.deployment;
 import com.hazelcast.config.Config;
 import com.hazelcast.internal.util.FilteringClassLoader;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
 import org.junit.Ignore;

@@ -16,14 +16,11 @@
 
 package com.hazelcast.jet.config;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
-
-import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
 

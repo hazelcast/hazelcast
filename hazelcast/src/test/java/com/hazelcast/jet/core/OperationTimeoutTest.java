@@ -18,7 +18,6 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.junit.Before;

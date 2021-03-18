@@ -18,7 +18,6 @@ package com.hazelcast.jet;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.JetTestSupport;
 import org.junit.Test;
 

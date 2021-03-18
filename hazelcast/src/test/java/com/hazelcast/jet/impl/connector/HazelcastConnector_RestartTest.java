@@ -28,7 +28,6 @@ import com.hazelcast.internal.partition.PartitionReplicationEvent;
 import com.hazelcast.internal.services.CoreService;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;

@@ -21,7 +21,6 @@ import com.hazelcast.function.SupplierEx;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;

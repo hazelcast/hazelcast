@@ -22,7 +22,6 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.DAG;
@@ -43,7 +42,6 @@ import java.io.File;
 import java.net.URL;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Properties;
 
 import static com.hazelcast.jet.core.JetProperties.JOB_RESULTS_MAX_SIZE;
 import static java.util.concurrent.TimeUnit.SECONDS;

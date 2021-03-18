@@ -28,7 +28,6 @@ import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.internal.server.FirewallingServer.FirewallingServerConnectionManager;
 import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.properties.ClusterProperty;
