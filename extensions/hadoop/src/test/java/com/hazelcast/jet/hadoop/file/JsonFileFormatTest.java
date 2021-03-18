@@ -17,6 +17,7 @@
 package com.hazelcast.jet.hadoop.file;
 
 import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.io.JsonEOFException;
 import com.google.common.collect.ImmutableMap;
 import com.hazelcast.jet.hadoop.file.model.User;
 import com.hazelcast.jet.pipeline.file.FileFormat;
@@ -150,6 +151,6 @@ public class JsonFileFormatTest extends BaseFileFormatTest {
                                                     .glob("file-multiline.jsonl")
                                                     .format(FileFormat.json(User.class).multiline(false));
 
-        assertJobFailed(source, JsonParseException.class, "");
+        assertJobFailed(source, JsonEOFException.class, "expected close marker for Object");
     }
 }

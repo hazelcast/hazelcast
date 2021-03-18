@@ -23,6 +23,7 @@ import com.hazelcast.jet.pipeline.file.FileFormat;
 import com.hazelcast.jet.pipeline.file.FileSourceBuilder;
 import com.hazelcast.jet.pipeline.file.FileSources;
 import org.apache.avro.AvroTypeException;
+import org.apache.avro.InvalidAvroMagicException;
 import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.specific.SpecificDatumWriter;
 import org.apache.commons.io.FileUtils;
@@ -79,7 +80,7 @@ public class AvroFileFormatTest extends BaseFileFormatTest {
                                                     .glob("invalid-data.png")
                                                     .format(FileFormat.avro(User.class));
 
-        assertJobFailed(source, IOException.class, "Not an Avro data file");
+        assertJobFailed(source, InvalidAvroMagicException.class, "Not an Avro data file");
     }
 
     @Test

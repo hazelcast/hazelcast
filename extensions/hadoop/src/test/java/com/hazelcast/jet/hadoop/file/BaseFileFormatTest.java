@@ -112,7 +112,8 @@ public abstract class BaseFileFormatTest extends HadoopTestSupport {
         try {
             assertThatThrownBy(() -> jets[0].newJob(p).join())
                     .hasCauseInstanceOf(JetException.class)
-                    .hasRootCauseInstanceOf(expectedRootException)
+                    // can't use hasRootCauseInstanceOf because of mismatch between shaded/non-shaded version
+                    .hasStackTraceContaining(expectedRootException.getName())
                     .hasMessageContaining(expectedMessage);
         } finally {
             for (JetInstance jet : jets) {
