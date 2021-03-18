@@ -43,15 +43,15 @@ needed to do on the other engine, should an engine be removed.
 ### Features Implemented Only in Jet Engine
 
 - Non-imap connectors (Kafka, CSV/JSON/Avro local or remote file
-(hadoop, s3, amazon, gcp))
+  (hadoop, s3, amazon, gcp))
 
 - Migration-tolerant when reading IMaps
 
 - Streaming support: queries with unbounded results
 
 - Aggregate functions, `GROUP BY` - with no memory management. (This is
-WIP in imdg, but only allows grouping by indexed columns - due to memory
-concerns)
+  WIP in imdg, but only allows grouping by indexed columns - due to memory
+  concerns)
 
 - Data generators (`generate_series`, `generate_stream`)
 
@@ -89,7 +89,7 @@ Changes in this areas don't require double implementation:
   in the plan like `+`, `ABS`, `SIN`, but not `SUM` or `TUMBLE` etc.
 
 - Type coercion for the above functions (e.g. the resulting type of
-`TINYINT + REAL` or the error for `INT + VARCHAR`)
+  `TINYINT + REAL` or the error for `INT + VARCHAR`)
 
 - Dialect (quoting style, case sensitivity, literal syntax...)
 
@@ -125,14 +125,22 @@ the target member, the member's network threads add the packet to the
 `ReceiverTasklet` deserializes them and adds them to input queues of
 target processors. The sender and receiver tasklets are cooperative.
 
-In IMDG ... TODO
+In Jet, to avoid possible packet loss or reordering of items sent over
+the network, we use the lower-level connection objects. A connection
+glitch that is normally handled without a cluster topology change, will
+cause the query to fail. However, in case of Jet, if the job is
+fault-tolerant, it can restart from the latest snapshot and continue.
 
-In both engines, to avoid possible packet loss or reordering of items
-sent over the network, we use the lower-level connection objects. A
-connection glitch that is normally handled without a cluster topology
-change, will cause the query to fail. However, in case of Jet, if the
-job is fault-tolerant, it can restart from the latest snapshot and
-continue.
+In IMDG, query plan is split into one or more query fragments. Fragments
+are connected with each other via edges with unique IDs. Every fragment
+has one or more inputs and strictly one output. Inputs could be either a
+concrete data source (e.g., `IMap`), or a receiver operator. Output is
+either a sender operator, or a user cursor. Fragment is a vertex in the
+DAG, and a pair of sender/receiver operators is an edge.
+
+IMDG also uses `Connection` objects to send messages, bypassing
+the invocation subsystem. The engine is resilient to packet reordering,
+but not resilient to packet loss.
 
 ### Queues
 
@@ -148,7 +156,13 @@ Items sent between processors on different members is handled using
 approach similar to RWIN in TCP: the receiver regularly communicates how
 many items it was able to process and the sender must not send more.
 
-In IMDG ...
+In IMDG, a pair of a sender and a receiver agrees on the initial number
+of bytes (aka "credits") that the sender may send to the receiver. With
+every outbound message, sender decreases the number of available
+credits. When the number of credits reaches zero, the sender stops
+sending messages to receiver. The Receiver periodically responds with a
+special `flow_control` message that increases the number of credits on
+the sender.
 
 ### Load balancing
 
@@ -159,7 +173,7 @@ queries are deterministically assigned to different threads, but in a
 specific situation it can happen that most important tasklets are
 assigned to one thread, while other threads are under-utilized. Two
 tasks of different size (a small vs. a large query) interleave well.
-However the cases where this would be an issue are rare. 
+However the cases where this would be an issue are rare.
 
 The cooperative threading model is also prone to issues of incorrect
 implementations not following the rules for cooperative processors. This
@@ -364,19 +378,19 @@ performance of very short jobs on par with IMDG, we need to implement
 the following:
 
 - Finish the [light job
-prototype](https://github.com/viliam-durina/hazelcast-jet/tree/light-job).
-It merges the `init`, `execute` and `complete` operations into one. This
-won't be trivial because various new races will appear, but it's
-possible. We might do it only for non-fault-tolerant jobs.
+  prototype](https://github.com/viliam-durina/hazelcast-jet/tree/light-job).
+  It merges the `init`, `execute` and `complete` operations into one.
+  This won't be trivial because various new races will appear, but it's
+  possible. We might do it only for non-fault-tolerant jobs.
 
 - Add a _light job_ mode that will not persist the job metadata in any
-IMap, that will not use the `JetClassLoader`. The operation of the
-coordinator will not require any remote calls except for forwarding the
-work to members.
+  IMap, that will not use the `JetClassLoader`. The operation of the
+  coordinator will not require any remote calls except for forwarding
+  the work to members.
 
 - Enable any member to coordinate the job, not just the master member.
-With this, queries submitted from a non-master member will not have
-additional hop to the master.
+  With this, queries submitted from a non-master member will not have
+  additional hop to the master.
 
 - Add plan caching, dynamic parameter support.
 
