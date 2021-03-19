@@ -121,6 +121,7 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.ACOS);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.ASIN);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.ATAN);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.ATAN2);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.EXP);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.LN);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.LOG10);

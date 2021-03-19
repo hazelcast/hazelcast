@@ -105,6 +105,8 @@ public class DoubleFunctionIntegrationTest extends ExpressionTestSupport {
         checkValue0(sql("null"), DOUBLE, null);
         checkValue0(sql("1"), DOUBLE, mode.process(1d));
         checkValue0(sql("1.0"), DOUBLE, mode.process(1d));
+        checkValue0(sql("1.5"), DOUBLE, mode.process(1.5d));
+        checkValue0(sql("0.001"), DOUBLE, mode.process(0.001d));
         checkValue0(sql("1E0"), DOUBLE, mode.process(1d));
 
         checkFailure0(sql("true"), SqlErrorCode.PARSING, signatureErrorFunction(mode.mode, BOOLEAN));
@@ -125,6 +127,7 @@ public class DoubleFunctionIntegrationTest extends ExpressionTestSupport {
         checkValue0(sql("?"), DOUBLE, mode.process(1d), BigDecimal.ONE);
         checkValue0(sql("?"), DOUBLE, mode.process(1d), 1f);
         checkValue0(sql("?"), DOUBLE, mode.process(1d), 1d);
+        checkValue0(sql("?"), DOUBLE, mode.process(0.001d), 0.001d);
 
         checkFailure0(sql("?"), SqlErrorCode.DATA_EXCEPTION, parameterError(0, DOUBLE, VARCHAR), '1');
         checkFailure0(sql("?"), SqlErrorCode.DATA_EXCEPTION, parameterError(0, DOUBLE, VARCHAR), "1");

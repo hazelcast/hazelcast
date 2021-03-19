@@ -29,10 +29,10 @@ import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import static org.apache.calcite.sql.type.SqlTypeName.DOUBLE;
 
 /**
- * Function that accepts a DOUBLE argument and produces a DOUBLE result.
+ * Function that accepts two DOUBLE arguments and produces a DOUBLE result.
  */
-public class HazelcastDoubleFunction extends HazelcastFunction {
-    public HazelcastDoubleFunction(String name) {
+public class HazelcastDoubleBiFunction extends HazelcastFunction {
+    public HazelcastDoubleBiFunction(String name) {
         super(
             name,
             SqlKind.OTHER_FUNCTION,
@@ -44,11 +44,12 @@ public class HazelcastDoubleFunction extends HazelcastFunction {
 
     @Override
     public SqlOperandCountRange getOperandCountRange() {
-        return SqlOperandCountRanges.of(1);
+        return SqlOperandCountRanges.of(2);
     }
 
     @Override
     public boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure) {
-        return TypedOperandChecker.DOUBLE.check(binding, throwOnFailure, 0);
+        return TypedOperandChecker.DOUBLE.check(binding, throwOnFailure, 0)
+                && TypedOperandChecker.DOUBLE.check(binding, throwOnFailure, 1);
     }
 }

@@ -27,6 +27,7 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.SymbolExpression;
 import com.hazelcast.sql.impl.expression.math.AbsFunction;
 import com.hazelcast.sql.impl.expression.math.DivideFunction;
+import com.hazelcast.sql.impl.expression.math.DoubleBiFunction;
 import com.hazelcast.sql.impl.expression.math.DoubleFunction;
 import com.hazelcast.sql.impl.expression.math.FloorCeilFunction;
 import com.hazelcast.sql.impl.expression.math.MinusFunction;
@@ -304,6 +305,9 @@ public final class RexToExpression {
                     return DoubleFunction.create(operands[0], DoubleFunction.ASIN);
                 } else if (function == HazelcastSqlOperatorTable.ATAN) {
                     return DoubleFunction.create(operands[0], DoubleFunction.ATAN);
+                } else if (function == HazelcastSqlOperatorTable.ATAN2) {
+                    assert operands.length == 2;
+                    return DoubleBiFunction.create(operands[0], operands[1], DoubleBiFunction.ATAN2);
                 } else if (function == HazelcastSqlOperatorTable.EXP) {
                     return DoubleFunction.create(operands[0], DoubleFunction.EXP);
                 } else if (function == HazelcastSqlOperatorTable.LN) {

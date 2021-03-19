@@ -157,11 +157,6 @@ public class ParserOperationsTest {
         checkFailure("select 1 + from t", "Was expecting one of");
     }
 
-    @Test
-    public void testUnsupportedFunction() {
-        checkFailure("select atan2(0, 0) from t", "Function 'atan2' does not exist");
-    }
-
     private static void checkSuccess(String sql) {
         createContext().parse(sql);
     }

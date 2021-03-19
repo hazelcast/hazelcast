@@ -33,6 +33,7 @@ import com.hazelcast.sql.impl.expression.ParameterExpression;
 import com.hazelcast.sql.impl.expression.math.AbsFunction;
 import com.hazelcast.sql.impl.expression.math.DivideFunction;
 import com.hazelcast.sql.impl.expression.math.DoubleFunction;
+import com.hazelcast.sql.impl.expression.math.DoubleBiFunction;
 import com.hazelcast.sql.impl.expression.math.FloorCeilFunction;
 import com.hazelcast.sql.impl.expression.math.MinusFunction;
 import com.hazelcast.sql.impl.expression.math.MultiplyFunction;
@@ -182,8 +183,10 @@ public class SqlDataSerializerHook implements DataSerializerHook {
 
     public static final int LAZY_TARGET = 65;
 
-    public static final int INTERVAL_YEAR_MONTH = 66;
-    public static final int INTERVAL_DAY_SECOND = 67;
+    public static final int EXPRESSION_DOUBLE_DOUBLE = 66;
+
+    public static final int INTERVAL_YEAR_MONTH = 67;
+    public static final int INTERVAL_DAY_SECOND = 68;
 
     public static final int LEN = INTERVAL_DAY_SECOND + 1;
 
@@ -279,6 +282,7 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[EXPRESSION_REMAINDER] = arg -> new RemainderFunction<>();
 
         constructors[LAZY_TARGET] = arg -> new LazyTarget();
+        constructors[EXPRESSION_DOUBLE_DOUBLE] = arg -> new DoubleBiFunction();
 
         constructors[INTERVAL_YEAR_MONTH] = arg -> new SqlYearMonthInterval();
         constructors[INTERVAL_DAY_SECOND] = arg -> new SqlDaySecondInterval();
