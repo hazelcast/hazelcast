@@ -180,7 +180,7 @@ public class JobCoordinationService {
 
     void startScanningForJobs() {
         ExecutionService executionService = nodeEngine.getExecutionService();
-        HazelcastProperties properties = new HazelcastProperties(config.getProperties());
+        HazelcastProperties properties = nodeEngine.getProperties();
         maxJobScanPeriodInMillis = properties.getMillis(JOB_SCAN_PERIOD);
         executionService.schedule(COORDINATOR_EXECUTOR_NAME, this::scanJobs, 0, MILLISECONDS);
     }

@@ -53,6 +53,7 @@ public class DefaultNodeContext implements NodeContext {
 
     public static final List<String> EXTENSION_PRIORITY_LIST = unmodifiableList(asList(
             "com.hazelcast.instance.impl.EnterpriseNodeExtension",
+            "com.hazelcast.jet.impl.JetNodeExtension",
             "com.hazelcast.instance.impl.DefaultNodeExtension"
     ));
 

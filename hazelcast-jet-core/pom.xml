@@ -49,8 +49,11 @@
 
 
         <!-- needed for CheckStyle -->
+        <!--suppress UnresolvedMavenProperty -->
         <checkstyle.headerLocation>${maven.multiModuleProjectDirectory}/checkstyle/ClassHeaderApache.txt</checkstyle.headerLocation>
+        <!--suppress UnresolvedMavenProperty -->
         <checkstyle.configLocation>${maven.multiModuleProjectDirectory}/checkstyle/checkstyle_jet.xml</checkstyle.configLocation>
+        <!--suppress UnresolvedMavenProperty -->
         <checkstyle.supressionsLocation>${maven.multiModuleProjectDirectory}/checkstyle/suppressions_jet.xml</checkstyle.supressionsLocation>
     </properties>
 

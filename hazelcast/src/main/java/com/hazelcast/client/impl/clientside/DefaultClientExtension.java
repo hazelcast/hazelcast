@@ -47,6 +47,7 @@ import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.util.JVMUtil;
 import com.hazelcast.internal.util.MapUtil;
+import com.hazelcast.jet.JetInstance;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.impl.MapService;
@@ -222,5 +223,10 @@ public class DefaultClientExtension implements ClientExtension {
         HazelcastProperties properties = client.getProperties();
 
         return new DefaultNearCacheManager(ss, taskScheduler, classLoader, properties);
+    }
+
+    @Override
+    public JetInstance getJetInstance() {
+        throw new IllegalArgumentException();
     }
 }

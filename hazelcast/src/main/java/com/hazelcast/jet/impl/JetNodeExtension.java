@@ -20,6 +20,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.instance.impl.DefaultNodeExtension;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Packet;
+import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.spi.impl.NodeEngineImpl.JetPacketConsumer;
 
@@ -30,12 +31,12 @@ public class JetNodeExtension extends DefaultNodeExtension implements JetPacketC
 
     public JetNodeExtension(Node node) {
         super(node);
-        extCommon = new NodeExtensionCommon(node, new JetService(node));
+        extCommon = new NodeExtensionCommon(node);
     }
 
     @Override
     public void beforeStart() {
-        JetConfig config = JetService.findJetServiceConfig(node.getConfig());
+        JetConfig config = node.config.getJetConfig();
         if (config.getInstanceConfig().isLosslessRestartEnabled()) {
             throw new UnsupportedOperationException("Lossless Restart is not available in the open-source version of " +
                     "Hazelcast Jet");
@@ -59,6 +60,11 @@ public class JetNodeExtension extends DefaultNodeExtension implements JetPacketC
     public void onClusterStateChange(ClusterState newState, boolean isTransient) {
         super.onClusterStateChange(newState, isTransient);
         extCommon.onClusterStateChange(newState);
+    }
+
+    @Override
+    public JetInstance getJetInstance() {
+        return super.getJetInstance();
     }
 
     @Override

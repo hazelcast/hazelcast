@@ -72,6 +72,7 @@ import com.hazelcast.internal.config.TopicConfigReadOnly;
 import com.hazelcast.internal.dynamicconfig.search.ConfigSearch;
 import com.hazelcast.internal.dynamicconfig.search.ConfigSupplier;
 import com.hazelcast.internal.dynamicconfig.search.Searcher;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.security.SecurityService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
@@ -1091,13 +1092,15 @@ public class DynamicConfigurationAwareConfig extends Config {
         throw new UnsupportedOperationException("Unsupported operation");
     }
 
+    @Nonnull
     @Override
     public AuditlogConfig getAuditlogConfig() {
         return staticConfig.getAuditlogConfig();
     }
 
+    @Nonnull
     @Override
-    public Config setAuditlogConfig(AuditlogConfig auditlogConfig) {
+    public Config setAuditlogConfig(@Nonnull AuditlogConfig auditlogConfig) {
         throw new UnsupportedOperationException("Unsupported operation");
     }
 
@@ -1122,6 +1125,18 @@ public class DynamicConfigurationAwareConfig extends Config {
     @Nonnull
     @Override
     public Config setSqlConfig(@Nonnull SqlConfig sqlConfig) {
+        throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    @Nonnull
+    @Override
+    public JetConfig getJetConfig() {
+        return staticConfig.getJetConfig();
+    }
+
+    @Nonnull
+    @Override
+    public Config setJetConfig(JetConfig jetConfig) {
         throw new UnsupportedOperationException("Unsupported operation");
     }
 }

@@ -17,8 +17,6 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.client.impl.ClientEngineImpl;
-import com.hazelcast.config.Config;
-import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.metrics.impl.MetricsService;
@@ -111,7 +109,7 @@ public class JetService implements ManagedService, MembershipAwareService, LiveO
     @Override
     public void init(NodeEngine engine, Properties hzProperties) {
         this.nodeEngine = (NodeEngineImpl) engine;
-        this.config = findJetServiceConfig(engine.getConfig());
+        this.config = engine.getConfig().getJetConfig();
         jetInstance = new JetInstanceImpl((HazelcastInstanceImpl) engine.getHazelcastInstance(), config);
         taskletExecutionService = new TaskletExecutionService(
                 nodeEngine, config.getInstanceConfig().getCooperativeThreadCount(), nodeEngine.getProperties()
@@ -130,7 +128,7 @@ public class JetService implements ManagedService, MembershipAwareService, LiveO
         ClientEngineImpl clientEngine = engine.getService(ClientEngineImpl.SERVICE_NAME);
         ExceptionUtil.registerJetExceptions(clientEngine.getExceptionFactory());
 
-        if (parseBoolean(config.getHazelcastConfig().getProperties().getProperty(JET_SHUTDOWNHOOK_ENABLED.getName()))) {
+        if (parseBoolean(engine.getConfig().getProperties().getProperty(JET_SHUTDOWNHOOK_ENABLED.getName()))) {
             logger.finest("Adding Jet shutdown hook");
             Runtime.getRuntime().addShutdownHook(shutdownHookThread);
         }
@@ -146,11 +144,6 @@ public class JetService implements ManagedService, MembershipAwareService, LiveO
                 throw new RuntimeException(e);
             }
         }
-    }
-
-    static JetConfig findJetServiceConfig(Config hzConfig) {
-        return (JetConfig) ConfigAccessor.getServicesConfig(hzConfig)
-                                         .getServiceConfig(SERVICE_NAME).getConfigObject();
     }
 
     /**
