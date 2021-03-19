@@ -17,6 +17,7 @@
 package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.collection.IList;
+import com.hazelcast.config.Config;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
@@ -91,9 +92,9 @@ public class SourceBuilder_TopologyChangeTest extends JetTestSupport {
                 })
                 .build();
 
-        JetConfig jetConfig = new JetConfig();
-        jetConfig.getInstanceConfig().setScaleUpDelayMillis(1000); // restart sooner after member add
-        JetInstance jet = createJetMember(jetConfig);
+        Config config = new Config();
+        config.getJetConfig().getInstanceConfig().setScaleUpDelayMillis(1000); // restart sooner after member add
+        JetInstance jet = createJetMember(config);
         JetInstance possibleSecondNode = secondMemberSupplier.get();
 
         long windowSize = 100;

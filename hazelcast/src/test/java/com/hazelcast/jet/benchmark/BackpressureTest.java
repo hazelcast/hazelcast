@@ -18,6 +18,7 @@ package com.hazelcast.jet.benchmark;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.config.Config;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.config.JetConfig;
@@ -69,8 +70,8 @@ public class BackpressureTest extends JetTestSupport {
 
     @Before
     public void setUp() {
-        JetConfig config = new JetConfig();
-        config.getInstanceConfig().setCooperativeThreadCount(PARALLELISM_PER_MEMBER);
+        Config config = new Config();
+        config.getJetConfig().getInstanceConfig().setCooperativeThreadCount(PARALLELISM_PER_MEMBER);
         jet1 = createJetMember(config);
         jet2 = createJetMember(config);
     }

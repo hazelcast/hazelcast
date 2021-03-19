@@ -20,10 +20,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
-import com.hazelcast.jet.config.JetConfig;
-import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.test.Accessors;
 import com.hazelcast.test.mocknetwork.TestNodeRegistry;
@@ -33,9 +30,7 @@ import java.util.Comparator;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 
-import static com.hazelcast.jet.Jet.getJetClientInstance;
 import static com.hazelcast.jet.impl.JetNodeContext.JET_EXTENSION_PRIORITY_LIST;
-import static com.hazelcast.jet.impl.config.ConfigProvider.locateAndGetClientConfig;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
 import static com.hazelcast.test.HazelcastTestSupport.spawn;
@@ -58,26 +53,22 @@ public class JetTestInstanceFactory {
     }
 
     public JetInstance newMember() {
-        return newMember(JetConfig.loadDefault());
+        return newMember(new Config());
     }
 
     public JetInstance newMember(Config config) {
-        return newMember(new JetConfig().setHazelcastConfig(config));
+        return factory.newHazelcastInstance(config).getJetInstance();
     }
 
-    public JetInstance newMember(JetConfig config) {
-        return Jet.newJetInstanceImpl(config, factory::newHazelcastInstance);
+    public JetInstance newMember(Config config, Address address) {
+        return factory.newHazelcastInstance(address, config).getJetInstance();
     }
 
-    public JetInstance newMember(JetConfig config, Address address) {
-        return Jet.newJetInstanceImpl(config, hzCfg -> factory.newHazelcastInstance(address, hzCfg));
+    public JetInstance newMember(Config config, Address[] blockedAddresses) {
+        return factory.newHazelcastInstance(config, blockedAddresses).getJetInstance();
     }
 
-    public JetInstance newMember(JetConfig config, Address[] blockedAddresses) {
-        return Jet.newJetInstanceImpl(config, hzCfg -> factory.newHazelcastInstance(hzCfg, blockedAddresses));
-    }
-
-    public JetInstance[] newMembers(JetConfig config, int nodeCount) {
+    public JetInstance[] newMembers(Config config, int nodeCount) {
         JetInstance[] jetInstances = new JetInstance[nodeCount];
         Arrays.setAll(jetInstances, i -> newMember(config));
         return jetInstances;
@@ -93,7 +84,7 @@ public class JetTestInstanceFactory {
      *
      * @param configFn a function that must return a separate config instance for each address
      */
-    public JetInstance[] newMembersParallel(int nodeCount, Function<Address, JetConfig> configFn) {
+    public JetInstance[] newMembersParallel(int nodeCount, Function<Address, Config> configFn) {
         JetInstance[] jetInstances = IntStream.range(0, nodeCount)
                 .mapToObj(i -> factory.nextAddress())
                 .map(address -> spawn(() -> newMember(configFn.apply(address), address)))
@@ -110,13 +101,12 @@ public class JetTestInstanceFactory {
         return ((HazelcastInstanceImpl) inst.getHazelcastInstance()).node.isMaster();
     }
 
-    public JetClientInstanceImpl newClient() {
-        return newClient(locateAndGetClientConfig());
+    public JetInstance newClient() {
+        return newClient(new ClientConfig());
     }
 
-    public JetClientInstanceImpl newClient(ClientConfig config) {
-        HazelcastInstance client = factory.newHazelcastClient(config);
-        return getJetClientInstance(client);
+    public JetInstance newClient(ClientConfig config) {
+        return factory.newHazelcastClient(config).getJetInstance();
     }
 
     public JetInstance[] getAllJetInstances() {

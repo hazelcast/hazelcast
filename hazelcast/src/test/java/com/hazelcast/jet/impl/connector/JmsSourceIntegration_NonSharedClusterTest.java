@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.client.map.helpers.AMapStore;
 import com.hazelcast.collection.IList;
+import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.jet.JetInstance;
@@ -112,12 +113,12 @@ public class JmsSourceIntegration_NonSharedClusterTest extends JetTestSupport {
     private void when_snapshotFails(ProcessingGuarantee guarantee, boolean expectFailure) {
         storeFailed = false;
         // force snapshots to fail by adding a failing map store configuration for snapshot data maps
-        JetConfig config = new JetConfig();
+        Config config = new Config();
         MapConfig mapConfig = new MapConfig(JobRepository.SNAPSHOT_DATA_MAP_PREFIX + '*');
         MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
         mapStoreConfig.setEnabled(true);
         mapStoreConfig.setImplementation(new FailingMapStore());
-        config.getHazelcastConfig().addMapConfig(mapConfig);
+        config.addMapConfig(mapConfig);
 
         JetInstance instance = createJetMember(config);
         Pipeline p = Pipeline.create();

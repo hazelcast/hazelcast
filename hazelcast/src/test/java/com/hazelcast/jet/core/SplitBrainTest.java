@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
@@ -65,9 +66,9 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
     }
 
     @Override
-    protected void onJetConfigCreated(JetConfig jetConfig) {
-        jetConfig.getInstanceConfig().setBackupCount(MAX_BACKUP_COUNT);
-        jetConfig.getInstanceConfig().setScaleUpDelayMillis(3000);
+    protected void onConfigCreated(Config config) {
+        config.getJetConfig().getInstanceConfig().setBackupCount(MAX_BACKUP_COUNT);
+        config.getJetConfig().getInstanceConfig().setScaleUpDelayMillis(3000);
     }
 
     @Test
@@ -265,10 +266,9 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
     @Test
     public void when_newMemberJoinsToCluster_then_jobQuorumSizeIsUpdated() {
         int clusterSize = 3;
-        JetConfig jetConfig = new JetConfig();
         JetInstance[] instances = new JetInstance[clusterSize];
         for (int i = 0; i < clusterSize; i++) {
-            instances[i] = createJetMember(jetConfig);
+            instances[i] = createJetMember();
         }
 
         NoOutputSourceP.executionStarted = new CountDownLatch(clusterSize * PARALLELISM);
@@ -277,7 +277,7 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
         Job job = instances[0].newJob(dag, new JobConfig().setSplitBrainProtection(true));
         assertOpenEventually(NoOutputSourceP.executionStarted);
 
-        createJetMember(jetConfig);
+        createJetMember();
 
         assertTrueEventually(() -> {
             JetService service = getJetService(instances[0]);
@@ -294,10 +294,9 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
     @Test
     public void when_newMemberIsAddedAfterClusterSizeFallsBelowQuorumSize_then_jobRestartDoesNotSucceed() {
         int clusterSize = 5;
-        JetConfig jetConfig = new JetConfig();
         JetInstance[] instances = new JetInstance[clusterSize];
         for (int i = 0; i < clusterSize; i++) {
-            instances[i] = createJetMember(jetConfig);
+            instances[i] = createJetMember();
         }
 
         NoOutputSourceP.executionStarted = new CountDownLatch(clusterSize * PARALLELISM);
@@ -311,7 +310,7 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
         }
         NoOutputSourceP.proceedLatch.countDown();
         assertJobStatusEventually(job, NOT_RUNNING, 10);
-        createJetMember(jetConfig);
+        createJetMember();
         assertTrueAllTheTime(() -> assertStatusNotRunningOrStarting(job.getStatus()), 5);
     }
 

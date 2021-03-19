@@ -75,19 +75,19 @@ public abstract class TestInClusterSupport extends JetTestSupport {
         client = factory.newClient();
     }
 
-    protected static JetConfig prepareConfig() {
+    protected static Config prepareConfig() {
         parallelism = Runtime.getRuntime().availableProcessors() / MEMBER_COUNT / 2;
-        JetConfig config = new JetConfig();
-        config.getInstanceConfig().setCooperativeThreadCount(max(2, parallelism));
-        config.getHazelcastConfig().getMetricsConfig().setCollectionFrequencySeconds(1);
-        Config hzConfig = config.getHazelcastConfig();
+        Config config = new Config();
+        JetConfig jetConfig = config.getJetConfig();
+        jetConfig.getInstanceConfig().setCooperativeThreadCount(max(2, parallelism));
+        config.getMetricsConfig().setCollectionFrequencySeconds(1);
         // Set partition count to match the parallelism of IMap sources.
         // Their preferred local parallelism is 2, therefore partition count
         // should be 2 * MEMBER_COUNT.
-        hzConfig.getProperties().setProperty("hazelcast.partition.count", "" + 2 * MEMBER_COUNT);
-        hzConfig.addCacheConfig(new CacheSimpleConfig().setName("*"));
-        hzConfig.getMapConfig(JOURNALED_MAP_PREFIX + '*').getEventJournalConfig().setEnabled(true);
-        hzConfig.getCacheConfig(JOURNALED_CACHE_PREFIX + '*').getEventJournalConfig().setEnabled(true);
+        config.getProperties().setProperty("hazelcast.partition.count", "" + 2 * MEMBER_COUNT);
+        config.addCacheConfig(new CacheSimpleConfig().setName("*"));
+        config.getMapConfig(JOURNALED_MAP_PREFIX + '*').getEventJournalConfig().setEnabled(true);
+        config.getCacheConfig(JOURNALED_CACHE_PREFIX + '*').getEventJournalConfig().setEnabled(true);
         return config;
     }
 
@@ -123,7 +123,7 @@ public abstract class TestInClusterSupport extends JetTestSupport {
         return allJetInstances;
     }
 
-    private static JetInstance createCluster(int nodeCount, JetConfig config) {
+    private static JetInstance createCluster(int nodeCount, Config config) {
         factory = new JetTestInstanceFactory();
         allJetInstances = new JetInstance[nodeCount];
         for (int i = 0; i < nodeCount; i++) {

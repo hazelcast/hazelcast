@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
@@ -42,8 +43,8 @@ public class GracefulShutdown_LiteMasterTest extends JetTestSupport {
     @Before
     public void setup() {
         TestProcessors.reset(0);
-        JetConfig liteMemberConfig = new JetConfig();
-        liteMemberConfig.getHazelcastConfig().setLiteMember(true);
+        Config liteMemberConfig = new Config();
+        liteMemberConfig.setLiteMember(true);
         liteMaster = createJetMember(liteMemberConfig);
         instance = createJetMember();
     }

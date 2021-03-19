@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.deployment;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.internal.util.FilteringClassLoader;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JetConfig;
@@ -32,11 +33,11 @@ public class DeploymentTest extends AbstractDeploymentTest {
 
     @BeforeClass
     public static void beforeClass() {
-        JetConfig jetConfig = new JetConfig();
+        Config config = new Config();
         FilteringClassLoader filteringClassLoader = new FilteringClassLoader(singletonList("deployment"), null);
-        jetConfig.getHazelcastConfig().setClassLoader(filteringClassLoader);
+        config.setClassLoader(filteringClassLoader);
 
-        initialize(2, jetConfig);
+        initialize(2, config);
     }
 
     @Override

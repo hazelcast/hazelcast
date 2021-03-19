@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.JetInstance;
@@ -83,8 +84,8 @@ public class JobTest extends SimpleTestInClusterSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        JetConfig config = new JetConfig();
-        config.getInstanceConfig().setCooperativeThreadCount(LOCAL_PARALLELISM);
+        Config config = new Config();
+        config.getJetConfig().getInstanceConfig().setCooperativeThreadCount(LOCAL_PARALLELISM);
         initializeWithClient(NODE_COUNT, config, null);
     }
 

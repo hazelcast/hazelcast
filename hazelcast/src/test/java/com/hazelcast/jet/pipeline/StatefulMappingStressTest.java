@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.pipeline;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.config.JetConfig;
@@ -50,7 +51,7 @@ public class StatefulMappingStressTest extends JetTestSupport {
 
     @Before
     public void setup() {
-        instance = createJetMembers(new JetConfig(), 2)[0];
+        instance = createJetMembers(new Config(), 2)[0];
     }
 
     @Test

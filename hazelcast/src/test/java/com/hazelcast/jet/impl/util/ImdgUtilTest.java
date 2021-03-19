@@ -16,12 +16,11 @@
 
 package com.hazelcast.jet.impl.util;
 
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
-import com.hazelcast.jet.config.JetClientConfig;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.map.IMap;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -40,22 +39,21 @@ public class ImdgUtilTest extends SimpleTestInClusterSupport {
 
     @BeforeClass
     public static void setupCluster() {
-        JetConfig jetConfig = new JetConfig();
-        Config hzConfig = jetConfig.getHazelcastConfig();
-        hzConfig.getMapConfig(NEAR_CACHED_SERIALIZED_MAP).setNearCacheConfig(
+        Config config = new Config();
+        config.getMapConfig(NEAR_CACHED_SERIALIZED_MAP).setNearCacheConfig(
                 new NearCacheConfig().setInMemoryFormat(InMemoryFormat.BINARY)
         );
-        hzConfig.getMapConfig(NEAR_CACHED_NON_SERIALIZED_MAP).setNearCacheConfig(
+        config.getMapConfig(NEAR_CACHED_NON_SERIALIZED_MAP).setNearCacheConfig(
                 new NearCacheConfig().setInMemoryFormat(InMemoryFormat.OBJECT)
         );
 
-        JetClientConfig clientConfig = new JetClientConfig();
+        ClientConfig clientConfig = new ClientConfig();
         clientConfig.addNearCacheConfig(new NearCacheConfig(NEAR_CACHED_SERIALIZED_MAP)
                 .setInMemoryFormat(InMemoryFormat.BINARY));
         clientConfig.addNearCacheConfig(new NearCacheConfig(NEAR_CACHED_NON_SERIALIZED_MAP)
                 .setInMemoryFormat(InMemoryFormat.OBJECT));
 
-        initializeWithClient(2, jetConfig, clientConfig);
+        initializeWithClient(2, config, clientConfig);
     }
 
     @Test

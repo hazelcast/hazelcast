@@ -20,12 +20,11 @@ import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Util;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.ProcessorSupplier;
@@ -88,21 +87,20 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
 
     @AfterClass
     public static void afterClass() {
-        Jet.shutdownAll();
+        Hazelcast.shutdownAll();
     }
 
     @Before
     public void before() {
-        JetConfig config = new JetConfig();
-        config.getInstanceConfig().setCooperativeThreadCount(PARALLELISM);
-        Config hazelcastConfig = config.getHazelcastConfig();
-        hazelcastConfig.setClusterName(randomName());
-        final JoinConfig join = hazelcastConfig.getNetworkConfig().getJoin();
+        Config config = new Config();
+        config.getJetConfig().getInstanceConfig().setCooperativeThreadCount(PARALLELISM);
+        config.setClusterName(randomName());
+        final JoinConfig join = config.getNetworkConfig().getJoin();
         join.getMulticastConfig().setEnabled(false);
         join.getTcpIpConfig().setEnabled(true).addMember("127.0.0.1");
 
         for (int i = 0; i < NODE_COUNT; i++) {
-            instance = Jet.newJetInstance(config);
+            instance = Hazelcast.newHazelcastInstance(config).getJetInstance();
         }
         logger = instance.getHazelcastInstance().getLoggingService().getLogger(WordCountTest.class);
         generateMockInput();

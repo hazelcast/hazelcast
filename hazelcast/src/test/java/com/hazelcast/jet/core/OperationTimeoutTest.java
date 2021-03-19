@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -36,13 +37,12 @@ public class OperationTimeoutTest extends JetTestSupport {
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
-    private JetConfig config;
+    private Config config;
 
     @Before
     public void setup() {
-        config = new JetConfig();
-        config.getHazelcastConfig().getProperties().put(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(),
-                Integer.toString(TIMEOUT_MILLIS));
+        config = new Config();
+        config.setProperty(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), Integer.toString(TIMEOUT_MILLIS));
     }
 
     @Test

@@ -85,26 +85,25 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
 
     @BeforeClass
     public static void setUp() {
-        JetConfig jetConfig = new JetConfig();
-        Config hazelcastConfig = jetConfig.getHazelcastConfig();
-        hazelcastConfig.addCacheConfig(new CacheSimpleConfig().setName("*"));
-
-        jet = factory.newMember(jetConfig);
-        JetInstance jet2 = factory.newMember(jetConfig);
-
         Config config = new Config();
+        config.addCacheConfig(new CacheSimpleConfig().setName("*"));
+
+        jet = factory.newMember(config);
+        JetInstance jet2 = factory.newMember(config);
+
+        Config remoteClusterConfig = new Config();
         CacheSimpleConfig cacheConfig = new CacheSimpleConfig().setName("*");
         cacheConfig.getEventJournalConfig().setEnabled(true);
-        config.addCacheConfig(cacheConfig);
-        config.setClusterName(randomName());
+        remoteClusterConfig.addCacheConfig(cacheConfig);
+        remoteClusterConfig.setClusterName(randomName());
         MapConfig mapConfig = new MapConfig();
         mapConfig.setName("*").getEventJournalConfig().setEnabled(true);
-        config.addMapConfig(mapConfig);
-        hz = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(config);
+        remoteClusterConfig.addMapConfig(mapConfig);
+        hz = Hazelcast.newHazelcastInstance(remoteClusterConfig);
+        HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(remoteClusterConfig);
 
         clientConfig = new ClientConfig();
-        clientConfig.setClusterName(config.getClusterName());
+        clientConfig.setClusterName(remoteClusterConfig.getClusterName());
         Address address = hz.getCluster().getLocalMember().getAddress();
         clientConfig.getNetworkConfig().addAddress(address.getHost() + ':' + address.getPort());
 

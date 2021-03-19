@@ -16,10 +16,9 @@
 
 package com.hazelcast.jet.core.metrics;
 
-import com.hazelcast.jet.Jet;
+import com.hazelcast.config.Config;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
@@ -27,7 +26,6 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -53,16 +51,11 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
     public void before() throws Exception {
         reset(MEMBER_COUNT);
 
-        JetConfig config = new JetConfig();
+        Config config = new Config();
         config.setProperty("hazelcast.jmx", "true");
-        config.configureHazelcast(hzConfig -> hzConfig.getMetricsConfig().setCollectionFrequencySeconds(1));
+        config.getMetricsConfig().setCollectionFrequencySeconds(1);
 
         jetInstances = createJetMembers(config, MEMBER_COUNT);
-    }
-
-    @After
-    public void after() {
-        Jet.shutdownAll();
     }
 
     @Test

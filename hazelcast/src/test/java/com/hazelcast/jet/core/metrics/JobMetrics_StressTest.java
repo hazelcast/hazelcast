@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.core.metrics;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.jet.JetInstance;
@@ -63,8 +64,8 @@ public class JobMetrics_StressTest extends JetTestSupport {
         IncrementingProcessor.initCount.set(0);
         IncrementingProcessor.completeCount.set(0);
 
-        JetConfig config = new JetConfig();
-        config.getHazelcastConfig().getMetricsConfig().setCollectionFrequencySeconds(1);
+        Config config = new Config();
+        config.getMetricsConfig().setCollectionFrequencySeconds(1);
         instance = createJetMember(config);
     }
 

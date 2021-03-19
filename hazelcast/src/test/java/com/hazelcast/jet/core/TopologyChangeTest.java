@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
@@ -95,7 +96,7 @@ public class TopologyChangeTest extends JetTestSupport {
     private int nodeCount;
 
     private JetInstance[] instances;
-    private JetConfig config;
+    private Config config;
 
     @Parameterized.Parameters(name = "liteMemberFlags({index})")
     public static Collection<boolean[]> parameters() {
@@ -116,15 +117,15 @@ public class TopologyChangeTest extends JetTestSupport {
         }
         TestProcessors.reset(nodeCount * PARALLELISM);
 
-        config = new JetConfig();
-        config.getInstanceConfig().setCooperativeThreadCount(PARALLELISM);
+        config = new Config();
+        config.getJetConfig().getInstanceConfig().setCooperativeThreadCount(PARALLELISM);
 
         instances = new JetInstance[NODE_COUNT];
 
         for (int i = 0; i < NODE_COUNT; i++) {
-            JetConfig config = new JetConfig();
-            config.getHazelcastConfig().setLiteMember(liteMemberFlags[i]);
-            config.getInstanceConfig().setCooperativeThreadCount(PARALLELISM);
+            Config config = new Config();
+            config.setLiteMember(liteMemberFlags[i]);
+            config.getJetConfig().getInstanceConfig().setCooperativeThreadCount(PARALLELISM);
 
             instances[i] = createJetMember(config);
         }

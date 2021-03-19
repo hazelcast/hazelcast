@@ -17,6 +17,7 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.cluster.Cluster;
+import com.hazelcast.config.Config;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
@@ -54,8 +55,8 @@ public class ClusterStateChangeTest extends JetTestSupport {
     @Before
     public void before() {
         TestProcessors.reset(TOTAL_PARALLELISM);
-        JetConfig config = new JetConfig();
-        config.getInstanceConfig().setCooperativeThreadCount(LOCAL_PARALLELISM);
+        Config config = new Config();
+        config.getJetConfig().getInstanceConfig().setCooperativeThreadCount(LOCAL_PARALLELISM);
         members = createJetMembers(config, NODE_COUNT);
 
         assertTrueEventually(() -> {

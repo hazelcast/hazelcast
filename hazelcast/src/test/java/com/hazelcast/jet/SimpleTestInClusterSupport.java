@@ -16,8 +16,9 @@
 
 package com.hazelcast.jet;
 
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.jet.config.JetClientConfig;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.logging.ILogger;
@@ -47,33 +48,33 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
     private static final ILogger SUPPORT_LOGGER = Logger.getLogger(SimpleTestInClusterSupport.class);
 
     private static JetTestInstanceFactory factory;
-    private static JetConfig jetConfig;
+    private static Config config;
     private static JetInstance[] instances;
     private static JetInstance client;
 
-    protected static void initialize(int memberCount, @Nullable JetConfig jetConfig) {
+    protected static void initialize(int memberCount, @Nullable Config config) {
         assert factory == null : "already initialized";
         factory = new JetTestInstanceFactory();
         instances = new JetInstance[memberCount];
-        if (jetConfig == null) {
-            jetConfig = new JetConfig();
+        if (config == null) {
+            config = new Config();
         }
-        SimpleTestInClusterSupport.jetConfig = jetConfig;
+        SimpleTestInClusterSupport.config = config;
         // create members
         for (int i = 0; i < memberCount; i++) {
-            instances[i] = factory.newMember(jetConfig);
+            instances[i] = factory.newMember(config);
         }
     }
 
     protected static void initializeWithClient(
             int memberCount,
-            @Nullable JetConfig config,
-            @Nullable JetClientConfig clientConfig
+            @Nullable Config config,
+            @Nullable ClientConfig clientConfig
     ) {
         initialize(memberCount, config);
 
         if (clientConfig == null) {
-            clientConfig = new JetClientConfig();
+            clientConfig = new ClientConfig();
         }
         client = factory.newClient(clientConfig);
     }
@@ -123,8 +124,8 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
      * passed).
      */
     @Nonnull
-    protected static JetConfig jetConfig() {
-        return jetConfig;
+    protected static Config jetConfig() {
+        return config;
     }
 
     /**

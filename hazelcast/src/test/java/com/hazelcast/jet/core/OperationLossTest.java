@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
@@ -59,8 +60,8 @@ public class OperationLossTest extends SimpleTestInClusterSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        JetConfig config = new JetConfig();
-        config.getHazelcastConfig().setProperty(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "2000");
+        Config config = new Config();
+        config.setProperty(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "2000");
 
         initialize(2, config);
     }

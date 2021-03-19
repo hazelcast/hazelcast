@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
@@ -41,8 +42,8 @@ public class JobRestartStressTestBase extends JetTestSupport {
 
     @Before
     public void setup() {
-        JetConfig config = new JetConfig();
-        config.getInstanceConfig().setCooperativeThreadCount(4);
+        Config config = new Config();
+        config.getJetConfig().getInstanceConfig().setCooperativeThreadCount(4);
 
         instance1 = createJetMember(config);
         createJetMember(config);

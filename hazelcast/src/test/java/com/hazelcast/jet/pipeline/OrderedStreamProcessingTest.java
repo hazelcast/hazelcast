@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.pipeline;
 
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
-import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.Traversers;
@@ -80,7 +80,7 @@ public class OrderedStreamProcessingTest extends JetTestSupport implements Seria
 
     @BeforeClass
     public static void setupClass() {
-        jet = Jet.newJetInstance();
+        jet = Hazelcast.newHazelcastInstance().getJetInstance();
     }
 
     @Before

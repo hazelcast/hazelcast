@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
@@ -55,14 +56,14 @@ public class SuspendResumeTest extends JetTestSupport {
 
     private JetInstance[] instances;
     private DAG dag;
-    private JetConfig config;
+    private Config config;
 
     @Before
     public void before() {
         TestProcessors.reset(NODE_COUNT * PARALLELISM);
         instances = new JetInstance[NODE_COUNT];
-        config = new JetConfig();
-        config.getInstanceConfig().setCooperativeThreadCount(PARALLELISM);
+        config = new Config();
+        config.getJetConfig().getInstanceConfig().setCooperativeThreadCount(PARALLELISM);
         for (int i = 0; i < NODE_COUNT; i++) {
             instances[i] = createJetMember(config);
         }

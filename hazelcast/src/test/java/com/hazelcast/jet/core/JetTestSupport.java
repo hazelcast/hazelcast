@@ -19,6 +19,7 @@ package com.hazelcast.jet.core;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.collection.IList;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
@@ -92,10 +93,10 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
     }
 
     protected JetInstance createJetMember() {
-        return this.createJetMember(new JetConfig());
+        return this.createJetMember(new Config());
     }
 
-    protected JetInstance createJetMember(JetConfig config) {
+    protected JetInstance createJetMember(Config config) {
         if (instanceFactory == null) {
             instanceFactory = new JetTestInstanceFactory();
         }
@@ -103,17 +104,17 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
     }
 
     protected JetInstance[] createJetMembers(int nodeCount) {
-        return createJetMembers(new JetConfig(), nodeCount);
+        return createJetMembers(new Config(), nodeCount);
     }
 
-    protected JetInstance[] createJetMembers(JetConfig config, int nodeCount) {
+    protected JetInstance[] createJetMembers(Config config, int nodeCount) {
         if (instanceFactory == null) {
             instanceFactory = new JetTestInstanceFactory();
         }
         return instanceFactory.newMembers(config, nodeCount);
     }
 
-    protected JetInstance createJetMember(JetConfig config, Address[] blockedAddress) {
+    protected JetInstance createJetMember(Config config, Address[] blockedAddress) {
         if (instanceFactory == null) {
             instanceFactory = new JetTestInstanceFactory();
         }

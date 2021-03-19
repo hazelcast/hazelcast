@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.JetTestSupport;
@@ -29,14 +30,14 @@ public class JetTest extends JetTestSupport {
     @Test
     public void when_defaultMapConfig_then_notUsed() {
         // When
-        JetConfig config = new JetConfig();
-        config.getHazelcastConfig().getMapConfig("default")
+        Config config = new Config();
+        config.getMapConfig("default")
                 .setTimeToLiveSeconds(MapConfig.DEFAULT_TTL_SECONDS + 1);
         JetInstance instance = createJetMember(config);
 
         // Then
-        int actualTTL = instance.getConfig().getHazelcastConfig().findMapConfig(INTERNAL_JET_OBJECTS_PREFIX + "fooMap")
-                                .getTimeToLiveSeconds();
+        int actualTTL = instance.getHazelcastInstance().getConfig()
+                .findMapConfig(INTERNAL_JET_OBJECTS_PREFIX + "fooMap").getTimeToLiveSeconds();
         assertEquals(MapConfig.DEFAULT_TTL_SECONDS, actualTTL);
     }
 

@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.pipeline;
 
-import com.hazelcast.jet.Jet;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.Util;
@@ -66,7 +66,7 @@ public class OrderedProcessingMergingStagesTest extends JetTestSupport implement
 
     @BeforeClass
     public static void setupClass() {
-        jet = Jet.newJetInstance();
+        jet = Hazelcast.newHazelcastInstance().getJetInstance();
     }
 
     @Before

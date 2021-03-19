@@ -64,12 +64,11 @@ public class HazelcastConnector_RestartTest extends JetTestSupport {
 
     @Before
     public void setup() {
-        JetConfig config = new JetConfig();
-        Config hazelcastConfig = config.getHazelcastConfig();
+        Config config = new Config();
         CacheSimpleConfig cacheConfig = new CacheSimpleConfig().setName("*");
         cacheConfig.getEventJournalConfig().setEnabled(true);
-        hazelcastConfig.addCacheConfig(cacheConfig);
-        ConfigAccessor.getServicesConfig(config.getHazelcastConfig())
+        config.addCacheConfig(cacheConfig);
+        ConfigAccessor.getServicesConfig(config)
                       .addServiceConfig(
                               new ServiceConfig()
                                       .setName("MigrationBlockingService")

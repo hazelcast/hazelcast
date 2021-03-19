@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.execution.init;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.config.Config;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JetConfig;
@@ -43,9 +44,9 @@ public class DetermineLocalParallelismTest extends SimpleTestInClusterSupport {
 
     @BeforeClass
     public static void before() {
-        JetConfig cfg = new JetConfig();
-        cfg.getInstanceConfig().setCooperativeThreadCount(DEFAULT_PARALLELISM);
-        initialize(1, cfg);
+        Config config = new Config();
+        config.getJetConfig().getInstanceConfig().setCooperativeThreadCount(DEFAULT_PARALLELISM);
+        initialize(1, config);
         nodeEngine = getNode(instance()).getNodeEngine();
     }
 

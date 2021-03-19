@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.pipeline;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.Job;
@@ -67,12 +68,11 @@ public abstract class StreamSourceStageTestBase extends JetTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        JetConfig config = new JetConfig();
-        config.getHazelcastConfig()
-              .getMapConfig("*")
+        Config config = new Config();
+        config.getMapConfig("*")
               .getEventJournalConfig().setEnabled(true);
         // use 1 partition for the map journal to have an item in each ption
-        config.getHazelcastConfig().setProperty(PARTITION_COUNT.getName(), "1");
+        config.setProperty(PARTITION_COUNT.getName(), "1");
         instance = factory.newMember(config);
     }
 

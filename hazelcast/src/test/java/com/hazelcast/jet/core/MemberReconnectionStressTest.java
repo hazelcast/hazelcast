@@ -16,10 +16,10 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.TestProcessors.MockP;
 import com.hazelcast.jet.impl.util.ImdgUtil;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -47,7 +47,7 @@ public class MemberReconnectionStressTest extends JetTestSupport {
     @After
     public void after() {
         terminated.set(true);
-        Jet.shutdownAll();
+        Hazelcast.shutdownAll();
     }
 
     @Test
@@ -63,14 +63,14 @@ public class MemberReconnectionStressTest extends JetTestSupport {
         typically at most 1 restart per job. We assert that the jobs
         eventually successfully complete.
          */
-        JetConfig config = new JetConfig();
+        Config config = new Config();
         // The connection drop often causes regular IMap operations to fail - shorten the timeout so that
         // it recovers more quickly
-        config.getHazelcastConfig().setProperty(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "2000");
-        config.getHazelcastConfig().setClusterName(randomName());
+        config.setProperty(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "2000");
+        config.setClusterName(randomName());
 
-        JetInstance inst1 = Jet.newJetInstance(config);
-        JetInstance inst2 = Jet.newJetInstance(config);
+        JetInstance inst1 = Hazelcast.newHazelcastInstance(config).getJetInstance();
+        JetInstance inst2 = Hazelcast.newHazelcastInstance(config).getJetInstance();
 
         logger.info("Instances started");
 

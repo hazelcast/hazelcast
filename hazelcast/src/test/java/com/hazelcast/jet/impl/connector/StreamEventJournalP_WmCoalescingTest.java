@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.connector;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.JetInstance;
@@ -63,7 +64,7 @@ public class StreamEventJournalP_WmCoalescingTest extends JetTestSupport {
 
     @Before
     public void setUp() {
-        JetConfig config = new JetConfig();
+        Config config = new Config();
 
         String mapName = randomMapName();
         MapConfig mapConfig = new MapConfig();
@@ -72,8 +73,8 @@ public class StreamEventJournalP_WmCoalescingTest extends JetTestSupport {
                  .setCapacity(JOURNAL_CAPACITY)
                  .setEnabled(true);
 
-        config.getHazelcastConfig().setProperty(PARTITION_COUNT.getName(), "2");
-        config.getHazelcastConfig().addMapConfig(mapConfig);
+        config.setProperty(PARTITION_COUNT.getName(), "2");
+        config.addMapConfig(mapConfig);
         instance = this.createJetMember(config);
 
         map = (MapProxyImpl<Integer, Integer>) instance.getHazelcastInstance().<Integer, Integer>getMap(mapName);

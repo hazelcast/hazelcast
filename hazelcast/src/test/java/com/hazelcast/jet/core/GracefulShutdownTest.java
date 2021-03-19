@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.JetInstance;
@@ -137,8 +138,8 @@ public class GracefulShutdownTest extends JetTestSupport {
 
     @Test
     public void when_liteMemberShutDown_then_jobKeepsRunning() throws Exception {
-        JetConfig liteMemberConfig = new JetConfig();
-        liteMemberConfig.getHazelcastConfig().setLiteMember(true);
+        Config liteMemberConfig = new Config();
+        liteMemberConfig.setLiteMember(true);
         JetInstance liteMember = createJetMember(liteMemberConfig);
         DAG dag = new DAG();
         dag.newVertex("v", (SupplierEx<Processor>) NoOutputSourceP::new);
@@ -170,7 +171,7 @@ public class GracefulShutdownTest extends JetTestSupport {
         mapConfig.getMapStoreConfig()
                  .setClassName(BlockingMapStore.class.getName())
                  .setEnabled(true);
-        instances[0].getConfig().getHazelcastConfig().addMapConfig(mapConfig);
+        instances[0].getHazelcastInstance().getConfig().addMapConfig(mapConfig);
         BlockingMapStore.shouldBlock = false;
         BlockingMapStore.wasBlocked = false;
 

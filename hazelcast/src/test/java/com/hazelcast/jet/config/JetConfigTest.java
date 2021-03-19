@@ -54,26 +54,4 @@ public class JetConfigTest {
         // Then
         assertEquals(edgeConfig, config.getDefaultEdgeConfig());
     }
-
-    @Test
-    public void when_setHzConfig_thenReturnsHzConfig() {
-        // When
-        JetConfig jetConfig = new JetConfig();
-        Config hzConfig = new Config();
-        jetConfig.setHazelcastConfig(hzConfig);
-
-        // Then
-        assertEquals(hzConfig, jetConfig.getHazelcastConfig());
-    }
-
-    @Test
-    public void when_setProperties_thenReturnsProperties() {
-        // When
-        JetConfig jetConfig = new JetConfig();
-        Properties properties = new Properties();
-        jetConfig.setProperties(properties);
-
-        // Then
-        assertEquals(properties, jetConfig.getProperties());
-    }
 }

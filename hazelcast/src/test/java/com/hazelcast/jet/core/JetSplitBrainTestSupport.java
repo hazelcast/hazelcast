@@ -17,6 +17,7 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.EndpointQualifier;
@@ -84,19 +85,19 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
 
     }
 
-    private JetConfig createConfig() {
-        final JetConfig jetConfig = new JetConfig();
-        jetConfig.getInstanceConfig().setCooperativeThreadCount(PARALLELISM);
-        jetConfig.getHazelcastConfig().setProperty(ClusterProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5");
-        jetConfig.getHazelcastConfig().setProperty(ClusterProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "5");
-        onJetConfigCreated(jetConfig);
-        return jetConfig;
+    private Config createConfig() {
+        Config config = new Config();
+        config.getJetConfig().getInstanceConfig().setCooperativeThreadCount(PARALLELISM);
+        config.setProperty(ClusterProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5");
+        config.setProperty(ClusterProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "5");
+        onConfigCreated(config);
+        return config;
     }
 
     /**
      * Override this for custom Jet configuration
      */
-    protected void onJetConfigCreated(JetConfig jetConfig) {
+    protected void onConfigCreated(Config config) {
 
     }
 
@@ -107,7 +108,7 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
         checkPositive(firstSubClusterSize, "invalid first sub cluster size: " + firstSubClusterSize);
         checkPositive(secondSubClusterSize, "invalid second sub cluster size: " + secondSubClusterSize);
 
-        JetConfig config = createConfig();
+        Config config = createConfig();
         int clusterSize = firstSubClusterSize + secondSubClusterSize;
         JetInstance[] instances = startInitialCluster(config, clusterSize);
 
@@ -133,7 +134,7 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
         }
     }
 
-    private JetInstance[] startInitialCluster(JetConfig config, int clusterSize) {
+    private JetInstance[] startInitialCluster(Config config, int clusterSize) {
         JetInstance[] instances = new JetInstance[clusterSize];
         for (int i = 0; i < clusterSize; i++) {
             instances[i] = createJetMember(config);

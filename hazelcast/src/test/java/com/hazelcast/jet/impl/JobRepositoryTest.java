@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.jet.JetException;
@@ -64,9 +65,8 @@ public class JobRepositoryTest extends JetTestSupport {
 
     @Before
     public void setup() {
-        JetConfig config = new JetConfig();
-        Properties properties = config.getProperties();
-        properties.setProperty(JOB_RESULTS_MAX_SIZE.getName(), Integer.toString(MAX_JOB_RESULTS_COUNT));
+        Config config = new Config();
+        config.setProperty(JOB_RESULTS_MAX_SIZE.getName(), Integer.toString(MAX_JOB_RESULTS_COUNT));
 
         instance = createJetMember(config);
         jobRepository = new JobRepository(instance);

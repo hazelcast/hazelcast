@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
@@ -43,14 +44,14 @@ public class ScaleUpTest extends JetTestSupport {
 
     private JetInstance[] instances;
     private DAG dag;
-    private JetConfig config;
+    private Config config;
 
     private void setup(long scaleUpDelay) {
         TestProcessors.reset(NODE_COUNT * LOCAL_PARALLELISM);
 
         dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, NODE_COUNT)));
-        config = new JetConfig();
-        config.getInstanceConfig().setScaleUpDelayMillis(scaleUpDelay);
+        config = new Config();
+        config.getJetConfig().getInstanceConfig().setScaleUpDelayMillis(scaleUpDelay);
         instances = createJetMembers(config, NODE_COUNT);
     }
 
@@ -80,8 +81,7 @@ public class ScaleUpTest extends JetTestSupport {
         instances[0].newJob(dag);
         assertTrueEventually(() -> assertEquals(NODE_COUNT, MockPS.initCount.get()));
 
-        JetConfig config = new JetConfig().configureHazelcast(c -> c.setLiteMember(true));
-        createJetMember(config);
+        createJetMember(new Config().setLiteMember(true));
         assertTrueEventually(() -> assertEquals(NODE_COUNT, MockPS.initCount.get()));
     }
 

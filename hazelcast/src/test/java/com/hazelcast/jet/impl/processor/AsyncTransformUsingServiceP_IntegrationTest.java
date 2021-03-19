@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.collection.IList;
+import com.hazelcast.config.Config;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.Job;
@@ -93,9 +94,8 @@ public class AsyncTransformUsingServiceP_IntegrationTest extends SimpleTestInClu
 
     @BeforeClass
     public static void beforeClass() {
-        JetConfig config = new JetConfig();
-        config.getHazelcastConfig()
-              .getMapConfig("journaledMap*")
+        Config config = new Config();
+        config.getMapConfig("journaledMap*")
               .getEventJournalConfig()
               .setEnabled(true)
               .setCapacity(100_000);

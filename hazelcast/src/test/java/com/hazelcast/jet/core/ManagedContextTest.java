@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
@@ -47,9 +48,8 @@ public class ManagedContextTest extends JetTestSupport {
 
     @Before
     public void setup() {
-        JetConfig jetConfig = new JetConfig()
-                .configureHazelcast(hzConfig -> hzConfig.setManagedContext(new MockManagedContext()));
-        jet = createJetMember(jetConfig);
+        Config config = new Config().setManagedContext(new MockManagedContext());
+        jet = createJetMember(config);
     }
 
     @Test

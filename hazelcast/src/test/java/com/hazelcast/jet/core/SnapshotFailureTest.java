@@ -17,6 +17,7 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.client.map.helpers.AMapStore;
+import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.function.SupplierEx;
@@ -58,15 +59,15 @@ public class SnapshotFailureTest extends JetTestSupport {
 
     @Before
     public void setup() {
-        JetConfig config = new JetConfig();
-        config.getInstanceConfig().setCooperativeThreadCount(LOCAL_PARALLELISM);
+        Config config = new Config();
+        config.getJetConfig().getInstanceConfig().setCooperativeThreadCount(LOCAL_PARALLELISM);
 
         // force snapshots to fail by adding a failing map store configuration for snapshot data maps
         MapConfig mapConfig = new MapConfig(JobRepository.SNAPSHOT_DATA_MAP_PREFIX + '*');
         MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
         mapStoreConfig.setEnabled(true);
         mapStoreConfig.setImplementation(new FailingMapStore());
-        config.getHazelcastConfig().addMapConfig(mapConfig);
+        config.addMapConfig(mapConfig);
 
         JetInstance[] instances = createJetMembers(config, 2);
         instance1 = instances[0];

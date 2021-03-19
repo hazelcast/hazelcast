@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.JetInstance;
@@ -87,8 +88,8 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
 
     @Before
     public void setup() {
-        JetConfig config = new JetConfig();
-        config.getInstanceConfig().setCooperativeThreadCount(LOCAL_PARALLELISM);
+        Config config = new Config();
+        config.getJetConfig().getInstanceConfig().setCooperativeThreadCount(LOCAL_PARALLELISM);
 
         instance1 = createJetMember(config);
         instance2 = createJetMember(config);

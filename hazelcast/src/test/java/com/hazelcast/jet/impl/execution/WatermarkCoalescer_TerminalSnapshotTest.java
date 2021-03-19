@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.execution;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
@@ -60,12 +61,11 @@ public class WatermarkCoalescer_TerminalSnapshotTest extends JetTestSupport {
 
     @Before
     public void setUp() {
-        JetConfig config = new JetConfig().configureHazelcast(c -> {
-            EventJournalConfig journalConfig = new EventJournalConfig()
-                    .setCapacity(1_000_000)
-                    .setEnabled(true);
-            c.getMapConfig("*").setEventJournalConfig(journalConfig);
-        });
+        Config config = new Config();
+        EventJournalConfig journalConfig = new EventJournalConfig()
+                .setCapacity(1_000_000)
+                .setEnabled(true);
+        config.getMapConfig("*").setEventJournalConfig(journalConfig);
 
         // number of partitions must match number of source processors for coalescing
         // to work correctly

@@ -16,15 +16,15 @@
 
 package com.hazelcast.jet.pipeline;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.config.EventJournalConfig;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
-import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.accumulator.LongAccumulator;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.JetTestSupport;
 
 import com.hazelcast.jet.core.processor.Processors;
@@ -89,9 +89,9 @@ public class OrderedProcessingMultipleMemberTest extends JetTestSupport implemen
     @BeforeClass
     public static void setupClass() {
         int testCount = 16;
-        JetConfig config = new JetConfig();
+        Config config = new Config();
         for (int idx = 0; idx < testCount; idx++) {
-            EventJournalConfig eventJournalConfig = config.getHazelcastConfig()
+            EventJournalConfig eventJournalConfig = config
                     .getMapConfig("test-map-" + idx)
                     .getEventJournalConfig();
             eventJournalConfig.setEnabled(true);
@@ -99,7 +99,7 @@ public class OrderedProcessingMultipleMemberTest extends JetTestSupport implemen
         }
         instances = new JetInstance[INSTANCE_COUNT];
         for (int i = 0; i < INSTANCE_COUNT; i++) {
-            instances[i] = Jet.newJetInstance(config);
+            instances[i] = Hazelcast.newHazelcastInstance(config).getJetInstance();
         }
     }
 

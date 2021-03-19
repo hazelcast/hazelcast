@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.config;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -98,13 +99,13 @@ public class JobConfigTest extends JetTestSupport {
     @Test
     public void when_losslessRestartEnabled_then_openSourceMemberDoesNotStart() {
         // When
-        JetConfig jetConfig = new JetConfig();
-        jetConfig.getInstanceConfig().setLosslessRestartEnabled(true);
+        Config config = new Config();
+        config.getJetConfig().getInstanceConfig().setLosslessRestartEnabled(true);
 
         // Then
         exception.expect(IllegalStateException.class);
         exception.expectMessage("Hot Restart requires Hazelcast Enterprise Edition");
-        createJetMember(jetConfig);
+        createJetMember(config);
     }
 
     @Test

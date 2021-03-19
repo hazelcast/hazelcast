@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.job;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.JetConfig;
@@ -66,8 +67,8 @@ public final class JobSubmissionSlownessRegressionTest extends JetTestSupport {
 
     @Before
     public void setup() {
-        JetConfig config = new JetConfig();
-        config.getHazelcastConfig().setProperty("hazelcast.logging.type", "none");
+        Config config = new Config();
+        config.setProperty("hazelcast.logging.type", "none");
         createJetMember(config);
     }
 

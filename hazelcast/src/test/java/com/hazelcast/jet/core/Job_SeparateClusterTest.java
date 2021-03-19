@@ -20,10 +20,10 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.config.Config;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobAlreadyExistsException;
-import com.hazelcast.jet.config.JetClientConfig;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.MockPS;
@@ -66,9 +66,9 @@ public class Job_SeparateClusterTest extends JetTestSupport {
     public void setup() {
         TestProcessors.reset(NODE_COUNT * LOCAL_PARALLELISM);
 
-        JetConfig config = new JetConfig();
-        config.getInstanceConfig().setCooperativeThreadCount(LOCAL_PARALLELISM);
-        config.getInstanceConfig().setScaleUpDelayMillis(10);
+        Config config = new Config();
+        config.getJetConfig().getInstanceConfig().setCooperativeThreadCount(LOCAL_PARALLELISM);
+        config.getJetConfig().getInstanceConfig().setScaleUpDelayMillis(10);
         instance1 = createJetMember(config);
         instance2 = createJetMember(config);
     }
@@ -98,7 +98,7 @@ public class Job_SeparateClusterTest extends JetTestSupport {
         DAG dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, NODE_COUNT)));
 
         int timeoutSecs = 1;
-        ClientConfig config = new JetClientConfig()
+        ClientConfig config = new ClientConfig()
                 .setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), Integer.toString(timeoutSecs));
         JetInstance client = createJetClient(config);
 
@@ -129,7 +129,7 @@ public class Job_SeparateClusterTest extends JetTestSupport {
 
         int timeoutSecs = 1;
         Address address = getAddress(instance2);
-        ClientConfig config = new JetClientConfig()
+        ClientConfig config = new ClientConfig()
                 .setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), Integer.toString(timeoutSecs))
                 .setNetworkConfig(new ClientNetworkConfig()
                         .setSmartRouting(false)

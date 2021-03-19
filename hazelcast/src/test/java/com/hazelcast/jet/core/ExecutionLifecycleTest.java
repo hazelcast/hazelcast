@@ -564,7 +564,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         }
 
         // create a new client that will join the job after completion
-        JetClientInstanceImpl client2 = factory().newClient();
+        JetInstance client2 = factory().newClient();
         Job job2 = client2.getJob(job.getId());
         try {
             job2.join();

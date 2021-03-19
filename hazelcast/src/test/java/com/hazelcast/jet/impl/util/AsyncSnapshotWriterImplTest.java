@@ -83,14 +83,13 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
 
     @Before
     public void before() {
-        JetConfig jetConfig = new JetConfig();
-        Config config = jetConfig.getHazelcastConfig();
+        Config config = new Config();
         config.getMapConfig(ALWAYS_FAILING_MAP)
               .getMapStoreConfig()
               .setEnabled(true)
               .setImplementation(new AlwaysFailingMapStore());
 
-        JetInstance instance = createJetMember(jetConfig);
+        JetInstance instance = createJetMember(config);
         nodeEngine = ((HazelcastInstanceImpl) instance.getHazelcastInstance()).node.nodeEngine;
         serializationService = ((HazelcastInstanceImpl) instance.getHazelcastInstance()).getSerializationService();
         partitionService = nodeEngine.getPartitionService();
