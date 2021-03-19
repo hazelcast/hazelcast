@@ -24,7 +24,7 @@ import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobStatusCodec;
 import com.hazelcast.jet.impl.operation.GetJobStatusOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
-public class JetGetJobStatusMessageTask extends AbstractJetMessageTask<JetGetJobStatusCodec.RequestParameters, JobStatus> {
+public class JetGetJobStatusMessageTask extends AbstractJetMessageTask<Long, JobStatus> {
 
     JetGetJobStatusMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection,
@@ -34,7 +34,7 @@ public class JetGetJobStatusMessageTask extends AbstractJetMessageTask<JetGetJob
 
     @Override
     protected Operation prepareOperation() {
-        return new GetJobStatusOperation(parameters.jobId);
+        return new GetJobStatusOperation(parameters);
     }
 
     @Override

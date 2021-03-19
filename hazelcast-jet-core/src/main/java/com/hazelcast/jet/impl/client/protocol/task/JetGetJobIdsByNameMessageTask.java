@@ -26,7 +26,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import java.util.List;
 
 public class JetGetJobIdsByNameMessageTask
-        extends AbstractJetMessageTask<JetGetJobIdsByNameCodec.RequestParameters, List<Long>> {
+        extends AbstractJetMessageTask<String, List<Long>> {
 
     JetGetJobIdsByNameMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection,
@@ -36,7 +36,7 @@ public class JetGetJobIdsByNameMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new GetJobIdsByNameOperation(parameters.name);
+        return new GetJobIdsByNameOperation(parameters);
     }
 
     @Override

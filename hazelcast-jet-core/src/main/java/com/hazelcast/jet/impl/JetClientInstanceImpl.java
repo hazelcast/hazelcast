@@ -66,7 +66,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
     @Override
     public List<Job> getJobs() {
         return invokeRequestOnMasterAndDecodeResponse(JetGetJobIdsCodec.encodeRequest(), resp -> {
-            List<Long> jobs = JetGetJobIdsCodec.decodeResponse(resp).response;
+            List<Long> jobs = JetGetJobIdsCodec.decodeResponse(resp);
             return toList(jobs, jobId -> new ClientJobProxy(this, jobId));
         });
     }
@@ -77,7 +77,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
     @Nonnull
     public List<JobSummary> getJobSummaryList() {
         return invokeRequestOnMasterAndDecodeResponse(JetGetJobSummaryListCodec.encodeRequest(),
-                response -> JetGetJobSummaryListCodec.decodeResponse(response).response);
+                response -> JetGetJobSummaryListCodec.decodeResponse(response));
     }
 
     @Nonnull
@@ -89,7 +89,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
     public boolean existsDistributedObject(@Nonnull String serviceName, @Nonnull String objectName) {
         return invokeRequestOnAnyMemberAndDecodeResponse(
                 JetExistsDistributedObjectCodec.encodeRequest(serviceName, objectName),
-                response -> JetExistsDistributedObjectCodec.decodeResponse(response).response
+                response -> JetExistsDistributedObjectCodec.decodeResponse(response)
         );
     }
 
@@ -103,7 +103,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
     @Override
     public List<Long> getJobIdsByName(String name) {
         return invokeRequestOnMasterAndDecodeResponse(JetGetJobIdsByNameCodec.encodeRequest(name),
-                response -> JetGetJobIdsByNameCodec.decodeResponse(response).response);
+                response -> JetGetJobIdsByNameCodec.decodeResponse(response));
     }
 
     @Override

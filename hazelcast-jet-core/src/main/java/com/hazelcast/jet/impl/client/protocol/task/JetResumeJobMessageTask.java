@@ -25,7 +25,7 @@ import com.hazelcast.jet.impl.operation.ResumeJobOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 public class JetResumeJobMessageTask
-        extends AbstractJetMessageTask<JetResumeJobCodec.RequestParameters, Void> implements BlockingMessageTask {
+        extends AbstractJetMessageTask<Long, Void> implements BlockingMessageTask {
     protected JetResumeJobMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection, JetResumeJobCodec::decodeRequest,
                 o -> JetResumeJobCodec.encodeResponse());
@@ -33,7 +33,7 @@ public class JetResumeJobMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new ResumeJobOperation(parameters.jobId);
+        return new ResumeJobOperation(parameters);
     }
 
     @Override

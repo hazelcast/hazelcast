@@ -25,11 +25,11 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.List;
 
-public class JetGetJobIdsMessageTask extends AbstractJetMessageTask<JetGetJobIdsCodec.RequestParameters, List<Long>> {
+public class JetGetJobIdsMessageTask extends AbstractJetMessageTask<Void, List<Long>> {
 
     JetGetJobIdsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection,
-                JetGetJobIdsCodec::decodeRequest,
+                m -> null,
                 JetGetJobIdsCodec::encodeResponse);
     }
 

@@ -25,11 +25,11 @@ import com.hazelcast.jet.impl.operation.GetJobSummaryListOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 public class JetGetJobSummaryListMessageTask
-        extends AbstractJetMessageTask<JetGetJobSummaryListCodec.RequestParameters, Data> {
+        extends AbstractJetMessageTask<Void, Data> {
 
     JetGetJobSummaryListMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection,
-                JetGetJobSummaryListCodec::decodeRequest,
+                m -> null,
                 JetGetJobSummaryListCodec::encodeResponse);
     }
 

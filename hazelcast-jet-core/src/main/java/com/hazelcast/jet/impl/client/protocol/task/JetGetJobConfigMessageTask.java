@@ -25,7 +25,7 @@ import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobConfigCodec;
 import com.hazelcast.jet.impl.operation.GetJobConfigOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
-public class JetGetJobConfigMessageTask extends AbstractJetMessageTask<JetGetJobConfigCodec.RequestParameters, Data>
+public class JetGetJobConfigMessageTask extends AbstractJetMessageTask<Long, Data>
         implements BlockingMessageTask {
 
     protected JetGetJobConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -36,7 +36,7 @@ public class JetGetJobConfigMessageTask extends AbstractJetMessageTask<JetGetJob
 
     @Override
     protected Operation prepareOperation() {
-        return new GetJobConfigOperation(parameters.jobId);
+        return new GetJobConfigOperation(parameters);
     }
 
     @Override

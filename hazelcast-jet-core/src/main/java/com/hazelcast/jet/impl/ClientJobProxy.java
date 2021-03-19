@@ -31,7 +31,6 @@ import com.hazelcast.jet.impl.client.protocol.codec.JetExportSnapshotCodec;
 import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobConfigCodec;
 import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobMetricsCodec;
 import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobStatusCodec;
-import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobStatusCodec.ResponseParameters;
 import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobSubmissionTimeCodec;
 import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobSuspensionCauseCodec;
 import com.hazelcast.jet.impl.client.protocol.codec.JetJoinSubmittedJobCodec;
@@ -75,8 +74,8 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
         return callAndRetryIfTargetNotFound(()  -> {
             ClientMessage request = JetGetJobStatusCodec.encodeRequest(getId());
             ClientMessage response = invocation(request, masterUuid()).invoke().get();
-            ResponseParameters parameters = JetGetJobStatusCodec.decodeResponse(response);
-            return JobStatus.values()[parameters.response];
+            int jobStatusIndex = JetGetJobStatusCodec.decodeResponse(response);
+            return JobStatus.values()[jobStatusIndex];
         });
     }
 
@@ -97,8 +96,8 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
         return callAndRetryIfTargetNotFound(()  -> {
             ClientMessage request = JetGetJobMetricsCodec.encodeRequest(getId());
             ClientMessage response = invocation(request, masterUuid()).invoke().get();
-            JetGetJobMetricsCodec.ResponseParameters parameters = JetGetJobMetricsCodec.decodeResponse(response);
-            return toJobMetrics(serializationService().toObject(parameters.response));
+            Data metricsData = JetGetJobMetricsCodec.decodeResponse(response);
+            return toJobMetrics(serializationService().toObject(metricsData));
         });
     }
 
@@ -159,7 +158,7 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
         return callAndRetryIfTargetNotFound(() -> {
             ClientMessage request = JetGetJobSubmissionTimeCodec.encodeRequest(getId());
             ClientMessage response = invocation(request, masterUuid()).invoke().get();
-            return JetGetJobSubmissionTimeCodec.decodeResponse(response).response;
+            return JetGetJobSubmissionTimeCodec.decodeResponse(response);
         });
     }
 
@@ -168,7 +167,7 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
         return callAndRetryIfTargetNotFound(() -> {
             ClientMessage request = JetGetJobConfigCodec.encodeRequest(getId());
             ClientMessage response = invocation(request, masterUuid()).invoke().get();
-            Data data = JetGetJobConfigCodec.decodeResponse(response).response;
+            Data data = JetGetJobConfigCodec.decodeResponse(response);
             return serializationService().toObject(data);
         });
     }
