@@ -33,6 +33,7 @@ import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.accumulator.LongDoubleAccumulator;
 import com.hazelcast.jet.accumulator.LongLongAccumulator;
 import com.hazelcast.jet.accumulator.MutableReference;
+import com.hazelcast.jet.accumulator.PickAnyAccumulator;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.datamodel.ItemsByTag;
 import com.hazelcast.jet.datamodel.Tuple2;
@@ -1255,18 +1256,13 @@ public final class AggregateOperations {
      */
     @Nonnull
     @SuppressWarnings("checkstyle:needbraces")
-    public static <T> AggregateOperation1<T, MutableReference<T>, T> pickAny() {
+    public static <T> AggregateOperation1<T, PickAnyAccumulator<T>, T> pickAny() {
         return AggregateOperation
-                .withCreate(MutableReference<T>::new)
-                // Result would be correct even without the acc.isNull() check, but that
-                // can cause more GC churn due to medium-lived objects.
-                .<T>andAccumulate((acc, item) -> {
-                    if (acc.isNull()) acc.set(item);
-                })
-                .andCombine((acc1, acc2) -> {
-                    if (acc1.isNull()) acc1.set(acc2.get());
-                })
-                .andExportFinish(MutableReference::get);
+                .withCreate(PickAnyAccumulator<T>::new)
+                .<T>andAccumulate(PickAnyAccumulator::accumulate)
+                .andCombine(PickAnyAccumulator::combine)
+                .andDeduct(PickAnyAccumulator::deduct)
+                .andExportFinish(PickAnyAccumulator::get);
     }
 
     /**
@@ -1295,10 +1291,10 @@ public final class AggregateOperations {
                 .withCreate(ArrayList<T>::new)
                 .<T>andAccumulate(ArrayList::add)
                 .andCombine(ArrayList::addAll)
-                .andExport(acc -> {
+                .andExport(list -> {
                     // sorting the accumulator doesn't harm - will make the next sort an easier job
-                    acc.sort(comparator);
-                    return (List<T>) new ArrayList<>(acc);
+                    list.sort(comparator);
+                    return (List<T>) new ArrayList<>(list);
                 })
                 .andFinish(list -> {
                     list.sort(comparator);

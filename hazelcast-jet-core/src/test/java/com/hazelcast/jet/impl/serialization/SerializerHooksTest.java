@@ -16,9 +16,21 @@
 
 package com.hazelcast.jet.impl.serialization;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.jet.accumulator.LinTrendAccumulator;
+import com.hazelcast.jet.accumulator.LongAccumulator;
+import com.hazelcast.jet.accumulator.LongDoubleAccumulator;
+import com.hazelcast.jet.accumulator.LongLongAccumulator;
+import com.hazelcast.jet.accumulator.MutableReference;
+import com.hazelcast.jet.accumulator.PickAnyAccumulator;
+import com.hazelcast.jet.core.Watermark;
+import com.hazelcast.jet.datamodel.KeyedWindowResult;
+import com.hazelcast.jet.datamodel.TimestampedItem;
+import com.hazelcast.jet.datamodel.WindowResult;
+import com.hazelcast.jet.impl.execution.BroadcastEntry;
+import com.hazelcast.jet.impl.execution.SnapshotBarrier;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import org.junit.Test;
@@ -28,10 +40,18 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
+import java.math.BigInteger;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Arrays;
 import java.util.Collection;
 
+import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
+import static com.hazelcast.jet.datamodel.ItemsByTag.itemsByTag;
+import static com.hazelcast.jet.datamodel.Tag.tag;
+import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
+import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
+import static com.hazelcast.jet.datamodel.Tuple4.tuple4;
+import static com.hazelcast.jet.datamodel.Tuple5.tuple5;
 import static com.hazelcast.jet.impl.JetEvent.jetEvent;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -50,7 +70,26 @@ public class SerializerHooksTest {
         return Arrays.asList(
                 new Object[]{new String[]{"a", "b", "c"}},
                 new SimpleImmutableEntry<>("key", "value"),
-                jetEvent(System.currentTimeMillis(), "payload")
+                jetEvent(System.currentTimeMillis(), "payload"),
+                new LongAccumulator(42),
+                new LongLongAccumulator(42, 45),
+                new LongDoubleAccumulator(42, 0.42),
+                new MutableReference<>("payload"),
+                new LinTrendAccumulator(42, BigInteger.ONE, BigInteger.TEN,
+                        BigInteger.valueOf(42), BigInteger.valueOf(43)),
+                new PickAnyAccumulator<>("picked", 42),
+                tuple2("a", "b"),
+                tuple3("a", "b", "c"),
+                tuple4("a", "b", "c", "d"),
+                tuple5("a", "b", "c", "d", "e"),
+                itemsByTag(tag(1), "value"),
+                new Watermark(42),
+                new SnapshotBarrier(43, true),
+                new BroadcastEntry<>("key", "value"),
+                broadcastKey("key2"),
+                new WindowResult<>(433, 423, "result"),
+                new KeyedWindowResult<>(433, 423, "key", "result"),
+                new TimestampedItem<>(423, "result")
         );
     }
 

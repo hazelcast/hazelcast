@@ -40,6 +40,7 @@ Thank you for your valuable contributions!
 2. Enhancements
 
 [extensions] Ensure naming conventions for sources/sinks (#2685)
+[pipeline-api] Improved the pickAny aggregate operation by supporting the deduct primitive (#2917)
 
 3. Fixes
 

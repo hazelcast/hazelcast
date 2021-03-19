@@ -20,6 +20,7 @@ com.hazelcast.jet.accumulator.AccumulatorSerializerHooks$MutableReferenceHook
 com.hazelcast.jet.accumulator.AccumulatorSerializerHooks$LinTrendAccHook
 com.hazelcast.jet.accumulator.AccumulatorSerializerHooks$LongLongAccHook
 com.hazelcast.jet.accumulator.AccumulatorSerializerHooks$LongDoubleAccHook
+com.hazelcast.jet.accumulator.AccumulatorSerializerHooks$PickAnyAccHook
 com.hazelcast.jet.core.CoreSerializerHooks$WatermarkHook
 com.hazelcast.jet.core.CoreSerializerHooks$JetEventHook
 com.hazelcast.jet.datamodel.DataModelSerializerHooks$WindowResultHook

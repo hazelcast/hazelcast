@@ -26,6 +26,7 @@ import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.accumulator.LongDoubleAccumulator;
 import com.hazelcast.jet.accumulator.LongLongAccumulator;
 import com.hazelcast.jet.accumulator.MutableReference;
+import com.hazelcast.jet.accumulator.PickAnyAccumulator;
 import com.hazelcast.jet.datamodel.ItemsByTag;
 import com.hazelcast.jet.datamodel.Tag;
 import com.hazelcast.jet.datamodel.Tuple2;
@@ -636,13 +637,13 @@ public class AggregateOperationsTest {
 
     @Test
     public void when_pickAny() {
-        validateOpWithoutDeduct(pickAny(), MutableReference::get, 1, 2, 1, 1, 1);
+        validateOp(pickAny(), PickAnyAccumulator::get, 1, 2, 1, 1, 1);
     }
 
     @Test
     public void when_pickAny_noInput_then_nullResult() {
         // Given
-        AggregateOperation1<Object, MutableReference<Object>, Object> aggrOp = pickAny();
+        AggregateOperation1<Object, PickAnyAccumulator<Object>, Object> aggrOp = pickAny();
 
         // When
         Object result = aggrOp.finishFn().apply(aggrOp.createFn().get());
@@ -747,7 +748,7 @@ public class AggregateOperationsTest {
         op.accumulateFn().accept(acc1, item1);
         op.accumulateFn().accept(acc1, item2);
         // Then
-        assertEqualsOrArrayEquals("accumulated", expectCombined, getAccValFn.apply(acc1));
+        assertEqualsOrArrayEquals("accumulated both", expectCombined, getAccValFn.apply(acc1));
     }
 
     private static void assertEqualsOrArrayEquals(String msg, Object expected, Object actual) {
