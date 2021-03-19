@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.processor;
 
+import com.hazelcast.jet.pipeline.GeneralStage;
 import com.hazelcast.jet.pipeline.ServiceFactory;
 
 import javax.annotation.Nonnull;
@@ -24,19 +25,10 @@ import javax.annotation.Nullable;
 public abstract class AbstractAsyncTransformUsingServiceP<C, S> extends AbstractTransformUsingServiceP<C, S> {
 
     /**
-     * Default value for {@link #maxConcurrentOps}.
-     */
-    public static final int DEFAULT_MAX_CONCURRENT_OPS = 4;
-    /**
-     * Default value for {@link #preserveOrder}.
-     */
-    public static final boolean DEFAULT_PRESERVE_ORDER = true;
-
-    /**
      * Jet will execute at most this many concurrent async operations per processor
      * and will apply backpressure to the upstream to enforce it.
      * <p>
-     * Default value is {@value #DEFAULT_MAX_CONCURRENT_OPS}.
+     * Default value is {@value GeneralStage#DEFAULT_MAX_CONCURRENT_OPS}.
      */
     protected final int maxConcurrentOps;
 

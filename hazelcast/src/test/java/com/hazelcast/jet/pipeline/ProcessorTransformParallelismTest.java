@@ -33,8 +33,8 @@ import java.util.Arrays;
 import java.util.Collection;
 
 import static com.hazelcast.jet.impl.pipeline.transform.ProcessorTransform.NON_COOPERATIVE_DEFAULT_LOCAL_PARALLELISM;
-import static com.hazelcast.jet.impl.processor.AbstractAsyncTransformUsingServiceP.DEFAULT_MAX_CONCURRENT_OPS;
-import static com.hazelcast.jet.impl.processor.AbstractAsyncTransformUsingServiceP.DEFAULT_PRESERVE_ORDER;
+import static com.hazelcast.jet.pipeline.GeneralStage.DEFAULT_MAX_CONCURRENT_OPS;
+import static com.hazelcast.jet.pipeline.GeneralStage.DEFAULT_PRESERVE_ORDER;
 import static com.hazelcast.jet.pipeline.ServiceFactory.withCreateContextFn;
 import static java.util.concurrent.CompletableFuture.supplyAsync;
 import static org.junit.Assert.assertEquals;
@@ -241,7 +241,7 @@ public class ProcessorTransformParallelismTest {
     private DAG applyTransformAndGetDag(FunctionEx<StreamStage<Integer>, StreamStage<Integer>> transform) {
         Pipeline p = Pipeline.create();
         StreamStage<Integer> source = p.readFrom(TestSources.items(1))
-                                       .addTimestamps(t -> 0, 0);
+                .addTimestamps(t -> 0, 0);
         StreamStage<Integer> applied = source.apply(transform);
         applied.writeTo(Sinks.noop());
         return p.toDag();

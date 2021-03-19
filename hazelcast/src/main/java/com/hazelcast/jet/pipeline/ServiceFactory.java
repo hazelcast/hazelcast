@@ -31,7 +31,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.hazelcast.jet.impl.util.Util.checkSerializable;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.checkSerializable;
 import static java.util.Collections.emptyMap;
 
 /**

@@ -24,11 +24,11 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Function;
 
-import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
+
 
 /**
  * Base class to implement custom processors. Simplifies the contract of
@@ -90,7 +90,7 @@ public abstract class AbstractProcessor implements Processor {
      */
     @Override
     public final void restoreFromSnapshot(@Nonnull Inbox inbox) {
-        for (Map.Entry entry; (entry = (Map.Entry) inbox.poll()) != null; ) {
+        for (Entry entry; (entry = (Entry) inbox.poll()) != null; ) {
             restoreFromSnapshot(entry.getKey(), entry.getValue());
         }
     }

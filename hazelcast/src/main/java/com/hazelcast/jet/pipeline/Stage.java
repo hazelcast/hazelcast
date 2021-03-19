@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.pipeline;
 
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
+
 import javax.annotation.Nonnull;
 
 /**
@@ -53,7 +55,7 @@ public interface Stage {
      * member.
      * <p>
      * The default value is {@value
-     * com.hazelcast.jet.core.Vertex#LOCAL_PARALLELISM_USE_DEFAULT} and it signals
+     * ProcessorMetaSupplier#LOCAL_PARALLELISM_USE_DEFAULT} and it signals
      * to Jet to figure out a default value. Jet will determine the vertex's local
      * parallelism during job initialization from the global default and the
      * processor meta-supplier's preferred value.

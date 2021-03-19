@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.core;
 
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.util.concurrent.locks.LockSupport;

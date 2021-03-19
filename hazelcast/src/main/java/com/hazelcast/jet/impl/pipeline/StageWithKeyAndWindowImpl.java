@@ -122,5 +122,4 @@ public class StageWithKeyAndWindowImpl<T, K>
                 asList((GeneralStage<?>) computeStage1, (GeneralStage<?>) computeStage2),
                 fnAdapter);
     }
-
 }

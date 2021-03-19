@@ -37,7 +37,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
-import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.internal.util.MapUtil.entry;
+
 
 /**
  * An intermediate step while constructing a pipeline transform that

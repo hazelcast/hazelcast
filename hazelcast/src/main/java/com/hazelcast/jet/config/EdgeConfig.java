@@ -23,8 +23,9 @@ import java.io.Serializable;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
 /**
- * A configuration object for a DAG {@link Edge} that holds fine-tuning
- * parameters that influence its performance characteristics.
+ * A configuration object for a DAG {@link com.hazelcast.jet.core.Edge}
+ * that holds fine-tuning parameters that influence its performance
+ * characteristics.
  *
  * @since 3.0
  */

@@ -184,7 +184,7 @@ public final class JobMetrics implements IdentifiedDataSerializable {
                         return vertex == null ? "" : vertex;
                     }))
                     .entrySet().stream()
-                    .sorted(Comparator.comparing(Map.Entry::getKey))
+                    .sorted(Comparator.comparing(Entry::getKey))
                     .forEach(e -> {
                         String vertexName = e.getKey();
                         sb.append("  ").append(vertexName).append(":\n");

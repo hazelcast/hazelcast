@@ -18,7 +18,6 @@ package com.hazelcast.jet.impl.aggregate;
 
 import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
-import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -61,12 +60,12 @@ public class AggregateOpAggregator<T, A, R> implements Aggregator<T, R>, Identif
 
     @Override
     public int getFactoryId() {
-        return JetInitDataSerializerHook.FACTORY_ID;
+        return AggregateDataSerializerHook.FACTORY_ID;
     }
 
     @Override
     public int getClassId() {
-        return JetInitDataSerializerHook.AGGREGATE_OP_AGGREGATOR;
+        return AggregateDataSerializerHook.AGGREGATE_OP_AGGREGATOR;
     }
 
     @Override

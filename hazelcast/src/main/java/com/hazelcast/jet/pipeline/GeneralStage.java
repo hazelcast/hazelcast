@@ -30,7 +30,6 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.impl.pipeline.ComputeStageImplBase;
-import com.hazelcast.jet.impl.processor.AbstractAsyncTransformUsingServiceP;
 import com.hazelcast.map.IMap;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 
@@ -41,8 +40,6 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 import static com.hazelcast.function.PredicateEx.alwaysTrue;
-import static com.hazelcast.jet.impl.processor.AbstractAsyncTransformUsingServiceP.DEFAULT_MAX_CONCURRENT_OPS;
-import static com.hazelcast.jet.impl.processor.AbstractAsyncTransformUsingServiceP.DEFAULT_PRESERVE_ORDER;
 
 /**
  * The common aspect of {@link BatchStage batch} and {@link StreamStage
@@ -57,6 +54,15 @@ import static com.hazelcast.jet.impl.processor.AbstractAsyncTransformUsingServic
  * @since 3.0
  */
 public interface GeneralStage<T> extends Stage {
+
+    /**
+     * Default value for max concurrent operations.
+     */
+    int DEFAULT_MAX_CONCURRENT_OPS = 4;
+    /**
+     * Default value for preserver order.
+     */
+    boolean DEFAULT_PRESERVE_ORDER = true;
 
     /**
      * Attaches a mapping stage which applies the given function to each input
@@ -313,9 +319,9 @@ public interface GeneralStage<T> extends Stage {
      * <p>
      * Uses default values for some extra parameters, so the maximum number
      * of concurrent async operations per processor will be limited to
-     * {@value AbstractAsyncTransformUsingServiceP#DEFAULT_MAX_CONCURRENT_OPS} and
+     * {@value #DEFAULT_MAX_CONCURRENT_OPS} and
      * whether or not the order of input items should be preserved will be
-     * {@value AbstractAsyncTransformUsingServiceP#DEFAULT_PRESERVE_ORDER}.
+     * {@value #DEFAULT_PRESERVE_ORDER}.
      * <p>
      * The function can return a null future or the future can return a null
      * result: in both cases it will act just like a filter.

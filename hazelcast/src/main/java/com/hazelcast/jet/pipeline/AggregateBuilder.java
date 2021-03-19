@@ -50,7 +50,10 @@ public class AggregateBuilder<R0> {
     private final AggBuilder aggBuilder;
     private final CoAggregateOperationBuilder aggrOpBuilder = coAggregateOperationBuilder();
 
-    <T0> AggregateBuilder(@Nonnull BatchStage<T0> s, @Nonnull AggregateOperation1<? super T0, ?, ? extends R0> aggrOp) {
+    <T0> AggregateBuilder(
+            @Nonnull BatchStage<T0> s,
+            @Nonnull AggregateOperation1<? super T0, ?, ? extends R0> aggrOp
+    ) {
         aggBuilder = new AggBuilder(s, null);
         aggrOpBuilder.add(Tag.tag0(), aggrOp);
     }

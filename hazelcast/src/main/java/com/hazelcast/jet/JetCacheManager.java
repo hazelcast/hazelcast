@@ -17,10 +17,7 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.cache.ICache;
-import com.hazelcast.jet.pipeline.JournalInitialPosition;
 import com.hazelcast.jet.pipeline.Pipeline;
-import com.hazelcast.jet.pipeline.Sinks;
-import com.hazelcast.jet.pipeline.Sources;
 
 /**
  * {@code JetCacheManager} is the entry point to access JSR-107 (JCache) caches
@@ -58,7 +55,7 @@ public interface JetCacheManager {
      *
      * @throws com.hazelcast.cache.CacheNotExistsException  if there is no configured or created cache
      *                                                      with the specified prefixed name
-     * @throws java.lang.IllegalStateException              if a valid JCache library does not exist in the classpath
+     * @throws IllegalStateException              if a valid JCache library does not exist in the classpath
      *                                                      ({@code 1.0.0-PFD} or {@code 0.x} versions are not valid)
      */
     <K, V> ICache<K, V> getCache(String name);

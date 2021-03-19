@@ -25,7 +25,8 @@ import com.hazelcast.jet.datamodel.Tag;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import static com.hazelcast.jet.impl.util.Util.checkSerializable;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.checkSerializable;
+
 
 public class AggregateOperation1Impl<T0, A, R>
         extends AggregateOperationImpl<A, R>

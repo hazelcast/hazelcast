@@ -18,7 +18,6 @@ package com.hazelcast.jet.aggregate;
 
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.jet.core.Processor;
 
 import javax.annotation.Nonnull;
 import java.util.stream.Collector;

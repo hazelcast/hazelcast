@@ -372,11 +372,10 @@ public final class SourceBuilder<C> {
          * ensure that all the source processors are coordinated and not emitting
          * duplicated data. The {@code createFn} can consult {@link
          * Processor.Context#totalParallelism processorContext.totalParallelism()}
-         * and {@link Processor.Context#globalProcessorIndex
-         * processorContext.globalProcessorIndex()}. Jet calls {@code createFn}
-         * exactly once with each {@code globalProcessorIndex} from 0 to {@code
-         * totalParallelism - 1} and you can use this to make all the instances
-         * agree on which part of the data to emit.
+         * and {@link Processor.Context#globalProcessorIndex()}. Jet calls
+         * {@code createFn} exactly once with each {@code globalProcessorIndex}
+         * from 0 to {@code totalParallelism - 1} and you can use this to make
+         * all the instances agree on which part of the data to emit.
          * <p>
          * If you don't call this method, there will be only one processor instance
          * running on an arbitrary member.

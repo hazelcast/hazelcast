@@ -33,7 +33,7 @@ import static com.hazelcast.jet.impl.JetFactoryIdHelper.JET_CONFIG_DS_FACTORY_ID
 public final class JetConfigDataSerializerHook implements DataSerializerHook {
 
     /**
-     * Serialization ID of the {@link com.hazelcast.jet.config.JobConfig} class.
+     * Serialization ID of the {@link JobConfig} class.
      */
     public static final int JOB_CONFIG = 0;
 

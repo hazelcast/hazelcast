@@ -22,6 +22,7 @@ import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.Util;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.util.NonCompletableFuture;
 import com.hazelcast.logging.ILogger;
@@ -80,6 +81,12 @@ public abstract class AbstractJobProxy<T> implements Job {
         } catch (Throwable t) {
             throw rethrow(t);
         }
+    }
+
+    @Nonnull
+    @Override
+    public String getIdString() {
+        return Util.idToString(jobId);
     }
 
     @Override

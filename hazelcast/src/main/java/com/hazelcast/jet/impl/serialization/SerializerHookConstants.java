@@ -30,6 +30,7 @@ public final class SerializerHookConstants {
     public static final int MAP_ENTRY = -300;
     public static final int CUSTOM_CLASS_LOADED_OBJECT = -301;
     public static final int OBJECT_ARRAY = -302;
+
     public static final int LONG_ACC = -303;
     public static final int DOUBLE_ACC = -304;
     public static final int MUTABLE_REFERENCE = -305;

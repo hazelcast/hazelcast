@@ -140,8 +140,8 @@ public class StreamSourceStageTest extends StreamSourceStageTestBase {
 
         Pipeline p = Pipeline.create();
         p.readFrom(createSourceJournal())
-         .withIngestionTimestamps()
-         .writeTo(Sinks.list(sinkList));
+                .withIngestionTimestamps()
+                .writeTo(Sinks.list(sinkList));
 
         instance.newJob(p);
         assertTrueEventually(() -> assertEquals(Arrays.asList(1, 2), new ArrayList<>(sinkList)), 5);
@@ -154,10 +154,10 @@ public class StreamSourceStageTest extends StreamSourceStageTestBase {
 
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.mapJournal(map, START_FROM_OLDEST))
-         .withIngestionTimestamps()
-         .window(WindowDefinition.tumbling(1))
-         .aggregate(AggregateOperations.counting())
-         .writeTo(Sinks.list(sinkList));
+                .withIngestionTimestamps()
+                .window(WindowDefinition.tumbling(1))
+                .aggregate(AggregateOperations.counting())
+                .writeTo(Sinks.list(sinkList));
 
         Job job = instance.newJob(p);
         assertEquals(0, sinkList.size());
@@ -177,10 +177,10 @@ public class StreamSourceStageTest extends StreamSourceStageTestBase {
 
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.mapJournal(map, START_FROM_OLDEST))
-         .withIngestionTimestamps()
-         .window(WindowDefinition.session(15_000))
-         .aggregate(AggregateOperations.counting())
-         .writeTo(Sinks.list(sinkList));
+                .withIngestionTimestamps()
+                .window(WindowDefinition.session(15_000))
+                .aggregate(AggregateOperations.counting())
+                .writeTo(Sinks.list(sinkList));
 
         long start = System.nanoTime();
         Job job = instance.newJob(p);
@@ -195,7 +195,7 @@ public class StreamSourceStageTest extends StreamSourceStageTestBase {
     public void when_withTimestampsAndAddTimestamps_then_fail() {
         Pipeline p = Pipeline.create();
         StreamStage<Entry<Object, Object>> stage = p.readFrom(Sources.mapJournal("foo", START_FROM_OLDEST))
-                                                  .withIngestionTimestamps();
+                .withIngestionTimestamps();
 
         expectedException.expectMessage("This stage already has timestamps assigned to it");
         stage.addTimestamps(o -> 0L, 0);
@@ -210,16 +210,16 @@ public class StreamSourceStageTest extends StreamSourceStageTestBase {
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.streamFromProcessor("src",
                 ProcessorMetaSupplier.of(lp, ProcessorSupplier.of(noopP()))))
-         .withTimestamps(o -> 0L, 0)
-         .writeTo(Sinks.noop());
+                .withTimestamps(o -> 0L, 0)
+                .writeTo(Sinks.noop());
         DAG dag = p.toDag();
 
         // Then
         Vertex srcVertex = requireNonNull(dag.getVertex("src"));
         Vertex tsVertex = requireNonNull(dag.getVertex("src-add-timestamps"));
         assertEquals(lp, srcVertex.determineLocalParallelism(-1));
-        assertEquals(lp,  tsVertex.determineLocalParallelism(-1));
-}
+        assertEquals(lp, tsVertex.determineLocalParallelism(-1));
+    }
 
     @Test
     public void when_sourceHasExplicitLocalParallelism_then_lpMatchSource() {
@@ -230,9 +230,9 @@ public class StreamSourceStageTest extends StreamSourceStageTestBase {
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.streamFromProcessor("src",
                 ProcessorMetaSupplier.of(ProcessorSupplier.of(noopP()))))
-         .withTimestamps(o -> 0L, 0)
-         .setLocalParallelism(lp)
-         .writeTo(Sinks.noop());
+                .withTimestamps(o -> 0L, 0)
+                .setLocalParallelism(lp)
+                .writeTo(Sinks.noop());
         DAG dag = p.toDag();
 
         // Then
@@ -252,8 +252,8 @@ public class StreamSourceStageTest extends StreamSourceStageTestBase {
         // When
         Pipeline p = Pipeline.create();
         p.readFrom(source)
-         .withTimestamps(o -> 0L, 0)
-         .writeTo(Sinks.noop());
+                .withTimestamps(o -> 0L, 0)
+                .writeTo(Sinks.noop());
         DAG dag = p.toDag();
 
         // Then

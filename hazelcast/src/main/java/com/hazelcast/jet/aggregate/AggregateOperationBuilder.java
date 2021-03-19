@@ -19,7 +19,6 @@ package com.hazelcast.jet.aggregate;
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
-import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.datamodel.Tag;
 import com.hazelcast.jet.impl.aggregate.AggregateOperation1Impl;
 import com.hazelcast.jet.impl.aggregate.AggregateOperation2Impl;
@@ -31,7 +30,7 @@ import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.hazelcast.jet.impl.util.Util.checkSerializable;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.checkSerializable;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
 

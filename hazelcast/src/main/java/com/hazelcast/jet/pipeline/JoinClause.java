@@ -22,7 +22,8 @@ import com.hazelcast.jet.core.Processor;
 import java.io.Serializable;
 import java.util.Map.Entry;
 
-import static com.hazelcast.jet.impl.util.Util.checkSerializable;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.checkSerializable;
+
 
 /**
  * Specifies how to join an enriching stream to the primary stream in a

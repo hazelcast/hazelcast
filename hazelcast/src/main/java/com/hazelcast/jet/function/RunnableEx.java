@@ -18,7 +18,8 @@ package com.hazelcast.jet.function;
 
 import java.io.Serializable;
 
-import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
+
 
 @FunctionalInterface
 public interface RunnableEx extends Runnable, Serializable {

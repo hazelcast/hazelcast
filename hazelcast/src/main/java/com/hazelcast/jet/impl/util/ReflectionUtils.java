@@ -34,7 +34,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static java.lang.Character.toUpperCase;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
@@ -204,7 +204,8 @@ public final class ReflectionUtils {
                 .whitelistPaths(paths)
                 .ignoreClassVisibility();
         try (ScanResult scanResult = classGraph.scan()) {
-            Collection<ClassResource> classes = Util.toList(scanResult.getAllClasses(), ClassResource::new);
+            Collection<ClassResource> classes =
+                    scanResult.getAllClasses().stream().map(ClassResource::new).collect(toList());
             Collection<URL> nonClasses = scanResult.getAllResources().nonClassFilesOnly().getURLs();
             return new Resources(classes, nonClasses);
         }
