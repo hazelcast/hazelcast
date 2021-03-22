@@ -37,11 +37,7 @@ public class HazelcastReplaceFunction extends HazelcastFunction {
                 "REPLACE",
                 SqlKind.OTHER_FUNCTION,
                 ReturnTypes.ARG0_NULLABLE_VARYING,
-                new ReplaceUnknownOperandTypeInference(new SqlTypeName[] {
-                        SqlTypeName.VARCHAR,
-                        SqlTypeName.VARCHAR,
-                        SqlTypeName.VARCHAR
-                }),
+                new ReplaceUnknownOperandTypeInference(SqlTypeName.VARCHAR),
                 SqlFunctionCategory.STRING
         );
     }

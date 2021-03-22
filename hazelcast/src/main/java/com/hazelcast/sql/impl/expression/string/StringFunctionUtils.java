@@ -54,6 +54,13 @@ public final class StringFunctionUtils {
         if (original == null) {
             return null;
         }
+        // Java 'replace' matches empty string with every possible cursor location
+        // in the original string.
+        // On the other hand, SQL replace function doesn't match empty string to
+        // anything in the original string.
+        if (from.isEmpty()) {
+            return original;
+        }
         return original.replace(from, to);
     }
 

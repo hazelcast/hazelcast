@@ -38,9 +38,15 @@ public class ReplaceFunction extends TriExpression<String> implements Identified
     @Override
     public String eval(Row row, ExpressionEvalContext context) {
         String original = StringFunctionUtils.asVarchar(operand1, row, context);
+        if (original == null) {
+            return null;
+        }
         String from = StringFunctionUtils.asVarchar(operand2, row, context);
+        if (from == null) {
+            return null;
+        }
         String to = StringFunctionUtils.asVarchar(operand3, row, context);
-        if (original == null || from == null || to == null) {
+        if (to == null) {
             return null;
         }
         return StringFunctionUtils.replace(original, from, to);

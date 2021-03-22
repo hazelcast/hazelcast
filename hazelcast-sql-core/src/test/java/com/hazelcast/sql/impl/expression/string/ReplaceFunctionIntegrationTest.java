@@ -43,6 +43,19 @@ public class ReplaceFunctionIntegrationTest extends ExpressionTestSupport {
     }
 
     @Test
+    public void testEmptyString() {
+        put("yyy");
+
+        check(sql("this", "''", "'Y'"), "yyy");
+        check(sql("this", "'y'", "''"), "");
+
+        put("");
+
+        check(sql("this", "''", "'Y'"), "");
+        check(sql("this", "''", "''"), "");
+    }
+
+    @Test
     public void testNull() {
         put("xyz");
 
@@ -105,7 +118,7 @@ public class ReplaceFunctionIntegrationTest extends ExpressionTestSupport {
         SqlRow row = rows.get(0);
 
         assertEquals(SqlColumnType.VARCHAR, row.getMetadata().getColumn(0).getType());
-        assertEquals(row.getObject(0), expectedResult);
+        assertEquals(expectedResult, row.getObject(0));
     }
 
     private void checkFail(String sql) {
