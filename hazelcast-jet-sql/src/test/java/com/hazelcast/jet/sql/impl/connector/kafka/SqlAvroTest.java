@@ -20,7 +20,7 @@ import com.google.common.collect.ImmutableMap;
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.jet.kafka.impl.KafkaTestSupport;
 import com.hazelcast.jet.sql.SqlTestSupport;
-import com.hazelcast.jet.sql.impl.connector.test.AllTypesSqlConnector;
+import com.hazelcast.jet.sql.impl.connector.test.TestAllTypesSqlConnector;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlService;
 import io.confluent.kafka.schemaregistry.rest.SchemaRegistryConfig;
@@ -210,7 +210,7 @@ public class SqlAvroTest extends SqlTestSupport {
     @Test
     public void test_allTypes() {
         String from = randomName();
-        AllTypesSqlConnector.create(sqlService, from);
+        TestAllTypesSqlConnector.create(sqlService, from);
 
         String to = createRandomTopic();
         sqlService.execute("CREATE MAPPING " + to + " ("

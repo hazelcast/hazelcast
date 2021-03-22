@@ -41,7 +41,7 @@ import static java.util.Collections.singletonList;
 /**
  * A SQL source that fails immediately.
  */
-public class FailingTestSqlConnector implements SqlConnector {
+public class TestFailingSqlConnector implements SqlConnector {
 
     public static final String TYPE_NAME = "FailingSource";
 

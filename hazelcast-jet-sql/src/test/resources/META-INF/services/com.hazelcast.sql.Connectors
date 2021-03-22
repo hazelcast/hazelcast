@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-com.hazelcast.jet.sql.impl.connector.test.FailingTestSqlConnector
+com.hazelcast.jet.sql.impl.connector.test.TestFailingSqlConnector
 com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector
 com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector
-com.hazelcast.jet.sql.impl.connector.test.AllTypesSqlConnector
+com.hazelcast.jet.sql.impl.connector.test.TestAllTypesSqlConnector

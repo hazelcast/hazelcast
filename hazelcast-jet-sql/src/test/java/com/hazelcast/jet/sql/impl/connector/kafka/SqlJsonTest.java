@@ -19,7 +19,7 @@ package com.hazelcast.jet.sql.impl.connector.kafka;
 import com.google.common.collect.ImmutableMap;
 import com.hazelcast.jet.kafka.impl.KafkaTestSupport;
 import com.hazelcast.jet.sql.SqlTestSupport;
-import com.hazelcast.jet.sql.impl.connector.test.AllTypesSqlConnector;
+import com.hazelcast.jet.sql.impl.connector.test.TestAllTypesSqlConnector;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlService;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
@@ -168,7 +168,7 @@ public class SqlJsonTest extends SqlTestSupport {
     @Test
     public void test_allTypes() {
         String from = randomName();
-        AllTypesSqlConnector.create(sqlService, from);
+        TestAllTypesSqlConnector.create(sqlService, from);
 
         String to = createRandomTopic();
         sqlService.execute("CREATE MAPPING " + to + " ("

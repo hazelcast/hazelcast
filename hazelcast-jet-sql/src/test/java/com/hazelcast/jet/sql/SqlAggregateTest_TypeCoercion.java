@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.sql;
 
-import com.hazelcast.jet.sql.impl.connector.test.AllTypesSqlConnector;
+import com.hazelcast.jet.sql.impl.connector.test.TestAllTypesSqlConnector;
 import com.hazelcast.sql.SqlService;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -41,25 +41,25 @@ public class SqlAggregateTest_TypeCoercion extends SqlTestSupport {
 
     @Before
     public void before() {
-        AllTypesSqlConnector.create(sqlService, "allTypesTable");
+        TestAllTypesSqlConnector.create(sqlService, "allTypesTable");
     }
 
     @Test
     public void test_groupBy() {
-        AllTypesSqlConnector.create(sqlService, "t");
-        String allFields = AllTypesSqlConnector.FIELD_LIST.stream()
+        TestAllTypesSqlConnector.create(sqlService, "t");
+        String allFields = TestAllTypesSqlConnector.FIELD_LIST.stream()
                                                           .map(f -> "\"" + f.name() + '"')
                                                           .collect(Collectors.joining(", "));
         assertRowsAnyOrder(
                 "SELECT " + allFields + " " +
                         "FROM t " +
                         "GROUP BY 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14",
-                singletonList(AllTypesSqlConnector.ALL_TYPES_ROW));
+                singletonList(TestAllTypesSqlConnector.ALL_TYPES_ROW));
     }
 
     @Test
     public void test_count() {
-        String allFields = AllTypesSqlConnector.FIELD_LIST.stream()
+        String allFields = TestAllTypesSqlConnector.FIELD_LIST.stream()
                                                           .map(f -> "COUNT(\"" + f.name() + "\")")
                                                           .collect(Collectors.joining(", "));
 
@@ -154,26 +154,26 @@ public class SqlAggregateTest_TypeCoercion extends SqlTestSupport {
 
     @Test
     public void test_min() {
-        AllTypesSqlConnector.create(sqlService, "t");
-        String allFields = AllTypesSqlConnector.FIELD_LIST.stream()
+        TestAllTypesSqlConnector.create(sqlService, "t");
+        String allFields = TestAllTypesSqlConnector.FIELD_LIST.stream()
                                                           .map(f -> "MIN(\"" + f.name() + "\")")
                                                           .collect(Collectors.joining(", "));
 
         assertRowsAnyOrder("SELECT " + allFields + "FROM t",
-                singletonList(AllTypesSqlConnector.ALL_TYPES_ROW));
+                singletonList(TestAllTypesSqlConnector.ALL_TYPES_ROW));
 
         assertRowsAnyOrder("select min(null) from allTypesTable", singletonList(new Row((Object) null)));
     }
 
     @Test
     public void test_max() {
-        AllTypesSqlConnector.create(sqlService, "t");
-        String allFields = AllTypesSqlConnector.FIELD_LIST.stream()
+        TestAllTypesSqlConnector.create(sqlService, "t");
+        String allFields = TestAllTypesSqlConnector.FIELD_LIST.stream()
                                                           .map(f -> "MAX(\"" + f.name() + "\")")
                                                           .collect(Collectors.joining(", "));
 
         assertRowsAnyOrder("SELECT " + allFields + "FROM t",
-                singletonList(AllTypesSqlConnector.ALL_TYPES_ROW));
+                singletonList(TestAllTypesSqlConnector.ALL_TYPES_ROW));
 
         assertRowsAnyOrder("select max(null) from allTypesTable", singletonList(new Row((Object) null)));
     }

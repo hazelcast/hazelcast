@@ -18,7 +18,7 @@ package com.hazelcast.jet.sql.impl.connector.map;
 
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.jet.sql.SqlTestSupport;
-import com.hazelcast.jet.sql.impl.connector.test.AllTypesSqlConnector;
+import com.hazelcast.jet.sql.impl.connector.test.TestAllTypesSqlConnector;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlService;
 import org.junit.BeforeClass;
@@ -143,7 +143,7 @@ public class SqlJsonTest extends SqlTestSupport {
     @Test
     public void test_allTypes() {
         String from = randomName();
-        AllTypesSqlConnector.create(sqlService, from);
+        TestAllTypesSqlConnector.create(sqlService, from);
 
         String to = randomName();
         sqlService.execute("CREATE MAPPING " + to + " ("

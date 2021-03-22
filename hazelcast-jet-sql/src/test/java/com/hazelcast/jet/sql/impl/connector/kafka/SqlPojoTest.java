@@ -27,7 +27,7 @@ import com.hazelcast.jet.sql.impl.connector.kafka.model.PersonId;
 import com.hazelcast.jet.sql.impl.connector.kafka.model.PersonIdDeserializer;
 import com.hazelcast.jet.sql.impl.connector.kafka.model.PersonIdSerializer;
 import com.hazelcast.jet.sql.impl.connector.kafka.model.PersonSerializer;
-import com.hazelcast.jet.sql.impl.connector.test.AllTypesSqlConnector;
+import com.hazelcast.jet.sql.impl.connector.test.TestAllTypesSqlConnector;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlService;
 import org.apache.kafka.common.serialization.IntegerDeserializer;
@@ -172,7 +172,7 @@ public class SqlPojoTest extends SqlTestSupport {
     @Test
     public void test_allTypes() {
         String from = randomName();
-        AllTypesSqlConnector.create(sqlService, from);
+        TestAllTypesSqlConnector.create(sqlService, from);
 
         String to = createRandomTopic();
         sqlService.execute("CREATE MAPPING " + to + ' '

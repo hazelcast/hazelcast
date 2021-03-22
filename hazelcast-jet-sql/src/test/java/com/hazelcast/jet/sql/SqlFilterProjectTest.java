@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.sql;
 
-import com.hazelcast.jet.sql.impl.connector.test.AllTypesSqlConnector;
+import com.hazelcast.jet.sql.impl.connector.test.TestAllTypesSqlConnector;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlResult;
@@ -587,7 +587,7 @@ public class SqlFilterProjectTest extends SqlTestSupport {
 
     @Test
     public void test_queryMetadata() {
-        AllTypesSqlConnector.create(sqlService, "t");
+        TestAllTypesSqlConnector.create(sqlService, "t");
 
         SqlResult result = sqlService.execute("SELECT * FROM t");
 

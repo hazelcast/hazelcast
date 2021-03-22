@@ -18,7 +18,7 @@ package com.hazelcast.jet.sql;
 
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.sql.impl.connector.test.FailingTestSqlConnector;
+import com.hazelcast.jet.sql.impl.connector.test.TestFailingSqlConnector;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
@@ -82,7 +82,7 @@ public class SqlClientTest extends SqlTestSupport {
         JetInstance client = factory().newClient();
         SqlService sqlService = client.getSql();
 
-        sqlService.execute("CREATE MAPPING t TYPE " + FailingTestSqlConnector.TYPE_NAME);
+        sqlService.execute("CREATE MAPPING t TYPE " + TestFailingSqlConnector.TYPE_NAME);
         assertThatThrownBy(
                 () -> {
                     SqlResult result = sqlService.execute("SELECT * FROM t");

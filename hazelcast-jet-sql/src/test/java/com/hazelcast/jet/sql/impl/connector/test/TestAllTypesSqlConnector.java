@@ -55,7 +55,7 @@ import static java.util.Collections.singletonList;
 /**
  * A SQL source yielding a single row with all supported types.
  */
-public class AllTypesSqlConnector implements SqlConnector {
+public class TestAllTypesSqlConnector implements SqlConnector {
 
     public static final String TYPE_NAME = "AllTypes";
 
@@ -98,7 +98,7 @@ public class AllTypesSqlConnector implements SqlConnector {
     public static final SqlTestSupport.Row ALL_TYPES_ROW = new SqlTestSupport.Row(VALUES);
 
     public static void create(SqlService sqlService, String tableName) {
-        sqlService.execute("CREATE MAPPING " + tableName + " TYPE " + AllTypesSqlConnector.TYPE_NAME);
+        sqlService.execute("CREATE MAPPING " + tableName + " TYPE " + TestAllTypesSqlConnector.TYPE_NAME);
     }
 
     @Override

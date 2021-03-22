@@ -21,7 +21,7 @@ import com.hazelcast.jet.sql.impl.connector.map.model.AllTypesValue;
 import com.hazelcast.jet.sql.impl.connector.map.model.InsuredPerson;
 import com.hazelcast.jet.sql.impl.connector.map.model.Person;
 import com.hazelcast.jet.sql.impl.connector.map.model.PersonId;
-import com.hazelcast.jet.sql.impl.connector.test.AllTypesSqlConnector;
+import com.hazelcast.jet.sql.impl.connector.test.TestAllTypesSqlConnector;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlService;
 import org.junit.BeforeClass;
@@ -213,7 +213,7 @@ public class SqlPojoTest extends SqlTestSupport {
     @Test
     public void test_allTypes() {
         String from = randomName();
-        AllTypesSqlConnector.create(sqlService, from);
+        TestAllTypesSqlConnector.create(sqlService, from);
 
         String to = randomName();
         sqlService.execute(javaSerializableMapDdl(to, BigInteger.class, AllTypesValue.class));

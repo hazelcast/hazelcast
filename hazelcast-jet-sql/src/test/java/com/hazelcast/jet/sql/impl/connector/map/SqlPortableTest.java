@@ -23,7 +23,7 @@ import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecord;
 import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecordBuilder;
 import com.hazelcast.jet.sql.SqlTestSupport;
-import com.hazelcast.jet.sql.impl.connector.test.AllTypesSqlConnector;
+import com.hazelcast.jet.sql.impl.connector.test.TestAllTypesSqlConnector;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.record.Record;
@@ -368,7 +368,7 @@ public class SqlPortableTest extends SqlTestSupport {
     @Test
     public void test_allTypes() throws IOException {
         String from = randomName();
-        AllTypesSqlConnector.create(sqlService, from);
+        TestAllTypesSqlConnector.create(sqlService, from);
 
         String to = randomName();
         sqlService.execute("CREATE MAPPING " + to + ' '
@@ -515,7 +515,7 @@ public class SqlPortableTest extends SqlTestSupport {
     @Test
     public void test_derivesClassDefinitionFromSchema() throws IOException {
         String from = randomName();
-        AllTypesSqlConnector.create(sqlService, from);
+        TestAllTypesSqlConnector.create(sqlService, from);
 
         String to = randomName();
         sqlService.execute("CREATE MAPPING " + to + " ("
