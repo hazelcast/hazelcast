@@ -33,6 +33,7 @@ import com.hazelcast.sql.impl.type.converter.DoubleConverter;
 import com.hazelcast.sql.impl.type.converter.FloatConverter;
 import com.hazelcast.sql.impl.type.converter.InstantConverter;
 import com.hazelcast.sql.impl.type.converter.IntegerConverter;
+import com.hazelcast.sql.impl.type.converter.IntervalConverter;
 import com.hazelcast.sql.impl.type.converter.LocalDateConverter;
 import com.hazelcast.sql.impl.type.converter.LocalDateTimeConverter;
 import com.hazelcast.sql.impl.type.converter.LocalTimeConverter;
@@ -82,6 +83,9 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
     public static final QueryDataType OBJECT = new QueryDataType(ObjectConverter.INSTANCE);
 
     public static final QueryDataType NULL = new QueryDataType(NullConverter.INSTANCE);
+
+    public static final QueryDataType INTERVAL_YEAR_MONTH = new QueryDataType(IntervalConverter.YEAR_MONTH);
+    public static final QueryDataType INTERVAL_DAY_SECOND = new QueryDataType(IntervalConverter.DAY_SECOND);
 
     private Converter converter;
 

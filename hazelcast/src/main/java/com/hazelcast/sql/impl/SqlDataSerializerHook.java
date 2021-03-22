@@ -87,6 +87,8 @@ import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.JoinRow;
 import com.hazelcast.sql.impl.row.ListRowBatch;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
+import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SQL_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SQL_DS_FACTORY_ID;
@@ -183,7 +185,10 @@ public class SqlDataSerializerHook implements DataSerializerHook {
 
     public static final int EXPRESSION_DOUBLE_DOUBLE = 66;
 
-    public static final int LEN = EXPRESSION_DOUBLE_DOUBLE + 1;
+    public static final int INTERVAL_YEAR_MONTH = 67;
+    public static final int INTERVAL_DAY_SECOND = 68;
+
+    public static final int LEN = INTERVAL_DAY_SECOND + 1;
 
     @Override
     public int getFactoryId() {
@@ -278,6 +283,9 @@ public class SqlDataSerializerHook implements DataSerializerHook {
 
         constructors[LAZY_TARGET] = arg -> new LazyTarget();
         constructors[EXPRESSION_DOUBLE_DOUBLE] = arg -> new DoubleBiFunction();
+
+        constructors[INTERVAL_YEAR_MONTH] = arg -> new SqlYearMonthInterval();
+        constructors[INTERVAL_DAY_SECOND] = arg -> new SqlDaySecondInterval();
 
         return new ArrayDataSerializableFactory(constructors);
     }

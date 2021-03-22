@@ -22,8 +22,8 @@ import com.hazelcast.sql.impl.type.converter.Converter;
 import org.apache.calcite.sql.parser.SqlParserPos;
 
 public class NumericPrecedenceParameterConverter extends AbstractParameterConverter {
-    public NumericPrecedenceParameterConverter(int ordinal, SqlParserPos parserPos, QueryDataType type) {
-        super(ordinal, parserPos, type);
+    public NumericPrecedenceParameterConverter(int ordinal, SqlParserPos parserPos, QueryDataType targetType) {
+        super(ordinal, parserPos, targetType);
     }
 
     @Override

@@ -17,13 +17,13 @@
 package com.hazelcast.sql.impl.calcite.validate.operators;
 
 import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.SqlOperandTypeInference;
 import org.apache.calcite.sql.type.SqlTypeName;
 
+import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils.createType;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils.toHazelcastType;
 
 public final class BinaryOperatorOperandTypeInference implements SqlOperandTypeInference {
@@ -56,7 +56,7 @@ public final class BinaryOperatorOperandTypeInference implements SqlOperandTypeI
                     // If we are here, the operands are a parameter and a numeric expression.
                     // We upcast the type of the numeric expression to BIGINT, so that an expression `1 > ?` is resolved to
                     // `(BIGINT)1 > (BIGINT)?` rather than `(TINYINT)1 > (TINYINT)?`
-                    RelDataType newOperandType = HazelcastTypeUtils.createType(
+                    RelDataType newOperandType = createType(
                         binding.getTypeFactory(),
                         SqlTypeName.BIGINT,
                         operandType.isNullable()
@@ -80,7 +80,13 @@ public final class BinaryOperatorOperandTypeInference implements SqlOperandTypeI
 
         // If there is an operand with an unresolved type, set it to the known type.
         if (unknownTypeOperandIndex != -1) {
-            operandTypes[unknownTypeOperandIndex] = knownType;
+            if (SqlTypeName.INTERVAL_TYPES.contains(knownType.getSqlTypeName())) {
+                // If there is an interval on the one side, assume that the other side is a timestamp,
+                // because this is the only viable overload.
+                operandTypes[unknownTypeOperandIndex] = createType(binding.getTypeFactory(), SqlTypeName.TIMESTAMP, true);
+            } else {
+                operandTypes[unknownTypeOperandIndex] = knownType;
+            }
         }
     }
 }

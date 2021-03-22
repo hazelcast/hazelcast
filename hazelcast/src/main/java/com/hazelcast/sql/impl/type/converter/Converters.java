@@ -123,6 +123,11 @@ public final class Converters {
         // Object converter.
         converters.add(ObjectConverter.INSTANCE);
 
+        // Interval converters.
+        converters.add(IntervalConverter.YEAR_MONTH);
+        converters.add(IntervalConverter.DAY_SECOND);
+
+        // NULL converter.
         converters.add(NullConverter.INSTANCE);
 
         return converters;

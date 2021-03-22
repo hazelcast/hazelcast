@@ -19,6 +19,8 @@ package com.hazelcast.sql.impl.calcite.validate.operators.misc;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
 import com.hazelcast.sql.impl.calcite.validate.operators.BinaryOperatorOperandTypeInference;
 import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastBinaryOperator;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
+import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlBinaryOperator;
 import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.SqlOperatorBinding;
@@ -26,6 +28,7 @@ import org.apache.calcite.sql.SqlSyntax;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
+import org.apache.calcite.sql.type.SqlReturnTypeInference;
 import org.apache.calcite.sql.validate.SqlMonotonicity;
 
 public final class HazelcastArithmeticOperator extends HazelcastBinaryOperator {
@@ -43,7 +46,7 @@ public final class HazelcastArithmeticOperator extends HazelcastBinaryOperator {
             base.getKind(),
             base.getLeftPrec(),
             true,
-            ReturnTypes.ARG0_NULLABLE,
+            new ArithmeticTypeInference(),
             BinaryOperatorOperandTypeInference.INSTANCE
         );
     }
@@ -66,5 +69,19 @@ public final class HazelcastArithmeticOperator extends HazelcastBinaryOperator {
     @Override
     public SqlMonotonicity getMonotonicity(SqlOperatorBinding call) {
         return SqlMonotonicity.NOT_MONOTONIC;
+    }
+
+    private static final class ArithmeticTypeInference implements SqlReturnTypeInference {
+        @Override
+        public RelDataType inferReturnType(SqlOperatorBinding opBinding) {
+            assert opBinding.getOperandCount() == 2;
+
+            if (HazelcastTypeUtils.isIntervalType(opBinding.getOperandType(0))) {
+                // If interval is the first parameter, then use the second parameter as return type.
+                return ReturnTypes.ARG1_NULLABLE.inferReturnType(opBinding);
+            } else {
+                return ReturnTypes.ARG0_NULLABLE.inferReturnType(opBinding);
+            }
+        }
     }
 }

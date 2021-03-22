@@ -30,25 +30,34 @@ import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.prepare.Prepare;
 import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.runtime.CalciteContextException;
 import org.apache.calcite.runtime.Resources;
 import org.apache.calcite.sql.SqlCall;
+import org.apache.calcite.sql.SqlIntervalQualifier;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.parser.SqlParserPos;
+import org.apache.calcite.sql.type.SqlTypeFamily;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql.validate.SqlValidatorException;
 import org.apache.calcite.sql2rel.SqlRexConvertletTable;
 import org.apache.calcite.sql2rel.SqlToRelConverter;
 import org.apache.calcite.util.TimeString;
 
+import java.math.BigDecimal;
 import java.time.LocalTime;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Set;
 
+import static org.apache.calcite.avatica.util.TimeUnit.DAY;
+import static org.apache.calcite.avatica.util.TimeUnit.MONTH;
+import static org.apache.calcite.avatica.util.TimeUnit.SECOND;
+import static org.apache.calcite.avatica.util.TimeUnit.YEAR;
 import static org.apache.calcite.sql.type.SqlTypeName.CHAR_TYPES;
 import static org.apache.calcite.sql.type.SqlTypeName.NULL;
 import static org.apache.calcite.sql.type.SqlTypeName.TIME;
@@ -61,6 +70,10 @@ import static org.apache.calcite.sql.type.SqlTypeName.TIME;
  * literals and casts with more precise types assigned during the validation.
  */
 public class HazelcastSqlToRelConverter extends SqlToRelConverter {
+
+    private static final SqlIntervalQualifier INTERVAL_YEAR_MONTH = new SqlIntervalQualifier(YEAR, MONTH, SqlParserPos.ZERO);
+    private static final SqlIntervalQualifier INTERVAL_DAY_SECOND = new SqlIntervalQualifier(DAY, SECOND, SqlParserPos.ZERO);
+
     /** See {@link #convertCall(SqlNode, Blackboard)} for more information. */
     private final Set<SqlNode> callSet = Collections.newSetFromMap(new IdentityHashMap<>());
 
@@ -79,7 +92,7 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
     protected RexNode convertExtendedExpression(SqlNode node, Blackboard blackboard) {
         // Hook into conversion of literals, casts and calls to execute our own logic.
         if (node.getKind() == SqlKind.LITERAL) {
-            return convertLiteral((SqlLiteral) node);
+            return convertLiteral((SqlLiteral) node, blackboard.getTypeFactory());
         } else if (node.getKind() == SqlKind.CAST) {
             return convertCast((SqlCall) node, blackboard);
         } else if (node instanceof SqlCall) {
@@ -96,10 +109,29 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
      * For example, {@code [x:BIGINT > 1]} is interpreted as {@code [x:BIGINT > 1:BIGINT]} during the validation.
      * If this method is not invoked, Apache Calcite will convert it to {[@code x:BIGINT > 1:TINYINT]} instead.
      */
-    private RexNode convertLiteral(SqlLiteral literal) {
+    private RexNode convertLiteral(SqlLiteral literal, RelDataTypeFactory typeFactory) {
         RelDataType type = validator.getValidatedNodeType(literal);
 
-        return getRexBuilder().makeLiteral(literal.getValue(), type, true);
+        Object value;
+
+        if (HazelcastTypeUtils.isIntervalType(type)) {
+            // Normalize interval literals to YEAR-MONTH or DAY-SECOND literals.
+            value = literal.getValueAs(BigDecimal.class);
+
+            SqlTypeFamily family = type.getSqlTypeName().getFamily();
+
+            if (family == SqlTypeFamily.INTERVAL_YEAR_MONTH) {
+                type = typeFactory.createSqlIntervalType(INTERVAL_YEAR_MONTH);
+            } else {
+                assert family == SqlTypeFamily.INTERVAL_DAY_TIME;
+
+                type = typeFactory.createSqlIntervalType(INTERVAL_DAY_SECOND);
+            }
+        } else {
+            value = literal.getValue();
+        }
+
+        return getRexBuilder().makeLiteral(value, type, true);
     }
 
     /**

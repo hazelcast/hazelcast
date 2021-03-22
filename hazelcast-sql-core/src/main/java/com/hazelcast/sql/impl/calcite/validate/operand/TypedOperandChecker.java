@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.calcite.validate.operand;
 
 import com.hazelcast.sql.impl.ParameterConverter;
+import com.hazelcast.sql.impl.calcite.validate.param.TemporalPrecedenceParameterConverter;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
@@ -28,6 +29,9 @@ import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.sql.SqlDynamicParam;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.type.SqlTypeName;
+
+import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils.isNumericType;
+import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils.isTemporalType;
 
 public final class TypedOperandChecker extends AbstractOperandChecker {
 
@@ -41,17 +45,17 @@ public final class TypedOperandChecker extends AbstractOperandChecker {
     public static final TypedOperandChecker REAL = new TypedOperandChecker(SqlTypeName.REAL);
     public static final TypedOperandChecker DOUBLE = new TypedOperandChecker(SqlTypeName.DOUBLE);
 
-    private final SqlTypeName typeName;
+    private final SqlTypeName targetTypeName;
     private final RelDataType type;
 
-    private TypedOperandChecker(SqlTypeName typeName) {
-        this.typeName = typeName;
+    private TypedOperandChecker(SqlTypeName targetTypeName) {
+        this.targetTypeName = targetTypeName;
 
         type = null;
     }
 
     private TypedOperandChecker(RelDataType type) {
-        typeName = type.getSqlTypeName();
+        targetTypeName = type.getSqlTypeName();
 
         this.type = type;
     }
@@ -65,7 +69,7 @@ public final class TypedOperandChecker extends AbstractOperandChecker {
         if (type != null) {
             return type.equals(operandType);
         } else {
-            return operandType.getSqlTypeName() == typeName;
+            return operandType.getSqlTypeName() == targetTypeName;
         }
     }
 
@@ -74,7 +78,7 @@ public final class TypedOperandChecker extends AbstractOperandChecker {
         if (type != null) {
             return factory.createTypeWithNullability(type, nullable);
         } else {
-            return HazelcastTypeUtils.createType(factory, typeName, nullable);
+            return HazelcastTypeUtils.createType(factory, targetTypeName, nullable);
         }
     }
 
@@ -89,8 +93,11 @@ public final class TypedOperandChecker extends AbstractOperandChecker {
         QueryDataType targetType0 = getTargetHazelcastType();
         QueryDataType operandType0 = HazelcastTypeUtils.toHazelcastType(operandType.getSqlTypeName());
 
-        if (!isNumeric() || !operandType0.getTypeFamily().isNumeric()) {
-            // Do not coerce non-numeric types
+        // Coerce only numeric or temporal types.
+        boolean canCoerce = isTemporalType(operandType) && isTemporalType(targetTypeName)
+            || isNumericType(operandType) && isNumericType(targetTypeName);
+
+        if (!canCoerce) {
             return false;
         }
 
@@ -123,6 +130,12 @@ public final class TypedOperandChecker extends AbstractOperandChecker {
                 operand.getParserPosition(),
                 hazelcastType
             );
+        } else if (isTemporal()) {
+            return new TemporalPrecedenceParameterConverter(
+                operand.getIndex(),
+                operand.getParserPosition(),
+                hazelcastType
+            );
         } else {
             return new StrictParameterConverter(
                 operand.getIndex(),
@@ -133,10 +146,14 @@ public final class TypedOperandChecker extends AbstractOperandChecker {
     }
 
     private QueryDataType getTargetHazelcastType() {
-        return HazelcastTypeUtils.toHazelcastType(typeName);
+        return HazelcastTypeUtils.toHazelcastType(targetTypeName);
     }
 
     public boolean isNumeric() {
         return getTargetHazelcastType().getTypeFamily().isNumeric();
+    }
+
+    public boolean isTemporal() {
+        return getTargetHazelcastType().getTypeFamily().isTemporal();
     }
 }

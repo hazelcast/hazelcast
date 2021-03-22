@@ -23,11 +23,13 @@ import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.SqlIdentifier;
+import org.apache.calcite.sql.type.SqlTypeFamily;
 import org.apache.calcite.sql.type.SqlTypeName;
 
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.apache.calcite.sql.type.SqlTypeFamily.INTERVAL_DAY_TIME;
 import static org.apache.calcite.sql.type.SqlTypeName.DAY_INTERVAL_TYPES;
 import static org.apache.calcite.sql.type.SqlTypeName.INTERVAL_DAY_SECOND;
 import static org.apache.calcite.sql.type.SqlTypeName.INTERVAL_YEAR_MONTH;
@@ -82,6 +84,10 @@ public final class HazelcastTypeUtils {
 
         HZ_TO_CALCITE.put(QueryDataTypeFamily.NULL, SqlTypeName.NULL);
         CALCITE_TO_HZ.put(SqlTypeName.NULL, QueryDataType.NULL);
+
+        // The inverse mapping is not needed, because we map multiple interval type to two internal types.
+        HZ_TO_CALCITE.put(QueryDataTypeFamily.INTERVAL_YEAR_MONTH, INTERVAL_YEAR_MONTH);
+        HZ_TO_CALCITE.put(QueryDataTypeFamily.INTERVAL_DAY_SECOND, INTERVAL_DAY_SECOND);
     }
 
     private HazelcastTypeUtils() {
@@ -97,11 +103,20 @@ public final class HazelcastTypeUtils {
     }
 
     public static QueryDataType toHazelcastType(SqlTypeName sqlTypeName) {
-        QueryDataType queryDataType = CALCITE_TO_HZ.get(sqlTypeName);
-        if (queryDataType == null) {
-            throw new IllegalArgumentException("unexpected SQL type: " + sqlTypeName);
+        switch (sqlTypeName.getFamily()) {
+            case INTERVAL_YEAR_MONTH:
+                return QueryDataType.INTERVAL_YEAR_MONTH;
+
+            case INTERVAL_DAY_TIME:
+                return QueryDataType.INTERVAL_DAY_SECOND;
+
+            default:
+                QueryDataType queryDataType = CALCITE_TO_HZ.get(sqlTypeName);
+                if (queryDataType == null) {
+                    throw new IllegalArgumentException("unexpected SQL type: " + sqlTypeName);
+                }
+                return queryDataType;
         }
-        return queryDataType;
     }
 
     public static RelDataType createType(RelDataTypeFactory typeFactory, SqlTypeName typeName, boolean nullable) {
@@ -221,6 +236,33 @@ public final class HazelcastTypeUtils {
             default:
                 return false;
         }
+    }
+
+    public static boolean isTemporalType(RelDataType type) {
+        return isTemporalType(type.getSqlTypeName());
+    }
+
+    public static boolean isTemporalType(SqlTypeName typeName) {
+        switch (typeName) {
+            case DATE:
+            case TIME:
+            case TIMESTAMP:
+            case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
+                return true;
+
+            default:
+                return false;
+        }
+    }
+
+    public static boolean isIntervalType(RelDataType type) {
+        return isIntervalType(type.getSqlTypeName());
+    }
+
+    public static boolean isIntervalType(SqlTypeName typeName) {
+        SqlTypeFamily typeFamily = typeName.getFamily();
+
+        return typeFamily == INTERVAL_DAY_TIME || typeFamily == SqlTypeFamily.INTERVAL_YEAR_MONTH;
     }
 
     /**

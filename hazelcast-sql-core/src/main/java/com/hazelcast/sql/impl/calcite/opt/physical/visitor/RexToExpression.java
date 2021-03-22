@@ -59,6 +59,8 @@ import com.hazelcast.sql.impl.expression.string.SubstringFunction;
 import com.hazelcast.sql.impl.expression.string.TrimFunction;
 import com.hazelcast.sql.impl.expression.string.UpperFunction;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
+import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.sql.SqlFunction;
@@ -93,7 +95,7 @@ public final class RexToExpression {
      * @param literal the literal to convert.
      * @return the resulting constant expression.
      */
-    @SuppressWarnings("checkstyle:CyclomaticComplexity")
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:ReturnCount"})
     public static Expression<?> convertLiteral(RexLiteral literal) {
         SqlTypeName type = literal.getType().getSqlTypeName();
 
@@ -130,6 +132,12 @@ public final class RexToExpression {
 
             case TIME:
                 return convertTimeLiteral(literal);
+
+            case INTERVAL_YEAR_MONTH:
+                return convertIntervalYearMonth(literal);
+
+            case INTERVAL_DAY_SECOND:
+                return convertIntervalDaySecond(literal);
 
             default:
                 throw QueryException.error("Unsupported literal: " + literal);
@@ -457,5 +465,17 @@ public final class RexToExpression {
         } catch (Exception e) {
             throw QueryException.dataException("Cannot convert literal to " + SqlColumnType.TIME + ": " + timeString);
         }
+    }
+
+    public static Expression<?> convertIntervalYearMonth(RexLiteral literal) {
+        SqlYearMonthInterval value = new SqlYearMonthInterval(literal.getValueAs(Integer.class));
+
+        return ConstantExpression.create(value, QueryDataType.INTERVAL_YEAR_MONTH);
+    }
+
+    public static Expression<?> convertIntervalDaySecond(RexLiteral literal) {
+        SqlDaySecondInterval value = new SqlDaySecondInterval(literal.getValueAs(Long.class));
+
+        return ConstantExpression.create(value, QueryDataType.INTERVAL_DAY_SECOND);
     }
 }

@@ -201,11 +201,11 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
         return "Cannot apply '" + functionName + "' function to [" + joiner.toString() + "] (consider adding an explicit CAST)";
     }
 
-    protected static String signatureErrorOperator(String operatorName, SqlColumnType... columnTypes) {
+    protected static String signatureErrorOperator(String operatorName, Object... columnTypes) {
         TestCase.assertNotNull(columnTypes);
 
         StringJoiner joiner = new StringJoiner(", ");
-        Arrays.stream(columnTypes).forEach((columnType) -> joiner.add(columnType == SqlColumnType.NULL ? "UNKNOWN" : columnType.name()));
+        Arrays.stream(columnTypes).forEach((columnType) -> joiner.add(columnType == SqlColumnType.NULL ? "UNKNOWN" : columnType.toString()));
 
         return "Cannot apply '" + operatorName + "' operator to [" + joiner.toString() + "] (consider adding an explicit CAST)";
     }

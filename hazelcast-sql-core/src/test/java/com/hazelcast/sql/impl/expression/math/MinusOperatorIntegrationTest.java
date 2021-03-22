@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.expression.math;
 
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
+import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -28,6 +29,10 @@ import org.junit.runner.RunWith;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
 
 import static com.hazelcast.sql.SqlColumnType.BIGINT;
 import static com.hazelcast.sql.SqlColumnType.BOOLEAN;
@@ -43,7 +48,14 @@ import static com.hazelcast.sql.SqlColumnType.TIMESTAMP;
 import static com.hazelcast.sql.SqlColumnType.TIMESTAMP_WITH_TIME_ZONE;
 import static com.hazelcast.sql.SqlColumnType.VARCHAR;
 import static com.hazelcast.sql.impl.SqlErrorCode.DATA_EXCEPTION;
+import static com.hazelcast.sql.impl.SqlErrorCode.PARSING;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
+import static java.time.temporal.ChronoUnit.DAYS;
+import static java.time.temporal.ChronoUnit.HOURS;
+import static java.time.temporal.ChronoUnit.MINUTES;
+import static java.time.temporal.ChronoUnit.MONTHS;
+import static java.time.temporal.ChronoUnit.SECONDS;
+import static java.time.temporal.ChronoUnit.YEARS;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -387,30 +399,175 @@ public class MinusOperatorIntegrationTest extends ArithmeticOperatorIntegrationT
     }
 
     @Test
-    public void testTemporal() {
-        checkUnsupportedForAllTypesCommute(LOCAL_DATE_VAL, DATE);
-        checkUnsupportedForAllTypesCommute(LOCAL_TIME_VAL, TIME);
-        checkUnsupportedForAllTypesCommute(LOCAL_DATE_TIME_VAL, TIMESTAMP);
-        checkUnsupportedForAllTypesCommute(OFFSET_DATE_TIME_VAL, TIMESTAMP_WITH_TIME_ZONE);
+    public void testDate() {
+        LocalDate date = LocalDate.now();
+
+        // Check null values when one side is interval
+        putAndCheckValue(date, sql(null, "INTERVAL '1' SECOND"), TIMESTAMP, null);
+        putAndCheckFailure(date, sql("INTERVAL '1' SECOND", null), PARSING, signatureError("INTERVAL_SECOND", TIMESTAMP));
+
+        // Check null values when one side is temporal type. Since we cannot deduce the type of the other side, we fail.
+        putAndCheckFailure(date, sql("this", null), PARSING, signatureError(DATE, DATE));
+        putAndCheckFailure(date, sql(null, "this"), PARSING, signatureError(DATE, DATE));
+
+        // Check normal operations
+        putAndCheckValue(date, sql("this", "INTERVAL '1' SECOND"), TIMESTAMP, date.atStartOfDay().minus(1, SECONDS));
+        putAndCheckValue(date, sql("this", "INTERVAL '1' MINUTE"), TIMESTAMP, date.atStartOfDay().minus(1, MINUTES));
+        putAndCheckValue(date, sql("this", "INTERVAL '1' HOUR"), TIMESTAMP, date.atStartOfDay().minus(1, HOURS));
+        putAndCheckValue(date, sql("this", "INTERVAL '1' DAY"), TIMESTAMP, date.atStartOfDay().minus(1, DAYS));
+        putAndCheckValue(date, sql("this", "INTERVAL '1 00:00:01' DAY TO SECOND"), TIMESTAMP,
+            date.atStartOfDay().minus(1, DAYS).minus(1, SECONDS));
+
+        putAndCheckValue(date, sql("this", "INTERVAL '1' MONTH"), TIMESTAMP, date.atStartOfDay().minus(1, MONTHS));
+        putAndCheckValue(date, sql("this", "INTERVAL '1' YEAR"), TIMESTAMP, date.atStartOfDay().minus(1, YEARS));
+        putAndCheckValue(date, sql("this", "INTERVAL '1-1' YEAR TO MONTH"), TIMESTAMP,
+            date.atStartOfDay().minus(1, YEARS).minus(1, MONTHS));
+
+        // Check the inverse order of operands
+        putAndCheckFailure(date, sql("INTERVAL '1' SECOND", "this"), PARSING, signatureError("INTERVAL_SECOND", DATE));
+
+        // Check parameter as temporal operand
+        putAndCheckValue(date, sql("?", "INTERVAL '1' SECOND"), TIMESTAMP, date.atStartOfDay().minus(1, SECONDS), date);
+        putAndCheckFailure(date, sql("INTERVAL '1' SECOND", "?"), PARSING, signatureError("INTERVAL_SECOND", TIMESTAMP));
+
+        // Parameter on the other side of temporal operand should fail, because we do not expose interval literals.
+        putAndCheckFailure(date, sql("this", "?"), PARSING, signatureError(DATE, DATE));
+        putAndCheckFailure(date, sql("?", "this"), PARSING, signatureError(DATE, DATE));
+    }
+
+    @Test
+    public void testTime() {
+        LocalTime time = LocalTime.now();
+
+        // Check null values when one side is interval
+        putAndCheckValue(time, sql(null, "INTERVAL '1' SECOND"), TIMESTAMP, null);
+        putAndCheckFailure(time, sql("INTERVAL '1' SECOND", null), PARSING, signatureError("INTERVAL_SECOND", TIMESTAMP));
+
+        // Check null values when one side is temporal type. Since we cannot deduce the type of the other side, we fail.
+        putAndCheckFailure(time, sql("this", null), PARSING, signatureError(TIME, TIME));
+        putAndCheckFailure(time, sql(null, "this"), PARSING, signatureError(TIME, TIME));
+
+        // Check normal operations
+        putAndCheckValue(time, sql("this", "INTERVAL '1' SECOND"), TIME, time.minus(1, SECONDS));
+        putAndCheckValue(time, sql("this", "INTERVAL '1' MINUTE"), TIME, time.minus(1, MINUTES));
+        putAndCheckValue(time, sql("this", "INTERVAL '1' HOUR"), TIME, time.minus(1, HOURS));
+        putAndCheckValue(time, sql("this", "INTERVAL '1' DAY"), TIME, time);
+        putAndCheckValue(time, sql("this", "INTERVAL '1 00:00:01' DAY TO SECOND"), TIME, time.minus(1, SECONDS));
+
+        putAndCheckValue(time, sql("this", "INTERVAL '1' MONTH"), TIME, time);
+        putAndCheckValue(time, sql("this", "INTERVAL '1' YEAR"), TIME, time);
+        putAndCheckValue(time, sql("this", "INTERVAL '1-1' YEAR TO MONTH"), TIME, time);
+
+        // Check the inverse order of operands
+        putAndCheckFailure(time, sql("INTERVAL '1' SECOND", "this"), PARSING, signatureError("INTERVAL_SECOND", TIME));
+
+        // Check parameter as temporal operand. TIME is extended to TIMESTAMP
+        putAndCheckValue(time, sql("?", "INTERVAL '1' SECOND"), TIMESTAMP,
+            time.atDate(LocalDate.now()).minus(1, SECONDS), time);
+        putAndCheckFailure(time, sql("INTERVAL '1' SECOND", "?"), PARSING, signatureError("INTERVAL_SECOND", TIMESTAMP));
+
+        // Parameter on the other side of temporal operand should fail, because we do not expose interval literals.
+        putAndCheckFailure(time, sql("this", "?"), PARSING, signatureError(TIME, TIME));
+        putAndCheckFailure(time, sql("?", "this"), PARSING, signatureError(TIME, TIME));
+    }
+
+    @Test
+    public void testTimestamp() {
+        LocalDateTime timestamp = LocalDateTime.now();
+
+        // Check null values when one side is interval
+        putAndCheckValue(timestamp, sql(null, "INTERVAL '1' SECOND"), TIMESTAMP, null);
+        putAndCheckFailure(timestamp, sql("INTERVAL '1' SECOND", null), PARSING, signatureError("INTERVAL_SECOND", TIMESTAMP));
+
+        // Check null values when one side is temporal type. Since we cannot deduce the type of the other side, we fail.
+        putAndCheckFailure(timestamp, sql("this", null), PARSING, signatureError(TIMESTAMP, TIMESTAMP));
+        putAndCheckFailure(timestamp, sql(null, "this"), PARSING, signatureError(TIMESTAMP, TIMESTAMP));
+
+        // Check normal operations
+        putAndCheckValue(timestamp, sql("this", "INTERVAL '1' SECOND"), TIMESTAMP, timestamp.minus(1, SECONDS));
+        putAndCheckValue(timestamp, sql("this", "INTERVAL '1' MINUTE"), TIMESTAMP, timestamp.minus(1, MINUTES));
+        putAndCheckValue(timestamp, sql("this", "INTERVAL '1' HOUR"), TIMESTAMP, timestamp.minus(1, HOURS));
+        putAndCheckValue(timestamp, sql("this", "INTERVAL '1' DAY"), TIMESTAMP, timestamp.minus(1, DAYS));
+        putAndCheckValue(timestamp, sql("this", "INTERVAL '1 00:00:01' DAY TO SECOND"), TIMESTAMP,
+            timestamp.minus(1, DAYS).minus(1, SECONDS));
+
+        putAndCheckValue(timestamp, sql("this", "INTERVAL '1' MONTH"), TIMESTAMP, timestamp.minus(1, MONTHS));
+        putAndCheckValue(timestamp, sql("this", "INTERVAL '1' YEAR"), TIMESTAMP, timestamp.minus(1, YEARS));
+        putAndCheckValue(timestamp, sql("this", "INTERVAL '1-1' YEAR TO MONTH"), TIMESTAMP,
+            timestamp.minus(1, YEARS).minus(1, MONTHS));
+
+        // Check the inverse order of operands
+        putAndCheckFailure(timestamp, sql("INTERVAL '1' SECOND", "this"), PARSING, signatureError("INTERVAL_SECOND", TIMESTAMP));
+
+        // Check parameter as temporal operand
+        putAndCheckValue(timestamp, sql("?", "INTERVAL '1' SECOND"), TIMESTAMP, timestamp.minus(1, SECONDS), timestamp);
+        putAndCheckFailure(timestamp, sql("INTERVAL '1' SECOND", "?"), PARSING, signatureError("INTERVAL_SECOND", TIMESTAMP));
+
+        // Parameter on the other side of temporal operand should fail, because we do not expose interval literals.
+        putAndCheckFailure(timestamp, sql("this", "?"), PARSING, signatureError(TIMESTAMP, TIMESTAMP));
+        putAndCheckFailure(timestamp, sql("?", "this"), PARSING, signatureError(TIMESTAMP, TIMESTAMP));
+    }
+
+    @Test
+    public void testTimestampWithTimezone() {
+        OffsetDateTime timestamp = OffsetDateTime.now();
+
+        // Check null values when one side is interval
+        putAndCheckValue(timestamp, sql(null, "INTERVAL '1' SECOND"), TIMESTAMP, null);
+        putAndCheckFailure(timestamp, sql("INTERVAL '1' SECOND", null), PARSING, signatureError("INTERVAL_SECOND", TIMESTAMP));
+
+        // Check null values when one side is temporal type. Since we cannot deduce the type of the other side, we fail.
+        putAndCheckFailure(timestamp, sql("this", null), PARSING,
+            signatureError(TIMESTAMP_WITH_TIME_ZONE, TIMESTAMP_WITH_TIME_ZONE));
+        putAndCheckFailure(timestamp, sql(null, "this"), PARSING,
+            signatureError(TIMESTAMP_WITH_TIME_ZONE, TIMESTAMP_WITH_TIME_ZONE));
+
+        // Check normal operations
+        putAndCheckValue(timestamp, sql("this", "INTERVAL '1' SECOND"), TIMESTAMP_WITH_TIME_ZONE, timestamp.minus(1, SECONDS));
+        putAndCheckValue(timestamp, sql("this", "INTERVAL '1' MINUTE"), TIMESTAMP_WITH_TIME_ZONE, timestamp.minus(1, MINUTES));
+        putAndCheckValue(timestamp, sql("this", "INTERVAL '1' HOUR"), TIMESTAMP_WITH_TIME_ZONE, timestamp.minus(1, HOURS));
+        putAndCheckValue(timestamp, sql("this", "INTERVAL '1' DAY"), TIMESTAMP_WITH_TIME_ZONE, timestamp.minus(1, DAYS));
+        putAndCheckValue(timestamp, sql("this", "INTERVAL '1 00:00:01' DAY TO SECOND"), TIMESTAMP_WITH_TIME_ZONE,
+            timestamp.minus(1, DAYS).minus(1, SECONDS));
+
+        putAndCheckValue(timestamp, sql("this", "INTERVAL '1' MONTH"), TIMESTAMP_WITH_TIME_ZONE, timestamp.minus(1, MONTHS));
+        putAndCheckValue(timestamp, sql("this", "INTERVAL '1' YEAR"), TIMESTAMP_WITH_TIME_ZONE, timestamp.minus(1, YEARS));
+        putAndCheckValue(timestamp, sql("this", "INTERVAL '1-1' YEAR TO MONTH"), TIMESTAMP_WITH_TIME_ZONE,
+            timestamp.minus(1, YEARS).minus(1, MONTHS));
+
+        // Check the inverse order of operands
+        putAndCheckFailure(timestamp, sql("INTERVAL '1' SECOND", "this"), PARSING,
+            signatureError("INTERVAL_SECOND", TIMESTAMP_WITH_TIME_ZONE));
+
+        // Check parameter as temporal operand
+        putAndCheckFailure(timestamp, sql("?", "INTERVAL '1' SECOND"), DATA_EXCEPTION,
+            parameterError(0, TIMESTAMP, TIMESTAMP_WITH_TIME_ZONE), timestamp);
+        putAndCheckFailure(timestamp, sql("INTERVAL '1' SECOND", "?"), PARSING,
+            signatureError("INTERVAL_SECOND", TIMESTAMP));
+
+        // Parameter on the other side of temporal operand should fail, because we do not expose interval literals.
+        putAndCheckFailure(timestamp, sql("this", "?"), PARSING,
+            signatureError(TIMESTAMP_WITH_TIME_ZONE, TIMESTAMP_WITH_TIME_ZONE));
+        putAndCheckFailure(timestamp, sql("?", "this"), PARSING,
+            signatureError(TIMESTAMP_WITH_TIME_ZONE, TIMESTAMP_WITH_TIME_ZONE));
     }
 
     @Test
     public void testEquality() {
-        checkEquals(MultiplyFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT),
-            MultiplyFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT), true);
+        checkEquals(MinusFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT),
+            MinusFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT), true);
 
-        checkEquals(MultiplyFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT),
-            MultiplyFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), QueryDataType.BIGINT), false);
+        checkEquals(MinusFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT),
+            MinusFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), QueryDataType.BIGINT), false);
 
-        checkEquals(MultiplyFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT),
-            MultiplyFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(100, INT), INT), false);
+        checkEquals(MinusFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT),
+            MinusFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(100, INT), INT), false);
     }
 
     @Test
     public void testSerialization() {
-        MultiplyFunction<?> original =
-            MultiplyFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT);
-        MultiplyFunction<?> restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_MULTIPLY);
+        Expression<?> original = MinusFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT);
+        Expression<?> restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_MINUS);
 
         checkEquals(original, restored, true);
     }

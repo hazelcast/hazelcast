@@ -17,16 +17,21 @@
 package com.hazelcast.sql.impl.calcite.validate.param;
 
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.sql.impl.type.converter.Converter;
 import org.apache.calcite.sql.parser.SqlParserPos;
 
-public class StrictParameterConverter extends AbstractParameterConverter {
-    public StrictParameterConverter(int ordinal, SqlParserPos parserPos, QueryDataType targetType) {
+public class TemporalPrecedenceParameterConverter extends AbstractParameterConverter {
+    public TemporalPrecedenceParameterConverter(int ordinal, SqlParserPos parserPos, QueryDataType targetType) {
         super(ordinal, parserPos, targetType);
     }
 
     @Override
     protected boolean isValid(Object value, Converter valueConverter) {
-        return targetType.getTypeFamily() == valueConverter.getTypeFamily();
+        QueryDataTypeFamily valueTypeFamily = valueConverter.getTypeFamily();
+
+        return valueTypeFamily.isTemporal()
+            && valueConverter.canConvertTo(targetType.getTypeFamily())
+            && valueTypeFamily.getPrecedence() <= targetType.getTypeFamily().getPrecedence();
     }
 }
