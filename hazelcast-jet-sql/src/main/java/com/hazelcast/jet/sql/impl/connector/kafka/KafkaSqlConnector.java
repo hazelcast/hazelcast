@@ -51,23 +51,19 @@ public class KafkaSqlConnector implements SqlConnector {
 
     public static final String TYPE_NAME = "Kafka";
 
-    private final KvMetadataResolvers metadataResolvers;
-
-    public KafkaSqlConnector() {
-        this.metadataResolvers = new KvMetadataResolvers(
-                new KvMetadataResolver[]{
-                        KvMetadataNullResolver.INSTANCE,
-                        KvMetadataJavaResolver.INSTANCE,
-                        KvMetadataJsonResolver.INSTANCE,
-                        KvMetadataAvroResolver.INSTANCE
-                },
-                new KvMetadataResolver[]{
-                        KvMetadataJavaResolver.INSTANCE,
-                        KvMetadataJsonResolver.INSTANCE,
-                        KvMetadataAvroResolver.INSTANCE
-                }
-        );
-    }
+    private static final KvMetadataResolvers METADATA_RESOLVERS = new KvMetadataResolvers(
+            new KvMetadataResolver[]{
+                    KvMetadataNullResolver.INSTANCE,
+                    KvMetadataJavaResolver.INSTANCE,
+                    KvMetadataJsonResolver.INSTANCE,
+                    KvMetadataAvroResolver.INSTANCE
+            },
+            new KvMetadataResolver[]{
+                    KvMetadataJavaResolver.INSTANCE,
+                    KvMetadataJsonResolver.INSTANCE,
+                    KvMetadataAvroResolver.INSTANCE
+            }
+    );
 
     @Override
     public String typeName() {
@@ -85,7 +81,7 @@ public class KafkaSqlConnector implements SqlConnector {
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields
     ) {
-        return metadataResolvers.resolveAndValidateFields(userFields, options, nodeEngine);
+        return METADATA_RESOLVERS.resolveAndValidateFields(userFields, options, nodeEngine);
     }
 
     @Nonnull @Override
@@ -97,8 +93,8 @@ public class KafkaSqlConnector implements SqlConnector {
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> resolvedFields
     ) {
-        KvMetadata keyMetadata = metadataResolvers.resolveMetadata(true, resolvedFields, options, null);
-        KvMetadata valueMetadata = metadataResolvers.resolveMetadata(false, resolvedFields, options, null);
+        KvMetadata keyMetadata = METADATA_RESOLVERS.resolveMetadata(true, resolvedFields, options, null);
+        KvMetadata valueMetadata = METADATA_RESOLVERS.resolveMetadata(false, resolvedFields, options, null);
         List<TableField> fields = concat(keyMetadata.getFields().stream(), valueMetadata.getFields().stream())
                 .collect(toList());
 

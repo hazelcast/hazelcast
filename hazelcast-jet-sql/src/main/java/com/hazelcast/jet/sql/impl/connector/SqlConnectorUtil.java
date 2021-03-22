@@ -32,7 +32,7 @@ public final class SqlConnectorUtil {
         if (table instanceof JetTable) {
             connector = ((JetTable) table).getSqlConnector();
         } else if (table instanceof PartitionedMapTable) {
-            connector = new IMapSqlConnector();
+            connector = IMapSqlConnector.INSTANCE;
         } else {
             throw new JetException("Unknown table type: " + table.getClass());
         }

@@ -57,17 +57,15 @@ import static java.util.stream.Stream.concat;
 
 public class IMapSqlConnector implements SqlConnector {
 
+    public static final IMapSqlConnector INSTANCE = new IMapSqlConnector();
+
     public static final String TYPE_NAME = "IMap";
 
-    private final KvMetadataResolvers metadataResolvers;
-
-    public IMapSqlConnector() {
-        this.metadataResolvers = new KvMetadataResolvers(
-                KvMetadataJavaResolver.INSTANCE,
-                MetadataPortableResolver.INSTANCE,
-                MetadataJsonResolver.INSTANCE
-        );
-    }
+    private static final KvMetadataResolvers METADATA_RESOLVERS = new KvMetadataResolvers(
+            KvMetadataJavaResolver.INSTANCE,
+            MetadataPortableResolver.INSTANCE,
+            MetadataJsonResolver.INSTANCE
+    );
 
     @Override
     public String typeName() {
@@ -85,7 +83,7 @@ public class IMapSqlConnector implements SqlConnector {
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields
     ) {
-        return metadataResolvers.resolveAndValidateFields(userFields, options, nodeEngine);
+        return METADATA_RESOLVERS.resolveAndValidateFields(userFields, options, nodeEngine);
     }
 
     @Nonnull @Override
@@ -99,8 +97,8 @@ public class IMapSqlConnector implements SqlConnector {
     ) {
         InternalSerializationService ss = (InternalSerializationService) nodeEngine.getSerializationService();
 
-        KvMetadata keyMetadata = metadataResolvers.resolveMetadata(true, resolvedFields, options, ss);
-        KvMetadata valueMetadata = metadataResolvers.resolveMetadata(false, resolvedFields, options, ss);
+        KvMetadata keyMetadata = METADATA_RESOLVERS.resolveMetadata(true, resolvedFields, options, ss);
+        KvMetadata valueMetadata = METADATA_RESOLVERS.resolveMetadata(false, resolvedFields, options, ss);
         List<TableField> fields = concat(keyMetadata.getFields().stream(), valueMetadata.getFields().stream())
                 .collect(toList());
 
