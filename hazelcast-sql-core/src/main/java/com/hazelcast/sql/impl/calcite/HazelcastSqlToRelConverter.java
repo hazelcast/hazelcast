@@ -16,12 +16,14 @@
 
 package com.hazelcast.sql.impl.calcite;
 
+import com.google.common.collect.ImmutableList;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastResources;
 import com.hazelcast.sql.impl.calcite.validate.literal.Literal;
 import com.hazelcast.sql.impl.calcite.validate.literal.LiteralUtils;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference;
+import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastInPredicate;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.converter.Converter;
@@ -33,8 +35,10 @@ import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.rex.RexUtil;
 import org.apache.calcite.runtime.CalciteContextException;
 import org.apache.calcite.runtime.Resources;
+import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlIntervalQualifier;
 import org.apache.calcite.sql.SqlKind;
@@ -42,17 +46,28 @@ import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.type.SqlTypeFamily;
+import org.apache.calcite.sql.SqlNodeList;
+import org.apache.calcite.sql.SqlOperator;
+import org.apache.calcite.sql.fun.SqlInOperator;
+import org.apache.calcite.sql.fun.SqlRowOperator;
+import org.apache.calcite.sql.fun.SqlStdOperatorTable;
+import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql.validate.SqlValidatorException;
 import org.apache.calcite.sql2rel.SqlRexConvertletTable;
 import org.apache.calcite.sql2rel.SqlToRelConverter;
+import org.apache.calcite.util.Pair;
 import org.apache.calcite.util.TimeString;
+import org.apache.calcite.util.Util;
 
 import java.math.BigDecimal;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.apache.calcite.avatica.util.TimeUnit.DAY;
 import static org.apache.calcite.avatica.util.TimeUnit.MONTH;
@@ -95,12 +110,11 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
             return convertLiteral((SqlLiteral) node, blackboard.getTypeFactory());
         } else if (node.getKind() == SqlKind.CAST) {
             return convertCast((SqlCall) node, blackboard);
-//        } else if (node.getKind() == SqlKind.IN) {
-//            return convertIn(node, blackboard);
+        } else if (node.getKind() == SqlKind.IN || node.getKind() == SqlKind.NOT_IN) {
+            return convertIn((SqlCall) node, blackboard);
         } else if (node instanceof SqlCall) {
             return convertCall(node, blackboard);
         }
-
         return null;
     }
 
@@ -209,15 +223,37 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
     }
 
     /**
-     * This method overrides Apache Calcite approach to convert
-     * IN operator to chain of disjunctive comparison predicates.
-     * @see org.apache.calcite.sql2rel.SqlToRelConverter#substituteSubQuery
-     * @see org.apache.calcite.sql2rel.SqlToRelConverter#convertInToOr
+     * This method overrides Apache Calcite approach for IN operator.
      *
+     * @see org.apache.calcite.sql2rel.SqlToRelConverter##substituteSubQuery
+     * @see org.apache.calcite.sql2rel.SqlToRelConverter##convertInToOr
      */
-//    private RexNode convertIn(SqlNode call, Blackboard blackboard) {
-//        return null;
-//    }
+    private RexNode convertIn(SqlCall call, Blackboard blackboard) {
+        assert call.getOperandList().size() == 2;
+        final SqlNode lhs = call.operand(0);
+
+        final List<RexNode> leftKeys;
+        if (lhs.getKind() == SqlKind.ROW) {
+            leftKeys = new ArrayList<>();
+            for (SqlNode sqlExpr : ((SqlBasicCall) lhs).getOperandList()) {
+                leftKeys.add(blackboard.convertExpression(sqlExpr));
+            }
+        } else {
+            leftKeys = ImmutableList.of(blackboard.convertExpression(lhs));
+        }
+
+        final SqlNode rhs = call.operand(1);
+        if (rhs instanceof SqlNodeList) {
+            SqlNodeList valueList = (SqlNodeList) rhs;
+            return convertInToOr(
+                blackboard,
+                leftKeys,
+                valueList,
+                (HazelcastInPredicate) call.getOperator()
+            );
+        }
+        throw Util.needToImplement("Hazelcast SQL engine doesn't support subqueries.");
+    }
 
     /**
      * This method overcomes a bug in Apache Calcite that ignores previously resolved return types of the expression
@@ -285,5 +321,105 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
         CalciteContextException calciteContextError = validator.newValidationError(call, contextError);
 
         throw QueryException.error(SqlErrorCode.PARSING, calciteContextError.getMessage(), e);
+    }
+
+    // Copied from SqlToRelConverter.
+    private static boolean containsNullLiteral(SqlNodeList valueList) {
+        for (SqlNode node : valueList.getList()) {
+            if (node instanceof SqlLiteral) {
+                SqlLiteral lit = (SqlLiteral) node;
+                if (lit.getValue() == null) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    // Copied from SqlToRelConverter.
+    private RexNode convertInToOr(
+        final Blackboard bb,
+        final List<RexNode> leftKeys,
+        SqlNodeList valuesList,
+        SqlInOperator op) {
+        final List<RexNode> comparisons = constructComparisons(bb, leftKeys, valuesList, op);
+
+        switch (op.kind) {
+            case ALL:
+                return RexUtil.composeConjunction(rexBuilder, comparisons, true);
+            case NOT_IN:
+                return rexBuilder.makeCall(SqlStdOperatorTable.NOT,
+                    RexUtil.composeDisjunction(rexBuilder, comparisons, true));
+            case IN:
+            case SOME:
+                return RexUtil.composeDisjunction(rexBuilder, comparisons, true);
+            default:
+                throw new AssertionError();
+        }
+    }
+
+    /**
+     * Constructs comparisons between
+     * left-hand operand (as a rule, SqlIdentifier) and right-hand list.
+     */
+    private List<RexNode> constructComparisons(Blackboard bb, List<RexNode> leftKeys, SqlNodeList valuesList, SqlInOperator op) {
+        final List<RexNode> comparisons = new ArrayList<>();
+
+        if (containsNullLiteral(valuesList)) {
+            valuesList = removeNulls(valuesList);
+        }
+
+        for (SqlNode rightValues : valuesList) {
+            RexNode rexComparison;
+            final SqlOperator comparisonOp = SqlStdOperatorTable.EQUALS;
+            if (leftKeys.size() == 1) {
+                rexComparison = rexBuilder.makeCall(
+                    comparisonOp,
+                    leftKeys.get(0),
+                    ensureSqlType(
+                        leftKeys.get(0).getType(),
+                        bb.convertExpression(rightValues)
+                    )
+                );
+            } else {
+                assert rightValues instanceof SqlCall;
+                final SqlBasicCall basicCall = (SqlBasicCall) rightValues;
+                assert basicCall.getOperator() instanceof SqlRowOperator && basicCall.operandCount() == leftKeys.size();
+                rexComparison = RexUtil.composeConjunction(rexBuilder,
+                    Pair.zip(leftKeys, basicCall.getOperandList()).stream().map(pair ->
+                        rexBuilder.makeCall(
+                            comparisonOp, pair.left, ensureSqlType(
+                                pair.left.getType(),
+                                bb.convertExpression(pair.right)
+                            )
+                        )
+                    ).collect(Collectors.toList()));
+            }
+            comparisons.add(rexComparison);
+        }
+        return comparisons;
+    }
+
+    private static SqlNodeList removeNulls(SqlNodeList valueList) {
+        SqlNodeList list = new SqlNodeList(valueList.getParserPosition());
+        for (SqlNode node : valueList.getList()) {
+            if (node instanceof SqlLiteral) {
+                SqlLiteral lit = (SqlLiteral) node;
+                if (lit.getValue() == null) {
+                    continue;
+                }
+                list.add(node);
+            }
+        }
+        return list;
+    }
+
+    private RexNode ensureSqlType(RelDataType type, RexNode node) {
+        if (type.getSqlTypeName() == node.getType().getSqlTypeName()
+            || (type.getSqlTypeName() == SqlTypeName.VARCHAR
+            && node.getType().getSqlTypeName() == SqlTypeName.CHAR)) {
+            return node;
+        }
+        return rexBuilder.ensureType(type, node, true);
     }
 }

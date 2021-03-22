@@ -57,7 +57,7 @@ public class HazelcastInPredicate extends SqlInOperator implements HazelcastOper
     private final boolean negated;
 
     public HazelcastInPredicate(String name, boolean negated) {
-        super(name, SqlKind.IN);
+        super(name, negated ? SqlKind.NOT_IN : SqlKind.IN);
         this.negated = negated;
     }
 
@@ -138,7 +138,7 @@ public class HazelcastInPredicate extends SqlInOperator implements HazelcastOper
     }
 
     interface HazelcastInPredicateResource extends CalciteResource {
-        @Resources.BaseMessage("Sub-queries is not allowed for IN operator.")
+        @Resources.BaseMessage("Sub-queries are not allowed for IN operator.")
         Resources.ExInst<SqlValidatorException> noSubQueryAllowed();
     }
 }
