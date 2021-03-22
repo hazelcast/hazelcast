@@ -182,14 +182,15 @@ public class EventTimeMapper<T> {
      *                 event, event.getPartition(), nativeEventTime));
      * }</pre>
      *
-     * @param event           the event
+     * @param event           the event to flat-map.
+     *                        If {@code null}, it's equivalent to the behavior of {@link #flatMapIdle()}
      * @param partitionIndex  the source partition index the event came from
      * @param nativeEventTime native event time in case no {@code timestampFn} was supplied or
      *                        {@link #NO_NATIVE_TIME} if the event has no native timestamp
      * @return a traverser over the given event and the watermark (if it was due)
      */
     @Nonnull
-    public Traverser<Object> flatMapEvent(@Nonnull T event, int partitionIndex, long nativeEventTime) {
+    public Traverser<Object> flatMapEvent(@Nullable T event, int partitionIndex, long nativeEventTime) {
         return flatMapEvent(System.nanoTime(), event, partitionIndex, nativeEventTime);
     }
 
