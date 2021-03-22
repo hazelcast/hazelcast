@@ -55,6 +55,7 @@ import com.hazelcast.sql.impl.expression.string.ConcatFunction;
 import com.hazelcast.sql.impl.expression.string.InitcapFunction;
 import com.hazelcast.sql.impl.expression.string.LikeFunction;
 import com.hazelcast.sql.impl.expression.string.LowerFunction;
+import com.hazelcast.sql.impl.expression.string.ReplaceFunction;
 import com.hazelcast.sql.impl.expression.string.SubstringFunction;
 import com.hazelcast.sql.impl.expression.string.TrimFunction;
 import com.hazelcast.sql.impl.expression.string.UpperFunction;
@@ -366,6 +367,8 @@ public final class RexToExpression {
                     return TrimFunction.create(operands[0], null, false, true);
                 } else if (function == HazelcastSqlOperatorTable.BTRIM) {
                     return TrimFunction.create(operands[0], null, true, true);
+                } else if (function == HazelcastSqlOperatorTable.REPLACE) {
+                    return ReplaceFunction.create(operands[0], operands[1], operands[2]);
                 }
 
                 break;

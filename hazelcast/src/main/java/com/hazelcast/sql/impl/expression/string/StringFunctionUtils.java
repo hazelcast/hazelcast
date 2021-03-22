@@ -50,6 +50,13 @@ public final class StringFunctionUtils {
         return value != null ? value.toLowerCase(Locale.ROOT) : null;
     }
 
+    public static String replace(String original, String from, String to) {
+        if (original == null) {
+            return null;
+        }
+        return original.replace(from, to);
+    }
+
     public static String initcap(String value) {
         if (value == null) {
             return null;

@@ -33,6 +33,7 @@ import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastIsTr
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastNotPredicate;
 import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastConcatOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastLikeOperator;
+import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastReplaceFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastStringFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastSubstringFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastTrimFunction;
@@ -168,6 +169,8 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
     public static final SqlFunction LOWER = HazelcastStringFunction.LOWER;
     public static final SqlFunction UPPER = HazelcastStringFunction.UPPER;
+
+    public static final SqlFunction REPLACE = HazelcastReplaceFunction.INSTANCE;
 
     public static final SqlPostfixOperator DESC = HazelcastDescOperator.DESC;
 
