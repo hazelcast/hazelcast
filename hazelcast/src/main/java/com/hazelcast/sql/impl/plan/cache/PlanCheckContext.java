@@ -38,7 +38,7 @@ public class PlanCheckContext {
     }
 
     public boolean isValid(Set<PlanObjectKey> expectedObjectVersions, Map<UUID, PartitionIdSet> expectedPartitions) {
-        // If some of objects used in the plan has changed, then the plan should be re-created.
+        // If some of objects used in the plan have changed, then the plan should be re-created.
         // Examples are index creation, map destroy, external object redefinition.
         if (!objectIds.containsAll(expectedObjectVersions)) {
             return false;
