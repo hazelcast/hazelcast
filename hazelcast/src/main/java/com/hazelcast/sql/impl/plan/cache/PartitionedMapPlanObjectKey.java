@@ -38,6 +38,7 @@ public class PartitionedMapPlanObjectKey implements PlanObjectKey {
     private final boolean hd;
     private final Set<String> conflictingSchemas;
 
+    @SuppressWarnings("checkstyle:ParameterNumber")
     public PartitionedMapPlanObjectKey(
         String schemaName,
         String tableName,
@@ -65,6 +66,7 @@ public class PartitionedMapPlanObjectKey implements PlanObjectKey {
     }
 
     @Override
+    @SuppressWarnings("checkstyle:cyclomaticcomplexity")
     public boolean equals(Object o) {
         if (this == o) {
             return true;
