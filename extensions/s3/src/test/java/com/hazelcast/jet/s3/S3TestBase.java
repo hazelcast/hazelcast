@@ -64,12 +64,8 @@ abstract class S3TestBase extends JetTestSupport {
         createJetMember();
     }
 
-    void testSink(String bucketName) {
-        testSink(bucketName, "my-objects-", 20000);
-    }
-
     void testSink(String bucketName, String prefix, int itemCount) {
-        testSink(bucketName, prefix, itemCount, generateRandomString(1_000));
+        testSink(bucketName, prefix, itemCount, generateRandomString(100));
     }
 
     void testSink(String bucketName, String prefix, int itemCount, String payload) {

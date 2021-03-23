@@ -17,9 +17,10 @@
 package com.hazelcast.jet.s3;
 
 import com.hazelcast.function.SupplierEx;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.test.annotation.NightlyTest;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.AfterClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import software.amazon.awssdk.regions.Region;
@@ -38,12 +39,14 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public class S3SinkTest extends S3TestBase {
 
     private static final int WAIT_AFTER_CLEANUP_IN_SECS = 5;
-    private static String bucketName = "jet-s3-connector-test-bucket-sink";
+    private static final String BUCKET = "jet-s3-connector-test-bucket-sink";
+    private static final String prefix = randomString() + "/";
+    private static final ILogger logger = Logger.getLogger(S3SinkTest.class);
 
-    @Before
-    @After
-    public void deleteObjects() {
-        S3Client client = clientSupplier().get();
+
+    @AfterClass
+    public static void deleteObjects() {
+        S3Client client = client();
         List<ObjectIdentifier> identifiers = listObjects(client)
                 .contents()
                 .stream()
@@ -52,7 +55,7 @@ public class S3SinkTest extends S3TestBase {
                 .collect(Collectors.toList());
 
         if (!identifiers.isEmpty()) {
-            client.deleteObjects(b -> b.bucket(bucketName).delete(d -> d.objects(identifiers)));
+            client.deleteObjects(b -> b.bucket(BUCKET).delete(d -> d.objects(identifiers)));
         }
 
         int sleepMillis = (int) (SECONDS.toMillis(WAIT_AFTER_CLEANUP_IN_SECS) / 10);
@@ -60,7 +63,7 @@ public class S3SinkTest extends S3TestBase {
         int keyCount;
         while ((keyCount = listObjects(client).keyCount()) != 0 && System.currentTimeMillis() < deadline) {
 
-            logger.info("After sending the object cleanup request to S3, the bucket, " + bucketName
+            logger.info("After sending the object cleanup request to S3, the bucket, " + BUCKET
                     + ", still has " + keyCount + " keys.");
             sleepMillis(sleepMillis);
         }
@@ -73,20 +76,15 @@ public class S3SinkTest extends S3TestBase {
         }
     }
 
-    private ListObjectsV2Response listObjects(S3Client client) {
-        return client.listObjectsV2(ListObjectsV2Request
-                .builder().bucket(bucketName).build());
-    }
-
     @Test
     public void test() {
-        testSink(bucketName);
+        testSink(BUCKET, prefix + "test-", 1000);
     }
 
     @Test
     public void when_writesToExistingFile_then_overwritesFile() {
-        testSink(bucketName, "my-objects-", 100);
-        testSink(bucketName, "my-objects-", 200);
+        testSink(BUCKET, prefix + "write-existing-file-", 100);
+        testSink(BUCKET, prefix + "write-existing-file-", 200);
     }
 
     @Test
@@ -96,24 +94,34 @@ public class S3SinkTest extends S3TestBase {
 
     @Test
     public void when_withSpaceInName() {
-        testSink(bucketName, "file with space", 10);
+        testSink(BUCKET, prefix + "file with space-", 10);
     }
 
     @Test
     public void when_withNonAsciiSymbolInName() {
-        testSink(bucketName, "测试", 10);
+        testSink(BUCKET, prefix + "non-ascii-name-测试-", 10);
     }
 
     @Test
     public void when_withNonAsciiSymbolInFile() {
-        testSink(bucketName, "fileWithNonAsciiSymbol", 10, "测试");
+        testSink(BUCKET, prefix + "non-ascii-file-", 10, "测试");
     }
 
     SupplierEx<S3Client> clientSupplier() {
-        return () -> S3Client
+        return S3SinkTest::client;
+    }
+
+    private static S3Client client() {
+        return S3Client
                 .builder()
                 .region(Region.US_EAST_1)
                 .build();
     }
+
+    private static ListObjectsV2Response listObjects(S3Client client) {
+        return client.listObjectsV2(ListObjectsV2Request
+                .builder().bucket(BUCKET).prefix(prefix).build());
+    }
+
 
 }

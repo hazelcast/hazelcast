@@ -96,7 +96,7 @@ public class S3MockTest extends S3TestBase {
     public void when_manySmallItemsToSink() {
         s3Client.createBucket(b -> b.bucket(SINK_BUCKET));
 
-        testSink(SINK_BUCKET);
+        testSink(SINK_BUCKET, "many-small-items-", 1000);
     }
 
     @Test
