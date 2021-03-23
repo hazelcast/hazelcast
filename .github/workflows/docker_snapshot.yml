@@ -55,7 +55,7 @@ jobs:
 
       - name: Build hazelcast with Maven
         run: |
-          mvn -f hazelcast/pom.xml -B -Dmaven.test.skip=true \
+          mvn -f hazelcast/pom.xml -B \
             -Dmaven.site.skip=true -Dmaven.javadoc.skip=true \
             -Dcheckstyle.skip -Dspotbugs.skip clean install -DskipTests
           rm hazelcast/hazelcast-all/target/*-sources.jar \
