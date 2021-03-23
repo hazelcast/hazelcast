@@ -98,7 +98,7 @@ public class Outbox extends AbstractMailbox implements OutboundHandler {
         int maxAcceptedRows = (int) (remainingMemory / rowWidth);
         int acceptedRows = 0;
 
-        // Try to accept as much rows as possible.
+        // Try to accept as many rows as possible.
         int currentPosition = position;
 
         for (; currentPosition < batch.getRowCount(); currentPosition++) {

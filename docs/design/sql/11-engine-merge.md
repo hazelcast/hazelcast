@@ -77,6 +77,9 @@ needed to do on the other engine, should an engine be removed.
 
 - `INSERT INTO` and `SINK INTO` (connectors: IMap, Kafka, files)
 
+- Engine is resilient to packet loss - it will be detected and a failure
+reported
+
 ### Common Features
 
 Changes in this areas don't require double implementation:
@@ -126,7 +129,7 @@ the target member, the member's network threads add the packet to the
 target processors. The sender and receiver tasklets are cooperative.
 
 In Jet, to avoid possible packet loss or reordering of items sent over
-the network, we use the lower-level connection objects. A connection
+the network, we use the lower-level `Connection` objects. A connection
 glitch that is normally handled without a cluster topology change, will
 cause the query to fail. However, in case of Jet, if the job is
 fault-tolerant, it can restart from the latest snapshot and continue.
@@ -138,9 +141,11 @@ concrete data source (e.g., `IMap`), or a receiver operator. Output is
 either a sender operator, or a user cursor. Fragment is a vertex in the
 DAG, and a pair of sender/receiver operators is an edge.
 
-IMDG also uses `Connection` objects to send messages, bypassing
-the invocation subsystem. The engine is resilient to packet reordering,
-but not resilient to packet loss.
+IMDG also uses `Connection` objects to send messages, bypassing the
+invocation subsystem. The engine is resilient to packet reordering, but
+currently not resilient to packet loss - a lost packet can cause the
+query to get stuck or consume large amounts of memory - an issue that
+can be fixed.
 
 ### Queues
 
