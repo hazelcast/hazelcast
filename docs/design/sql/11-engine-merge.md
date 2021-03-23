@@ -409,7 +409,7 @@ the following:
 
 - Add plan caching, dynamic parameter support.
 
-After these changes I expect the performance to be comparable also for
+After these changes we expect the performance to be comparable also for
 short-running queries.
 
 ## Conclusion
