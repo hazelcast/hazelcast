@@ -381,6 +381,12 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
         check(sql("UPPER(?) || UPPER(?)"), "1", "2");
     }
 
+    @Test
+    public void test_REPLACE() {
+        check(sql("REPLACE(?, ?, ?) || REPLACE(?, ?, ?) "),
+                "xyz", "x", "X", "xyz", "y", "Y");
+    }
+
     private void check(String sql, Object... params) {
         checkValue0(sql, SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, params);
         checkValue0(sql.toLowerCase(), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, params);
