@@ -20,5 +20,7 @@ package com.hazelcast.sql.impl.plan.cache;
  * ID of an object used in the plan.
  */
 public interface PlanObjectKey {
-    // No-op.
+
+    PlanObjectKey NON_CACHEABLE_OBJECT_ID = new PlanObjectKey() {
+    };
 }

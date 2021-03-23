@@ -37,7 +37,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -53,8 +52,11 @@ public class MapPlanObjectKeyTest extends SqlTestSupport {
         String schema1 = "schema1";
         String schema2 = "schema2";
 
-        String name1 = "map1";
-        String name2 = "map2";
+        String tableName1 = "table1";
+        String tableName2 = "table2";
+
+        String mapName1 = "map1";
+        String mapName2 = "map2";
 
         List<TableField> fields1 = singletonList(new MapTableField("field1", QueryDataType.INT, true, QueryPath.KEY_PATH));
         List<TableField> fields2 = singletonList(new MapTableField("field2", QueryDataType.INT, true, QueryPath.KEY_PATH));
@@ -68,24 +70,33 @@ public class MapPlanObjectKeyTest extends SqlTestSupport {
         QueryTargetDescriptor valueDescriptor1 = GenericQueryTargetDescriptor.DEFAULT;
         QueryTargetDescriptor valueDescriptor2 = new TestTargetDescriptor();
 
+        Object keyJetMetadata1 = new Object();
+        Object valueJetMetadata1 = new Object();
+
+        Object keyJetMetadata2 = new Object();
+        Object valueJetMetadata2 = new Object();
+
         List<MapTableIndex> indexes1 = singletonList(new MapTableIndex("idx", IndexType.SORTED, 0, emptyList(), emptyList()));
         List<MapTableIndex> indexes2 = singletonList(new MapTableIndex("idx", IndexType.HASH, 0, emptyList(), emptyList()));
 
         boolean hd1 = false;
         boolean hd2 = true;
 
-        PartitionedMapPlanObjectKey objectId = new PartitionedMapPlanObjectKey(schema1, name1, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor1, indexes1, hd1);
+        PartitionedMapPlanObjectKey objectId = new PartitionedMapPlanObjectKey(schema1, tableName1, mapName1, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor1, keyJetMetadata1, valueJetMetadata1, indexes1, hd1);
 
-        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, name1, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor1, indexes1, hd1), true);
+        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, tableName1, mapName1, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor1, keyJetMetadata1, valueJetMetadata1, indexes1, hd1), true);
 
-        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema2, name1, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor1, indexes1, hd1), false);
-        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, name2, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor1, indexes1, hd1), false);
-        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, name1, fields2, conflictingSchemas1, keyDescriptor1, valueDescriptor1, indexes1, hd1), false);
-        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, name1, fields1, conflictingSchemas2, keyDescriptor1, valueDescriptor1, indexes1, hd1), false);
-        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, name1, fields1, conflictingSchemas1, keyDescriptor2, valueDescriptor1, indexes1, hd1), false);
-        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, name1, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor2, indexes1, hd1), false);
-        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, name1, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor1, indexes2, hd1), false);
-        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, name1, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor1, indexes1, hd2), false);
+        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema2, tableName1, mapName1, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor1, keyJetMetadata1, valueJetMetadata1, indexes1, hd1), false);
+        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema2, tableName2, mapName1, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor1, keyJetMetadata1, valueJetMetadata1, indexes1, hd1), false);
+        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, tableName1, mapName2, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor1, keyJetMetadata1, valueJetMetadata1, indexes1, hd1), false);
+        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, tableName1, mapName1, fields2, conflictingSchemas1, keyDescriptor1, valueDescriptor1, keyJetMetadata1, valueJetMetadata1, indexes1, hd1), false);
+        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, tableName1, mapName1, fields1, conflictingSchemas2, keyDescriptor1, valueDescriptor1, keyJetMetadata1, valueJetMetadata1, indexes1, hd1), false);
+        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, tableName1, mapName1, fields1, conflictingSchemas1, keyDescriptor2, valueDescriptor1, keyJetMetadata1, valueJetMetadata1, indexes1, hd1), false);
+        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, tableName1, mapName1, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor2, keyJetMetadata1, valueJetMetadata1, indexes1, hd1), false);
+        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, tableName1, mapName1, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor2, keyJetMetadata2, valueJetMetadata1, indexes1, hd1), false);
+        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, tableName1, mapName1, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor2, keyJetMetadata1, valueJetMetadata2, indexes1, hd1), false);
+        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, tableName1, mapName1, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor1, keyJetMetadata1, valueJetMetadata1, indexes2, hd1), false);
+        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, tableName1, mapName1, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor1, keyJetMetadata1, valueJetMetadata1, indexes1, hd2), false);
     }
 
     private static class TestTargetDescriptor implements QueryTargetDescriptor {
@@ -95,12 +106,12 @@ public class MapPlanObjectKeyTest extends SqlTestSupport {
         }
 
         @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
+        public void writeData(ObjectDataOutput out) {
             // No-op.
         }
 
         @Override
-        public void readData(ObjectDataInput in) throws IOException {
+        public void readData(ObjectDataInput in) {
             // No-op.
         }
     }

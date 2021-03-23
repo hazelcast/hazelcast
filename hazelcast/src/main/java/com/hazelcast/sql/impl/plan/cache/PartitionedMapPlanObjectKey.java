@@ -21,34 +21,44 @@ import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableIndex;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 public class PartitionedMapPlanObjectKey implements PlanObjectKey {
 
     private final String schemaName;
-    private final String name;
+    private final String tableName;
+    private final String mapName;
     private final List<TableField> fields;
     private final QueryTargetDescriptor keyDescriptor;
     private final QueryTargetDescriptor valueDescriptor;
+    private final Object keyJetMetadata;
+    private final Object valueJetMetadata;
     private final List<MapTableIndex> indexes;
     private final boolean hd;
     private final Set<String> conflictingSchemas;
 
     public PartitionedMapPlanObjectKey(
         String schemaName,
-        String name,
+        String tableName,
+        String mapName,
         List<TableField> fields,
         Set<String> conflictingSchemas,
         QueryTargetDescriptor keyDescriptor,
         QueryTargetDescriptor valueDescriptor,
+        Object keyJetMetadata,
+        Object valueJetMetadata,
         List<MapTableIndex> indexes,
         boolean hd
     ) {
         this.schemaName = schemaName;
-        this.name = name;
+        this.tableName = tableName;
+        this.mapName = mapName;
         this.fields = fields;
         this.keyDescriptor = keyDescriptor;
         this.valueDescriptor = valueDescriptor;
+        this.keyJetMetadata = keyJetMetadata;
+        this.valueJetMetadata = valueJetMetadata;
         this.indexes = indexes;
         this.hd = hd;
         this.conflictingSchemas = conflictingSchemas;
@@ -68,10 +78,13 @@ public class PartitionedMapPlanObjectKey implements PlanObjectKey {
 
         return hd == that.hd
             && schemaName.equals(that.schemaName)
-            && name.equals(that.name)
+            && tableName.equals(that.tableName)
+            && mapName.equals(that.mapName)
             && fields.equals(that.fields)
             && keyDescriptor.equals(that.keyDescriptor)
             && valueDescriptor.equals(that.valueDescriptor)
+            && Objects.equals(keyJetMetadata, that.keyJetMetadata)
+            && Objects.equals(valueJetMetadata, that.valueJetMetadata)
             && indexes.equals(that.indexes)
             && conflictingSchemas.equals(that.conflictingSchemas);
     }
@@ -79,10 +92,13 @@ public class PartitionedMapPlanObjectKey implements PlanObjectKey {
     @Override
     public int hashCode() {
         int result = schemaName.hashCode();
-        result = 31 * result + name.hashCode();
+        result = 31 * result + tableName.hashCode();
+        result = 31 * result + mapName.hashCode();
         result = 31 * result + fields.hashCode();
         result = 31 * result + keyDescriptor.hashCode();
         result = 31 * result + valueDescriptor.hashCode();
+        result = 31 * result + Objects.hashCode(keyJetMetadata);
+        result = 31 * result + Objects.hashCode(valueJetMetadata.hashCode());
         result = 31 * result + indexes.hashCode();
         result = 31 * result + (hd ? 1 : 0);
         result = 31 * result + conflictingSchemas.hashCode();
