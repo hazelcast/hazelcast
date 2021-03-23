@@ -22,7 +22,7 @@ package com.hazelcast.internal.util;
  * to do version comparison safely on runtime environments with versions
  * not listed in {@link JavaVersion}.
  */
-interface JavaMajorVersion {
+public interface JavaMajorVersion {
     /**
      * Returns the major version.
      *
