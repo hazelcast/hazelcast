@@ -204,7 +204,7 @@ public abstract class CdcSourceP<T> extends AbstractProcessor {
             logger.warning("Connection to database lost, will attempt to reconnect and retry operations from " +
                     "scratch" + getCause(re), re);
 
-            close();
+            killConnection();
             reconnectTracker.reset();
             if (clearStateOnReconnect) {
                 state = new State();
@@ -215,7 +215,7 @@ public abstract class CdcSourceP<T> extends AbstractProcessor {
     }
 
     private <Th extends Throwable> Th shutDownAndThrow(Th th) {
-        close();
+        killConnection();
         return th;
     }
 
@@ -287,7 +287,7 @@ public abstract class CdcSourceP<T> extends AbstractProcessor {
 
     @Override
     public boolean snapshotCommitFinish(boolean success) {
-        if (success) {
+        if (success && task != null) {
             try {
                 task.commit();
             } catch (InterruptedException e) {
@@ -309,6 +309,10 @@ public abstract class CdcSourceP<T> extends AbstractProcessor {
 
     @Override
     public void close() {
+        killConnection();
+    }
+
+    private void killConnection() {
         if (task != null) {
             task.stop();
             task = null;
