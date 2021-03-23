@@ -100,7 +100,7 @@ public class PartitionedMapPlanObjectKey implements PlanObjectKey {
         result = 31 * result + keyDescriptor.hashCode();
         result = 31 * result + valueDescriptor.hashCode();
         result = 31 * result + Objects.hashCode(keyJetMetadata);
-        result = 31 * result + Objects.hashCode(valueJetMetadata.hashCode());
+        result = 31 * result + Objects.hashCode(valueJetMetadata);
         result = 31 * result + indexes.hashCode();
         result = 31 * result + (hd ? 1 : 0);
         result = 31 * result + conflictingSchemas.hashCode();
