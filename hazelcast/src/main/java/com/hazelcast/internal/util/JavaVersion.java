@@ -47,7 +47,7 @@ public enum JavaVersion implements JavaMajorVersion {
     JAVA_16(16)
     ;
 
-    private static final JavaMajorVersion CURRENT_VERSION = detectCurrentVersion();
+    public static final JavaMajorVersion CURRENT_VERSION = detectCurrentVersion();
 
     private int majorVersion;
 
