@@ -59,6 +59,8 @@ import java.util.logging.Level;
 import static com.hazelcast.sql.SqlExpectedResultType.ANY;
 import static com.hazelcast.sql.SqlExpectedResultType.ROWS;
 import static com.hazelcast.sql.SqlExpectedResultType.UPDATE_COUNT;
+import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
+import static java.util.Arrays.asList;
 
 /**
  * Base SQL service implementation that bridges optimizer implementation, public and private APIs.
@@ -319,7 +321,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         if (schema == null || schema.isEmpty()) {
             currentSearchPaths = Collections.emptyList();
         } else {
-            currentSearchPaths = Collections.singletonList(Collections.singletonList(schema));
+            currentSearchPaths = Collections.singletonList(asList(CATALOG, schema));
         }
 
         return QueryUtils.prepareSearchPaths(currentSearchPaths, tableResolvers);
