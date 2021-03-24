@@ -366,7 +366,7 @@
               files="src[\\/]main[\\/]java[\\/]com[\\/]hazelcast[\\/]client[\\/]impl[\\/]protocol[\\/]codec[\\/]"/>
     <suppress checks="LineLength|VisibilityModifier|AvoidStarImport|RegexpSingleline|ParameterNumber"
               files="src[\\/]main[\\/]java[\\/]com[\\/]hazelcast[\\/]internal[\\/]longregister[\\/]client[\\/]codec[\\/]"/>
-    <suppress checks="LineLength|VisibilityModifier|AvoidStarImport|RegexpSingleline|ParameterNumber"
+    <suppress checks="UnusedImport|LineLength|VisibilityModifier|AvoidStarImport|RegexpSingleline|ParameterNumber"
               files="src[\\/]main[\\/]java[\\/]com[\\/]hazelcast[\\/]jet[\\/]impl[\\/]client[\\/]protocol[\\/]codec[\\/]"/>
     <suppress checks="" files="src[\\/]test[\\/]java[\\/]com[\\/]hazelcast[\\/]client[\\/]protocol[\\/]compatibility[\\/]"/>
     <suppress checks="" files="src[\\/]test[\\/]java[\\/]com[\\/]hazelcast[\\/]nio[\\/]serialization[\\/]compatibility[\\/]"/>
