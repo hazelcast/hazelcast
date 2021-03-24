@@ -31,7 +31,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class PollMCEventsMessageTask extends AbstractCallableMessageTask<Void> {
+public class PollMCEventsMessageTask extends AbstractCallableMessageTask<Long> {
 
     private static final Permission REQUIRED_PERMISSION = new ManagementPermission("pollMCEvents");
 
@@ -45,7 +45,7 @@ public class PollMCEventsMessageTask extends AbstractCallableMessageTask<Void> {
         if (mcs == null) {
             return Collections.<MCEventDTO>emptyList();
         }
-        List<Event> polledEvents = mcs.pollMCEvents(connection.getRemoteAddress());
+        List<Event> polledEvents = mcs.pollMCEvents();
         List<MCEventDTO> result = new ArrayList<>(polledEvents.size());
         for (Event event : polledEvents) {
             result.add(MCEventDTO.fromEvent(event));
@@ -54,8 +54,8 @@ public class PollMCEventsMessageTask extends AbstractCallableMessageTask<Void> {
     }
 
     @Override
-    protected Void decodeClientMessage(ClientMessage clientMessage) {
-        return null;
+    protected Long decodeClientMessage(ClientMessage clientMessage) {
+        return MCPollMCEventsCodec.decodeRequest(clientMessage);
     }
 
     @Override
