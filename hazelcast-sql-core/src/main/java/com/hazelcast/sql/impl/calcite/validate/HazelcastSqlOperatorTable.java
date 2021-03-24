@@ -44,6 +44,8 @@ import org.apache.calcite.sql.SqlBinaryOperator;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlKind;
+import org.apache.calcite.sql.SqlLiteral;
+import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlPostfixOperator;
@@ -213,11 +215,6 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
             return super.visit(call);
         }
 
-        @Override
-        public Void visit(SqlNodeList nodeList) {
-            return super.visit(nodeList);
-        }
-
         private void rewriteCall(SqlCall call) {
             if (call instanceof SqlBasicCall) {
                 // An alias is declared as a SqlBasicCall with "SqlKind.AS". We do not need to rewrite aliases, so skip it.
@@ -227,6 +224,17 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
                 SqlBasicCall basicCall = (SqlBasicCall) call;
                 SqlOperator operator = basicCall.getOperator();
+
+                // Remove raw NULL from right-side operands list AST. Otherwise, we ignore raw NULL.
+                if (operator.getKind() == SqlKind.IN || operator.getKind() == SqlKind.NOT_IN) {
+                    List<SqlNode> operandList = call.getOperandList();
+
+                    assert operandList.size() == 2;
+                    SqlNode rhs = operandList.get(1);
+                    if (rhs instanceof SqlNodeList) {
+                        call.setOperand(1, removeNullWithinInStatement((SqlNodeList) rhs));
+                    }
+                }
 
                 List<SqlOperator> resolvedOperators = new ArrayList<>(1);
 
@@ -248,6 +256,20 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
             } else if (call instanceof SqlCase) {
                 throw functionDoesNotExist(call);
             }
+        }
+
+        private static SqlNodeList removeNullWithinInStatement(SqlNodeList valueList) {
+            SqlNodeList list = new SqlNodeList(valueList.getParserPosition());
+            for (SqlNode node : valueList.getList()) {
+                if (node instanceof SqlLiteral) {
+                    SqlLiteral lit = (SqlLiteral) node;
+                    if (lit.getValue() == null) {
+                        continue;
+                    }
+                    list.add(node);
+                }
+            }
+            return list;
         }
 
         private CalciteException functionDoesNotExist(SqlCall call) {

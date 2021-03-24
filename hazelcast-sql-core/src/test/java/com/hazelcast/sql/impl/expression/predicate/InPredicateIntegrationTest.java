@@ -46,17 +46,8 @@ public class InPredicateIntegrationTest extends ExpressionTestSupport {
         checkValues(sqlQuery(inClause), SqlColumnType.INTEGER, new Integer[]{0, 1});
     }
 
-    @Ignore(value = "Should be enabled after engines merge.")
     @Test
-    public void inPredicateRowWithShortListTest() {
-        putAll(0, 1);
-        String inClause = "IN (ROW(0, 0), ROW(1, 1), ROW(2, 2))";
-        checkValues(sqlQuery(inClause), SqlColumnType.INTEGER, new Integer[]{0, 1});
-        // TODO: write check
-    }
-
-    @Test
-    public void inPredicateWithShortListAndNullsWithinTest() {
+    public void inPredicateWithRawNullWithinRHSTest() {
         putAll(0, 1);
         String inClause = "IN (NULL, 0, 1)";
         checkValues(sqlQuery(inClause), SqlColumnType.INTEGER, new Integer[]{0, 1});

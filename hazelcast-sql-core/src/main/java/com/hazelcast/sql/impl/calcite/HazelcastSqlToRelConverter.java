@@ -324,19 +324,6 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
     }
 
     // Copied from SqlToRelConverter.
-    private static boolean containsNullLiteral(SqlNodeList valueList) {
-        for (SqlNode node : valueList.getList()) {
-            if (node instanceof SqlLiteral) {
-                SqlLiteral lit = (SqlLiteral) node;
-                if (lit.getValue() == null) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    // Copied from SqlToRelConverter.
     private RexNode convertInToOr(
         final Blackboard bb,
         final List<RexNode> leftKeys,
@@ -364,10 +351,6 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
      */
     private List<RexNode> constructComparisons(Blackboard bb, List<RexNode> leftKeys, SqlNodeList valuesList, SqlInOperator op) {
         final List<RexNode> comparisons = new ArrayList<>();
-
-        if (containsNullLiteral(valuesList)) {
-            valuesList = removeNulls(valuesList);
-        }
 
         for (SqlNode rightValues : valuesList) {
             RexNode rexComparison;
@@ -398,20 +381,6 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
             comparisons.add(rexComparison);
         }
         return comparisons;
-    }
-
-    private static SqlNodeList removeNulls(SqlNodeList valueList) {
-        SqlNodeList list = new SqlNodeList(valueList.getParserPosition());
-        for (SqlNode node : valueList.getList()) {
-            if (node instanceof SqlLiteral) {
-                SqlLiteral lit = (SqlLiteral) node;
-                if (lit.getValue() == null) {
-                    continue;
-                }
-                list.add(node);
-            }
-        }
-        return list;
     }
 
     private RexNode ensureSqlType(RelDataType type, RexNode node) {

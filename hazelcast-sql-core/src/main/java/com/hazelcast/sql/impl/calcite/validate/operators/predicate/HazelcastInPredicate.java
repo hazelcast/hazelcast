@@ -52,8 +52,6 @@ public class HazelcastInPredicate extends SqlInOperator implements HazelcastOper
     public static final HazelcastInPredicate NOT_IN = new HazelcastInPredicate("NOT IN", true);
     protected static final HazelcastInPredicateResource HZRESOURCE = Resources.create(HazelcastInPredicateResource.class);
 
-    // Both IN and NOT IN predicate have maximum precedence.
-    private static final int PRECEDENCE = 100;
     private final boolean negated;
 
     public HazelcastInPredicate(String name, boolean negated) {
