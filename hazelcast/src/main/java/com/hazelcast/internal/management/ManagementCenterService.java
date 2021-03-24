@@ -49,26 +49,38 @@ import static com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher.inspectOutO
 public class ManagementCenterService {
 
     static class MCEventStore {
-        
-        static class LastPollRecord {
-            final long lastAccessTime;
-            final int nextSequence;
 
-            public LastPollRecord(long lastAccessTime, int nextSequence) {
+        /**
+         * Stores data about a specific MC's next and previous event poll calls
+         */
+        static class LastPollRecord {
+            /**
+             * Denotes when did the MC poll the events last time
+             */
+            final long lastAccessTime;
+            /**
+             * Denotes what sequence should be used when MC polls next time when the events are obtained using
+             * {@link ConcurrentArrayRingbuffer#copyFrom(long)}
+             */
+            final long nextSequence;
+
+            LastPollRecord(long lastAccessTime, long nextSequence) {
                 this.lastAccessTime = lastAccessTime;
                 this.nextSequence = nextSequence;
             }
         }
-        
+
         static final long MC_EVENTS_WINDOW_MILLIS = TimeUnit.SECONDS.toMillis(30);
         private final LongSupplier clock;
         private volatile long lastMCEventsPollMillis;
-        private final ConcurrentMap<Address, Long> nextSequencePerMC = new ConcurrentHashMap<>();
+        private volatile long lastCleanupTimestamp;
+        private final ConcurrentMap<Address, LastPollRecord> lastPollRecordPerMCAddress = new ConcurrentHashMap<>();
         private final ConcurrentArrayRingbuffer<Event> mcEvents;
 
         MCEventStore(LongSupplier clock, ConcurrentArrayRingbuffer<Event> mcEvents) {
             this.clock = clock;
             this.lastMCEventsPollMillis = clock.getAsLong();
+            this.lastCleanupTimestamp = this.lastMCEventsPollMillis;
             this.mcEvents = mcEvents;
         }
 
@@ -78,12 +90,33 @@ public class ManagementCenterService {
                 onMCEventWindowExceeded();
             } else {
                 mcEvents.add(event);
+                cleanUpLastAccessRecords();
             }
+        }
+        
+        private static boolean isOutOfTimeWindow(long nowInMillis, long subjectTimestampInMillis) {
+            return nowInMillis - subjectTimestampInMillis > MC_EVENTS_WINDOW_MILLIS;
+        }
+
+        /**
+         * Removing {@link #lastPollRecordPerMCAddress} entries older than {@link #MC_EVENTS_WINDOW_MILLIS} according to their
+         * {@code lastAccessTime}.
+         * 
+         * No-op if less than {@link #MC_EVENTS_WINDOW_MILLIS} millis passed since the last cleanup. This avoids too frequent
+         * unnecessary iterations on the {@link #lastPollRecordPerMCAddress} entries.
+         */
+        private void cleanUpLastAccessRecords() {
+            long now = clock.getAsLong();
+            if (!isOutOfTimeWindow(now, lastCleanupTimestamp)) {
+                return;
+            }
+            lastPollRecordPerMCAddress.entrySet().removeIf(entry -> isOutOfTimeWindow(now, entry.getValue().lastAccessTime));
+            lastCleanupTimestamp = now;
         }
 
         void onMCEventWindowExceeded() {
             mcEvents.clear();
-            nextSequencePerMC.clear();
+            lastPollRecordPerMCAddress.clear();
         }
 
         /**
@@ -93,12 +126,15 @@ public class ManagementCenterService {
          */
         public List<Event> pollMCEvents(Address mcRemoteAddr) {
             lastMCEventsPollMillis = clock.getAsLong();
-            Long nextSequence = nextSequencePerMC.get(mcRemoteAddr);
-            if (nextSequence == null) {
-                nextSequence = 0L;
+            LastPollRecord lastPollRecord = lastPollRecordPerMCAddress.get(mcRemoteAddr);
+            long sequence;
+            if (lastPollRecord == null) {
+                sequence = 0;
+            } else {
+                sequence = lastPollRecord.nextSequence;
             }
-            ConcurrentArrayRingbuffer.RingbufferSlice<Event> slice = mcEvents.copyFrom(nextSequence);
-            nextSequencePerMC.put(mcRemoteAddr, slice.nextSequence());
+            ConcurrentArrayRingbuffer.RingbufferSlice<Event> slice = mcEvents.copyFrom(sequence);
+            lastPollRecordPerMCAddress.put(mcRemoteAddr, new LastPollRecord(lastMCEventsPollMillis, slice.nextSequence()));
             return slice.elements();
         }
     }
@@ -134,7 +170,8 @@ public class ManagementCenterService {
         int partitionCount = instance.node.getPartitionService().getPartitionCount();
         this.commandHandler = new ConsoleCommandHandler(instance);
         this.bwListConfigHandler = new ClientBwListConfigHandler(instance.node.clientEngine);
-        this.eventStore = new MCEventStore(clock, new ConcurrentArrayRingbuffer<>(Math.max(MIN_EVENT_QUEUE_CAPACITY, partitionCount)));
+        this.eventStore = new MCEventStore(clock,
+                new ConcurrentArrayRingbuffer<>(Math.max(MIN_EVENT_QUEUE_CAPACITY, partitionCount)));
         registerExecutor();
     }
 
