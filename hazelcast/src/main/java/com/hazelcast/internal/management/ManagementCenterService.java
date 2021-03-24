@@ -49,6 +49,17 @@ import static com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher.inspectOutO
 public class ManagementCenterService {
 
     static class MCEventStore {
+        
+        static class LastPollRecord {
+            final long lastAccessTime;
+            final int nextSequence;
+
+            public LastPollRecord(long lastAccessTime, int nextSequence) {
+                this.lastAccessTime = lastAccessTime;
+                this.nextSequence = nextSequence;
+            }
+        }
+        
         static final long MC_EVENTS_WINDOW_MILLIS = TimeUnit.SECONDS.toMillis(30);
         private final LongSupplier clock;
         private volatile long lastMCEventsPollMillis;

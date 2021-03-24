@@ -167,7 +167,7 @@ public class MCEventStoreTest {
     }
 
     @Test
-    public void disconnectRecognized_after30secInactivity() {
+    public void eventCollectionStops_whenNoPollHappens_in30sec() {
         inNextMilli(() -> {
             assertPolledEventCount(0, MC_1_REMOTE_ADDR);
             assertPolledEventCount(0, MC_2_REMOTE_ADDR);
@@ -177,20 +177,35 @@ public class MCEventStoreTest {
         inNextMilli(() -> {
             assertPolledEventCount(1, MC_3_REMOTE_ADDR);
         });
-        clock.now += TimeUnit.SECONDS.toMillis(15);
-        inNextMilli(() -> {
-            assertPolledEventCount(1, MC_1_REMOTE_ADDR);
-        });
-        inNextMilli(() -> {
-            logEvent();
-            logEvent();
-        });
-        clock.now += TimeUnit.SECONDS.toMillis(30);
+        clock.now += TimeUnit.SECONDS.toMillis(31);
         logEvent();
         logEvent();
         inNextMilli(() -> {
             assertPolledEventCount(0, MC_1_REMOTE_ADDR);
             assertPolledEventCount(0, MC_3_REMOTE_ADDR);
+        });
+    }
+    
+    @Test
+    public void disconnectRecognized_after30secInactivity() {
+        inNextMilli(() -> {
+            assertPolledEventCount(0, MC_1_REMOTE_ADDR);
+            assertPolledEventCount(0, MC_2_REMOTE_ADDR);
+            assertPolledEventCount(0, MC_3_REMOTE_ADDR);
+        });
+        logEvent();
+        assertPolledEventCount(1, MC_3_REMOTE_ADDR); // reading if previous event noted, nextSequence incremented
+        clock.now += TimeUnit.SECONDS.toMillis(15);
+        inNextMilli(() -> {
+            assertPolledEventCount(1, MC_1_REMOTE_ADDR);
+            assertPolledEventCount(1, MC_2_REMOTE_ADDR);
+        });
+        clock.now += TimeUnit.SECONDS.toMillis(16);
+        logEvent();
+        inNextMilli(() -> {
+            assertPolledEventCount(1, MC_1_REMOTE_ADDR);
+            assertPolledEventCount(1, MC_2_REMOTE_ADDR);
+            assertPolledEventCount(2, MC_3_REMOTE_ADDR); // 30sec passed since last read, previous nextSequence forgotten
         });
     }
 
