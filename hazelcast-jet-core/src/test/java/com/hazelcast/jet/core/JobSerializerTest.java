@@ -41,6 +41,7 @@ import org.junit.runner.RunWith;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableSet;
 
+import javax.annotation.Nonnull;
 import javax.cache.Cache;
 import java.io.IOException;
 import java.util.AbstractMap.SimpleEntry;
@@ -199,7 +200,7 @@ public class JobSerializerTest extends SimpleTestInClusterSupport {
 
         // Then
         client().newJob(pipeline, jobConfig()).join();
-        assertThat(counter.get(5, TimeUnit.SECONDS).intValue()).isEqualTo(2);
+        assertThat(counter.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS).intValue()).isEqualTo(2);
     }
 
     private static JobConfig jobConfig() {
@@ -249,6 +250,7 @@ public class JobSerializerTest extends SimpleTestInClusterSupport {
         }
 
         @Override
+        @Nonnull
         public Value read(ObjectDataInput input) throws IOException {
             return new Value(input.readInt());
         }
