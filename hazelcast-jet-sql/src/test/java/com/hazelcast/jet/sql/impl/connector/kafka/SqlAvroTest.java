@@ -41,9 +41,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.math.BigDecimal;
-import java.net.ServerSocket;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -86,7 +84,7 @@ public class SqlAvroTest extends SqlTestSupport {
         kafkaTestSupport.createKafkaCluster();
 
         Properties properties = new Properties();
-        properties.put("listeners", "http://0.0.0.0:" + randomPort());
+        properties.put("listeners", "http://0.0.0.0:0");
         properties.put("kafkastore.connection.url", kafkaTestSupport.getZookeeperConnectionString());
         SchemaRegistryConfig config = new SchemaRegistryConfig(properties);
         SchemaRegistryRestApplication schemaRegistryApplication = new SchemaRegistryRestApplication(config);
@@ -476,11 +474,5 @@ public class SqlAvroTest extends SqlTestSupport {
                             .fields()
                             .name(fieldName).type().unionOf().nullType().and().stringType().endUnion().nullDefault()
                             .endRecord();
-    }
-
-    private static int randomPort() throws IOException {
-        try (ServerSocket server = new ServerSocket(0)) {
-            return server.getLocalPort();
-        }
     }
 }
