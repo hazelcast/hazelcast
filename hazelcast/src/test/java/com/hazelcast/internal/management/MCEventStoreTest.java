@@ -34,7 +34,6 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.function.LongSupplier;
@@ -185,7 +184,7 @@ public class MCEventStoreTest {
             assertPolledEventCount(0, MC_3_REMOTE_ADDR);
         });
     }
-    
+
     @Test
     public void disconnectRecognized_after30secInactivity() {
         inNextMilli(() -> {

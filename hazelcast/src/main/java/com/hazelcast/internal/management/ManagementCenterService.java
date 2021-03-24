@@ -93,7 +93,7 @@ public class ManagementCenterService {
                 cleanUpLastAccessRecords();
             }
         }
-        
+
         private static boolean isOutOfTimeWindow(long nowInMillis, long subjectTimestampInMillis) {
             return nowInMillis - subjectTimestampInMillis > MC_EVENTS_WINDOW_MILLIS;
         }
@@ -101,7 +101,7 @@ public class ManagementCenterService {
         /**
          * Removing {@link #lastPollRecordPerMCAddress} entries older than {@link #MC_EVENTS_WINDOW_MILLIS} according to their
          * {@code lastAccessTime}.
-         * 
+         * <p>
          * No-op if less than {@link #MC_EVENTS_WINDOW_MILLIS} millis passed since the last cleanup. This avoids too frequent
          * unnecessary iterations on the {@link #lastPollRecordPerMCAddress} entries.
          */
