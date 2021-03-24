@@ -24,24 +24,18 @@ import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.dto.ClientBwListDTO;
 import com.hazelcast.internal.management.events.Event;
 import com.hazelcast.internal.metrics.managementcenter.ConcurrentArrayRingbuffer;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.executor.ExecutorType;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.properties.ClusterProperty;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
-import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.OptionalLong;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -57,29 +51,27 @@ public class ManagementCenterService {
     static class MCEventStore {
         static final long MC_EVENTS_WINDOW_MILLIS = TimeUnit.SECONDS.toMillis(30);
         private final LongSupplier clock;
-        private volatile long mostRecentAccessTimestamp;
+        private volatile long lastMCEventsPollMillis;
         private final ConcurrentMap<Address, Long> nextSequencePerMC = new ConcurrentHashMap<>();
-        
-        private final ConcurrentArrayRingbuffer<Event> events = new ConcurrentArrayRingbuffer<>(1000);
+        private final ConcurrentArrayRingbuffer<Event> mcEvents;
 
-        MCEventStore(LongSupplier clock, BlockingQueue<Event> mcEvents) {
+        MCEventStore(LongSupplier clock, ConcurrentArrayRingbuffer<Event> mcEvents) {
             this.clock = clock;
-            this.mostRecentAccessTimestamp = clock.getAsLong();
-//            this.mcEvents = mcEvents;
+            this.lastMCEventsPollMillis = clock.getAsLong();
+            this.mcEvents = mcEvents;
         }
 
-        @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
         void log(Event event) {
-            if (clock.getAsLong() - mostRecentAccessTimestamp > MC_EVENTS_WINDOW_MILLIS) {
+            if (clock.getAsLong() - lastMCEventsPollMillis > MC_EVENTS_WINDOW_MILLIS) {
                 // ignore event and clear the queue if the last poll happened a while ago
                 onMCEventWindowExceeded();
             } else {
-                events.add(event);
+                mcEvents.add(event);
             }
         }
 
         void onMCEventWindowExceeded() {
-            events.clear();
+            mcEvents.clear();
             nextSequencePerMC.clear();
         }
 
@@ -89,79 +81,14 @@ public class ManagementCenterService {
          * first time.
          */
         public List<Event> pollMCEvents(Address mcRemoteAddr) {
-            Long lastAccessObj = nextSequencePerMC.get(mcRemoteAddr);
-            mostRecentAccessTimestamp = clock.getAsLong();
-            long pollStartedAt = mostRecentAccessTimestamp;
-            List<Event> events;
-            if (lastAccessObj == null) {
-                events = new ArrayList<>(this.events);
-            } else {
-                Integer receivedInSameMsWrapper = eventsReceivedInSameMillisec.get(mcRemoteAddr);
-                int receivedInSameMs = receivedInSameMsWrapper == null ? 0 : receivedInSameMsWrapper;
-                long lastAccess = lastAccessObj;
-                events = new ArrayList<>(events.size());
-                for (Event evt : events) {
-                    if (evt.getTimestamp() >= lastAccess) {
-                        if (receivedInSameMs-- <= 0) {
-                            events.add(evt);
-                        }
-                    }
-                }
+            lastMCEventsPollMillis = clock.getAsLong();
+            Long nextSequence = nextSequencePerMC.get(mcRemoteAddr);
+            if (nextSequence == null) {
+                nextSequence = 0L;
             }
-            updateLatestAccessStats(mcRemoteAddr, pollStartedAt);
-            int sameMilliEvents = 0;
-            for (int i = events.size() - 1; i >= 0 && events.get(i).getTimestamp() >= mostRecentAccessTimestamp; --i) {
-                ++sameMilliEvents;
-            }
-            eventsReceivedInSameMillisec.put(mcRemoteAddr, sameMilliEvents);
-            return events;
-        }
-
-        /**
-         * Updates {@link #mostRecentAccessTimestamp} to the current time, removes old entries from {@link #nextSequencePerMC}
-         * and removes the entries of {@link #mcEvents} that are already read by all known MCs.
-         *
-         * @param mcRemoteAddr
-         * @param pollStartedAt
-         */
-        private void updateLatestAccessStats(Address mcRemoteAddr, long pollStartedAt) {
-            nextSequencePerMC.put(mcRemoteAddr, pollStartedAt);
-            if (mcEvents.isEmpty()) {
-                return;
-            }
-            OptionalLong maybeOldestAccess = nextSequencePerMC.values().stream().mapToLong(Long::longValue).min();
-            if (maybeOldestAccess.isPresent()) {
-                long oldestAccess = maybeOldestAccess.getAsLong();
-                cleanUpLastAccessTimestamps(oldestAccess, pollStartedAt);
-                Iterator<Event> it = mcEvents.iterator();
-                while (it.hasNext()) {
-                    Event evt = it.next();
-                    if (evt.getTimestamp() >= oldestAccess) {
-                        break;
-                    }
-                    it.remove();
-                }
-            }
-        }
-
-        /**
-         * Removes the entries from {@link #nextSequencePerMC} which record accesses older than
-         * {@link #MC_EVENTS_WINDOW_MILLIS}. Also removes the entry from {@link #eventsReceivedInSameMillisec} with the same key.
-         *
-         * @param oldestAccess
-         * @param pollStartedAt
-         */
-        private void cleanUpLastAccessTimestamps(long oldestAccess, long pollStartedAt) {
-            if (pollStartedAt - oldestAccess > MC_EVENTS_WINDOW_MILLIS) {
-                Iterator<Map.Entry<Address, Long>> it = nextSequencePerMC.entrySet().iterator();
-                while (it.hasNext()) {
-                    Map.Entry<Address, Long> entry = it.next();
-                    if (pollStartedAt - entry.getValue() > MC_EVENTS_WINDOW_MILLIS) {
-                        it.remove();
-                        eventsReceivedInSameMillisec.remove(entry.getKey());
-                    }
-                }
-            }
+            ConcurrentArrayRingbuffer.RingbufferSlice<Event> slice = mcEvents.copyFrom(nextSequence);
+            nextSequencePerMC.put(mcRemoteAddr, slice.nextSequence());
+            return slice.elements();
         }
     }
 
@@ -186,7 +113,7 @@ public class ManagementCenterService {
     private volatile long lastTMSUpdateNanos;
 
     public ManagementCenterService(HazelcastInstanceImpl instance) {
-        this(instance, System::currentTimeMillis);
+        this(instance, Clock::currentTimeMillis);
     }
 
     public ManagementCenterService(HazelcastInstanceImpl instance, LongSupplier clock) {
@@ -196,7 +123,7 @@ public class ManagementCenterService {
         int partitionCount = instance.node.getPartitionService().getPartitionCount();
         this.commandHandler = new ConsoleCommandHandler(instance);
         this.bwListConfigHandler = new ClientBwListConfigHandler(instance.node.clientEngine);
-        this.eventStore = new MCEventStore(clock, new LinkedBlockingQueue<>(Math.max(MIN_EVENT_QUEUE_CAPACITY, partitionCount)));
+        this.eventStore = new MCEventStore(clock, new ConcurrentArrayRingbuffer<>(Math.max(MIN_EVENT_QUEUE_CAPACITY, partitionCount)));
         registerExecutor();
     }
 

@@ -19,6 +19,7 @@ package com.hazelcast.internal.management;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.management.events.Event;
+import com.hazelcast.internal.metrics.managementcenter.ConcurrentArrayRingbuffer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -74,7 +75,7 @@ public class MCEventStoreTest {
         }
     }
 
-    private LinkedBlockingQueue<Event> queue;
+    private ConcurrentArrayRingbuffer<Event> queue;
 
     private ManagementCenterService.MCEventStore eventStore;
 
@@ -96,7 +97,7 @@ public class MCEventStoreTest {
     @Before
     public void before() {
         clock = new FakeClock();
-        queue = new LinkedBlockingQueue<>();
+        queue = new ConcurrentArrayRingbuffer<>(1000);
         eventStore = new ManagementCenterService.MCEventStore(clock, queue);
     }
 
@@ -143,21 +144,6 @@ public class MCEventStoreTest {
     }
 
     @Test
-    public void elemsReadByAllMCsAreCleared() {
-        eventStore.pollMCEvents(MC_2_REMOTE_ADDR);
-        inNextMilli(() -> {
-            logEvent();
-            logEvent();
-        });
-        clock.now += MC_EVENTS_WINDOW_MILLIS;
-        inNextMilli(() -> {
-            assertPolledEventCount(2, MC_1_REMOTE_ADDR);
-            assertPolledEventCount(2, MC_2_REMOTE_ADDR);
-            assertEquals(0, queue.size());
-        });
-    }
-
-    @Test
     public void sameMilliEvent_reportedInNextPoll() {
         assertPolledEventCount(0, MC_1_REMOTE_ADDR);
         logEvent();
@@ -199,13 +185,12 @@ public class MCEventStoreTest {
             logEvent();
             logEvent();
         });
-        clock.now += TimeUnit.SECONDS.toMillis(15);
+        clock.now += TimeUnit.SECONDS.toMillis(30);
         logEvent();
         logEvent();
         inNextMilli(() -> {
-            assertPolledEventCount(4, MC_1_REMOTE_ADDR);
-            // reads all 5 events, since its last-access TS is already cleared during previous read
-            assertPolledEventCount(5, MC_3_REMOTE_ADDR);
+            assertPolledEventCount(0, MC_1_REMOTE_ADDR);
+            assertPolledEventCount(0, MC_3_REMOTE_ADDR);
         });
     }
 
