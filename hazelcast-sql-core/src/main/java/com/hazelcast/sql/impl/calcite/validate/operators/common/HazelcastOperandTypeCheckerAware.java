@@ -41,7 +41,7 @@ import java.util.Arrays;
  * {@link HazelcastFunction}, {@link HazelcastPrefixOperator}, {@link HazelcastPostfixOperator},
  * {@link HazelcastBinaryOperator}, {@link HazelcastSpecialOperator}.
  */
-public interface HazelcastOperandTypeCheckerAware {
+interface HazelcastOperandTypeCheckerAware {
     default HazelcastCallBinding prepareBinding(SqlCallBinding binding) {
         SqlOperator operator = binding.getOperator();
 

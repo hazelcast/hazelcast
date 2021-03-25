@@ -1,5 +1,5 @@
 /*
- * CopyrhsType (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.calcite.validate.operators.predicate;
 
 import com.google.common.collect.ImmutableList;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
-import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastOperandTypeCheckerAware;
+import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastBinaryOperator;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeField;
@@ -30,10 +30,11 @@ import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
-import org.apache.calcite.sql.fun.SqlInOperator;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.type.ComparableOperandTypeChecker;
+import org.apache.calcite.sql.type.InferTypes;
 import org.apache.calcite.sql.type.OperandTypes;
+import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.type.SqlTypeUtil;
 import org.apache.calcite.sql.validate.SqlValidator;
@@ -46,16 +47,24 @@ import java.util.List;
 
 import static org.apache.calcite.util.Static.RESOURCE;
 
-public class HazelcastInPredicate extends SqlInOperator implements HazelcastOperandTypeCheckerAware {
+public class HazelcastInPredicate extends HazelcastBinaryOperator {
 
     public static final HazelcastInPredicate IN = new HazelcastInPredicate("IN", false);
     public static final HazelcastInPredicate NOT_IN = new HazelcastInPredicate("NOT IN", true);
     protected static final HazelcastInPredicateResource HZRESOURCE = Resources.create(HazelcastInPredicateResource.class);
+    protected static final int PRECEDENCE = 32;
 
+    // Copied from SqlInOperator
     private final boolean negated;
 
     public HazelcastInPredicate(String name, boolean negated) {
-        super(name, negated ? SqlKind.NOT_IN : SqlKind.IN);
+
+        super(name,
+            negated ? SqlKind.NOT_IN : SqlKind.IN,
+            PRECEDENCE,
+            true,
+            ReturnTypes.BOOLEAN_NULLABLE,
+            InferTypes.FIRST_KNOWN);
         this.negated = negated;
     }
 
@@ -133,6 +142,16 @@ public class HazelcastInPredicate extends SqlInOperator implements HazelcastOper
             }
         }
         return false;
+    }
+
+    @Override
+    protected boolean checkOperandTypes(HazelcastCallBinding callBinding, boolean throwOnFailure) {
+        return false;
+    }
+
+    @Override
+    public HazelcastCallBinding prepareBinding(SqlCallBinding binding) {
+        return super.prepareBinding(binding);
     }
 
     interface HazelcastInPredicateResource extends CalciteResource {

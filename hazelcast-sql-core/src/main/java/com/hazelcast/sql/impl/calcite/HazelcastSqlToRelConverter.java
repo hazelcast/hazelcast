@@ -48,7 +48,6 @@ import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.type.SqlTypeFamily;
 import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlOperator;
-import org.apache.calcite.sql.fun.SqlInOperator;
 import org.apache.calcite.sql.fun.SqlRowOperator;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.type.SqlTypeName;
@@ -85,6 +84,7 @@ import static org.apache.calcite.sql.type.SqlTypeName.TIME;
  * literals and casts with more precise types assigned during the validation.
  */
 public class HazelcastSqlToRelConverter extends SqlToRelConverter {
+    /** See {@link #convertCall(SqlNode, Blackboard)} for more information. */
 
     private static final SqlIntervalQualifier INTERVAL_YEAR_MONTH = new SqlIntervalQualifier(YEAR, MONTH, SqlParserPos.ZERO);
     private static final SqlIntervalQualifier INTERVAL_DAY_SECOND = new SqlIntervalQualifier(DAY, SECOND, SqlParserPos.ZERO);
@@ -328,7 +328,7 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
         final Blackboard bb,
         final List<RexNode> leftKeys,
         SqlNodeList valuesList,
-        SqlInOperator op) {
+        HazelcastInPredicate op) {
         final List<RexNode> comparisons = constructComparisons(bb, leftKeys, valuesList, op);
 
         switch (op.kind) {
@@ -349,7 +349,11 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
      * Constructs comparisons between
      * left-hand operand (as a rule, SqlIdentifier) and right-hand list.
      */
-    private List<RexNode> constructComparisons(Blackboard bb, List<RexNode> leftKeys, SqlNodeList valuesList, SqlInOperator op) {
+    private List<RexNode> constructComparisons(
+        Blackboard bb,
+        List<RexNode> leftKeys,
+        SqlNodeList valuesList,
+        HazelcastInPredicate op) {
         final List<RexNode> comparisons = new ArrayList<>();
 
         for (SqlNode rightValues : valuesList) {
