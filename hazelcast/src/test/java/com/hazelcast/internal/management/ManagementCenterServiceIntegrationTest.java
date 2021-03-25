@@ -35,7 +35,7 @@ import org.junit.runner.RunWith;
 
 import java.util.List;
 
-import static com.hazelcast.internal.management.MCEventStoreTest.MC_1_REMOTE_ADDR;
+import static com.hazelcast.internal.management.MCEventStoreTest.MC_1_UUID;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertEquals;
@@ -113,7 +113,7 @@ public class ManagementCenterServiceIntegrationTest
         mcs.log(new TestEvent());
         mcs.log(new TestEvent());
 
-        List<Event> actualEvents = mcs.pollMCEvents(MC_1_REMOTE_ADDR);
+        List<Event> actualEvents = mcs.pollMCEvents(MC_1_UUID);
         assertEquals(3, actualEvents.size());
         assertEquals(expectedEvent, actualEvents.get(0));
     }
@@ -123,7 +123,7 @@ public class ManagementCenterServiceIntegrationTest
         mcs.log(new TestEvent());
         mcs.log(new TestEvent());
 
-        assertEquals(2, mcs.pollMCEvents(MC_1_REMOTE_ADDR).size());
+        assertEquals(2, mcs.pollMCEvents(MC_1_UUID).size());
     }
 
     @Test
@@ -132,10 +132,10 @@ public class ManagementCenterServiceIntegrationTest
         mcs.log(new TestEvent());
 
         mcs.onMCEventWindowExceeded();
-        assertEquals(0, mcs.pollMCEvents(MC_1_REMOTE_ADDR).size());
+        assertEquals(0, mcs.pollMCEvents(MC_1_UUID).size());
 
         mcs.log(new TestEvent(System.currentTimeMillis()));
-        assertEquals(1, mcs.pollMCEvents(MC_1_REMOTE_ADDR).size());
+        assertEquals(1, mcs.pollMCEvents(MC_1_UUID).size());
     }
 
     static class TestEvent

@@ -45,7 +45,7 @@ public class PollMCEventsMessageTask extends AbstractCallableMessageTask<Void> {
         if (mcs == null) {
             return Collections.<MCEventDTO>emptyList();
         }
-        List<Event> polledEvents = mcs.pollMCEvents(connection.getRemoteAddress());
+        List<Event> polledEvents = mcs.pollMCEvents(endpoint.getUuid());
         List<MCEventDTO> result = new ArrayList<>(polledEvents.size());
         for (Event event : polledEvents) {
             result.add(MCEventDTO.fromEvent(event));

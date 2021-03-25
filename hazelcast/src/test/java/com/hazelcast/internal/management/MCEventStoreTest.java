@@ -17,7 +17,6 @@
 package com.hazelcast.internal.management;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.management.events.Event;
 import com.hazelcast.internal.metrics.managementcenter.ConcurrentArrayRingbuffer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -29,17 +28,17 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.function.LongSupplier;
 import java.util.stream.IntStream;
 
-import static com.hazelcast.internal.management.ManagementCenterService.MCEventStore.MC_EVENTS_WINDOW_MILLIS;
+import static com.hazelcast.internal.management.ManagementCenterService.MCEventStore.MC_EVENTS_WINDOW_NANOS;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 
@@ -58,21 +57,11 @@ public class MCEventStoreTest {
         }
     }
 
-    static final Address MC_1_REMOTE_ADDR;
+    static final UUID MC_1_UUID = UUID.fromString("6c31a5a6-91b2-4a6c-bc0d-3592c5a3d29f");
 
-    static final Address MC_2_REMOTE_ADDR;
+    static final UUID MC_2_UUID = UUID.fromString("31a7baf0-11a2-4cad-8943-fa5d8a48e62b");
 
-    static final Address MC_3_REMOTE_ADDR;
-
-    static {
-        try {
-            MC_1_REMOTE_ADDR = new Address("localhost", 5701);
-            MC_2_REMOTE_ADDR = new Address("localhost", 5702);
-            MC_3_REMOTE_ADDR = new Address("localhost", 5703);
-        } catch (UnknownHostException e) {
-            throw new RuntimeException(e);
-        }
-    }
+    static final UUID MC_3_UUID = UUID.fromString("ec83e345-7e4a-4a46-b049-0c34dd201b18");
 
     private ConcurrentArrayRingbuffer<Event> queue;
 
@@ -80,12 +69,12 @@ public class MCEventStoreTest {
 
     private FakeClock clock;
 
-    private void assertPolledEventCount(int expectedEventCount, Address mcRemoteAddress) {
+    private void assertPolledEventCount(int expectedEventCount, UUID mcRemoteAddress) {
         assertEquals(expectedEventCount, eventStore.pollMCEvents(mcRemoteAddress).size());
     }
 
     void inNextMilli(Runnable r) {
-        clock.now++;
+        clock.now += 1_000_000;
         r.run();
     }
 
@@ -102,55 +91,55 @@ public class MCEventStoreTest {
 
     @Test
     public void multipleMCs_canPollSeparately() {
-        assertPolledEventCount(0, MC_2_REMOTE_ADDR);
+        assertPolledEventCount(0, MC_2_UUID);
         inNextMilli(() -> {
             logEvent();
             logEvent();
         });
         inNextMilli(() -> {
-            assertPolledEventCount(2, MC_1_REMOTE_ADDR);
-            assertPolledEventCount(2, MC_2_REMOTE_ADDR);
-            assertPolledEventCount(0, MC_1_REMOTE_ADDR);
-            assertPolledEventCount(0, MC_2_REMOTE_ADDR);
+            assertPolledEventCount(2, MC_1_UUID);
+            assertPolledEventCount(2, MC_2_UUID);
+            assertPolledEventCount(0, MC_1_UUID);
+            assertPolledEventCount(0, MC_2_UUID);
         });
         logEvent();
         inNextMilli(() -> {
-            assertPolledEventCount(1, MC_1_REMOTE_ADDR);
+            assertPolledEventCount(1, MC_1_UUID);
         });
         inNextMilli(() -> {
             logEvent();
-            assertPolledEventCount(1, MC_1_REMOTE_ADDR);
-            assertPolledEventCount(2, MC_2_REMOTE_ADDR);
+            assertPolledEventCount(1, MC_1_UUID);
+            assertPolledEventCount(2, MC_2_UUID);
         });
         inNextMilli(() -> {
             logEvent();
             logEvent();
         });
-        clock.now += MC_EVENTS_WINDOW_MILLIS;
+        clock.now += MC_EVENTS_WINDOW_NANOS;
         logEvent();
         inNextMilli(() -> {
-            assertPolledEventCount(0, MC_1_REMOTE_ADDR);
-            assertPolledEventCount(0, MC_2_REMOTE_ADDR);
+            assertPolledEventCount(0, MC_1_UUID);
+            assertPolledEventCount(0, MC_2_UUID);
         });
         inNextMilli(() -> {
-            assertPolledEventCount(0, MC_1_REMOTE_ADDR);
+            assertPolledEventCount(0, MC_1_UUID);
         });
         inNextMilli(() -> {
             logEvent();
-            assertPolledEventCount(1, MC_1_REMOTE_ADDR);
-            assertPolledEventCount(1, MC_2_REMOTE_ADDR);
+            assertPolledEventCount(1, MC_1_UUID);
+            assertPolledEventCount(1, MC_2_UUID);
         });
     }
 
     @Test
     public void sameMilliEvent_reportedInNextPoll() {
-        assertPolledEventCount(0, MC_1_REMOTE_ADDR);
+        assertPolledEventCount(0, MC_1_UUID);
         logEvent();
         logEvent();
         inNextMilli(() -> {
             logEvent();
             logEvent();
-            assertPolledEventCount(4, MC_1_REMOTE_ADDR);
+            assertPolledEventCount(4, MC_1_UUID);
             logEvent();
             logEvent();
             logEvent();
@@ -161,50 +150,50 @@ public class MCEventStoreTest {
         });
         inNextMilli(() -> {
             // 3 of these were reported in the same MS as the previous poll, 2 of them later
-            assertPolledEventCount(5, MC_1_REMOTE_ADDR);
+            assertPolledEventCount(5, MC_1_UUID);
         });
     }
 
     @Test
     public void eventCollectionStops_whenNoPollHappens_in30sec() {
         inNextMilli(() -> {
-            assertPolledEventCount(0, MC_1_REMOTE_ADDR);
-            assertPolledEventCount(0, MC_2_REMOTE_ADDR);
-            assertPolledEventCount(0, MC_3_REMOTE_ADDR);
+            assertPolledEventCount(0, MC_1_UUID);
+            assertPolledEventCount(0, MC_2_UUID);
+            assertPolledEventCount(0, MC_3_UUID);
         });
         logEvent();
         inNextMilli(() -> {
-            assertPolledEventCount(1, MC_3_REMOTE_ADDR);
+            assertPolledEventCount(1, MC_3_UUID);
         });
-        clock.now += TimeUnit.SECONDS.toMillis(31);
+        clock.now += TimeUnit.SECONDS.toNanos(31);
         logEvent();
         logEvent();
         inNextMilli(() -> {
-            assertPolledEventCount(0, MC_1_REMOTE_ADDR);
-            assertPolledEventCount(0, MC_3_REMOTE_ADDR);
+            assertPolledEventCount(0, MC_1_UUID);
+            assertPolledEventCount(0, MC_3_UUID);
         });
     }
 
     @Test
     public void disconnectRecognized_after30secInactivity() {
         inNextMilli(() -> {
-            assertPolledEventCount(0, MC_1_REMOTE_ADDR);
-            assertPolledEventCount(0, MC_2_REMOTE_ADDR);
-            assertPolledEventCount(0, MC_3_REMOTE_ADDR);
+            assertPolledEventCount(0, MC_1_UUID);
+            assertPolledEventCount(0, MC_2_UUID);
+            assertPolledEventCount(0, MC_3_UUID);
         });
         logEvent();
-        assertPolledEventCount(1, MC_3_REMOTE_ADDR); // reading if previous event noted, nextSequence incremented
-        clock.now += TimeUnit.SECONDS.toMillis(15);
+        assertPolledEventCount(1, MC_3_UUID); // reading if previous event noted, nextSequence incremented
+        clock.now += TimeUnit.SECONDS.toNanos(15);
         inNextMilli(() -> {
-            assertPolledEventCount(1, MC_1_REMOTE_ADDR);
-            assertPolledEventCount(1, MC_2_REMOTE_ADDR);
+            assertPolledEventCount(1, MC_1_UUID);
+            assertPolledEventCount(1, MC_2_UUID);
         });
-        clock.now += TimeUnit.SECONDS.toMillis(16);
+        clock.now += TimeUnit.SECONDS.toNanos(16);
         logEvent();
         inNextMilli(() -> {
-            assertPolledEventCount(1, MC_1_REMOTE_ADDR);
-            assertPolledEventCount(1, MC_2_REMOTE_ADDR);
-            assertPolledEventCount(2, MC_3_REMOTE_ADDR); // 30sec passed since last read, previous nextSequence forgotten
+            assertPolledEventCount(1, MC_1_UUID);
+            assertPolledEventCount(1, MC_2_UUID);
+            assertPolledEventCount(2, MC_3_UUID); // 30sec passed since last read, previous nextSequence forgotten
         });
     }
 
@@ -226,8 +215,8 @@ public class MCEventStoreTest {
                         inNextMilli(this::logEvent);
                     }
                 },
-                () -> inNextMilli(() -> eventStore.pollMCEvents(MC_1_REMOTE_ADDR)),
-                () -> inNextMilli(() -> eventStore.pollMCEvents(MC_2_REMOTE_ADDR))
+                () -> inNextMilli(() -> eventStore.pollMCEvents(MC_1_UUID)),
+                () -> inNextMilli(() -> eventStore.pollMCEvents(MC_2_UUID))
         };
         Random random = new Random();
 

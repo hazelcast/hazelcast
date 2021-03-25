@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.management;
 
-import com.hazelcast.cluster.Address;
 import com.hazelcast.console.ConsoleApp;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
@@ -24,7 +23,6 @@ import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.dto.ClientBwListDTO;
 import com.hazelcast.internal.management.events.Event;
 import com.hazelcast.internal.metrics.managementcenter.ConcurrentArrayRingbuffer;
-import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.executor.ExecutorType;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.RetryableException;
@@ -34,6 +32,7 @@ import com.hazelcast.spi.properties.ClusterProperty;
 import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
@@ -70,22 +69,22 @@ public class ManagementCenterService {
             }
         }
 
-        static final long MC_EVENTS_WINDOW_MILLIS = TimeUnit.SECONDS.toMillis(30);
-        private final LongSupplier clock;
-        private volatile long lastMCEventsPollMillis;
+        static final long MC_EVENTS_WINDOW_NANOS = TimeUnit.SECONDS.toNanos(30);
+        private final LongSupplier nanoClock;
+        private volatile long lastMCEventsPollTimestamp;
         private volatile long lastCleanupTimestamp;
-        private final ConcurrentMap<Address, LastPollRecord> lastPollRecordPerMCAddress = new ConcurrentHashMap<>();
+        private final ConcurrentMap<UUID, LastPollRecord> lastPollRecordPerMC = new ConcurrentHashMap<>();
         private final ConcurrentArrayRingbuffer<Event> mcEvents;
 
-        MCEventStore(LongSupplier clock, ConcurrentArrayRingbuffer<Event> mcEvents) {
-            this.clock = clock;
-            this.lastMCEventsPollMillis = clock.getAsLong();
-            this.lastCleanupTimestamp = this.lastMCEventsPollMillis;
+        MCEventStore(LongSupplier nanoClock, ConcurrentArrayRingbuffer<Event> mcEvents) {
+            this.nanoClock = nanoClock;
+            this.lastMCEventsPollTimestamp = nanoClock.getAsLong();
+            this.lastCleanupTimestamp = this.lastMCEventsPollTimestamp;
             this.mcEvents = mcEvents;
         }
 
         void log(Event event) {
-            if (clock.getAsLong() - lastMCEventsPollMillis > MC_EVENTS_WINDOW_MILLIS) {
+            if (nanoClock.getAsLong() - lastMCEventsPollTimestamp > MC_EVENTS_WINDOW_NANOS) {
                 // ignore event and clear the queue if the last poll happened a while ago
                 onMCEventWindowExceeded();
             } else {
@@ -95,38 +94,38 @@ public class ManagementCenterService {
         }
 
         private static boolean isOutOfTimeWindow(long nowInMillis, long subjectTimestampInMillis) {
-            return nowInMillis - subjectTimestampInMillis > MC_EVENTS_WINDOW_MILLIS;
+            return nowInMillis - subjectTimestampInMillis > MC_EVENTS_WINDOW_NANOS;
         }
 
         /**
-         * Removing {@link #lastPollRecordPerMCAddress} entries older than {@link #MC_EVENTS_WINDOW_MILLIS} according to their
+         * Removing {@link #lastPollRecordPerMC} entries older than {@link #MC_EVENTS_WINDOW_NANOS} according to their
          * {@code lastAccessTime}.
          * <p>
-         * No-op if less than {@link #MC_EVENTS_WINDOW_MILLIS} millis passed since the last cleanup. This avoids too frequent
-         * unnecessary iterations on the {@link #lastPollRecordPerMCAddress} entries.
+         * No-op if less than {@link #MC_EVENTS_WINDOW_NANOS} millis passed since the last cleanup. This avoids too frequent
+         * unnecessary iterations on the {@link #lastPollRecordPerMC} entries.
          */
         private void cleanUpLastAccessRecords() {
-            long now = clock.getAsLong();
+            long now = nanoClock.getAsLong();
             if (!isOutOfTimeWindow(now, lastCleanupTimestamp)) {
                 return;
             }
-            lastPollRecordPerMCAddress.entrySet().removeIf(entry -> isOutOfTimeWindow(now, entry.getValue().lastAccessTime));
+            lastPollRecordPerMC.entrySet().removeIf(entry -> isOutOfTimeWindow(now, entry.getValue().lastAccessTime));
             lastCleanupTimestamp = now;
         }
 
         void onMCEventWindowExceeded() {
             mcEvents.clear();
-            lastPollRecordPerMCAddress.clear();
+            lastPollRecordPerMC.clear();
         }
 
         /**
-         * @param mcRemoteAddr the address of the calling MC instance.
+         * @param mcClientUuid the UUID of the calling MC client.
          * @return the events which were added to the queue since this MC last polled, or all known events if the MC polls for the
          * first time.
          */
-        public List<Event> pollMCEvents(Address mcRemoteAddr) {
-            lastMCEventsPollMillis = clock.getAsLong();
-            LastPollRecord lastPollRecord = lastPollRecordPerMCAddress.get(mcRemoteAddr);
+        public List<Event> pollMCEvents(UUID mcClientUuid) {
+            lastMCEventsPollTimestamp = nanoClock.getAsLong();
+            LastPollRecord lastPollRecord = lastPollRecordPerMC.get(mcClientUuid);
             long sequence;
             if (lastPollRecord == null) {
                 sequence = 0;
@@ -134,7 +133,7 @@ public class ManagementCenterService {
                 sequence = lastPollRecord.nextSequence;
             }
             ConcurrentArrayRingbuffer.RingbufferSlice<Event> slice = mcEvents.copyFrom(sequence);
-            lastPollRecordPerMCAddress.put(mcRemoteAddr, new LastPollRecord(lastMCEventsPollMillis, slice.nextSequence()));
+            lastPollRecordPerMC.put(mcClientUuid, new LastPollRecord(lastMCEventsPollTimestamp, slice.nextSequence()));
             return slice.elements();
         }
     }
@@ -160,7 +159,7 @@ public class ManagementCenterService {
     private volatile long lastTMSUpdateNanos;
 
     public ManagementCenterService(HazelcastInstanceImpl instance) {
-        this(instance, Clock::currentTimeMillis);
+        this(instance, System::nanoTime);
     }
 
     public ManagementCenterService(HazelcastInstanceImpl instance, LongSupplier clock) {
@@ -250,8 +249,8 @@ public class ManagementCenterService {
      * @return polled events
      */
     @Nonnull
-    public List<Event> pollMCEvents(Address mcRemoteAddr) {
-        return eventStore.pollMCEvents(mcRemoteAddr);
+    public List<Event> pollMCEvents(UUID clientUuid) {
+        return eventStore.pollMCEvents(clientUuid);
     }
 
     // visible for testing
