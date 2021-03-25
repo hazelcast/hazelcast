@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,12 +45,53 @@ public class CaseOperationIntegrationTest extends ExpressionTestSupport {
     public void caseWithConstants() {
         put(1);
 
-        checkValue0("select case when true then null else null end from map", SqlColumnType.NULL, null);
+        checkFailure0(
+                "select case when true then null else null end from map",
+                SqlErrorCode.PARSING,
+                "ELSE clause or at least one THEN clause must be non-NULL");
         checkFailure0("select case when 1 then 1 else 2 end from map", SqlErrorCode.PARSING, "Expected a boolean type");
         checkValue0("select case when 1 = 1 then 1 else null end from map", SqlColumnType.TINYINT, (byte) 1);
         checkValue0("select case when 1 = 1 then null else 1 end from map", SqlColumnType.TINYINT, null);
         checkValue0("select case 1 when 1 then 100 else 2 end from map", SqlColumnType.TINYINT, (byte) 100);
         checkFailure0("select case 'a' when 1 then 100 else 2 end from map", SqlErrorCode.PARSING, "Cannot apply '=' operator to [VARCHAR, TINYINT]");
+
+        checkValue0("select case when 1 <> 1 then null else 10 end from map", SqlColumnType.TINYINT, (byte) 10);
+    }
+
+    @Test
+    public void nested() throws Exception {
+        put(1);
+
+        checkValue0("select \n"
+                + "case 1 \n"
+                + "when \n"
+                + "       case when 2 = 2 then 1 end \n"
+                + "then 100 \n"
+                + "else 2 \n"
+                + "end \n"
+                + "from map", SqlColumnType.TINYINT, (byte) 100);
+
+        checkValue0("select \n"
+                + "case 1 \n"
+                + "when 1 then \n"
+                + "       case when 2 = 2 then 100 end \n"
+                + "else 2 \n"
+                + "end \n"
+                + "from map", SqlColumnType.TINYINT, (byte) 100);
+
+        checkValue0("select \n"
+                + "case 1 \n"
+                + "when 100 then 1 \n"
+                + "else \n"
+                + "       case when 2 = 2 then 100 end \n"
+                + "end \n"
+                + "from map", SqlColumnType.TINYINT, (byte) 100);
+
+        checkValue0("select t.* from \n"
+                + "(select case 1 when 1 then 100 end from map) as t", SqlColumnType.TINYINT, (byte) 100);
+
+        checkValue0("select this from map \n"
+                + "where 100 = case this when 1 then 100 end", SqlColumnType.INTEGER, 1);
     }
 
     @Test
@@ -88,7 +129,31 @@ public class CaseOperationIntegrationTest extends ExpressionTestSupport {
     }
 
     @Test
-    public void differentReturnTypes() {
+    public void differentCoercibleReturnTypes() {
+        put(1);
+
+        checkValue0(
+                "select case this \n"
+                        + "when 1 then " + Byte.MAX_VALUE + " \n"
+                        + "when 2 then " + Short.MAX_VALUE + " \n"
+                        + "when 3 then " + Integer.MAX_VALUE + " \n"
+                        + "else " + Long.MAX_VALUE + " \n"
+                        + "end from map",
+                SqlColumnType.BIGINT,
+                (long) Byte.MAX_VALUE);
+
+        checkValue0(
+                "select case this \n"
+                        + "when 1 then CAST('2021-01-01T10:00' AS TIMESTAMP) \n"
+                        + "when 2 then CAST('2021-01-01' AS DATE) \n"
+                        + "else CAST('2021-01-01T10:00+02:00' as TIMESTAMP WITH LOCAL TIME ZONE) \n"
+                        + "end from map",
+                SqlColumnType.TIMESTAMP_WITH_TIME_ZONE,
+                OffsetDateTime.of(LocalDateTime.of(2021, 1, 1, 10, 0, 0), ZoneOffset.ofHours(2)));
+    }
+
+    @Test
+    public void differentNonCoercibleReturnTypes() {
         put(1);
 
         checkFailure0(
@@ -96,9 +161,26 @@ public class CaseOperationIntegrationTest extends ExpressionTestSupport {
                 SqlErrorCode.PARSING,
                 "Cannot infer return type for CASE among [TINYINT, VARCHAR, NULL]");
         checkFailure0(
-                "select case when 1 = 1 then 1 when 2 = 2 then 1000000000 else 'some string' end from map",
+                "select case 1 when 1 then 1 when 2 then 1000000000 else CAST('2021-01-01' as DATE) end from map",
                 SqlErrorCode.PARSING,
-                "Cannot infer return type for CASE among [TINYINT, INTEGER, VARCHAR]");
+                "Cannot infer return type for CASE among [TINYINT, INTEGER, DATE]");
+        checkFailure0(
+                "select case this when 1 then '1' when 2 then '1000000000' else CAST('2021-01-01' as DATE) end from map",
+                SqlErrorCode.GENERIC,
+                "while converting CASE WHEN `map`.`this` = CAST(1 AS INTEGER) THEN CAST('1' AS DATE) "
+                        + "WHEN `map`.`this` = CAST(2 AS INTEGER) THEN CAST('1000000000' AS DATE) ELSE CAST('2021-01-01' AS DATE) END");
+        checkFailure0(
+                "select case 1 when 1 then true when 2 then false else CAST('2021-01-01' as DATE) end from map",
+                SqlErrorCode.PARSING,
+                "Cannot infer return type for CASE among [BOOLEAN, BOOLEAN, DATE]");
+        checkFailure0(
+                "select case this when 2 then 100 else CAST('2021-01-01' as DATE) end from map",
+                SqlErrorCode.PARSING,
+                "Cannot infer return type for CASE among [TINYINT, DATE]");
+        checkFailure0(
+                "select case this when 2 then CAST('10:00:00' AS TIME) else CAST('2021-01-01' as DATE) end from map",
+                SqlErrorCode.PARSING,
+                "Cannot infer return type for CASE among [TIME, DATE]");
     }
 
     @Test
@@ -251,7 +333,7 @@ public class CaseOperationIntegrationTest extends ExpressionTestSupport {
                 OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC),
                 ExpressionTypes.LOCAL_DATE_TIME, ExpressionTypes.OFFSET_DATE_TIME
         );
-        checkValue0(sql, SqlColumnType.TIMESTAMP, LocalDateTime.of(2020, 12, 30, 14, 2, 0));
+        checkValue0(sql, SqlColumnType.TIMESTAMP_WITH_TIME_ZONE, OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.ofHours(2)));
 
         putBiValue(
                 OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC),
@@ -269,28 +351,28 @@ public class CaseOperationIntegrationTest extends ExpressionTestSupport {
         SerializableDummy field2 = new SerializableDummy();
 
         putBiValue((byte) 1, field2, ExpressionTypes.BYTE, ExpressionTypes.OBJECT);
-        checkValue0(sql, SqlColumnType.OBJECT, (byte) 1);
+        checkFailure0(sql, SqlErrorCode.PARSING, "Cannot infer return type for CASE among [TINYINT, OBJECT]");
 
         putBiValue((short) 1, field2, ExpressionTypes.SHORT, ExpressionTypes.OBJECT);
-        checkValue0(sql, SqlColumnType.OBJECT, (short) 1);
+        checkFailure0(sql, SqlErrorCode.PARSING, "Cannot infer return type for CASE among [SMALLINT, OBJECT]");
 
         putBiValue(1, field2, ExpressionTypes.INTEGER, ExpressionTypes.OBJECT);
-        checkValue0(sql, SqlColumnType.OBJECT, 1);
+        checkFailure0(sql, SqlErrorCode.PARSING, "Cannot infer return type for CASE among [INTEGER, OBJECT]");
 
         putBiValue(1L, field2, ExpressionTypes.LONG, ExpressionTypes.OBJECT);
-        checkValue0(sql, SqlColumnType.OBJECT, 1L);
+        checkFailure0(sql, SqlErrorCode.PARSING, "Cannot infer return type for CASE among [BIGINT, OBJECT]");
 
         putBiValue(BigDecimal.ONE, field2, ExpressionTypes.BIG_DECIMAL, ExpressionTypes.OBJECT);
-        checkValue0(sql, SqlColumnType.OBJECT, BigDecimal.ONE);
+        checkFailure0(sql, SqlErrorCode.PARSING, "Cannot infer return type for CASE among [DECIMAL(38, 38), OBJECT]");
 
         putBiValue(BigInteger.ONE, field2, ExpressionTypes.BIG_INTEGER, ExpressionTypes.OBJECT);
-        checkValue0(sql, SqlColumnType.OBJECT, BigDecimal.ONE);
+        checkFailure0(sql, SqlErrorCode.PARSING, "Cannot infer return type for CASE among [DECIMAL(38, 38), OBJECT]");
 
         putBiValue(1.0, field2, ExpressionTypes.DOUBLE, ExpressionTypes.OBJECT);
-        checkValue0(sql, SqlColumnType.OBJECT, 1.0);
+        checkFailure0(sql, SqlErrorCode.PARSING, "Cannot infer return type for CASE among [DOUBLE, OBJECT]");
 
         putBiValue(1.0f, field2, ExpressionTypes.FLOAT, ExpressionTypes.OBJECT);
-        checkValue0(sql, SqlColumnType.OBJECT, 1.0f);
+        checkFailure0(sql, SqlErrorCode.PARSING, "Cannot infer return type for CASE among [REAL, OBJECT]");
     }
 
     private static class SerializableDummy implements Serializable {

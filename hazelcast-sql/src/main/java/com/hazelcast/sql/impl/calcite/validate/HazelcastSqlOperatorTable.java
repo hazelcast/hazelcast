@@ -225,6 +225,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         @Override
         public Void visit(SqlNodeList nodeList) {
             rewriteNodeList(nodeList);
+
             return super.visit(nodeList);
         }
 
@@ -301,12 +302,14 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
             throw RESOURCES.functionDoesNotExist(call.getOperator().getName()).ex();
         }
 
-        private static void rewriteNodeList(SqlNodeList nodeList) {
+        private void rewriteNodeList(SqlNodeList nodeList) {
             for (int i = 0; i < nodeList.size(); ++i) {
                 SqlNode node = nodeList.get(i);
 
-                SqlNode rewrittenCase = tryRewriteCase(node);
-                if (rewrittenCase != null) {
+                if (node instanceof SqlCase && !(node instanceof HazelcastSqlCase)) {
+                    SqlCase sqlCase = (SqlCase) node;
+                    SqlNode rewrittenCase = new HazelcastSqlCase(sqlCase.getParserPosition(), sqlCase.getValueOperand(),
+                            sqlCase.getWhenOperands(), sqlCase.getThenOperands(), sqlCase.getElseOperand());
                     nodeList.set(i, rewrittenCase);
                 }
             }

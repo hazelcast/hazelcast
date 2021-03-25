@@ -38,6 +38,7 @@ com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastLikeOperator
 com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastSubstringFunction
 com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastTrimFunction
 com.hazelcast.sql.impl.calcite.opt.physical.ExpandConversionRule
+com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCaseOperator
 
 contain code originating from the Apache Calcite (https://github.com/apache/calcite)
 
