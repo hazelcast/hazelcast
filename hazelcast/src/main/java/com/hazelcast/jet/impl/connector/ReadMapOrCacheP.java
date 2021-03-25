@@ -99,11 +99,13 @@ import static java.util.stream.Collectors.toList;
  */
 public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends AbstractProcessor {
 
-    private static final int MAX_FETCH_SIZE = 16384;
+    private static final int MAX_FETCH_SIZE = 2048;
+    private static final int MAX_PARALLEL_READ = 5;
 
     private final Reader<F, B, R> reader;
     private final int[] partitionIds;
     private final IterationPointer[][] readPointers;
+    private final int maxParallelRead;
 
     private F[] readFutures;
 
@@ -112,6 +114,8 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
     private int currentBatchPosition;
     private int currentPartitionIndex = -1;
     private int numCompletedPartitions;
+    private int nextPartitionReadIndex;
+    private int partitionReadCount;
 
     private Object pendingItem;
 
@@ -119,6 +123,7 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         this.reader = reader;
         this.partitionIds = partitionIds;
 
+        maxParallelRead = Math.min(partitionIds.length, MAX_PARALLEL_READ);
         readPointers = new IterationPointer[partitionIds.length][];
         Arrays.fill(readPointers, new IterationPointer[]{new IterationPointer(Integer.MAX_VALUE, -1)});
     }
@@ -139,9 +144,11 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
     @SuppressWarnings("unchecked")
     private void initialRead() {
         readFutures = (F[]) new CompletableFuture[partitionIds.length];
-        for (int i = 0; i < readFutures.length; i++) {
+        for (int i = 0; i < maxParallelRead; i++) {
             readFutures[i] = reader.readBatch(partitionIds[i], readPointers[i]);
         }
+        nextPartitionReadIndex = maxParallelRead;
+        partitionReadCount = maxParallelRead;
     }
 
     private boolean emitResultSet() {
@@ -175,11 +182,17 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
             }
 
             F future = readFutures[currentPartitionIndex];
+            if (future == null) {
+                readNextPartition();
+                continue;
+            }
             if (!future.isDone()) {  // data for partition not yet available
                 continue;
             }
 
             B result = toBatchResult(future);
+            readFutures[currentPartitionIndex] = null;
+            partitionReadCount--;
 
             IterationPointer[] pointers = reader.toNextPointer(result);
             if (isDone(pointers)) {
@@ -191,10 +204,8 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
             currentBatch = reader.toRecordSet(result);
             currentBatchPosition = 0;
             readPointers[currentPartitionIndex] = pointers;
-            // make another read on the same partition
-            readFutures[currentPartitionIndex] = !isDone(pointers)
-                    ? reader.readBatch(partitionIds[currentPartitionIndex], pointers)
-                    : null;
+
+            readNextPartition();
         }
 
         if (currentPartitionIndex == partitionIds.length) {
@@ -202,6 +213,26 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
             return false;
         }
         return true;
+    }
+
+    private void readNextPartition() {
+        if (partitionReadCount == maxParallelRead) {
+            return;
+        }
+        if (nextPartitionReadIndex == partitionIds.length) {
+            nextPartitionReadIndex = 0;
+        }
+        while (nextPartitionReadIndex < partitionIds.length) {
+            IterationPointer[] pointers = readPointers[nextPartitionReadIndex];
+            if (readFutures[nextPartitionReadIndex] != null || isDone(pointers)) {
+                nextPartitionReadIndex++;
+                continue;
+            }
+            readFutures[nextPartitionReadIndex] = reader.readBatch(partitionIds[nextPartitionReadIndex], pointers);
+            nextPartitionReadIndex++;
+            partitionReadCount++;
+            break;
+        }
     }
 
     private boolean isDone(IterationPointer[] partitionPointers) {
