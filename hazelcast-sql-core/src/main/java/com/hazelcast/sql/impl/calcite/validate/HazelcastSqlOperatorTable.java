@@ -261,14 +261,11 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         private static SqlNodeList removeNullWithinInStatement(SqlNodeList valueList) {
             SqlNodeList list = new SqlNodeList(valueList.getParserPosition());
             for (SqlNode node : valueList.getList()) {
-                if (node instanceof SqlLiteral) {
-                    SqlLiteral lit = (SqlLiteral) node;
-                    if (lit.getValue() == null) {
-                        continue;
-                    }
-                    list.add(node);
+                if (node instanceof SqlLiteral && ((SqlLiteral) node).getValue() == null) {
+                    continue;
                 }
-            }
+                list.add(node);
+        }
             return list;
         }
 

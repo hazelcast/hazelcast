@@ -40,38 +40,41 @@ public class InPredicateIntegrationTest extends ExpressionTestSupport {
     protected String longList = "(0, 1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 25, 28, 31, 35)";
 
     @Test
-    public void inPredicateWithShortListTest() {
-        putAll(0, 1);
-        String inClause = "IN (0, 1, 2)";
-        checkValues(sqlQuery(inClause), SqlColumnType.INTEGER, new Integer[]{0, 1});
-    }
-
-    @Test
-    public void inPredicateWithRawNullWithinRHSTest() {
-        putAll(0, 1);
-        String inClause = "IN (NULL, 0, 1)";
-        checkValues(sqlQuery(inClause), SqlColumnType.INTEGER, new Integer[]{0, 1});
-    }
-
-    @Test
-    public void inPredicateWithLongListTest() {
+    public void inPredicateWithDifferentListLengthTest() {
         putAll(0, 1, 25, 30);
-        String inClause = "IN " + longList;
-        checkValues(sqlQuery(inClause), SqlColumnType.INTEGER, new Integer[]{25, 0, 1});
+        checkValues(sqlQuery("IN (0, 1, 2)"), SqlColumnType.INTEGER, new Integer[]{0, 1});
+        checkValues(sqlQuery("IN " + longList), SqlColumnType.INTEGER, new Integer[]{25, 0, 1});
+    }
+
+    @Test
+    public void notInPredicateWithDifferentListLengthTest() {
+        putAll(0, 1, 3);
+        checkValues(sqlQuery("NOT IN (0, 1, 2)"), SqlColumnType.INTEGER, new Integer[]{3});
+        checkValues(sqlQuery("NOT IN " + longList), SqlColumnType.INTEGER, new Integer[]{3});
+    }
+
+    @Test
+    public void inPredicateWithRawNullTest() {
+        putAll(0, 1, 2);
+        checkValues(sqlQuery("IN (NULL, 0, 1)"), SqlColumnType.INTEGER, new Integer[]{0, 1});
+        checkValues(sqlQuery("IN (0, NULL, NULL, NULL, 2)"), SqlColumnType.INTEGER, new Integer[]{2, 0});
+        checkValues(sqlQuery("NOT IN (0, NULL, NULL, NULL, 2)"), SqlColumnType.INTEGER, new Integer[]{1});
+        checkValues(sqlQuery("NOT IN (NULL, 2, 1)"), SqlColumnType.INTEGER, new Integer[]{0});
     }
 
     @Test
     public void inPredicateWithSubQueryTest() {
         putAll(1, 2);
-        String inClause = "IN (SELECT __key FROM map)";
-        checkThrows(sqlQuery(inClause), HazelcastSqlException.class);
+        checkThrows(sqlQuery("IN (SELECT __key FROM map)"), HazelcastSqlException.class);
+        checkThrows(sqlQuery("NOT IN (SELECT __key FROM map)"), HazelcastSqlException.class);
     }
 
     @Test
-    public void notInPredicateWithShortListTest() {
-        putAll(0, 1, 3);
-        String inClause = "NOT IN (0, 1, 2)";
-        checkValues(sqlQuery(inClause), SqlColumnType.INTEGER, new Integer[]{3});
+    public void inPredicateWithDifferentTypesTest() {
+        putAll(0, 1);
+        checkValues(sqlQuery("IN (0, '1', 2)"), SqlColumnType.INTEGER, new Integer[]{0, 1});
+        checkValues(sqlQuery("IN ('0', '1', 2)"), SqlColumnType.INTEGER, new Integer[]{0, 1});
+        checkValues(sqlQuery("IN (CAST ('0' AS INTEGER), CAST ('1' AS INTEGER), 2)"), SqlColumnType.INTEGER, new Integer[]{0, 1});
     }
 
     @Ignore(value = "Should be enabled after engines merge.")
@@ -80,20 +83,6 @@ public class InPredicateIntegrationTest extends ExpressionTestSupport {
         putAll(0, 1);
         String inClause = "NOT IN (ROW(0, 0), ROW(1, 1), ROW(2, 2))";
         // TODO: write check
-    }
-
-    @Test
-    public void notInPredicateWithLongListTest() {
-        putAll(0, 1, 3);
-        String inClause = "NOT IN " + longList;
-        checkValues(sqlQuery(inClause), SqlColumnType.INTEGER, new Integer[]{3});
-    }
-
-    @Test
-    public void notInPredicateWithSubQueryTest() {
-        putAll(1, 2);
-        String inClause = "NOT IN (SELECT __key FROM map)";
-        checkThrows(sqlQuery(inClause), HazelcastSqlException.class);
     }
 
     protected void checkValues(
