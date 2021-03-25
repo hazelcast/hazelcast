@@ -43,6 +43,7 @@ public class InPredicateIntegrationTest extends ExpressionTestSupport {
     public void inPredicateWithDifferentListLengthTest() {
         putAll(0, 1, 25, 30);
         checkValues(sqlQuery("IN (0, 1, 2)"), SqlColumnType.INTEGER, new Integer[]{0, 1});
+        checkValues(sqlQuery("IN (?, ?, ?)"), SqlColumnType.INTEGER, new Integer[]{0, 1}, 0, 1, 2);
         checkValues(sqlQuery("IN " + longList), SqlColumnType.INTEGER, new Integer[]{25, 0, 1});
     }
 
@@ -50,6 +51,7 @@ public class InPredicateIntegrationTest extends ExpressionTestSupport {
     public void notInPredicateWithDifferentListLengthTest() {
         putAll(0, 1, 3);
         checkValues(sqlQuery("NOT IN (0, 1, 2)"), SqlColumnType.INTEGER, new Integer[]{3});
+        checkValues(sqlQuery("NOT IN (?, ?, ?)"), SqlColumnType.INTEGER, new Integer[]{3}, 0, 1, 2);
         checkValues(sqlQuery("NOT IN " + longList), SqlColumnType.INTEGER, new Integer[]{3});
     }
 
@@ -88,9 +90,10 @@ public class InPredicateIntegrationTest extends ExpressionTestSupport {
     protected void checkValues(
         String sql,
         SqlColumnType expectedType,
-        Object[] expectedResults
+        Object[] expectedResults,
+        Object ... params
     ) {
-        List<SqlRow> rows = execute(member, sql);
+        List<SqlRow> rows = execute(member, sql, params);
         assertEquals(expectedResults.length, rows.size());
         for (int i = 0; i < expectedResults.length; i++) {
             SqlRow row = rows.get(i);

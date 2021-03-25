@@ -18,14 +18,14 @@ package com.hazelcast.sql.impl.calcite.validate;
 
 import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference;
-import com.hazelcast.sql.impl.calcite.validate.operators.common.*;
+import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastFunction;
+import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastOperandTypeCheckerAware;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlSyntax;
-import org.apache.calcite.sql.fun.SqlInOperator;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;

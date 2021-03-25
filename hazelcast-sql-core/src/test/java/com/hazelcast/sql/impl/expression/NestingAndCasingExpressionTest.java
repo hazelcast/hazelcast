@@ -22,7 +22,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.sql.SqlOperator;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -114,12 +113,12 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
 
     @Test
     public void test_IN() {
-        check(sql("(IN (?, ?)) || (IN (?, ?)))"), 1, 1, 1, 1);
+        check(sql("(1 IN (1)) || (1 IN (1)) "));
     }
 
     @Test
     public void test_NOT_IN() {
-        check(sql("(NOT IN (?, ?)) || (NOT IN (?, ?))"), 1, 1, 1, 1);
+        check(sql("(1 NOT IN (2)) || (1 NOT IN (2))"));
     }
 
     @Test
