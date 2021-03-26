@@ -28,6 +28,7 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -60,6 +61,11 @@ public class PartitionRebalanceTest extends HazelcastTestSupport {
     @Before
     public void setup() {
         factory = createHazelcastInstanceFactory();
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void configureWithNegativeDelay() {
+        instance1 = factory.newHazelcastInstance(getConfig(-3));
     }
 
     @Test
@@ -102,6 +108,7 @@ public class PartitionRebalanceTest extends HazelcastTestSupport {
         assertTrueEventually(() -> assertSomePartitionsBelongTo(instance2), PARTITION_REBALANCE_TIMEOUT);
     }
 
+    @Ignore
     @Test
     public void rebalance_whenAutoWithDelay() {
         // this test will take > 10 seconds :(
@@ -118,6 +125,8 @@ public class PartitionRebalanceTest extends HazelcastTestSupport {
 
         // some partitions still belong to the gone member
         try {
+            // todo intentionally broken: this does not hold because we immediately promote on member leave,
+            //  then rebalance after configured repartition delay
             assertTrueAllTheTime(() -> assertSomePartitionsBelongTo(instance1, shutdownMemberAddress), PARTITION_REBALANCE_TIMEOUT);
             sleepAtLeastSeconds(PARTITION_REBALANCE_TIMEOUT);
 
@@ -209,6 +218,29 @@ public class PartitionRebalanceTest extends HazelcastTestSupport {
         // table -> these replicas are pruned and backups are promoted)
         // related: MemberMap#getMember(Address address, UUID uuid)
         assertEquals(1000, (int) sizeFuture.get());
+    }
+
+    @Test
+    public void rebalanceImmediately_afterDelayedRebalancing() {
+        // start instances with high rebalance delay
+        instance1 = factory.newHazelcastInstance(getConfig(1000));
+        getPartitionService(instance1).firstArrangement();
+
+        AtomicBoolean done = new AtomicBoolean(true);
+
+        instance2 = factory.newHazelcastInstance(getConfig(1000));
+        assertTrueEventually(() -> assertSomePartitionsBelongTo(instance2), PARTITION_REBALANCE_TIMEOUT);
+        // terminate second member
+        instance2.getLifecycleService().terminate();
+        sleepSeconds(1);
+
+        try {
+            // when member rejoins, partition rebalancing happens immediately, before configured delay
+            instance2 = factory.newHazelcastInstance(getConfig(1000));
+            assertTrueEventually(() -> assertSomePartitionsBelongTo(instance2), PARTITION_REBALANCE_TIMEOUT);
+        } finally {
+            done.set(false);
+        }
     }
 
     /** Configuration with manual rebalance mode */

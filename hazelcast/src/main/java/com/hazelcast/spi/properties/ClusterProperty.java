@@ -653,7 +653,7 @@ public final class ClusterProperty {
      * Time (in seconds) to wait before triggering automatic partition rebalancing
      * after a member leaves the cluster unexpectedly. Unexpectedly in this context
      * means that a member leaves the cluster by means other than graceful shutdown:
-     * programmatic termination (eg {@link LifecycleService#terminate()}, a
+     * programmatic termination (eg {@link LifecycleService#terminate()}), a
      * process crash or network partition.
      * Default is 0, which means rebalancing is triggered immediately.
      * Rebalancing delay is only applied when using the automatic partition

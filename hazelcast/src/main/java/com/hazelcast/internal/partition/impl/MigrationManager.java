@@ -153,6 +153,7 @@ public class MigrationManager {
      * otherwise the positive number of seconds to delay triggering
      */
     private final int autoRebalanceDelaySeconds;
+    private volatile boolean delayNextRepartitioningExecution;
     private volatile ScheduledFuture<Void> scheduledControlTaskFuture;
 
     @SuppressWarnings("checkstyle:ExecutableStatementCount")
@@ -637,13 +638,11 @@ public class MigrationManager {
         if (!autoRebalance) {
             return;
         }
-        if (autoRebalanceDelaySeconds == 0) {
-            triggerControlTask();
-        } else {
-            ExecutionService executionService = nodeEngine.getExecutionService();
-            scheduledControlTaskFuture = (ScheduledFuture<Void>) executionService.schedule(() -> triggerControlTask(),
-                    autoRebalanceDelaySeconds, TimeUnit.SECONDS);
+        if (autoRebalanceDelaySeconds > 0) {
+            System.out.println(">>> delayNextRepartitioningExecution = true");
+            delayNextRepartitioningExecution = true;
         }
+        triggerControlTask();
     }
 
     MigrationInterceptor getMigrationInterceptor() {
@@ -665,6 +664,8 @@ public class MigrationManager {
             return;
         }
         ClusterState clusterState = node.getClusterService().getClusterState();
+        // todo when active and manual rebalancing?
+        //  when active and auto+delay?
         if (!clusterState.isMigrationAllowed() && clusterState != ClusterState.IN_TRANSITION) {
             sendShutdownOperation(member.getAddress());
             return;
@@ -1641,6 +1642,18 @@ public class MigrationManager {
 
             Map<PartitionReplica, Collection<MigrationInfo>> promotions = removeUnknownMembersAndCollectPromotions();
             boolean success = promoteBackupsForMissingOwners(promotions);
+            if (delayNextRepartitioningExecution) {
+                System.out.println(">>> delayNextRepartitioningExecution was true");
+                ExecutionService executionService = nodeEngine.getExecutionService();
+                // schedule a complete execution of the control task, to ensure migration queue
+                // is cleared before triggering partition rebalancing
+                scheduledControlTaskFuture = (ScheduledFuture<Void>) executionService.schedule(() -> triggerControlTask(),
+                        autoRebalanceDelaySeconds, TimeUnit.SECONDS);
+                delayNextRepartitioningExecution = false;
+                return;
+            } else {
+                System.out.println(">>> delayNextRepartitioningExecution was false");
+            }
             partitionServiceLock.lock();
             try {
                 if (success) {
