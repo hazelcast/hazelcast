@@ -30,6 +30,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runners.Parameterized;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -72,11 +73,38 @@ public class InPredicateIntegrationTest extends ExpressionTestSupport {
     }
 
     @Test
-    public void inPredicateWithDifferentTypesTest() {
+    public void inPredicateNumberTypeTest() {
         putAll(0, 1);
         checkValues(sqlQuery("IN (0, '1', 2)"), SqlColumnType.INTEGER, new Integer[]{0, 1});
-        checkValues(sqlQuery("IN ('0', '1', 2)"), SqlColumnType.INTEGER, new Integer[]{0, 1});
+        checkValues(sqlQuery("IN ('0', 1, '2')"), SqlColumnType.INTEGER, new Integer[]{0, 1});
         checkValues(sqlQuery("IN (CAST ('0' AS INTEGER), CAST ('1' AS INTEGER), 2)"), SqlColumnType.INTEGER, new Integer[]{0, 1});
+        checkValues(sqlQuery("NOT IN (CAST ('0' AS INTEGER), CAST ('1' AS INTEGER), 2)"), SqlColumnType.INTEGER, new Integer[]{});
+    }
+
+    @Test
+    public void inPredicateStringTypeTest() {
+        putAll("abc", "bac", "cba");
+        checkValues(sqlQuery("IN ('abc', 'cba')"), SqlColumnType.VARCHAR, new String[]{"cba", "abc"});
+        checkValues(sqlQuery("IN ('abc', 'cba', 'bac')"), SqlColumnType.VARCHAR, new String[]{"cba", "abc", "bac"});
+        checkValues(sqlQuery("NOT IN ('abc', '1', 'cba')"), SqlColumnType.VARCHAR, new String[]{"bac"});
+    }
+
+    @Test
+    public void inPredicateDatesTest() {
+        LocalDate date1 = LocalDate.of(1970, 1, 1);
+        LocalDate date2 = LocalDate.of(1970, 1, 3);
+        putAll(date1, date2);
+        checkValues(sqlQuery("IN (CAST ('1970-01-01' AS DATE), CAST ('1970-01-03' AS DATE))"), SqlColumnType.DATE, new LocalDate[]{date1, date2});
+        checkValues(sqlQuery("IN (CAST ('1970-01-01' AS DATE), CAST ('1970-01-02' AS DATE))"), SqlColumnType.DATE, new LocalDate[]{date1});
+        checkValues(sqlQuery("NOT IN (CAST ('1970-01-01' AS DATE), CAST ('1970-01-02' AS DATE))"), SqlColumnType.DATE, new LocalDate[]{date2});
+    }
+
+    @Test
+    public void inPredicateWithDifferentTypesWouldFailsTest() {
+        putAll(0, 1, "abc", LocalDate.of(1970, 1, 1));
+        checkThrows(sqlQuery("IN ('1970-01-01', 1, '2')"), HazelcastSqlException.class);
+        checkThrows(sqlQuery("IN (0, 1, 'bac')"), HazelcastSqlException.class);
+        checkThrows(sqlQuery(sqlQuery("IN (CAST ('1970-01-01' AS DATE), 1, CAST ('1970-01-02' AS DATE))")), HazelcastSqlException.class);
     }
 
     @Ignore(value = "Should be enabled after engines merge.")
@@ -97,7 +125,7 @@ public class InPredicateIntegrationTest extends ExpressionTestSupport {
         assertEquals(expectedResults.length, rows.size());
         for (int i = 0; i < expectedResults.length; i++) {
             SqlRow row = rows.get(i);
-            assertEquals(expectedType, row.getMetadata().getColumn(0).getType());
+            assertEquals(expectedType, row.getMetadata().getColumn(1).getType());
             assertEquals(expectedResults[i], row.getObject(1));
         }
     }

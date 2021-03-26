@@ -52,7 +52,6 @@ public class HazelcastInPredicate extends SqlInOperator implements HazelcastOper
     public static final HazelcastInPredicate NOT_IN = new HazelcastInPredicate("NOT IN", true);
     protected static final HazelcastInPredicateResource HZRESOURCE = Resources.create(HazelcastInPredicateResource.class);
 
-    // Copied from SqlInOperator
     private final boolean negated;
 
     public HazelcastInPredicate(String name, boolean negated) {
@@ -65,6 +64,7 @@ public class HazelcastInPredicate extends SqlInOperator implements HazelcastOper
         return negated;
     }
 
+    // Copied from SqlInOperator
     @Override
     public RelDataType deriveType(SqlValidator validator, SqlValidatorScope scope, SqlCall call) {
         final List<SqlNode> operands = call.getOperandList();
