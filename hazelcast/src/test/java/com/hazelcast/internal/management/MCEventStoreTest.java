@@ -18,7 +18,6 @@ package com.hazelcast.internal.management;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.hazelcast.internal.management.dto.MCEventDTO;
-import com.hazelcast.internal.management.events.Event;
 import com.hazelcast.internal.metrics.managementcenter.ConcurrentArrayRingbuffer;
 import com.hazelcast.logging.NoLogFactory;
 import com.hazelcast.test.HazelcastParallelClassRunner;
