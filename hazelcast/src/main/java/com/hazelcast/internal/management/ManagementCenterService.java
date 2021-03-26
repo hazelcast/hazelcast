@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.dto.ClientBwListDTO;
+import com.hazelcast.internal.management.dto.MCEventDTO;
 import com.hazelcast.internal.management.events.Event;
 import com.hazelcast.internal.metrics.managementcenter.ConcurrentArrayRingbuffer;
 import com.hazelcast.internal.util.executor.ExecutorType;
@@ -41,6 +42,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.LongSupplier;
 
 import static com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
+import static java.util.Collections.emptyList;
 
 /**
  * ManagementCenterService is responsible for sending statistics data to the Management Center.
@@ -70,17 +72,20 @@ public class ManagementCenterService {
         }
 
         static final long MC_EVENTS_WINDOW_NANOS = TimeUnit.SECONDS.toNanos(30);
+        static final long MC_DISAPPEARED_INTERVAL_NANOS = TimeUnit.SECONDS.toNanos(120);
         private final LongSupplier nanoClock;
         private volatile long lastMCEventsPollTimestamp;
         private volatile long lastCleanupTimestamp;
         private final ConcurrentMap<UUID, LastPollRecord> lastPollRecordPerMC = new ConcurrentHashMap<>();
-        private final ConcurrentArrayRingbuffer<Event> mcEvents;
+        private final ConcurrentArrayRingbuffer<MCEventDTO> mcEvents;
+        private final ILogger logger;
 
-        MCEventStore(LongSupplier nanoClock, ConcurrentArrayRingbuffer<Event> mcEvents) {
+        MCEventStore(LongSupplier nanoClock, ConcurrentArrayRingbuffer<MCEventDTO> mcEvents, ILogger logger) {
             this.nanoClock = nanoClock;
             this.lastMCEventsPollTimestamp = nanoClock.getAsLong();
             this.lastCleanupTimestamp = this.lastMCEventsPollTimestamp;
             this.mcEvents = mcEvents;
+            this.logger = logger;
         }
 
         void log(Event event) {
@@ -88,13 +93,13 @@ public class ManagementCenterService {
                 // ignore event and clear the queue if the last poll happened a while ago
                 onMCEventWindowExceeded();
             } else {
-                mcEvents.add(event);
+                mcEvents.add(MCEventDTO.fromEvent(event));
                 cleanUpLastAccessRecords();
             }
         }
 
-        private static boolean isOutOfTimeWindow(long nowInMillis, long subjectTimestampInMillis) {
-            return nowInMillis - subjectTimestampInMillis > MC_EVENTS_WINDOW_NANOS;
+        private static boolean isOutOfTimeWindow(long nowInMillis, long subjectTimestampInMillis, long timeWindowLength) {
+            return nowInMillis - subjectTimestampInMillis > timeWindowLength;
         }
 
         /**
@@ -106,10 +111,11 @@ public class ManagementCenterService {
          */
         private void cleanUpLastAccessRecords() {
             long now = nanoClock.getAsLong();
-            if (!isOutOfTimeWindow(now, lastCleanupTimestamp)) {
+            if (!isOutOfTimeWindow(now, lastCleanupTimestamp, MC_EVENTS_WINDOW_NANOS)) {
                 return;
             }
-            lastPollRecordPerMC.entrySet().removeIf(entry -> isOutOfTimeWindow(now, entry.getValue().lastAccessTime));
+            lastPollRecordPerMC.entrySet()
+                    .removeIf(entry -> isOutOfTimeWindow(now, entry.getValue().lastAccessTime, MC_DISAPPEARED_INTERVAL_NANOS));
             lastCleanupTimestamp = now;
         }
 
@@ -123,7 +129,7 @@ public class ManagementCenterService {
          * @return the events which were added to the queue since this MC last polled, or all known events if the MC polls for the
          * first time.
          */
-        public List<Event> pollMCEvents(UUID mcClientUuid) {
+        public List<MCEventDTO> pollMCEvents(UUID mcClientUuid) {
             lastMCEventsPollTimestamp = nanoClock.getAsLong();
             LastPollRecord lastPollRecord = lastPollRecordPerMC.get(mcClientUuid);
             long sequence;
@@ -132,9 +138,14 @@ public class ManagementCenterService {
             } else {
                 sequence = lastPollRecord.nextSequence;
             }
-            ConcurrentArrayRingbuffer.RingbufferSlice<Event> slice = mcEvents.copyFrom(sequence);
-            lastPollRecordPerMC.put(mcClientUuid, new LastPollRecord(lastMCEventsPollTimestamp, slice.nextSequence()));
-            return slice.elements();
+            try {
+                ConcurrentArrayRingbuffer.RingbufferSlice<MCEventDTO> slice = mcEvents.copyFrom(sequence);
+                lastPollRecordPerMC.put(mcClientUuid, new LastPollRecord(lastMCEventsPollTimestamp, slice.nextSequence()));
+                return slice.elements();
+            } catch (IllegalArgumentException e) {
+                logger.severe("failed to read events for MC " + mcClientUuid + " from sequence " + sequence, e);
+                return emptyList();
+            }
         }
     }
 
@@ -170,7 +181,7 @@ public class ManagementCenterService {
         this.commandHandler = new ConsoleCommandHandler(instance);
         this.bwListConfigHandler = new ClientBwListConfigHandler(instance.node.clientEngine);
         this.eventStore = new MCEventStore(clock,
-                new ConcurrentArrayRingbuffer<>(Math.max(MIN_EVENT_QUEUE_CAPACITY, partitionCount)));
+                new ConcurrentArrayRingbuffer<>(Math.max(MIN_EVENT_QUEUE_CAPACITY, partitionCount)), logger);
         registerExecutor();
     }
 
@@ -249,7 +260,7 @@ public class ManagementCenterService {
      * @return polled events
      */
     @Nonnull
-    public List<Event> pollMCEvents(UUID clientUuid) {
+    public List<MCEventDTO> pollMCEvents(UUID clientUuid) {
         return eventStore.pollMCEvents(clientUuid);
     }
 

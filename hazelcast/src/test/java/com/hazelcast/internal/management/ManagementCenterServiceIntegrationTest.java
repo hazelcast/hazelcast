@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.ParseException;
+import com.hazelcast.internal.management.dto.MCEventDTO;
 import com.hazelcast.internal.management.events.Event;
 import com.hazelcast.internal.management.events.EventMetadata;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -113,9 +114,9 @@ public class ManagementCenterServiceIntegrationTest
         mcs.log(new TestEvent());
         mcs.log(new TestEvent());
 
-        List<Event> actualEvents = mcs.pollMCEvents(MC_1_UUID);
+        List<MCEventDTO> actualEvents = mcs.pollMCEvents(MC_1_UUID);
         assertEquals(3, actualEvents.size());
-        assertEquals(expectedEvent, actualEvents.get(0));
+        assertEquals(MCEventDTO.fromEvent(expectedEvent), actualEvents.get(0));
     }
 
     @Test
@@ -163,7 +164,7 @@ public class ManagementCenterServiceIntegrationTest
 
         @Override
         public JsonObject toJson() {
-            return null;
+            return new JsonObject();
         }
 
     }

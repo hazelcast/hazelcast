@@ -17,8 +17,10 @@
 package com.hazelcast.internal.management;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.hazelcast.internal.management.dto.MCEventDTO;
 import com.hazelcast.internal.management.events.Event;
 import com.hazelcast.internal.metrics.managementcenter.ConcurrentArrayRingbuffer;
+import com.hazelcast.logging.NoLogFactory;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -63,7 +65,7 @@ public class MCEventStoreTest {
 
     static final UUID MC_3_UUID = UUID.fromString("ec83e345-7e4a-4a46-b049-0c34dd201b18");
 
-    private ConcurrentArrayRingbuffer<Event> queue;
+    private ConcurrentArrayRingbuffer<MCEventDTO> queue;
 
     private ManagementCenterService.MCEventStore eventStore;
 
@@ -86,7 +88,7 @@ public class MCEventStoreTest {
     public void before() {
         clock = new FakeClock();
         queue = new ConcurrentArrayRingbuffer<>(1000);
-        eventStore = new ManagementCenterService.MCEventStore(clock, queue);
+        eventStore = new ManagementCenterService.MCEventStore(clock, queue, new NoLogFactory().getLogger(""));
     }
 
     @Test
@@ -175,7 +177,7 @@ public class MCEventStoreTest {
     }
 
     @Test
-    public void disconnectRecognized_after30secInactivity() {
+    public void disconnectRecognized_after120secInactivity() {
         inNextMilli(() -> {
             assertPolledEventCount(0, MC_1_UUID);
             assertPolledEventCount(0, MC_2_UUID);
@@ -183,17 +185,29 @@ public class MCEventStoreTest {
         });
         logEvent();
         assertPolledEventCount(1, MC_3_UUID); // reading if previous event noted, nextSequence incremented
-        clock.now += TimeUnit.SECONDS.toNanos(15);
+        clock.now += TimeUnit.SECONDS.toNanos(30);
         inNextMilli(() -> {
             assertPolledEventCount(1, MC_1_UUID);
             assertPolledEventCount(1, MC_2_UUID);
         });
-        clock.now += TimeUnit.SECONDS.toNanos(16);
+        logEvent();
+        clock.now += TimeUnit.SECONDS.toNanos(30);
+        inNextMilli(() -> {
+            assertPolledEventCount(1, MC_1_UUID);
+            assertPolledEventCount(1, MC_2_UUID);
+        });
+        clock.now += TimeUnit.SECONDS.toNanos(30);
+        inNextMilli(() -> {
+            assertPolledEventCount(0, MC_1_UUID);
+            assertPolledEventCount(0, MC_2_UUID);
+        });
+        clock.now += TimeUnit.SECONDS.toNanos(30);
         logEvent();
         inNextMilli(() -> {
             assertPolledEventCount(1, MC_1_UUID);
             assertPolledEventCount(1, MC_2_UUID);
-            assertPolledEventCount(2, MC_3_UUID); // 30sec passed since last read, previous nextSequence forgotten
+            // 120sec passed since last read, previous nextSequence forgotten, therefore all 3 events are logged
+            assertPolledEventCount(3, MC_3_UUID);
         });
     }
 
