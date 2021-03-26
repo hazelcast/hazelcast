@@ -29,7 +29,7 @@ import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastDescOpera
 import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastUnaryOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastAndOrPredicate;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastComparisonPredicate;
-import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastInPredicate;
+import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastInOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastIsTrueFalseNullPredicate;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastNotPredicate;
 import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastConcatOperator;
@@ -82,8 +82,8 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
     public static final SqlBinaryOperator AND = HazelcastAndOrPredicate.AND;
     public static final SqlBinaryOperator OR = HazelcastAndOrPredicate.OR;
     public static final SqlPrefixOperator NOT = new HazelcastNotPredicate();
-    public static final SqlBinaryOperator IN = HazelcastInPredicate.IN;
-    public static final SqlBinaryOperator NOT_IN = HazelcastInPredicate.NOT_IN;
+    public static final SqlBinaryOperator IN = HazelcastInOperator.IN;
+    public static final SqlBinaryOperator NOT_IN = HazelcastInOperator.NOT_IN;
 
     //#endregion
 
@@ -225,7 +225,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
                 SqlBasicCall basicCall = (SqlBasicCall) call;
                 SqlOperator operator = basicCall.getOperator();
 
-                // Remove raw NULL from right-side operands list AST. Otherwise, we ignore raw NULL.
+                // Remove raw NULL from the right-hand operand if it's a list. We ignore raw NULL.
                 if (operator.getKind() == SqlKind.IN || operator.getKind() == SqlKind.NOT_IN) {
                     List<SqlNode> operandList = call.getOperandList();
 
@@ -265,7 +265,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
                     continue;
                 }
                 list.add(node);
-        }
+            }
             return list;
         }
 

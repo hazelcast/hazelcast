@@ -16,11 +16,13 @@
 
 package com.hazelcast.sql.impl.calcite.validate.types;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rel.type.RelDataTypeFactoryImpl;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlCall;
@@ -38,6 +40,7 @@ import org.apache.calcite.sql.SqlUpdate;
 import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.type.SqlTypeFamily;
+import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.type.SqlTypeUtil;
 import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.sql.validate.implicit.TypeCoercionImpl;
@@ -109,11 +112,6 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
         } else {
             return HazelcastSqlOperatorTable.CAST.createCall(SqlParserPos.ZERO, node, targetTypeSpec);
         }
-    }
-
-    @Override
-    protected boolean coerceColumnType(SqlValidatorScope scope, SqlNodeList nodeList, int index, RelDataType targetType) {
-        throw new UnsupportedOperationException("Should not be called");
     }
 
     private boolean requiresCast(SqlValidatorScope scope, SqlNode node, RelDataType to) {
@@ -231,11 +229,6 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
     }
 
     @Override
-    public boolean inOperationCoercion(SqlCallBinding binding) {
-        throw new UnsupportedOperationException("Should not be called");
-    }
-
-    @Override
     public boolean builtinFunctionCoercion(
         SqlCallBinding binding,
         List<RelDataType> operandTypes,
@@ -339,5 +332,50 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
             default:
                 return rowTypeCoercion(sourceScope, query, columnIndex, targetType);
         }
+    }
+
+    // copied from TypeCoercionImpl
+    @SuppressWarnings({"checkstyle:NPathComplexity", "checkstyle:CyclomaticComplexity"})
+    @Override
+    protected boolean needToCast(SqlValidatorScope scope, SqlNode node, RelDataType toType) {
+        RelDataType fromType = validator.deriveType(scope, node);
+        if (fromType == null) {
+            return false;
+        }
+
+        // This prevents that we cast a JavaType to normal RelDataType.
+        if (fromType instanceof RelDataTypeFactoryImpl.JavaType
+                && toType.getSqlTypeName() == fromType.getSqlTypeName()) {
+            return false;
+        }
+
+        // Do not make a cast when we don't know specific type (ANY) of the origin node.
+        if (toType.getSqlTypeName() == SqlTypeName.ANY || fromType.getSqlTypeName() == SqlTypeName.ANY) {
+            return false;
+        }
+
+        // No need to cast between char and varchar.
+        if (SqlTypeUtil.isCharacter(toType) && SqlTypeUtil.isCharacter(fromType)) {
+            return false;
+        }
+
+        // No need to cast if the source type precedence list
+        // contains target type. i.e. do not cast from
+        // tinyint to int or int to bigint.
+        if (fromType.getPrecedenceList().containsType(toType)
+                && SqlTypeUtil.isIntType(fromType)
+                && SqlTypeUtil.isIntType(toType)) {
+            return false;
+        }
+
+        // Implicit type coercion does not handle nullability.
+        if (SqlTypeUtil.equalSansNullability(factory, fromType, toType)) {
+            return false;
+        }
+        // Should keep sync with rules in SqlTypeCoercionRule.
+        if (SqlTypeUtil.canCastFrom(toType, fromType, true)) {
+            throw new HazelcastException("Can't cast from " + toType.getSqlTypeName() + "to " + fromType.getSqlTypeName());
+        }
+        return true;
     }
 }

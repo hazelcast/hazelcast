@@ -23,7 +23,6 @@ import com.hazelcast.sql.impl.calcite.validate.HazelcastResources;
 import com.hazelcast.sql.impl.calcite.validate.literal.Literal;
 import com.hazelcast.sql.impl.calcite.validate.literal.LiteralUtils;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference;
-import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastInPredicate;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.converter.Converter;
@@ -44,12 +43,13 @@ import org.apache.calcite.sql.SqlIntervalQualifier;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
-import org.apache.calcite.sql.parser.SqlParserPos;
-import org.apache.calcite.sql.type.SqlTypeFamily;
 import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlOperator;
+import org.apache.calcite.sql.fun.SqlInOperator;
 import org.apache.calcite.sql.fun.SqlRowOperator;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
+import org.apache.calcite.sql.parser.SqlParserPos;
+import org.apache.calcite.sql.type.SqlTypeFamily;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql.validate.SqlValidatorException;
@@ -57,7 +57,6 @@ import org.apache.calcite.sql2rel.SqlRexConvertletTable;
 import org.apache.calcite.sql2rel.SqlToRelConverter;
 import org.apache.calcite.util.Pair;
 import org.apache.calcite.util.TimeString;
-import org.apache.calcite.util.Util;
 
 import java.math.BigDecimal;
 import java.time.LocalTime;
@@ -84,8 +83,6 @@ import static org.apache.calcite.sql.type.SqlTypeName.TIME;
  * literals and casts with more precise types assigned during the validation.
  */
 public class HazelcastSqlToRelConverter extends SqlToRelConverter {
-    /** See {@link #convertCall(SqlNode, Blackboard)} for more information. */
-
     private static final SqlIntervalQualifier INTERVAL_YEAR_MONTH = new SqlIntervalQualifier(YEAR, MONTH, SqlParserPos.ZERO);
     private static final SqlIntervalQualifier INTERVAL_DAY_SECOND = new SqlIntervalQualifier(DAY, SECOND, SqlParserPos.ZERO);
 
@@ -249,10 +246,11 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
                 blackboard,
                 leftKeys,
                 valueList,
-                (HazelcastInPredicate) call.getOperator()
+                (SqlInOperator) call.getOperator()
             );
         }
-        throw Util.needToImplement("Hazelcast SQL engine doesn't support subqueries.");
+        throw QueryException.error(SqlErrorCode.GENERIC,
+                "Hazelcast SQL engine doesn't support subqueries within IN operator.");
     }
 
     /**
@@ -328,8 +326,9 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
         final Blackboard bb,
         final List<RexNode> leftKeys,
         SqlNodeList valuesList,
-        HazelcastInPredicate op) {
-        final List<RexNode> comparisons = constructComparisons(bb, leftKeys, valuesList, op);
+        SqlInOperator op
+    ) {
+        final List<RexNode> comparisons = constructComparisons(bb, leftKeys, valuesList);
 
         switch (op.kind) {
             case ALL:
@@ -352,8 +351,7 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
     private List<RexNode> constructComparisons(
         Blackboard bb,
         List<RexNode> leftKeys,
-        SqlNodeList valuesList,
-        HazelcastInPredicate op) {
+        SqlNodeList valuesList) {
         final List<RexNode> comparisons = new ArrayList<>();
 
         for (SqlNode rightValues : valuesList) {

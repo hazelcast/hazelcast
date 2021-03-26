@@ -46,27 +46,20 @@ import java.util.List;
 
 import static org.apache.calcite.util.Static.RESOURCE;
 
-public class HazelcastInPredicate extends SqlInOperator implements HazelcastOperandTypeCheckerAware {
+public class HazelcastInOperator extends SqlInOperator implements HazelcastOperandTypeCheckerAware {
 
-    public static final HazelcastInPredicate IN = new HazelcastInPredicate("IN", false);
-    public static final HazelcastInPredicate NOT_IN = new HazelcastInPredicate("NOT IN", true);
+    public static final HazelcastInOperator IN = new HazelcastInOperator("IN", false);
+    public static final HazelcastInOperator NOT_IN = new HazelcastInOperator("NOT IN", true);
     protected static final HazelcastInPredicateResource HZRESOURCE = Resources.create(HazelcastInPredicateResource.class);
 
-    private final boolean negated;
-
-    public HazelcastInPredicate(String name, boolean negated) {
-
+    public HazelcastInOperator(String name, boolean negated) {
         super(name, negated ? SqlKind.NOT_IN : SqlKind.IN);
-        this.negated = negated;
     }
 
-    public boolean isNegated() {
-        return negated;
-    }
-
-    // Copied from SqlInOperator
-    @Override
-    public RelDataType deriveType(SqlValidator validator, SqlValidatorScope scope, SqlCall call) {
+    public RelDataType deriveType(
+            SqlValidator validator,
+            SqlValidatorScope scope,
+            SqlCall call) {
         final List<SqlNode> operands = call.getOperandList();
         assert operands.size() == 2;
         final SqlNode left = operands.get(0);
@@ -88,24 +81,38 @@ public class HazelcastInPredicate extends SqlInOperator implements HazelcastOper
             }
             rightType = typeFactory.leastRestrictive(rightTypeList);
 
+            // First check that the expressions in the IN list are compatible
+            // with each other. Same rules as the VALUES operator (per
+            // SQL:2003 Part 2 Section 8.4, <in predicate>).
             if (null == rightType && validator.config().typeCoercionEnabled()) {
                 // Do implicit type cast if it is allowed to.
                 rightType = validator.getTypeCoercion().getWiderTypeFor(rightTypeList, true);
             }
             if (null == rightType) {
-                throw validator.newValidationError(right, RESOURCE.incompatibleTypesInList());
+                throw validator.newValidationError(right,
+                        RESOURCE.incompatibleTypesInList());
             }
 
             // Record the RHS type for use by SqlToRelConverter.
             ((SqlValidatorImpl) validator).setValidatedNodeType(nodeList, rightType);
         } else {
             // We do not support subquerying for IN operator.
-            // rightType = validator.deriveType(scope, right);
             throw validator.newValidationError(call, HZRESOURCE.noSubQueryAllowed());
         }
-        SqlCallBinding callBinding = new SqlCallBinding(validator, scope, call);
-        HazelcastCallBinding hazelcastCallBinding = prepareBinding(callBinding);
+        HazelcastCallBinding hazelcastCallBinding = prepareBinding(new SqlCallBinding(validator, scope, call));
+        // Coerce type first.
+        if (hazelcastCallBinding.isTypeCoercionEnabled()) {
+            boolean coerced = hazelcastCallBinding.getValidator().getTypeCoercion()
+                    .inOperationCoercion(hazelcastCallBinding);
+            if (coerced) {
+                // Update the node data type if we coerced any type.
+                leftType = validator.deriveType(scope, call.operand(0));
+                rightType = validator.deriveType(scope, call.operand(1));
+            }
+        }
 
+        // Now check that the left expression is compatible with the
+        // type of the list. Same strategy as the '=' operator.
         // Normalize the types on both sides to be row types
         // for the purposes of compatibility-checking.
         RelDataType leftRowType = SqlTypeUtil.promoteToRowType(typeFactory, leftType, null);
@@ -117,7 +124,7 @@ public class HazelcastInPredicate extends SqlInOperator implements HazelcastOper
         if (!checker.checkOperandTypes(
                 new ExplicitOperatorBinding(
                         hazelcastCallBinding,
-                        ImmutableList.of(leftRowType, rightRowType)), callBinding)) {
+                        ImmutableList.of(leftRowType, rightRowType)), hazelcastCallBinding)) {
             throw validator.newValidationError(call,
                     RESOURCE.incompatibleValueType(SqlStdOperatorTable.IN.getName()));
         }
@@ -125,7 +132,8 @@ public class HazelcastInPredicate extends SqlInOperator implements HazelcastOper
         return typeFactory.createTypeWithNullability(
                 typeFactory.createSqlType(SqlTypeName.BOOLEAN),
                 anyNullable(leftRowType.getFieldList())
-                        || anyNullable(rightRowType.getFieldList()));
+                        || anyNullable(rightRowType.getFieldList())
+        );
     }
 
     private static boolean anyNullable(List<RelDataTypeField> fieldList) {

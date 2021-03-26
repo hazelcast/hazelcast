@@ -37,7 +37,7 @@ import static org.junit.Assert.assertEquals;
 
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class InPredicateIntegrationTest extends ExpressionTestSupport {
+public class InOperatorIntegrationTest extends ExpressionTestSupport {
     protected String longList = "(0, 1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 25, 28, 31, 35)";
 
     @Test
@@ -46,6 +46,11 @@ public class InPredicateIntegrationTest extends ExpressionTestSupport {
         checkValues(sqlQuery("IN (0, 1, 2)"), SqlColumnType.INTEGER, new Integer[]{0, 1});
         checkValues(sqlQuery("IN (?, ?, ?)"), SqlColumnType.INTEGER, new Integer[]{0, 1}, 0, 1, 2);
         checkValues(sqlQuery("IN " + longList), SqlColumnType.INTEGER, new Integer[]{25, 0, 1});
+
+        // Another way to call IN operator
+        // TODO : work in progress
+//        checkValues("SELECT this FROM map WHERE NOT (this IN (NULL, 2, 1))", SqlColumnType.INTEGER, new Integer[]{});
+//        checkValues("SELECT this FROM map WHERE true <> (this IN (NULL, 2, 1))", SqlColumnType.INTEGER, new Integer[]{});
     }
 
     @Test
@@ -73,20 +78,46 @@ public class InPredicateIntegrationTest extends ExpressionTestSupport {
     }
 
     @Test
-    public void inPredicateNumberTypeTest() {
-        putAll(0, 1);
-        checkValues(sqlQuery("IN (0, '1', 2)"), SqlColumnType.INTEGER, new Integer[]{0, 1});
-        checkValues(sqlQuery("IN ('0', 1, '2')"), SqlColumnType.INTEGER, new Integer[]{0, 1});
-        checkValues(sqlQuery("IN (CAST ('0' AS INTEGER), CAST ('1' AS INTEGER), 2)"), SqlColumnType.INTEGER, new Integer[]{0, 1});
-        checkValues(sqlQuery("NOT IN (CAST ('0' AS INTEGER), CAST ('1' AS INTEGER), 2)"), SqlColumnType.INTEGER, new Integer[]{});
+    public void inPredicateLongNumericTypeTest() {
+        putAll(0L, 1L, Long.MAX_VALUE - 1);
+        checkValues(sqlQuery("IN (0, 1, 2)"), SqlColumnType.BIGINT, new Long[]{0L, 1L});
+        checkValues(sqlQuery("NOT IN (0, 1, 2)"), SqlColumnType.BIGINT, new Long[]{Long.MAX_VALUE - 1});
+        checkValues(sqlQuery("IN (CAST ('0' AS INTEGER), CAST ('1' AS INTEGER), 2)"), SqlColumnType.BIGINT,
+                new Long[]{0L, 1L});
+        checkValues(sqlQuery("NOT IN (CAST ('0' AS INTEGER), CAST ('1' AS INTEGER), 2)"), SqlColumnType.BIGINT,
+                new Long[]{Long.MAX_VALUE - 1});
+    }
+
+    @Test
+    public void inPredicateNumericTypesTest() {
+        putAll(0, 1, (int) Byte.MAX_VALUE, Short.MAX_VALUE - 1);
+        checkValues(sqlQuery("IN (0, 1, 2)"), SqlColumnType.INTEGER, new Integer[]{0, 1});
+        checkValues(sqlQuery("NOT IN (0, 1, 2)"), SqlColumnType.INTEGER,
+                new Integer[]{(int) Byte.MAX_VALUE, Short.MAX_VALUE - 1});
+        checkValues(sqlQuery("IN (CAST ('0' AS INTEGER), CAST ('1' AS TINYINT), 2)"), SqlColumnType.INTEGER,
+                new Integer[]{0, 1});
+        checkValues(sqlQuery("NOT IN (CAST ('0' AS INTEGER), CAST ('1' AS INTEGER), 2, (CAST (32766 AS SMALLINT)))"),
+                SqlColumnType.INTEGER,
+                new Integer[]{(int) Byte.MAX_VALUE});
+
+        checkThrows(sqlQuery("IN ('1970-01-01', 1, '2')"), HazelcastSqlException.class);
+        checkThrows(sqlQuery("IN ('abc', TRUE, 0)"), HazelcastSqlException.class);
+        checkThrows(sqlQuery("NOT IN ('abc', TRUE, CAST ('1970-01-01' AS DATE)"), HazelcastSqlException.class);
+        checkThrows(sqlQuery(sqlQuery("IN (CAST ('1970-01-01' AS DATE), 1, CAST ('1970-01-02' AS DATE))")), HazelcastSqlException.class);
     }
 
     @Test
     public void inPredicateStringTypeTest() {
-        putAll("abc", "bac", "cba");
+        putAll("abc", "bac", "cba", "20");
         checkValues(sqlQuery("IN ('abc', 'cba')"), SqlColumnType.VARCHAR, new String[]{"cba", "abc"});
         checkValues(sqlQuery("IN ('abc', 'cba', 'bac')"), SqlColumnType.VARCHAR, new String[]{"cba", "abc", "bac"});
-        checkValues(sqlQuery("NOT IN ('abc', '1', 'cba')"), SqlColumnType.VARCHAR, new String[]{"bac"});
+        checkValues(sqlQuery("NOT IN ('abc', '1', 'cba')"), SqlColumnType.VARCHAR, new String[]{"bac", "20"});
+
+        checkThrows(sqlQuery("IN (0, 'CAST ('1970-01-01' AS DATE)', 1, '2')"), HazelcastSqlException.class);
+        checkThrows(sqlQuery("IN ('abc', 0, 1, 'bac')"), HazelcastSqlException.class);
+        checkThrows(sqlQuery("IN ('abc', TRUE, 0)"), HazelcastSqlException.class);
+        checkThrows(sqlQuery("NOT IN ('abc', TRUE, CAST ('1970-01-01' AS DATE)"), HazelcastSqlException.class);
+        checkThrows(sqlQuery(sqlQuery("IN (CAST ('1970-01-01' AS DATE), 1, CAST ('1970-01-02' AS DATE))")), HazelcastSqlException.class);
     }
 
     @Test
@@ -97,36 +128,34 @@ public class InPredicateIntegrationTest extends ExpressionTestSupport {
         checkValues(sqlQuery("IN (CAST ('1970-01-01' AS DATE), CAST ('1970-01-03' AS DATE))"), SqlColumnType.DATE, new LocalDate[]{date1, date2});
         checkValues(sqlQuery("IN (CAST ('1970-01-01' AS DATE), CAST ('1970-01-02' AS DATE))"), SqlColumnType.DATE, new LocalDate[]{date1});
         checkValues(sqlQuery("NOT IN (CAST ('1970-01-01' AS DATE), CAST ('1970-01-02' AS DATE))"), SqlColumnType.DATE, new LocalDate[]{date2});
-    }
 
-    @Test
-    public void inPredicateWithDifferentTypesWouldFailsTest() {
-        putAll(0, 1, "abc", LocalDate.of(1970, 1, 1));
         checkThrows(sqlQuery("IN ('1970-01-01', 1, '2')"), HazelcastSqlException.class);
         checkThrows(sqlQuery("IN (0, 1, 'bac')"), HazelcastSqlException.class);
+        checkThrows(sqlQuery("IN ('abc', TRUE, 0)"), HazelcastSqlException.class);
+        checkThrows(sqlQuery("NOT IN ('abc', TRUE, CAST ('1970-01-01' AS DATE)"), HazelcastSqlException.class);
         checkThrows(sqlQuery(sqlQuery("IN (CAST ('1970-01-01' AS DATE), 1, CAST ('1970-01-02' AS DATE))")), HazelcastSqlException.class);
     }
 
     @Ignore(value = "Should be enabled after engines merge.")
     @Test
-    public void notInPredicateRowWithShortListTest() {
+    public void inPredicateRowsTest() {
         putAll(0, 1);
-        String inClause = "NOT IN (ROW(0, 0), ROW(1, 1), ROW(2, 2))";
+        String inClause = "IN (ROW(0, 0), ROW(1, 1), ROW(2, 2))";
         // TODO: write check
     }
 
     protected void checkValues(
-        String sql,
-        SqlColumnType expectedType,
-        Object[] expectedResults,
-        Object ... params
+            String sql,
+            SqlColumnType expectedType,
+            Object[] expectedResults,
+            Object... params
     ) {
         List<SqlRow> rows = execute(member, sql, params);
         assertEquals(expectedResults.length, rows.size());
         for (int i = 0; i < expectedResults.length; i++) {
             SqlRow row = rows.get(i);
-            assertEquals(expectedType, row.getMetadata().getColumn(1).getType());
-            assertEquals(expectedResults[i], row.getObject(1));
+            assertEquals(expectedType, row.getMetadata().getColumn(0).getType());
+            assertEquals(expectedResults[i], row.getObject(0));
         }
     }
 
@@ -135,10 +164,10 @@ public class InPredicateIntegrationTest extends ExpressionTestSupport {
     }
 
     private String sqlQuery(String inClause) {
-        return "SELECT * FROM map WHERE this " + inClause;
+        return "SELECT this FROM map WHERE this " + inClause;
     }
 
     private String sqlRowQuery(String inClause) {
-        return "SELECT * FROM map WHERE (key, __this) " + inClause;
+        return "SELECT this FROM map WHERE (key, __this) " + inClause;
     }
 }
