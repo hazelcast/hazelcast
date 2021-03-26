@@ -1,0 +1,6 @@
+hazelcast:
+  map:
+    trades:
+      event-journal:
+        enabled: true
+        capacity: 100000

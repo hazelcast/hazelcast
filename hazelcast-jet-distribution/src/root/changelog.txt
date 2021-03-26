@@ -1,0 +1,291 @@
+** Hazelcast Jet 4.4 **
+
+* @hhromic improved the naming of source and sink stages across different
+ connectors, bringing them all in line with the same convention `xSource`
+ / `xSink`
+* @TomaszGaweda added the `pipeline.isEmpty()` method that tells whether
+  it contains any stage
+* SQL Beta: submit jobs to Jet from the command-line SQL shell.
+* Unified API to create sources and sinks from file-like resources: local
+  filesystem, Amazon S3, Azure Blob Storage and Data Lake Storage, Google
+  Cloud Storage
+* Amazon Kinesis connector
+* Prevent event reordering: by default Jet reorders data for performance,
+  now you can disable this to get strict event order where you need it.
+* @TomaszGaweda added the `jet.imdg.version.mismatch.check.disabled`
+  config property that disables the enforcement of the exact IMDG
+  dependency version. This allows adding IMDG quick fixes to the existing
+  Jet release.
+* New packaging: download either the full package with all the extensions
+  enabled, or the minimal package and separately download the extensions
+  you want.
+* Improved the behavior of `jet submit`: now it waits for the job to
+  start and prints a message about it.
+* Improved the error message when using a Python function but Python
+  is not installed.
+* Improved the performance of the Kafka source by fine-tuning some
+  timeouts.
+
+
+** Hazelcast Jet 4.3 **
+
+* @MohamedMandouh implemented distributed sorting: `BatchStage.sort()`.
+* @guenter-hesse added a high-throughput source with precisely controlled
+  timing, to be used to benchmark Jet's throughput and latency.
+* We added the ability for Jet to suspend an unbounded, fault-tolerant job
+  when it fails due to an exception in the pipeline code. This allows you
+  to diagnose the problem, remove its cause, and resume the pipeline without
+  data loss.
+* We have improved the consistency of reconnect behaviour across CDC sources and
+  introduced a uniform API to configure the reconnect strategy.
+* We improved the behavior of streaming pipelines based on ingestion time: a
+  low event rate in any partition of the source used to stall the progress,
+  now the watermark advances even without events.
+* We moved the `Pipeline` to `DAG` transformation from the client to the server,
+  in preparation for the upcoming feature of preventing event reordering in the
+  pipeline.
+
+** Hazelcast Jet 4.2 **
+
+* We added Change Data Capture (CDC) support for PostgreSQL and MySql. New
+  connectors use Debezium to provide a high-level API for processing the
+  stream of changes from relational databases. A new map sink can be used to
+  automatically keep the map in-sync with changes from the database.
+* We added new source and sink connectors for Elasticsearch 5, 6 and 7
+  with support for slicing and co-located reading for maximum read performance
+  and extended Elasticsearch's client retry mechanism for reliable writing.
+* We improved JSON support through a new file source which can read JSON files
+  directly and also added built-in Jet methods for parsing and mapping JSON strings.
+* We introduced the .rebalance() operator which can be used for distributing items
+  across the cluster.
+* We made some improvements to Jet startup scripts:
+  - You can now use the PROMETHEUS_PORT to start Jet with prometheus metrics enabled.
+  - You can use the jvm.options file to edit the startup JVM parameters.
+  - You can now use the JET_MODULES environment variable to add modules when using docker
+    or jet-start script.
+* We did several rounds of improvements to the documentation:
+  - Improvements to Docker and Kubernetes instructions
+  - New guidance on Garbage Collector choice and settings
+  - New and improved tutorials for CDC
+  - New documentation for Python module and early results support in windowing
+
+** Hazelcast Jet 4.1 **
+
+* You can now use our JMS and JDBC sinks with the exactly-once guarantee.
+* We simplified adding classes to the Jet job configuration object. You
+  can add a whole package in one call and, for `jobConfig.addClass`, we
+  automatically add all the class's nested classes, including anonymous
+  ones.
+* We made the serialization setup simpler. You can now register custom
+  serializers with the job and we added extra convenience for protobuf
+  serialization.
+* We added a `ServiceFactory` that accesses an external gRPC service. You
+  can now use `mapUsingService` to transform the data by calling either
+  a unary or a bidirectional streaming gRPC service.
+* We added the `innerHashJoin` transform that achieves an inner join
+  directly instead of requiring custom code in the `mapToOutputFn`. Credit
+  for this one goes to @TomaszGaweda.
+
+** Hazelcast Jet 4.0 **
+
+* Updated Hazelcast IMDG version to 4.0, which brings many new features
+  such as a revamped metrics system, improved performance.
+* Jet now supports calling user-defined Python function from within a
+  pipeline using the mapUsingPython transform.
+* Snapshots now offer support for distributed two-phase commit (2PC),
+  which enables end-to-end exactly-once processing support for sinks and
+  sources such as JMS and files.
+* Clients can now collect the results of jobs they have submitted via
+  Rx-style Observables.
+* Users can now add custom metrics to their Pipelines.
+* The distribution has been improved with support for daemon mode and
+  rolling file based logging.
+* Snapshot statistics (keys & bytes saved) and job lifecycle-statistics
+  (no. of jobs submitted, terminated and so on) can be tracked via
+  metrics now.
+* Debezium-Jet connector is now available in hazelcast-jet-contrib. The
+  connector makes it possible to stream changes from a database into Jet,
+  also known as Change Data Capture (CDC).
+* A Kafka Connect adapter is added which enables using any Kafka Connect
+  source inside Jet.
+* It is now possible to specify the main class when submitting jobs from
+  CLI.
+* [Jet Enterprise] Jet clients have improved support for failover
+  through the use of a blue/green client.
+
+** Hazelcast Jet 3.2 **
+
+* New stateful mapping/flat-mapping and filtering operators allows
+  possibility for advanced stateful computation such as custom windows
+  and pattern matching.
+* New test sources and assertion sinks to help with unit testing of
+  pipelines.
+* Job-specific metrics are now available via Job API and it's also
+  possible to store and query the final metrics for completed jobs.
+* New S3 source and sink which can be used to read from and write to
+  Amazon Web Services S3 buckets.
+* IMap sources and sinks have been rewritten to make better use of
+  cooperative multi-threading, resulting in significantly increased
+  performance.
+* Various job lifecycle improvements to allow small batch jobs to run
+  with less latency.
+* Updated Hazelcast IMDG version to 3.12.3.
+
+** Hazelcast Jet 3.1 **
+
+* Apache Beam Runner for Hazelcast Jet is released. For more details
+  please see https://beam.apache.org/documentation/runners/jet/
+* New hazelcast-jet-contrib repository containing new connectors:
+   * InfluxDb: https://github.com/hazelcast/hazelcast-jet-contrib/tree/master/influxdb
+   * Elasticsearch: https://github.com/hazelcast/hazelcast-jet-contrib/tree/master/elasticsearch
+* New AggregateOperations: `filtering` and `flatMapping`
+* SourceBuilder API has been extended to add support for fault tolerance
+* Support for composite transforms in Pipeline API through the `apply`
+  operator
+* Jet now supports YAML configuration as well as XML
+* Update Hazelcast IMDG version to 3.12.1
+
+** Hazelcast Jet 3.0 **
+
+* 3.0 is the first major release of Hazelcast Jet past 0.x, and is
+  versioned at 3.x to align it better with IMDG 3.x versions that it is
+  based on
+* Starting with 3.0, main Job API and the pipeline API will be backward-
+  compatible in further minor versions. Core API will only be compatible
+  between patch versions.
+  - Several APIs have been streamlined in preparation for this change.
+    Please see the breaking changes section of the release notes for a
+    list of specific changes.
+* Pipeline API has the following new additions:
+  - Support for async map/filter/flatMapUsingContext methods
+  - Support for emitting early results for a window before a window has
+    completed
+* Being able to atomically create a job only if it's not already running
+  using JetInstance.newJobIfAbsent
+* [Jet Enterprise] Support for job upgrades and A/B testing via taking a
+  named snapshot and then starting the job from the saved snapshot.
+* [Jet Enterprise] Being able to restart the whole cluster and restoring
+  jobs by using IMDG Hot Restart to persist the cluster to disk
+* New Jet Command Line Interface for job management of a cluster
+* Support for improved Watermark diagnostics in Jet Management Center
+* Support for showing map stats in Jet Management Center
+* Full support for JDK 11
+* Update Hazelcast version to 3.12
+
+** Hazelcast Jet 0.7.2 **
+
+* Fix for missing config schema file in previous release
+
+** Hazelcast Jet 0.7.1 **
+
+* Full support for running Hazelcast Jet on Kubernetes
+* Hazelcast Jet Helm Charts are released
+* TopN and BottomN aggregate operations are added
+
+** Hazelcast Jet 0.7 **
+
+* Several new additions to pipeline API including:
+  - A new SourceBuilder API which can be used to build both streaming
+    and batch sources
+  - Merge and distinct operations
+  - Simplified ways to do aggregations on more than one input
+    (co-aggregation)
+  - Support for rolling aggregations
+  - Keyed map/flatMap/filterUsingContext operations
+  - Convenience functions for enriching a stream directly from an IMap
+    or ReplicatedMap
+* Several additions to job management:
+  - Jobs can now be automatically both scaled up and down without
+    disruption when new nodes are added or removed.
+  - Jobs can now be suspended and resumed.
+* Several new default connectors are added:
+  - JMS
+  - JDBC
+  - Avro Files
+* Distributed java.util.stream implementation has been removed with this
+  release. Please refer to the Pipeline API instead.
+* It's now possible to get Jet metrics through a JMX interface.
+* First version of Jet Management Center is released
+* Update Hazelcast version to 3.10.5
+* Security suite available in Jet enterprise version
+
+** Hazelcast Jet 0.6.1 **
+
+* Optimize in memory layout of snapshot data, reducing memory usage by
+  up to 75%
+* Add support for configuring a custom classloader per job
+* Update Hazelcast version to final released version (3.10)
+
+** Hazelcast Jet 0.6 **
+
+* Pipeline API has been extended with support for windowing operations
+including co grouped windows and support for event time.
+* Pipeline API now allows stateful transforms using a context object.
+* Parallelism and name of each stage on the pipeline API can now be set
+  individually.
+* New custom sink builder for building sink connectors without writing
+  custom processors.
+* Merging and updating map sinks, which can update a value in place
+  rather than overwriting it.
+* It is now possible to set names for jobs and retrieve them by name.
+* Running jobs can now be manually restarted and scaled up.
+* Spring integration module which brings support for XML and annotation
+based Spring configuration
+* Jet builds on Java 9 and has an explicit automatic module name.
+* New Jet demos repository added to showcase several new use cases for
+  Jet.
+* Hazelcast version is updated to 3.10.
+
+** Hazelcast Jet 0.5 **
+
+* Introduction of Pipeline API for building Jet applications with
+  support for group by, hash join and co-group operations. The DAG API
+  is still supported, and referred to as the core API.
+* Generalization of AggregateOperation abstraction to support multiple
+  inbound streams.
+* Improved job lifecycle management - jobs can now be restarted
+  automatically when a node leaves the cluster.
+* Exactly-once and at-least-once processing guarantees when restarting
+  streaming jobs with use of distributed in memory snapshotting.
+* New streaming source from IMap and ICache using Hazelcast event
+  journal
+* Support for predicates and projections when reading from Hazelcast
+  IMap
+* Ability to create a distributed java.util.stream from any source.
+* Update Hazelcast version to 3.9.
+
+** Hazelcast Jet 0.4 **
+
+* Improved streaming support including windowing support with
+  event-time semantics.
+* Out of the box support for tumbling, sliding and session window
+  aggregations.
+* Streaming file reader to process change streams of files and general
+  improvements to file readers and writers.
+* New AggregateOperation abstraction with several built-in ones
+  including count, average, sum, min, max and linear regression.
+* Hazelcast ICache support added. ICache can be used as a source or
+  sink with both core API and java.util.stream.
+* Socket connector is overhauled and can now also be used as a sink.
+* Many new code samples including several streaming examples and
+  enrichment and co-group for batch operations.
+* Hazelcast version updated to 3.8.2. Hazelcast IMDG is now shaded
+  inside the Jet JAR.
+* Several built-in diagnostic processors and unit test support for
+  writing custom Processors.
+* Hazelcast Jet tile for Pivotal Cloud Foundry is released,
+
+** Hazelcast Jet 0.3.1 **
+
+* The Jet cluster can be scaled up without affecting running jobs.
+  Please refer to the
+  [elasticity](https://github.com/hazelcast/hazelcast-jet-reference-manual/blob/master/src/Introduction.md#elasticity)
+  section in the user guide for details.
+* Added support for reading and writing non-text data from or to HDFS.
+  Please refer to the
+  [hazelcast-jet-hadoop documentation](https://github.com/hazelcast/hazelcast-jet-reference-manual/blob/master/src/Modules.md#hazelcast-jet-hadoop)
+  for details.
+* Kafka Connector extended. Please refer to the
+  [hazelcast-jet-kafka documentation](https://github.com/hazelcast/hazelcast-jet-reference-manual/blob/master/src/Modules.md#hazelcast-jet-kafka)
+  for details.
+* Hazelcast version updated to 3.8

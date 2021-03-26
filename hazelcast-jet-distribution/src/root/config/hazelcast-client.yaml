@@ -1,0 +1,19 @@
+hazelcast-client:
+  # Name of the cluster to connect to. Must match the name configured on the
+  # cluster members.
+  cluster-name: jet
+  network:
+    # List of addresses for the client to try to connect to. All members of
+    # a Hazelcast Jet cluster accept client connections.
+    # Use the format <hostname>:<port>
+    # If a port number is not specified, port range 5701-5703 will be tried.
+    cluster-members:
+      - 127.0.0.1
+    # Whether client should discover and connect other members in the cluster
+    # and route requests to them or only connects to the members listed
+    # above.
+    smart-routing: false
+  connection-strategy:
+    connection-retry:
+      # how long the client should keep trying connecting to the server
+      cluster-connect-timeout-millis: 1000

@@ -1,0 +1,9 @@
+{
+"namespace": "com.hazelcast.jet.hadoop.file.generated",
+  "type": "record",
+  "name": "SpecificUser",
+  "fields": [
+    {"name": "name", "type": "string"},
+    {"name": "favorite_number",  "type": ["int", "null"]}
+  ]
+}

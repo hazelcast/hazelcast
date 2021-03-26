@@ -1,0 +1,55 @@
+#!/bin/bash
+
+SCRIPT_DIR=$(dirname "$0")
+#shellcheck source=bin-regular/common.sh
+
+if [[ "$1" = "--help" ]] || [[ "$1" = "-h" ]]; then
+    echo "Usage: jet-start [-d]"
+    echo "  -d, --daemon   Starts Hazelcast Jet in daemon mode"
+    exit 0
+elif [[ "$1" = "-d" ]] || [[ "$1" = "--daemon" ]]; then
+    DAEMON="true"
+fi
+
+. "$SCRIPT_DIR"/common.sh
+
+if [ "${PROMETHEUS_PORT}" ]; then
+    echo "Prometheus enabled on port ${PROMETHEUS_PORT}"
+    PROMETHEUS="-javaagent:${JET_HOME}/lib/jmx_prometheus_javaagent-${prometheus.version}.jar=${PROMETHEUS_PORT}:${JET_HOME}/config/jmx_agent_config.yaml"
+fi
+
+readJvmOptionsFile "jvm.options"
+
+JAVA_OPTS_ARRAY=(\
+$JDK_OPTS \
+"-Dhazelcast.logging.type=log4j2" \
+"-Dlog4j.configurationFile=file:$JET_HOME/config/log4j2.properties" \
+"-Djet.home=$JET_HOME" \
+"-Dhazelcast.config=$JET_HOME/config/hazelcast.yaml" \
+"-Dhazelcast.jet.config=$JET_HOME/config/hazelcast-jet.yaml" \
+$PROMETHEUS \
+$JVM_OPTIONS \
+$JAVA_OPTS \
+)
+
+if [ "$JET_LICENSE_KEY" ]; then
+    LICENSING_OPTS_ARRAY=("-Dhazelcast.enterprise.license.key=${JET_LICENSE_KEY}")
+fi
+
+echo "########################################"
+echo "# JAVA=$JAVA"
+echo "# JAVA_OPTS=${JAVA_OPTS_ARRAY[*]}"
+echo "# CLASSPATH=$CLASSPATH"
+echo "########################################"
+
+if [[ "$DAEMON" = "true" ]]; then
+    mkdir -p $JET_HOME/logs
+    DATE=`date "+%Y-%m-%d.%H.%M.%S"`
+    JET_LOG="$JET_HOME/logs/hazelcast-jet.$DATE.out"
+    echo "Starting Hazelcast Jet in daemon mode. Standard out and error will be written to $JET_LOG"
+    nohup $JAVA "${JAVA_OPTS_ARRAY[@]}" "${LICENSING_OPTS_ARRAY[@]}" -cp "$CLASSPATH" com.hazelcast.jet.server.JetMemberStarter > "$JET_LOG" 2>&1 &
+else
+    echo "Starting Hazelcast Jet"
+    set -x
+    exec $JAVA "${JAVA_OPTS_ARRAY[@]}" "${LICENSING_OPTS_ARRAY[@]}" -cp "$CLASSPATH" com.hazelcast.jet.server.JetMemberStarter
+fi

@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package com.hazelcast.jet.protobuf;
+
+message Person {
+    string name = 1;
+    int32 age = 2;
+}
+
+message Animal {
+    string name = 1;
+}

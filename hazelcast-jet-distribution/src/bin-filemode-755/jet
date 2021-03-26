@@ -1,0 +1,16 @@
+#!/bin/bash
+
+SCRIPT_DIR="$(dirname "$0")"
+#shellcheck source=bin-regular/common.sh
+. "$SCRIPT_DIR/common.sh"
+
+readJvmOptionsFile "jvm-client.options"
+
+JAVA_OPTS_ARRAY=(\
+$JDK_OPTS \
+"-Dhazelcast.client.config=$JET_HOME/config/hazelcast-client.yaml" \
+$JVM_OPTIONS \
+$JAVA_OPTS \
+)
+
+$JAVA "${JAVA_OPTS_ARRAY[@]}" -cp "$CLASSPATH" com.hazelcast.jet.server.JetCommandLine "$@"

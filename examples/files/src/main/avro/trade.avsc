@@ -1,0 +1,11 @@
+{
+"namespace": "com.hazelcast.jet.examples.files.unifiedapi.generated",
+  "type": "record",
+  "name": "AvroTrade",
+  "fields": [
+    {"name": "time", "type": "long"},
+    {"name": "ticker", "type": "string"},
+    {"name": "quantity",  "type": "long"},
+    {"name": "price",  "type": "long"}
+  ]
+}

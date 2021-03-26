@@ -1,0 +1,6 @@
+hazelcast:
+  map:
+    default:
+      event-journal:
+        enabled: true
+        capacity: 100000

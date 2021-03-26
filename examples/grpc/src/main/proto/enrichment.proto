@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.hazelcast.jet.examples.grpc";
+option java_outer_classname = "EnrichmentProto";
+option objc_class_prefix = "HLW";
+
+package helloworld;
+
+service ProductService {
+  rpc ProductInfo (ProductInfoRequest) returns (ProductInfoReply) {}
+}
+
+service BrokerService {
+  rpc BrokerInfo (stream BrokerInfoRequest) returns (stream BrokerInfoReply) {}
+}
+
+message ProductInfoRequest {
+  int32 id = 1;
+}
+
+message ProductInfoReply {
+  string productName = 1;
+}
+
+message BrokerInfoRequest {
+  int32 id = 1;
+}
+
+message BrokerInfoReply {
+  string brokerName = 1;
+} 
