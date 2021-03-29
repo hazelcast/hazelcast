@@ -59,6 +59,7 @@ import com.hazelcast.sql.impl.expression.string.ConcatFunction;
 import com.hazelcast.sql.impl.expression.string.InitcapFunction;
 import com.hazelcast.sql.impl.expression.string.LikeFunction;
 import com.hazelcast.sql.impl.expression.string.LowerFunction;
+import com.hazelcast.sql.impl.expression.string.PositionFunction;
 import com.hazelcast.sql.impl.expression.string.ReplaceFunction;
 import com.hazelcast.sql.impl.expression.string.SubstringFunction;
 import com.hazelcast.sql.impl.expression.string.TrimFunction;
@@ -190,7 +191,9 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int INTERVAL_DAY_SECOND = 68;
 
     public static final int EXPRESSION_REPLACE = 69;
-    public static final int LEN = EXPRESSION_REPLACE + 1;
+    public static final int EXPRESSION_POSITION = 70;
+
+    public static final int LEN = EXPRESSION_POSITION + 1;
 
     @Override
     public int getFactoryId() {
@@ -278,6 +281,7 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[EXPRESSION_SUBSTRING] = arg -> new SubstringFunction();
         constructors[EXPRESSION_TRIM] = arg -> new TrimFunction();
         constructors[EXPRESSION_REPLACE] = arg -> new ReplaceFunction();
+        constructors[EXPRESSION_POSITION] = arg -> new PositionFunction();
 
         constructors[NODE_RECEIVE_MERGE_SORT] = arg -> new ReceiveSortMergePlanNode();
         constructors[NODE_FETCH] = arg -> new FetchPlanNode();
