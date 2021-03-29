@@ -48,7 +48,7 @@
     <maven.jacoco.plugin.version>0.8.6</maven.jacoco.plugin.version>
     <maven.javadoc.plugin.version>3.2.0</maven.javadoc.plugin.version>
     <maven.gpg.plugin.version>1.6</maven.gpg.plugin.version>
-    <maven.bundle.plugin.version>2.4.0</maven.bundle.plugin.version>
+    <maven.bundle.plugin.version>5.1.2</maven.bundle.plugin.version>
     <maven.compiler.plugin.version>3.8.1</maven.compiler.plugin.version>
     <maven.release.plugin.version>2.5.3</maven.release.plugin.version>
   </properties>
