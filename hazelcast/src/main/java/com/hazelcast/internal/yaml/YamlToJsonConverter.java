@@ -19,32 +19,32 @@ package com.hazelcast.internal.yaml;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-public final class YamlConverter {
+public final class YamlToJsonConverter {
 
-    private YamlConverter() {
+    private YamlToJsonConverter() {
         // util class
     }
 
-    public static Object convertToJson(YamlNode yamlNode) {
+    public static Object convert(YamlNode yamlNode) {
         if (yamlNode instanceof YamlMapping) {
             YamlMapping yamlMapping = (YamlMapping) yamlNode;
             JSONObject resultObject = new JSONObject();
             for (YamlNode child : yamlMapping.children()) {
-                resultObject.put(child.nodeName(), convertToJson(child));
+                resultObject.put(child.nodeName(), convert(child));
             }
             return resultObject;
         }  else if (yamlNode instanceof YamlSequence) {
             YamlSequence yamlSequence = (YamlSequence) yamlNode;
             JSONArray resultArray = new JSONArray();
             for (YamlNode child : yamlSequence.children()) {
-                resultArray.put(convertToJson(child));
+                resultArray.put(convert(child));
             }
             return resultArray;
         }   else if (yamlNode instanceof YamlScalar) {
             YamlScalar yamlScalar = (YamlScalar) yamlNode;
             return yamlScalar.nodeValue();
         }
-        throw new IllegalArgumentException("Unknown type");
+        throw new IllegalArgumentException("Unknown type " + yamlNode.getClass().getName());
     }
 
 }
