@@ -46,11 +46,7 @@ public class InOperatorIntegrationTest extends ExpressionTestSupport {
         checkValues(sqlQuery("IN (0, 1, 2)"), SqlColumnType.INTEGER, new Integer[]{0, 1});
         checkValues(sqlQuery("IN (?, ?, ?)"), SqlColumnType.INTEGER, new Integer[]{0, 1}, 0, 1, 2);
         checkValues(sqlQuery("IN " + longList), SqlColumnType.INTEGER, new Integer[]{25, 0, 1});
-
-        // Another way to call IN operator
-        // TODO : work in progress
-//        checkValues("SELECT this FROM map WHERE NOT (this IN (NULL, 2, 1))", SqlColumnType.INTEGER, new Integer[]{});
-//        checkValues("SELECT this FROM map WHERE true <> (this IN (NULL, 2, 1))", SqlColumnType.INTEGER, new Integer[]{});
+        checkValues("SELECT this FROM map WHERE NOT (this IN (2, 1))", SqlColumnType.INTEGER, new Integer[]{25, 0, 30});
     }
 
     @Test
@@ -68,6 +64,11 @@ public class InOperatorIntegrationTest extends ExpressionTestSupport {
         checkValues(sqlQuery("IN (0, NULL, NULL, NULL, 2)"), SqlColumnType.INTEGER, new Integer[]{2, 0});
         checkValues(sqlQuery("NOT IN (0, NULL, NULL, NULL, 2)"), SqlColumnType.INTEGER, new Integer[]{1});
         checkValues(sqlQuery("NOT IN (NULL, 2, 1)"), SqlColumnType.INTEGER, new Integer[]{0});
+
+        checkValues("SELECT this FROM map WHERE NOT (this IN (2, 1, 0))", SqlColumnType.INTEGER, new Integer[]{});
+        checkValues("SELECT this FROM map WHERE NOT (this IN (2, NULL, 1))", SqlColumnType.INTEGER, new Integer[]{0});
+        checkValues("SELECT this FROM map WHERE NOT (this IN (NULL, 2, 1, 0))", SqlColumnType.INTEGER, new Integer[]{});
+        checkValues("SELECT this FROM map WHERE true <> (this IN (NULL, 2, 1, 0))", SqlColumnType.INTEGER, new Integer[]{});
     }
 
     @Test
