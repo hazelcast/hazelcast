@@ -147,6 +147,8 @@ public class YamlConfigBuilder extends AbstractYamlConfigBuilder implements Conf
         } catch (Exception ex) {
             throw new InvalidConfigurationException("Invalid YAML configuration", ex);
         }
+        
+        YamlConfigSchemaValidator.create().validate(yamlRootNode);
 
         YamlNode imdgRoot = yamlRootNode.childAsMapping(ConfigSections.HAZELCAST.getName());
         if (imdgRoot == null) {
@@ -158,8 +160,6 @@ public class YamlConfigBuilder extends AbstractYamlConfigBuilder implements Conf
         Node w3cRootNode = asW3cNode(imdgRoot);
         replaceVariables(w3cRootNode);
         importDocuments(imdgRoot);
-
-        Object jsonRepresentation = YamlConverter.convertToJson(imdgRoot.parent());
 
         new YamlMemberDomConfigProcessor(true, config).buildConfig(w3cRootNode);
     }
