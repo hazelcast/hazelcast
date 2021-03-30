@@ -407,6 +407,11 @@
             <version>${classgraph.version}</version>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>com.github.erosb</groupId>
+            <artifactId>everit-json-schema</artifactId>
+            <version>1.12.2</version>
+        </dependency>
 
         <!-- JetCommandLine dependencies - optional, packaged in server distribution -->
         <dependency>
