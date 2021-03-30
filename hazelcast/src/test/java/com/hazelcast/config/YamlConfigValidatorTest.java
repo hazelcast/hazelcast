@@ -23,6 +23,9 @@ import org.junit.Test;
 
 import java.util.HashMap;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
 public class YamlConfigValidatorTest {
 
     @After
@@ -36,5 +39,20 @@ public class YamlConfigValidatorTest {
         YamlMapping config = (YamlMapping) YamlDomBuilder.build(new HashMap<>());
         YamlConfigSchemaValidator validator = YamlConfigSchemaValidator.create();
         validator.validate(config);
+    }
+    
+    @Test
+    public void validationExceptionIsWrapped() {
+        YamlMapping config = (YamlMapping) YamlDomBuilder.build(new HashMap<>());
+        YamlConfigSchemaValidator validator = YamlConfigSchemaValidator.create();
+        try {
+            validator.validate(config);
+            fail("did not throw exception for invalid config");
+        } catch (SchemaViolationConfigurationException e) {
+            assertEquals("#", e.getKeywordLocation());
+            assertEquals("#", e.getInstanceLocation());
+            assertEquals("required key [hazelcast] not found", e.getMessage());
+            assertEquals("required key [hazelcast] not found", e.getError());
+        }
     }
 }
