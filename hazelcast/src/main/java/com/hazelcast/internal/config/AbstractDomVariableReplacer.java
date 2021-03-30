@@ -18,6 +18,9 @@ package com.hazelcast.internal.config;
 
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.replacer.spi.ConfigReplacer;
+import com.hazelcast.internal.config.yaml.ScalarTextNodeAdapter;
+import com.hazelcast.internal.config.yaml.YamlElementAdapter;
+import com.hazelcast.internal.yaml.YamlScalarImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import org.w3c.dom.Node;
@@ -54,6 +57,9 @@ abstract class AbstractDomVariableReplacer implements DomVariableReplacer {
     }
 
     void replaceVariableInNodeValue(Node node, ConfigReplacer replacer, boolean failFast) {
+        if (nonReplaceableNode(node)) {
+            return;
+        }
         String value = node.getNodeValue();
         if (value != null) {
             String replacedValue = replaceValue(node, replacer, failFast, value);
@@ -68,5 +74,23 @@ abstract class AbstractDomVariableReplacer implements DomVariableReplacer {
             throw new InvalidConfigurationException(message);
         }
         LOGGER.warning(message);
+    }
+
+    private boolean nonReplaceableNode(Node node) {
+        if (node instanceof YamlElementAdapter) {
+            YamlElementAdapter yamlElementAdapter = (YamlElementAdapter) node;
+            if (yamlElementAdapter.getYamlNode() instanceof YamlScalarImpl) {
+                YamlScalarImpl yamlNode = (YamlScalarImpl) yamlElementAdapter.getYamlNode();
+                if (!(yamlNode.nodeValue() instanceof String)) {
+                    return true;
+                }
+            }
+        }
+        if (node instanceof ScalarTextNodeAdapter) {
+            ScalarTextNodeAdapter yamlElementAdapter = (ScalarTextNodeAdapter) node;
+            Object rawNodeValue = yamlElementAdapter.getNodeRawValue();
+            return !(rawNodeValue instanceof String);
+        }
+        return false;
     }
 }

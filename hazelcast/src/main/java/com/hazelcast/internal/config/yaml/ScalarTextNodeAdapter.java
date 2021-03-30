@@ -28,7 +28,7 @@ import org.w3c.dom.UserDataHandler;
 import static com.hazelcast.internal.config.yaml.EmptyNodeList.emptyNodeList;
 
 @SuppressWarnings({"checkstyle:methodcount"})
-class ScalarTextNodeAdapter implements Node {
+public class ScalarTextNodeAdapter implements Node {
     private YamlScalar scalar;
 
     ScalarTextNodeAdapter(YamlScalar scalar) {
@@ -44,6 +44,10 @@ class ScalarTextNodeAdapter implements Node {
     public String getNodeValue() throws DOMException {
         Object nodeValue = scalar.nodeValue();
         return nodeValue != null ? nodeValue.toString() : null;
+    }
+
+    public Object getNodeRawValue() {
+        return scalar.nodeValue();
     }
 
     @Override
