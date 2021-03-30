@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.yaml.YamlConverter;
 import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.spi.properties.HazelcastProperty;
 import org.everit.json.schema.Schema;
@@ -39,7 +40,7 @@ interface YamlConfigSchemaValidator {
 
         @Override
         public void validate(YamlMapping rootNode) {
-            SCHEMA.validate(null);
+            SCHEMA.validate(YamlConverter.convertToJson(rootNode));
         }
     }
 

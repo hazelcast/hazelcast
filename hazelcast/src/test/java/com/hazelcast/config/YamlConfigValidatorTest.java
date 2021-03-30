@@ -32,7 +32,7 @@ public class YamlConfigValidatorTest {
 
     @Test
     public void validationDisabled() {
-        //        System.setProperty("yaml.config.validation.skip", "true");
+        System.setProperty("yaml.config.validation.skip", "true");
         YamlMapping config = (YamlMapping) YamlDomBuilder.build(new HashMap<>());
         YamlConfigSchemaValidator validator = YamlConfigSchemaValidator.create();
         validator.validate(config);
