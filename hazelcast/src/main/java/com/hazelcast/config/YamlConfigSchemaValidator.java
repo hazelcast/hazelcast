@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.internal.yaml.YamlToJsonConverter;
 import com.hazelcast.spi.properties.HazelcastProperty;
@@ -34,6 +35,13 @@ interface YamlConfigSchemaValidator {
     class YamlConfigSchemaValidatorImpl
             implements YamlConfigSchemaValidator {
 
+        private static final Schema SCHEMA = SchemaLoader.builder().draftV6Support()
+                .schemaJson(readJSONObject("/hazelcast-config-" + Versions.CURRENT_CLUSTER_VERSION.getMajor() + "."
+                        + Versions.CURRENT_CLUSTER_VERSION.getMinor() + ".json"))
+                .build()
+                .load()
+                .build();
+
         SchemaViolationConfigurationException wrap(ValidationException e) {
             List<SchemaViolationConfigurationException> subErrors = e.getCausingExceptions()
                     .stream()
@@ -42,11 +50,6 @@ interface YamlConfigSchemaValidator {
             return new SchemaViolationConfigurationException(e.getErrorMessage(), e.getSchemaLocation(),
                     e.getPointerToViolation(), subErrors);
         }
-
-        private static final Schema SCHEMA = SchemaLoader.builder().draftV6Support()
-                .schemaJson(readJSONObject("/hazelcast-config-4.2.json"))
-                .build()
-                .load().build();
 
         private static JSONObject readJSONObject(String absPath) {
             return new JSONObject(new JSONTokener(YamlConfigSchemaValidator.class.getResourceAsStream(absPath)));
