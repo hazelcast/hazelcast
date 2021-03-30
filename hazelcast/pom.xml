@@ -253,6 +253,9 @@
                                     <include>com.fasterxml.jackson.dataformat:jackson-dataformat-csv</include>
                                     <include>org.snakeyaml:snakeyaml-engine</include>
                                     <include>io.github.classgraph:classgraph</include>
+                                    <include>com.github.erosb:everit-json-schema</include>
+                                    <include>com.damnhandy:handy-uri-templates</include>
+                                    <include>org.json:json</include>
                                 </includes>
                             </artifactSet>
                             <relocations>
@@ -278,6 +281,18 @@
                                 <relocation>
                                     <pattern>nonapi.io.github.classgraph</pattern>
                                     <shadedPattern>${relocation.root}.nonapi.io.github.classgraph</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.everit.json.schema</pattern>
+                                    <shadedPattern>${relocation.root}.org.everit.json.schema</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>com.damnhandy.uri.template</pattern>
+                                    <shadedPattern>${relocation.root}.com.damnhandy.uri.template</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.json</pattern>
+                                    <shadedPattern>${relocation.root}.org.json</shadedPattern>
                                 </relocation>
                             </relocations>
                             <transformers>
