@@ -20,7 +20,6 @@ import com.hazelcast.internal.config.ConfigSections;
 import com.hazelcast.internal.config.YamlConfigLocator;
 import com.hazelcast.internal.config.YamlMemberDomConfigProcessor;
 import com.hazelcast.internal.config.yaml.YamlDomChecker;
-import com.hazelcast.internal.yaml.YamlConverter;
 import com.hazelcast.internal.yaml.YamlLoader;
 import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.internal.yaml.YamlNode;

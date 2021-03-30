@@ -20,14 +20,28 @@ import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.internal.yaml.YamlToJsonConverter;
 import com.hazelcast.spi.properties.HazelcastProperty;
 import org.everit.json.schema.Schema;
+import org.everit.json.schema.ValidationException;
 import org.everit.json.schema.loader.SchemaLoader;
 import org.json.JSONObject;
 import org.json.JSONTokener;
+
+import java.util.List;
+
+import static java.util.stream.Collectors.toList;
 
 interface YamlConfigSchemaValidator {
 
     class YamlConfigSchemaValidatorImpl
             implements YamlConfigSchemaValidator {
+
+        SchemaViolationConfigurationException wrap(ValidationException e) {
+            List<SchemaViolationConfigurationException> subErrors = e.getCausingExceptions()
+                    .stream()
+                    .map(this::wrap)
+                    .collect(toList());
+            return new SchemaViolationConfigurationException(e.getErrorMessage(), e.getSchemaLocation(),
+                    e.getPointerToViolation(), subErrors);
+        }
 
         private static final Schema SCHEMA = SchemaLoader.builder().draftV6Support()
                 .schemaJson(readJSONObject("/hazelcast-config-4.2.json"))
@@ -40,7 +54,11 @@ interface YamlConfigSchemaValidator {
 
         @Override
         public void validate(YamlMapping rootNode) {
-            SCHEMA.validate(YamlToJsonConverter.convert(rootNode));
+            try {
+                SCHEMA.validate(YamlToJsonConverter.convert(rootNode));
+            } catch (ValidationException e) {
+                throw wrap(e);
+            }
         }
     }
 
@@ -57,5 +75,9 @@ interface YamlConfigSchemaValidator {
         return new YamlConfigSchemaValidatorImpl();
     }
 
+    /**
+     * @param rootNode the root object of the configuration (should have a single "hazelcast" key)
+     * @throws SchemaViolationConfigurationException if the configuration doesn't match the schema
+     */
     void validate(YamlMapping rootNode);
 }
