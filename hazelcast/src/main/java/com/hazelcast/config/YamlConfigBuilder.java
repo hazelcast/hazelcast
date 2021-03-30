@@ -146,7 +146,7 @@ public class YamlConfigBuilder extends AbstractYamlConfigBuilder implements Conf
         } catch (Exception ex) {
             throw new InvalidConfigurationException("Invalid YAML configuration", ex);
         }
-        
+
         YamlConfigSchemaValidator.create().validate(yamlRootNode);
 
         YamlNode imdgRoot = yamlRootNode.childAsMapping(ConfigSections.HAZELCAST.getName());

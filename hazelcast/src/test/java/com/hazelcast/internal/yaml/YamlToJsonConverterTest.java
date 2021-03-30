@@ -26,23 +26,23 @@ public class YamlToJsonConverterTest {
 
     @Test
     public void convertSuccess() {
-        String expectedJson = "{\n" +
-                "   \"hazelcast\":{\n" +
-                "      \"network\":{\n" +
-                "         \"port\":{\n" +
-                "            \"auto-increment\":true,\n" +
-                "            \"port-count\":100,\n" +
-                "            \"port\":5701,\n" +
-                "            \"outbound-ports\":[\n" +
-                "               \"33000-35000\",\n" +
-                "               \"37000,37001,37002,37003\",\n" +
-                "               \"38000,38500-38600\"\n" +
-                "            ]\n" +
-                "         },\n" +
-                "         \"public-address\":\"dummy\"\n" +
-                "      }\n" +
-                "   }\n" +
-                "}";
+        String expectedJson = "{\n"
+                + "   \"hazelcast\":{\n"
+                + "      \"network\":{\n"
+                + "         \"port\":{\n"
+                + "            \"auto-increment\":true,\n"
+                + "            \"port-count\":100,\n"
+                + "            \"port\":5701,\n"
+                + "            \"outbound-ports\":[\n"
+                + "               \"33000-35000\",\n"
+                + "               \"37000,37001,37002,37003\",\n"
+                + "               \"38000,38500-38600\"\n"
+                + "            ]\n"
+                + "         },\n"
+                + "         \"public-address\":\"dummy\"\n"
+                + "      }\n"
+                + "   }\n"
+                + "}";
         JSONObject expectedJsonObject = new JSONObject(expectedJson);
         YamlMappingImpl parentNode = createYamlMapping();
 
