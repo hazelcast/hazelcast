@@ -19,10 +19,19 @@ package com.hazelcast.internal.yaml;
 import org.json.JSONObject;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 public class YamlToJsonConverterTest {
+
+    @Test
+    public void emptyObject() {
+        YamlMapping root = (YamlMapping) YamlLoader.load(
+                getClass().getResourceAsStream("/com/hazelcast/config/empty-object.yaml"));
+        JSONObject actual = (JSONObject) YamlToJsonConverter.convert(root);
+        assertEquals(JSONObject.NULL, actual.getJSONObject("hazelcast").getJSONObject("network").get("memcache-protocol"));
+    }
 
     @Test
     public void convertSuccess() {

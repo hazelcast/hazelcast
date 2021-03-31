@@ -32,7 +32,7 @@ public class YamlConfigSchemaValidatorTest {
 
     @After
     public void clearSysProp() {
-        System.setProperty("yaml.config.validation.skip", "");
+        System.clearProperty("yaml.config.validation.skip");
     }
 
     @Test
@@ -75,5 +75,10 @@ public class YamlConfigSchemaValidatorTest {
                     .filter(expectedSubErrorMessages::contains)
                     .count(), 2);
         }
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void emptyObject() {
+        new YamlConfigBuilder(getClass().getResourceAsStream("/com/hazelcast/config/empty-object.yaml")).build();
     }
 }

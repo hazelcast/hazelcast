@@ -26,21 +26,24 @@ public final class YamlToJsonConverter {
     }
 
     public static Object convert(YamlNode yamlNode) {
+        if (yamlNode == null) {
+            return JSONObject.NULL;
+        }
         if (yamlNode instanceof YamlMapping) {
             YamlMapping yamlMapping = (YamlMapping) yamlNode;
             JSONObject resultObject = new JSONObject();
-            for (YamlNode child : yamlMapping.children()) {
-                resultObject.put(child.nodeName(), convert(child));
+            for (YamlNameNodePair pair : yamlMapping.childrenPairs()) {
+                resultObject.put(pair.nodeName(), convert(pair.childNode()));
             }
             return resultObject;
-        }  else if (yamlNode instanceof YamlSequence) {
+        } else if (yamlNode instanceof YamlSequence) {
             YamlSequence yamlSequence = (YamlSequence) yamlNode;
             JSONArray resultArray = new JSONArray();
             for (YamlNode child : yamlSequence.children()) {
                 resultArray.put(convert(child));
             }
             return resultArray;
-        }   else if (yamlNode instanceof YamlScalar) {
+        } else if (yamlNode instanceof YamlScalar) {
             YamlScalar yamlScalar = (YamlScalar) yamlNode;
             return yamlScalar.nodeValue();
         }
