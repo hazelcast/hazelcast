@@ -751,6 +751,7 @@
             "CUSTOM",
             "PER_MEMBER",
             "ZONE_AWARE",
+            "PLACEMENT_AWARE",
             "SPI"
           ],
           "default": "PER_MEMBER"
@@ -1014,6 +1015,10 @@
           "statistics-enabled": {
             "type": "boolean",
             "default": true
+          },
+          "per-entry-stats-enabled": {
+            "type": "boolean",
+            "default": false
           },
           "cache-deserialized-values": {
             "enum": [
@@ -2477,7 +2482,12 @@
               "scheduled-executor",
               "cache",
               "user-code-deployment",
-              "pn-counter"
+              "pn-counter",
+              "atomic-reference",
+              "ring-buffer",
+              "reliable-topic",
+              "replicatedmap",
+              "management"
             ]
           },
           "properties": {
