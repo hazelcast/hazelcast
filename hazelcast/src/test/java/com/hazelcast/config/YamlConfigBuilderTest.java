@@ -28,6 +28,9 @@ import com.hazelcast.config.security.LdapAuthenticationConfig;
 import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.yaml.YamlLoader;
+import com.hazelcast.internal.yaml.YamlMapping;
+import com.hazelcast.internal.yaml.YamlToJsonConverter;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.splitbrainprotection.impl.ProbabilisticSplitBrainProtectionFunction;
 import com.hazelcast.splitbrainprotection.impl.RecentlyActiveSplitBrainProtectionFunction;
@@ -36,6 +39,7 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.wan.WanPublisherState;
+import org.json.JSONObject;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -536,8 +540,10 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         config = buildConfig(""
                 + "hazelcast:\n"
                 + "  network:\n"
-                + "    port: 5701\n");
+                + "    port: \n"
+                + "      port: 5801\n");
         assertTrue(config.getNetworkConfig().isPortAutoIncrement());
+        assertEquals(5801, config.getNetworkConfig().getPort());
     }
 
     @Override
@@ -2550,7 +2556,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = SchemaViolationConfigurationException.class)
     public void testAttributeConfig_noName_emptyTag() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -2568,7 +2574,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = SchemaViolationConfigurationException.class)
     public void testAttributeConfig_noName_singleTag() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -2580,7 +2586,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = SchemaViolationConfigurationException.class)
     public void testAttributeConfig_noExtractor() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -2592,7 +2598,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = SchemaViolationConfigurationException.class)
     public void testAttributeConfig_emptyExtractor() {
         String yaml = ""
                 + "hazelcast:\n"
