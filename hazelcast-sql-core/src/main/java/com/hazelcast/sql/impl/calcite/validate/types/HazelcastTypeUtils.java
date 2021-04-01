@@ -103,7 +103,8 @@ public final class HazelcastTypeUtils {
     }
 
     public static QueryDataType toHazelcastType(SqlTypeName sqlTypeName) {
-        switch (sqlTypeName.getFamily()) {
+        // some types have null family (e.g. SqlTypeName.ROW), we fall back to default branch for those
+        switch (sqlTypeName.getFamily() != null ? sqlTypeName.getFamily() : SqlTypeFamily.ANY) {
             case INTERVAL_YEAR_MONTH:
                 return QueryDataType.INTERVAL_YEAR_MONTH;
 
