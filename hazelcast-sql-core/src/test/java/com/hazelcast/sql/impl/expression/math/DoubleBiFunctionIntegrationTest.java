@@ -44,6 +44,7 @@ import static com.hazelcast.sql.SqlColumnType.TIMESTAMP;
 import static com.hazelcast.sql.SqlColumnType.TIMESTAMP_WITH_TIME_ZONE;
 import static com.hazelcast.sql.SqlColumnType.VARCHAR;
 import static com.hazelcast.sql.impl.expression.math.DoubleBiFunction.ATAN2;
+import static com.hazelcast.sql.impl.expression.math.DoubleBiFunction.POWER;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
@@ -55,7 +56,8 @@ public class DoubleBiFunctionIntegrationTest extends ExpressionTestSupport {
     @Parameterized.Parameters(name = "mode: {0}")
     public static Collection<Object[]> parameters() {
         return Arrays.asList(new Object[][]{
-            { new Mode("ATAN2") }
+            { new Mode("ATAN2", DoubleBiFunction.ATAN2) },
+            { new Mode("POWER", DoubleBiFunction.POWER) }
         });
     }
 
@@ -78,16 +80,16 @@ public class DoubleBiFunctionIntegrationTest extends ExpressionTestSupport {
 
         // Other
         putAndCheckFailure('1', sql("this, this"), SqlErrorCode.PARSING,
-                signatureErrorFunction(mode.mode, VARCHAR, VARCHAR));
-        putAndCheckFailure("1", sql("this, this"), SqlErrorCode.PARSING, signatureErrorFunction(mode.mode, VARCHAR, VARCHAR));
-        putAndCheckFailure(true, sql("this, this"), SqlErrorCode.PARSING, signatureErrorFunction(mode.mode, BOOLEAN, BOOLEAN));
-        putAndCheckFailure(LOCAL_DATE_VAL, sql("this, this"), SqlErrorCode.PARSING, signatureErrorFunction(mode.mode, DATE, DATE));
-        putAndCheckFailure(LOCAL_TIME_VAL, sql("this, this"), SqlErrorCode.PARSING, signatureErrorFunction(mode.mode, TIME, TIME));
+                signatureErrorFunction(mode.stringMode, VARCHAR, VARCHAR));
+        putAndCheckFailure("1", sql("this, this"), SqlErrorCode.PARSING, signatureErrorFunction(mode.stringMode, VARCHAR, VARCHAR));
+        putAndCheckFailure(true, sql("this, this"), SqlErrorCode.PARSING, signatureErrorFunction(mode.stringMode, BOOLEAN, BOOLEAN));
+        putAndCheckFailure(LOCAL_DATE_VAL, sql("this, this"), SqlErrorCode.PARSING, signatureErrorFunction(mode.stringMode, DATE, DATE));
+        putAndCheckFailure(LOCAL_TIME_VAL, sql("this, this"), SqlErrorCode.PARSING, signatureErrorFunction(mode.stringMode, TIME, TIME));
         putAndCheckFailure(LOCAL_DATE_TIME_VAL, sql("this, this"), SqlErrorCode.PARSING,
-                signatureErrorFunction(mode.mode, TIMESTAMP, TIMESTAMP));
+                signatureErrorFunction(mode.stringMode, TIMESTAMP, TIMESTAMP));
         putAndCheckFailure(OFFSET_DATE_TIME_VAL, sql("this, this"), SqlErrorCode.PARSING,
-                signatureErrorFunction(mode.mode, TIMESTAMP_WITH_TIME_ZONE, TIMESTAMP_WITH_TIME_ZONE));
-        putAndCheckFailure(OBJECT_VAL, sql("this, this"), SqlErrorCode.PARSING, signatureErrorFunction(mode.mode, OBJECT, OBJECT));
+                signatureErrorFunction(mode.stringMode, TIMESTAMP_WITH_TIME_ZONE, TIMESTAMP_WITH_TIME_ZONE));
+        putAndCheckFailure(OBJECT_VAL, sql("this, this"), SqlErrorCode.PARSING, signatureErrorFunction(mode.stringMode, OBJECT, OBJECT));
     }
 
     @Test
@@ -105,8 +107,8 @@ public class DoubleBiFunctionIntegrationTest extends ExpressionTestSupport {
         checkValue0(sql("1.0, 1.0"), DOUBLE, mode.process(1d, 1d));
         checkValue0(sql("1E0, 1E0"), DOUBLE, mode.process(1d, 1d));
 
-        checkFailure0(sql("false, true"), SqlErrorCode.PARSING, signatureErrorFunction(mode.mode, BOOLEAN, BOOLEAN));
-        checkFailure0(sql("'1', '1'"), SqlErrorCode.PARSING, signatureErrorFunction(mode.mode, VARCHAR, VARCHAR));
+        checkFailure0(sql("false, true"), SqlErrorCode.PARSING, signatureErrorFunction(mode.stringMode, BOOLEAN, BOOLEAN));
+        checkFailure0(sql("'1', '1'"), SqlErrorCode.PARSING, signatureErrorFunction(mode.stringMode, VARCHAR, VARCHAR));
     }
 
     @Test
@@ -138,7 +140,7 @@ public class DoubleBiFunctionIntegrationTest extends ExpressionTestSupport {
     }
 
     private String sql(String operand) {
-        return "SELECT " + mode.mode + "(" + operand + ") FROM map";
+        return "SELECT " + mode.stringMode + "(" + operand + ") FROM map";
     }
 
     @Test
@@ -146,18 +148,18 @@ public class DoubleBiFunctionIntegrationTest extends ExpressionTestSupport {
         DoubleBiFunction function = DoubleBiFunction.create(
                 ConstantExpression.create(1d, QueryDataType.DOUBLE),
                 ConstantExpression.create(1d, QueryDataType.DOUBLE),
-                ATAN2
+                mode.mode
         );
         DoubleBiFunction sameFunction = DoubleBiFunction.create(
                 ConstantExpression.create(1d, QueryDataType.DOUBLE),
                 ConstantExpression.create(1d, QueryDataType.DOUBLE),
-                ATAN2
+                mode.mode
         );
 
         DoubleBiFunction differentFunction = DoubleBiFunction.create(
                 ConstantExpression.create(0.5d, QueryDataType.DOUBLE),
                 ConstantExpression.create(1d, QueryDataType.DOUBLE),
-                ATAN2
+                mode.mode
         );
 
         checkEquals(function, sameFunction, true);
@@ -169,7 +171,7 @@ public class DoubleBiFunctionIntegrationTest extends ExpressionTestSupport {
         DoubleBiFunction original = DoubleBiFunction.create(
                 ConstantExpression.create(1d, QueryDataType.DOUBLE),
                 ConstantExpression.create(1d, QueryDataType.DOUBLE),
-                ATAN2
+                mode.mode
         );
         DoubleBiFunction restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_DOUBLE_DOUBLE);
 
@@ -178,19 +180,22 @@ public class DoubleBiFunctionIntegrationTest extends ExpressionTestSupport {
 
     private static final class Mode {
 
-        private final String mode;
+        public final int mode;
+        public final String stringMode;
 
-        private Mode(String mode) {
+        private Mode(String stringMode, int mode) {
             this.mode = mode;
+            this.stringMode = stringMode;
         }
 
         public Double process(Double lhs, Double rhs) {
             if (lhs == null || rhs == null) {
                 return null;
             }
-            //noinspection SwitchStatementWithTooFewBranches
             switch (mode) {
-                case "ATAN2":
+                case POWER:
+                    return Math.pow(lhs, rhs);
+                case ATAN2:
                     return Math.atan2(lhs, rhs);
                 default:
                     throw new UnsupportedOperationException("Unsupported mode: " + mode);
@@ -199,7 +204,7 @@ public class DoubleBiFunctionIntegrationTest extends ExpressionTestSupport {
 
         @Override
         public String toString() {
-            return mode;
+            return stringMode;
         }
     }
 }

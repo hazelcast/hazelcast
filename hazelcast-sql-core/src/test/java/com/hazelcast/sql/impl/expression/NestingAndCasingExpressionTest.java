@@ -227,6 +227,11 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
     }
 
     @Test
+    public void test_POWER() {
+        check(sql("POWER(?, ?) || POWER(?, ?)"), 1, 1, 1, 1);
+    }
+
+    @Test
     public void test_SIN() {
         check(sql("SIN(?) || SIN(?)"), 1, 1);
     }

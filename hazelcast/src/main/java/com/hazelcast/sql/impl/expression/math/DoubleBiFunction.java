@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql.impl.expression.math;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
@@ -25,11 +27,14 @@ import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
+import java.io.IOException;
+
 /**
  * Family of functions which accept two double operands and return double result.
  */
 public class DoubleBiFunction extends BiExpression<Double> implements IdentifiedDataSerializable {
-    public static final int ATAN2 = 0;
+    public static final int POWER = 0;
+    public static final int ATAN2 = 1;
 
     private int type;
 
@@ -61,6 +66,19 @@ public class DoubleBiFunction extends BiExpression<Double> implements Identified
     }
 
     @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        super.writeData(out);
+        out.writeInt(type);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        super.readData(in);
+        type = in.readInt();
+    }
+
+
+    @Override
     public Double eval(Row row, ExpressionEvalContext context) {
         Object lhsValue = operand1.eval(row, context);
         if (lhsValue == null) {
@@ -78,8 +96,9 @@ public class DoubleBiFunction extends BiExpression<Double> implements Identified
         double lhsDouble = ((Number) lhsValue).doubleValue();
         double rhsDouble = ((Number) rhsValue).doubleValue();
 
-        //noinspection SwitchStatementWithTooFewBranches
         switch (type) {
+            case POWER:
+                return Math.pow(lhsDouble, rhsDouble);
             case ATAN2:
                 return Math.atan2(lhsDouble, rhsDouble);
             default:
