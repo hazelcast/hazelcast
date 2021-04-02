@@ -232,6 +232,11 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
     }
 
     @Test
+    public void test_SQUARE() {
+        check(sql("SQUARE(?) || SQUARE(?)"), 16, 16);
+    }
+
+    @Test
     public void test_SIN() {
         check(sql("SIN(?) || SIN(?)"), 1, 1);
     }

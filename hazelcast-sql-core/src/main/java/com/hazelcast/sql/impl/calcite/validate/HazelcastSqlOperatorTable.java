@@ -124,6 +124,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
     public static final SqlFunction RAND = HazelcastRandFunction.INSTANCE;
 
     public static final SqlFunction POWER = new HazelcastDoubleBiFunction("POWER");
+    public static final SqlFunction SQUARE = new HazelcastDoubleFunction("SQUARE");
 
     public static final SqlFunction COS = new HazelcastDoubleFunction("COS");
     public static final SqlFunction SIN = new HazelcastDoubleFunction("SIN");

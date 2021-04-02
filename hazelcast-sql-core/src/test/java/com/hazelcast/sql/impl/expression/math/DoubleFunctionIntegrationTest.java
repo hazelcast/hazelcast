@@ -68,6 +68,7 @@ public class DoubleFunctionIntegrationTest extends ExpressionTestSupport {
             { new Mode("LOG10") },
             { new Mode("DEGREES") },
             { new Mode("RADIANS") },
+            { new Mode("SQUARE") },
         });
     }
 
@@ -209,6 +210,9 @@ public class DoubleFunctionIntegrationTest extends ExpressionTestSupport {
 
                 case "RADIANS":
                     return Math.toRadians(arg);
+
+                case "SQUARE":
+                    return arg * arg;
 
                 default:
                     throw new UnsupportedOperationException("Unsupported mode: " + mode);

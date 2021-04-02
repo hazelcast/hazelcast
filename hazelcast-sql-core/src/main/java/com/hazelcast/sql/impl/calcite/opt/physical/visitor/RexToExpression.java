@@ -294,6 +294,8 @@ public final class RexToExpression {
                 if (function == HazelcastSqlOperatorTable.POWER) {
                     assert operands.length == 2;
                     return DoubleBiFunction.create(operands[0], operands[1], DoubleBiFunction.POWER);
+                } else if (function == HazelcastSqlOperatorTable.SQUARE) {
+                    return DoubleFunction.create(operands[0], DoubleFunction.SQUARE);
                 } else if (function == HazelcastSqlOperatorTable.COS) {
                     return DoubleFunction.create(operands[0], DoubleFunction.COS);
                 } else if (function == HazelcastSqlOperatorTable.SIN) {
