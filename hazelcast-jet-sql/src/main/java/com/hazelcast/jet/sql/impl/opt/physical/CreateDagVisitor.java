@@ -17,12 +17,15 @@
 package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.function.BiFunctionEx;
+import com.hazelcast.function.BiPredicateEx;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
+import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
@@ -32,8 +35,10 @@ import com.hazelcast.jet.pipeline.ServiceFactories;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
+import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.schema.Table;
 import org.apache.calcite.rel.RelNode;
 
@@ -62,12 +67,12 @@ public class CreateDagVisitor {
     }
 
     public Vertex onValues(ValuesPhysicalRel rel) {
-        List<Object[]> values = rel.tuples();
+        List<ExpressionValues> values = rel.values();
 
         return dag.newUniqueVertex("Values", convenientSourceP(
-                pCtx -> null,
-                (ignored, buffer) -> {
-                    values.forEach(buffer::add);
+                CreateDagVisitor::toExpressionEvalContext,
+                (context, buffer) -> {
+                    values.forEach(vs -> vs.toValues(context).forEach(buffer::add));
                     buffer.close();
                 },
                 ctx -> null,
@@ -99,11 +104,10 @@ public class CreateDagVisitor {
 
         Vertex vertex = dag.newUniqueVertex("Filter", filterUsingServiceP(
                 ServiceFactories.nonSharedService(ctx -> {
-                    InternalSerializationService serializationService = ((ProcSupplierCtx) ctx).serializationService();
-                    SimpleExpressionEvalContext context = new SimpleExpressionEvalContext(serializationService);
+                    ExpressionEvalContext context = toExpressionEvalContext(ctx);
                     return ExpressionUtil.filterFn(filter, context);
                 }),
-                (Predicate<Object[]> filterFn, Object[] row) -> filterFn.test(row)));
+                (BiPredicateEx<Predicate<Object[]>, Object[]>) Predicate::test));
         connectInput(rel.getInput(), vertex, null);
         return vertex;
     }
@@ -113,11 +117,10 @@ public class CreateDagVisitor {
 
         Vertex vertex = dag.newUniqueVertex("Project", mapUsingServiceP(
                 ServiceFactories.nonSharedService(ctx -> {
-                    InternalSerializationService serializationService = ((ProcSupplierCtx) ctx).serializationService();
-                    SimpleExpressionEvalContext context = new SimpleExpressionEvalContext(serializationService);
+                    ExpressionEvalContext context = toExpressionEvalContext(ctx);
                     return ExpressionUtil.projectionFn(projection, context);
                 }),
-                (Function<Object[], Object[]> projectionFn, Object[] row) -> projectionFn.apply(row)
+                (BiFunctionEx<Function<Object[], Object[]>, Object[], Object[]>) Function::apply
         ));
 
         connectInput(rel.getInput(), vertex, null);
@@ -246,5 +249,10 @@ public class CreateDagVisitor {
             configureEdgeFn.accept(edge);
         }
         dag.edge(edge);
+    }
+
+    private static ExpressionEvalContext toExpressionEvalContext(Processor.Context ctx) {
+        InternalSerializationService serializationService = ((ProcSupplierCtx) ctx).serializationService();
+        return new SimpleExpressionEvalContext(serializationService);
     }
 }

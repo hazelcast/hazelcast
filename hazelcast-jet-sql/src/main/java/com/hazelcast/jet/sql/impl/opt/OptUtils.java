@@ -20,7 +20,6 @@ import com.google.common.collect.ImmutableList;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.sql.impl.calcite.opt.physical.visitor.RexToExpression;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.RexToExpressionVisitor;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastRelOptTable;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
@@ -44,7 +43,6 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.logical.LogicalTableScan;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
-import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexVisitor;
 import org.apache.calcite.sql.type.SqlTypeName;
 
@@ -223,22 +221,6 @@ public final class OptUtils {
     public static RexVisitor<Expression<?>> createRexToExpressionVisitor(PlanNodeFieldTypeProvider schema) {
         // TODO: pass actual parameter metadata, see JetSqlCoreBackendImpl#execute
         return new RexToExpressionVisitor(schema, new QueryParameterMetadata());
-    }
-
-    public static List<Object[]> convert(ImmutableList<ImmutableList<RexLiteral>> values) {
-        List<Object[]> rows = new ArrayList<>(values.size());
-        for (List<RexLiteral> tuple : values) {
-
-            Object[] result = new Object[tuple.size()];
-            for (int i = 0; i < tuple.size(); i++) {
-                RexLiteral literal = tuple.get(i);
-                Expression<?> expression = RexToExpression.convertLiteral(literal);
-                Object value = expression.eval(null, null);
-                result[i] = value;
-            }
-            rows.add(result);
-        }
-        return rows;
     }
 
     /**

@@ -68,11 +68,12 @@ public final class LogicalRules {
                 ReduceExpressionsRule.JOIN_INSTANCE,
 
                 // Value rules
-                ValuesLogicalRule.INSTANCE,
-                ValuesReduceRules.FILTER_INSTANCE,
-                ValuesReduceRules.PROJECT_INSTANCE,
-                ValuesReduceRules.PROJECT_FILTER_INSTANCE,
-                ValuesReduceRules.UNION_INSTANCE,
+                ValuesLogicalRules.CONVERT_INSTANCE,
+                ValuesLogicalRules.FILTER_INSTANCE,
+                ValuesLogicalRules.PROJECT_INSTANCE,
+                ValuesLogicalRules.PROJECT_FILTER_INSTANCE,
+                ValuesLogicalRules.UNION_INSTANCE,
+                ValuesLogicalRules.INSTANCE,
 
                 // Insert rules
                 InsertLogicalRule.INSTANCE,
