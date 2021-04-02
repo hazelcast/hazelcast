@@ -69,6 +69,8 @@ public class DoubleFunctionIntegrationTest extends ExpressionTestSupport {
             { new Mode("DEGREES") },
             { new Mode("RADIANS") },
             { new Mode("SQUARE") },
+            { new Mode("SQRT") },
+            { new Mode("CBRT") },
         });
     }
 
@@ -213,6 +215,12 @@ public class DoubleFunctionIntegrationTest extends ExpressionTestSupport {
 
                 case "SQUARE":
                     return arg * arg;
+
+                case "SQRT":
+                    return Math.sqrt(arg);
+
+                case "CBRT":
+                    return Math.cbrt(arg);
 
                 default:
                     throw new UnsupportedOperationException("Unsupported mode: " + mode);

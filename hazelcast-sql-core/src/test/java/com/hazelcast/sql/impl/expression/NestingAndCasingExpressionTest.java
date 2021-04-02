@@ -233,7 +233,17 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
 
     @Test
     public void test_SQUARE() {
-        check(sql("SQUARE(?) || SQUARE(?)"), 16, 16);
+        check(sql("SQUARE(?) || SQUARE(?)"), 1, 1);
+    }
+
+    @Test
+    public void test_SQRT() {
+        check(sql("SQRT(?) || SQRT(?)"), 4, 4);
+    }
+
+    @Test
+    public void test_CBRT() {
+        check(sql("CBRT(?) || CBRT(?)"), 8, 8);
     }
 
     @Test
