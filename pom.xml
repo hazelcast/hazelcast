@@ -28,19 +28,6 @@
     <description>Hazelcast In-Memory DataGrid</description>
     <url>http://www.hazelcast.com/</url>
 
-    <modules>
-        <module>extensions</module>
-        <module>hazelcast</module>
-        <module>hazelcast-jet-sql</module>
-        <module>hazelcast-spring</module>
-        <module>hazelcast-spring-tests</module>
-        <module>hazelcast-build-utils</module>
-        <module>hazelcast-sql-core</module>
-        <module>hazelcast-sql</module>
-        <module>hazelcast-all</module>
-        <module>distribution</module>
-    </modules>
-
     <properties>
         <main.basedir>${project.basedir}</main.basedir>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -443,6 +430,24 @@
 
     <profiles>
         <profile>
+            <id>default</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <modules>
+                <module>extensions</module>
+                <module>hazelcast</module>
+                <module>hazelcast-jet-sql</module>
+                <module>hazelcast-spring</module>
+                <module>hazelcast-spring-tests</module>
+                <module>hazelcast-build-utils</module>
+                <module>hazelcast-sql-core</module>
+                <module>hazelcast-sql</module>
+                <module>hazelcast-all</module>
+                <module>distribution</module>
+            </modules>
+        </profile>
+        <profile>
             <!-- used by the PR builder -->
             <id>parallelTest</id>
             <build>
@@ -593,6 +598,18 @@
                     </plugin>
                 </plugins>
             </build>
+            <modules>
+                <module>extensions</module>
+                <module>hazelcast</module>
+                <module>hazelcast-jet-sql</module>
+                <module>hazelcast-spring</module>
+                <module>hazelcast-spring-tests</module>
+                <module>hazelcast-build-utils</module>
+                <module>hazelcast-sql-core</module>
+                <module>hazelcast-sql</module>
+                <module>hazelcast-all</module>
+                <module>distribution</module>
+            </modules>
         </profile>
 
         <profile>
@@ -664,6 +681,18 @@
                     </plugin>
                 </plugins>
             </build>
+            <modules>
+                <module>extensions</module>
+                <module>hazelcast</module>
+                <module>hazelcast-jet-sql</module>
+                <module>hazelcast-spring</module>
+                <module>hazelcast-spring-tests</module>
+                <module>hazelcast-build-utils</module>
+                <module>hazelcast-sql-core</module>
+                <module>hazelcast-sql</module>
+                <module>hazelcast-all</module>
+                <module>distribution</module>
+            </modules>
         </profile>
 
         <profile>
@@ -726,6 +755,18 @@
                     </plugin>
                 </plugins>
             </reporting>
+            <modules>
+                <module>extensions</module>
+                <module>hazelcast</module>
+                <module>hazelcast-jet-sql</module>
+                <module>hazelcast-spring</module>
+                <module>hazelcast-spring-tests</module>
+                <module>hazelcast-build-utils</module>
+                <module>hazelcast-sql-core</module>
+                <module>hazelcast-sql</module>
+                <module>hazelcast-all</module>
+                <module>distribution</module>
+            </modules>
         </profile>
 
         <profile>
@@ -833,6 +874,18 @@
                     </plugin>
                 </plugins>
             </build>
+            <modules>
+                <module>extensions</module>
+                <module>hazelcast</module>
+                <module>hazelcast-jet-sql</module>
+                <module>hazelcast-spring</module>
+                <module>hazelcast-spring-tests</module>
+                <module>hazelcast-build-utils</module>
+                <module>hazelcast-sql-core</module>
+                <module>hazelcast-sql</module>
+                <module>hazelcast-all</module>
+                <module>distribution</module>
+            </modules>
         </profile>
 
         <profile>
@@ -890,7 +943,16 @@
                 </plugins>
             </build>
             <modules>
+                <module>extensions</module>
+                <module>hazelcast</module>
+                <module>hazelcast-jet-sql</module>
+                <module>hazelcast-spring</module>
+                <module>hazelcast-spring-tests</module>
+                <module>hazelcast-build-utils</module>
+                <module>hazelcast-sql-core</module>
+                <module>hazelcast-sql</module>
                 <module>hazelcast-all</module>
+                <module>distribution</module>
             </modules>
         </profile>
 
@@ -901,7 +963,16 @@
                 <javadoc>true</javadoc>
             </properties>
             <modules>
+                <module>extensions</module>
+                <module>hazelcast</module>
+                <module>hazelcast-jet-sql</module>
+                <module>hazelcast-spring</module>
+                <module>hazelcast-spring-tests</module>
+                <module>hazelcast-build-utils</module>
+                <module>hazelcast-sql-core</module>
+                <module>hazelcast-sql</module>
                 <module>hazelcast-all</module>
+                <module>distribution</module>
             </modules>
             <build>
                 <plugins>
@@ -929,6 +1000,32 @@
         <profile>
             <id>zip</id>
             <modules>
+                <module>extensions</module>
+                <module>hazelcast</module>
+                <module>hazelcast-jet-sql</module>
+                <module>hazelcast-spring</module>
+                <module>hazelcast-spring-tests</module>
+                <module>hazelcast-build-utils</module>
+                <module>hazelcast-sql-core</module>
+                <module>hazelcast-sql</module>
+                <module>hazelcast-all</module>
+                <module>distribution</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>quick</id>
+            <properties>
+                <checkstyle.skip>true</checkstyle.skip>
+            </properties>
+            <modules>
+                <module>hazelcast</module>
+                <module>hazelcast-jet-sql</module>
+                <module>hazelcast-spring</module>
+                <module>hazelcast-spring-tests</module>
+                <module>hazelcast-build-utils</module>
+                <module>hazelcast-sql-core</module>
+                <module>hazelcast-sql</module>
                 <module>hazelcast-all</module>
             </modules>
         </profile>
@@ -1000,6 +1097,18 @@
                     </plugin>
                 </plugins>
             </build>
+            <modules>
+                <module>extensions</module>
+                <module>hazelcast</module>
+                <module>hazelcast-jet-sql</module>
+                <module>hazelcast-spring</module>
+                <module>hazelcast-spring-tests</module>
+                <module>hazelcast-build-utils</module>
+                <module>hazelcast-sql-core</module>
+                <module>hazelcast-sql</module>
+                <module>hazelcast-all</module>
+                <module>distribution</module>
+            </modules>
         </profile>
 
         <profile>
@@ -1061,6 +1170,18 @@
                     </plugin>
                 </plugins>
             </build>
+            <modules>
+                <module>extensions</module>
+                <module>hazelcast</module>
+                <module>hazelcast-jet-sql</module>
+                <module>hazelcast-spring</module>
+                <module>hazelcast-spring-tests</module>
+                <module>hazelcast-build-utils</module>
+                <module>hazelcast-sql-core</module>
+                <module>hazelcast-sql</module>
+                <module>hazelcast-all</module>
+                <module>distribution</module>
+            </modules>
         </profile>
 
         <profile>
@@ -1095,6 +1216,16 @@
                 </javaModuleArgs>
             </properties>
             <modules>
+                <module>extensions</module>
+                <module>hazelcast</module>
+                <module>hazelcast-jet-sql</module>
+                <module>hazelcast-spring</module>
+                <module>hazelcast-spring-tests</module>
+                <module>hazelcast-build-utils</module>
+                <module>hazelcast-sql-core</module>
+                <module>hazelcast-sql</module>
+                <module>hazelcast-all</module>
+                <module>distribution</module>
                 <module>modulepath-tests</module>
             </modules>
         </profile>
@@ -1152,6 +1283,18 @@
                     </plugin>
                 </plugins>
             </build>
+            <modules>
+                <module>extensions</module>
+                <module>hazelcast</module>
+                <module>hazelcast-jet-sql</module>
+                <module>hazelcast-spring</module>
+                <module>hazelcast-spring-tests</module>
+                <module>hazelcast-build-utils</module>
+                <module>hazelcast-sql-core</module>
+                <module>hazelcast-sql</module>
+                <module>hazelcast-all</module>
+                <module>distribution</module>
+            </modules>
         </profile>
     </profiles>
 
