@@ -73,7 +73,7 @@ public class ManualRestartTest extends JetTestSupport {
         TestProcessors.reset(NODE_COUNT * LOCAL_PARALLELISM);
 
         dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, NODE_COUNT)));
-        instances = createJetMembers(NODE_COUNT);
+        instances = createJetMembers(smallInstanceConfig(), NODE_COUNT);
     }
 
     @Test
@@ -96,7 +96,7 @@ public class ManualRestartTest extends JetTestSupport {
         // When the job is restarted after new members join to the cluster
         int newMemberCount = 2;
         for (int i = 0; i < newMemberCount; i++) {
-            createJetMember();
+            createJetMember(smallInstanceConfig());
         }
 
         assertTrueAllTheTime(() -> assertEquals(NODE_COUNT, MockPS.initCount.get()), 3);

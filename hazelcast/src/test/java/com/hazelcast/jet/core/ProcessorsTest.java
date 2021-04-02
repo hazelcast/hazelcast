@@ -62,7 +62,7 @@ public class ProcessorsTest extends SimpleTestInClusterSupport {
 
     @BeforeClass
     public static void setUp() {
-        initialize(1, null);
+        initialize(1, smallInstanceConfig());
     }
 
     @Test

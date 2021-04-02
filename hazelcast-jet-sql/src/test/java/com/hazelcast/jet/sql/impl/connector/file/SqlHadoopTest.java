@@ -55,7 +55,7 @@ public class SqlHadoopTest extends SqlTestSupport {
 
     @BeforeClass
     public static void setUpClass() throws Exception {
-        initialize(1, null);
+        initialize(1, smallInstanceConfig());
         sqlService = instance().getSql();
 
         File directory = Files.createTempDirectory("sql-test-hdfs").toFile().getAbsoluteFile();

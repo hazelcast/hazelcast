@@ -55,7 +55,7 @@ public class AvroSourceTest extends SimpleTestInClusterSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        initialize(1, null);
+        initialize(1, smallInstanceConfig());
     }
 
     @Before

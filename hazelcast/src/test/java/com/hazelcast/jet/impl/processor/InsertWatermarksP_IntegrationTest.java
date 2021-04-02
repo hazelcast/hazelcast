@@ -44,7 +44,7 @@ public class InsertWatermarksP_IntegrationTest extends JetTestSupport {
 
     @Before
     public void before() {
-        instance = super.createJetMember();
+        instance = super.createJetMember(smallInstanceConfig());
     }
 
     @Test

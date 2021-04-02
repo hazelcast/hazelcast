@@ -97,7 +97,7 @@ public class ReadHadoopPTest extends HadoopTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        initialize(2, null);
+        initialize(2, smallInstanceConfig());
     }
 
     @Before

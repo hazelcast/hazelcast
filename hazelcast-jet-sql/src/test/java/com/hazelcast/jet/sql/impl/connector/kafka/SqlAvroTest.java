@@ -77,7 +77,7 @@ public class SqlAvroTest extends SqlTestSupport {
 
     @BeforeClass
     public static void setUpClass() throws Exception {
-        initialize(1, null);
+        initialize(1, smallInstanceConfig());
         sqlService = instance().getSql();
 
         kafkaTestSupport = new KafkaTestSupport();

@@ -73,7 +73,7 @@ public class ReadMapOrCacheP_ConsistencyTest extends JetTestSupport {
 
     @Before
     public void setup() {
-        jet = createJetMember();
+        jet = createJetMember(smallInstanceConfig());
 
         processedCount = new AtomicInteger();
         startLatch = new CountDownLatch(1);
@@ -118,12 +118,12 @@ public class ReadMapOrCacheP_ConsistencyTest extends JetTestSupport {
 
     @Test
     public void test_migration_local() throws Exception {
-        test_migration(jet.getMap(MAP_NAME), null, this::createJetMember);
+        test_migration(jet.getMap(MAP_NAME), null, () -> createJetMember(smallInstanceConfig()));
     }
 
     @Test
     public void test_migration_remote() throws Exception {
-        Config config = new Config().setClusterName(UuidUtil.newUnsecureUuidString());
+        Config config = smallInstanceConfig().setClusterName(UuidUtil.newUnsecureUuidString());
         HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
         remoteInstances.add(hz);
 

@@ -39,7 +39,7 @@ public class ReadIListPTest extends JetTestSupport {
 
     @Before
     public void setUp() {
-        instance = this.createJetMember();
+        instance = this.createJetMember(smallInstanceConfig());
     }
 
     @Test

@@ -54,7 +54,7 @@ public class ObservableShutdownTest extends JetTestSupport {
 
     @Before
     public void before() {
-        members = createJetMembers(MEMBER_COUNT);
+        members = createJetMembers(smallInstanceConfig(), MEMBER_COUNT);
         client = createJetClient();
 
         memberObserver = new TestObserver();

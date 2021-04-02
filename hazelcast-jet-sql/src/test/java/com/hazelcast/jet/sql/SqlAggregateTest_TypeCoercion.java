@@ -35,7 +35,7 @@ public class SqlAggregateTest_TypeCoercion extends SqlTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        initialize(1, null);
+        initialize(1, smallInstanceConfig());
         sqlService = instance().getSql();
     }
 

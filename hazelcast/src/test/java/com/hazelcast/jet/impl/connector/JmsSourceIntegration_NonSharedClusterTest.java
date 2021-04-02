@@ -63,8 +63,8 @@ public class JmsSourceIntegration_NonSharedClusterTest extends JetTestSupport {
 
     @Test
     public void when_memberTerminated_then_transactionsRolledBack() throws Exception {
-        JetInstance instance1 = createJetMember();
-        JetInstance instance2 = createJetMember();
+        JetInstance instance1 = createJetMember(smallInstanceConfig());
+        JetInstance instance2 = createJetMember(smallInstanceConfig());
 
         // use higher number of messages so that each of the parallel processors gets some
         JmsTestUtil.sendMessages(getConnectionFactory(), "queue", true, MESSAGE_COUNT);
@@ -112,7 +112,7 @@ public class JmsSourceIntegration_NonSharedClusterTest extends JetTestSupport {
     private void when_snapshotFails(ProcessingGuarantee guarantee, boolean expectFailure) {
         storeFailed = false;
         // force snapshots to fail by adding a failing map store configuration for snapshot data maps
-        Config config = new Config();
+        Config config = smallInstanceConfig();
         MapConfig mapConfig = new MapConfig(JobRepository.SNAPSHOT_DATA_MAP_PREFIX + '*');
         MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
         mapStoreConfig.setEnabled(true);

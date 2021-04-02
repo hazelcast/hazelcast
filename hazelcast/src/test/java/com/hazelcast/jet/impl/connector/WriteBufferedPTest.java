@@ -85,7 +85,7 @@ public class WriteBufferedPTest extends JetTestSupport {
 
     @Test
     public void when_writeBufferedJobFailed_then_bufferDisposed() throws Exception {
-        JetInstance instance = createJetMember();
+        JetInstance instance = createJetMember(smallInstanceConfig());
         DAG dag = new DAG();
         Vertex source = dag.newVertex("source", () -> new NoOutputSourceP());
         Vertex sink = dag.newVertex("sink", getLoggingBufferedWriter()).localParallelism(1);

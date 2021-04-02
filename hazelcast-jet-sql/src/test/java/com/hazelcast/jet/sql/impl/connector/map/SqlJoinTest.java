@@ -38,7 +38,7 @@ public class SqlJoinTest extends SqlTestSupport {
 
     @BeforeClass
     public static void setUpClass() {
-        initialize(2, null);
+        initialize(2, smallInstanceConfig());
         sqlService = instance().getSql();
     }
 

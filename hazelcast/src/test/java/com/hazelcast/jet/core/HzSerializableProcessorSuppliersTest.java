@@ -37,7 +37,7 @@ public class HzSerializableProcessorSuppliersTest extends SimpleTestInClusterSup
 
     @BeforeClass
     public static void beforeClass() {
-        initialize(2, null);
+        initialize(2, smallInstanceConfig());
     }
 
     @Test

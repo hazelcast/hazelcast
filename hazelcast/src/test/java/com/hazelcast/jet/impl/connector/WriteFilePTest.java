@@ -88,7 +88,7 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        initialize(1, null);
+        initialize(1, smallInstanceConfig());
         semaphore.drainPermits();
     }
 

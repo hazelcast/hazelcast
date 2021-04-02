@@ -57,7 +57,7 @@ public class SqlPojoTest extends SqlTestSupport {
 
     @BeforeClass
     public static void setUpClass() {
-        initialize(1, null);
+        initialize(1, smallInstanceConfig());
         sqlService = instance().getSql();
     }
 

@@ -54,7 +54,7 @@ public class ClusterStateChangeTest extends JetTestSupport {
     @Before
     public void before() {
         TestProcessors.reset(TOTAL_PARALLELISM);
-        Config config = new Config();
+        Config config = smallInstanceConfig();
         config.getJetConfig().getInstanceConfig().setCooperativeThreadCount(LOCAL_PARALLELISM);
         members = createJetMembers(config, NODE_COUNT);
 

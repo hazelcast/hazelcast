@@ -42,8 +42,8 @@ public class MultigraphTest extends JetTestSupport {
         dag.edge(from(source, 0).to(sink, 0));
         dag.edge(from(source, 1).to(sink, 1).partitioned(wholeItem()).distributed());
 
-        JetInstance instance = createJetMember();
-        createJetMember();
+        JetInstance instance = createJetMember(smallInstanceConfig());
+        createJetMember(smallInstanceConfig());
         instance.newJob(dag).join();
 
         int numMembers = 2;

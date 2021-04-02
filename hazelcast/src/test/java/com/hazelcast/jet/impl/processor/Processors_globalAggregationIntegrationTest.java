@@ -62,7 +62,7 @@ public class Processors_globalAggregationIntegrationTest extends JetTestSupport 
 
     private void runTest(List<Long> sourceItems, Long expectedOutput)
             throws Exception {
-        JetInstance instance = createJetMember();
+        JetInstance instance = createJetMember(smallInstanceConfig());
 
         AggregateOperation1<Long, ?, Long> summingOp = summingLong((Long l) -> l);
 

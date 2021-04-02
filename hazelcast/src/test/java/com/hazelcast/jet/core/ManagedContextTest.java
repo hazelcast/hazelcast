@@ -47,7 +47,7 @@ public class ManagedContextTest extends JetTestSupport {
 
     @Before
     public void setup() {
-        Config config = new Config().setManagedContext(new MockManagedContext());
+        Config config = smallInstanceConfig().setManagedContext(new MockManagedContext());
         jet = createJetMember(config);
     }
 

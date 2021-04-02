@@ -37,9 +37,11 @@ import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Arrays;
@@ -361,6 +363,7 @@ public class MetricsTest extends SimpleTestInClusterSupport {
         new JobMetricsChecker(job).assertSummedMetricValue("total", 5);
     }
 
+    @Category(NightlyTest.class)
     @Test
     public void metricsAreJobIndependent() {
         pipeline.readFrom(TestSources.itemStream(1_000))
@@ -414,6 +417,7 @@ public class MetricsTest extends SimpleTestInClusterSupport {
         String instanceName = instance().getHazelcastInstance().getName();
         long sum = 0;
         int availableProcessors = Runtime.getRuntime().availableProcessors();
+        System.out.println("Available processors: " + availableProcessors);
         for (int i = 0; i < availableProcessors; i++) {
             JmxMetricsChecker jmxMetricsChecker = new JmxMetricsChecker(instanceName, job,
                     "vertex=fused(filter, map)", "procType=TransformP", "proc=" + i, "user=true");

@@ -77,7 +77,7 @@ public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
 
     @Before
     public void before() {
-        instance = super.createJetMember();
+        instance = super.createJetMember(smallInstanceConfig());
         sinkList = instance.getHazelcastInstance().getList("sinkList");
     }
 

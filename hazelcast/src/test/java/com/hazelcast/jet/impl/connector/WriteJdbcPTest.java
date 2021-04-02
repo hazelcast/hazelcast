@@ -69,7 +69,7 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
 
     @BeforeClass
     public static void setupClass() {
-        initialize(2, null);
+        initialize(2, smallInstanceConfig());
     }
 
     @Before
