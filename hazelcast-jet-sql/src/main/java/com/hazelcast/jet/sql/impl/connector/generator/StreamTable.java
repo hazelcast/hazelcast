@@ -28,31 +28,35 @@ import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.TableField;
 
 import java.util.List;
 
+import static com.hazelcast.jet.sql.impl.ExpressionUtil.NOT_IMPLEMENTED_ARGUMENTS_CONTEXT;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 class StreamTable extends JetTable {
 
-    private final Integer rate;
+    private final List<Expression<?>> argumentExpressions;
 
     StreamTable(
             SqlConnector sqlConnector,
             List<TableField> fields,
             String schemaName,
             String name,
-            Integer rate
+            List<Expression<?>> argumentExpressions
     ) {
         super(sqlConnector, fields, schemaName, name, new ConstantTableStatistics(Integer.MAX_VALUE));
 
-        this.rate = rate;
+        this.argumentExpressions = argumentExpressions;
     }
 
     StreamSource<Object[]> items(Expression<Boolean> predicate, List<Expression<?>> projections) {
+        Integer rate = evaluate(argumentExpressions.get(0));
+
         if (rate == null) {
             throw QueryException.error("rate cannot be null");
         }
@@ -60,7 +64,6 @@ class StreamTable extends JetTable {
             throw QueryException.error("rate cannot be less than zero");
         }
 
-        int rate = this.rate;
         return SourceBuilder
                 .stream("stream", ctx -> {
                     InternalSerializationService serializationService = ((ProcSupplierCtx) ctx).serializationService();
@@ -69,6 +72,13 @@ class StreamTable extends JetTable {
                 })
                 .fillBufferFn(DataGenerator::fillBuffer)
                 .build();
+    }
+
+    private static Integer evaluate(Expression<?> argumentExpression) {
+        if (argumentExpression == null) {
+            return null;
+        }
+        return (Integer) argumentExpression.eval(EmptyRow.INSTANCE, NOT_IMPLEMENTED_ARGUMENTS_CONTEXT);
     }
 
     private static final class DataGenerator {

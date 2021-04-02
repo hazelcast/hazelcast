@@ -27,6 +27,7 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.TableField;
 
@@ -35,29 +36,29 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.IntStream;
 
+import static com.hazelcast.jet.sql.impl.ExpressionUtil.NOT_IMPLEMENTED_ARGUMENTS_CONTEXT;
+
 class SeriesTable extends JetTable {
 
-    private final Integer start;
-    private final Integer stop;
-    private final Integer step;
+    private final List<Expression<?>> argumentExpressions;
 
     SeriesTable(
             SqlConnector sqlConnector,
             List<TableField> fields,
             String schemaName,
             String name,
-            Integer start,
-            Integer stop,
-            Integer step
+            List<Expression<?>> argumentExpressions
     ) {
-        super(sqlConnector, fields, schemaName, name, new ConstantTableStatistics(numberOfItems(start, stop, step)));
+        super(sqlConnector, fields, schemaName, name, new ConstantTableStatistics(0));
 
-        this.start = start;
-        this.stop = stop;
-        this.step = step;
+        this.argumentExpressions = argumentExpressions;
     }
 
     BatchSource<Object[]> items(Expression<Boolean> predicate, List<Expression<?>> projections) {
+        Integer start = evaluate(argumentExpressions.get(0), null);
+        Integer stop = evaluate(argumentExpressions.get(1), null);
+        Integer step = evaluate(argumentExpressions.get(2), 1);
+
         if (start == null || stop == null || step == null) {
             throw QueryException.error("null arguments to GENERATE_SERIES functions");
         }
@@ -65,9 +66,6 @@ class SeriesTable extends JetTable {
             throw QueryException.error("step cannot equal zero");
         }
 
-        int start = this.start;
-        int stop = this.stop;
-        int step = this.step;
         return SourceBuilder
                 .batch("series", ctx -> {
                     InternalSerializationService serializationService = ((ProcSupplierCtx) ctx).serializationService();
@@ -78,21 +76,12 @@ class SeriesTable extends JetTable {
                 .build();
     }
 
-    long numberOfItems() {
-        return numberOfItems(start, stop, step);
-    }
-
-    private static long numberOfItems(Integer start, Integer stop, Integer step) {
-        // ignore bad arguments, it will be reported in items()
-        if (start == null || stop == null || step == null || step == 0) {
-            return 0;
+    private static Integer evaluate(Expression<?> argumentExpression, Integer defaultValue) {
+        if (argumentExpression == null) {
+            return defaultValue;
         }
-
-        if (start <= stop) {
-            return step < 0 ? 0 : ((long) stop - start) / step + 1;
-        } else {
-            return step > 0 ? 0 : ((long) start - stop) / (-step) + 1;
-        }
+        Integer value = (Integer) argumentExpression.eval(EmptyRow.INSTANCE, NOT_IMPLEMENTED_ARGUMENTS_CONTEXT);
+        return value == null ? defaultValue : value;
     }
 
     private static final class DataGenerator {
@@ -125,6 +114,14 @@ class SeriesTable extends JetTable {
                     buffer.close();
                     return;
                 }
+            }
+        }
+
+        private static long numberOfItems(int start, int stop, int step) {
+            if (start <= stop) {
+                return step < 0 ? 0 : ((long) stop - start) / step + 1;
+            } else {
+                return step > 0 ? 0 : ((long) start - stop) / (-step) + 1;
             }
         }
     }
