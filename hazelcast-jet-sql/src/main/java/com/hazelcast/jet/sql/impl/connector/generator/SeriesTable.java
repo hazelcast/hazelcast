@@ -27,6 +27,7 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.plan.cache.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.TableField;
 
@@ -36,6 +37,10 @@ import java.util.Objects;
 import java.util.stream.IntStream;
 
 class SeriesTable extends JetTable {
+
+    // table is always available and its field list does not change
+    private static final PlanObjectKey OBJECT_ID = new PlanObjectKey() {
+    };
 
     private final Integer start;
     private final Integer stop;
@@ -93,6 +98,11 @@ class SeriesTable extends JetTable {
         } else {
             return step > 0 ? 0 : ((long) start - stop) / (-step) + 1;
         }
+    }
+
+    @Override
+    public PlanObjectKey getObjectKey() {
+        return OBJECT_ID;
     }
 
     private static final class DataGenerator {

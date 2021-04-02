@@ -24,6 +24,7 @@ import org.junit.Test;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class SqlSeriesGeneratorTest extends SqlTestSupport {
@@ -167,5 +168,26 @@ public class SqlSeriesGeneratorTest extends SqlTestSupport {
         assertThatThrownBy(() -> sqlService.execute(
                 "SELECT * FROM TABLE(GENERATE_SERIES(\"start\" => 0, stop => 1, non_existing => 0))"
         )).hasMessageContaining("Unknown argument name 'non_existing'");
+    }
+
+    @Test
+    public void test_planCache() {
+        assertRowsAnyOrder(
+                "SELECT * FROM TABLE(GENERATE_SERIES(0, 1))",
+                asList(
+                        new Row(0),
+                        new Row(1)
+                )
+        );
+        assertThat(planCache(instance()).size()).isEqualTo(1);
+
+        assertRowsAnyOrder(
+                "SELECT * FROM TABLE(GENERATE_SERIES(1, 2))",
+                asList(
+                        new Row(1),
+                        new Row(2)
+                )
+        );
+        assertThat(planCache(instance()).size()).isEqualTo(2);
     }
 }

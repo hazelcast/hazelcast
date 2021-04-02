@@ -16,16 +16,10 @@
 
 package com.hazelcast.jet.sql.impl;
 
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.jet.core.DAG;
-import com.hazelcast.jet.sql.impl.JetPlan.AlterJobPlan;
-import com.hazelcast.jet.sql.impl.JetPlan.CreateJobPlan;
-import com.hazelcast.jet.sql.impl.JetPlan.CreateMappingPlan;
-import com.hazelcast.jet.sql.impl.JetPlan.CreateSnapshotPlan;
-import com.hazelcast.jet.sql.impl.JetPlan.DropJobPlan;
-import com.hazelcast.jet.sql.impl.JetPlan.DropMappingPlan;
-import com.hazelcast.jet.sql.impl.JetPlan.DropSnapshotPlan;
+import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.sql.impl.JetPlan.SelectOrSinkPlan;
-import com.hazelcast.jet.sql.impl.JetPlan.ShowStatementPlan;
 import com.hazelcast.jet.sql.impl.calcite.parser.JetSqlParser;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
@@ -62,6 +56,8 @@ import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
+import com.hazelcast.sql.impl.plan.cache.PlanCacheKey;
+import com.hazelcast.sql.impl.plan.cache.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.RelOptCluster;
@@ -85,6 +81,9 @@ import org.apache.calcite.sql2rel.SqlToRelConverter.Config;
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 import static java.util.stream.Collectors.toList;
 
@@ -153,29 +152,36 @@ class JetSqlBackend implements SqlBackend {
             throw QueryException.error("Query parameters not yet supported");
         }
 
+        PlanCacheKey id = new PlanCacheKey(task.getSearchPaths(), task.getSql());
         if (node instanceof SqlCreateMapping) {
-            return toCreateMappingPlan((SqlCreateMapping) node);
+            return toCreateMappingPlan(id, (SqlCreateMapping) node);
         } else if (node instanceof SqlDropMapping) {
-            return toDropMappingPlan((SqlDropMapping) node);
+            return toDropMappingPlan(id, (SqlDropMapping) node);
         } else if (node instanceof SqlCreateJob) {
-            return toCreateJobPlan(parseResult, context);
+            return toCreateJobPlan(id, parseResult, context);
         } else if (node instanceof SqlAlterJob) {
-            return toAlterJobPlan((SqlAlterJob) node);
+            return toAlterJobPlan(id, (SqlAlterJob) node);
         } else if (node instanceof SqlDropJob) {
-            return toDropJobPlan((SqlDropJob) node);
+            return toDropJobPlan(id, (SqlDropJob) node);
         } else if (node instanceof SqlCreateSnapshot) {
-            return toCreateSnapshotPlan((SqlCreateSnapshot) node);
+            return toCreateSnapshotPlan(id, (SqlCreateSnapshot) node);
         } else if (node instanceof SqlDropSnapshot) {
-            return toDropSnapshotPlan((SqlDropSnapshot) node);
+            return toDropSnapshotPlan(id, (SqlDropSnapshot) node);
         } else if (node instanceof SqlShowStatement) {
-            return toShowStatementPlan((SqlShowStatement) node);
+            return toShowStatementPlan(id, (SqlShowStatement) node);
         } else {
             QueryConvertResult convertResult = context.convert(parseResult);
-            return toPlan(convertResult.getRel(), convertResult.getFieldNames(), context, parseResult.isInfiniteRows());
+            return toPlan(
+                    id,
+                    convertResult.getRel(),
+                    convertResult.getFieldNames(),
+                    context,
+                    parseResult.isInfiniteRows()
+            );
         }
     }
 
-    private SqlPlan toCreateMappingPlan(SqlCreateMapping sqlCreateMapping) {
+    private SqlPlan toCreateMappingPlan(PlanCacheKey id, SqlCreateMapping sqlCreateMapping) {
         List<MappingField> mappingFields = sqlCreateMapping.columns()
                 .map(field -> new MappingField(field.name(), field.type(), field.externalName()))
                 .collect(toList());
@@ -187,7 +193,8 @@ class JetSqlBackend implements SqlBackend {
                 sqlCreateMapping.options()
         );
 
-        return new CreateMappingPlan(
+        return JetPlan.toCreateMapping(
+                id,
                 mapping,
                 sqlCreateMapping.getReplace(),
                 sqlCreateMapping.ifNotExists(),
@@ -195,23 +202,28 @@ class JetSqlBackend implements SqlBackend {
         );
     }
 
-    private SqlPlan toDropMappingPlan(SqlDropMapping sqlDropMapping) {
-        return new DropMappingPlan(sqlDropMapping.nameWithoutSchema(), sqlDropMapping.ifExists(), planExecutor);
+    private SqlPlan toDropMappingPlan(PlanCacheKey id, SqlDropMapping sqlDropMapping) {
+        return JetPlan.toDropMapping(id, sqlDropMapping.nameWithoutSchema(), sqlDropMapping.ifExists(), planExecutor);
     }
 
-    private SqlPlan toCreateJobPlan(QueryParseResult parseResult, OptimizerContext context) {
+    private SqlPlan toCreateJobPlan(PlanCacheKey id, QueryParseResult parseResult, OptimizerContext context) {
         SqlCreateJob sqlCreateJob = (SqlCreateJob) parseResult.getNode();
         SqlNode source = sqlCreateJob.dmlStatement();
 
         QueryParseResult dmlParseResult =
                 new QueryParseResult(source, parseResult.getParameterMetadata(), parseResult.getValidator(), this, false);
         QueryConvertResult dmlConvertedResult = context.convert(dmlParseResult);
-        SelectOrSinkPlan dmlPlan = toPlan(dmlConvertedResult.getRel(), dmlConvertedResult.getFieldNames(), context,
-                dmlParseResult.isInfiniteRows());
+        SelectOrSinkPlan dmlPlan = toPlan(
+                null,
+                dmlConvertedResult.getRel(),
+                dmlConvertedResult.getFieldNames(),
+                context,
+                dmlParseResult.isInfiniteRows()
+        );
         assert dmlPlan.isInsert();
 
-        return new CreateJobPlan(
-                sqlCreateJob.name(),
+        return JetPlan.toCreateJob(
+                id,
                 sqlCreateJob.jobConfig(),
                 sqlCreateJob.ifNotExists(),
                 dmlPlan,
@@ -219,27 +231,34 @@ class JetSqlBackend implements SqlBackend {
         );
     }
 
-    private SqlPlan toAlterJobPlan(SqlAlterJob sqlAlterJob) {
-        return new AlterJobPlan(sqlAlterJob.name(), sqlAlterJob.getOperation(), planExecutor);
+    private SqlPlan toAlterJobPlan(PlanCacheKey id, SqlAlterJob sqlAlterJob) {
+        return JetPlan.toAlterJob(id, sqlAlterJob.name(), sqlAlterJob.getOperation(), planExecutor);
     }
 
-    private SqlPlan toDropJobPlan(SqlDropJob sqlDropJob) {
-        return new DropJobPlan(sqlDropJob.name(), sqlDropJob.ifExists(), sqlDropJob.withSnapshotName(), planExecutor);
+    private SqlPlan toDropJobPlan(PlanCacheKey id, SqlDropJob sqlDropJob) {
+        return JetPlan.toDropJob(
+                id,
+                sqlDropJob.name(),
+                sqlDropJob.ifExists(),
+                sqlDropJob.withSnapshotName(),
+                planExecutor
+        );
     }
 
-    private SqlPlan toCreateSnapshotPlan(SqlCreateSnapshot sqlNode) {
-        return new CreateSnapshotPlan(sqlNode.getSnapshotName(), sqlNode.getJobName(), planExecutor);
+    private SqlPlan toCreateSnapshotPlan(PlanCacheKey id, SqlCreateSnapshot sqlNode) {
+        return JetPlan.toCreateSnapshot(id, sqlNode.getSnapshotName(), sqlNode.getJobName(), planExecutor);
     }
 
-    private SqlPlan toDropSnapshotPlan(SqlDropSnapshot sqlNode) {
-        return new DropSnapshotPlan(sqlNode.getSnapshotName(), sqlNode.isIfExists(), planExecutor);
+    private SqlPlan toDropSnapshotPlan(PlanCacheKey id, SqlDropSnapshot sqlNode) {
+        return JetPlan.toDropSnapshot(id, sqlNode.getSnapshotName(), sqlNode.isIfExists(), planExecutor);
     }
 
-    private SqlPlan toShowStatementPlan(SqlShowStatement sqlNode) {
-        return new ShowStatementPlan(sqlNode.getTarget(), planExecutor);
+    private SqlPlan toShowStatementPlan(PlanCacheKey id, SqlShowStatement sqlNode) {
+        return JetPlan.toShowStatement(id, sqlNode.getTarget(), planExecutor);
     }
 
     private SelectOrSinkPlan toPlan(
+            PlanCacheKey id,
             RelNode rel,
             List<String> fieldNames,
             OptimizerContext context,
@@ -253,14 +272,19 @@ class JetSqlBackend implements SqlBackend {
 
         boolean isInsert = physicalRel instanceof TableModify;
 
+        Map<UUID, PartitionIdSet> partitions =
+                QueryUtils.createPartitionMap(nodeEngine, nodeEngine.getLocalMember().getVersion(), true);
         List<Permission> permissions = extractPermissions(physicalRel);
+
         if (isInsert) {
-            DAG dag = createDag(physicalRel);
-            return new SelectOrSinkPlan(dag, isInfiniteRows, true, null, planExecutor, permissions);
+            Tuple2<DAG, Set<PlanObjectKey>> result = createDag(physicalRel);
+            return JetPlan.toSelectOrSink(id, result.f1(), partitions, result.f0(), isInfiniteRows, true, null,
+                    planExecutor, permissions);
         } else {
-            DAG dag = createDag(new JetRootRel(physicalRel, nodeEngine.getThisAddress()));
+            Tuple2<DAG, Set<PlanObjectKey>> result = createDag(new JetRootRel(physicalRel, nodeEngine.getThisAddress()));
             SqlRowMetadata rowMetadata = createRowMetadata(fieldNames, physicalRel.schema().getTypes());
-            return new SelectOrSinkPlan(dag, isInfiniteRows, false, rowMetadata, planExecutor, permissions);
+            return JetPlan.toSelectOrSink(id, result.f1(), partitions, result.f0(), isInfiniteRows, false, rowMetadata,
+                    planExecutor, permissions);
         }
     }
 
@@ -335,9 +359,9 @@ class JetSqlBackend implements SqlBackend {
         return new SqlRowMetadata(columns);
     }
 
-    private DAG createDag(PhysicalRel physicalRel) {
-        CreateDagVisitor visitor = new CreateDagVisitor(nodeEngine.getLocalMember().getAddress());
+    private Tuple2<DAG, Set<PlanObjectKey>> createDag(PhysicalRel physicalRel) {
+        CreateDagVisitor visitor = new CreateDagVisitor(nodeEngine.getThisAddress());
         physicalRel.accept(visitor);
-        return visitor.getDag();
+        return Tuple2.tuple2(visitor.getDag(), visitor.getObjectIds());
     }
 }

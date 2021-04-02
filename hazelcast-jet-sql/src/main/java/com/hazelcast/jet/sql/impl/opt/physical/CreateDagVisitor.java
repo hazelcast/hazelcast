@@ -17,6 +17,8 @@
 package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.function.BiFunctionEx;
+import com.hazelcast.function.BiPredicateEx;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -34,11 +36,14 @@ import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.plan.cache.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.Table;
 import org.apache.calcite.rel.RelNode;
 
 import javax.annotation.Nullable;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -55,6 +60,7 @@ import static java.util.Collections.singletonList;
 public class CreateDagVisitor {
 
     private final DAG dag = new DAG();
+    private final Set<PlanObjectKey> objectIds = new HashSet<>();
     private final Address localMemberAddress;
 
     public CreateDagVisitor(Address localMemberAddress) {
@@ -81,6 +87,7 @@ public class CreateDagVisitor {
 
     public Vertex onInsert(InsertPhysicalRel rel) {
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
+        collectObjectIds(table);
 
         Vertex vertex = getJetSqlConnector(table).sink(dag, table);
         connectInput(rel.getInput(), vertex, null);
@@ -89,6 +96,7 @@ public class CreateDagVisitor {
 
     public Vertex onFullScan(FullScanPhysicalRel rel) {
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
+        collectObjectIds(table);
 
         return getJetSqlConnector(table)
                 .fullScanReader(dag, table, rel.filter(), rel.projection());
@@ -103,7 +111,7 @@ public class CreateDagVisitor {
                     SimpleExpressionEvalContext context = new SimpleExpressionEvalContext(serializationService);
                     return ExpressionUtil.filterFn(filter, context);
                 }),
-                (Predicate<Object[]> filterFn, Object[] row) -> filterFn.test(row)));
+                (BiPredicateEx<Predicate<Object[]>, Object[]>) Predicate::test));
         connectInput(rel.getInput(), vertex, null);
         return vertex;
     }
@@ -117,7 +125,7 @@ public class CreateDagVisitor {
                     SimpleExpressionEvalContext context = new SimpleExpressionEvalContext(serializationService);
                     return ExpressionUtil.projectionFn(projection, context);
                 }),
-                (Function<Object[], Object[]> projectionFn, Object[] row) -> projectionFn.apply(row)
+                (BiFunctionEx<Function<Object[], Object[]>, Object[], Object[]>) Function::apply
         ));
 
         connectInput(rel.getInput(), vertex, null);
@@ -202,6 +210,7 @@ public class CreateDagVisitor {
         assert rel.getRight() instanceof FullScanPhysicalRel : rel.getRight().getClass();
 
         Table rightTable = rel.getRight().getTable().unwrap(HazelcastTable.class).getTarget();
+        collectObjectIds(rightTable);
 
         VertexWithInputConfig vertexWithConfig = getJetSqlConnector(rightTable).nestedLoopReader(
                 dag,
@@ -229,6 +238,10 @@ public class CreateDagVisitor {
         return dag;
     }
 
+    public Set<PlanObjectKey> getObjectIds() {
+        return objectIds;
+    }
+
     /**
      * Converts the {@code inputRel} into a {@code Vertex} by visiting it and
      * create an edge from the input vertex into {@code thisVertex}.
@@ -246,5 +259,11 @@ public class CreateDagVisitor {
             configureEdgeFn.accept(edge);
         }
         dag.edge(edge);
+    }
+
+    private void collectObjectIds(Table table) {
+        PlanObjectKey objectId = table.getObjectKey();
+        assert objectId != null;
+        objectIds.add(objectId);
     }
 }

@@ -60,7 +60,7 @@ public class KvMetadataNullResolver implements KvMetadataResolver {
             Map<String, String> options,
             InternalSerializationService serializationService
     ) {
-        return new KvMetadata(emptyList(), new NullQueryTargetDescriptor(), new NullUpsertTargetDescriptor());
+        return new KvMetadata(emptyList(), NullQueryTargetDescriptor.INSTANCE, NullUpsertTargetDescriptor.INSTANCE);
     }
 
     @Override
@@ -69,6 +69,9 @@ public class KvMetadataNullResolver implements KvMetadataResolver {
     }
 
     private static class NullQueryTargetDescriptor implements QueryTargetDescriptor {
+
+        private static final NullQueryTargetDescriptor INSTANCE = new NullQueryTargetDescriptor();
+
         @Override
         public QueryTarget create(InternalSerializationService ss, Extractors extractors, boolean isKey) {
             return new NullQueryTarget();
@@ -80,6 +83,15 @@ public class KvMetadataNullResolver implements KvMetadataResolver {
         @Override
         public void readData(ObjectDataInput in) { }
 
+        @Override
+        public boolean equals(Object obj) {
+            return obj instanceof NullQueryTargetDescriptor;
+        }
+
+        @Override
+        public int hashCode() {
+            return 0;
+        }
     }
 
     private static class NullQueryTarget implements QueryTarget {
@@ -93,6 +105,9 @@ public class KvMetadataNullResolver implements KvMetadataResolver {
     }
 
     private static class NullUpsertTargetDescriptor implements UpsertTargetDescriptor {
+
+        private static final NullUpsertTargetDescriptor INSTANCE = new NullUpsertTargetDescriptor();
+
         @Override
         public UpsertTarget create(InternalSerializationService serializationService) {
             return new NullUpsertTarget();
@@ -104,6 +119,15 @@ public class KvMetadataNullResolver implements KvMetadataResolver {
         @Override
         public void readData(ObjectDataInput in) { }
 
+        @Override
+        public boolean equals(Object obj) {
+            return obj instanceof NullUpsertTargetDescriptor;
+        }
+
+        @Override
+        public int hashCode() {
+            return 0;
+        }
     }
 
     private static class NullUpsertTarget implements UpsertTarget {

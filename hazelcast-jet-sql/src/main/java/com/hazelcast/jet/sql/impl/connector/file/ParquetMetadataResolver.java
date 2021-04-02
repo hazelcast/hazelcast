@@ -44,7 +44,7 @@ final class ParquetMetadataResolver extends MetadataResolver<GenericRecord> {
     protected Metadata resolveMetadata(List<MappingField> resolvedFields, Map<String, ?> options) {
         return new Metadata(
                 toFields(resolvedFields),
-                toProcessorMetaSupplierProvider(options, FORMAT),
+                new ProcessorMetaSupplierProvider(options, FORMAT),
                 AvroQueryTarget::new);
     }
 }

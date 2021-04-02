@@ -28,6 +28,7 @@ import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.plan.cache.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.TableField;
 
@@ -37,6 +38,10 @@ import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 class StreamTable extends JetTable {
+
+    // table is always available and its field list does not change
+    private static final PlanObjectKey OBJECT_ID = new PlanObjectKey() {
+    };
 
     private final Integer rate;
 
@@ -69,6 +74,11 @@ class StreamTable extends JetTable {
                 })
                 .fillBufferFn(DataGenerator::fillBuffer)
                 .build();
+    }
+
+    @Override
+    public PlanObjectKey getObjectKey() {
+        return OBJECT_ID;
     }
 
     private static final class DataGenerator {

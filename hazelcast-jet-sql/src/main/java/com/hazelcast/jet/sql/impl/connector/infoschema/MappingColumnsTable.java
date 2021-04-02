@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.connector.infoschema;
 
 import com.hazelcast.jet.sql.impl.schema.Mapping;
 import com.hazelcast.jet.sql.impl.schema.MappingField;
+import com.hazelcast.sql.impl.plan.cache.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -32,6 +33,10 @@ import static java.util.Arrays.asList;
  * Table object for the {@code information_schema.columns} table.
  */
 public class MappingColumnsTable extends InfoSchemaTable {
+
+    // table is always available and its field list does not change
+    private static final PlanObjectKey OBJECT_ID = new PlanObjectKey() {
+    };
 
     private static final String NAME = "columns";
 
@@ -88,5 +93,10 @@ public class MappingColumnsTable extends InfoSchemaTable {
             }
         }
         return rows;
+    }
+
+    @Override
+    public PlanObjectKey getObjectKey() {
+        return OBJECT_ID;
     }
 }
