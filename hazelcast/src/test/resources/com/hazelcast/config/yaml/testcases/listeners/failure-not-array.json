@@ -1,0 +1,14 @@
+{
+  "instance": {
+    "hazelcast": {
+      "listeners": {}
+    }
+  },
+  "error": {
+    "schemaLocation": "#/definitions/Listeners",
+    "pointerToViolation": "#/hazelcast/listeners",
+    "causingExceptions": [],
+    "keyword": "type",
+    "message": "expected type: JSONArray, found: JSONObject"
+  }
+}

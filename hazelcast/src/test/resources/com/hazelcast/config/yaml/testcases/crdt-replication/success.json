@@ -1,0 +1,11 @@
+{
+  "instance": {
+    "hazelcast": {
+      "crdt-replication": {
+        "max-concurrent-replication-targets": 3,
+        "replication-period-millis": 15
+      }
+    }
+  },
+  "error": null
+}

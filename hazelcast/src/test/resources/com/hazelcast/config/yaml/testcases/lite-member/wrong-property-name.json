@@ -1,0 +1,16 @@
+{
+  "instance": {
+    "hazelcast": {
+      "lite-member": {
+        "disabled": false
+      }
+    }
+  },
+  "error": {
+    "schemaLocation": "#/definitions/LiteMember",
+    "pointerToViolation": "#/hazelcast/lite-member",
+    "causingExceptions": [],
+    "keyword": "additionalProperties",
+    "message": "extraneous key [disabled] is not permitted"
+  }
+}

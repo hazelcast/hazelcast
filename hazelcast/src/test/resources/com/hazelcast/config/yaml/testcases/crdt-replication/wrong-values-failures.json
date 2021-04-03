@@ -1,0 +1,31 @@
+{
+  "instance": {
+    "hazelcast": {
+      "crdt-replication": {
+        "max-concurrent-replication-targets": 0,
+        "replication-period-millis": -1
+      }
+    }
+  },
+  "error": {
+    "schemaLocation": "#/definitions/CrdtReplication",
+    "pointerToViolation": "#/hazelcast/crdt-replication",
+    "causingExceptions": [
+      {
+        "schemaLocation": "#/definitions/CrdtReplication/properties/max-concurrent-replication-targets",
+        "pointerToViolation": "#/hazelcast/crdt-replication/max-concurrent-replication-targets",
+        "causingExceptions": [],
+        "keyword": "minimum",
+        "message": "0 is not greater or equal to 1"
+      },
+      {
+        "schemaLocation": "#/definitions/CrdtReplication/properties/replication-period-millis",
+        "pointerToViolation": "#/hazelcast/crdt-replication/replication-period-millis",
+        "causingExceptions": [],
+        "keyword": "minimum",
+        "message": "-1 is not greater or equal to 1"
+      }
+    ],
+    "message": "2 schema violations found"
+  }
+}

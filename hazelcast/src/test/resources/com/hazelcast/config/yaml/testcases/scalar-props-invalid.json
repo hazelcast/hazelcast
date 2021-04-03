@@ -1,0 +1,38 @@
+{
+  "instance": {
+    "hazelcast": {
+      "cluster-name": 22,
+      "license-key": [],
+      "instance-name": false
+    }
+  },
+  "error": {
+    "schemaLocation": "#/properties/hazelcast",
+    "pointerToViolation": "#/hazelcast",
+    "causingExceptions": [
+      {
+        "schemaLocation": "#/properties/hazelcast/properties/instance-name",
+        "pointerToViolation": "#/hazelcast/instance-name",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: String, found: Boolean"
+      },
+      {
+        "schemaLocation": "#/properties/hazelcast/properties/license-key",
+        "pointerToViolation": "#/hazelcast/license-key",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: String, found: JSONArray"
+      },
+      {
+        "schemaLocation": "#/properties/hazelcast/properties/cluster-name",
+        "pointerToViolation": "#/hazelcast/cluster-name",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: String, found: Integer"
+      }
+    ],
+    "message": "3 schema violations found"
+  }
+
+}

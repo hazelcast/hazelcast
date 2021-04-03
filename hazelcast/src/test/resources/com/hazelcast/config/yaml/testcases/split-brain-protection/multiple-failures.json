@@ -1,0 +1,59 @@
+{
+  "instance": {
+    "hazelcast": {
+      "split-brain-protection": {
+        "my-sbp": {
+          "enabled": "On",
+          "minimum-cluster-size": 1,
+          "protect-on": "delete",
+          "function-class-name": null,
+          "listeners": {
+            "item": "xxx"
+          }
+        }
+      }
+    }
+  },
+  "error": {
+    "schemaLocation": "#/definitions/SplitBrainProtection/additionalProperties",
+    "pointerToViolation": "#/hazelcast/split-brain-protection/my-sbp",
+    "causingExceptions": [
+      {
+        "schemaLocation": "#/definitions/SplitBrainProtection/additionalProperties/properties/minimum-cluster-size",
+        "pointerToViolation": "#/hazelcast/split-brain-protection/my-sbp/minimum-cluster-size",
+        "causingExceptions": [],
+        "keyword": "minimum",
+        "message": "1 is not greater or equal to 2"
+      },
+      {
+        "schemaLocation": "#/definitions/SplitBrainProtection/additionalProperties/properties/listeners",
+        "pointerToViolation": "#/hazelcast/split-brain-protection/my-sbp/listeners",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: JSONArray, found: JSONObject"
+      },
+      {
+        "schemaLocation": "#/definitions/SplitBrainProtection/additionalProperties/properties/function-class-name",
+        "pointerToViolation": "#/hazelcast/split-brain-protection/my-sbp/function-class-name",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: String, found: Null"
+      },
+      {
+        "schemaLocation": "#/definitions/SplitBrainProtection/additionalProperties/properties/enabled",
+        "pointerToViolation": "#/hazelcast/split-brain-protection/my-sbp/enabled",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Boolean, found: String"
+      },
+      {
+        "schemaLocation": "#/definitions/SplitBrainProtection/additionalProperties/properties/protect-on",
+        "pointerToViolation": "#/hazelcast/split-brain-protection/my-sbp/protect-on",
+        "causingExceptions": [],
+        "keyword": "enum",
+        "message": "delete is not a valid enum value"
+      }
+    ],
+    "message": "5 schema violations found"
+  }
+}

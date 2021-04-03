@@ -1,0 +1,10 @@
+{
+  "instance": {
+    "hazelcast": {
+      "import": [
+        "./other.yaml"
+      ]
+    }
+  },
+  "error": null
+}

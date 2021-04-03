@@ -1,0 +1,18 @@
+{
+  "instance": {
+    "hazelcast": {
+      "split-brain-protection": {
+        "mySplitBrainProtection": {
+          "enabled": true,
+          "minimum-cluster-size": 3,
+          "protect-on": "READ_WRITE",
+          "function-class-name": "com.your-package.AbsPresMySplitBrainProtection",
+          "listeners": [
+            "com.your-package.ThreeMemberSplitBrainProtectionListener"
+          ]
+        }
+      }
+    }
+  },
+  "error": null
+}

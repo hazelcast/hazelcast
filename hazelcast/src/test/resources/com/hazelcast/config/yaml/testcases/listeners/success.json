@@ -1,0 +1,13 @@
+{
+  "instance": {
+    "hazelcast": {
+      "listeners": [
+        "your-package.YourMembershipListener",
+        "your-package.YourDistributedObjectListener",
+        "your-package.YourMigrationListener",
+        "your-package.YourPartitionLostListener"
+      ]
+    }
+  },
+  "error": null
+}

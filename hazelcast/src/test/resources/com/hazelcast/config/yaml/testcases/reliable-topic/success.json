@@ -1,0 +1,17 @@
+{
+  "instance": {
+    "hazelcast": {
+      "reliable-topic": {
+        "my-reliable-topic": {
+          "statistics-enabled": true,
+          "topic-overload-policy": "ERROR",
+          "read-batch-size": 10,
+          "message-listeners": [
+            "com.hazelcast.examples.MessageListener"
+          ]
+        }
+      }
+    }
+  },
+  "error": null
+}

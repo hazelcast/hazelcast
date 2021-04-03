@@ -1,0 +1,17 @@
+{
+  "instance": {
+    "hazelcast": {
+      "topic": {
+        "my-topic": {
+          "global-ordering-enabled": false,
+          "statistics-enabled": true,
+          "multi-threading-enabled": true,
+          "message-listeners": [
+            "com.hazelcast.examples.MessageListener"
+          ]
+        }
+      }
+    }
+  },
+  "error": null
+}

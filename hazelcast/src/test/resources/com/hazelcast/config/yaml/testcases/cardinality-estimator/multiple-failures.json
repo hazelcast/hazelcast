@@ -1,0 +1,55 @@
+{
+  "instance": {
+    "hazelcast": {
+      "cardinality-estimator": {
+        "my-estimator": {
+          "backup-count": -1,
+          "async-backup-count": 7,
+          "split-brain-protection-ref": null,
+          "merge-policy": []
+        }
+      }
+    }
+  },
+  "error": {
+    "schemaLocation": "#/definitions/CardinalityEstimator/additionalProperties",
+    "pointerToViolation": "#/hazelcast/cardinality-estimator/my-estimator",
+    "causingExceptions": [
+      {
+        "schemaLocation": "#/definitions/AsyncBackupCount",
+        "pointerToViolation": "#/hazelcast/cardinality-estimator/my-estimator/async-backup-count",
+        "causingExceptions": [],
+        "keyword": "maximum",
+        "message": "7 is not less or equal to 6"
+      },
+      {
+        "schemaLocation": "#/definitions/BackupCount",
+        "pointerToViolation": "#/hazelcast/cardinality-estimator/my-estimator/backup-count",
+        "causingExceptions": [],
+        "keyword": "minimum",
+        "message": "-1 is not greater or equal to 0"
+      },
+      {
+        "schemaLocation": "#/definitions/CardinalityEstimator/additionalProperties/properties/merge-policy",
+        "pointerToViolation": "#/hazelcast/cardinality-estimator/my-estimator/merge-policy",
+        "causingExceptions": [{
+          "schemaLocation": "#/definitions/MergePolicy",
+          "pointerToViolation": "#/hazelcast/cardinality-estimator/my-estimator/merge-policy",
+          "causingExceptions": [],
+          "keyword": "type",
+          "message": "expected type: JSONObject, found: JSONArray"
+        }],
+        "keyword": "allOf",
+        "message": "#: only 1 subschema matches out of 2"
+      },
+      {
+        "schemaLocation": "#/definitions/CardinalityEstimator/additionalProperties/properties/split-brain-protection-ref",
+        "pointerToViolation": "#/hazelcast/cardinality-estimator/my-estimator/split-brain-protection-ref",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: String, found: Null"
+      }
+    ],
+    "message": "4 schema violations found"
+  }
+}

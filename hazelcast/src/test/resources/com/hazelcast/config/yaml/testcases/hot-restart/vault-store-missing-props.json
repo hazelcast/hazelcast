@@ -1,0 +1,62 @@
+{
+  "instance": {
+    "hazelcast": {
+      "hot-restart-persistence": {
+        "encryption-at-rest": {
+          "secure-store": {
+            "vault": {
+            }
+          }
+        }
+      }
+    }
+  },
+  "error": {
+    "schemaLocation": "#/definitions/HotRestartPersistence/properties/encryption-at-rest/properties/secure-store",
+    "pointerToViolation": "#/hazelcast/hot-restart-persistence/encryption-at-rest/secure-store",
+    "causingExceptions": [{
+      "pointerToViolation": "#/hazelcast/hot-restart-persistence/encryption-at-rest/secure-store",
+      "causingExceptions": [
+        {
+          "schemaLocation": "#/definitions/HotRestartPersistence/properties/encryption-at-rest/properties/secure-store/oneOf/0",
+          "pointerToViolation": "#/hazelcast/hot-restart-persistence/encryption-at-rest/secure-store",
+          "causingExceptions": [],
+          "keyword": "additionalProperties",
+          "message": "extraneous key [vault] is not permitted"
+        },
+        {
+          "schemaLocation": "#/definitions/HotRestartPersistence/properties/encryption-at-rest/properties/secure-store/oneOf/1/properties/vault",
+          "pointerToViolation": "#/hazelcast/hot-restart-persistence/encryption-at-rest/secure-store/vault",
+          "causingExceptions": [
+            {
+              "schemaLocation": "#/definitions/HotRestartPersistence/properties/encryption-at-rest/properties/secure-store/oneOf/1/properties/vault",
+              "pointerToViolation": "#/hazelcast/hot-restart-persistence/encryption-at-rest/secure-store/vault",
+              "causingExceptions": [],
+              "keyword": "required",
+              "message": "required key [address] not found"
+            },
+            {
+              "schemaLocation": "#/definitions/HotRestartPersistence/properties/encryption-at-rest/properties/secure-store/oneOf/1/properties/vault",
+              "pointerToViolation": "#/hazelcast/hot-restart-persistence/encryption-at-rest/secure-store/vault",
+              "causingExceptions": [],
+              "keyword": "required",
+              "message": "required key [secret-path] not found"
+            },
+            {
+              "schemaLocation": "#/definitions/HotRestartPersistence/properties/encryption-at-rest/properties/secure-store/oneOf/1/properties/vault",
+              "pointerToViolation": "#/hazelcast/hot-restart-persistence/encryption-at-rest/secure-store/vault",
+              "causingExceptions": [],
+              "keyword": "required",
+              "message": "required key [token] not found"
+            }
+          ],
+          "message": "3 schema violations found"
+        }
+      ],
+      "keyword": "oneOf",
+      "message": "#: 0 subschemas matched instead of one"
+    }],
+    "keyword": "allOf",
+    "message": "#: only 1 subschema matches out of 2"
+  }
+}
