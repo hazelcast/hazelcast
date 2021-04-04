@@ -23,6 +23,7 @@ import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.springframework.cache.annotation.EnableCaching;
@@ -42,6 +43,7 @@ import java.util.Arrays;
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = HazelcastCacheReadTimeoutTestWithJavaConfig.TestConfig.class)
 @Category(QuickTest.class)
+@Ignore("https://github.com/hazelcast/hazelcast/issues/18455")
 public class HazelcastCacheReadTimeoutTestWithJavaConfig extends AbstractHazelcastCacheReadTimeoutTest {
 
     @Configuration
