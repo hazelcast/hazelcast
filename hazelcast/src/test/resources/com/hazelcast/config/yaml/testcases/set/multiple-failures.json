@@ -58,7 +58,7 @@
         "pointerToViolation": "#/hazelcast/set/my-set/async-backup-count",
         "causingExceptions": [],
         "keyword": "type",
-        "message": "expected type: Number, found: String"
+        "message": "expected type: Integer, found: String"
       }
     ],
     "message": "6 schema violations found"

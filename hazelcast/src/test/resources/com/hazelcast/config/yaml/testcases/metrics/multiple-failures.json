@@ -37,7 +37,7 @@
         "pointerToViolation": "#/hazelcast/metrics/collection-frequency-seconds",
         "causingExceptions": [],
         "keyword": "type",
-        "message": "expected type: Integer, found: Double"
+        "message": "expected type: Integer, found: BigDecimal"
       }
     ],
     "message": "3 schema violations found"

@@ -114,7 +114,7 @@
             "pointerToViolation": "#/hazelcast/security/realms/0/authentication/ldap/role-recursion-max-depth",
             "causingExceptions": [],
             "keyword": "type",
-            "message": "expected type: Number, found: String"
+            "message": "expected type: Integer, found: String"
           },
           {
             "schemaLocation": "#/definitions/Security/properties/realms/items/properties/authentication/properties/ldap/properties/user-filter",

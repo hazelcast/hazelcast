@@ -195,7 +195,7 @@
             "pointerToViolation": "#/hazelcast/cache/default/merge-policy/batch-size",
             "causingExceptions": [],
             "keyword": "type",
-            "message": "expected type: Number, found: String"
+            "message": "expected type: Integer, found: String"
           },
           {
             "schemaLocation": "#/definitions/MergePolicyClassName",
@@ -237,7 +237,7 @@
             "pointerToViolation": "#/hazelcast/cache/default/eviction/size",
             "causingExceptions": [],
             "keyword": "type",
-            "message": "expected type: Number, found: String"
+            "message": "expected type: Integer, found: String"
           },
           {
             "schemaLocation": "#/definitions/Eviction/properties/max-size-policy",
@@ -321,7 +321,7 @@
             "pointerToViolation": "#/hazelcast/cache/default/event-journal/time-to-live-seconds",
             "causingExceptions": [],
             "keyword": "type",
-            "message": "expected type: Number, found: String"
+            "message": "expected type: Integer, found: String"
           },
           {
             "schemaLocation": "#/definitions/Cache/additionalProperties/properties/event-journal/properties/enabled",
@@ -335,7 +335,7 @@
             "pointerToViolation": "#/hazelcast/cache/default/event-journal/capacity",
             "causingExceptions": [],
             "keyword": "type",
-            "message": "expected type: Number, found: String"
+            "message": "expected type: Integer, found: String"
           }
         ],
         "message": "3 schema violations found"

@@ -41,7 +41,7 @@
             "pointerToViolation": "#/hazelcast/partition-group/member-group/1/1",
             "causingExceptions": [],
             "keyword": "type",
-            "message": "expected type: String, found: Double"
+            "message": "expected type: String, found: BigDecimal"
           }
         ],
         "message": "2 schema violations found"

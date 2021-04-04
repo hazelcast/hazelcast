@@ -67,7 +67,7 @@
             "pointerToViolation": "#/hazelcast/native-memory/min-block-size",
             "causingExceptions": [],
             "keyword": "type",
-            "message": "expected type: Number, found: Null"
+            "message": "expected type: Integer, found: Null"
           }
         ],
         "keyword": "allOf",
@@ -78,7 +78,7 @@
         "pointerToViolation": "#/hazelcast/native-memory/page-size",
         "causingExceptions": [],
         "keyword": "type",
-        "message": "expected type: Number, found: Null"
+        "message": "expected type: Integer, found: Null"
       },
       {
         "schemaLocation": "#/definitions/NativeMemory/properties/metadata-space-percentage",

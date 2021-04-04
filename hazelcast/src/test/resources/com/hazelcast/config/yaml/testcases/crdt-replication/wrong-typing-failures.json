@@ -16,14 +16,14 @@
         "pointerToViolation": "#/hazelcast/crdt-replication/max-concurrent-replication-targets",
         "causingExceptions": [],
         "keyword": "type",
-        "message": "expected type: Number, found: String"
+        "message": "expected type: Integer, found: String"
       },
       {
         "schemaLocation": "#/definitions/CrdtReplication/properties/replication-period-millis",
         "pointerToViolation": "#/hazelcast/crdt-replication/replication-period-millis",
         "causingExceptions": [],
         "keyword": "type",
-        "message": "expected type: Number, found: Null"
+        "message": "expected type: Integer, found: Null"
       }
     ],
     "message": "2 schema violations found"

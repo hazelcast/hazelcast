@@ -64,84 +64,21 @@
       },
       {
         "schemaLocation": "#/definitions/FlakeIdGenerator/additionalProperties",
-        "pointerToViolation": "#/hazelcast/flake-id-generator/fig-type-failures",
-        "causingExceptions": [
-          {
-            "schemaLocation": "#/definitions/FlakeIdGenerator/additionalProperties/properties/bits-node-id",
-            "pointerToViolation": "#/hazelcast/flake-id-generator/fig-type-failures/bits-node-id",
-            "causingExceptions": [],
-            "keyword": "type",
-            "message": "expected type: Number, found: String"
-          },
-          {
-            "schemaLocation": "#/definitions/FlakeIdGenerator/additionalProperties/properties/node-id-offset",
-            "pointerToViolation": "#/hazelcast/flake-id-generator/fig-type-failures/node-id-offset",
-            "causingExceptions": [],
-            "keyword": "type",
-            "message": "expected type: Number, found: String"
-          },
-          {
-            "schemaLocation": "#/definitions/FlakeIdGenerator/additionalProperties/properties/bits-sequence",
-            "pointerToViolation": "#/hazelcast/flake-id-generator/fig-type-failures/bits-sequence",
-            "causingExceptions": [],
-            "keyword": "type",
-            "message": "expected type: Number, found: String"
-          },
-          {
-            "schemaLocation": "#/definitions/FlakeIdGenerator/additionalProperties/properties/epoch-start",
-            "pointerToViolation": "#/hazelcast/flake-id-generator/fig-type-failures/epoch-start",
-            "causingExceptions": [],
-            "keyword": "type",
-            "message": "expected type: Number, found: String"
-          },
-          {
-            "schemaLocation": "#/definitions/FlakeIdGenerator/additionalProperties/properties/allowed-future-millis",
-            "pointerToViolation": "#/hazelcast/flake-id-generator/fig-type-failures/allowed-future-millis",
-            "causingExceptions": [],
-            "keyword": "type",
-            "message": "expected type: Number, found: String"
-          },
-          {
-            "schemaLocation": "#/definitions/FlakeIdGenerator/additionalProperties/properties/prefetch-count",
-            "pointerToViolation": "#/hazelcast/flake-id-generator/fig-type-failures/prefetch-count",
-            "causingExceptions": [],
-            "keyword": "type",
-            "message": "expected type: Number, found: String"
-          },
-          {
-            "schemaLocation": "#/definitions/FlakeIdGenerator/additionalProperties/properties/prefetch-validity-millis",
-            "pointerToViolation": "#/hazelcast/flake-id-generator/fig-type-failures/prefetch-validity-millis",
-            "causingExceptions": [],
-            "keyword": "type",
-            "message": "expected type: Number, found: String"
-          },
-          {
-            "schemaLocation": "#/definitions/FlakeIdGenerator/additionalProperties/properties/statistics-enabled",
-            "pointerToViolation": "#/hazelcast/flake-id-generator/fig-type-failures/statistics-enabled",
-            "causingExceptions": [],
-            "keyword": "type",
-            "message": "expected type: Boolean, found: JSONObject"
-          }
-        ],
-        "message": "8 schema violations found"
-      },
-      {
-        "schemaLocation": "#/definitions/FlakeIdGenerator/additionalProperties",
         "pointerToViolation": "#/hazelcast/flake-id-generator/fig-minimum-failures",
         "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/FlakeIdGenerator/additionalProperties/properties/allowed-future-millis",
+            "pointerToViolation": "#/hazelcast/flake-id-generator/fig-minimum-failures/allowed-future-millis",
+            "causingExceptions": [],
+            "keyword": "minimum",
+            "message": "-15000 is not greater or equal to 0"
+          },
           {
             "schemaLocation": "#/definitions/FlakeIdGenerator/additionalProperties/properties/bits-node-id",
             "pointerToViolation": "#/hazelcast/flake-id-generator/fig-minimum-failures/bits-node-id",
             "causingExceptions": [],
             "keyword": "minimum",
             "message": "-16 is not greater or equal to 0"
-          },
-          {
-            "schemaLocation": "#/definitions/FlakeIdGenerator/additionalProperties/properties/node-id-offset",
-            "pointerToViolation": "#/hazelcast/flake-id-generator/fig-minimum-failures/node-id-offset",
-            "causingExceptions": [],
-            "keyword": "minimum",
-            "message": "-300 is not greater or equal to 0"
           },
           {
             "schemaLocation": "#/definitions/FlakeIdGenerator/additionalProperties/properties/bits-sequence",
@@ -151,11 +88,11 @@
             "message": "-6 is not greater or equal to 0"
           },
           {
-            "schemaLocation": "#/definitions/FlakeIdGenerator/additionalProperties/properties/allowed-future-millis",
-            "pointerToViolation": "#/hazelcast/flake-id-generator/fig-minimum-failures/allowed-future-millis",
+            "schemaLocation": "#/definitions/FlakeIdGenerator/additionalProperties/properties/node-id-offset",
+            "pointerToViolation": "#/hazelcast/flake-id-generator/fig-minimum-failures/node-id-offset",
             "causingExceptions": [],
             "keyword": "minimum",
-            "message": "-15000 is not greater or equal to 0"
+            "message": "-300 is not greater or equal to 0"
           },
           {
             "schemaLocation": "#/definitions/FlakeIdGenerator/additionalProperties/properties/prefetch-count",
@@ -173,9 +110,71 @@
           }
         ],
         "message": "6 schema violations found"
+      },
+      {
+        "schemaLocation": "#/definitions/FlakeIdGenerator/additionalProperties",
+        "pointerToViolation": "#/hazelcast/flake-id-generator/fig-type-failures",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/FlakeIdGenerator/additionalProperties/properties/allowed-future-millis",
+            "pointerToViolation": "#/hazelcast/flake-id-generator/fig-type-failures/allowed-future-millis",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Integer, found: String"
+          },
+          {
+            "schemaLocation": "#/definitions/FlakeIdGenerator/additionalProperties/properties/bits-node-id",
+            "pointerToViolation": "#/hazelcast/flake-id-generator/fig-type-failures/bits-node-id",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Integer, found: String"
+          },
+          {
+            "schemaLocation": "#/definitions/FlakeIdGenerator/additionalProperties/properties/bits-sequence",
+            "pointerToViolation": "#/hazelcast/flake-id-generator/fig-type-failures/bits-sequence",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Integer, found: String"
+          },
+          {
+            "schemaLocation": "#/definitions/FlakeIdGenerator/additionalProperties/properties/epoch-start",
+            "pointerToViolation": "#/hazelcast/flake-id-generator/fig-type-failures/epoch-start",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Integer, found: String"
+          },
+          {
+            "schemaLocation": "#/definitions/FlakeIdGenerator/additionalProperties/properties/node-id-offset",
+            "pointerToViolation": "#/hazelcast/flake-id-generator/fig-type-failures/node-id-offset",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Integer, found: String"
+          },
+          {
+            "schemaLocation": "#/definitions/FlakeIdGenerator/additionalProperties/properties/prefetch-count",
+            "pointerToViolation": "#/hazelcast/flake-id-generator/fig-type-failures/prefetch-count",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Integer, found: String"
+          },
+          {
+            "schemaLocation": "#/definitions/FlakeIdGenerator/additionalProperties/properties/prefetch-validity-millis",
+            "pointerToViolation": "#/hazelcast/flake-id-generator/fig-type-failures/prefetch-validity-millis",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Integer, found: String"
+          },
+          {
+            "schemaLocation": "#/definitions/FlakeIdGenerator/additionalProperties/properties/statistics-enabled",
+            "pointerToViolation": "#/hazelcast/flake-id-generator/fig-type-failures/statistics-enabled",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Boolean, found: JSONObject"
+          }
+        ],
+        "message": "8 schema violations found"
       }
     ],
     "message": "17 schema violations found"
   }
-
 }

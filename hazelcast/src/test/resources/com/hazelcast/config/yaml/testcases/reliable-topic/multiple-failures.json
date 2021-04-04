@@ -73,7 +73,7 @@
             "pointerToViolation": "#/hazelcast/reliable-topic/my-reliable-topic/read-batch-size",
             "causingExceptions": [],
             "keyword": "type",
-            "message": "expected type: Number, found: String"
+            "message": "expected type: Integer, found: String"
           },
           {
             "schemaLocation": "#/definitions/ReliableTopic/additionalProperties/properties/topic-overload-policy",

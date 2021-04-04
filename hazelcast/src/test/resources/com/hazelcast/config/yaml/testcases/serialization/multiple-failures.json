@@ -175,7 +175,7 @@
             "pointerToViolation": "#/hazelcast/serialization/portable-version",
             "causingExceptions": [],
             "keyword": "type",
-            "message": "expected type: Number, found: Null"
+            "message": "expected type: Integer, found: Null"
           },
           {
             "schemaLocation": "#/definitions/Serialization/properties/data-serializable-factories",
@@ -225,7 +225,7 @@
                     "pointerToViolation": "#/hazelcast/serialization/data-serializable-factories/2/factory-id",
                     "causingExceptions": [],
                     "keyword": "type",
-                    "message": "expected type: Number, found: String"
+                    "message": "expected type: Integer, found: String"
                   },
                   {
                     "schemaLocation": "#/definitions/ClassWithFactoryId/properties/class-name",

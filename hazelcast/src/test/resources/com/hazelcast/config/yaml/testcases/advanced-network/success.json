@@ -93,7 +93,6 @@
         "member-server-socket-endpoint-config": {
           "outbound-ports": [
             "33000-35000",
-            37000370013700237003,
             "38000,38500-38600"
           ],
           "interfaces": {

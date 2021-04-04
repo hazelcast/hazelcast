@@ -36,7 +36,7 @@ public class YamlSchemaTest {
         return new JSONObject(new JSONTokener(YamlSchemaTest.class.getResourceAsStream(absPath)));
     }
 
-    @Parameterized.Parameters
+    @Parameterized.Parameters(name = "{0}")
     public static List<Object[]> buildTestcases() {
         ConfigurationBuilder configuration = new ConfigurationBuilder()
                 .setUrls(ClasspathHelper.forJavaClassPath())
