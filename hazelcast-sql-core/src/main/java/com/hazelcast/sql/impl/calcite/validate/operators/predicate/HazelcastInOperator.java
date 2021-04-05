@@ -50,7 +50,7 @@ public class HazelcastInOperator extends SqlInOperator implements HazelcastOpera
 
     public static final HazelcastInOperator IN = new HazelcastInOperator("IN", false);
     public static final HazelcastInOperator NOT_IN = new HazelcastInOperator("NOT IN", true);
-    protected static final HazelcastInPredicateResource HZRESOURCE = Resources.create(HazelcastInPredicateResource.class);
+    protected static final HazelcastInOperatorResource HZRESOURCE = Resources.create(HazelcastInOperatorResource.class);
 
     public HazelcastInOperator(String name, boolean negated) {
         super(name, negated ? SqlKind.NOT_IN : SqlKind.IN);
@@ -145,7 +145,7 @@ public class HazelcastInOperator extends SqlInOperator implements HazelcastOpera
         return false;
     }
 
-    interface HazelcastInPredicateResource extends CalciteResource {
+    interface HazelcastInOperatorResource extends CalciteResource {
         @Resources.BaseMessage("Sub-queries are not allowed for IN operator.")
         Resources.ExInst<SqlValidatorException> noSubQueryAllowed();
     }
