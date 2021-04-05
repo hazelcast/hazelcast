@@ -127,6 +127,9 @@
         },
         "metrics": {
           "$ref": "#/definitions/Metrics"
+        },
+        "sql": {
+          "$ref": "#/definitions/Sql"
         }
       }
     }
@@ -3502,6 +3505,22 @@
         "provider-filter": {
           "type": "string",
           "description": "Filter to constraint members to be used for a class loading request when a class is not available locally. The value is in the format \"HAS_ATTRIBUTE:foo\". When it is set as \"HAS_ATTRIBUTE:foo\", the class loading request will only be sent to the members which have \"foo\" as a member attribute."
+        }
+      }
+    },
+    "Sql": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "executor-pool-size": {
+          "type": "integer",
+          "default": -1,
+          "description": "Defines the number of threads responsible for query execution."
+        },
+        "statement-timeout-millis": {
+          "type": "integer",
+          "default": 0,
+          "description": "Defines the timeout in milliseconds that is applied to queries without an explicit timeout."
         }
       }
     }
