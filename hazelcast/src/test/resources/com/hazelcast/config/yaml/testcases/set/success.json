@@ -3,6 +3,7 @@
     "hazelcast": {
       "set": {
         "my-set": {
+          "statistics-enabled": false,
           "backup-count": 1,
           "async-backup-count": 0,
           "max-size": 10,

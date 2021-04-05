@@ -1383,6 +1383,11 @@
           },
           "merge-policy": {
             "$ref": "#/definitions/MergePolicy"
+          },
+          "statistics-enabled":  {
+            "type": "boolean",
+            "default": true,
+            "description":  "True if statistics gathering is enabled on the set, false otherwise."
           }
         }
       }

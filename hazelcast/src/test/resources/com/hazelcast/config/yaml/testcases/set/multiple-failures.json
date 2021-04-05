@@ -9,7 +9,8 @@
           "backup-count": -1,
           "async-backup-count": "2",
           "split-brain-protection-ref": [],
-          "merge-policy": {}
+          "merge-policy": {},
+          "statistics-enabled": "Off"
         }
       }
     }
@@ -18,6 +19,20 @@
     "schemaLocation": "#/definitions/Set/additionalProperties",
     "pointerToViolation": "#/hazelcast/set/my-set",
     "causingExceptions": [
+      {
+        "schemaLocation": "#/definitions/AsyncBackupCount",
+        "pointerToViolation": "#/hazelcast/set/my-set/async-backup-count",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Integer, found: String"
+      },
+      {
+        "schemaLocation": "#/definitions/BackupCount",
+        "pointerToViolation": "#/hazelcast/set/my-set/backup-count",
+        "causingExceptions": [],
+        "keyword": "minimum",
+        "message": "-1 is not greater or equal to 0"
+      },
       {
         "schemaLocation": "#/definitions/Set/additionalProperties",
         "pointerToViolation": "#/hazelcast/set/my-set",
@@ -47,21 +62,13 @@
         "message": "expected type: String, found: JSONArray"
       },
       {
-        "schemaLocation": "#/definitions/BackupCount",
-        "pointerToViolation": "#/hazelcast/set/my-set/backup-count",
-        "causingExceptions": [],
-        "keyword": "minimum",
-        "message": "-1 is not greater or equal to 0"
-      },
-      {
-        "schemaLocation": "#/definitions/AsyncBackupCount",
-        "pointerToViolation": "#/hazelcast/set/my-set/async-backup-count",
+        "schemaLocation": "#/definitions/Set/additionalProperties/properties/statistics-enabled",
+        "pointerToViolation": "#/hazelcast/set/my-set/statistics-enabled",
         "causingExceptions": [],
         "keyword": "type",
-        "message": "expected type: Integer, found: String"
+        "message": "expected type: Boolean, found: String"
       }
     ],
-    "message": "6 schema violations found"
+    "message": "7 schema violations found"
   }
-
 }
