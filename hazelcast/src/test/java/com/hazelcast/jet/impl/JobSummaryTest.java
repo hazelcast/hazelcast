@@ -131,7 +131,6 @@ public class JobSummaryTest extends JetTestSupport {
             assertEquals(numJobs, list.size());
 
             Collections.reverse(list);
-
             // jobs are sorted by submission time in descending order
             for (int i = 0; i < numJobs; i++) {
                 JobSummary summary = list.get(i);
