@@ -16,12 +16,12 @@
 
 package com.hazelcast.spring.hotrestart;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.config.EncryptionAtRestConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.VaultSecureStoreConfig;
 import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.ssl.SSLContextFactory;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -46,8 +46,8 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class TestHotRestartEncryptionVaultApplicationContext {
 
-    @Resource(name = "instance")
-    private HazelcastInstance instance;
+    @Resource(name = "theConfig")
+    private Config config;
 
     @Resource
     private SSLContextFactory sslContextFactory;
@@ -62,7 +62,7 @@ public class TestHotRestartEncryptionVaultApplicationContext {
     public void testHotRestart() {
         File dir = new File("/mnt/hot-restart/");
         File hotBackupDir = new File("/mnt/hot-backup/");
-        HotRestartPersistenceConfig hotRestartPersistenceConfig = instance.getConfig().getHotRestartPersistenceConfig();
+        HotRestartPersistenceConfig hotRestartPersistenceConfig = config.getHotRestartPersistenceConfig();
 
         assertFalse(hotRestartPersistenceConfig.isEnabled());
         assertEquals(dir.getAbsolutePath(), hotRestartPersistenceConfig.getBaseDir().getAbsolutePath());
