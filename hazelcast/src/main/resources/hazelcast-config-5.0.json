@@ -3387,7 +3387,8 @@
                 "queue-full-behavior": {
                   "enum": [
                     "DISCARD_AFTER_MUTATION",
-                    "THROW_EXCEPTION"
+                    "THROW_EXCEPTION",
+                    "THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE"
                   ],
                   "default": "DISCARD_AFTER_MUTATION",
                   "description": "Policy to be applied when WAN Replication event queues are full. You can set it to the following values: \\n - DISCARD_AFTER_MUTATION (default): The new WAN events generated are dropped and not replicated to the target cluster."
