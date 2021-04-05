@@ -2862,6 +2862,10 @@
               "$ref": "#/definitions/ClassFilter"
             }
           }
+        },
+        "allow-override-default-serializers": {
+          "type": "boolean",
+          "default": false
         }
       }
     },

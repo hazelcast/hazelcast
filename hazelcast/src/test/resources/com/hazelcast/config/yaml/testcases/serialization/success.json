@@ -48,7 +48,8 @@
               "java"
             ]
           }
-        }
+        },
+        "allow-override-default-serializers": true
       }
     }
   },
