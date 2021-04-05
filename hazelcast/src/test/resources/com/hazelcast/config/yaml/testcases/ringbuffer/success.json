@@ -9,6 +9,7 @@
           "async-backup-count": 0,
           "in-memory-format": "BINARY",
           "ringbuffer-store": {
+            "enabled": true,
             "class-name": "com.hazelcast.RingbufferStoreImpl",
             "properties": {
               "prop1": "prop1-value",

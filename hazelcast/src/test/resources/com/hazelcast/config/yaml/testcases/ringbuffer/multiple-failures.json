@@ -10,6 +10,7 @@
           "async-backup-count": "invalid",
           "in-memory-format": "UNKNOWN",
           "ringbuffer-store": {
+            "enabled": "Yes",
             "class-name": null,
             "properties": []
           },
@@ -79,27 +80,6 @@
             "message": "expected type: Integer, found: String"
           },
           {
-            "schemaLocation": "#/definitions/ClassNameWithProps",
-            "pointerToViolation": "#/hazelcast/ringbuffer/my-ringbuffer/ringbuffer-store",
-            "causingExceptions": [
-              {
-                "schemaLocation": "#/definitions/ClassNameWithProps/properties/class-name",
-                "pointerToViolation": "#/hazelcast/ringbuffer/my-ringbuffer/ringbuffer-store/class-name",
-                "causingExceptions": [],
-                "keyword": "type",
-                "message": "expected type: String, found: Null"
-              },
-              {
-                "schemaLocation": "#/definitions/ClassNameWithProps/properties/properties",
-                "pointerToViolation": "#/hazelcast/ringbuffer/my-ringbuffer/ringbuffer-store/properties",
-                "causingExceptions": [],
-                "keyword": "type",
-                "message": "expected type: JSONObject, found: JSONArray"
-              }
-            ],
-            "message": "2 schema violations found"
-          },
-          {
             "schemaLocation": "#/definitions/MergePolicy/properties/batch-size",
             "pointerToViolation": "#/hazelcast/ringbuffer/my-ringbuffer/merge-policy/batch-size",
             "causingExceptions": [],
@@ -128,6 +108,34 @@
             "message": "UNKNOWN is not a valid enum value"
           },
           {
+            "schemaLocation": "#/definitions/Ringbuffer/additionalProperties/properties/ringbuffer-store",
+            "pointerToViolation": "#/hazelcast/ringbuffer/my-ringbuffer/ringbuffer-store",
+            "causingExceptions": [
+              {
+                "schemaLocation": "#/definitions/Ringbuffer/additionalProperties/properties/ringbuffer-store/properties/class-name",
+                "pointerToViolation": "#/hazelcast/ringbuffer/my-ringbuffer/ringbuffer-store/class-name",
+                "causingExceptions": [],
+                "keyword": "type",
+                "message": "expected type: String, found: Null"
+              },
+              {
+                "schemaLocation": "#/definitions/Ringbuffer/additionalProperties/properties/ringbuffer-store/properties/enabled",
+                "pointerToViolation": "#/hazelcast/ringbuffer/my-ringbuffer/ringbuffer-store/enabled",
+                "causingExceptions": [],
+                "keyword": "type",
+                "message": "expected type: Boolean, found: String"
+              },
+              {
+                "schemaLocation": "#/definitions/Ringbuffer/additionalProperties/properties/ringbuffer-store/properties/properties",
+                "pointerToViolation": "#/hazelcast/ringbuffer/my-ringbuffer/ringbuffer-store/properties",
+                "causingExceptions": [],
+                "keyword": "type",
+                "message": "expected type: JSONObject, found: JSONArray"
+              }
+            ],
+            "message": "3 schema violations found"
+          },
+          {
             "schemaLocation": "#/definitions/Ringbuffer/additionalProperties/properties/split-brain-protection-ref",
             "pointerToViolation": "#/hazelcast/ringbuffer/my-ringbuffer/split-brain-protection-ref",
             "causingExceptions": [],
@@ -142,9 +150,9 @@
             "message": "expected type: Integer, found: String"
           }
         ],
-        "message": "10 schema violations found"
+        "message": "11 schema violations found"
       }
     ],
-    "message": "13 schema violations found"
+    "message": "14 schema violations found"
   }
 }

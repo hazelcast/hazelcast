@@ -2,7 +2,9 @@
   "$schema": "http://json-schema.org/draft-06/schema",
   "type": "object",
   "additionalProperties": false,
-  "required": ["hazelcast"],
+  "required": [
+    "hazelcast"
+  ],
   "properties": {
     "hazelcast": {
       "type": "object",
@@ -1497,8 +1499,24 @@
             "description": "Sets the in-memory format. Setting the in-memory format controls the format of the stored item in the ringbuffer: - OBJECT: the item is stored in deserialized format (a regular object) - BINARY (default): the item is stored in serialized format (a binary blob) The object in-memory format is useful when: - the object stored in object format has a smaller footprint than in binary format - if there are readers using a filter. Since for every filter invocation, the object needs to be available in object format."
           },
           "ringbuffer-store": {
-            "$ref": "#/definitions/ClassNameWithProps",
-            "description": "Includes the Ringbuffer store factory class name and property configurations. The store format is the same as the in-memory-format for the Ringbuffer."
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "class-name": {
+                "type": "string",
+                "description": "Fully qualified class name."
+              },
+              "properties": {
+                "type": "object"
+              },
+              "enabled": {
+                "type": "boolean",
+                "default": true
+              }
+            },
+            "required": [
+              "class-name"
+            ]
           },
           "split-brain-protection-ref": {
             "type": "string",
