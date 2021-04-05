@@ -753,6 +753,7 @@
         "group-type": {
           "enum": [
             "HOST_AWARE",
+            "NODE_AWARE",
             "CUSTOM",
             "PER_MEMBER",
             "ZONE_AWARE",
@@ -3392,6 +3393,9 @@
                   ],
                   "default": "DISCARD_AFTER_MUTATION",
                   "description": "Policy to be applied when WAN Replication event queues are full. You can set it to the following values: \\n - DISCARD_AFTER_MUTATION (default): The new WAN events generated are dropped and not replicated to the target cluster."
+                },
+                "properties": {
+                  "type": "object"
                 },
                 "max-target-endpoints": {
                   "type": "integer",

@@ -23,6 +23,7 @@
               "max-target-endpoints": "Inf",
               "queue-capacity": "10000",
               "target-endpoints": ["10.3.5.1:5701", "10.3.5.2:5701"],
+              "properties": "props",
               "sync": {
                 "unknown-prop": null,
                 "consistency-check-strategy": "INVALID"
@@ -249,6 +250,13 @@
             "message": "expected type: Integer, found: String"
           },
           {
+            "schemaLocation": "#/definitions/WanReplication/additionalProperties/properties/batch-publisher/additionalProperties/properties/properties",
+            "pointerToViolation": "#/hazelcast/wan-replication/my-wan-cluster-batch/batch-publisher/nycPublisherId/properties",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: JSONObject, found: String"
+          },
+          {
             "schemaLocation": "#/definitions/WanReplication/additionalProperties/properties/batch-publisher/additionalProperties/properties/queue-capacity",
             "pointerToViolation": "#/hazelcast/wan-replication/my-wan-cluster-batch/batch-publisher/nycPublisherId/queue-capacity",
             "causingExceptions": [],
@@ -312,7 +320,7 @@
             "message": "expected type: Boolean, found: String"
           }
         ],
-        "message": "26 schema violations found"
+        "message": "27 schema violations found"
       },
       {
         "schemaLocation": "#/definitions/WanReplication/additionalProperties/properties/consumer",
@@ -343,6 +351,6 @@
         "message": "3 schema violations found"
       }
     ],
-    "message": "33 schema violations found"
+    "message": "34 schema violations found"
   }
 }
