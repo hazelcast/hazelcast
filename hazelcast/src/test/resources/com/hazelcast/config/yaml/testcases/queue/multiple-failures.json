@@ -68,8 +68,8 @@
             "schemaLocation": "#/definitions/MergePolicyClassName",
             "pointerToViolation": "#/hazelcast/queue/default/merge-policy/class-name",
             "causingExceptions": [],
-            "keyword": "enum",
-            "message": "{} is not a valid enum value"
+            "keyword": "type",
+            "message": "expected type: String, found: JSONObject"
           }
         ],
         "message": "2 schema violations found"

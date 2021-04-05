@@ -35,25 +35,11 @@
         "message": "expected type: Boolean, found: String"
       },
       {
-        "schemaLocation": "#/definitions/MergePolicy",
-        "pointerToViolation": "#/hazelcast/replicatedmap/replicatedMap1/merge-policy",
-        "causingExceptions": [
-          {
-            "schemaLocation": "#/definitions/MergePolicy/properties/batch-size",
-            "pointerToViolation": "#/hazelcast/replicatedmap/replicatedMap1/merge-policy/batch-size",
-            "causingExceptions": [],
-            "keyword": "minimum",
-            "message": "-100 is not greater or equal to 0"
-          },
-          {
-            "schemaLocation": "#/definitions/MergePolicyClassName",
-            "pointerToViolation": "#/hazelcast/replicatedmap/replicatedMap1/merge-policy/class-name",
-            "causingExceptions": [],
-            "keyword": "enum",
-            "message": "invalid is not a valid enum value"
-          }
-        ],
-        "message": "2 schema violations found"
+        "schemaLocation": "#/definitions/MergePolicy/properties/batch-size",
+        "pointerToViolation": "#/hazelcast/replicatedmap/replicatedMap1/merge-policy/batch-size",
+        "causingExceptions": [],
+        "keyword": "minimum",
+        "message": "-100 is not greater or equal to 0"
       },
       {
         "schemaLocation": "#/definitions/ReplicatedMap/additionalProperties/properties/entry-listeners",
@@ -119,6 +105,6 @@
         "message": "expected type: Boolean, found: String"
       }
     ],
-    "message": "10 schema violations found"
+    "message": "9 schema violations found"
   }
 }

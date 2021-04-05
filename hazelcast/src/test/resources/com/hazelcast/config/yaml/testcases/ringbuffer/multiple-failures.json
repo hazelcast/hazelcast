@@ -100,25 +100,11 @@
             "message": "2 schema violations found"
           },
           {
-            "schemaLocation": "#/definitions/MergePolicy",
-            "pointerToViolation": "#/hazelcast/ringbuffer/my-ringbuffer/merge-policy",
-            "causingExceptions": [
-              {
-                "schemaLocation": "#/definitions/MergePolicy/properties/batch-size",
-                "pointerToViolation": "#/hazelcast/ringbuffer/my-ringbuffer/merge-policy/batch-size",
-                "causingExceptions": [],
-                "keyword": "type",
-                "message": "expected type: Integer, found: BigDecimal"
-              },
-              {
-                "schemaLocation": "#/definitions/MergePolicyClassName",
-                "pointerToViolation": "#/hazelcast/ringbuffer/my-ringbuffer/merge-policy/class-name",
-                "causingExceptions": [],
-                "keyword": "enum",
-                "message": "UnknownMergePolicy is not a valid enum value"
-              }
-            ],
-            "message": "2 schema violations found"
+            "schemaLocation": "#/definitions/MergePolicy/properties/batch-size",
+            "pointerToViolation": "#/hazelcast/ringbuffer/my-ringbuffer/merge-policy/batch-size",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Integer, found: BigDecimal"
           },
           {
             "schemaLocation": "#/definitions/Ringbuffer/additionalProperties",
@@ -156,9 +142,9 @@
             "message": "expected type: Integer, found: String"
           }
         ],
-        "message": "11 schema violations found"
+        "message": "10 schema violations found"
       }
     ],
-    "message": "14 schema violations found"
+    "message": "13 schema violations found"
   }
 }

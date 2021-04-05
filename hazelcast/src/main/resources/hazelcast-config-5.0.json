@@ -848,7 +848,8 @@
       "default": 16
     },
     "MergePolicyClassName": {
-      "enum": [
+      "type": "string",
+      "examples": [
         "ExpirationTimeMergePolicy",
         "HyperLogLogMergePolicy",
         "HigherHitsMergePolicy",
@@ -1023,6 +1024,7 @@
           "cache-deserialized-values": {
             "enum": [
               "INDEX_ONLY",
+              "INDEX-ONLY",
               "NEVER",
               "ALWAYS"
             ],

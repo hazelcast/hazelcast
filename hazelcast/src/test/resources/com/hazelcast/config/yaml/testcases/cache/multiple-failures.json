@@ -187,25 +187,11 @@
         "message": "-2 is not greater or equal to 0"
       },
       {
-        "schemaLocation": "#/definitions/MergePolicy",
-        "pointerToViolation": "#/hazelcast/cache/default/merge-policy",
-        "causingExceptions": [
-          {
-            "schemaLocation": "#/definitions/MergePolicy/properties/batch-size",
-            "pointerToViolation": "#/hazelcast/cache/default/merge-policy/batch-size",
-            "causingExceptions": [],
-            "keyword": "type",
-            "message": "expected type: Integer, found: String"
-          },
-          {
-            "schemaLocation": "#/definitions/MergePolicyClassName",
-            "pointerToViolation": "#/hazelcast/cache/default/merge-policy/class-name",
-            "causingExceptions": [],
-            "keyword": "enum",
-            "message": "INVALID is not a valid enum value"
-          }
-        ],
-        "message": "2 schema violations found"
+        "schemaLocation": "#/definitions/MergePolicy/properties/batch-size",
+        "pointerToViolation": "#/hazelcast/cache/default/merge-policy/batch-size",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Integer, found: String"
       },
       {
         "schemaLocation": "#/definitions/Cache/additionalProperties/properties/read-through",
@@ -348,6 +334,6 @@
         "message": "expected type: String, found: Integer"
       }
     ],
-    "message": "33 schema violations found"
+    "message": "32 schema violations found"
   }
 }

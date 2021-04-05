@@ -28,25 +28,11 @@
     "pointerToViolation": "#/hazelcast/list/default",
     "causingExceptions": [
       {
-        "schemaLocation": "#/definitions/MergePolicy",
-        "pointerToViolation": "#/hazelcast/list/default/merge-policy",
-        "causingExceptions": [
-          {
-            "schemaLocation": "#/definitions/MergePolicy/properties/batch-size",
-            "pointerToViolation": "#/hazelcast/list/default/merge-policy/batch-size",
-            "causingExceptions": [],
-            "keyword": "type",
-            "message": "expected type: Integer, found: String"
-          },
-          {
-            "schemaLocation": "#/definitions/MergePolicyClassName",
-            "pointerToViolation": "#/hazelcast/list/default/merge-policy/class-name",
-            "causingExceptions": [],
-            "keyword": "enum",
-            "message": "INVALID is not a valid enum value"
-          }
-        ],
-        "message": "2 schema violations found"
+        "schemaLocation": "#/definitions/MergePolicy/properties/batch-size",
+        "pointerToViolation": "#/hazelcast/list/default/merge-policy/batch-size",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Integer, found: String"
       },
       {
         "schemaLocation": "#/definitions/List/additionalProperties/properties/item-listeners",
@@ -112,6 +98,6 @@
         "message": "-1 is not greater or equal to 0"
       }
     ],
-    "message": "9 schema violations found"
+    "message": "8 schema violations found"
   }
 }
