@@ -30,7 +30,8 @@
           "merge-policy": {
             "batch-size": "100",
             "class-name": {}
-          }
+          },
+          "priority-comparator-class-name": {}
         }
       }
     }
@@ -199,8 +200,15 @@
         "causingExceptions": [],
         "keyword": "type",
         "message": "expected type: Boolean, found: Integer"
+      },
+      {
+        "schemaLocation": "#/definitions/Queue/additionalProperties/properties/priority-comparator-class-name",
+        "pointerToViolation": "#/hazelcast/queue/default/priority-comparator-class-name",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: String, found: JSONObject"
       }
     ],
-    "message": "18 schema violations found"
+    "message": "19 schema violations found"
   }
 }

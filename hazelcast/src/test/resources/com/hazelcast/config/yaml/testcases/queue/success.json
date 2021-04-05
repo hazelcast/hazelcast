@@ -26,7 +26,8 @@
           "merge-policy": {
             "batch-size": 100,
             "class-name": "PutIfAbsentMergePolicy"
-          }
+          },
+          "priority-comparator-class-name":  "MyComparator",
         }
       }
     }

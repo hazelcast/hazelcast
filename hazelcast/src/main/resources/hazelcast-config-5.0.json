@@ -1646,6 +1646,10 @@
           },
           "merge-policy": {
             "$ref": "#/definitions/MergePolicy"
+          },
+          "priority-comparator-class-name": {
+            "type": "string",
+            "description": "Fully-qualified comparator's class name to be used for the priority queue. If nothing is provided, then queue behaves as a FIFO queue."
           }
         }
       }
