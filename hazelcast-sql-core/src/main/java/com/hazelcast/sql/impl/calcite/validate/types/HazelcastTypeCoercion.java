@@ -373,8 +373,8 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
             return false;
         }
         // Should keep sync with rules in SqlTypeCoercionRule.
-        if (SqlTypeUtil.canCastFrom(toType, fromType, true)) {
-            throw new HazelcastException("Can't cast from " + toType.getSqlTypeName() + "to " + fromType.getSqlTypeName());
+        if (!SqlTypeUtil.canCastFrom(toType, fromType, false)) {
+            throw new HazelcastException("Can't cast from " + fromType.getSqlTypeName() + " to " + toType.getSqlTypeName());
         }
         return true;
     }

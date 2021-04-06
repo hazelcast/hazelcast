@@ -16,29 +16,30 @@
 
 package com.hazelcast.sql.impl.expression.predicate;
 
-import com.hazelcast.core.HazelcastException;
-import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runners.Parameterized;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
+import static com.hazelcast.sql.impl.SqlErrorCode.PARSING;
 import static org.junit.Assert.assertEquals;
 
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class InOperatorIntegrationTest extends ExpressionTestSupport {
     protected String longList = "(0, 1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 25, 28, 31, 35)";
+    private static final String inOperatorIncompatibleTypesError = "Values passed to IN operator must have compatible types";
+    private static final String incompatibleTypesError = "Values in expression list must have compatible types";
 
     @Test
     public void inPredicateWithDifferentListLengthTest() {
@@ -73,9 +74,11 @@ public class InOperatorIntegrationTest extends ExpressionTestSupport {
 
     @Test
     public void inPredicateWithSubQueryTest() {
+        String expectedExMessage = "Sub-queries are not allowed for IN operator.";
+
         putAll(1, 2);
-        checkThrows(sqlQuery("IN (SELECT __key FROM map)"), HazelcastSqlException.class);
-        checkThrows(sqlQuery("NOT IN (SELECT __key FROM map)"), HazelcastSqlException.class);
+        checkFailure0(sqlQuery("IN (SELECT __key FROM map)"), PARSING, expectedExMessage);
+        checkFailure0(sqlQuery("NOT IN (SELECT __key FROM map)"), PARSING, expectedExMessage);
     }
 
     @Test
@@ -101,10 +104,10 @@ public class InOperatorIntegrationTest extends ExpressionTestSupport {
                 SqlColumnType.INTEGER,
                 new Integer[]{(int) Byte.MAX_VALUE});
 
-        checkThrows(sqlQuery("IN ('1970-01-01', 1, '2')"), HazelcastSqlException.class);
-        checkThrows(sqlQuery("IN ('abc', TRUE, 0)"), HazelcastSqlException.class);
-        checkThrows(sqlQuery("NOT IN ('abc', TRUE, CAST ('1970-01-01' AS DATE)"), HazelcastSqlException.class);
-        checkThrows(sqlQuery(sqlQuery("IN (CAST ('1970-01-01' AS DATE), 1, CAST ('1970-01-02' AS DATE))")), HazelcastSqlException.class);
+        checkFailure0(sqlQuery("IN ('abc', 0, 1, 'bac')"),  PARSING, castError("VARCHAR", "INTEGER"));
+        checkFailure0(sqlQuery("IN ('abc', TRUE)"),  PARSING, castError("VARCHAR", "INTEGER"));
+        checkFailure0(sqlQuery("IN (CAST ('1970-01-01' AS DATE), 2, 'dac')"),  PARSING, inOperatorIncompatibleTypesError);
+        checkFailure0(sqlQuery("IN (CAST ('00:00:00' AS TIME), 1, CAST ('00:00:02' AS TIME))"), PARSING, inOperatorIncompatibleTypesError);
     }
 
     @Test
@@ -114,11 +117,11 @@ public class InOperatorIntegrationTest extends ExpressionTestSupport {
         checkValues(sqlQuery("IN ('abc', 'cba', 'bac')"), SqlColumnType.VARCHAR, new String[]{"cba", "abc", "bac"});
         checkValues(sqlQuery("NOT IN ('abc', '1', 'cba')"), SqlColumnType.VARCHAR, new String[]{"bac", "20"});
 
-        checkThrows(sqlQuery("IN (0, 'CAST ('1970-01-01' AS DATE)', 1, '2')"), HazelcastSqlException.class);
-        checkThrows(sqlQuery("IN ('abc', 0, 1, 'bac')"), HazelcastSqlException.class);
-        checkThrows(sqlQuery("IN ('abc', TRUE, 0)"), HazelcastSqlException.class);
-        checkThrows(sqlQuery("NOT IN ('abc', TRUE, CAST ('1970-01-01' AS DATE)"), HazelcastSqlException.class);
-        checkThrows(sqlQuery(sqlQuery("IN (CAST ('1970-01-01' AS DATE), 1, CAST ('1970-01-02' AS DATE))")), HazelcastSqlException.class);
+        checkFailure0(sqlQuery("IN (CAST('00:00:00' AS TIME), '1')"), PARSING, castError("TIME", "VARCHAR"));
+        checkFailure0(sqlQuery("IN ('abc', 0, 1, 'bac')"), PARSING, castError("TINYINT", "VARCHAR"));
+        checkFailure0(sqlQuery("IN (3, CAST('1970-01-01' AS DATE), 'dac')"), PARSING, castError("TINYINT", "DATE"));
+        checkFailure0(sqlQuery("IN (CAST('00:00:00' AS TIME), 'dac')"), PARSING, castError("TIME", "VARCHAR"));
+        checkFailure0(sqlQuery("IN (CAST('00:00:00' AS TIME), 1, CAST ('00:00:02' AS TIME))"), PARSING, castError("TINYINT", "TIME"));
     }
 
     @Test
@@ -130,11 +133,26 @@ public class InOperatorIntegrationTest extends ExpressionTestSupport {
         checkValues(sqlQuery("IN (CAST ('1970-01-01' AS DATE), CAST ('1970-01-02' AS DATE))"), SqlColumnType.DATE, new LocalDate[]{date1});
         checkValues(sqlQuery("NOT IN (CAST ('1970-01-01' AS DATE), CAST ('1970-01-02' AS DATE))"), SqlColumnType.DATE, new LocalDate[]{date2});
 
-        checkThrows(sqlQuery("IN ('1970-01-01', 1, '2')"), HazelcastSqlException.class);
-        checkThrows(sqlQuery("IN (0, 1, 'bac')"), HazelcastSqlException.class);
-        checkThrows(sqlQuery("IN ('abc', TRUE, 0)"), HazelcastSqlException.class);
-        checkThrows(sqlQuery("NOT IN ('abc', TRUE, CAST ('1970-01-01' AS DATE)"), HazelcastSqlException.class);
-        checkThrows(sqlQuery(sqlQuery("IN (CAST ('1970-01-01' AS DATE), 1, CAST ('1970-01-02' AS DATE))")), HazelcastSqlException.class);
+        checkFailure0(sqlQuery("IN ('abc', 0, 1, 'bac')"),  PARSING, castError("VARCHAR", "DATE"));
+        checkFailure0(sqlQuery("IN (CAST('1970-01-01' AS DATE), 2)"),  PARSING, castError("TINYINT", "DATE"));
+        checkFailure0(sqlQuery("IN (TRUE, CAST('00:00:00' AS TIME))"),  PARSING, incompatibleTypesError);
+        checkFailure0(sqlQuery("IN (CAST ('00:00:00' AS TIME), 1, CAST ('00:00:02' AS TIME))"), PARSING, inOperatorIncompatibleTypesError);
+    }
+
+    @Test
+    public void inPredicateTimesTest() {
+        LocalTime time1 = LocalTime.of(0, 0, 0);
+        LocalTime time2 = LocalTime.of(0, 0, 2);
+        putAll(time1, time2);
+        checkValues(sqlQuery("IN (CAST('00:00:00' AS TIME), CAST('00:00:02' AS TIME))"), SqlColumnType.TIME, new LocalTime[]{time1, time2});
+        checkValues(sqlQuery("IN (CAST('00:00:00' AS TIME), CAST('00:00:01' AS TIME))"), SqlColumnType.TIME, new LocalTime[]{time1});
+        checkValues(sqlQuery("NOT IN (CAST('00:00:00' AS TIME))"), SqlColumnType.TIME, new LocalTime[]{time2});
+
+        checkFailure0(sqlQuery("IN ('abc', 0, 1, 'bac')"),  PARSING, castError("VARCHAR", "TIME"));
+        checkFailure0(sqlQuery("IN (CAST('00:00:00' AS TIME), 1)"), PARSING, castError("TINYINT", "TIME"));
+        checkFailure0(sqlQuery("IN (CAST('1970-01-01' AS DATE), 2)"),  PARSING, inOperatorIncompatibleTypesError);
+        checkFailure0(sqlQuery("NOT IN (0, 1)"),  PARSING, inOperatorIncompatibleTypesError);
+        checkFailure0(sqlQuery("IN (CAST ('1970-01-01' AS DATE), 1, CAST ('00:00:02' AS TIME))"), PARSING, inOperatorIncompatibleTypesError);
     }
 
     @Ignore(value = "Should be enabled after engines merge.")
@@ -160,12 +178,12 @@ public class InOperatorIntegrationTest extends ExpressionTestSupport {
         }
     }
 
-    protected void checkThrows(String sql, Class<? extends HazelcastException> expectedClass) {
-        Assert.assertThrows(expectedClass, () -> execute(member, sql));
-    }
-
     private String sqlQuery(String inClause) {
         return "SELECT this FROM map WHERE this " + inClause;
+    }
+
+    private String castError(String fromType, String toType) {
+        return fromType + " to " + toType;
     }
 
     private String sqlRowQuery(String inClause) {
