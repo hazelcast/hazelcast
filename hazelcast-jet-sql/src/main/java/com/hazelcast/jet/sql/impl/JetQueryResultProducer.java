@@ -47,6 +47,11 @@ public class JetQueryResultProducer implements QueryResultProducer {
     private final AtomicReference<Exception> done = new AtomicReference<>();
 
     private InternalIterator iterator;
+    private long limit = Long.MAX_VALUE;
+
+    public void init(long limit) {
+        this.limit = limit;
+    }
 
     @Override
     public ResultIterator<Row> iterator() {
@@ -69,8 +74,17 @@ public class JetQueryResultProducer implements QueryResultProducer {
 
     public void consume(Inbox inbox) {
         ensureNotDone();
-        for (Object[] row; (row = (Object[]) inbox.peek()) != null && rows.offer(new HeapRow(row)); ) {
+        Object[] row = (Object[]) inbox.peek();
+        while (row != null && rows.offer(new HeapRow(row))) {
             inbox.remove();
+            if (limit != Long.MAX_VALUE) {
+                limit -= 1;
+                if (limit < 1) {
+                    done.compareAndSet(null, new ResultLimitReachedException());
+                }
+                ensureNotDone();
+            }
+            row = (Object[]) inbox.peek();
         }
     }
 
@@ -137,7 +151,7 @@ public class JetQueryResultProducer implements QueryResultProducer {
         private boolean isDone() {
             Exception exception = done.get();
             if (exception != null) {
-                if (exception instanceof NormalCompletionException) {
+                if (exception instanceof NormalCompletionException || exception instanceof ResultLimitReachedException) {
                     // finish the rows first
                     return rows.isEmpty();
                 }
@@ -152,6 +166,14 @@ public class JetQueryResultProducer implements QueryResultProducer {
             // Use writableStackTrace = false, the exception is not created at a place where it's thrown,
             // it's better if it has no stack trace then.
             super("Done normally", null, false, false);
+        }
+    }
+
+    private static class ResultLimitReachedException extends Exception {
+        ResultLimitReachedException() {
+            // Use writableStackTrace = false, the exception is not created at a place where it's thrown,
+            // it's better if it has no stack trace then.
+            super("Done by reaching the item number in SQL LIMIT clause", null, false, false);
         }
     }
 }
