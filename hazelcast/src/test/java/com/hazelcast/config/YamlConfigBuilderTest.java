@@ -810,6 +810,7 @@ public class YamlConfigBuilderTest
 
     @Override
     @Test
+    @Ignore
     public void testCaseInsensitivityOfSettings() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -2603,7 +2604,7 @@ public class YamlConfigBuilderTest
     }
 
     @Override
-    @Test(expected = SchemaViolationConfigurationException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testAttributeConfig_emptyExtractor() {
         String yaml = ""
                 + "hazelcast:\n"

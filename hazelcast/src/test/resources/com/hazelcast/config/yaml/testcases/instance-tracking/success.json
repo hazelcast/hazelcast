@@ -1,0 +1,12 @@
+{
+  "instance": {
+    "hazelcast": {
+      "instance-tracking": {
+        "enabled": true,
+        "file-name": "/dummy/file",
+        "format-pattern": "dummy-pattern with $HZ_INSTANCE_TRACKING{placeholder} and $RND{placeholder}"
+      }
+    }
+  },
+  "error": null
+}

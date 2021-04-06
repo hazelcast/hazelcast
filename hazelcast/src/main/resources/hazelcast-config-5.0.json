@@ -133,6 +133,9 @@
         },
         "auditlog": {
           "$ref": "#/definitions/Auditlog"
+        },
+        "instance-tracking": {
+          "$ref": "#/definitions/InstanceTracking"
         }
       }
     }
@@ -3615,6 +3618,22 @@
       "required": [
         "factory-class-name"
       ]
+    },
+    "InstanceTracking": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "file-name":  {
+          "type": "string"
+        },
+        "format-pattern": {
+          "type": "string"
+        }
+      }
     }
   }
 }
