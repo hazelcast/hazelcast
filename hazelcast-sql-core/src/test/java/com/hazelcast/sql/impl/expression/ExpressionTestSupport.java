@@ -16,12 +16,12 @@
 
 package com.hazelcast.sql.impl.expression;
 
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlRow;
-import com.hazelcast.sql.SqlTestInstanceFactory;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue;
 import com.hazelcast.sql.support.expressions.ExpressionValue;
@@ -69,7 +69,7 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
     protected static final Object SKIP_VALUE_CHECK = new Object();
     protected HazelcastInstance member;
 
-    private final SqlTestInstanceFactory factory = SqlTestInstanceFactory.create();
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
     protected IMap map;
 
     @Before

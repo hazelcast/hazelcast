@@ -17,6 +17,7 @@
 package com.hazelcast.sql;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
@@ -95,7 +96,7 @@ public class SqlBasicTest extends SqlTestSupport {
 
     private static final int[] PAGE_SIZES = { 256 };
     private static final int[] DATA_SET_SIZES = { 4096 };
-    private static final SqlTestInstanceFactory FACTORY = SqlTestInstanceFactory.create();
+    private static final TestHazelcastFactory FACTORY = new TestHazelcastFactory();
 
     private static HazelcastInstance member1;
     private static HazelcastInstance member2;
