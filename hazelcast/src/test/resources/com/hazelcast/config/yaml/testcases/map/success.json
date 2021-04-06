@@ -55,7 +55,8 @@
               "size": 1000,
               "max-size-policy": "ENTRY_COUNT",
               "eviction-policy": "LFU"
-            }
+            },
+            "serialize-keys": true
           },
           "wan-replication-ref": {
             "my-wan-cluster-batch": {

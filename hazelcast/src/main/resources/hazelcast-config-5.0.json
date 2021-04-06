@@ -1205,6 +1205,10 @@
               },
               "eviction": {
                 "$ref": "#/definitions/Eviction"
+              },
+              "serialize-keys":  {
+                "type": "boolean",
+                "default":  false
               }
             }
           },
