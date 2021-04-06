@@ -99,8 +99,13 @@ import static java.util.stream.Collectors.toList;
  */
 public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends AbstractProcessor {
 
-    private static final int MAX_FETCH_SIZE = 2048;
+    /**
+     * See <a href="https://github.com/hazelcast/hazelcast-jet/pull/3009#discussion_r606338266">discussion</a>
+     * for the numbers and how {@link #MAX_FETCH_SIZE} and
+     * {@code #MAX_PARALLEL_READ} affect the throughput.
+     */
     private static final int MAX_PARALLEL_READ = 5;
+    private static final int MAX_FETCH_SIZE = 2048;
 
     private final Reader<F, B, R> reader;
     private final int[] partitionIds;
