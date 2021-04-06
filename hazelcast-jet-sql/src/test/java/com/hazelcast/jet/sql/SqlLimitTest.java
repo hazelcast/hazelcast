@@ -91,8 +91,27 @@ public class SqlLimitTest extends SqlTestSupport {
                 new String[]{"Joey", "3"}
         );
 
-        assertRowsAnyOrder(
-                "SELECT name FROM " + tableName + " LIMIT 5.2",
+        assertContainsSubsetOfRows(
+                "SELECT name FROM " + tableName + " LIMIT 2.99",
+                2,
+                asList(new Row("Alice"), new Row("Bob"), new Row("Joey"))
+        );
+
+        assertContainsSubsetOfRows(
+                "SELECT name FROM " + tableName + " LIMIT 2.5",
+                2,
+                asList(new Row("Alice"), new Row("Bob"), new Row("Joey"))
+        );
+
+        assertContainsSubsetOfRows(
+                "SELECT name FROM " + tableName + " LIMIT 2.45",
+                2,
+                asList(new Row("Alice"), new Row("Bob"), new Row("Joey"))
+        );
+
+        assertContainsSubsetOfRows(
+                "SELECT name FROM " + tableName + " LIMIT 3.1",
+                3,
                 asList(new Row("Alice"), new Row("Bob"), new Row("Joey"))
         );
     }
