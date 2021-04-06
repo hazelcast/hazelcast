@@ -146,7 +146,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         do {
             checkedEntryCount += findKeys();
             evictedCount += evictKeys(now, backup);
-        } while (expirationIterator.hasNext() && checkedEntryCount >= maxIterationCount);
+        } while (expirationIterator.hasNext() && checkedEntryCount < maxIterationCount);
 
         return evictedCount;
     }
