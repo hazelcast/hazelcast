@@ -74,8 +74,7 @@ public class JetQueryResultProducer implements QueryResultProducer {
 
     public void consume(Inbox inbox) {
         ensureNotDone();
-        Object[] row = (Object[]) inbox.peek();
-        while (row != null && rows.offer(new HeapRow(row))) {
+        for (Object[] row; (row = (Object[]) inbox.peek()) != null && rows.offer(new HeapRow(row)); ) {
             inbox.remove();
             if (limit != Long.MAX_VALUE) {
                 limit -= 1;
@@ -84,7 +83,6 @@ public class JetQueryResultProducer implements QueryResultProducer {
                 }
                 ensureNotDone();
             }
-            row = (Object[]) inbox.peek();
         }
     }
 
