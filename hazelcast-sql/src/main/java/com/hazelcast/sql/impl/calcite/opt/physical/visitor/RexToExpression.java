@@ -25,6 +25,7 @@ import com.hazelcast.sql.impl.expression.CaseExpression;
 import com.hazelcast.sql.impl.expression.CastExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.NullIfExpression;
 import com.hazelcast.sql.impl.expression.SymbolExpression;
 import com.hazelcast.sql.impl.expression.datetime.ExtractField;
 import com.hazelcast.sql.impl.expression.datetime.ExtractFunction;
@@ -305,6 +306,11 @@ public final class RexToExpression {
 
             case CASE:
                 return CaseExpression.create(operands);
+
+            case COALESCE:
+                return null;
+            case NULLIF:
+                return NullIfExpression.create(operands[0], operands[1]);
 
             case OTHER:
                 if (operator == HazelcastSqlOperatorTable.CONCAT) {

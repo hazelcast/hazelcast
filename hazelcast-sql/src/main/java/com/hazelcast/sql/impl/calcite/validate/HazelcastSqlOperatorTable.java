@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.calcite.validate;
 
 import com.hazelcast.sql.impl.calcite.validate.operators.datetime.HazelcastExtractFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlCase;
+import com.hazelcast.sql.impl.calcite.validate.operators.NullCheckFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastAbsFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastDoubleBiFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastDoubleFunction;
@@ -58,6 +59,8 @@ import org.apache.calcite.sql.SqlPrefixOperator;
 import org.apache.calcite.sql.SqlSpecialOperator;
 import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.fun.SqlCase;
+import org.apache.calcite.sql.fun.SqlCoalesceFunction;
+import org.apache.calcite.sql.fun.SqlNullifFunction;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.util.ReflectiveSqlOperatorTable;
 import org.apache.calcite.sql.util.SqlBasicVisitor;
@@ -197,6 +200,13 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
     public static final SqlFunction EXTRACT = HazelcastExtractFunction.INSTANCE;
 
     public static final SqlPostfixOperator DESC = HazelcastDescOperator.DESC;
+
+    //#endregion
+
+    //#region null check functions
+
+    public static final SqlFunction NULL_IF = NullCheckFunction.NULL_IF;
+    public static final SqlFunction COALESCE = NullCheckFunction.COALESCE;
 
     //#endregion
 
