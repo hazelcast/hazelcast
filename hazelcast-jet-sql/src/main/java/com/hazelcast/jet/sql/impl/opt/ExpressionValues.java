@@ -34,10 +34,17 @@ import java.util.List;
 import static com.hazelcast.jet.impl.util.Util.toList;
 import static java.util.stream.Collectors.toList;
 
+/**
+ * Representation of the VALUES clause data, see subclasses.
+ */
 public abstract class ExpressionValues implements Serializable {
 
     public abstract List<Object[]> toValues(ExpressionEvalContext context);
 
+    /**
+     * Representation of the VALUES clause data in the form of a simple {@code
+     * List<List<Expression>>}.
+     */
     public static class SimpleExpressionValues extends ExpressionValues {
 
         private final List<List<? extends Expression<?>>> expressions;
@@ -61,6 +68,10 @@ public abstract class ExpressionValues implements Serializable {
         }
     }
 
+    /**
+     * A class that wraps another {@link ExpressionValues}, but applies an
+     * optional filter and projection on top of them.
+     */
     public static class CompoundExpressionValues extends ExpressionValues {
 
         private final Expression<Boolean> predicate;
