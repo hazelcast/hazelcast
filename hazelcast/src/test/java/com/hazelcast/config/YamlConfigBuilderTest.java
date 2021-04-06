@@ -28,9 +28,6 @@ import com.hazelcast.config.security.LdapAuthenticationConfig;
 import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.nio.IOUtil;
-import com.hazelcast.internal.yaml.YamlLoader;
-import com.hazelcast.internal.yaml.YamlMapping;
-import com.hazelcast.internal.yaml.YamlToJsonConverter;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.splitbrainprotection.impl.ProbabilisticSplitBrainProtectionFunction;
 import com.hazelcast.splitbrainprotection.impl.RecentlyActiveSplitBrainProtectionFunction;
@@ -39,7 +36,6 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.wan.WanPublisherState;
-import org.json.JSONObject;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -95,11 +91,13 @@ import static org.junit.Assert.fail;
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
+public class YamlConfigBuilderTest
+        extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void testConfigurationURL() throws Exception {
+    public void testConfigurationURL()
+            throws Exception {
         URL configURL = getClass().getClassLoader().getResource("hazelcast-default.yaml");
         Config config = new YamlConfigBuilder(configURL).build();
         assertEquals(configURL, config.getConfigurationUrl());
@@ -119,7 +117,8 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void testConfigurationWithFileName() throws Exception {
+    public void testConfigurationWithFileName()
+            throws Exception {
         assumeThatNotZingJDK6(); // https://github.com/hazelcast/hazelcast/issues/9044
 
         File file = createTempFile("foo", "bar");
@@ -595,7 +594,8 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(2, customQueueConfig.getBackupCount());
         assertEquals(1, customQueueConfig.getAsyncBackupCount());
         assertEquals(1, customQueueConfig.getEmptyQueueTtl());
-        assertEquals("com.hazelcast.collection.impl.queue.model.PriorityElementComparator", customQueueConfig.getPriorityComparatorClassName());
+        assertEquals("com.hazelcast.collection.impl.queue.model.PriorityElementComparator",
+                customQueueConfig.getPriorityComparatorClassName());
 
         MergePolicyConfig mergePolicyConfig = customQueueConfig.getMergePolicyConfig();
         assertEquals("CustomMergePolicy", mergePolicyConfig.getPolicy());
@@ -1845,7 +1845,8 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         SplitBrainProtectionConfig splitBrainProtectionConfig = config.getSplitBrainProtectionConfig("mySplitBrainProtection");
 
         assertFalse(splitBrainProtectionConfig.getListenerConfigs().isEmpty());
-        assertEquals("com.abc.my.splitbrainprotection.listener", splitBrainProtectionConfig.getListenerConfigs().get(0).getClassName());
+        assertEquals("com.abc.my.splitbrainprotection.listener",
+                splitBrainProtectionConfig.getListenerConfigs().get(0).getClassName());
         assertEquals("com.abc.my.second.listener", splitBrainProtectionConfig.getListenerConfigs().get(1).getClassName());
         assertEquals("com.hazelcast.SomeSplitBrainProtectionFunction", splitBrainProtectionConfig.getFunctionClassName());
     }
@@ -1909,7 +1910,8 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
         Config config = buildConfig(yaml);
         SplitBrainProtectionConfig splitBrainProtectionConfig = config.getSplitBrainProtectionConfig("mySplitBrainProtection");
-        assertInstanceOf(RecentlyActiveSplitBrainProtectionFunction.class, splitBrainProtectionConfig.getFunctionImplementation());
+        assertInstanceOf(RecentlyActiveSplitBrainProtectionFunction.class,
+                splitBrainProtectionConfig.getFunctionImplementation());
         RecentlyActiveSplitBrainProtectionFunction splitBrainProtectionFunction = (RecentlyActiveSplitBrainProtectionFunction) splitBrainProtectionConfig
                 .getFunctionImplementation();
         assertEquals(RecentlyActiveSplitBrainProtectionConfigBuilder.DEFAULT_HEARTBEAT_TOLERANCE_MILLIS,
@@ -1931,7 +1933,8 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         Config config = buildConfig(yaml);
         SplitBrainProtectionConfig splitBrainProtectionConfig = config.getSplitBrainProtectionConfig("mySplitBrainProtection");
         assertEquals(3, splitBrainProtectionConfig.getMinimumClusterSize());
-        assertInstanceOf(RecentlyActiveSplitBrainProtectionFunction.class, splitBrainProtectionConfig.getFunctionImplementation());
+        assertInstanceOf(RecentlyActiveSplitBrainProtectionFunction.class,
+                splitBrainProtectionConfig.getFunctionImplementation());
         RecentlyActiveSplitBrainProtectionFunction splitBrainProtectionFunction = (RecentlyActiveSplitBrainProtectionFunction) splitBrainProtectionConfig
                 .getFunctionImplementation();
         assertEquals(13000, splitBrainProtectionFunction.getHeartbeatToleranceMillis());
@@ -1958,8 +1961,10 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 splitBrainProtectionFunction.getAcceptableHeartbeatPauseMillis());
         assertEquals(ProbabilisticSplitBrainProtectionConfigBuilder.DEFAULT_MIN_STD_DEVIATION,
                 splitBrainProtectionFunction.getMinStdDeviationMillis());
-        assertEquals(ProbabilisticSplitBrainProtectionConfigBuilder.DEFAULT_PHI_THRESHOLD, splitBrainProtectionFunction.getSuspicionThreshold(), 0.01);
-        assertEquals(ProbabilisticSplitBrainProtectionConfigBuilder.DEFAULT_SAMPLE_SIZE, splitBrainProtectionFunction.getMaxSampleSize());
+        assertEquals(ProbabilisticSplitBrainProtectionConfigBuilder.DEFAULT_PHI_THRESHOLD,
+                splitBrainProtectionFunction.getSuspicionThreshold(), 0.01);
+        assertEquals(ProbabilisticSplitBrainProtectionConfigBuilder.DEFAULT_SAMPLE_SIZE,
+                splitBrainProtectionFunction.getMaxSampleSize());
     }
 
     @Override
@@ -2921,16 +2926,15 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     @Test
     public void testAllowOverrideDefaultSerializers() {
         final String yaml = ""
-          + "hazelcast:\n"
-          + "  serialization:\n"
-          + "    allow-override-default-serializers: true\n";
+                + "hazelcast:\n"
+                + "  serialization:\n"
+                + "    allow-override-default-serializers: true\n";
 
         final Config config = new InMemoryYamlConfig(yaml);
         final boolean isAllowOverrideDefaultSerializers
-          = config.getSerializationConfig().isAllowOverrideDefaultSerializers();
+                = config.getSerializationConfig().isAllowOverrideDefaultSerializers();
         assertTrue(isAllowOverrideDefaultSerializers);
     }
-
 
     @Override
     @Test
@@ -3559,10 +3563,10 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     @Test
     public void testSqlConfig() {
         String yaml = ""
-            + "hazelcast:\n"
-            + "  sql:\n"
-            + "    executor-pool-size: 10\n"
-            + "    statement-timeout-millis: 30\n";
+                + "hazelcast:\n"
+                + "  sql:\n"
+                + "    executor-pool-size: 10\n"
+                + "    statement-timeout-millis: 30\n";
         Config config = buildConfig(yaml);
         SqlConfig sqlConfig = config.getSqlConfig();
         assertEquals(10, sqlConfig.getExecutorPoolSize());
@@ -3600,7 +3604,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         PersistentMemoryConfig pmemConfig = yamlConfig.getNativeMemoryConfig()
                 .getPersistentMemoryConfig();
         List<PersistentMemoryDirectoryConfig> directoryConfigs = pmemConfig
-                                                                           .getDirectoryConfigs();
+                .getDirectoryConfigs();
         assertFalse(pmemConfig.isEnabled());
         assertEquals(MOUNTED, pmemConfig.getMode());
         assertEquals(2, directoryConfigs.size());

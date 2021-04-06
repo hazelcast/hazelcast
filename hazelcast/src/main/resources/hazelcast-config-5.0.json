@@ -130,6 +130,9 @@
         },
         "sql": {
           "$ref": "#/definitions/Sql"
+        },
+        "auditlog": {
+          "$ref": "#/definitions/Auditlog"
         }
       }
     }
@@ -955,9 +958,9 @@
           "minimum": 0,
           "default": 2147483647
         },
-        "comparator-class-name":  {
+        "comparator-class-name": {
           "type": "string"
-        },
+        }
       }
     },
     "IndexConfig": {
@@ -1391,10 +1394,10 @@
           "merge-policy": {
             "$ref": "#/definitions/MergePolicy"
           },
-          "statistics-enabled":  {
+          "statistics-enabled": {
             "type": "boolean",
             "default": true,
-            "description":  "True if statistics gathering is enabled on the set, false otherwise."
+            "description": "True if statistics gathering is enabled on the set, false otherwise."
           }
         }
       }
@@ -2959,7 +2962,7 @@
             "properties": {
               "heartbeat-tolerance-millis": {
                 "type": "integer",
-                "description": "Overrides the hazelcast.max.no.heartbeat.seconds system property." 
+                "description": "Overrides the hazelcast.max.no.heartbeat.seconds system property."
               }
             }
           },
@@ -2971,11 +2974,11 @@
                 "type": "integer",
                 "description": "Default duration in milliseconds corresponding to number of potentially lost/delayed heartbeats that will be accepted before considering it to be an anomaly. Overrides the hazelcast.max.no.heartbeat.seconds system property."
               },
-              "suspicion-threshold":  {
+              "suspicion-threshold": {
                 "type": "number",
-                "description":  "Threshold for suspicion (φ) level. A low threshold is prone to generate many wrong suspicions but ensures a quick detection in the event of a real crash. Conversely, a high threshold generates fewer mistakes but needs more time to detect actual crashes. Overrides the hazelcast.heartbeat.phiaccrual.failuredetector.threshold system property."
+                "description": "Threshold for suspicion (φ) level. A low threshold is prone to generate many wrong suspicions but ensures a quick detection in the event of a real crash. Conversely, a high threshold generates fewer mistakes but needs more time to detect actual crashes. Overrides the hazelcast.heartbeat.phiaccrual.failuredetector.threshold system property."
               },
-              "max-sample-size":  {
+              "max-sample-size": {
                 "type": "integer",
                 "description": "Number of samples to use for calculations. Overrides the hazelcast.heartbeat.phiaccrual.failuredetector.sample.size system property."
               },
@@ -3568,6 +3571,25 @@
           "description": "Defines the timeout in milliseconds that is applied to queries without an explicit timeout."
         }
       }
+    },
+    "Auditlog": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "factory-class-name": {
+          "type": "string"
+        },
+        "properties": {
+          "type": "object"
+        }
+      },
+      "required": [
+        "factory-class-name"
+      ]
     }
   }
 }
