@@ -360,7 +360,6 @@
                     <excludes>
                         <exclude>**/jsr/**.java</exclude>
                         <exclude>**/**IT.java</exclude>
-                        <exclude>com.hazelcast.sql.SqlIntegrationTestSuite.java</exclude>
                     </excludes>
                     <excludedGroups>
                         com.hazelcast.test.annotation.SlowTest,
@@ -508,7 +507,6 @@
                                     <excludes>
                                         <exclude>**/jsr/**.java</exclude>
                                         <exclude>**/**IT.java</exclude>
-                                        <exclude>com.hazelcast.sql.SqlIntegrationTestSuite.java</exclude>
                                     </excludes>
                                     <groups>
                                         com.hazelcast.test.annotation.ParallelJVMTest
@@ -547,7 +545,6 @@
                                     <excludes>
                                         <exclude>**/jsr/**.java</exclude>
                                         <exclude>**/**IT.java</exclude>
-                                        <exclude>com.hazelcast.sql.SqlIntegrationTestSuite.java</exclude>
                                     </excludes>
                                     <excludedGroups>
                                         com.hazelcast.test.annotation.SlowTest,
@@ -623,7 +620,6 @@
                             <excludes>
                                 <exclude>**/jsr/**.java</exclude>
                                 <exclude>**/**IT.java</exclude>
-                                <exclude>com.hazelcast.sql.SqlIntegrationTestSuite.java</exclude>
                             </excludes>
                             <excludedGroups>
                                 com.hazelcast.test.annotation.SlowTest,
@@ -788,7 +784,6 @@
                             </includes>
                             <excludes>
                                 <exclude>**/**IT.java</exclude>
-                                <exclude>com.hazelcast.sql.SqlIntegrationTestSuite.java</exclude>
                             </excludes>
                             <excludedGroups>
                                 com.hazelcast.test.annotation.NightlyTest
@@ -960,7 +955,6 @@
                             <excludes>
                                 <exclude>**/**IT.java</exclude>
                                 <exclude>**/jsr/**.java</exclude>
-                                <exclude>com.hazelcast.sql.SqlIntegrationTestSuite.java</exclude>
                             </excludes>
                             <groups>
                                 com.hazelcast.test.annotation.NightlyTest,
@@ -1029,7 +1023,6 @@
                             <excludes>
                                 <exclude>**/jsr/**.java</exclude>
                                 <exclude>**/**IT.java</exclude>
-                                <exclude>com.hazelcast.sql.SqlIntegrationTestSuite.java</exclude>
                             </excludes>
                         </configuration>
                     </plugin>
@@ -1141,7 +1134,6 @@
                                 <exclude>**/UserCodeDeploymentSmokeTest.java</exclude>
                                 <exclude>**/OperationRunnerImplTest.java</exclude>
                                 <exclude>**/**IT.java</exclude>
-                                <exclude>com.hazelcast.sql.SqlIntegrationTestSuite.java</exclude>
                             </excludes>
                             <excludedGroups>
                                 com.hazelcast.test.annotation.SlowTest,
