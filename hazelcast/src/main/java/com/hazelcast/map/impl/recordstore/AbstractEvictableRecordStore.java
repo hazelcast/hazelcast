@@ -33,10 +33,9 @@ import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
-import java.util.ArrayList;
+import java.util.ArrayDeque;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.TimeUnit;
@@ -57,12 +56,15 @@ import static com.hazelcast.map.impl.record.Record.UNSET;
  */
 public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
+    private static final int MAX_SCAN = 16;
+
     protected final long expiryDelayMillis;
     protected final Address thisAddress;
     protected final EventService eventService;
     protected final MapEventPublisher mapEventPublisher;
     protected final ClearExpiredRecordsTask clearExpiredRecordsTask;
     protected final InvalidationQueue<ExpiredKey> expiredKeys = new InvalidationQueue<>();
+
     /**
      * Iterates over a pre-set entry count/percentage in one round.
      * Used in expiration logic for traversing entries. Initializes lazily.
@@ -70,6 +72,8 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     protected Iterator<Map.Entry<Data, Record>> expirationIterator;
 
     protected volatile boolean hasEntryWithCustomExpiration;
+
+    private final ArrayDeque keyValuePairs = new ArrayDeque<>(MAX_SCAN);
 
     protected AbstractEvictableRecordStore(MapContainer mapContainer, int partitionId) {
         super(mapContainer, partitionId);
@@ -137,25 +141,39 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     }
 
     private int evictExpiredEntriesInternal(int maxIterationCount, long now, boolean backup) {
-        int evictedEntryCount = 0;
         int checkedEntryCount = 0;
+        int evictedCount = 0;
+        do {
+            checkedEntryCount += findKeys();
+            evictedCount += evictKeys(now, backup);
+        } while (expirationIterator.hasNext() && checkedEntryCount >= maxIterationCount);
+
+        return evictedCount;
+    }
+
+    private int findKeys() {
         initExpirationIterator();
 
-        List keyValuePairs = new ArrayList<>();
+        int checkedEntryCount = 0;
         while (expirationIterator.hasNext()) {
-            if (checkedEntryCount >= maxIterationCount) {
-                break;
-            }
             Map.Entry<Data, Record> entry = expirationIterator.next();
-            checkedEntryCount++;
-
             keyValuePairs.add(entry.getKey());
             keyValuePairs.add(entry.getValue());
-        }
+            checkedEntryCount++;
 
-        for (int i = 0; i < keyValuePairs.size(); i += 2) {
-            Data key = (Data) keyValuePairs.get(i);
-            Record record = (Record) keyValuePairs.get(i + 1);
+            if (checkedEntryCount == MAX_SCAN) {
+                break;
+            }
+        }
+        return checkedEntryCount;
+    }
+
+    private int evictKeys(long now, boolean backup) {
+        int evictedEntryCount = 0;
+
+        Data key;
+        while ((key = (Data) keyValuePairs.poll()) != null) {
+            Record record = (Record) keyValuePairs.poll();
             if (getOrNullIfExpired(key, record, now, backup) == null) {
                 evictedEntryCount++;
             }
