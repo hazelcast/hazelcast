@@ -19,8 +19,10 @@ package com.hazelcast.spring;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.FailOnTimeoutStatement;
 import com.hazelcast.test.JmxLeakHelper;
 import com.hazelcast.test.TestLoggingUtils;
+import org.junit.Test;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
@@ -28,8 +30,13 @@ import org.junit.runners.model.Statement;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
+import static java.lang.Integer.getInteger;
 
 public class CustomSpringJUnit4ClassRunner extends SpringJUnit4ClassRunner {
+
+    private static final int DEFAULT_TEST_TIMEOUT_IN_SECONDS = getInteger("hazelcast.test.defaultTestTimeoutInSeconds", 300);
 
     static {
         TestLoggingUtils.initializeLogging();
@@ -60,6 +67,20 @@ public class CustomSpringJUnit4ClassRunner extends SpringJUnit4ClassRunner {
         } finally {
             TestLoggingUtils.removeThreadLocalTestMethodName();
         }
+    }
+
+    @Override
+    @SuppressWarnings("deprecation")
+    protected Statement withPotentialTimeout(FrameworkMethod method, Object test, Statement next) {
+        long timeout = getTimeout(method.getAnnotation(Test.class));
+        return new FailOnTimeoutStatement(method.getName(), next, timeout);
+    }
+
+    private long getTimeout(Test annotation) {
+        if (annotation == null || annotation.timeout() == 0) {
+            return TimeUnit.SECONDS.toMillis(DEFAULT_TEST_TIMEOUT_IN_SECONDS);
+        }
+        return annotation.timeout();
     }
 
     @Override
