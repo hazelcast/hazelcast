@@ -60,7 +60,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.fail;
 
-@Ignore("https://github.com/hazelcast/hazelcast/issues/18453")
 public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTest {
 
     @Test
