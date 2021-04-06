@@ -153,8 +153,9 @@ $ mvn clean install
 ```
 
 Take into account that the default build executes thousands of tests which may take a
-considerable amount of time. Additionally, there is a `quick` profile that skips
-checkstyle validation and does not build `extensions` and `distribution` modules. 
+considerable amount of time. Additionally, there is a `quick` build activated by
+setting the `-Dquick` system property that skips tests, checkstyle validation,
+javadoc and source plugins and does not build `extensions` and `distribution` modules.
 
 ### Testing
 
