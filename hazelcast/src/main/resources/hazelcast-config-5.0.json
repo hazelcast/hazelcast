@@ -954,7 +954,10 @@
           "type": "integer",
           "minimum": 0,
           "default": 2147483647
-        }
+        },
+        "comparator-class-name":  {
+          "type": "string"
+        },
       }
     },
     "IndexConfig": {
