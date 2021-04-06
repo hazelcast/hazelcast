@@ -48,6 +48,7 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -477,6 +478,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
     }
 
     @Test
+    @Ignore("https://github.com/hazelcast/hazelcast-jet/issues/3011")
     public void when_topicDoesNotExist_then_partitionCountGreaterThanZero() {
         KafkaConsumer<Integer, String> c = kafkaTestSupport.createConsumer("non-existing-topic");
         assertGreaterOrEquals("partition count", c.partitionsFor("non-existing-topic", Duration.ofSeconds(2)).size(), 1);
