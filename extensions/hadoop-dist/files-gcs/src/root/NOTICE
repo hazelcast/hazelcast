@@ -80,7 +80,6 @@ Apache License, Version 2.0
   OpenCensus:0.24.0
   OpenCensus:0.24.0
   perfmark:perfmark-api:0.19.0
-  Apache Log4j:1.2.17
   ASM based accessors helper used by json-smart:1.2
   JSON Small and Fast Parser:2.3
   Apache Avro:1.10.2
