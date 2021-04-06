@@ -1178,6 +1178,9 @@
             "type": "object",
             "additionalProperties": false,
             "properties": {
+              "name": {
+                "type": "string"
+              },
               "time-to-live-seconds": {
                 "type": "integer",
                 "minimum": 0,
@@ -2042,13 +2045,16 @@
       }
     },
     "LiteMember": {
+      "type": "object",
       "additionalProperties": false,
       "properties": {
         "enabled": {
-          "type": "boolean",
-          "default": false
+          "type": "boolean"
         }
       },
+      "required": [
+        "enabled"
+      ],
       "description": "When you want to use a Hazelcast member as a lite member, set this element's \"enabled\" attribute to true in that member's YAML configuration. Lite members do not store data, do not have partitions and are used mainly to execute tasks and register listeners."
     },
     "CPSubsystem": {

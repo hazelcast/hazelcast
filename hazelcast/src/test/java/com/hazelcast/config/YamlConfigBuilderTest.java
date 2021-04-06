@@ -1167,7 +1167,7 @@ public class YamlConfigBuilderTest
                 + "  map:\n"
                 + "    mymap:\n"
                 + "      map-store:"
-                + (useDefault ? "{}" : "\n        write-coalescing: " + String.valueOf(value) + "\n");
+                + (useDefault ? " {}" : "\n        write-coalescing: " + String.valueOf(value) + "\n");
     }
 
     @Override
@@ -2725,8 +2725,7 @@ public class YamlConfigBuilderTest
     }
 
     @Override
-    @Test(expected = InvalidConfigurationException.class)
-    @Ignore("Schema validation is supposed to fail with missing mandatory field: enabled")
+    @Test(expected = SchemaViolationConfigurationException.class)
     public void testNonLiteMemberConfigWithoutEnabledField() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -2736,8 +2735,7 @@ public class YamlConfigBuilderTest
     }
 
     @Override
-    @Test(expected = InvalidConfigurationException.class)
-    @Ignore("Schema validation is supposed to fail with invalid boolean in enabled")
+    @Test(expected = SchemaViolationConfigurationException.class)
     public void testInvalidLiteMemberConfig() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -3579,9 +3577,9 @@ public class YamlConfigBuilderTest
         String yaml = ""
                 + "hazelcast:\n"
                 + "  split-brain-protection:\n"
-                + "    enabled: true\n"
-                + "    name: q\n"
-                + "    protect-on:   WRITE   \n";
+                + "    name-of-split-brain-protection:\n"
+                + "      enabled: true\n"
+                + "      protect-on:   WRITE   \n";
 
         buildConfig(yaml);
     }

@@ -46,6 +46,7 @@
             }
           },
           "near-cache": {
+            "name": "near-cache-name",
             "time-to-live-seconds": 0,
             "max-idle-seconds": 60,
             "invalidate-on-change": true,
