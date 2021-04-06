@@ -127,9 +127,9 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
         String yaml = ""
                 + "hazelcast:\n"
-                + "  group:\n"
-                + "    name: foobar\n"
-                + "    password: dev-pass";
+                + "  map:\n"
+                + "    my-map:\n"
+                + "      backup-count: 1";
         Writer writer = new PrintWriter(file, "UTF-8");
         writer.write(yaml);
         writer.close();

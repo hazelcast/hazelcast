@@ -9,7 +9,17 @@
           "function-class-name": "com.your-package.AbsPresMySplitBrainProtection",
           "listeners": [
             "com.your-package.ThreeMemberSplitBrainProtectionListener"
-          ]
+          ],
+          "recently-active-split-brain-protection": {
+            "heartbeat-tolerance-millis": 3000
+          },
+          "probabilistic-split-brain-protection": {
+            "acceptable-heartbeat-pause-millis": 37400,
+            "suspicion-threshold": 3.14592,
+            "max-sample-size": 42,
+            "min-std-deviation-millis": 1234,
+            "heartbeat-interval-millis": 4321
+          }
         }
       }
     }

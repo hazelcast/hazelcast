@@ -2279,7 +2279,8 @@
                   "enum": [
                     "jaas",
                     "tls",
-                    "ldap"
+                    "ldap",
+                    "kerberos"
                   ]
                 },
                 "maxProperties": 1,
@@ -2947,6 +2948,42 @@
             "description": "Provides the list of split brain protection listeners that you can register to be notified about split brain protection results. Split brain protection listeners are local to the member that they are registered, so they receive only events occurred on that local member.",
             "items": {
               "type": "string"
+            }
+          },
+          "recently-active-split-brain-protection": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "heartbeat-tolerance-millis": {
+                "type": "integer",
+                "description": "Overrides the hazelcast.max.no.heartbeat.seconds system property." 
+              }
+            }
+          },
+          "probabilistic-split-brain-protection": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "acceptable-heartbeat-pause-millis": {
+                "type": "integer",
+                "description": "Default duration in milliseconds corresponding to number of potentially lost/delayed heartbeats that will be accepted before considering it to be an anomaly. Overrides the hazelcast.max.no.heartbeat.seconds system property."
+              },
+              "suspicion-threshold":  {
+                "type": "number",
+                "description":  "Threshold for suspicion (φ) level. A low threshold is prone to generate many wrong suspicions but ensures a quick detection in the event of a real crash. Conversely, a high threshold generates fewer mistakes but needs more time to detect actual crashes. Overrides the hazelcast.heartbeat.phiaccrual.failuredetector.threshold system property."
+              },
+              "max-sample-size":  {
+                "type": "integer",
+                "description": "Number of samples to use for calculations. Overrides the hazelcast.heartbeat.phiaccrual.failuredetector.sample.size system property."
+              },
+              "min-std-deviation-millis": {
+                "type": "integer",
+                "description": "Minimum standard deviation (in milliseconds) to use for the normal distribution used when calculating phi. Overrides the hazelcast.heartbeat.phiaccrual.failuredetector.min.std.dev.millis system propery."
+              },
+              "heartbeat-interval-millis": {
+                "type": "integer",
+                "description": "Value of heartbeat interval in milliseconds. Overrides the hazelcast.heartbeat.interval.seconds system property."
+              }
             }
           }
         }
