@@ -1209,9 +1209,9 @@
               "eviction": {
                 "$ref": "#/definitions/Eviction"
               },
-              "serialize-keys":  {
+              "serialize-keys": {
                 "type": "boolean",
-                "default":  false
+                "default": false
               }
             }
           },
@@ -1295,8 +1295,23 @@
                   "properties": {
                     "class-name": {
                       "type": "string"
+                    },
+                    "sql": {
+                      "type": "string"
                     }
                   },
+                  "oneOf": [
+                    {
+                      "required": [
+                        "class-name"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "sql"
+                      ]
+                    }
+                  ],
                   "description": "Predicate to filter events which will be applied to the query cache."
                 },
                 "entry-listeners": {

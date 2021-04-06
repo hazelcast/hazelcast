@@ -158,6 +158,15 @@
               ]
             }
           }
+        },
+        "map-with-sql-query-cache": {
+          "query-caches": {
+            "mySqlQueryCache": {
+              "predicate": {
+                "sql": "a  = 2"
+              }
+            }
+          }
         }
       }
     }
