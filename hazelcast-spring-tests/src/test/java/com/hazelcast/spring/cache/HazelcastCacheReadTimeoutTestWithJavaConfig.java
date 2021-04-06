@@ -17,13 +17,13 @@
 package com.hazelcast.spring.cache;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.JoinConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.springframework.cache.annotation.EnableCaching;
@@ -43,7 +43,6 @@ import java.util.Arrays;
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = HazelcastCacheReadTimeoutTestWithJavaConfig.TestConfig.class)
 @Category(QuickTest.class)
-@Ignore("https://github.com/hazelcast/hazelcast/issues/18455")
 public class HazelcastCacheReadTimeoutTestWithJavaConfig extends AbstractHazelcastCacheReadTimeoutTest {
 
     @Configuration
@@ -63,16 +62,14 @@ public class HazelcastCacheReadTimeoutTestWithJavaConfig extends AbstractHazelca
 
         @Bean
         Config config() {
-            Config config = new Config();
-            config.setProperty("hazelcast.wait.seconds.before.join", "0");
+            Config config = smallInstanceConfig();
             config.setProperty("hazelcast.graceful.shutdown.max.wait", "120");
             config.setProperty("hazelcast.partition.backup.sync.interval", "1");
 
-            config.getNetworkConfig().setPort(5701).setPortAutoIncrement(false);
-            config.getNetworkConfig().getJoin()
-                    .getTcpIpConfig()
-                    .setEnabled(true)
-                    .getMembers().add("127.0.0.1:5701");
+            JoinConfig join = config.getNetworkConfig().getJoin();
+            join.getMulticastConfig().setEnabled(false);
+            join.getAutoDetectionConfig().setEnabled(false);
+
             config.getNetworkConfig().getInterfaces()
                     .setEnabled(true)
                     .setInterfaces(Arrays.asList("127.0.0.1"));
@@ -93,7 +90,6 @@ public class HazelcastCacheReadTimeoutTestWithJavaConfig extends AbstractHazelca
         }
 
     }
-
 
     @BeforeClass
     @AfterClass
