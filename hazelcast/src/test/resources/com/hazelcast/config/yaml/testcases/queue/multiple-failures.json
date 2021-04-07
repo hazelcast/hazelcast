@@ -22,8 +22,7 @@
             "properties": {
               "binary": "false",
               "memory-limit": "1000",
-              "bulk-load": "500",
-              "unknown": {}
+              "bulk-load": "500"
             }
           },
           "split-brain-protection-ref": 1,
@@ -139,6 +138,13 @@
         "message": "expected type: Integer, found: String"
       },
       {
+        "schemaLocation": "#/definitions/Queue/additionalProperties/properties/priority-comparator-class-name",
+        "pointerToViolation": "#/hazelcast/queue/default/priority-comparator-class-name",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: String, found: JSONObject"
+      },
+      {
         "schemaLocation": "#/definitions/Queue/additionalProperties/properties/queue-store",
         "pointerToViolation": "#/hazelcast/queue/default/queue-store",
         "causingExceptions": [
@@ -153,13 +159,6 @@
             "schemaLocation": "#/definitions/Queue/additionalProperties/properties/queue-store/properties/properties",
             "pointerToViolation": "#/hazelcast/queue/default/queue-store/properties",
             "causingExceptions": [
-              {
-                "schemaLocation": "#/definitions/Queue/additionalProperties/properties/queue-store/properties/properties",
-                "pointerToViolation": "#/hazelcast/queue/default/queue-store/properties",
-                "causingExceptions": [],
-                "keyword": "additionalProperties",
-                "message": "extraneous key [unknown] is not permitted"
-              },
               {
                 "schemaLocation": "#/definitions/Queue/additionalProperties/properties/queue-store/properties/properties/properties/binary",
                 "pointerToViolation": "#/hazelcast/queue/default/queue-store/properties/binary",
@@ -182,10 +181,10 @@
                 "message": "expected type: Integer, found: String"
               }
             ],
-            "message": "4 schema violations found"
+            "message": "3 schema violations found"
           }
         ],
-        "message": "5 schema violations found"
+        "message": "4 schema violations found"
       },
       {
         "schemaLocation": "#/definitions/Queue/additionalProperties/properties/split-brain-protection-ref",
@@ -200,15 +199,8 @@
         "causingExceptions": [],
         "keyword": "type",
         "message": "expected type: Boolean, found: Integer"
-      },
-      {
-        "schemaLocation": "#/definitions/Queue/additionalProperties/properties/priority-comparator-class-name",
-        "pointerToViolation": "#/hazelcast/queue/default/priority-comparator-class-name",
-        "causingExceptions": [],
-        "keyword": "type",
-        "message": "expected type: String, found: JSONObject"
       }
     ],
-    "message": "19 schema violations found"
+    "message": "18 schema violations found"
   }
 }

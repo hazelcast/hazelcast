@@ -1682,7 +1682,6 @@
               },
               "properties": {
                 "type": "object",
-                "additionalProperties": false,
                 "properties": {
                   "binary": {
                     "type": "boolean",
