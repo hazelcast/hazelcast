@@ -44,13 +44,13 @@ import org.apache.calcite.sql.SqlBinaryOperator;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlKind;
-import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlPostfixOperator;
 import org.apache.calcite.sql.SqlPrefixOperator;
 import org.apache.calcite.sql.SqlSpecialOperator;
+import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.fun.SqlCase;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.util.ReflectiveSqlOperatorTable;
@@ -261,7 +261,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         private static SqlNodeList removeNullWithinInStatement(SqlNodeList valueList) {
             SqlNodeList list = new SqlNodeList(valueList.getParserPosition());
             for (SqlNode node : valueList.getList()) {
-                if (node instanceof SqlLiteral && ((SqlLiteral) node).getValue() == null) {
+                if (SqlUtil.isNullLiteral(node, false)) {
                     continue;
                 }
                 list.add(node);
