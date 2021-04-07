@@ -78,7 +78,7 @@ public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTe
         Pipeline pipeline = customersPipeline(null);
 
         // when
-        JetInstance jet = createJetMembers(2)[0];
+        JetInstance jet = createJetMembers(smallInstanceConfig(), 2)[0];
         Job job = jet.newJob(pipeline);
 
         //then
@@ -114,7 +114,7 @@ public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTe
         Pipeline pipeline = ordersPipeline();
 
         // when
-        JetInstance jet = createJetMembers(2)[0];
+        JetInstance jet = createJetMembers(smallInstanceConfig(), 2)[0];
         Job job = jet.newJob(pipeline);
 
         //then
@@ -170,7 +170,7 @@ public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTe
                 .setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE)
                 .setSnapshotIntervalMillis(snapshotIntervalMs);
 
-        JetInstance jet = createJetMembers(2)[0];
+        JetInstance jet = createJetMembers(smallInstanceConfig(), 2)[0];
         Job job = jet.newJob(pipeline, config);
         JetTestSupport.assertJobStatusEventually(job, JobStatus.RUNNING);
         assertEqualsEventually(() -> jet.getMap("results").size(), 4);
@@ -228,7 +228,7 @@ public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTe
         Pipeline pipeline = customersPipeline(250L);
 
         // when
-        JetInstance jet = createJetMembers(2)[0];
+        JetInstance jet = createJetMembers(smallInstanceConfig(), 2)[0];
         Job job = jet.newJob(pipeline, new JobConfig());
         JetTestSupport.assertJobStatusEventually(job, JobStatus.RUNNING);
         assertEqualsEventually(() -> jet.getMap("results").size(), 4);
@@ -305,7 +305,7 @@ public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTe
         Pipeline pipeline = customersPipeline(null);
 
         // when
-        JetInstance jet = createJetMembers(1)[0];
+        JetInstance jet = createJetMembers(smallInstanceConfig(), 1)[0];
         Job job = jet.newJob(pipeline);
 
         //then
@@ -369,7 +369,7 @@ public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTe
 
 
         // when
-        JetInstance jet = createJetMembers(2)[0];
+        JetInstance jet = createJetMembers(smallInstanceConfig(), 2)[0];
         JobConfig jobConfig = new JobConfig().setProcessingGuarantee(ProcessingGuarantee.AT_LEAST_ONCE);
         Job job = jet.newJob(pipeline, jobConfig);
         JetTestSupport.assertJobStatusEventually(job, JobStatus.RUNNING);

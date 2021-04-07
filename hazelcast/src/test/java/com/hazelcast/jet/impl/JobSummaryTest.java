@@ -50,7 +50,7 @@ public class JobSummaryTest extends JetTestSupport {
 
     @Before
     public void setup() {
-        Config config = new Config();
+        Config config = smallInstanceConfig();
         MapConfig mapConfig = new MapConfig(SOURCE_NAME);
         mapConfig.getEventJournalConfig().setEnabled(true);
         config.addMapConfig(mapConfig);

@@ -90,7 +90,7 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
                     .writeTo(Sinks.map("results"));
 
             // when
-            JetInstance jet = createJetMembers(2)[0];
+            JetInstance jet = createJetMembers(smallInstanceConfig(), 2)[0];
             Job job = jet.newJob(pipeline);
 
             //then
@@ -199,7 +199,7 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
                     .writeTo(Sinks.map("results"));
 
             // when
-            JetInstance jet = createJetMembers(2)[0];
+            JetInstance jet = createJetMembers(smallInstanceConfig(), 2)[0];
             Job job = jet.newJob(pipeline);
 
             //then
@@ -270,7 +270,7 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
                     .writeTo(Sinks.map("results"));
 
             // when
-            JetInstance jet = createJetMembers(2)[0];
+            JetInstance jet = createJetMembers(smallInstanceConfig(), 2)[0];
             Job job = jet.newJob(pipeline);
 
             //then
@@ -355,7 +355,7 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
                     .writeTo(Sinks.map("results"));
 
             // when
-            JetInstance jet = createJetMembers(2)[0];
+            JetInstance jet = createJetMembers(smallInstanceConfig(), 2)[0];
             Job job = jet.newJob(pipeline);
 
             //then
@@ -391,7 +391,7 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
                 .writeTo(Sinks.noop());
 
         // when
-        JetInstance jet = createJetMembers(2)[0];
+        JetInstance jet = createJetMembers(smallInstanceConfig(), 2)[0];
         Job job = jet.newJob(pipeline);
         assertThatThrownBy(job::join)
                 .hasRootCauseInstanceOf(JetException.class)

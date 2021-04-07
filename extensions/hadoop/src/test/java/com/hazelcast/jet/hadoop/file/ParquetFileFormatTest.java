@@ -103,7 +103,7 @@ public class ParquetFileFormatTest extends BaseFileFormatTest {
          .map(IncorrectUser::getSurname)
          .writeTo(Sinks.logger());
 
-        JetInstance[] jets = createJetMembers(1);
+        JetInstance[] jets = createJetMembers(smallInstanceConfig(), 1);
 
         try {
             assertThatThrownBy(() -> jets[0].newJob(p).join())

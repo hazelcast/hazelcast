@@ -83,7 +83,7 @@ public abstract class BaseFileFormatTest extends HadoopTestSupport {
         p.readFrom(source.build())
          .apply(Assertions.assertCollected(assertion));
 
-        JetInstance[] jets = createJetMembers(memberCount);
+        JetInstance[] jets = createJetMembers(smallInstanceConfig(), memberCount);
         try {
             jets[0].newJob(p).join();
         } finally {
@@ -107,7 +107,7 @@ public abstract class BaseFileFormatTest extends HadoopTestSupport {
         p.readFrom(source.build())
          .writeTo(Sinks.logger());
 
-        JetInstance[] jets = createJetMembers(1);
+        JetInstance[] jets = createJetMembers(smallInstanceConfig(), 1);
 
         try {
             assertThatThrownBy(() -> jets[0].newJob(p).join())

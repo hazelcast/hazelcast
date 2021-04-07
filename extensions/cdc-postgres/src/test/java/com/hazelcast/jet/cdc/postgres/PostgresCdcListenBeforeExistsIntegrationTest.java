@@ -62,7 +62,7 @@ public class PostgresCdcListenBeforeExistsIntegrationTest extends AbstractPostgr
         Pipeline pipeline = pipeline(source);
 
         // when
-        JetInstance jet = createJetMembers(2)[0];
+        JetInstance jet = createJetMembers(smallInstanceConfig(), 2)[0];
         Job job = jet.newJob(pipeline);
         assertJobStatusEventually(job, RUNNING);
 
@@ -98,7 +98,7 @@ public class PostgresCdcListenBeforeExistsIntegrationTest extends AbstractPostgr
         Pipeline pipeline = pipeline(source);
 
         // when
-        JetInstance jet = createJetMembers(2)[0];
+        JetInstance jet = createJetMembers(smallInstanceConfig(), 2)[0];
         Job job = jet.newJob(pipeline);
         assertJobStatusEventually(job, RUNNING);
         assertReplicationSlotActive();
@@ -135,7 +135,7 @@ public class PostgresCdcListenBeforeExistsIntegrationTest extends AbstractPostgr
         Pipeline pipeline = pipeline(source);
 
         // when
-        JetInstance jet = createJetMembers(2)[0];
+        JetInstance jet = createJetMembers(smallInstanceConfig(), 2)[0];
         Job job = jet.newJob(pipeline);
         assertJobStatusEventually(job, RUNNING);
         assertReplicationSlotActive();

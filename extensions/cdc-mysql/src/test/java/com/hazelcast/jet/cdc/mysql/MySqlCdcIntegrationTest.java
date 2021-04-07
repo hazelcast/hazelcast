@@ -83,7 +83,7 @@ public class MySqlCdcIntegrationTest extends AbstractMySqlCdcIntegrationTest {
                 .writeTo(Sinks.map("results"));
 
         // when
-        JetInstance jet = createJetMembers(2)[0];
+        JetInstance jet = createJetMembers(smallInstanceConfig(), 2)[0];
         Job job = jet.newJob(pipeline);
 
         //then
@@ -140,7 +140,7 @@ public class MySqlCdcIntegrationTest extends AbstractMySqlCdcIntegrationTest {
                 .writeTo(Sinks.map("results"));
 
         // when
-        JetInstance jet = createJetMembers(2)[0];
+        JetInstance jet = createJetMembers(smallInstanceConfig(), 2)[0];
         Job job = jet.newJob(pipeline);
 
         //then
@@ -182,7 +182,7 @@ public class MySqlCdcIntegrationTest extends AbstractMySqlCdcIntegrationTest {
 
 
         // when
-        JetInstance jet = createJetMembers(2)[0];
+        JetInstance jet = createJetMembers(smallInstanceConfig(), 2)[0];
         JobConfig jobConfig = new JobConfig().setProcessingGuarantee(ProcessingGuarantee.AT_LEAST_ONCE);
         Job job = jet.newJob(pipeline, jobConfig);
         JetTestSupport.assertJobStatusEventually(job, JobStatus.RUNNING);
@@ -231,7 +231,7 @@ public class MySqlCdcIntegrationTest extends AbstractMySqlCdcIntegrationTest {
 
 
         // when
-        JetInstance jet = createJetMembers(2)[0];
+        JetInstance jet = createJetMembers(smallInstanceConfig(), 2)[0];
         JobConfig jobConfig = new JobConfig().setProcessingGuarantee(ProcessingGuarantee.AT_LEAST_ONCE);
         Job job = jet.newJob(pipeline, jobConfig);
         JetTestSupport.assertJobStatusEventually(job, JobStatus.RUNNING);

@@ -77,7 +77,7 @@ public class MultiTableCacheIntegrationTest extends AbstractPostgresCdcIntegrati
                 ));
 
         // when
-        JetInstance jet = createJetMembers(1)[0];
+        JetInstance jet = createJetMembers(smallInstanceConfig(), 1)[0];
         Job job = jet.newJob(pipeline);
         //then
         Map<Integer, OrdersOfCustomer> expected = toMap(

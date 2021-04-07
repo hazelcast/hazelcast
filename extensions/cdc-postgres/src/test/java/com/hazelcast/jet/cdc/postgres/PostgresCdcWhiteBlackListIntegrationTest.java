@@ -234,7 +234,7 @@ public class PostgresCdcWhiteBlackListIntegrationTest extends AbstractPostgresCd
         Pipeline pipeline = pipeline(source);
 
         // when
-        JetInstance jet = createJetMembers(2)[0];
+        JetInstance jet = createJetMembers(smallInstanceConfig(), 2)[0];
         Job job = jet.newJob(pipeline);
 
         try {

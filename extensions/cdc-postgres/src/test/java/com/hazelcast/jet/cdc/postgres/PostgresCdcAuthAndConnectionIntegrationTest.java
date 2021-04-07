@@ -45,7 +45,7 @@ public class PostgresCdcAuthAndConnectionIntegrationTest extends AbstractPostgre
 
         Pipeline pipeline = pipeline(source);
 
-        JetInstance jet = createJetMembers(2)[0];
+        JetInstance jet = createJetMembers(smallInstanceConfig(), 2)[0];
 
         // when
         Job job = jet.newJob(pipeline);
@@ -67,7 +67,7 @@ public class PostgresCdcAuthAndConnectionIntegrationTest extends AbstractPostgre
 
         Pipeline pipeline = pipeline(source);
 
-        JetInstance jet = createJetMembers(2)[0];
+        JetInstance jet = createJetMembers(smallInstanceConfig(), 2)[0];
 
         // when
         Job job = jet.newJob(pipeline);
