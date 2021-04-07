@@ -59,9 +59,9 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
     @After
     public void tearDown() {
         for (JetInstance instance : instances()) {
-            PlanCache planCache = nodeEngine(instance.getHazelcastInstance()).getSqlService().getPlanCache();
+            PlanCache planCache = planCache(instance);
             SUPPORT_LOGGER.info("Removing " + planCache.size() + " cached plans in SqlTestSupport.@After");
-            nodeEngine(instance.getHazelcastInstance()).getSqlService().getPlanCache().clear();
+            planCache.clear();
         }
     }
 
