@@ -17,28 +17,23 @@
 package com.hazelcast.sql.impl.calcite.validate.operators;
 
 import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
-import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastComparisonPredicateUtils;
 import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlKind;
-import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.SqlOperatorBinding;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
-import org.apache.calcite.sql.type.SqlOperandTypeInference;
 import org.apache.calcite.sql.type.SqlReturnTypeInference;
 
 import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference.wrap;
 
-public class NullCheckFunction extends HazelcastFunction {
-    public static final NullCheckFunction NULL_IF = new NullCheckFunction("NULLIF", SqlKind.NULLIF, SqlFunctionCategory.SYSTEM);
-    public static final NullCheckFunction COALESCE = new NullCheckFunction("COALESCE", SqlKind.COALESCE, SqlFunctionCategory.SYSTEM);
+public class CoalesceFunction extends HazelcastFunction {
+    public static final CoalesceFunction INSTANCE = new CoalesceFunction();
 
-    private NullCheckFunction(String name, SqlKind kind, SqlFunctionCategory category) {
-        super(name, kind, wrap(new NullCheckReturnTypeInference()), BinaryOperatorOperandTypeInference.INSTANCE, category);
+    private CoalesceFunction() {
+        super("COALESCE", SqlKind.COALESCE, wrap(opBinding -> opBinding.getOperandType(0)), VariableLengthOperandTypeInference.INSTANCE, SqlFunctionCategory.SYSTEM);
     }
 
     @Override
@@ -49,12 +44,5 @@ public class NullCheckFunction extends HazelcastFunction {
     @Override
     protected boolean checkOperandTypes(HazelcastCallBinding callBinding, boolean throwOnFailure) {
         return HazelcastComparisonPredicateUtils.checkOperandTypes(callBinding, throwOnFailure);
-    }
-
-    private static class NullCheckReturnTypeInference implements SqlReturnTypeInference {
-        @Override
-        public RelDataType inferReturnType(SqlOperatorBinding opBinding) {
-            return opBinding.getOperandType(0);
-        }
     }
 }

@@ -23,6 +23,7 @@ import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastLikeOpe
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.expression.CaseExpression;
 import com.hazelcast.sql.impl.expression.CastExpression;
+import com.hazelcast.sql.impl.expression.CoalesceExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.NullIfExpression;
@@ -308,7 +309,7 @@ public final class RexToExpression {
                 return CaseExpression.create(operands);
 
             case COALESCE:
-                return null;
+                return CoalesceExpression.create(operands);
             case NULLIF:
                 return NullIfExpression.create(operands[0], operands[1]);
 

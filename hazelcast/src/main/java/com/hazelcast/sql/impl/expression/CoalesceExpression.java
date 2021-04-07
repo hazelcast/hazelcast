@@ -24,20 +24,19 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.io.IOException;
 
-public class NullIfExpression<T> implements Expression<T>, IdentifiedDataSerializable {
-    private Expression<T> left;
-    private Expression<T> right;
+public class CoalesceExpression implements Expression, IdentifiedDataSerializable {
+    private Expression<?>[] operands;
 
-    public NullIfExpression() {
+    public static CoalesceExpression create(Expression<?>[] operands) {
+        assert operands.length > 1;
+        return new CoalesceExpression(operands);
     }
 
-    public static NullIfExpression<?> create(Expression<?> left, Expression<?> right) {
-        return new NullIfExpression(left, right);
+    public CoalesceExpression() {
     }
 
-    private NullIfExpression(Expression<T> left, Expression<T> right) {
-        this.left = left;
-        this.right = right;
+    private CoalesceExpression(Expression<?>[] operands) {
+        this.operands = operands;
     }
 
     @Override
@@ -61,17 +60,18 @@ public class NullIfExpression<T> implements Expression<T>, IdentifiedDataSeriali
     }
 
     @Override
-    public T eval(Row row, ExpressionEvalContext context) {
-        T leftResult = left.eval(row, context);
-        T rightResult = right.eval(row, context);
-        if (leftResult.equals(rightResult)) {
-            return null;
+    public Object eval(Row row, ExpressionEvalContext context) {
+        for (Expression<?> expr : operands) {
+            Object value = expr.eval(row, context);
+            if (value != null) {
+                return value;
+            }
         }
-        return leftResult;
+        return null;
     }
 
     @Override
     public QueryDataType getType() {
-        return left.getType();
+        return operands[0].getType();
     }
 }
