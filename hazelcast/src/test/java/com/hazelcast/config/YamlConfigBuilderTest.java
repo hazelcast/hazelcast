@@ -521,7 +521,7 @@ public class YamlConfigBuilderTest
         config = buildConfig(""
                 + "hazelcast:\n"
                 + "  network:\n"
-                + "    port:\n" 
+                + "    port:\n"
                 + "      port: 5703\n");
         assertEquals(100, config.getNetworkConfig().getPortCount());
         assertEquals(5703, config.getNetworkConfig().getPort());
@@ -3155,10 +3155,12 @@ public class YamlConfigBuilderTest
         assertTrue("All permission types should be listed in hazelcast-fullconfig.yaml. Not found ones: " + permTypes,
                 permTypes.isEmpty());
     }
-    
+
     @Test
-    public void cacheEntryListenerParsingTest() throws Exception {
-        String yaml = IOUtils.toString(getClass().getResourceAsStream("/com/hazelcast/config/yaml/cache-entry-listener.yaml"), StandardCharsets.UTF_8);
+    public void cacheEntryListenerParsingTest()
+            throws Exception {
+        String yaml = IOUtils.toString(getClass().getResourceAsStream("/com/hazelcast/config/yaml/cache-entry-listener.yaml"),
+                StandardCharsets.UTF_8);
         Config actual = buildConfig(yaml);
         CacheSimpleEntryListenerConfig expected = new CacheSimpleEntryListenerConfig()
                 .setOldValueRequired(true)
