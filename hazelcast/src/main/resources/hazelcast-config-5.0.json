@@ -2640,6 +2640,7 @@
         "create",
         "destroy",
         "put",
+        "add",
         "read",
         "remove",
         "lock",
