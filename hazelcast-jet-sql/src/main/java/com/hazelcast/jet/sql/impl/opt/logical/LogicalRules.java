@@ -67,13 +67,15 @@ public final class LogicalRules {
                 JoinProjectTransposeRule.RIGHT_PROJECT_INCLUDE_OUTER,
                 ReduceExpressionsRule.JOIN_INSTANCE,
 
+                // Union rules
+                UnionLogicalRule.INSTANCE,
+
                 // Value rules
                 ValuesLogicalRules.CONVERT_INSTANCE,
                 ValuesLogicalRules.FILTER_INSTANCE,
                 ValuesLogicalRules.PROJECT_INSTANCE,
                 ValuesLogicalRules.PROJECT_FILTER_INSTANCE,
                 ValuesLogicalRules.UNION_INSTANCE,
-                ValuesLogicalRules.INSTANCE,
 
                 // Insert rules
                 InsertLogicalRule.INSTANCE,
