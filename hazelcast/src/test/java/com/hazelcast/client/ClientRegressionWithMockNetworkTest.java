@@ -165,7 +165,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         hz.getList("list");
         HazelcastInstance instance = hazelcastFactory.newHazelcastClient();
         Collection<DistributedObject> distributedObjects = instance.getDistributedObjects();
-        assertEquals(9, distributedObjects.size());
+        assertEquals(3, distributedObjects.size());
     }
 
     @Test

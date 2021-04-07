@@ -99,9 +99,6 @@ public class JetExtension {
     }
 
     public void afterStart() {
-        if (node.isRunning()) {
-            jetService.getJobCoordinationService().startScanningForJobs();
-        }
     }
 
     public void beforeClusterStateChange(ClusterState requestedState) {

@@ -82,6 +82,7 @@ import static com.hazelcast.jet.impl.util.IOUtil.fileNameFromUrl;
 import static com.hazelcast.jet.impl.util.IOUtil.packDirectoryIntoZip;
 import static com.hazelcast.jet.impl.util.IOUtil.packStreamIntoZip;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
+import static com.hazelcast.jet.impl.util.Util.memoizeConcurrent;
 import static java.util.Comparator.comparing;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.HOURS;
@@ -170,18 +171,25 @@ public class JobRepository {
     private final HazelcastInstance instance;
     private final ILogger logger;
 
-    private IMap<Long, JobRecord> jobRecords;
-    private IMap<Long, JobExecutionRecord> jobExecutionRecords;
-    private IMap<Long, JobResult> jobResults;
-    private IMap<Long, List<RawJobMetrics>> jobMetrics;
-    private IMap<String, SnapshotValidationRecord> exportedSnapshotDetailsCache;
-    private FlakeIdGenerator idGenerator;
+    private final Supplier<IMap<Long, JobRecord>> jobRecords;
+    private final Supplier<IMap<Long, JobExecutionRecord>> jobExecutionRecords;
+    private final Supplier<IMap<Long, JobResult>> jobResults;
+    private final Supplier<IMap<Long, List<RawJobMetrics>>> jobMetrics;
+    private final Supplier<IMap<String, SnapshotValidationRecord>> exportedSnapshotDetailsCache;
+    private final Supplier<FlakeIdGenerator> idGenerator;
 
     private long resourcesExpirationMillis = DEFAULT_RESOURCES_EXPIRATION_MILLIS;
 
     public JobRepository(JetInstance jetInstance) {
         this.instance = jetInstance.getHazelcastInstance();
         this.logger = instance.getLoggingService().getLogger(getClass());
+
+        jobRecords = memoizeConcurrent(() -> instance.getMap(JOB_RECORDS_MAP_NAME));
+        jobExecutionRecords = memoizeConcurrent(() -> instance.getMap(JOB_EXECUTION_RECORDS_MAP_NAME));
+        jobResults = memoizeConcurrent(() -> instance.getMap(JOB_RESULTS_MAP_NAME));
+        jobMetrics = memoizeConcurrent(() -> instance.getMap(JOB_METRICS_MAP_NAME));
+        exportedSnapshotDetailsCache = memoizeConcurrent(() -> instance.getMap(EXPORTED_SNAPSHOTS_DETAIL_CACHE));
+        idGenerator = memoizeConcurrent(() -> instance.getFlakeIdGenerator(RANDOM_ID_GENERATOR_NAME));
     }
 
     // for tests
@@ -255,7 +263,7 @@ public class JobRepository {
     }
 
     public long newJobId() {
-        return idGenerator().newId();
+        return idGenerator.get().newId();
     }
 
     private void loadJar(Map<String, byte[]> tmpMap, ResourceConfig rc) throws IOException {
@@ -319,7 +327,7 @@ public class JobRepository {
      */
     void putNewJobRecord(JobRecord jobRecord) {
         long jobId = jobRecord.getJobId();
-        JobRecord prev = jobRecords().putIfAbsent(jobId, jobRecord);
+        JobRecord prev = jobRecords.get().putIfAbsent(jobId, jobRecord);
         if (prev != null && !prev.getDag().equals(jobRecord.getDag())) {
             throw new IllegalStateException("Cannot put job record for job " + idToString(jobId)
                     + " because it already exists with a different DAG");
@@ -331,7 +339,7 @@ public class JobRepository {
      * newQuorumSize}.
      */
     void updateJobQuorumSizeIfSmaller(long jobId, int newQuorumSize) {
-        jobExecutionRecords().executeOnKey(jobId, ImdgUtil.entryProcessor((key, value) -> {
+        jobExecutionRecords.get().executeOnKey(jobId, ImdgUtil.entryProcessor((key, value) -> {
             if (value == null) {
                 return null;
             }
@@ -344,7 +352,7 @@ public class JobRepository {
      * Generates a new execution id for the given job id, guaranteed to be unique across the cluster
      */
     long newExecutionId() {
-        return idGenerator().newId();
+        return idGenerator.get().newId();
     }
 
     /**
@@ -367,7 +375,7 @@ public class JobRepository {
 
         if (terminalMetrics != null) {
             try {
-                List<RawJobMetrics> prevMetrics = jobMetrics().put(jobId, terminalMetrics);
+                List<RawJobMetrics> prevMetrics = jobMetrics.get().put(jobId, terminalMetrics);
                 if (prevMetrics != null) {
                     logger.warning("Overwriting job metrics for job " + jobResult);
                 }
@@ -378,7 +386,7 @@ public class JobRepository {
         for (;;) {
             // keep trying to store the JobResult until it succeeds
             try {
-                jobResults().set(jobId, jobResult);
+                jobResults.get().set(jobId, jobResult);
                 break;
             } catch (Exception e) {
                 // if the local instance was shut down, re-throw the error
@@ -408,8 +416,8 @@ public class JobRepository {
                             + idToString(jobId) + ", ignoring", t);
             }
         };
-        jobExecutionRecords().removeAsync(jobId).whenComplete(callback);
-        jobRecords().removeAsync(jobId).whenComplete(callback);
+        jobExecutionRecords.get().removeAsync(jobId).whenComplete(callback);
+        jobRecords.get().removeAsync(jobId).whenComplete(callback);
     }
 
     /**
@@ -431,7 +439,7 @@ public class JobRepository {
 
         // we need to take the list of active job records after getting the list of maps --
         // otherwise the job records could be missing newly submitted jobs
-        Set<Long> activeJobs = jobRecords().keySet();
+        Set<Long> activeJobs = jobRecords.get().keySet();
 
         for (DistributedObject map : maps) {
             if (map.getName().startsWith(SNAPSHOT_DATA_MAP_PREFIX)) {
@@ -452,7 +460,7 @@ public class JobRepository {
             // job is still active, do nothing
             return;
         }
-        if (jobResults().containsKey(id)) {
+        if (jobResults.get().containsKey(id)) {
             // if job is finished, we can safely delete the map
             logFine(logger, "Deleting job resource map '%s' because job is already finished", map.getName());
             map.destroy();
@@ -474,14 +482,14 @@ public class JobRepository {
     private void cleanupJobResults(NodeEngine nodeEngine) {
         int maxNoResults = Math.max(1, nodeEngine.getProperties().getInteger(JetProperties.JOB_RESULTS_MAX_SIZE));
         // delete oldest job results
-        if (jobResults().size() > Util.addClamped(maxNoResults, maxNoResults / MAX_NO_RESULTS_OVERHEAD)) {
-            jobResults().values().stream().sorted(comparing(JobResult::getCompletionTime).reversed())
+        if (jobResults.get().size() > Util.addClamped(maxNoResults, maxNoResults / MAX_NO_RESULTS_OVERHEAD)) {
+            jobResults.get().values().stream().sorted(comparing(JobResult::getCompletionTime).reversed())
                     .skip(maxNoResults)
                     .map(JobResult::getJobId)
                     .collect(Collectors.toList())
                     .forEach(id -> {
-                        jobMetrics().delete(id);
-                        jobResults().delete(id);
+                        jobMetrics.get().delete(id);
+                        jobResults.get().delete(id);
                     });
         }
     }
@@ -512,21 +520,21 @@ public class JobRepository {
 
     Set<Long> getAllJobIds() {
         Set<Long> ids = new HashSet<>();
-        ids.addAll(jobRecords().keySet());
-        ids.addAll(jobResults().keySet());
+        ids.addAll(jobRecords.get().keySet());
+        ids.addAll(jobResults.get().keySet());
         return ids;
     }
 
     public Collection<JobRecord> getJobRecords() {
-        return jobRecords().values();
+        return jobRecords.get().values();
     }
 
     public JobRecord getJobRecord(long jobId) {
-        return jobRecords().get(jobId);
+        return jobRecords.get().get(jobId);
     }
 
     public JobExecutionRecord getJobExecutionRecord(long jobId) {
-        return jobExecutionRecords().get(jobId);
+        return jobExecutionRecords.get().get(jobId);
     }
 
     /**
@@ -538,20 +546,20 @@ public class JobRepository {
 
     @Nullable
     public JobResult getJobResult(long jobId) {
-        return jobResults().get(jobId);
+        return jobResults.get().get(jobId);
     }
 
     @Nullable
     List<RawJobMetrics> getJobMetrics(long jobId) {
-        return jobMetrics().get(jobId);
+        return jobMetrics.get().get(jobId);
     }
 
     Collection<JobResult> getJobResults() {
-        return jobResults().values();
+        return jobResults.get().values();
     }
 
     List<JobResult> getJobResults(String name) {
-        return jobResults().values(new FilterJobResultByNamePredicate(name)).stream()
+        return jobResults.get().values(new FilterJobResultByNamePredicate(name)).stream()
                          .sorted(comparing(JobResult::getCreationTime).reversed()).collect(toList());
     }
 
@@ -565,7 +573,7 @@ public class JobRepository {
      */
     void writeJobExecutionRecord(long jobId, JobExecutionRecord record, boolean canCreate) {
         record.updateTimestamp();
-        String message = (String) jobExecutionRecords().executeOnKey(jobId,
+        String message = (String) jobExecutionRecords.get().executeOnKey(jobId,
                 new UpdateJobExecutionRecordEntryProcessor(jobId, record, canCreate));
         if (message != null) {
             logger.fine(message);
@@ -619,7 +627,7 @@ public class JobRepository {
 
     void cacheValidationRecord(@Nonnull String snapshotName, @Nonnull SnapshotValidationRecord validationRecord) {
         try {
-            exportedSnapshotDetailsCache().set(snapshotName, validationRecord);
+            exportedSnapshotDetailsCache.get().set(snapshotName, validationRecord);
         } catch (Exception e) {
             logger.warning("Snapshot name: '" + snapshotName + "', failed to store validation record to cache: " + e, e);
         }
@@ -725,45 +733,5 @@ public class JobRepository {
         }
     }
 
-    private IMap<Long, JobRecord> jobRecords() {
-        if (jobRecords == null) {
-            jobRecords = instance.getMap(JOB_RECORDS_MAP_NAME);
-        }
-        return jobRecords;
-    }
 
-    private IMap<Long, JobExecutionRecord> jobExecutionRecords() {
-        if (jobExecutionRecords == null) {
-            jobExecutionRecords = instance.getMap(JOB_EXECUTION_RECORDS_MAP_NAME);
-        }
-        return jobExecutionRecords;
-    }
-
-    private IMap<Long, JobResult> jobResults() {
-        if (jobResults == null) {
-            jobResults = instance.getMap(JOB_RESULTS_MAP_NAME);
-        }
-        return jobResults;
-    }
-
-    private IMap<Long, List<RawJobMetrics>> jobMetrics() {
-        if (jobMetrics == null) {
-            jobMetrics = instance.getMap(JOB_METRICS_MAP_NAME);
-        }
-        return jobMetrics;
-    }
-
-    private IMap<String, SnapshotValidationRecord> exportedSnapshotDetailsCache() {
-        if (exportedSnapshotDetailsCache == null) {
-            exportedSnapshotDetailsCache = instance.getMap(EXPORTED_SNAPSHOTS_DETAIL_CACHE);
-        }
-        return exportedSnapshotDetailsCache;
-    }
-
-    private FlakeIdGenerator idGenerator() {
-        if (idGenerator == null) {
-            idGenerator = instance.getFlakeIdGenerator(RANDOM_ID_GENERATOR_NAME);
-        }
-        return idGenerator;
-    }
 }
