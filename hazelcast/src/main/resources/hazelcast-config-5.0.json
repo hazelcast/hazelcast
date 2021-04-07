@@ -2473,6 +2473,12 @@
                       },
                       "user-search-scope": {
                         "$ref": "#/definitions/LdapSearchScope"
+                      },
+                      "system-authentication":  {
+                        "type": "string"
+                      },
+                      "security-realm": {
+                        "type": "string"
                       }
                     }
                   }

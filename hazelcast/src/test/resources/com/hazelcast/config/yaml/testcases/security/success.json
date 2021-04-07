@@ -67,7 +67,9 @@
                 "password-attribute": "passwordAttribute",
                 "user-context": "userContext",
                 "user-filter": "userFilter",
-                "user-search-scope": "one-level"
+                "user-search-scope": "one-level",
+                "security-realm": "realmName",
+                "system-authentication": "simple"
               }
             }
           },
