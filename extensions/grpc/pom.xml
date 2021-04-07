@@ -20,9 +20,6 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>hazelcast-jet-grpc</artifactId>
-    <properties>
-        <guava.version>28.1-android</guava.version>
-    </properties>
 
     <parent>
         <groupId>com.hazelcast.jet</groupId>
