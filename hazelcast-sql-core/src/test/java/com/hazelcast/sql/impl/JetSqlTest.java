@@ -39,6 +39,7 @@ import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.mocknetwork.MockNodeContext;
 import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mock;
@@ -62,6 +63,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
+@Ignore("see https://hazelcast.atlassian.net/browse/PLAT-176")
 public class JetSqlTest extends SqlTestSupport {
 
     private static final TestHazelcastInstanceFactory FACTORY = new TestHazelcastInstanceFactory(1);

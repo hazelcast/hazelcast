@@ -180,7 +180,6 @@ public class LikePredicateTest {
         EqualsVerifier.forClass(LikePredicate.class)
             .suppress(Warning.NONFINAL_FIELDS, Warning.STRICT_INHERITANCE)
             .withRedefinedSuperclass()
-            .allFieldsShouldBeUsed()
             .verify();
     }
 

@@ -232,7 +232,6 @@ public class ReliableTopicConfigTest {
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(ReliableTopicConfig.class)
-                      .allFieldsShouldBeUsed()
                       .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS)
                       .verify();
     }

@@ -38,6 +38,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.util.ByteArrayProcessor;
+import com.hazelcast.jet.JetInstance;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.SecurityService;
@@ -87,7 +88,7 @@ public interface NodeExtension {
     /**
      * Called before <tt>Node.shutdown()</tt>
      */
-    void beforeShutdown();
+    void beforeShutdown(boolean terminate);
 
     /**
      * Shutdowns <tt>NodeExtension</tt>. Called on <tt>Node.shutdown()</tt>
@@ -344,4 +345,9 @@ public interface NodeExtension {
      * Returns CP persistence service.
      */
     CPPersistenceService getCPPersistenceService();
+
+    /**
+     * Returns the JetInstance.
+     */
+    JetInstance getJetInstance();
 }

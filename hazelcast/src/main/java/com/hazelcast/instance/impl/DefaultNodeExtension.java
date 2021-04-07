@@ -78,6 +78,7 @@ import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
@@ -94,6 +95,8 @@ import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.internal.util.phonehome.PhoneHome;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.MemberSocketInterceptor;
@@ -103,6 +106,7 @@ import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.SecurityService;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.NodeEngineImpl.JetPacketConsumer;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceManager;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -130,13 +134,16 @@ import static com.hazelcast.internal.util.InstanceTrackingUtil.writeInstanceTrac
 import static com.hazelcast.map.impl.MapServiceConstructor.getDefaultMapServiceConstructor;
 
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity", "checkstyle:classdataabstractioncoupling"})
-public class DefaultNodeExtension implements NodeExtension {
+public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
+
+    private static final String JET_DISABLED_PROPERTY = "hazelcast.jet.disabled";
 
     protected final Node node;
     protected final ILogger logger;
     protected final ILogger systemLogger;
     protected final List<ClusterVersionListener> clusterVersionListeners = new CopyOnWriteArrayList<ClusterVersionListener>();
     protected PhoneHome phoneHome;
+    protected JetExtension jetExtension;
 
     private final MemoryStats memoryStats = new DefaultMemoryStats();
 
@@ -147,6 +154,9 @@ public class DefaultNodeExtension implements NodeExtension {
         checkSecurityAllowed();
         checkPersistenceAllowed();
         createAndSetPhoneHome();
+        if (!jetDisabled(node)) {
+            jetExtension = new JetExtension(node, createService(JetService.class));
+        }
     }
 
     private void checkPersistenceAllowed() {
@@ -189,16 +199,23 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public void beforeStart() {
+        if (jetExtension != null) {
+            jetExtension.beforeStart();
+        }
     }
 
     @Override
     public void printNodeInfo() {
-        BuildInfo buildInfo = node.getBuildInfo();
+        if (jetExtension != null) {
+            jetExtension.printNodeInfo(systemLogger, "Hazelcast Platform");
+        } else {
+            BuildInfo buildInfo = node.getBuildInfo();
 
-        printBannersBeforeNodeInfo();
+            printBannersBeforeNodeInfo();
 
-        String build = constructBuildString(buildInfo);
-        printNodeInfoInternal(buildInfo, build);
+            String build = constructBuildString(buildInfo);
+            printNodeInfoInternal(buildInfo, build);
+        }
     }
 
     @Override
@@ -257,6 +274,9 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public void afterStart() {
+        if (jetExtension != null) {
+            jetExtension.afterStart();
+        }
     }
 
     @Override
@@ -327,6 +347,8 @@ public class DefaultNodeExtension implements NodeExtension {
             return (T) new CacheService();
         } else if (MapService.class.isAssignableFrom(clazz)) {
             return createMapService();
+        } else if (JetService.class.isAssignableFrom(clazz)) {
+            return (T) new JetService(node);
         }
 
         throw new IllegalArgumentException("Unknown service class: " + clazz);
@@ -340,7 +362,10 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public Map<String, Object> createExtensionServices() {
-        return Collections.emptyMap();
+        if (jetExtension == null) {
+            return Collections.emptyMap();
+        }
+        return jetExtension.createExtensionServices();
     }
 
     @Override
@@ -384,7 +409,10 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
-    public void beforeShutdown() {
+    public void beforeShutdown(boolean terminate) {
+        if (jetExtension != null) {
+            jetExtension.beforeShutdown(terminate);
+        }
     }
 
     @Override
@@ -417,6 +445,9 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public void beforeClusterStateChange(ClusterState currState, ClusterState requestedState, boolean isTransient) {
+        if (jetExtension != null) {
+            jetExtension.beforeClusterStateChange(requestedState);
+        }
     }
 
     @Override
@@ -425,6 +456,9 @@ public class DefaultNodeExtension implements NodeExtension {
         List<ClusterStateListener> listeners = serviceManager.getServices(ClusterStateListener.class);
         for (ClusterStateListener listener : listeners) {
             listener.onClusterStateChange(newState);
+        }
+        if (jetExtension != null) {
+            jetExtension.onClusterStateChange(newState);
         }
     }
 
@@ -606,5 +640,30 @@ public class DefaultNodeExtension implements NodeExtension {
     @Override
     public AuditlogService getAuditlogService() {
         return NoOpAuditlogService.INSTANCE;
+    }
+
+    @Override
+    public JetInstance getJetInstance() {
+        if (jetExtension == null) {
+            throw new IllegalArgumentException("Jet is disabled");
+        }
+        return jetExtension.getJetInstance();
+    }
+
+    @Override
+    public void accept(Packet packet) {
+        if (jetExtension == null) {
+            throw new IllegalArgumentException("Jet is disabled");
+        }
+        jetExtension.handlePacket(packet);
+    }
+
+    private boolean jetDisabled(Node node) {
+        String disabled = System.getProperty(JET_DISABLED_PROPERTY);
+        if (Boolean.parseBoolean(disabled)) {
+            return true;
+        }
+        disabled = node.getProperties().get(JET_DISABLED_PROPERTY);
+        return Boolean.parseBoolean(disabled);
     }
 }

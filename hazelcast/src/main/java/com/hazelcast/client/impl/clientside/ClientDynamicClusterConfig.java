@@ -85,6 +85,7 @@ import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.config.ServicesConfig;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.jet.config.JetConfig;
 
 import javax.annotation.Nonnull;
 import java.io.File;
@@ -984,7 +985,7 @@ public class ClientDynamicClusterConfig extends Config {
 
     @Override
     @Nonnull
-    public Config setMetricsConfig(MetricsConfig metricsConfig) {
+    public Config setMetricsConfig(@Nonnull MetricsConfig metricsConfig) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
@@ -1018,13 +1019,27 @@ public class ClientDynamicClusterConfig extends Config {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
+    @Nonnull
+    @Override
+    public JetConfig getJetConfig() {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Nonnull
+    @Override
+    public Config setJetConfig(JetConfig jetConfig) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Nonnull
     @Override
     public AuditlogConfig getAuditlogConfig() {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
+    @Nonnull
     @Override
-    public Config setAuditlogConfig(AuditlogConfig auditlogConfig) {
+    public Config setAuditlogConfig(@Nonnull AuditlogConfig auditlogConfig) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 

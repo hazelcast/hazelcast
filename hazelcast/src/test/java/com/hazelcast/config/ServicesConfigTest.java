@@ -35,7 +35,6 @@ public class ServicesConfigTest {
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(ServicesConfig.class)
-                .allFieldsShouldBeUsed()
                 .suppress(Warning.NONFINAL_FIELDS, Warning.NULL_FIELDS)
                 .verify();
     }

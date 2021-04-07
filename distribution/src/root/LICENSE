@@ -1,0 +1,9 @@
+The artifacts in the opt folder are licensed under Hazelcast Community
+License, except following modules:
+ * hazelcast-jet-spring
+ * hazelcast-jet-cdc-debezium
+ * hazelcast-jet-cdc-mysql
+ * hazelcast-jet-cdc-postgres
+
+These exceptions and all other artifacts in this distribution are
+released under Apache License 2.0.

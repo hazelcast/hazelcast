@@ -58,6 +58,7 @@ public class CheckDependenciesIT extends HazelcastTestSupport {
             "javax.net.ssl",
             "javax.script",
             "javax.security.auth",
+            "javax.sql",
             "javax.transaction.xa",
             "javax.xml",
             "javax.naming",
@@ -157,7 +158,7 @@ public class CheckDependenciesIT extends HazelcastTestSupport {
     }
 
     protected boolean isMatching(String urlString) {
-        return urlString.contains("hazelcast-" + getMajorVersion() + ".") && urlString.contains("target");
+        return urlString.contains("target");
     }
 
     protected String getMajorVersion() {

@@ -45,6 +45,7 @@ import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.spring.context.SpringManagedContext;
+import com.hazelcast.spring.jet.JetBeanDefinitionParser;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanReference;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
@@ -84,6 +85,7 @@ import static org.springframework.util.Assert.isTrue;
  * <li>{@link HazelcastConfigBeanDefinitionParser}</li>
  * <li>{@link HazelcastInstanceDefinitionParser}</li>
  * <li>{@link HazelcastTypeBeanDefinitionParser}</li>
+ * <li>{@link JetBeanDefinitionParser}</li>
  * </ul>
  */
 @SuppressWarnings({"WeakerAccess", "checkstyle:methodcount"})

@@ -41,6 +41,7 @@ import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.ByteArrayProcessor;
+import com.hazelcast.jet.JetInstance;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.SecurityService;
@@ -104,8 +105,8 @@ public class SamplingNodeExtension implements NodeExtension {
     }
 
     @Override
-    public void beforeShutdown() {
-        nodeExtension.beforeShutdown();
+    public void beforeShutdown(boolean terminate) {
+        nodeExtension.beforeShutdown(terminate);
     }
 
     @Override
@@ -284,4 +285,8 @@ public class SamplingNodeExtension implements NodeExtension {
         return NopCPPersistenceService.INSTANCE;
     }
 
+    @Override
+    public JetInstance getJetInstance() {
+        throw new IllegalArgumentException();
+    }
 }

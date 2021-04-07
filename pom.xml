@@ -30,13 +30,13 @@
 
     <modules>
         <module>hazelcast</module>
+        <module>hazelcast-jet-sql</module>
         <module>hazelcast-spring</module>
         <module>hazelcast-spring-tests</module>
         <module>hazelcast-build-utils</module>
         <module>hazelcast-sql-core</module>
         <module>hazelcast-sql</module>
         <module>hazelcast-all</module>
-        <module>distribution</module>
     </modules>
 
     <properties>
@@ -78,21 +78,63 @@
 
         <maven.surefire.plugin.version>2.22.2</maven.surefire.plugin.version>
         <maven.checkstyle.plugin.version>3.1.1</maven.checkstyle.plugin.version>
-        <maven.spotbugs.plugin.version>4.1.4</maven.spotbugs.plugin.version>
         <maven.sonar.plugin.version>3.6.0.1398</maven.sonar.plugin.version>
         <maven.jacoco.plugin.version>0.8.6</maven.jacoco.plugin.version>
         <maven.failsafe.plugin.version>2.22.2</maven.failsafe.plugin.version>
         <maven.cobertura.plugin.version>2.7</maven.cobertura.plugin.version>
         <maven.enforcer.plugin.version>3.0.0-M2</maven.enforcer.plugin.version>
+        <maven.os.plugin.version>1.6.2</maven.os.plugin.version>
+        <maven.protobuf.plugin.version>0.6.1</maven.protobuf.plugin.version>
+        <maven.resources.plugin.version>3.2.0</maven.resources.plugin.version>
 
         <log4j.version>1.2.17</log4j.version>
 
         <log4j2.version>2.14.0</log4j2.version>
         <slf4j.api.version>1.7.30</slf4j.api.version>
 
+        <jms.api.version>2.0.1</jms.api.version>
+        <jsr107.api.version>1.0.0</jsr107.api.version> <!-- JCache -->
+        <jsr250.api.version>1.2</jsr250.api.version> <!-- javax.annotations -->
+        <log4j.version>1.2.17</log4j.version>
+        <log4j2.version>2.13.3</log4j2.version>
+        <slf4j.api.version>1.7.28</slf4j.api.version>
+        <reflections.version>0.9.10</reflections.version>
+        <osgi.version>4.2.0</osgi.version>
+        <prometheus.version>0.13.0</prometheus.version>
+        <hadoop.version>3.3.0</hadoop.version>
+        <spring.version>4.3.0.RELEASE</spring.version>
+        <avro.version>1.10.2</avro.version>
+        <parquet.version>1.11.1</parquet.version>
+        <scala.version>2.12</scala.version>
+        <zookeeper.version>3.5.8</zookeeper.version>
+        <kafka.version>2.2.0</kafka.version>
+        <grpc.version>1.34.0</grpc.version>
+        <protobuf.version>3.13.0</protobuf.version>
+        <picocli.version>3.9.0</picocli.version>
+        <jline.version>3.16.0</jline.version>
+        <classgraph.version>4.8.66</classgraph.version>
         <jackson.version>2.12.1</jackson.version>
+        <snakeyaml.engine.version>1.0</snakeyaml.engine.version>
+        <affinity.version>3.2.3</affinity.version>
+        <aws.sdk.version>1.11.934</aws.sdk.version>
+        <kotlin.version>1.3.61</kotlin.version>
+
+        <hazelcast.aws.version>3.3</hazelcast.aws.version>
+        <hazelcast.kubernetes.version>2.2.1</hazelcast.kubernetes.version>
+        <hazelcast.gcp.version>2.1</hazelcast.gcp.version>
+        <hazelcast.azure.version>2.1</hazelcast.azure.version>
+
+        <!-- test dependencies -->
+        <activemq.version>5.15.11</activemq.version>
+        <activemq-artemis.version>2.11.0</activemq-artemis.version>
         <junit.version>4.13.2</junit.version>
-        <hamcrest.version>2.2</hamcrest.version>
+        <assertj.version>3.15.0</assertj.version>
+        <mockito.version>3.5.13</mockito.version>
+        <powermock.version>2.0.0</powermock.version>
+
+        <jackson.version>2.11.2</jackson.version>
+        <junit.version>4.13.1</junit.version>
+        <hamcrest.version>1.3</hamcrest.version>
         <mockito.version>3.6.0</mockito.version>
         <powermock.version>2.0.9</powermock.version>
         <bytebuddy.version>1.10.21</bytebuddy.version>
@@ -117,6 +159,7 @@
         <jsr107.tck.version>1.1.1</jsr107.tck.version>
 
         <snakeyaml.engine.version>2.1</snakeyaml.engine.version>
+        <classgraph.version>4.8.66</classgraph.version>
 
         <h2.version>1.3.160</h2.version>
         <atomikos.version>3.9.3</atomikos.version>
@@ -129,6 +172,11 @@
         <vmHeapSettings>-Xms512m -Xmx2G</vmHeapSettings>
         <!-- Java 9+ module system args to be appended during surefire/failsafe executions. -->
         <javaModuleArgs/>
+
+        <!-- needed for CheckStyle -->
+        <checkstyle.configLocation>${main.basedir}/checkstyle/checkstyle.xml</checkstyle.configLocation>
+        <checkstyle.supressionsLocation>${main.basedir}/checkstyle/suppressions.xml</checkstyle.supressionsLocation>
+        <checkstyle.headerLocation>${main.basedir}/checkstyle/ClassHeader.txt</checkstyle.headerLocation>
     </properties>
     <licenses>
         <license>
@@ -186,6 +234,7 @@
                     <include>**/*.html</include>
                     <include>**/*.bat</include>
                     <include>**/*.sh</include>
+                    <include>**/*.py</include>
                     <include>**/*.properties</include>
                     <include>**/*.xml</include>
                     <include>**/*.yaml</include>
@@ -207,7 +256,52 @@
             </resource>
         </resources>
 
+        <!-- ignore the testjob module -->
+        <testResources>
+            <testResource>
+                <directory>src/test/resources</directory>
+                <excludes>
+                    <exclude>com/hazelcast/jet/server/testjob/**</exclude>
+                </excludes>
+            </testResource>
+        </testResources>
+
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>${maven.checkstyle.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>checkstyle</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <configLocation>${checkstyle.configLocation}</configLocation>
+                    <suppressionsLocation>${checkstyle.supressionsLocation}</suppressionsLocation>
+                    <headerLocation>${checkstyle.headerLocation}</headerLocation>
+                    <enableRSS>false</enableRSS>
+                    <linkXRef>false</linkXRef>
+                    <consoleOutput>true</consoleOutput>
+                    <failsOnError>true</failsOnError>
+                    <failOnViolation>true</failOnViolation>
+                    <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                    <enableRulesSummary>true</enableRulesSummary>
+                    <propertyExpansion>main.basedir=${main.basedir}</propertyExpansion>
+                    <excludes>**/module-info.java</excludes>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.puppycrawl.tools</groupId>
+                        <artifactId>checkstyle</artifactId>
+                        <version>${checkstyle.version}</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -216,16 +310,6 @@
                     <source>${jdk.version}</source>
                     <target>${jdk.version}</target>
                     <encoding>${project.build.sourceEncoding}</encoding>
-                </configuration>
-            </plugin>
-
-            <plugin>
-                <groupId>com.github.spotbugs</groupId>
-                <artifactId>spotbugs-maven-plugin</artifactId>
-                <version>${maven.spotbugs.plugin.version}</version>
-                <configuration>
-                    <spotbugsXmlOutput>true</spotbugsXmlOutput>
-                    <xmlOutput>true</xmlOutput>
                 </configuration>
             </plugin>
 
@@ -276,10 +360,6 @@
                         <exclude>**/**IT.java</exclude>
                         <exclude>com.hazelcast.sql.SqlIntegrationTestSuite.java</exclude>
                     </excludes>
-                    <groups>
-                        com.hazelcast.test.annotation.QuickTest,
-                        com.hazelcast.test.modulepath.ModulePathTest
-                    </groups>
                     <excludedGroups>
                         com.hazelcast.test.annotation.SlowTest,
                         com.hazelcast.test.annotation.NightlyTest
@@ -303,10 +383,6 @@
                     </argLine>
                     <useManifestOnlyJar>false</useManifestOnlyJar>
                     <useSystemClassLoader>true</useSystemClassLoader>
-                    <groups>
-                        com.hazelcast.test.annotation.QuickTest,
-                        com.hazelcast.test.modulepath.ModulePathTest
-                    </groups>
                     <excludedGroups>
                         com.hazelcast.test.annotation.SlowTest,
                         com.hazelcast.test.annotation.NightlyTest
@@ -342,6 +418,25 @@
                 </executions>
             </plugin>
         </plugins>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-shade-plugin</artifactId>
+                    <version>${maven.shade.plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${maven.surefire.plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>${maven.jar.plugin.version}</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
     </build>
 
     <profiles>
@@ -414,7 +509,6 @@
                                         <exclude>com.hazelcast.sql.SqlIntegrationTestSuite.java</exclude>
                                     </excludes>
                                     <groups>
-                                        com.hazelcast.test.annotation.QuickTest AND
                                         com.hazelcast.test.annotation.ParallelJVMTest
                                     </groups>
                                     <excludedGroups>
@@ -453,16 +547,45 @@
                                         <exclude>**/**IT.java</exclude>
                                         <exclude>com.hazelcast.sql.SqlIntegrationTestSuite.java</exclude>
                                     </excludes>
-                                    <groups>
-                                        com.hazelcast.test.annotation.QuickTest,
-                                        com.hazelcast.test.modulepath.ModulePathTest
-                                    </groups>
                                     <excludedGroups>
                                         com.hazelcast.test.annotation.SlowTest,
                                         com.hazelcast.test.annotation.NightlyTest,
                                         com.hazelcast.test.annotation.ParallelJVMTest
                                     </excludedGroups>
                                 </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <version>${maven.failsafe.plugin.version}</version>
+                        <configuration combine.self="override">
+                            <useFile>false</useFile>
+                            <argLine>
+                                ${vmHeapSettings}
+                                ${javaModuleArgs}
+                                -Dhazelcast.phone.home.enabled=false
+                                -Dhazelcast.logging.type=none
+                                -Dhazelcast.test.use.network=false
+                                -Dlog4j.configurationFile=log4j2.xml
+                                -Dlog4j.skipJansi=true
+                                ${extraVmArgs}
+                                ${jacocoArgLine}
+                            </argLine>
+                            <useManifestOnlyJar>false</useManifestOnlyJar>
+                            <useSystemClassLoader>true</useSystemClassLoader>
+                            <excludedGroups>
+                                com.hazelcast.test.annotation.SlowTest,
+                                com.hazelcast.test.annotation.NightlyTest
+                            </excludedGroups>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>integration-test</goal>
+                                    <goal>verify</goal>
+                                </goals>
                             </execution>
                         </executions>
                     </plugin>
@@ -500,10 +623,6 @@
                                 <exclude>**/**IT.java</exclude>
                                 <exclude>com.hazelcast.sql.SqlIntegrationTestSuite.java</exclude>
                             </excludes>
-                            <groups>
-                                com.hazelcast.test.annotation.QuickTest,
-                                com.hazelcast.test.modulepath.ModulePathTest
-                            </groups>
                             <excludedGroups>
                                 com.hazelcast.test.annotation.SlowTest,
                                 com.hazelcast.test.annotation.NightlyTest
@@ -527,10 +646,6 @@
                             </argLine>
                             <useManifestOnlyJar>false</useManifestOnlyJar>
                             <useSystemClassLoader>true</useSystemClassLoader>
-                            <groups>
-                                com.hazelcast.test.annotation.QuickTest,
-                                com.hazelcast.test.modulepath.ModulePathTest
-                            </groups>
                             <excludedGroups>
                                 com.hazelcast.test.annotation.SlowTest,
                                 com.hazelcast.test.annotation.NightlyTest
@@ -673,11 +788,6 @@
                                 <exclude>**/**IT.java</exclude>
                                 <exclude>com.hazelcast.sql.SqlIntegrationTestSuite.java</exclude>
                             </excludes>
-                            <groups>
-                                com.hazelcast.test.annotation.QuickTest,
-                                com.hazelcast.test.annotation.SlowTest,
-                                com.hazelcast.test.modulepath.ModulePathTest
-                            </groups>
                             <excludedGroups>
                                 com.hazelcast.test.annotation.NightlyTest
                             </excludedGroups>
@@ -698,11 +808,6 @@
                                 -Dlog4j.skipJansi=true
                                 ${extraVmArgs}
                             </argLine>
-                            <groups>
-                                com.hazelcast.test.annotation.QuickTest,
-                                com.hazelcast.test.annotation.SlowTest,
-                                com.hazelcast.test.modulepath.ModulePathTest
-                            </groups>
                             <excludedGroups>
                                 com.hazelcast.test.annotation.NightlyTest
                             </excludedGroups>
@@ -757,7 +862,7 @@
                         <configuration>
                             <maxmemory>1024</maxmemory>
                             <excludePackageNames>${maven.javadoc.plugin.excludePackageNames}</excludePackageNames>
-                            <doclint>none</doclint>
+                            <doclint>-missing</doclint>
                         </configuration>
                         <executions>
                             <execution>
@@ -804,7 +909,7 @@
                         <version>${maven.javadoc.plugin.version}</version>
                         <configuration>
                             <excludePackageNames>${maven.javadoc.plugin.excludePackageNames}</excludePackageNames>
-                            <doclint>none</doclint>
+                            <doclint>-missing</doclint>
                         </configuration>
                         <executions>
                             <execution>
@@ -824,72 +929,6 @@
             <modules>
                 <module>hazelcast-all</module>
             </modules>
-        </profile>
-
-        <profile>
-            <id>checkstyle</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-checkstyle-plugin</artifactId>
-                        <version>${maven.checkstyle.plugin.version}</version>
-                        <executions>
-                            <execution>
-                                <phase>validate</phase>
-                                <goals>
-                                    <goal>checkstyle</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                        <configuration>
-                            <configLocation>${main.basedir}/checkstyle/checkstyle.xml</configLocation>
-                            <suppressionsLocation>${main.basedir}/checkstyle/suppressions.xml</suppressionsLocation>
-                            <headerLocation>${main.basedir}/checkstyle/ClassHeader.txt</headerLocation>
-                            <enableRSS>false</enableRSS>
-                            <linkXRef>true</linkXRef>
-                            <consoleOutput>true</consoleOutput>
-                            <failsOnError>true</failsOnError>
-                            <failOnViolation>true</failOnViolation>
-                            <includeTestSourceDirectory>true</includeTestSourceDirectory>
-                            <enableRulesSummary>true</enableRulesSummary>
-                            <propertyExpansion>main.basedir=${main.basedir}</propertyExpansion>
-                            <excludes>**/module-info.java</excludes>
-                        </configuration>
-                        <dependencies>
-                            <dependency>
-                                <groupId>com.puppycrawl.tools</groupId>
-                                <artifactId>checkstyle</artifactId>
-                                <version>${checkstyle.version}</version>
-                            </dependency>
-                        </dependencies>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
-        <profile>
-            <id>spotbugs</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>com.github.spotbugs</groupId>
-                        <artifactId>spotbugs-maven-plugin</artifactId>
-                        <version>${maven.spotbugs.plugin.version}</version>
-                        <executions>
-                            <execution>
-                                <phase>compile</phase>
-                                <goals>
-                                    <goal>check</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                        <configuration>
-                            <failOnError>true</failOnError>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
         </profile>
 
         <profile>
@@ -990,12 +1029,6 @@
                                 <exclude>**/**IT.java</exclude>
                                 <exclude>com.hazelcast.sql.SqlIntegrationTestSuite.java</exclude>
                             </excludes>
-                            <groups>
-                                com.hazelcast.test.annotation.QuickTest,
-                                com.hazelcast.test.annotation.SlowTest,
-                                com.hazelcast.test.modulepath.ModulePathTest,
-                                com.hazelcast.test.annotation.NightlyTest
-                            </groups>
                         </configuration>
                     </plugin>
                     <plugin>
@@ -1014,12 +1047,6 @@
                             </argLine>
                             <useManifestOnlyJar>false</useManifestOnlyJar>
                             <useSystemClassLoader>true</useSystemClassLoader>
-                            <groups>
-                                com.hazelcast.test.annotation.QuickTest,
-                                com.hazelcast.test.annotation.SlowTest,
-                                com.hazelcast.test.modulepath.ModulePathTest,
-                                com.hazelcast.test.annotation.NightlyTest
-                            </groups>
                         </configuration>
                         <executions>
                             <execution>
@@ -1114,10 +1141,6 @@
                                 <exclude>**/**IT.java</exclude>
                                 <exclude>com.hazelcast.sql.SqlIntegrationTestSuite.java</exclude>
                             </excludes>
-                            <groups>
-                                com.hazelcast.test.annotation.QuickTest,
-                                com.hazelcast.test.modulepath.ModulePathTest
-                            </groups>
                             <excludedGroups>
                                 com.hazelcast.test.annotation.SlowTest,
                                 com.hazelcast.test.annotation.NightlyTest,
@@ -1127,6 +1150,34 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+
+        <profile>
+            <id>not-quick</id>
+            <activation>
+                <property>
+                    <name>!quick</name>
+                </property>
+            </activation>
+            <modules>
+                <module>extensions</module>
+                <module>distribution</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>quick</id>
+            <activation>
+                <property>
+                    <name>quick</name>
+                </property>
+            </activation>
+            <properties>
+                <checkstyle.skip>true</checkstyle.skip>
+                <spotbugs.skip>true</spotbugs.skip>
+                <skipTests>true</skipTests>
+                <maven.javadoc.skip>true</maven.javadoc.skip>
+                <maven.source.skip>true</maven.source.skip>
+            </properties>
         </profile>
     </profiles>
 
@@ -1157,6 +1208,219 @@
         </repository>
     </repositories>
 
+    <dependencyManagement>
+        <dependencies>
+            <!--
+            Pin dependencies to particular version.
+
+            This doesn't add dependencies for modules, but if any of the modules uses any listed dependency, either
+            directly or transitively, it will use the version specified here.
+            This ensures that all jars with dependencies use the same version of a particular dependency, both for tests
+            and for inclusion to the jar with dependencies.
+
+            The enforcer plugin checks that no two modules have a dependency conflict, if they do simply add an entry
+            with conflicting dependency here, using the higher version.
+            -->
+
+            <!-- Import versions from bom - avoids to importing many modules for certain dependencies, e.g. Jackson -->
+            <dependency>
+                <groupId>com.fasterxml.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
+                <version>${jackson.version}</version>
+                <scope>import</scope>
+                <type>pom</type>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-bom</artifactId>
+                <version>9.4.20.v20190813</version>
+                <scope>import</scope>
+                <type>pom</type>
+            </dependency>
+            <dependency>
+                <groupId>com.google.protobuf</groupId>
+                <artifactId>protobuf-bom</artifactId>
+                <version>${protobuf.version}</version>
+                <scope>import</scope>
+                <type>pom</type>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-bom</artifactId>
+                <version>${grpc.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.google.auth</groupId>
+                <artifactId>google-auth-library-bom</artifactId>
+                <version>0.21.1</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>29.0-jre</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-codec</groupId>
+                <artifactId>commons-codec</artifactId>
+                <version>1.12</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>3.7</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-collections</groupId>
+                <artifactId>commons-collections</artifactId>
+                <version>3.2.2</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-logging</groupId>
+                <artifactId>commons-logging</artifactId>
+                <version>1.2</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-compress</artifactId>
+                <version>1.19</version>
+            </dependency>
+            <dependency>
+                <groupId>joda-time</groupId>
+                <artifactId>joda-time</artifactId>
+                <version>2.10.1</version>
+            </dependency>
+            <dependency>
+                <groupId>org.xerial.snappy</groupId>
+                <artifactId>snappy-java</artifactId>
+                <version>1.1.7.2</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.api.grpc</groupId>
+                <artifactId>proto-google-common-protos</artifactId>
+                <version>1.18.1</version>
+            </dependency>
+            <!-- NOTE: httpcore and httpclient versions are not in sync -->
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpcore</artifactId>
+                <version>4.4.13</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpclient</artifactId>
+                <version>4.5.12</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-handler</artifactId>
+                <version>4.1.39.Final</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec-http</artifactId>
+                <version>4.1.39.Final</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.auto.value</groupId>
+                <artifactId>auto-value-annotations</artifactId>
+                <version>1.7.4</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.http-client</groupId>
+                <artifactId>google-http-client</artifactId>
+                <version>1.36.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.nimbusds</groupId>
+                <artifactId>nimbus-jose-jwt</artifactId>
+                <version>7.9</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.code.gson</groupId>
+                <artifactId>gson</artifactId>
+                <version>2.8.6</version>
+            </dependency>
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>aws-java-sdk-bundle</artifactId>
+                <version>${aws.sdk.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.avro</groupId>
+                <artifactId>avro</artifactId>
+                <version>${avro.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.objenesis</groupId>
+                <artifactId>objenesis</artifactId>
+                <version>3.1</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.luben</groupId>
+                <artifactId>zstd-jni</artifactId>
+                <version>1.4.5-12</version>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j.api.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-api</artifactId>
+                <version>${log4j2.version}</version>
+            </dependency>
+            <!--
+            The following are test dependencies, they are not in the final distribution.
+            We put them there for the dependency convergence task to succeed.
+            -->
+            <dependency>
+                <groupId>net.bytebuddy</groupId>
+                <artifactId>byte-buddy</artifactId>
+                <version>1.10.15</version>
+            </dependency>
+            <dependency>
+                <groupId>net.bytebuddy</groupId>
+                <artifactId>byte-buddy-agent</artifactId>
+                <version>1.10.15</version>
+            </dependency>
+            <dependency>
+                <groupId>org.javassist</groupId>
+                <artifactId>javassist</artifactId>
+                <version>3.26.0-GA</version>
+            </dependency>
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>${junit.version}</version>
+            </dependency>
+            <dependency>
+                <!--
+                parquet-avro depends on this transitively, but it has an invalid pom, generating warnings during build.
+                This is newer fixed version.
+                -->
+                <groupId>org.apache.yetus</groupId>
+                <artifactId>audience-annotations</artifactId>
+                <version>0.12.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.reflections</groupId>
+                <artifactId>reflections</artifactId>
+                <version>${reflections.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.code.findbugs</groupId>
+                <artifactId>annotations</artifactId>
+                <version>3.0.0</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
         <dependency>
             <groupId>javax.cache</groupId>
@@ -1186,7 +1450,18 @@
             <scope>test</scope>
             <optional>true</optional>
         </dependency>
-
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-library</artifactId>
+            <version>${hamcrest.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <version>${assertj.version}</version>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
@@ -1255,12 +1530,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-            <version>${commons-lang3.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>net.bytebuddy</groupId>
             <artifactId>byte-buddy-agent</artifactId>
             <version>${bytebuddy.version}</version>
@@ -1269,7 +1538,7 @@
         <dependency>
             <groupId>nl.jqno.equalsverifier</groupId>
             <artifactId>equalsverifier</artifactId>
-            <version>1.7.8</version>
+            <version>3.5.5</version>
             <scope>test</scope>
         </dependency>
         <dependency>

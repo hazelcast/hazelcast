@@ -26,7 +26,7 @@ import java.util.Map.Entry;
 
 /**
  * An EntryProcessor processes a {@link java.util.Map.Entry}.
- * The {@code EntryProcessor}'s {@link #process(Entry)} method is executed atomically.
+ * The {@code EntryProcessor}'s {@link #process(Map.Entry)} method is executed atomically.
  * This obviates the need to explicitly lock as would be required with a {@link java.util.concurrent.ExecutorService}.
  * <p>
  * Performance can be very high as the data is not moved off the Member partition. This avoids network cost and, if
@@ -61,7 +61,7 @@ import java.util.Map.Entry;
  * concurrency control needs to be provided to coordinate access to mutable state. Another option is to rely
  * on {@code ThreadLocal}s.
  * <p>
- * Since Hazelcast 4.1, an instance of {@link ExtendedMapEntry} is provided as argument in {@link #process(Entry)}
+ * Since Hazelcast 4.1, an instance of {@link ExtendedMapEntry} is provided as argument in {@link #process(Map.Entry)}
  * method:
  * <pre>
  * {@code

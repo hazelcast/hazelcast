@@ -78,6 +78,7 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
         thisAddress = new Address("localhost", 5701);
         Node node = Mockito.mock(Node.class);
         when(node.getConfig()).thenReturn(config);
+        when(node.getProperties()).thenReturn(new HazelcastProperties(config));
         nodeExtension = new DefaultNodeExtension(node);
         handlerFactory = new DummyOperationRunnerFactory();
 

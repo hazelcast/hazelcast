@@ -118,7 +118,6 @@ public class NotPredicateTest {
     public void testEqualsAndHashCode() {
         EqualsVerifier.forClass(NotPredicate.class)
             .suppress(Warning.NONFINAL_FIELDS, Warning.STRICT_INHERITANCE)
-            .allFieldsShouldBeUsed()
             .verify();
     }
 

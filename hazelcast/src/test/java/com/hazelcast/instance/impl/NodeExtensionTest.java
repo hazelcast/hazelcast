@@ -63,7 +63,7 @@ public class NodeExtensionTest extends HazelcastTestSupport {
         inOrder.verify(nodeExtension, times(1)).afterStart();
 
         hazelcastInstance.shutdown();
-        inOrder.verify(nodeExtension, times(1)).beforeShutdown();
+        inOrder.verify(nodeExtension, times(1)).beforeShutdown(false);
         inOrder.verify(nodeExtension, times(1)).shutdown();
     }
 

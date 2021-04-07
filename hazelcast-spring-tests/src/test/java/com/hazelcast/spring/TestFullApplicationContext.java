@@ -127,6 +127,10 @@ import com.hazelcast.cp.lock.FencedLock;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
+import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.config.EdgeConfig;
+import com.hazelcast.jet.config.InstanceConfig;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapStore;
 import com.hazelcast.map.MapStoreFactory;
@@ -197,10 +201,15 @@ import static org.junit.Assert.fail;
 @SuppressWarnings("unused")
 public class TestFullApplicationContext extends HazelcastTestSupport {
 
+    public static final String INTERNAL_JET_OBJECTS_PREFIX = "__jet.";
+
     private Config config;
 
     @Resource(name = "instance")
     private HazelcastInstance instance;
+
+    @Resource(name = "jetInstance")
+    private JetInstance jet;
 
     @Resource(name = "map1")
     private IMap<Object, Object> map1;
@@ -327,7 +336,9 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     @Test
     public void testMapConfig() {
         assertNotNull(config);
-        assertEquals(26, config.getMapConfigs().size());
+        long mapConfigSize = config.getMapConfigs()
+                .keySet().stream().filter(name -> !name.startsWith(INTERNAL_JET_OBJECTS_PREFIX)).count();
+        assertEquals(26, mapConfigSize);
 
         MapConfig testMapConfig = config.getMapConfig("testMap");
         assertNotNull(testMapConfig);
@@ -762,7 +773,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         NetworkConfig networkConfig = config.getNetworkConfig();
         assertNotNull(networkConfig);
         assertEquals(5700, networkConfig.getPort());
-        assertFalse(networkConfig.isPortAutoIncrement());
+        assertTrue(networkConfig.isPortAutoIncrement());
 
         Collection<String> allowedPorts = networkConfig.getOutboundPortDefinitions();
         assertEquals(2, allowedPorts.size());
@@ -782,7 +793,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals("10.10.1.*", networkConfig.getInterfaces().getInterfaces().iterator().next());
         TcpIpConfig tcp = networkConfig.getJoin().getTcpIpConfig();
         assertNotNull(tcp);
-        assertTrue(tcp.isEnabled());
+        assertFalse(tcp.isEnabled());
         SymmetricEncryptionConfig symmetricEncryptionConfig = networkConfig.getSymmetricEncryptionConfig();
         assertFalse(symmetricEncryptionConfig.isEnabled());
         assertEquals("PBEWithMD5AndDES", symmetricEncryptionConfig.getAlgorithm());
@@ -929,6 +940,8 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertNotNull(semaphore);
         assertNotNull(lock);
         assertNotNull(pnCounter);
+        assertNotNull(jet);
+        assertEquals(config.getJetConfig(), jet.getConfig());
         assertEquals("map1", map1.getName());
         assertEquals("map2", map2.getName());
         assertEquals("testMultimap", multiMap.getName());
@@ -942,6 +955,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals("testAtomicReference", atomicReference.getName());
         assertEquals("countDownLatch", countDownLatch.getName());
         assertEquals("semaphore", semaphore.getName());
+
     }
 
     @Test
@@ -1048,7 +1062,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     @Test
     public void testPartitionGroupConfig() {
         PartitionGroupConfig pgc = config.getPartitionGroupConfig();
-        assertTrue(pgc.isEnabled());
+        assertFalse(pgc.isEnabled());
         assertEquals(PartitionGroupConfig.MemberGroupType.CUSTOM, pgc.getGroupType());
         assertEquals(2, pgc.getMemberGroupConfigs().size());
         for (MemberGroupConfig mgc : pgc.getMemberGroupConfigs()) {
@@ -1481,5 +1495,24 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         SqlConfig sqlConfig = config.getSqlConfig();
         assertEquals(10, sqlConfig.getExecutorPoolSize());
         assertEquals(30L, sqlConfig.getStatementTimeoutMillis());
+    }
+
+    @Test
+    public void testJetConfig() {
+        JetConfig jetConfig = config.getJetConfig();
+
+        InstanceConfig instanceConfig = jetConfig.getInstanceConfig();
+        assertEquals(4, instanceConfig.getCooperativeThreadCount());
+        assertEquals(2, instanceConfig.getBackupCount());
+        assertEquals(200, instanceConfig.getFlowControlPeriodMs());
+        assertEquals(20000, instanceConfig.getScaleUpDelayMillis());
+        assertFalse(instanceConfig.isLosslessRestartEnabled());
+
+        EdgeConfig edgeConfig = jetConfig.getDefaultEdgeConfig();
+        assertEquals(2048, edgeConfig.getQueueSize());
+        assertEquals(15000, edgeConfig.getPacketSizeLimit());
+        assertEquals(4, edgeConfig.getReceiveWindowMultiplier());
+
+
     }
 }

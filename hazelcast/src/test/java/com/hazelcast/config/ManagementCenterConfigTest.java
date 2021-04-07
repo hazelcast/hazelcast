@@ -67,7 +67,6 @@ public class ManagementCenterConfigTest extends HazelcastTestSupport {
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(ManagementCenterConfig.class)
-                      .allFieldsShouldBeUsed()
                       .suppress(Warning.NONFINAL_FIELDS)
                       .verify();
     }

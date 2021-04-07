@@ -33,9 +33,10 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
+import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -104,7 +105,7 @@ public class SqlSchemaPropagationTest extends SqlTestSupport {
         List<List<String>> searchPaths = optimizer.getSearchPaths();
 
         List<List<String>> expectedSearchPaths = new ArrayList<>(originalSearchPaths);
-        expectedSearchPaths.add(0, Collections.singletonList(SCHEMA_NAME));
+        expectedSearchPaths.add(0, asList(CATALOG, SCHEMA_NAME));
 
         assertEquals(expectedSearchPaths, searchPaths);
     }

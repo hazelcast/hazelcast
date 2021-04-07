@@ -183,7 +183,7 @@ public class HazelcastInstanceFactoryTest extends HazelcastTestSupport {
                         }
                         return null;
                     }
-                }).when(nodeExtension).beforeShutdown();
+                }).when(nodeExtension).beforeShutdown(false);
                 return nodeExtension;
             }
         };

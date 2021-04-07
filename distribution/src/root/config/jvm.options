@@ -1,0 +1,62 @@
+# JVM Configuration
+
+# One option per line
+# Lines starting with # and empty lines are ignored
+
+# Memory configuration
+#-Xms4g
+#-Xmx4g
+#-XX:+AlwaysPreTouch
+#-XX:MaxMetaspaceSize=128m
+
+# Generate heap dump on out-of-memory error
+# Uncomment to enable
+#-XX:+HeapDumpOnOutOfMemoryError
+#-XX:HeapDumpPath=$JET_HOME
+
+# Enable debugger
+#-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005
+
+# Enable JMX
+#-Dcom.sun.management.jmxremote
+#-Dcom.sun.management.jmxremote.port=9010
+#-Dcom.sun.management.jmxremote.authenticate=false
+#-Dcom.sun.management.jmxremote.ssl=false
+#-Dcom.sun.management.jmxremote.local.only=false
+
+# GC configuration
+
+# G1GC Configuration
+# Use G1GC on Java 8
+#-XX:+UseG1GC
+#-XX:MaxGCPauseMillis=50
+
+# ZGC
+# Available on Java 11 and forward, does not need -XX:+UnlockExperimentalVMOptions since Java 15
+# See https://wiki.openjdk.java.net/display/zgc/Main
+#-XX:+UnlockExperimentalVMOptions
+#-XX:+UseZGC
+
+# Shenandoah
+# Available on Java 12 and forward, does not need -XX:+UnlockExperimentalVMOptions since Java 15
+# See https://wiki.openjdk.java.net/display/shenandoah/Main
+#-XX:+UseShenandoahGC
+
+# Java 8 GC logging
+#-XX:+PrintGC
+#-Xloggc:$JET_HOME/logs/gc.log
+#-XX:+UseGCLogFileRotation
+#-XX:NumberOfGCLogFiles=32
+#-XX:GCLogFileSize=64m
+
+# Java 8 More detailed GC logging - consider moving the logs location to a RAM disk
+#-XX:+PrintGCDetails
+#-XX:+PrintGCDateStamps
+#-XX:+PrintTenuringDistribution
+#-XX:+PrintGCApplicationStoppedTime
+
+# Java 9+ GC logging
+#-Xlog:gc:file=$JET_HOME/logs/gc.log:utctime,pid,tags:filecount=32,filesize=64m
+
+# Java 9+ More detailed GC logging - consider moving the logs location to a RAM disk
+#-Xlog:gc*,gc+age=trace,safepoint:file=$JET_HOME/logs/gc.log:utctime,pid,tags:filecount=32,filesize=64m

@@ -32,7 +32,6 @@ public class ClientBwListEntryDTOTest {
     @Test
     public void testEqualsAndHashCode() {
         EqualsVerifier.forClass(ClientBwListEntryDTO.class)
-                      .allFieldsShouldBeUsed()
                       .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS)
                       .verify();
     }

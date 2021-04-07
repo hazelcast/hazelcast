@@ -1,0 +1,54 @@
+[
+    {
+        "version": "4.4",
+        "releaseNotes": "/blog/2021/02/03/jet-44-is-released",
+        "size" : 547,
+        "slimSize" : 29,
+        "mcVersion": "4.2021.02"
+    },
+    {
+        "version": "4.3.1",
+        "releaseNotes": "/blog/2020/10/23/jet-43-is-released",
+        "size" : 106
+    },
+    {
+        "version": "4.2",
+        "releaseNotes": "/blog/2020/07/14/jet-42-is-released",
+        "size" : 102
+    },
+    {
+        "version": "4.1.1",
+        "releaseNotes": "/blog/2020/04/29/jet-41-is-released",
+        "size" : 60.5
+    },
+    {
+        "version": "4.0",
+        "releaseNotes": "/blog/2020/03/02/jet-40-is-released",
+        "size" : 44.8
+    },
+    {
+        "version": "3.2.2",
+        "manual": "https://docs.hazelcast.org/docs/jet/3.2.2/manual/manual.html",
+        "size" : 60.6
+    },
+    {
+        "version": "3.2.1",
+        "manual": "https://docs.hazelcast.org/docs/jet/3.2.1/manual/manual.html",
+        "size" : 60.4
+    },
+    {
+        "version": "3.2",
+        "manual": "https://docs.hazelcast.org/docs/jet/3.2/manual/manual.html",
+        "size" : 60.4
+    },
+    {
+        "version": "3.1",
+        "manual": "https://docs.hazelcast.org/docs/jet/3.1/manual/manual.html",
+        "size" : 98.8
+    },
+    {
+        "version": "3.0",
+        "manual": "https://docs.hazelcast.org/docs/jet/3.0/manual/manual.html",
+        "size" : 98.5
+    }
+]

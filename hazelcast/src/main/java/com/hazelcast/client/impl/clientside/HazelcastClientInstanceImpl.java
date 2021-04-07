@@ -101,6 +101,7 @@ import com.hazelcast.internal.nio.Disposable;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.ConcurrencyDetection;
 import com.hazelcast.internal.util.ServiceLoader;
+import com.hazelcast.jet.JetInstance;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.IMap;
@@ -822,6 +823,12 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     @Override
     public SqlService getSql() {
         return sqlService;
+    }
+
+    @Nonnull
+    @Override
+    public JetInstance getJetInstance() {
+        return clientExtension.getJetInstance();
     }
 
     public void onClusterChange() {

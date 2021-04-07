@@ -69,13 +69,13 @@ public final class ReflectionsHelper {
     }
 
     /**
-     * Removes abstract classes and interfaces from the given set.
+     * Removes abstract and anonymous classes and interfaces from the given set.
      */
     public static void filterNonConcreteClasses(Set<? extends Class> classes) {
         Iterator<? extends Class> iterator = classes.iterator();
         while (iterator.hasNext()) {
             Class<?> klass = iterator.next();
-            if (klass.isInterface() || Modifier.isAbstract(klass.getModifiers())) {
+            if (klass.isAnonymousClass() || klass.isInterface() || Modifier.isAbstract(klass.getModifiers())) {
                 iterator.remove();
             }
         }
