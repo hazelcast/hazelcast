@@ -43,31 +43,31 @@ public class SqlPlanCacheTest extends SqlTestSupport {
     public void test_tableName() {
         createMapping("file1", "id", "file.csv");
         sqlService.execute("SELECT * FROM file1");
-        assertThat(planCache(instance()).size()).isEqualTo(2);
+        assertThat(planCache(instance()).size()).isEqualTo(1);
 
         createMapping("file2", "id", "file.csv");
         sqlService.execute("DROP MAPPING file1");
-        assertTrueEventually(() -> assertThat(planCache(instance()).size()).isEqualTo(3));
+        assertTrueEventually(() -> assertThat(planCache(instance()).size()).isZero());
     }
 
     @Test
     public void test_fieldList() {
         createMapping("file", "id", "file.csv");
         sqlService.execute("SELECT * FROM file");
-        assertThat(planCache(instance()).size()).isEqualTo(2);
+        assertThat(planCache(instance()).size()).isEqualTo(1);
 
         createMapping("file", "name", "file.csv");
-        assertTrueEventually(() -> assertThat(planCache(instance()).size()).isEqualTo(2));
+        assertTrueEventually(() -> assertThat(planCache(instance()).size()).isZero());
     }
 
     @Test
     public void test_options() {
         createMapping("file", "id", "file.csv");
         sqlService.execute("SELECT * FROM file");
-        assertThat(planCache(instance()).size()).isEqualTo(2);
+        assertThat(planCache(instance()).size()).isEqualTo(1);
 
         createMapping("file", "id", "*");
-        assertTrueEventually(() -> assertThat(planCache(instance()).size()).isEqualTo(2));
+        assertTrueEventually(() -> assertThat(planCache(instance()).size()).isZero());
     }
 
     @Test

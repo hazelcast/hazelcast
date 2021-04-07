@@ -152,27 +152,26 @@ class JetSqlBackend implements SqlBackend {
             throw QueryException.error("Query parameters not yet supported");
         }
 
-        PlanCacheKey id = new PlanCacheKey(task.getSearchPaths(), task.getSql());
         if (node instanceof SqlCreateMapping) {
-            return toCreateMappingPlan(id, (SqlCreateMapping) node);
+            return toCreateMappingPlan((SqlCreateMapping) node);
         } else if (node instanceof SqlDropMapping) {
-            return toDropMappingPlan(id, (SqlDropMapping) node);
+            return toDropMappingPlan((SqlDropMapping) node);
         } else if (node instanceof SqlCreateJob) {
-            return toCreateJobPlan(id, parseResult, context);
+            return toCreateJobPlan(new PlanCacheKey(task.getSearchPaths(), task.getSql()), parseResult, context);
         } else if (node instanceof SqlAlterJob) {
-            return toAlterJobPlan(id, (SqlAlterJob) node);
+            return toAlterJobPlan((SqlAlterJob) node);
         } else if (node instanceof SqlDropJob) {
-            return toDropJobPlan(id, (SqlDropJob) node);
+            return toDropJobPlan((SqlDropJob) node);
         } else if (node instanceof SqlCreateSnapshot) {
-            return toCreateSnapshotPlan(id, (SqlCreateSnapshot) node);
+            return toCreateSnapshotPlan((SqlCreateSnapshot) node);
         } else if (node instanceof SqlDropSnapshot) {
-            return toDropSnapshotPlan(id, (SqlDropSnapshot) node);
+            return toDropSnapshotPlan((SqlDropSnapshot) node);
         } else if (node instanceof SqlShowStatement) {
-            return toShowStatementPlan(id, (SqlShowStatement) node);
+            return toShowStatementPlan((SqlShowStatement) node);
         } else {
             QueryConvertResult convertResult = context.convert(parseResult);
             return toPlan(
-                    id,
+                    new PlanCacheKey(task.getSearchPaths(), task.getSql()),
                     convertResult.getRel(),
                     convertResult.getFieldNames(),
                     context,
@@ -181,7 +180,7 @@ class JetSqlBackend implements SqlBackend {
         }
     }
 
-    private SqlPlan toCreateMappingPlan(PlanCacheKey id, SqlCreateMapping sqlCreateMapping) {
+    private SqlPlan toCreateMappingPlan(SqlCreateMapping sqlCreateMapping) {
         List<MappingField> mappingFields = sqlCreateMapping.columns()
                 .map(field -> new MappingField(field.name(), field.type(), field.externalName()))
                 .collect(toList());
@@ -194,7 +193,6 @@ class JetSqlBackend implements SqlBackend {
         );
 
         return JetPlan.toCreateMapping(
-                id,
                 mapping,
                 sqlCreateMapping.getReplace(),
                 sqlCreateMapping.ifNotExists(),
@@ -202,8 +200,8 @@ class JetSqlBackend implements SqlBackend {
         );
     }
 
-    private SqlPlan toDropMappingPlan(PlanCacheKey id, SqlDropMapping sqlDropMapping) {
-        return JetPlan.toDropMapping(id, sqlDropMapping.nameWithoutSchema(), sqlDropMapping.ifExists(), planExecutor);
+    private SqlPlan toDropMappingPlan(SqlDropMapping sqlDropMapping) {
+        return JetPlan.toDropMapping(sqlDropMapping.nameWithoutSchema(), sqlDropMapping.ifExists(), planExecutor);
     }
 
     private SqlPlan toCreateJobPlan(PlanCacheKey id, QueryParseResult parseResult, OptimizerContext context) {
@@ -231,13 +229,12 @@ class JetSqlBackend implements SqlBackend {
         );
     }
 
-    private SqlPlan toAlterJobPlan(PlanCacheKey id, SqlAlterJob sqlAlterJob) {
-        return JetPlan.toAlterJob(id, sqlAlterJob.name(), sqlAlterJob.getOperation(), planExecutor);
+    private SqlPlan toAlterJobPlan(SqlAlterJob sqlAlterJob) {
+        return JetPlan.toAlterJob(sqlAlterJob.name(), sqlAlterJob.getOperation(), planExecutor);
     }
 
-    private SqlPlan toDropJobPlan(PlanCacheKey id, SqlDropJob sqlDropJob) {
+    private SqlPlan toDropJobPlan(SqlDropJob sqlDropJob) {
         return JetPlan.toDropJob(
-                id,
                 sqlDropJob.name(),
                 sqlDropJob.ifExists(),
                 sqlDropJob.withSnapshotName(),
@@ -245,16 +242,16 @@ class JetSqlBackend implements SqlBackend {
         );
     }
 
-    private SqlPlan toCreateSnapshotPlan(PlanCacheKey id, SqlCreateSnapshot sqlNode) {
-        return JetPlan.toCreateSnapshot(id, sqlNode.getSnapshotName(), sqlNode.getJobName(), planExecutor);
+    private SqlPlan toCreateSnapshotPlan(SqlCreateSnapshot sqlNode) {
+        return JetPlan.toCreateSnapshot(sqlNode.getSnapshotName(), sqlNode.getJobName(), planExecutor);
     }
 
-    private SqlPlan toDropSnapshotPlan(PlanCacheKey id, SqlDropSnapshot sqlNode) {
-        return JetPlan.toDropSnapshot(id, sqlNode.getSnapshotName(), sqlNode.isIfExists(), planExecutor);
+    private SqlPlan toDropSnapshotPlan(SqlDropSnapshot sqlNode) {
+        return JetPlan.toDropSnapshot(sqlNode.getSnapshotName(), sqlNode.isIfExists(), planExecutor);
     }
 
-    private SqlPlan toShowStatementPlan(PlanCacheKey id, SqlShowStatement sqlNode) {
-        return JetPlan.toShowStatement(id, sqlNode.getTarget(), planExecutor);
+    private SqlPlan toShowStatementPlan(SqlShowStatement sqlNode) {
+        return JetPlan.toShowStatement(sqlNode.getTarget(), planExecutor);
     }
 
     private SelectOrSinkPlan toPlan(

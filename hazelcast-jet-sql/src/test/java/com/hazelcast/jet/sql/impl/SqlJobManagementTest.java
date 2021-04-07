@@ -311,10 +311,10 @@ public class SqlJobManagementTest extends SqlTestSupport {
         sqlService.execute(javaSerializableMapDdl("target", Long.class, Long.class));
         sqlService.execute("CREATE MAPPING source TYPE TestStream");
         sqlService.execute("CREATE JOB job AS SINK INTO target SELECT v, v FROM source");
-        assertThat(planCache(instance()).size()).isEqualTo(3);
+        assertThat(planCache(instance()).size()).isEqualTo(1);
 
         sqlService.execute("DROP MAPPING target");
-        assertTrueEventually(() -> assertThat(planCache(instance()).size()).isEqualTo(3));
+        assertTrueEventually(() -> assertThat(planCache(instance()).size()).isZero());
     }
 
     private void createCompletedJob() {

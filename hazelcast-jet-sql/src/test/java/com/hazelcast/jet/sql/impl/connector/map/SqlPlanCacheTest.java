@@ -46,51 +46,51 @@ public class SqlPlanCacheTest extends SqlTestSupport {
     public void test_tableName() {
         createMapping("map1", "m", "id", PersonId.class, "varchar");
         sqlService.execute("SELECT * FROM map1");
-        assertThat(planCache(instance()).size()).isEqualTo(2);
+        assertThat(planCache(instance()).size()).isEqualTo(1);
 
         createMapping("map2", "m", "id", PersonId.class, "varchar");
         sqlService.execute("DROP MAPPING map1");
-        assertTrueEventually(() -> assertThat(planCache(instance()).size()).isEqualTo(3));
+        assertTrueEventually(() -> assertThat(planCache(instance()).size()).isZero());
     }
 
     @Test
     public void test_mapName() {
         createMapping("map", "m1", "id", PersonId.class, "varchar");
         sqlService.execute("SELECT * FROM map");
-        assertThat(planCache(instance()).size()).isEqualTo(2);
+        assertThat(planCache(instance()).size()).isEqualTo(1);
 
         createMapping("map", "m2", "id", PersonId.class, "varchar");
-        assertTrueEventually(() -> assertThat(planCache(instance()).size()).isEqualTo(2));
+        assertTrueEventually(() -> assertThat(planCache(instance()).size()).isZero());
     }
 
     @Test
     public void test_fieldList() {
         createMapping("map", "m", "id1", PersonId.class, "varchar");
         sqlService.execute("SELECT * FROM map");
-        assertThat(planCache(instance()).size()).isEqualTo(2);
+        assertThat(planCache(instance()).size()).isEqualTo(1);
 
         createMapping("map", "m", "id2", PersonId.class, "varchar");
-        assertTrueEventually(() -> assertThat(planCache(instance()).size()).isEqualTo(2));
+        assertTrueEventually(() -> assertThat(planCache(instance()).size()).isZero());
     }
 
     @Test
     public void test_keyDescriptor() {
         createMapping("map", "m", "id", PersonId.class, "varchar");
         sqlService.execute("SELECT * FROM map");
-        assertThat(planCache(instance()).size()).isEqualTo(2);
+        assertThat(planCache(instance()).size()).isEqualTo(1);
 
         createMapping("map", "m", "id", 1, 2, "varchar");
-        assertTrueEventually(() -> assertThat(planCache(instance()).size()).isEqualTo(2));
+        assertTrueEventually(() -> assertThat(planCache(instance()).size()).isZero());
     }
 
     @Test
     public void test_valueDescriptor() {
         createMapping("map", "m", "id", PersonId.class, "varchar");
         sqlService.execute("SELECT * FROM map");
-        assertThat(planCache(instance()).size()).isEqualTo(2);
+        assertThat(planCache(instance()).size()).isEqualTo(1);
 
         createMapping("map", "m", "id", PersonId.class, JSON_FORMAT);
-        assertTrueEventually(() -> assertThat(planCache(instance()).size()).isEqualTo(2));
+        assertTrueEventually(() -> assertThat(planCache(instance()).size()).isZero());
     }
 
     @SuppressWarnings("SameParameterValue")

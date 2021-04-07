@@ -89,7 +89,7 @@ public class JetPlanExecutorTest {
     public void test_createMappingExecution(boolean replace, boolean ifNotExists) {
         // given
         Mapping mapping = mapping();
-        CreateMappingPlan plan = JetPlan.toCreateMapping(planId(), mapping, replace, ifNotExists, planExecutor);
+        CreateMappingPlan plan = JetPlan.toCreateMapping(mapping, replace, ifNotExists, planExecutor);
 
         // when
         SqlResult result = planExecutor.execute(plan);
@@ -107,7 +107,7 @@ public class JetPlanExecutorTest {
     public void test_dropMappingExecution(boolean ifExists) {
         // given
         String name = "name";
-        DropMappingPlan plan = JetPlan.toDropMapping(planId(), name, ifExists, planExecutor);
+        DropMappingPlan plan = JetPlan.toDropMapping(name, ifExists, planExecutor);
 
         // when
         SqlResult result = planExecutor.execute(plan);

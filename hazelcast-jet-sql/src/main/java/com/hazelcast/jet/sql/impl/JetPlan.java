@@ -43,22 +43,20 @@ interface JetPlan extends SqlPlan {
     SqlResult execute(QueryId queryId);
 
     static CreateMappingPlan toCreateMapping(
-            PlanCacheKey id,
             Mapping mapping,
             boolean replace,
             boolean ifNotExists,
             JetPlanExecutor planExecutor
     ) {
-        return new CreateMappingPlan(id, mapping, replace, ifNotExists, planExecutor);
+        return new CreateMappingPlan(mapping, replace, ifNotExists, planExecutor);
     }
 
     static DropMappingPlan toDropMapping(
-            PlanCacheKey id,
             String name,
             boolean ifExists,
             JetPlanExecutor planExecutor
     ) {
-        return new DropMappingPlan(id, name, ifExists, planExecutor);
+        return new DropMappingPlan(name, ifExists, planExecutor);
     }
 
     static CreateJobPlan toCreateJob(
@@ -74,48 +72,43 @@ interface JetPlan extends SqlPlan {
     }
 
     static AlterJobPlan toAlterJob(
-            PlanCacheKey id,
             String jobName,
             AlterJobOperation operation,
             JetPlanExecutor planExecutor
     ) {
-        return new AlterJobPlan(id, jobName, operation, planExecutor);
+        return new AlterJobPlan(jobName, operation, planExecutor);
     }
 
     static CreateSnapshotPlan toCreateSnapshot(
-            PlanCacheKey id,
             String snapshotName,
             String jobName,
             JetPlanExecutor planExecutor
     ) {
-        return new CreateSnapshotPlan(id, snapshotName, jobName, planExecutor);
+        return new CreateSnapshotPlan(snapshotName, jobName, planExecutor);
     }
 
     static DropJobPlan toDropJob(
-            PlanCacheKey id,
             String jobName,
             boolean ifExists,
             String withSnapshotName,
             JetPlanExecutor planExecutor
     ) {
-        return new DropJobPlan(id, jobName, ifExists, withSnapshotName, planExecutor);
+        return new DropJobPlan(jobName, ifExists, withSnapshotName, planExecutor);
     }
 
     static DropSnapshotPlan toDropSnapshot(
-            PlanCacheKey id,
             String snapshotName,
             boolean ifExists,
             JetPlanExecutor planExecutor
     ) {
-        return new DropSnapshotPlan(id, snapshotName, ifExists, planExecutor);
+        return new DropSnapshotPlan(snapshotName, ifExists, planExecutor);
     }
 
     static ShowStatementPlan toShowStatement(
-            PlanCacheKey id,
             ShowStatementTarget showTarget,
             JetPlanExecutor planExecutor
     ) {
-        return new ShowStatementPlan(id, showTarget, planExecutor);
+        return new ShowStatementPlan(showTarget, planExecutor);
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
@@ -164,21 +157,18 @@ interface JetPlan extends SqlPlan {
         }
     }
 
-    class CreateMappingPlan extends CacheableJetPlan {
+    class CreateMappingPlan implements JetPlan {
         private final Mapping mapping;
         private final boolean replace;
         private final boolean ifNotExists;
         private final JetPlanExecutor planExecutor;
 
         private CreateMappingPlan(
-                PlanCacheKey id,
                 Mapping mapping,
                 boolean replace,
                 boolean ifNotExists,
                 JetPlanExecutor planExecutor
         ) {
-            super(id);
-
             this.mapping = mapping;
             this.replace = replace;
             this.ifNotExists = ifNotExists;
@@ -207,29 +197,21 @@ interface JetPlan extends SqlPlan {
         }
 
         @Override
-        public boolean isPlanValid(PlanCheckContext context) {
-            return true;
-        }
-
-        @Override
         public SqlResult execute(QueryId queryId) {
             return planExecutor.execute(this);
         }
     }
 
-    class DropMappingPlan extends CacheableJetPlan {
+    class DropMappingPlan implements JetPlan {
         private final String name;
         private final boolean ifExists;
         private final JetPlanExecutor planExecutor;
 
         private DropMappingPlan(
-                PlanCacheKey id,
                 String name,
                 boolean ifExists,
                 JetPlanExecutor planExecutor
         ) {
-            super(id);
-
             this.name = name;
             this.ifExists = ifExists;
             this.planExecutor = planExecutor;
@@ -250,11 +232,6 @@ interface JetPlan extends SqlPlan {
         @Override
         public boolean producesRows() {
             return false;
-        }
-
-        @Override
-        public boolean isPlanValid(PlanCheckContext context) {
-            return true;
         }
 
         @Override
@@ -377,19 +354,16 @@ interface JetPlan extends SqlPlan {
         }
     }
 
-    class AlterJobPlan extends CacheableJetPlan {
+    class AlterJobPlan implements JetPlan {
         private final String jobName;
         private final AlterJobOperation operation;
         private final JetPlanExecutor planExecutor;
 
         private AlterJobPlan(
-                PlanCacheKey id,
                 String jobName,
                 AlterJobOperation operation,
                 JetPlanExecutor planExecutor
         ) {
-            super(id);
-
             this.jobName = jobName;
             this.operation = operation;
             this.planExecutor = planExecutor;
@@ -413,31 +387,23 @@ interface JetPlan extends SqlPlan {
         }
 
         @Override
-        public boolean isPlanValid(PlanCheckContext context) {
-            return true;
-        }
-
-        @Override
         public SqlResult execute(QueryId queryId) {
             return planExecutor.execute(this);
         }
     }
 
-    class DropJobPlan extends CacheableJetPlan {
+    class DropJobPlan implements JetPlan {
         private final String jobName;
         private final boolean ifExists;
         private final String withSnapshotName;
         private final JetPlanExecutor planExecutor;
 
         private DropJobPlan(
-                PlanCacheKey id,
                 String jobName,
                 boolean ifExists,
                 String withSnapshotName,
                 JetPlanExecutor planExecutor
         ) {
-            super(id);
-
             this.jobName = jobName;
             this.ifExists = ifExists;
             this.withSnapshotName = withSnapshotName;
@@ -466,29 +432,21 @@ interface JetPlan extends SqlPlan {
         }
 
         @Override
-        public boolean isPlanValid(PlanCheckContext context) {
-            return true;
-        }
-
-        @Override
         public SqlResult execute(QueryId queryId) {
             return planExecutor.execute(this);
         }
     }
 
-    class CreateSnapshotPlan extends CacheableJetPlan {
+    class CreateSnapshotPlan implements JetPlan {
         private final String snapshotName;
         private final String jobName;
         private final JetPlanExecutor planExecutor;
 
         private CreateSnapshotPlan(
-                PlanCacheKey id,
                 String snapshotName,
                 String jobName,
                 JetPlanExecutor planExecutor
         ) {
-            super(id);
-
             this.snapshotName = snapshotName;
             this.jobName = jobName;
             this.planExecutor = planExecutor;
@@ -512,29 +470,21 @@ interface JetPlan extends SqlPlan {
         }
 
         @Override
-        public boolean isPlanValid(PlanCheckContext context) {
-            return true;
-        }
-
-        @Override
         public SqlResult execute(QueryId queryId) {
             return planExecutor.execute(this);
         }
     }
 
-    class DropSnapshotPlan extends CacheableJetPlan {
+    class DropSnapshotPlan implements JetPlan {
         private final String snapshotName;
         private final boolean ifExists;
         private final JetPlanExecutor planExecutor;
 
         private DropSnapshotPlan(
-                PlanCacheKey id,
                 String snapshotName,
                 boolean ifExists,
                 JetPlanExecutor planExecutor
         ) {
-            super(id);
-
             this.snapshotName = snapshotName;
             this.ifExists = ifExists;
             this.planExecutor = planExecutor;
@@ -558,24 +508,16 @@ interface JetPlan extends SqlPlan {
         }
 
         @Override
-        public boolean isPlanValid(PlanCheckContext context) {
-            return true;
-        }
-
-        @Override
         public SqlResult execute(QueryId queryId) {
             return planExecutor.execute(this);
         }
     }
 
-    class ShowStatementPlan extends CacheableJetPlan {
-
+    class ShowStatementPlan implements JetPlan {
         private final ShowStatementTarget showTarget;
         private final JetPlanExecutor planExecutor;
 
-        private ShowStatementPlan(PlanCacheKey id, ShowStatementTarget showTarget, JetPlanExecutor planExecutor) {
-            super(id);
-
+        private ShowStatementPlan(ShowStatementTarget showTarget, JetPlanExecutor planExecutor) {
             this.showTarget = showTarget;
             this.planExecutor = planExecutor;
         }
@@ -590,11 +532,6 @@ interface JetPlan extends SqlPlan {
 
         @Override
         public boolean producesRows() {
-            return true;
-        }
-
-        @Override
-        public boolean isPlanValid(PlanCheckContext context) {
             return true;
         }
 
