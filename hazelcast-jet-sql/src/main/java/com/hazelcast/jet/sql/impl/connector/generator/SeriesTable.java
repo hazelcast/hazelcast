@@ -38,10 +38,6 @@ import java.util.stream.IntStream;
 
 class SeriesTable extends JetTable {
 
-    // table is always available and its field list does not change
-    private static final PlanObjectKey OBJECT_ID = new PlanObjectKey() {
-    };
-
     private final Integer start;
     private final Integer stop;
     private final Integer step;
@@ -102,7 +98,8 @@ class SeriesTable extends JetTable {
 
     @Override
     public PlanObjectKey getObjectKey() {
-        return OBJECT_ID;
+        // table is always available and its field list does not change
+        return null;
     }
 
     private static final class DataGenerator {

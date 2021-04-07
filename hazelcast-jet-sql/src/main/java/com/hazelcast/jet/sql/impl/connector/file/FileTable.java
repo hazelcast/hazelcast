@@ -106,7 +106,7 @@ abstract class FileTable extends JetTable {
 
         @Override
         public PlanObjectKey getObjectKey() {
-            return PlanObjectKey.NON_CACHEABLE_OBJECT_ID;
+            return PlanObjectKey.NON_CACHEABLE_OBJECT_KEY;
         }
     }
 

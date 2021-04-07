@@ -263,7 +263,8 @@ public class CreateDagVisitor {
 
     private void collectObjectKeys(Table table) {
         PlanObjectKey objectKey = table.getObjectKey();
-        assert objectKey != null;
-        objectKeys.add(objectKey);
+        if (objectKey != null) {
+            objectKeys.add(objectKey);
+        }
     }
 }

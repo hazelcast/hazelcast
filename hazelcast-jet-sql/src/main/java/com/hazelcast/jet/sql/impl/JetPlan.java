@@ -123,7 +123,7 @@ interface JetPlan extends SqlPlan {
             JetPlanExecutor planExecutor,
             List<Permission> permissions
     ) {
-        return objectKeys.contains(PlanObjectKey.NON_CACHEABLE_OBJECT_ID)
+        return objectKeys.contains(PlanObjectKey.NON_CACHEABLE_OBJECT_KEY)
                 ? new NonCacheableSelectOrSinkPlan(dag, isStreaming, isInsert, rowMetadata, planExecutor, permissions)
                 : new CacheableSelectOrSinkPlan(id, objectKeys, partitions, dag, isStreaming, isInsert, rowMetadata,
                 planExecutor, permissions);

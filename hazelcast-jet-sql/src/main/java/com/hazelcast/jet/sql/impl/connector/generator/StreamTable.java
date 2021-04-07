@@ -39,10 +39,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 class StreamTable extends JetTable {
 
-    // table is always available and its field list does not change
-    private static final PlanObjectKey OBJECT_ID = new PlanObjectKey() {
-    };
-
     private final Integer rate;
 
     StreamTable(
@@ -78,7 +74,8 @@ class StreamTable extends JetTable {
 
     @Override
     public PlanObjectKey getObjectKey() {
-        return OBJECT_ID;
+        // table is always available and its field list does not change
+        return null;
     }
 
     private static final class DataGenerator {

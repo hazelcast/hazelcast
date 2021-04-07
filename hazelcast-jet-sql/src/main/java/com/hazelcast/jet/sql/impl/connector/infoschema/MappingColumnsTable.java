@@ -34,10 +34,6 @@ import static java.util.Arrays.asList;
  */
 public class MappingColumnsTable extends InfoSchemaTable {
 
-    // table is always available and its field list does not change
-    private static final PlanObjectKey OBJECT_ID = new PlanObjectKey() {
-    };
-
     private static final String NAME = "columns";
 
     private static final List<TableField> FIELDS = asList(
@@ -97,6 +93,7 @@ public class MappingColumnsTable extends InfoSchemaTable {
 
     @Override
     public PlanObjectKey getObjectKey() {
-        return OBJECT_ID;
+        // table is always available and its field list does not change
+        return null;
     }
 }
