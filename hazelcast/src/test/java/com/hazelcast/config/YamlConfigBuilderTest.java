@@ -48,7 +48,6 @@ import java.io.PrintWriter;
 import java.io.Writer;
 import java.net.URL;
 import java.text.MessageFormat;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -66,6 +65,7 @@ import static com.hazelcast.config.PersistentMemoryMode.SYSTEM_MEMORY;
 import static com.hazelcast.config.WanQueueFullBehavior.DISCARD_AFTER_MUTATION;
 import static com.hazelcast.config.WanQueueFullBehavior.THROW_EXCEPTION;
 import static java.io.File.createTempFile;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -3145,8 +3145,7 @@ public class YamlConfigBuilderTest
         } finally {
             IOUtil.closeResource(yamlResource);
         }
-        Set<PermissionConfig.PermissionType> permTypes = new HashSet<>(Arrays
-                .asList(PermissionConfig.PermissionType.values()));
+        Set<PermissionConfig.PermissionType> permTypes = new HashSet<>(asList(PermissionConfig.PermissionType.values()));
         for (PermissionConfig pc : config.getSecurityConfig().getClientPermissionConfigs()) {
             permTypes.remove(pc.getType());
         }
@@ -3384,22 +3383,29 @@ public class YamlConfigBuilderTest
         buildConfig(yaml);
 
     }
-    
+
     @Test
-    public void outboundPortsParsingTest() {
-        System.setProperty("yaml.config.validation.skip", "true");
+    public void outboundPorts_asObject_ParsingTest() {
         String yaml = ""
                 + "hazelcast:\n"
                 + "  network:\n"
                 + "    outbound-ports:\n"
                 + "      ports: 2500-3000\n"
-                + "      more-ports: 2600-3500\n"
-//                + "      - 1234-1999\n"
-//                + "      - 2500\n"
-                        ;
+                + "      more-ports: 2600-3500\n";
         Config actual = buildConfig(yaml);
-        System.out.println(actual.getNetworkConfig().getOutboundPorts());
-        System.out.println(actual.getNetworkConfig().getOutboundPortDefinitions());
+        assertEquals(new HashSet<>(asList("2500-3000", "2600-3500")), actual.getNetworkConfig().getOutboundPortDefinitions());
+    }
+
+    @Test
+    public void outboundPorts_asSequence_ParsingTest() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  network:\n"
+                + "    outbound-ports:\n"
+                + "      - 1234-1999\n"
+                + "      - 2500\n";
+        Config actual = buildConfig(yaml);
+        assertEquals(new HashSet<>(asList("2500", "1234-1999")), actual.getNetworkConfig().getOutboundPortDefinitions());
     }
 
     @Override
