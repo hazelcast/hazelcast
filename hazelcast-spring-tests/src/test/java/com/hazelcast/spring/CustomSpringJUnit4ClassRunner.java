@@ -80,6 +80,7 @@ public class CustomSpringJUnit4ClassRunner extends SpringJUnit4ClassRunner {
             return TimeUnit.SECONDS.toMillis(DEFAULT_TEST_TIMEOUT_IN_SECONDS);
         }
         return annotation.timeout();
+    }
 
     protected Statement withBeforeClasses(Statement statement) {
         setProperties();
