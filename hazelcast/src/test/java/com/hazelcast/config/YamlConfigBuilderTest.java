@@ -519,8 +519,10 @@ public class YamlConfigBuilderTest
         config = buildConfig(""
                 + "hazelcast:\n"
                 + "  network:\n"
-                + "    port: 5701\n");
+                + "    port:\n" 
+                + "      port: 5703\n");
         assertEquals(100, config.getNetworkConfig().getPortCount());
+        assertEquals(5703, config.getNetworkConfig().getPort());
     }
 
     @Override
