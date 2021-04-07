@@ -17,7 +17,7 @@
 package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
-import com.hazelcast.jet.sql.impl.opt.ExpressionValues.CompoundExpressionValues;
+import com.hazelcast.jet.sql.impl.opt.ExpressionValues.TransformedExpressionValues;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues.SimpleExpressionValues;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import org.apache.calcite.plan.Convention;
@@ -81,7 +81,7 @@ final class ValuesLogicalRules {
                 public void onMatch(RelOptRuleCall call) {
                     Filter filter = call.rel(0);
                     Values values = call.rel(1);
-                    ExpressionValues expressionValues = new CompoundExpressionValues(
+                    ExpressionValues expressionValues = new TransformedExpressionValues(
                             filter.getCondition(),
                             null,
                             values.getRowType(),
@@ -106,7 +106,7 @@ final class ValuesLogicalRules {
                 public void onMatch(RelOptRuleCall call) {
                     Project project = call.rel(0);
                     Values values = call.rel(1);
-                    ExpressionValues expressionValues = new CompoundExpressionValues(
+                    ExpressionValues expressionValues = new TransformedExpressionValues(
                             null,
                             project.getProjects(),
                             values.getRowType(),
@@ -132,7 +132,7 @@ final class ValuesLogicalRules {
                     Project project = call.rel(0);
                     Filter filter = call.rel(1);
                     Values values = call.rel(2);
-                    ExpressionValues expressionValues = new CompoundExpressionValues(
+                    ExpressionValues expressionValues = new TransformedExpressionValues(
                             filter.getCondition(),
                             project.getProjects(),
                             values.getRowType(),

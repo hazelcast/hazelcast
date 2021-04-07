@@ -72,14 +72,14 @@ public abstract class ExpressionValues implements Serializable {
      * A class that wraps another {@link ExpressionValues}, but applies an
      * optional filter and projection on top of them.
      */
-    public static class CompoundExpressionValues extends ExpressionValues {
+    public static class TransformedExpressionValues extends ExpressionValues {
 
         private final Expression<Boolean> predicate;
         private final List<Expression<?>> projection;
         private final List<ExpressionValues> values;
 
         @SuppressWarnings("unchecked")
-        public CompoundExpressionValues(
+        public TransformedExpressionValues(
                 RexNode filter,
                 List<RexNode> project,
                 RelDataType tuplesType,
