@@ -575,19 +575,7 @@
           }
         },
         "outbound-ports": {
-          "description": "By default, Hazelcast lets the system pick up an ephemeral port during socket bind operation. But security policies/firewalls may require you to restrict outbound ports to be used by Hazelcast-enabled applications. You can specify these ports under the element \"outbound-ports\". You can give a single port number, comma separated multiple ports or port ranges.",
-          "type": "array",
-          "items": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0
-              },
-              {
-                "type": "string"
-              }
-            ]
-          }
+          "$ref": "#/definitions/OutboundPorts"
         },
         "join": {
           "$ref": "#/definitions/NetworkJoin"
@@ -2119,7 +2107,7 @@
               "maximum": 7,
               "not": {
                 "multipleOf": 2
-              }    
+              }
             }
           ],
           "description": "Number of CP members to run CP groups. If set, it must be an odd number between 3 and 7. Otherwise, \"cp-member-count\" is respected. If set, must be smaller than or equal to \"cp-member-count\"."
@@ -3268,11 +3256,7 @@
           "description": "Name of the endpoint configuration. Only relevant when defining WAN server sockets."
         },
         "outbound-ports": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "By default, Hazelcast lets the system pick up an ephemeral port during socket bind operation. But security policies/firewalls may require to restrict outbound ports to be used by Hazelcast-enabled applications. To fulfill this requirement, you can configure Hazelcast to use only defined outbound ports."
+          "$ref": "#/definitions/OutboundPorts"
         },
         "interfaces": {
           "type": "object",
@@ -3650,13 +3634,42 @@
           "type": "boolean",
           "default": false
         },
-        "file-name":  {
+        "file-name": {
           "type": "string"
         },
         "format-pattern": {
           "type": "string"
         }
       }
+    },
+    "OutboundPortDefinition": {
+      "anyOf": [
+        {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65536
+        },
+        {
+          "type": "string"
+        }
+      ]
+    },
+    "OutboundPorts": {
+      "description": "By default, Hazelcast lets the system pick up an ephemeral port during socket bind operation. But security policies/firewalls may require you to restrict outbound ports to be used by Hazelcast-enabled applications. You can specify these ports under the element \"outbound-ports\". You can give a single port number, comma separated multiple ports or port ranges.",
+      "anyOf": [
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/OutboundPortDefinition"
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/OutboundPortDefinition"
+          }
+        }
+      ]
     }
   }
 }

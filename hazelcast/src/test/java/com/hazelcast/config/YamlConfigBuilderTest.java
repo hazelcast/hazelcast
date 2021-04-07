@@ -3384,6 +3384,23 @@ public class YamlConfigBuilderTest
         buildConfig(yaml);
 
     }
+    
+    @Test
+    public void outboundPortsParsingTest() {
+        System.setProperty("yaml.config.validation.skip", "true");
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  network:\n"
+                + "    outbound-ports:\n"
+                + "      ports: 2500-3000\n"
+                + "      more-ports: 2600-3500\n"
+//                + "      - 1234-1999\n"
+//                + "      - 2500\n"
+                        ;
+        Config actual = buildConfig(yaml);
+        System.out.println(actual.getNetworkConfig().getOutboundPorts());
+        System.out.println(actual.getNetworkConfig().getOutboundPortDefinitions());
+    }
 
     @Override
     protected Config buildCompleteAdvancedNetworkConfig() {
