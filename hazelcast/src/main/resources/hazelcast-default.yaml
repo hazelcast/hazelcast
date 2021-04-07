@@ -61,8 +61,6 @@ hazelcast:
       enabled: false
       interfaces:
         - 10.10.1.*
-    ssl:
-      enabled: false
     socket-interceptor:
       enabled: false
     symmetric-encryption:

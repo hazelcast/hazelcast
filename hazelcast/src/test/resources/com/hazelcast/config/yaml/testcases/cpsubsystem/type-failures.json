@@ -86,20 +86,35 @@
         "pointerToViolation": "#/hazelcast/cp-subsystem/group-size",
         "causingExceptions": [
           {
+            "schemaLocation": "#/definitions/CPSubsystem/properties/group-size/anyOf/0",
             "pointerToViolation": "#/hazelcast/cp-subsystem/group-size",
             "causingExceptions": [],
-            "keyword": "not",
-            "message": "subject must not be valid against schema {\"multipleOf\":2}"
+            "keyword": "const",
+            "message": ""
           },
           {
+            "schemaLocation": "#/definitions/CPSubsystem/properties/group-size/anyOf/1",
             "pointerToViolation": "#/hazelcast/cp-subsystem/group-size",
-            "causingExceptions": [],
-            "keyword": "type",
-            "message": "expected type: Integer, found: String"
+            "causingExceptions": [
+              {
+                "pointerToViolation": "#/hazelcast/cp-subsystem/group-size",
+                "causingExceptions": [],
+                "keyword": "not",
+                "message": "subject must not be valid against schema {\"multipleOf\":2}"
+              },
+              {
+                "pointerToViolation": "#/hazelcast/cp-subsystem/group-size",
+                "causingExceptions": [],
+                "keyword": "type",
+                "message": "expected type: Integer, found: String"
+              }
+            ],
+            "keyword": "allOf",
+            "message": "#: only 0 subschema matches out of 2"
           }
         ],
-        "keyword": "allOf",
-        "message": "#: only 0 subschema matches out of 2"
+        "keyword": "anyOf",
+        "message": "#: no subschema matched out of the total 2 subschemas"
       },
       {
         "schemaLocation": "#/definitions/CPSubsystem/properties/locks/additionalProperties/properties/lock-acquire-limit",
@@ -214,6 +229,6 @@
         "message": "expected type: Integer, found: String"
       }
     ],
-    "message": "21 schema violations found"
+    "message": "22 schema violations found"
   }
 }

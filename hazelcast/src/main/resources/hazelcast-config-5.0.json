@@ -210,6 +210,11 @@
               "default": false,
               "description": "Specifies if the loopback mode is enabled for multicast discovery."
             },
+            "loopbackModeEnabled": {
+              "type": "boolean",
+              "default": false,
+              "description": "Alias for loopback-mode-enabled"
+            },
             "multicast-group": {
               "type": "string",
               "default": "224.2.2.3",
@@ -240,6 +245,17 @@
               }
             }
           }
+        },
+        "auto-detection": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": "true"
+            }
+          },
+          "description": "When enabled, it will walk through all available discovery strategies and detect the correct one for the current runtime environment. For example, it will automatically use the hazelcast-aws plugin if run on an AWS instance."
         },
         "tcp-ip": {
           "type": "object",
@@ -2093,12 +2109,19 @@
           "description": "Number of CP Members to initialize the CP Subsystem. The CP subsystem is enabled when a positive value is set. After the CP subsystem is initialized successfully, more CP members can be added at run-time and number of active CP members can go beyond the configured CP member count. Number of CP members can be smaller than total size of the Hazelcast cluster. For instance, you can run 5 CP members in a 20-member Hazelcast cluster. If set, must be greater than or equal to \"group-size\"."
         },
         "group-size": {
-          "type": "integer",
-          "minimum": 3,
-          "maximum": 7,
-          "not": {
-            "multipleOf": 2
-          },
+          "anyOf": [
+            {
+              "const": 0
+            },
+            {
+              "type": "integer",
+              "minimum": 3,
+              "maximum": 7,
+              "not": {
+                "multipleOf": 2
+              }    
+            }
+          ],
           "description": "Number of CP members to run CP groups. If set, it must be an odd number between 3 and 7. Otherwise, \"cp-member-count\" is respected. If set, must be smaller than or equal to \"cp-member-count\"."
         },
         "session-time-to-live-seconds": {
