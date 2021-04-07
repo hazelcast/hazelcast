@@ -114,7 +114,7 @@ interface JetPlan extends SqlPlan {
     @SuppressWarnings("checkstyle:ParameterNumber")
     static SelectOrSinkPlan toSelectOrSink(
             PlanCacheKey id,
-            Set<PlanObjectKey> objectIds,
+            Set<PlanObjectKey> objectKeys,
             Map<UUID, PartitionIdSet> partitions,
             DAG dag,
             boolean isStreaming,
@@ -123,9 +123,9 @@ interface JetPlan extends SqlPlan {
             JetPlanExecutor planExecutor,
             List<Permission> permissions
     ) {
-        return objectIds.contains(PlanObjectKey.NON_CACHEABLE_OBJECT_ID)
+        return objectKeys.contains(PlanObjectKey.NON_CACHEABLE_OBJECT_ID)
                 ? new NonCacheableSelectOrSinkPlan(dag, isStreaming, isInsert, rowMetadata, planExecutor, permissions)
-                : new CacheableSelectOrSinkPlan(id, objectIds, partitions, dag, isStreaming, isInsert, rowMetadata,
+                : new CacheableSelectOrSinkPlan(id, objectKeys, partitions, dag, isStreaming, isInsert, rowMetadata,
                 planExecutor, permissions);
     }
 
@@ -614,7 +614,7 @@ interface JetPlan extends SqlPlan {
     }
 
     class CacheableSelectOrSinkPlan extends CacheableJetPlan implements SelectOrSinkPlan {
-        private final Set<PlanObjectKey> objectIds;
+        private final Set<PlanObjectKey> objectKeys;
         private final Map<UUID, PartitionIdSet> partitions;
 
         private final DAG dag;
@@ -626,7 +626,7 @@ interface JetPlan extends SqlPlan {
 
         private CacheableSelectOrSinkPlan(
                 PlanCacheKey id,
-                Set<PlanObjectKey> objectIds,
+                Set<PlanObjectKey> objectKeys,
                 Map<UUID, PartitionIdSet> partitions,
                 DAG dag,
                 boolean isStreaming,
@@ -637,7 +637,7 @@ interface JetPlan extends SqlPlan {
         ) {
             super(id);
 
-            this.objectIds = objectIds;
+            this.objectKeys = objectKeys;
             this.partitions = partitions;
 
             this.dag = dag;
@@ -682,7 +682,7 @@ interface JetPlan extends SqlPlan {
 
         @Override
         public boolean isPlanValid(PlanCheckContext context) {
-            return context.isValid(objectIds, partitions);
+            return context.isValid(objectKeys, partitions);
         }
 
         @Override

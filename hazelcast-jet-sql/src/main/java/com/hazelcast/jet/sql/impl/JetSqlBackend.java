@@ -359,6 +359,6 @@ class JetSqlBackend implements SqlBackend {
     private Tuple2<DAG, Set<PlanObjectKey>> createDag(PhysicalRel physicalRel) {
         CreateDagVisitor visitor = new CreateDagVisitor(nodeEngine.getThisAddress());
         physicalRel.accept(visitor);
-        return Tuple2.tuple2(visitor.getDag(), visitor.getObjectIds());
+        return Tuple2.tuple2(visitor.getDag(), visitor.getObjectKeys());
     }
 }

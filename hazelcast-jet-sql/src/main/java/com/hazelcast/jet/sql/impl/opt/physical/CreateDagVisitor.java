@@ -60,7 +60,7 @@ import static java.util.Collections.singletonList;
 public class CreateDagVisitor {
 
     private final DAG dag = new DAG();
-    private final Set<PlanObjectKey> objectIds = new HashSet<>();
+    private final Set<PlanObjectKey> objectKeys = new HashSet<>();
     private final Address localMemberAddress;
 
     public CreateDagVisitor(Address localMemberAddress) {
@@ -87,7 +87,7 @@ public class CreateDagVisitor {
 
     public Vertex onInsert(InsertPhysicalRel rel) {
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
-        collectObjectIds(table);
+        collectObjectKeys(table);
 
         Vertex vertex = getJetSqlConnector(table).sink(dag, table);
         connectInput(rel.getInput(), vertex, null);
@@ -96,7 +96,7 @@ public class CreateDagVisitor {
 
     public Vertex onFullScan(FullScanPhysicalRel rel) {
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
-        collectObjectIds(table);
+        collectObjectKeys(table);
 
         return getJetSqlConnector(table)
                 .fullScanReader(dag, table, rel.filter(), rel.projection());
@@ -210,7 +210,7 @@ public class CreateDagVisitor {
         assert rel.getRight() instanceof FullScanPhysicalRel : rel.getRight().getClass();
 
         Table rightTable = rel.getRight().getTable().unwrap(HazelcastTable.class).getTarget();
-        collectObjectIds(rightTable);
+        collectObjectKeys(rightTable);
 
         VertexWithInputConfig vertexWithConfig = getJetSqlConnector(rightTable).nestedLoopReader(
                 dag,
@@ -238,8 +238,8 @@ public class CreateDagVisitor {
         return dag;
     }
 
-    public Set<PlanObjectKey> getObjectIds() {
-        return objectIds;
+    public Set<PlanObjectKey> getObjectKeys() {
+        return objectKeys;
     }
 
     /**
@@ -261,9 +261,9 @@ public class CreateDagVisitor {
         dag.edge(edge);
     }
 
-    private void collectObjectIds(Table table) {
-        PlanObjectKey objectId = table.getObjectKey();
-        assert objectId != null;
-        objectIds.add(objectId);
+    private void collectObjectKeys(Table table) {
+        PlanObjectKey objectKey = table.getObjectKey();
+        assert objectKey != null;
+        objectKeys.add(objectKey);
     }
 }
