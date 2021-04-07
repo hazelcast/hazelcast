@@ -29,6 +29,8 @@ import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.Statement;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -40,10 +42,7 @@ public class CustomSpringJUnit4ClassRunner extends SpringJUnit4ClassRunner {
 
     static {
         TestLoggingUtils.initializeLogging();
-        System.setProperty("java.net.preferIPv4Stack", "true");
-        ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.setSystemProperty("1");
         ClusterProperty.PHONE_HOME_ENABLED.setSystemProperty("false");
-        System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
     }
 
     /**
@@ -81,10 +80,15 @@ public class CustomSpringJUnit4ClassRunner extends SpringJUnit4ClassRunner {
             return TimeUnit.SECONDS.toMillis(DEFAULT_TEST_TIMEOUT_IN_SECONDS);
         }
         return annotation.timeout();
+
+    protected Statement withBeforeClasses(Statement statement) {
+        setProperties();
+        return super.withBeforeClasses(statement);
     }
 
     @Override
     protected Statement withAfterClasses(Statement statement) {
+        restoreProperties();
         final Statement originalStatement = super.withAfterClasses(statement);
         return new Statement() {
             @Override
@@ -101,5 +105,38 @@ public class CustomSpringJUnit4ClassRunner extends SpringJUnit4ClassRunner {
                 JmxLeakHelper.checkJmxBeans();
             }
         };
+    }
+
+    /**
+     * includes {@link com.hazelcast.test.HazelcastTestSupport#smallInstanceConfig}
+     * except SqlConfig executor pool size, JetConfig cooperative thread count.
+     */
+    HashMap<String, String> propertiesMap = new HashMap<String, String>() {{
+        put("java.net.preferIPv4Stack", "true");
+        put("hazelcast.local.localAddress", "127.0.0.1");
+        put(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "1");
+
+        put(ClusterProperty.PARTITION_COUNT.getName(), "11");
+        put(ClusterProperty.PARTITION_OPERATION_THREAD_COUNT.getName(), "2");
+        put(ClusterProperty.GENERIC_OPERATION_THREAD_COUNT.getName(), "2");
+        put(ClusterProperty.EVENT_THREAD_COUNT.getName(), "1");
+    }};
+
+    private void setProperties() {
+        for (Map.Entry<String, String> entry : propertiesMap.entrySet()) {
+            String prevValue = System.getProperty(entry.getKey());
+            System.setProperty(entry.getKey(), entry.getValue());
+            entry.setValue(prevValue);
+        }
+    }
+
+    private void restoreProperties() {
+        for (Map.Entry<String, String> entry : propertiesMap.entrySet()) {
+            if (entry.getValue() == null) {
+                System.clearProperty(entry.getKey());
+            } else {
+                System.setProperty(entry.getKey(), entry.getValue());
+            }
+        }
     }
 }

@@ -16,12 +16,10 @@
 
 package com.hazelcast.spring;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -37,8 +35,6 @@ import static org.junit.Assert.assertNotNull;
 @Category(QuickTest.class)
 public class TestEmptyApplicationContext {
 
-    private Config config;
-
     @Resource(name = "instance")
     private HazelcastInstance instance;
 
@@ -48,13 +44,8 @@ public class TestEmptyApplicationContext {
         Hazelcast.shutdownAll();
     }
 
-    @Before
-    public void before() {
-        config = instance.getConfig();
-    }
-
     @Test
     public void testXmlWithoutConfig() {
-        assertNotNull(config);
+        assertNotNull(instance.getConfig());
     }
 }
