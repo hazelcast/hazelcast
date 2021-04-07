@@ -75,18 +75,18 @@
     "pointerToViolation": "#/hazelcast/cache/default",
     "causingExceptions": [
       {
-        "schemaLocation": "#/definitions/Cache/additionalProperties/properties/partition-lost-listeners/items",
-        "pointerToViolation": "#/hazelcast/cache/default/partition-lost-listeners/0",
+        "schemaLocation": "#/definitions/AsyncBackupCount",
+        "pointerToViolation": "#/hazelcast/cache/default/async-backup-count",
         "causingExceptions": [],
-        "keyword": "type",
-        "message": "expected type: String, found: Integer"
+        "keyword": "minimum",
+        "message": "-2 is not greater or equal to 0"
       },
       {
-        "schemaLocation": "#/definitions/Cache/additionalProperties/properties/write-through",
-        "pointerToViolation": "#/hazelcast/cache/default/write-through",
+        "schemaLocation": "#/definitions/BackupCount",
+        "pointerToViolation": "#/hazelcast/cache/default/backup-count",
         "causingExceptions": [],
-        "keyword": "type",
-        "message": "expected type: Boolean, found: String"
+        "keyword": "minimum",
+        "message": "-1 is not greater or equal to 0"
       },
       {
         "schemaLocation": "#/definitions/Cache/additionalProperties/properties/cache-entry-listeners/properties/cache-entry-listener",
@@ -100,11 +100,11 @@
             "message": "expected type: Boolean, found: String"
           },
           {
-            "schemaLocation": "#/definitions/ClassNameObj/properties/class-name",
-            "pointerToViolation": "#/hazelcast/cache/default/cache-entry-listeners/cache-entry-listener/cache-entry-event-filter-factory/class-name",
+            "schemaLocation": "#/definitions/Cache/additionalProperties/properties/cache-entry-listeners/properties/cache-entry-listener/properties/synchronous",
+            "pointerToViolation": "#/hazelcast/cache/default/cache-entry-listeners/cache-entry-listener/synchronous",
             "causingExceptions": [],
             "keyword": "type",
-            "message": "expected type: String, found: Boolean"
+            "message": "expected type: Boolean, found: String"
           },
           {
             "schemaLocation": "#/definitions/ClassNameObj",
@@ -114,63 +114,14 @@
             "message": "required key [class-name] not found"
           },
           {
-            "schemaLocation": "#/definitions/Cache/additionalProperties/properties/cache-entry-listeners/properties/cache-entry-listener/properties/synchronous",
-            "pointerToViolation": "#/hazelcast/cache/default/cache-entry-listeners/cache-entry-listener/synchronous",
+            "schemaLocation": "#/definitions/ClassNameObj/properties/class-name",
+            "pointerToViolation": "#/hazelcast/cache/default/cache-entry-listeners/cache-entry-listener/cache-entry-event-filter-factory/class-name",
             "causingExceptions": [],
             "keyword": "type",
-            "message": "expected type: Boolean, found: String"
+            "message": "expected type: String, found: Boolean"
           }
         ],
         "message": "4 schema violations found"
-      },
-      {
-        "schemaLocation": "#/definitions/Cache/additionalProperties/properties/split-brain-protection-ref",
-        "pointerToViolation": "#/hazelcast/cache/default/split-brain-protection-ref",
-        "causingExceptions": [],
-        "keyword": "type",
-        "message": "expected type: String, found: Boolean"
-      },
-      {
-        "schemaLocation": "#/definitions/ClassNameObj/properties/class-name",
-        "pointerToViolation": "#/hazelcast/cache/default/cache-writer-factory/class-name",
-        "causingExceptions": [],
-        "keyword": "type",
-        "message": "expected type: String, found: JSONArray"
-      },
-      {
-        "schemaLocation": "#/definitions/InMemoryFormat",
-        "pointerToViolation": "#/hazelcast/cache/default/in-memory-format",
-        "causingExceptions": [],
-        "keyword": "enum",
-        "message": "INVALID is not a valid enum value"
-      },
-      {
-        "schemaLocation": "#/definitions/Cache/additionalProperties/properties/statistics-enabled",
-        "pointerToViolation": "#/hazelcast/cache/default/statistics-enabled",
-        "causingExceptions": [],
-        "keyword": "type",
-        "message": "expected type: Boolean, found: String"
-      },
-      {
-        "schemaLocation": "#/definitions/Cache/additionalProperties/properties/hot-restart",
-        "pointerToViolation": "#/hazelcast/cache/default/hot-restart",
-        "causingExceptions": [
-          {
-            "schemaLocation": "#/definitions/Cache/additionalProperties/properties/hot-restart/properties/fsync",
-            "pointerToViolation": "#/hazelcast/cache/default/hot-restart/fsync",
-            "causingExceptions": [],
-            "keyword": "type",
-            "message": "expected type: Boolean, found: String"
-          },
-          {
-            "schemaLocation": "#/definitions/Cache/additionalProperties/properties/hot-restart/properties/enabled",
-            "pointerToViolation": "#/hazelcast/cache/default/hot-restart/enabled",
-            "causingExceptions": [],
-            "keyword": "type",
-            "message": "expected type: Boolean, found: String"
-          }
-        ],
-        "message": "2 schema violations found"
       },
       {
         "schemaLocation": "#/definitions/Cache/additionalProperties/properties/disable-per-entry-invalidation-events",
@@ -180,22 +131,163 @@
         "message": "expected type: Boolean, found: String"
       },
       {
-        "schemaLocation": "#/definitions/AsyncBackupCount",
-        "pointerToViolation": "#/hazelcast/cache/default/async-backup-count",
-        "causingExceptions": [],
-        "keyword": "minimum",
-        "message": "-2 is not greater or equal to 0"
+        "schemaLocation": "#/definitions/Cache/additionalProperties/properties/event-journal",
+        "pointerToViolation": "#/hazelcast/cache/default/event-journal",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/Cache/additionalProperties/properties/event-journal/properties/capacity",
+            "pointerToViolation": "#/hazelcast/cache/default/event-journal/capacity",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Integer, found: String"
+          },
+          {
+            "schemaLocation": "#/definitions/Cache/additionalProperties/properties/event-journal/properties/enabled",
+            "pointerToViolation": "#/hazelcast/cache/default/event-journal/enabled",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Boolean, found: String"
+          },
+          {
+            "schemaLocation": "#/definitions/Cache/additionalProperties/properties/event-journal/properties/time-to-live-seconds",
+            "pointerToViolation": "#/hazelcast/cache/default/event-journal/time-to-live-seconds",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Integer, found: String"
+          }
+        ],
+        "message": "3 schema violations found"
       },
       {
-        "schemaLocation": "#/definitions/MergePolicy/properties/batch-size",
-        "pointerToViolation": "#/hazelcast/cache/default/merge-policy/batch-size",
+        "schemaLocation": "#/definitions/Cache/additionalProperties/properties/expiry-policy-factory",
+        "pointerToViolation": "#/hazelcast/cache/default/expiry-policy-factory",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/Cache/additionalProperties/properties/expiry-policy-factory/anyOf/1",
+            "pointerToViolation": "#/hazelcast/cache/default/expiry-policy-factory",
+            "causingExceptions": [
+              {
+                "schemaLocation": "#/definitions/Cache/additionalProperties/properties/expiry-policy-factory/anyOf/1",
+                "pointerToViolation": "#/hazelcast/cache/default/expiry-policy-factory",
+                "causingExceptions": [],
+                "keyword": "additionalProperties",
+                "message": "extraneous key [class-name] is not permitted"
+              },
+              {
+                "schemaLocation": "#/definitions/Cache/additionalProperties/properties/expiry-policy-factory/anyOf/1",
+                "pointerToViolation": "#/hazelcast/cache/default/expiry-policy-factory",
+                "causingExceptions": [],
+                "keyword": "required",
+                "message": "required key [timed-expiry-policy-factory] not found"
+              }
+            ],
+            "message": "2 schema violations found"
+          },
+          {
+            "schemaLocation": "#/definitions/ClassNameObj/properties/class-name",
+            "pointerToViolation": "#/hazelcast/cache/default/expiry-policy-factory/class-name",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: String, found: Integer"
+          }
+        ],
+        "keyword": "anyOf",
+        "message": "#: no subschema matched out of the total 2 subschemas"
+      },
+      {
+        "schemaLocation": "#/definitions/Cache/additionalProperties/properties/hot-restart",
+        "pointerToViolation": "#/hazelcast/cache/default/hot-restart",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/Cache/additionalProperties/properties/hot-restart/properties/enabled",
+            "pointerToViolation": "#/hazelcast/cache/default/hot-restart/enabled",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Boolean, found: String"
+          },
+          {
+            "schemaLocation": "#/definitions/Cache/additionalProperties/properties/hot-restart/properties/fsync",
+            "pointerToViolation": "#/hazelcast/cache/default/hot-restart/fsync",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Boolean, found: String"
+          }
+        ],
+        "message": "2 schema violations found"
+      },
+      {
+        "schemaLocation": "#/definitions/Cache/additionalProperties/properties/management-enabled",
+        "pointerToViolation": "#/hazelcast/cache/default/management-enabled",
         "causingExceptions": [],
         "keyword": "type",
-        "message": "expected type: Integer, found: String"
+        "message": "expected type: Boolean, found: String"
+      },
+      {
+        "schemaLocation": "#/definitions/Cache/additionalProperties/properties/partition-lost-listeners/items",
+        "pointerToViolation": "#/hazelcast/cache/default/partition-lost-listeners/0",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: String, found: Integer"
       },
       {
         "schemaLocation": "#/definitions/Cache/additionalProperties/properties/read-through",
         "pointerToViolation": "#/hazelcast/cache/default/read-through",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Boolean, found: String"
+      },
+      {
+        "schemaLocation": "#/definitions/Cache/additionalProperties/properties/split-brain-protection-ref",
+        "pointerToViolation": "#/hazelcast/cache/default/split-brain-protection-ref",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: String, found: Boolean"
+      },
+      {
+        "schemaLocation": "#/definitions/Cache/additionalProperties/properties/statistics-enabled",
+        "pointerToViolation": "#/hazelcast/cache/default/statistics-enabled",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Boolean, found: String"
+      },
+      {
+        "schemaLocation": "#/definitions/Cache/additionalProperties/properties/wan-replication-ref",
+        "pointerToViolation": "#/hazelcast/cache/default/wan-replication-ref",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/Cache/additionalProperties/properties/wan-replication-ref/properties/filters",
+            "pointerToViolation": "#/hazelcast/cache/default/wan-replication-ref/filters",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: JSONArray, found: JSONObject"
+          },
+          {
+            "schemaLocation": "#/definitions/Cache/additionalProperties/properties/wan-replication-ref/properties/merge-policy-class-name",
+            "pointerToViolation": "#/hazelcast/cache/default/wan-replication-ref/merge-policy-class-name",
+            "causingExceptions": [],
+            "keyword": "enum",
+            "message": "INVALID is not a valid enum value"
+          },
+          {
+            "schemaLocation": "#/definitions/Cache/additionalProperties/properties/wan-replication-ref/properties/name",
+            "pointerToViolation": "#/hazelcast/cache/default/wan-replication-ref/name",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: String, found: Null"
+          },
+          {
+            "schemaLocation": "#/definitions/Cache/additionalProperties/properties/wan-replication-ref/properties/republishing-enabled",
+            "pointerToViolation": "#/hazelcast/cache/default/wan-replication-ref/republishing-enabled",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Boolean, found: String"
+          }
+        ],
+        "message": "4 schema violations found"
+      },
+      {
+        "schemaLocation": "#/definitions/Cache/additionalProperties/properties/write-through",
+        "pointerToViolation": "#/hazelcast/cache/default/write-through",
         "causingExceptions": [],
         "keyword": "type",
         "message": "expected type: Boolean, found: String"
@@ -206,6 +298,27 @@
         "causingExceptions": [],
         "keyword": "type",
         "message": "expected type: String, found: JSONObject"
+      },
+      {
+        "schemaLocation": "#/definitions/ClassNameObj/properties/class-name",
+        "pointerToViolation": "#/hazelcast/cache/default/cache-writer-factory/class-name",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: String, found: JSONArray"
+      },
+      {
+        "schemaLocation": "#/definitions/ClassNameObj/properties/class-name",
+        "pointerToViolation": "#/hazelcast/cache/default/key-type/class-name",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: String, found: Null"
+      },
+      {
+        "schemaLocation": "#/definitions/ClassNameObj/properties/class-name",
+        "pointerToViolation": "#/hazelcast/cache/default/value-type/class-name",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: String, found: Integer"
       },
       {
         "schemaLocation": "#/definitions/Eviction",
@@ -219,106 +332,15 @@
             "message": "ALSO INVALID is not a valid enum value"
           },
           {
-            "schemaLocation": "#/definitions/Eviction/properties/size",
-            "pointerToViolation": "#/hazelcast/cache/default/eviction/size",
-            "causingExceptions": [],
-            "keyword": "type",
-            "message": "expected type: Integer, found: String"
-          },
-          {
             "schemaLocation": "#/definitions/Eviction/properties/max-size-policy",
             "pointerToViolation": "#/hazelcast/cache/default/eviction/max-size-policy",
             "causingExceptions": [],
             "keyword": "enum",
             "message": "INVALID is not a valid enum value"
-          }
-        ],
-        "message": "3 schema violations found"
-      },
-      {
-        "schemaLocation": "#/definitions/Cache/additionalProperties/properties/wan-replication-ref",
-        "pointerToViolation": "#/hazelcast/cache/default/wan-replication-ref",
-        "causingExceptions": [
-          {
-            "schemaLocation": "#/definitions/Cache/additionalProperties/properties/wan-replication-ref/properties/merge-policy-class-name",
-            "pointerToViolation": "#/hazelcast/cache/default/wan-replication-ref/merge-policy-class-name",
-            "causingExceptions": [],
-            "keyword": "enum",
-            "message": "INVALID is not a valid enum value"
           },
           {
-            "schemaLocation": "#/definitions/Cache/additionalProperties/properties/wan-replication-ref/properties/republishing-enabled",
-            "pointerToViolation": "#/hazelcast/cache/default/wan-replication-ref/republishing-enabled",
-            "causingExceptions": [],
-            "keyword": "type",
-            "message": "expected type: Boolean, found: String"
-          },
-          {
-            "schemaLocation": "#/definitions/Cache/additionalProperties/properties/wan-replication-ref/properties/name",
-            "pointerToViolation": "#/hazelcast/cache/default/wan-replication-ref/name",
-            "causingExceptions": [],
-            "keyword": "type",
-            "message": "expected type: String, found: Null"
-          },
-          {
-            "schemaLocation": "#/definitions/Cache/additionalProperties/properties/wan-replication-ref/properties/filters",
-            "pointerToViolation": "#/hazelcast/cache/default/wan-replication-ref/filters",
-            "causingExceptions": [],
-            "keyword": "type",
-            "message": "expected type: JSONArray, found: JSONObject"
-          }
-        ],
-        "message": "4 schema violations found"
-      },
-      {
-        "schemaLocation": "#/definitions/ClassNameObj/properties/class-name",
-        "pointerToViolation": "#/hazelcast/cache/default/key-type/class-name",
-        "causingExceptions": [],
-        "keyword": "type",
-        "message": "expected type: String, found: Null"
-      },
-      {
-        "schemaLocation": "#/definitions/BackupCount",
-        "pointerToViolation": "#/hazelcast/cache/default/backup-count",
-        "causingExceptions": [],
-        "keyword": "minimum",
-        "message": "-1 is not greater or equal to 0"
-      },
-      {
-        "schemaLocation": "#/definitions/ClassNameObj/properties/class-name",
-        "pointerToViolation": "#/hazelcast/cache/default/value-type/class-name",
-        "causingExceptions": [],
-        "keyword": "type",
-        "message": "expected type: String, found: Integer"
-      },
-      {
-        "schemaLocation": "#/definitions/Cache/additionalProperties/properties/management-enabled",
-        "pointerToViolation": "#/hazelcast/cache/default/management-enabled",
-        "causingExceptions": [],
-        "keyword": "type",
-        "message": "expected type: Boolean, found: String"
-      },
-      {
-        "schemaLocation": "#/definitions/Cache/additionalProperties/properties/event-journal",
-        "pointerToViolation": "#/hazelcast/cache/default/event-journal",
-        "causingExceptions": [
-          {
-            "schemaLocation": "#/definitions/Cache/additionalProperties/properties/event-journal/properties/time-to-live-seconds",
-            "pointerToViolation": "#/hazelcast/cache/default/event-journal/time-to-live-seconds",
-            "causingExceptions": [],
-            "keyword": "type",
-            "message": "expected type: Integer, found: String"
-          },
-          {
-            "schemaLocation": "#/definitions/Cache/additionalProperties/properties/event-journal/properties/enabled",
-            "pointerToViolation": "#/hazelcast/cache/default/event-journal/enabled",
-            "causingExceptions": [],
-            "keyword": "type",
-            "message": "expected type: Boolean, found: String"
-          },
-          {
-            "schemaLocation": "#/definitions/Cache/additionalProperties/properties/event-journal/properties/capacity",
-            "pointerToViolation": "#/hazelcast/cache/default/event-journal/capacity",
+            "schemaLocation": "#/definitions/Eviction/properties/size",
+            "pointerToViolation": "#/hazelcast/cache/default/eviction/size",
             "causingExceptions": [],
             "keyword": "type",
             "message": "expected type: Integer, found: String"
@@ -327,13 +349,20 @@
         "message": "3 schema violations found"
       },
       {
-        "schemaLocation": "#/definitions/ClassNameObj/properties/class-name",
-        "pointerToViolation": "#/hazelcast/cache/default/expiry-policy-factory/class-name",
+        "schemaLocation": "#/definitions/InMemoryFormat",
+        "pointerToViolation": "#/hazelcast/cache/default/in-memory-format",
+        "causingExceptions": [],
+        "keyword": "enum",
+        "message": "INVALID is not a valid enum value"
+      },
+      {
+        "schemaLocation": "#/definitions/MergePolicy/properties/batch-size",
+        "pointerToViolation": "#/hazelcast/cache/default/merge-policy/batch-size",
         "causingExceptions": [],
         "keyword": "type",
-        "message": "expected type: String, found: Integer"
+        "message": "expected type: Integer, found: String"
       }
     ],
-    "message": "32 schema violations found"
+    "message": "34 schema violations found"
   }
 }

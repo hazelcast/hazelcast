@@ -68,6 +68,15 @@
             "time-to-live-seconds": 0
           },
           "disable-per-entry-invalidation-events": true
+        },
+        "cache-with-timed-expiry-policy-factory": {
+          "expiry-policy-factory": {
+            "timed-expiry-policy-factory": {
+              "expiry-policy-type": "ETERNAL",
+              "duration-amount": 123,
+              "time-unit": "MICROSECONDS"
+            }
+          }
         }
       }
     }

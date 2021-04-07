@@ -1766,6 +1766,10 @@
           },
           "merge-policy": {
             "$ref": "#/definitions/MergePolicy"
+          },
+          "statistics-enabled": {
+            "type": "boolean",
+            "default": true
           }
         }
       }
@@ -1854,8 +1858,51 @@
             "description": "Name of the cache writer class."
           },
           "expiry-policy-factory": {
-            "$ref": "#/definitions/ClassNameObj",
-            "description": "Fully qualified class name of the javax.cache.configuration.Factory implementation providing a javax.cache.expiry.ExpiryPolicy instance to the cache."
+            "anyOf": [
+              {
+                "$ref": "#/definitions/ClassNameObj",
+                "description": "Fully qualified class name of the javax.cache.configuration.Factory implementation providing a javax.cache.expiry.ExpiryPolicy instance to the cache."
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "timed-expiry-policy-factory": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "expiry-policy-type": {
+                        "enum": [
+                          "CREATED",
+                          "MODIFIED",
+                          "ACCESSED",
+                          "TOUCHED",
+                          "ETERNAL"
+                        ]
+                      },
+                      "duration-amount": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "time-unit": {
+                        "enum": [
+                          "NANOSECONDS",
+                          "MICROSECONDS",
+                          "MILLISECONDS",
+                          "SECONDS",
+                          "MINUTES",
+                          "HOURS",
+                          "DAYS"
+                        ]
+                      }
+                    }
+                  }
+                },
+                "required": [
+                  "timed-expiry-policy-factory"
+                ]
+              }
+            ]
           },
           "cache-entry-listeners": {
             "type": "object",
