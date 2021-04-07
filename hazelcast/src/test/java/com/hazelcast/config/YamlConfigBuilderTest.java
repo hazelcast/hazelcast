@@ -36,6 +36,7 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.wan.WanPublisherState;
+import org.apache.commons.io.IOUtils;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -47,6 +48,7 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.HashSet;
@@ -2041,8 +2043,7 @@ public class YamlConfigBuilderTest
                 + "      partition-lost-listeners:\n"
                 + "        - com.your-package.YourPartitionLostListener\n"
                 + "      cache-entry-listeners:\n"
-                + "        cache-entry-listener:\n"
-                + "          old-value-required: false\n"
+                + "        - old-value-required: false\n"
                 + "          synchronous: false\n"
                 + "          cache-entry-listener-factory:\n"
                 + "            class-name: com.example.cache.MyEntryListenerFactory\n"
@@ -3153,6 +3154,19 @@ public class YamlConfigBuilderTest
         }
         assertTrue("All permission types should be listed in hazelcast-fullconfig.yaml. Not found ones: " + permTypes,
                 permTypes.isEmpty());
+    }
+    
+    @Test
+    public void cacheEntryListenerParsingTest() throws Exception {
+        String yaml = IOUtils.toString(getClass().getResourceAsStream("/com/hazelcast/config/yaml/cache-entry-listener.yaml"), StandardCharsets.UTF_8);
+        Config actual = buildConfig(yaml);
+        CacheSimpleEntryListenerConfig expected = new CacheSimpleEntryListenerConfig()
+                .setOldValueRequired(true)
+                .setSynchronous(true)
+                .setCacheEntryListenerFactory("com.example.cache.MyEntryListenerFactory")
+                .setCacheEntryEventFilterFactory("com.example.cache.MyEntryEventFilterFactory");
+        CacheSimpleEntryListenerConfig listenerCfg = actual.getCacheConfig("my-cache").getCacheEntryListeners().get(0);
+        assertEquals(expected, listenerCfg);
     }
 
     @Override

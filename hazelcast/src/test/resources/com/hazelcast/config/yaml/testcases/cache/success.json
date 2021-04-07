@@ -22,8 +22,8 @@
           "expiry-policy-factory": {
             "class-name": "com.example.cache.MyExpirePolicyFactory"
           },
-          "cache-entry-listeners": {
-            "cache-entry-listener": {
+          "cache-entry-listeners": [
+            {
               "old-value-required": false,
               "synchronous": false,
               "cache-entry-listener-factory": {
@@ -33,7 +33,7 @@
                 "class-name": "com.example.cache.MyEntryEventFilterFactory"
               }
             }
-          },
+          ],
           "in-memory-format": "BINARY",
           "backup-count": 1,
           "async-backup-count": 0,

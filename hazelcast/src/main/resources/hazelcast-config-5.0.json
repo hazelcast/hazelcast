@@ -1905,30 +1905,28 @@
             ]
           },
           "cache-entry-listeners": {
-            "type": "object",
-            "properties": {
-              "cache-entry-listener": {
-                "type": "object",
-                "additionalProperties": false,
-                "properties": {
-                  "old-value-required": {
-                    "type": "boolean",
-                    "default": false,
-                    "description": "If set to true, previously assigned values for the affected keys will be sent to the javax.cache.event.CacheEntryListener implementation. Setting this attribute to true creates additional traffic."
-                  },
-                  "synchronous": {
-                    "type": "boolean",
-                    "default": false,
-                    "description": "If set to true, the javax.cache.event.CacheEntryListener implementation will be called in a synchronous manner."
-                  },
-                  "cache-entry-listener-factory": {
-                    "$ref": "#/definitions/ClassNameObj",
-                    "description": "Fully qualified class name of the javax.cache.configuration.Factory implementation providing a javax.cache.event.CacheEntryListener instance."
-                  },
-                  "cache-entry-event-filter-factory": {
-                    "$ref": "#/definitions/ClassNameObj",
-                    "description": "Fully qualified class name of the javax.cache.configuration.Factory implementation providing a javax.cache.event.CacheEntryEventFilter instance."
-                  }
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "old-value-required": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "If set to true, previously assigned values for the affected keys will be sent to the javax.cache.event.CacheEntryListener implementation. Setting this attribute to true creates additional traffic."
+                },
+                "synchronous": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "If set to true, the javax.cache.event.CacheEntryListener implementation will be called in a synchronous manner."
+                },
+                "cache-entry-listener-factory": {
+                  "$ref": "#/definitions/ClassNameObj",
+                  "description": "Fully qualified class name of the javax.cache.configuration.Factory implementation providing a javax.cache.event.CacheEntryListener instance."
+                },
+                "cache-entry-event-filter-factory": {
+                  "$ref": "#/definitions/ClassNameObj",
+                  "description": "Fully qualified class name of the javax.cache.configuration.Factory implementation providing a javax.cache.event.CacheEntryEventFilter instance."
                 }
               }
             },

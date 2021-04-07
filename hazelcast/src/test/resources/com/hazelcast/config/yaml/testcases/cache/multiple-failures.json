@@ -22,8 +22,8 @@
           "expiry-policy-factory": {
             "class-name": 2
           },
-          "cache-entry-listeners": {
-            "cache-entry-listener": {
+          "cache-entry-listeners": [
+            {
               "old-value-required": "false",
               "synchronous": "false",
               "cache-entry-listener-factory": {},
@@ -31,7 +31,7 @@
                 "class-name": false
               }
             }
-          },
+          ],
           "in-memory-format": "INVALID",
           "backup-count": -1,
           "async-backup-count": -2,
@@ -89,33 +89,33 @@
         "message": "-1 is not greater or equal to 0"
       },
       {
-        "schemaLocation": "#/definitions/Cache/additionalProperties/properties/cache-entry-listeners/properties/cache-entry-listener",
-        "pointerToViolation": "#/hazelcast/cache/default/cache-entry-listeners/cache-entry-listener",
+        "schemaLocation": "#/definitions/Cache/additionalProperties/properties/cache-entry-listeners/items",
+        "pointerToViolation": "#/hazelcast/cache/default/cache-entry-listeners/0",
         "causingExceptions": [
           {
-            "schemaLocation": "#/definitions/Cache/additionalProperties/properties/cache-entry-listeners/properties/cache-entry-listener/properties/old-value-required",
-            "pointerToViolation": "#/hazelcast/cache/default/cache-entry-listeners/cache-entry-listener/old-value-required",
+            "schemaLocation": "#/definitions/Cache/additionalProperties/properties/cache-entry-listeners/items/properties/old-value-required",
+            "pointerToViolation": "#/hazelcast/cache/default/cache-entry-listeners/0/old-value-required",
             "causingExceptions": [],
             "keyword": "type",
             "message": "expected type: Boolean, found: String"
           },
           {
-            "schemaLocation": "#/definitions/Cache/additionalProperties/properties/cache-entry-listeners/properties/cache-entry-listener/properties/synchronous",
-            "pointerToViolation": "#/hazelcast/cache/default/cache-entry-listeners/cache-entry-listener/synchronous",
+            "schemaLocation": "#/definitions/Cache/additionalProperties/properties/cache-entry-listeners/items/properties/synchronous",
+            "pointerToViolation": "#/hazelcast/cache/default/cache-entry-listeners/0/synchronous",
             "causingExceptions": [],
             "keyword": "type",
             "message": "expected type: Boolean, found: String"
           },
           {
             "schemaLocation": "#/definitions/ClassNameObj",
-            "pointerToViolation": "#/hazelcast/cache/default/cache-entry-listeners/cache-entry-listener/cache-entry-listener-factory",
+            "pointerToViolation": "#/hazelcast/cache/default/cache-entry-listeners/0/cache-entry-listener-factory",
             "causingExceptions": [],
             "keyword": "required",
             "message": "required key [class-name] not found"
           },
           {
             "schemaLocation": "#/definitions/ClassNameObj/properties/class-name",
-            "pointerToViolation": "#/hazelcast/cache/default/cache-entry-listeners/cache-entry-listener/cache-entry-event-filter-factory/class-name",
+            "pointerToViolation": "#/hazelcast/cache/default/cache-entry-listeners/0/cache-entry-event-filter-factory/class-name",
             "causingExceptions": [],
             "keyword": "type",
             "message": "expected type: String, found: Boolean"
