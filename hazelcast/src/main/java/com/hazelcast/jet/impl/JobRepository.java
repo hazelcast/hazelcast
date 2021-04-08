@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.LifecycleService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.jet.JetException;
@@ -39,7 +40,6 @@ import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
-import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -60,6 +60,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -84,6 +85,7 @@ import static com.hazelcast.jet.impl.util.IOUtil.packDirectoryIntoZip;
 import static com.hazelcast.jet.impl.util.IOUtil.packStreamIntoZip;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.impl.util.Util.memoizeConcurrent;
+import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static java.util.Comparator.comparing;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.HOURS;
@@ -169,12 +171,12 @@ public class JobRepository {
     private static final int JOB_ID_STRING_LENGTH = idToString(0L).length();
 
 
-    private final HazelcastInstance instance;
+    private final JetInstance jetInstance;
     private final ILogger logger;
 
     private final ConcurrentMemoizingSupplier<IMap<Long, JobRecord>> jobRecords;
+    private final ConcurrentMemoizingSupplier<IMap<Long, JobResult>> jobResults;
     private final Supplier<IMap<Long, JobExecutionRecord>> jobExecutionRecords;
-    private final Supplier<IMap<Long, JobResult>> jobResults;
     private final Supplier<IMap<Long, List<RawJobMetrics>>> jobMetrics;
     private final Supplier<IMap<String, SnapshotValidationRecord>> exportedSnapshotDetailsCache;
     private final Supplier<FlakeIdGenerator> idGenerator;
@@ -182,12 +184,13 @@ public class JobRepository {
     private long resourcesExpirationMillis = DEFAULT_RESOURCES_EXPIRATION_MILLIS;
 
     public JobRepository(JetInstance jetInstance) {
-        this.instance = jetInstance.getHazelcastInstance();
+        this.jetInstance = jetInstance;
+        HazelcastInstance instance = jetInstance.getHazelcastInstance();
         this.logger = instance.getLoggingService().getLogger(getClass());
 
         jobRecords = new ConcurrentMemoizingSupplier<>(() -> instance.getMap(JOB_RECORDS_MAP_NAME));
+        jobResults = new ConcurrentMemoizingSupplier<>(() -> instance.getMap(JOB_RESULTS_MAP_NAME));
         jobExecutionRecords = memoizeConcurrent(() -> instance.getMap(JOB_EXECUTION_RECORDS_MAP_NAME));
-        jobResults = memoizeConcurrent(() -> instance.getMap(JOB_RESULTS_MAP_NAME));
         jobMetrics = memoizeConcurrent(() -> instance.getMap(JOB_METRICS_MAP_NAME));
         exportedSnapshotDetailsCache = memoizeConcurrent(() -> instance.getMap(EXPORTED_SNAPSHOTS_DETAIL_CACHE));
         idGenerator = memoizeConcurrent(() -> instance.getFlakeIdGenerator(RANDOM_ID_GENERATOR_NAME));
@@ -391,7 +394,8 @@ public class JobRepository {
                 break;
             } catch (Exception e) {
                 // if the local instance was shut down, re-throw the error
-                if (e instanceof HazelcastInstanceNotActiveException && (!instance.getLifecycleService().isRunning())) {
+                LifecycleService lifecycleService = jetInstance.getHazelcastInstance().getLifecycleService();
+                if (e instanceof HazelcastInstanceNotActiveException && (!lifecycleService.isRunning())) {
                     throw e;
                 }
                 // retry otherwise, after a delay
@@ -436,11 +440,11 @@ public class JobRepository {
 
     private void cleanupMaps(NodeEngine nodeEngine) {
         Collection<DistributedObject> maps =
-                nodeEngine.getProxyService().getDistributedObjects(MapService.SERVICE_NAME);
+                nodeEngine.getProxyService().getDistributedObjects(SERVICE_NAME);
 
         // we need to take the list of active job records after getting the list of maps --
         // otherwise the job records could be missing newly submitted jobs
-        Set<Long> activeJobs = jobRecords.get().keySet();
+        Set<Long> activeJobs = jobRecordsMap().keySet();
 
         for (DistributedObject map : maps) {
             if (map.getName().startsWith(SNAPSHOT_DATA_MAP_PREFIX)) {
@@ -483,8 +487,9 @@ public class JobRepository {
     private void cleanupJobResults(NodeEngine nodeEngine) {
         int maxNoResults = Math.max(1, nodeEngine.getProperties().getInteger(JetProperties.JOB_RESULTS_MAX_SIZE));
         // delete oldest job results
-        if (jobResults.get().size() > Util.addClamped(maxNoResults, maxNoResults / MAX_NO_RESULTS_OVERHEAD)) {
-            jobResults.get().values().stream().sorted(comparing(JobResult::getCompletionTime).reversed())
+        Map<Long, JobResult> jobResultsMap = jobResultsMap();
+        if (jobResultsMap.size() > Util.addClamped(maxNoResults, maxNoResults / MAX_NO_RESULTS_OVERHEAD)) {
+            jobResultsMap.values().stream().sorted(comparing(JobResult::getCompletionTime).reversed())
                     .skip(maxNoResults)
                     .map(JobResult::getJobId)
                     .collect(Collectors.toList())
@@ -527,14 +532,23 @@ public class JobRepository {
     }
 
     public Collection<JobRecord> getJobRecords() {
-        return jobRecords.get().values();
+        return jobRecordsMap().values();
     }
 
-    public boolean jobRecordsExists() {
-        if (jobRecords.remembered() != null) {
-            return true;
+    private Map<Long, JobRecord> jobRecordsMap() {
+        if (jobRecords.remembered() != null ||
+                ((AbstractJetInstance) jetInstance).existsDistributedObject(SERVICE_NAME, JOB_RECORDS_MAP_NAME)) {
+            return jobRecords.get();
         }
-        return instance.getDistributedObjects().stream().anyMatch(o -> o.getName().equals(JOB_RECORDS_MAP_NAME));
+        return Collections.emptyMap();
+    }
+
+    private Map<Long, JobResult> jobResultsMap() {
+        if (jobResults.remembered() != null ||
+                ((AbstractJetInstance) jetInstance).existsDistributedObject(SERVICE_NAME, JOB_RESULTS_MAP_NAME)) {
+            return jobResults.get();
+        }
+        return Collections.emptyMap();
     }
 
     public JobRecord getJobRecord(long jobId) {
@@ -549,7 +563,7 @@ public class JobRepository {
      * Gets the job resources map
      */
     public IMap<String, byte[]> getJobResources(long jobId) {
-        return instance.getMap(jobResourcesMapName(jobId));
+        return jetInstance.getMap(jobResourcesMapName(jobId));
     }
 
     @Nullable
@@ -626,7 +640,7 @@ public class JobRepository {
     void clearSnapshotData(long jobId, int dataMapIndex) {
         String mapName = snapshotDataMapName(jobId, dataMapIndex);
         try {
-            instance.getMap(mapName).clear();
+            jetInstance.getMap(mapName).clear();
             logFine(logger, "Cleared snapshot data map %s", mapName);
         } catch (Exception logged) {
             logger.warning("Cannot delete old snapshot data  " + idToString(jobId), logged);

@@ -16,10 +16,7 @@
 
 package com.hazelcast.jet.impl;
 
-import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.cluster.MembershipEvent;
-import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.function.FunctionEx;
@@ -81,7 +78,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -148,7 +144,6 @@ public class JobCoordinationService {
     private volatile boolean jobsScanned;
 
     private final AtomicInteger scaleUpScheduledCount = new AtomicInteger();
-    private final AtomicBoolean startedJobScanning = new AtomicBoolean();
 
     @Probe(name = MetricNames.JOBS_SUBMITTED)
     private final Counter jobSubmitted = MwCounter.newMwCounter();
@@ -176,7 +171,6 @@ public class JobCoordinationService {
         MetricDescriptor descriptor = registry.newMetricDescriptor()
                 .withTag(MetricTags.MODULE, "jet");
         registry.registerStaticMetrics(descriptor, this);
-        registerMasterListener();
     }
 
     public JobRepository jobRepository() {
@@ -184,16 +178,13 @@ public class JobCoordinationService {
     }
 
     public void startScanningForJobs() {
-        if (startedJobScanning.compareAndSet(false, true)) {
-            ExecutionService executionService = nodeEngine.getExecutionService();
-            HazelcastProperties properties = nodeEngine.getProperties();
-            maxJobScanPeriodInMillis = properties.getMillis(JOB_SCAN_PERIOD);
-            executionService.schedule(COORDINATOR_EXECUTOR_NAME, this::scanJobs, 0, MILLISECONDS);
-        }
+        ExecutionService executionService = nodeEngine.getExecutionService();
+        HazelcastProperties properties = nodeEngine.getProperties();
+        maxJobScanPeriodInMillis = properties.getMillis(JOB_SCAN_PERIOD);
+        executionService.schedule(COORDINATOR_EXECUTOR_NAME, this::scanJobs, 0, MILLISECONDS);
     }
 
     public CompletableFuture<Void> submitJob(long jobId, Data serializedJobDefinition, Data serializedConfig) {
-        startScanningForJobs();
         CompletableFuture<Void> res = new CompletableFuture<>();
         submitToCoordinatorThread(() -> {
             MasterContext masterContext;
@@ -1090,29 +1081,5 @@ public class JobCoordinationService {
                 logger.severe("Failed to complete observable '" + observable + "': " + e, e);
             }
         }
-    }
-
-    /**
-     * Register a membership listener which checks if this member is
-     * master when a member is removed and start scanning for jobs.
-     */
-    private void registerMasterListener() {
-        nodeEngine.getClusterService().addMembershipListener(new MembershipListener() {
-            @Override
-            public void memberAdded(MembershipEvent membershipEvent) {
-            }
-
-            @Override
-            public void memberRemoved(MembershipEvent membershipEvent) {
-                if (isMaster(membershipEvent) && jobRepository.jobRecordsExists()) {
-                    startScanningForJobs();
-                }
-            }
-
-            boolean isMaster(MembershipEvent membershipEvent) {
-                Address masterAddress = membershipEvent.getMembers().iterator().next().getAddress();
-                return nodeEngine.getClusterService().getThisAddress().equals(masterAddress);
-            }
-        });
     }
 }
