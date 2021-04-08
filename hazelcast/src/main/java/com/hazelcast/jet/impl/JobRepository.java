@@ -32,6 +32,7 @@ import com.hazelcast.jet.core.metrics.JobMetrics;
 import com.hazelcast.jet.impl.deployment.IMapOutputStream;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.jet.impl.metrics.RawJobMetrics;
+import com.hazelcast.jet.impl.util.ConcurrentMemoizingSupplier;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.jet.impl.util.ImdgUtil;
 import com.hazelcast.jet.impl.util.Util;
@@ -171,7 +172,7 @@ public class JobRepository {
     private final HazelcastInstance instance;
     private final ILogger logger;
 
-    private final Supplier<IMap<Long, JobRecord>> jobRecords;
+    private final ConcurrentMemoizingSupplier<IMap<Long, JobRecord>> jobRecords;
     private final Supplier<IMap<Long, JobExecutionRecord>> jobExecutionRecords;
     private final Supplier<IMap<Long, JobResult>> jobResults;
     private final Supplier<IMap<Long, List<RawJobMetrics>>> jobMetrics;
@@ -184,7 +185,7 @@ public class JobRepository {
         this.instance = jetInstance.getHazelcastInstance();
         this.logger = instance.getLoggingService().getLogger(getClass());
 
-        jobRecords = memoizeConcurrent(() -> instance.getMap(JOB_RECORDS_MAP_NAME));
+        jobRecords = new ConcurrentMemoizingSupplier<>(() -> instance.getMap(JOB_RECORDS_MAP_NAME));
         jobExecutionRecords = memoizeConcurrent(() -> instance.getMap(JOB_EXECUTION_RECORDS_MAP_NAME));
         jobResults = memoizeConcurrent(() -> instance.getMap(JOB_RESULTS_MAP_NAME));
         jobMetrics = memoizeConcurrent(() -> instance.getMap(JOB_METRICS_MAP_NAME));
@@ -527,6 +528,10 @@ public class JobRepository {
 
     public Collection<JobRecord> getJobRecords() {
         return jobRecords.get().values();
+    }
+
+    public boolean jobRecordsExists() {
+        return jobRecords.remembered() != null;
     }
 
     public JobRecord getJobRecord(long jobId) {

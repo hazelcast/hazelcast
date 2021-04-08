@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.MembershipListener;
@@ -1103,9 +1104,14 @@ public class JobCoordinationService {
 
             @Override
             public void memberRemoved(MembershipEvent membershipEvent) {
-                if (isMaster()) {
+                if (isMaster(membershipEvent) && jobRepository.jobRecordsExists()) {
                     startScanningForJobs();
                 }
+            }
+
+            boolean isMaster(MembershipEvent membershipEvent) {
+                Address masterAddress = membershipEvent.getMembers().iterator().next().getAddress();
+                return nodeEngine.getClusterService().getThisAddress().equals(masterAddress);
             }
         });
     }

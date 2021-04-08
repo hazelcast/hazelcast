@@ -54,7 +54,6 @@ import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.MessageListener;
 import org.junit.After;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -169,7 +168,6 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Ignore //https://hazelcast.atlassian.net/browse/PLAT-150
     public void testMapDestroyIssue764() {
         HazelcastInstance server = hazelcastFactory.newHazelcastInstance();
         HazelcastInstance client = hazelcastFactory.newHazelcastClient();

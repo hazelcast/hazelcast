@@ -35,7 +35,6 @@ import com.hazelcast.test.annotation.QuickTest;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -61,7 +60,6 @@ import static org.junit.Assume.assumeTrue;
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category(QuickTest.class)
-@Ignore("see https://hazelcast.atlassian.net/browse/PLAT-150")
 public class TenantControlTest extends TenantControlTestSupport {
     private static final ILogger LOGGER = Logger.getLogger(TenantControlTest.class);
 
