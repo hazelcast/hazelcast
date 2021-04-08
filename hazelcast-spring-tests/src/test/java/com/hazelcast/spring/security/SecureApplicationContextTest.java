@@ -25,15 +25,12 @@ import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SecurityInterceptorConfig;
 import com.hazelcast.config.security.JaasAuthenticationConfig;
 import com.hazelcast.config.security.RealmConfig;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.security.ICredentialsFactory;
 import com.hazelcast.security.IPermissionPolicy;
 import com.hazelcast.security.SecurityInterceptor;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -64,12 +61,6 @@ public class SecureApplicationContextTest {
 
     @Resource
     private IPermissionPolicy dummyPermissionPolicy;
-
-    @BeforeClass
-    @AfterClass
-    public static void start() {
-        Hazelcast.shutdownAll();
-    }
 
     @Before
     public void init() {

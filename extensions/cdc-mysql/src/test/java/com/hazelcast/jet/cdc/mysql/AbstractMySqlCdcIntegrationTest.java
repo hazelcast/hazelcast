@@ -35,7 +35,7 @@ import static org.testcontainers.containers.MySQLContainer.MYSQL_PORT;
 @Category({IgnoreInJenkinsOnWindows.class})
 public abstract class AbstractMySqlCdcIntegrationTest extends AbstractCdcIntegrationTest {
 
-    private static final DockerImageName DOCKER_IMAGE = DockerImageName.parse("debezium/example-mysql:1.3")
+    public static final DockerImageName DOCKER_IMAGE = DockerImageName.parse("debezium/example-mysql:1.3")
             .asCompatibleSubstituteFor("mysql");
 
     @Rule

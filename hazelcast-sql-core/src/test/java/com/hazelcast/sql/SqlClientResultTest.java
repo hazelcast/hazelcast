@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql;
 
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.SqlTestSupport;
@@ -43,7 +44,7 @@ public class SqlClientResultTest extends SqlTestSupport {
     private static final String SQL_GOOD = "SELECT * FROM " + MAP_NAME;
     private static final String SQL_BAD = "SELECT * FROM " + MAP_NAME + "_bad";
 
-    private final SqlTestInstanceFactory factory = SqlTestInstanceFactory.create();
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
     private HazelcastInstance client;
 
     @Before

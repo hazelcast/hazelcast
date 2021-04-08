@@ -46,6 +46,9 @@ public class DoubleFunction extends UniExpression<Double> implements IdentifiedD
     public static final int LOG10 = 9;
     public static final int DEGREES = 10;
     public static final int RADIANS = 11;
+    public static final int SQUARE = 12;
+    public static final int SQRT = 13;
+    public static final int CBRT = 14;
 
     private int type;
 
@@ -112,6 +115,15 @@ public class DoubleFunction extends UniExpression<Double> implements IdentifiedD
 
             case RADIANS:
                 return Math.toRadians(valueDouble);
+
+            case SQUARE:
+                return valueDouble * valueDouble;
+
+            case SQRT:
+                return Math.sqrt(valueDouble);
+
+            case CBRT:
+                return Math.cbrt(valueDouble);
 
             default:
                 throw QueryException.error("Unsupported function type: " + type);

@@ -333,7 +333,7 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
 
     private MySQLContainer<?> initMySql(Network network, Integer fixedExposedPort) {
         MySQLContainer<?> mysql = namedTestContainer(
-                new MySQLContainer<>("debezium/example-mysql:1.3")
+                new MySQLContainer<>(AbstractMySqlCdcIntegrationTest.DOCKER_IMAGE)
                         .withUsername("mysqluser")
                         .withPassword("mysqlpw")
         );

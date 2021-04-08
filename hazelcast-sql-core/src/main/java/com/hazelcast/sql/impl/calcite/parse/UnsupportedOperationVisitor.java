@@ -114,6 +114,10 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
         SUPPORTED_OPERATORS = new HashSet<>();
 
         // Math
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.POWER);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.SQUARE);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.SQRT);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.CBRT);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.COS);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.SIN);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.TAN);

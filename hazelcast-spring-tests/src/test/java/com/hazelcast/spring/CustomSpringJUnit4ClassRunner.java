@@ -19,24 +19,30 @@ package com.hazelcast.spring;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.FailOnTimeoutStatement;
 import com.hazelcast.test.JmxLeakHelper;
 import com.hazelcast.test.TestLoggingUtils;
+import org.junit.Test;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.Statement;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
+import static java.lang.Integer.getInteger;
 
 public class CustomSpringJUnit4ClassRunner extends SpringJUnit4ClassRunner {
 
+    private static final int DEFAULT_TEST_TIMEOUT_IN_SECONDS = getInteger("hazelcast.test.defaultTestTimeoutInSeconds", 300);
+
     static {
         TestLoggingUtils.initializeLogging();
-        System.setProperty("java.net.preferIPv4Stack", "true");
-        ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.setSystemProperty("1");
         ClusterProperty.PHONE_HOME_ENABLED.setSystemProperty("false");
-        System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
     }
 
     /**
@@ -63,7 +69,27 @@ public class CustomSpringJUnit4ClassRunner extends SpringJUnit4ClassRunner {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
+    protected Statement withPotentialTimeout(FrameworkMethod method, Object test, Statement next) {
+        long timeout = getTimeout(method.getAnnotation(Test.class));
+        return new FailOnTimeoutStatement(method.getName(), next, timeout);
+    }
+
+    private long getTimeout(Test annotation) {
+        if (annotation == null || annotation.timeout() == 0) {
+            return TimeUnit.SECONDS.toMillis(DEFAULT_TEST_TIMEOUT_IN_SECONDS);
+        }
+        return annotation.timeout();
+    }
+
+    protected Statement withBeforeClasses(Statement statement) {
+        setProperties();
+        return super.withBeforeClasses(statement);
+    }
+
+    @Override
     protected Statement withAfterClasses(Statement statement) {
+        restoreProperties();
         final Statement originalStatement = super.withAfterClasses(statement);
         return new Statement() {
             @Override
@@ -80,5 +106,38 @@ public class CustomSpringJUnit4ClassRunner extends SpringJUnit4ClassRunner {
                 JmxLeakHelper.checkJmxBeans();
             }
         };
+    }
+
+    /**
+     * includes {@link com.hazelcast.test.HazelcastTestSupport#smallInstanceConfig}
+     * except SqlConfig executor pool size, JetConfig cooperative thread count.
+     */
+    HashMap<String, String> propertiesMap = new HashMap<String, String>() {{
+        put("java.net.preferIPv4Stack", "true");
+        put("hazelcast.local.localAddress", "127.0.0.1");
+        put(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "1");
+
+        put(ClusterProperty.PARTITION_COUNT.getName(), "11");
+        put(ClusterProperty.PARTITION_OPERATION_THREAD_COUNT.getName(), "2");
+        put(ClusterProperty.GENERIC_OPERATION_THREAD_COUNT.getName(), "2");
+        put(ClusterProperty.EVENT_THREAD_COUNT.getName(), "1");
+    }};
+
+    private void setProperties() {
+        for (Map.Entry<String, String> entry : propertiesMap.entrySet()) {
+            String prevValue = System.getProperty(entry.getKey());
+            System.setProperty(entry.getKey(), entry.getValue());
+            entry.setValue(prevValue);
+        }
+    }
+
+    private void restoreProperties() {
+        for (Map.Entry<String, String> entry : propertiesMap.entrySet()) {
+            if (entry.getValue() == null) {
+                System.clearProperty(entry.getKey());
+            } else {
+                System.setProperty(entry.getKey(), entry.getValue());
+            }
+        }
     }
 }

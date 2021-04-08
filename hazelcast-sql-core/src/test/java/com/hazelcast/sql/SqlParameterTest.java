@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql;
 
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -47,7 +48,7 @@ public class SqlParameterTest {
     @Parameterized.Parameter
     public boolean useClient;
 
-    private final SqlTestInstanceFactory factory = SqlTestInstanceFactory.create();
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
     private HazelcastInstance member;
     private HazelcastInstance client;
 

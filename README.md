@@ -120,18 +120,6 @@ You can use the following channels for getting help with Hazelcast:
   development team and other Hazelcast users.
 * [Stack Overflow](https://stackoverflow.com/tags/hazelcast)
 
-## Contributing
-
-We encourage Pull Requests and process them promptly.
-
-To contribute:
-
-* see [Developing with Git](https://hazelcast.atlassian.net/wiki/display/COM/Developing+with+Git) for our Git process
-* complete the [Hazelcast Contributor Agreement](https://hazelcast.atlassian.net/wiki/display/COM/Hazelcast+Contributor+Agreement)
-
-For an enhancement or larger feature, create a GitHub issue first to
-discuss.
-
 ### Using Snapshot Releases
 
 Maven snippet:
@@ -157,8 +145,17 @@ Maven snippet:
 
 ### Building From Source
 
-Pull latest from repo `git pull origin master` and use Maven install (or
-package) to build `mvn clean install`.
+Building Hazelcast requires JDK 1.8. Pull the latest source from the repository and use
+Maven install (or package) to build:
+```bash
+$ git pull origin master
+$ mvn clean install
+```
+
+Take into account that the default build executes thousands of tests which may take a
+considerable amount of time. Additionally, there is a `quick` build activated by
+setting the `-Dquick` system property that skips tests, checkstyle validation,
+javadoc and source plugins and does not build `extensions` and `distribution` modules.
 
 ### Testing
 
@@ -174,7 +171,7 @@ Hazelcast has 3 testing profiles:
 ### Checkstyle
 
 Hazelcast uses static code analysis tools to check if a Pull Request is
-ready for merge. Run the following commandslocally to check if your
+ready for merge. Run the following commands locally to check if your
 contribution is Checkstyle compatible.
 
 ```bash
