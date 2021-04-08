@@ -22,7 +22,8 @@ import org.apache.calcite.sql.type.SqlTypeName;
 
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils.createType;
 
-public final class BinaryOperatorOperandTypeInference extends AbstractOperandTypeInference<BinaryOperatorOperandTypeInference.IndexState> {
+public final class BinaryOperatorOperandTypeInference
+        extends AbstractOperandTypeInference<BinaryOperatorOperandTypeInference.IndexState> {
     public static final BinaryOperatorOperandTypeInference INSTANCE = new BinaryOperatorOperandTypeInference();
 
     private BinaryOperatorOperandTypeInference() {
@@ -84,7 +85,12 @@ public final class BinaryOperatorOperandTypeInference extends AbstractOperandTyp
     }
 
     @Override
-    protected void updateUnresolvedTypes(SqlCallBinding binding, RelDataType knownType, RelDataType[] operandTypes, IndexState state) {
+    protected void updateUnresolvedTypes(
+            SqlCallBinding binding,
+            RelDataType knownType,
+            RelDataType[] operandTypes,
+            IndexState state
+    ) {
         // If there is an operand with an unresolved type, set it to the known type.
         if (state.unknownTypeOperandIndex != -1) {
             if (SqlTypeName.INTERVAL_TYPES.contains(knownType.getSqlTypeName())) {

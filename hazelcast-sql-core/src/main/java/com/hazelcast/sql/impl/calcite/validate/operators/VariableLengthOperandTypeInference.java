@@ -25,7 +25,8 @@ import java.util.List;
 
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils.createType;
 
-public class VariableLengthOperandTypeInference extends AbstractOperandTypeInference<VariableLengthOperandTypeInference.OperandsIndexState> {
+public final class VariableLengthOperandTypeInference
+        extends AbstractOperandTypeInference<VariableLengthOperandTypeInference.OperandsIndexState> {
     public static final VariableLengthOperandTypeInference INSTANCE = new VariableLengthOperandTypeInference();
 
     private VariableLengthOperandTypeInference() {
@@ -41,7 +42,12 @@ public class VariableLengthOperandTypeInference extends AbstractOperandTypeInfer
     }
 
     @Override
-    protected void updateUnresolvedTypes(SqlCallBinding binding, RelDataType knownType, RelDataType[] operandTypes, OperandsIndexState state) {
+    protected void updateUnresolvedTypes(
+            SqlCallBinding binding,
+            RelDataType knownType,
+            RelDataType[] operandTypes,
+            OperandsIndexState state
+    ) {
         // If there is an operand with an unresolved type, set it to the known type.
         if (!state.unknownTypeOperandIndexes.isEmpty()) {
             boolean knownTypeIsIntervalType = SqlTypeName.INTERVAL_TYPES.contains(knownType.getSqlTypeName());

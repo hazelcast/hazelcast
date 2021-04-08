@@ -23,14 +23,15 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 
 public class NullIfExpression<T> extends BiExpression<T> implements IdentifiedDataSerializable {
     public NullIfExpression() {
-    }
-
-    public static NullIfExpression<?> create(Expression<?> left, Expression<?> right) {
-        return new NullIfExpression(left, right);
+        super();
     }
 
     private NullIfExpression(Expression<T> left, Expression<T> right) {
         super(left, right);
+    }
+
+    public static NullIfExpression<?> create(Expression<?> left, Expression<?> right) {
+        return new NullIfExpression(left, right);
     }
 
     @Override

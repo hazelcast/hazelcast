@@ -42,11 +42,16 @@ import java.util.List;
 import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference.wrap;
 import static org.apache.calcite.util.Static.RESOURCE;
 
-public class CoalesceFunction extends HazelcastFunction {
+public final class CoalesceFunction extends HazelcastFunction {
     public static final CoalesceFunction INSTANCE = new CoalesceFunction();
 
     private CoalesceFunction() {
-        super("COALESCE", SqlKind.COALESCE, wrap(ReturnTypes.ARG0_NULLABLE), VariableLengthOperandTypeInference.INSTANCE, SqlFunctionCategory.SYSTEM);
+        super(
+                "COALESCE",
+                SqlKind.COALESCE,
+                wrap(ReturnTypes.ARG0_NULLABLE),
+                VariableLengthOperandTypeInference.INSTANCE,
+                SqlFunctionCategory.SYSTEM);
     }
 
     @Override

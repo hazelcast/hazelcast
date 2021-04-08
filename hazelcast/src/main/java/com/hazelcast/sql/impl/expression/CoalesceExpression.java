@@ -22,16 +22,17 @@ import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 public class CoalesceExpression<T> extends VariExpression<T> implements IdentifiedDataSerializable {
-    public static CoalesceExpression<?> create(Expression<?>... operands) {
-        assert operands.length > 0;
-        return new CoalesceExpression<>(operands);
+    private CoalesceExpression(Expression<?>[] operands) {
+        super(operands);
     }
 
     public CoalesceExpression() {
+        super();
     }
 
-    private CoalesceExpression(Expression<?>[] operands) {
-        super(operands);
+    public static CoalesceExpression<?> create(Expression<?>... operands) {
+        assert operands.length > 0;
+        return new CoalesceExpression<>(operands);
     }
 
     @Override
@@ -49,7 +50,7 @@ public class CoalesceExpression<T> extends VariExpression<T> implements Identifi
         for (Expression<?> expr : operands) {
             Object value = expr.eval(row, context);
             if (value != null) {
-                return (T)value;
+                return (T) value;
             }
         }
         return null;
