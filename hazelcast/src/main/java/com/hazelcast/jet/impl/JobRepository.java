@@ -531,7 +531,10 @@ public class JobRepository {
     }
 
     public boolean jobRecordsExists() {
-        return jobRecords.remembered() != null;
+        if (jobRecords.remembered() != null) {
+            return true;
+        }
+        return instance.getDistributedObjects().stream().anyMatch(o -> o.getName().equals(JOB_RECORDS_MAP_NAME));
     }
 
     public JobRecord getJobRecord(long jobId) {
