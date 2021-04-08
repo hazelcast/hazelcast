@@ -22,9 +22,22 @@
         http://www.hazelcast.com/schema/spring
         http://www.hazelcast.com/schema/spring/hazelcast-spring-5.0.xsd">
 
-    <hz:hazelcast id="instance"/>
+    <hz:hazelcast id="instance">
+        <hz:config>
+            <hz:cluster-name>client-network-default</hz:cluster-name>
+            <hz:jet>
+                <hz:instance>
+                    <hz:cooperative-thread-count>2</hz:cooperative-thread-count>
+                </hz:instance>
+            </hz:jet>
+            <hz:sql>
+                <hz:executor-pool-size>2</hz:executor-pool-size>
+            </hz:sql>
+        </hz:config>
+    </hz:hazelcast>
 
     <hz:client id="client">
+        <hz:cluster-name>client-network-default</hz:cluster-name>
         <hz:network/>
     </hz:client>
 

@@ -61,7 +61,7 @@ public class TestClientNetworkConfig {
 
     @Test
     public void smokeMember() {
-        int memberCountInConfigurationXml = 2;
+        int memberCountInConfigurationXml = 10;
         ClientConfig config = client.getClientConfig();
         assertEquals(memberCountInConfigurationXml, config.getNetworkConfig().getAddresses().size());
     }

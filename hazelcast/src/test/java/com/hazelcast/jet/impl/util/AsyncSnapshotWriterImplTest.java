@@ -268,7 +268,7 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
 
         // Then
         assertTrueEventually(() ->
-                assertThat(String.valueOf(writer.getError()), StringContains.containsString("Always failing store")), 10);
+                assertThat(String.valueOf(writer.getError()), StringContains.containsString("Always failing store")));
     }
 
     @Test
