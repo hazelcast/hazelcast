@@ -20,7 +20,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import javax.annotation.concurrent.NotThreadSafe;
-import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
