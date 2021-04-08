@@ -27,6 +27,7 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.TableField;
@@ -35,8 +36,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.IntStream;
-
-import static com.hazelcast.jet.sql.impl.ExpressionUtil.NOT_IMPLEMENTED_ARGUMENTS_CONTEXT;
 
 class SeriesTable extends JetTable {
 
@@ -55,32 +54,37 @@ class SeriesTable extends JetTable {
     }
 
     BatchSource<Object[]> items(Expression<Boolean> predicate, List<Expression<?>> projections) {
-        Integer start = evaluate(argumentExpressions.get(0), null);
-        Integer stop = evaluate(argumentExpressions.get(1), null);
-        Integer step = evaluate(argumentExpressions.get(2), 1);
-
-        if (start == null || stop == null || step == null) {
-            throw QueryException.error("null arguments to GENERATE_SERIES functions");
-        }
-        if (step == 0) {
-            throw QueryException.error("step cannot equal zero");
-        }
-
+        List<Expression<?>> argumentExpressions = this.argumentExpressions;
         return SourceBuilder
                 .batch("series", ctx -> {
                     InternalSerializationService serializationService = ((ProcSupplierCtx) ctx).serializationService();
                     SimpleExpressionEvalContext context = new SimpleExpressionEvalContext(serializationService);
+
+                    Integer start = evaluate(argumentExpressions.get(0), null, context);
+                    Integer stop = evaluate(argumentExpressions.get(1), null, context);
+                    Integer step = evaluate(argumentExpressions.get(2), 1, context);
+                    if (start == null || stop == null || step == null) {
+                        throw QueryException.error("null arguments to GENERATE_SERIES functions");
+                    }
+                    if (step == 0) {
+                        throw QueryException.error("step cannot equal zero");
+                    }
+
                     return new DataGenerator(start, stop, step, predicate, projections, context);
                 })
                 .fillBufferFn(DataGenerator::fillBuffer)
                 .build();
     }
 
-    private static Integer evaluate(Expression<?> argumentExpression, Integer defaultValue) {
+    private static Integer evaluate(
+            Expression<?> argumentExpression,
+            Integer defaultValue,
+            ExpressionEvalContext context
+    ) {
         if (argumentExpression == null) {
             return defaultValue;
         }
-        Integer value = (Integer) argumentExpression.eval(EmptyRow.INSTANCE, NOT_IMPLEMENTED_ARGUMENTS_CONTEXT);
+        Integer value = (Integer) argumentExpression.eval(EmptyRow.INSTANCE, context);
         return value == null ? defaultValue : value;
     }
 

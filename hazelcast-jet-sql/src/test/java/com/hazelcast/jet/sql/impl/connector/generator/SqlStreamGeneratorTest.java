@@ -100,7 +100,7 @@ public class SqlStreamGeneratorTest extends SqlTestSupport {
 
     @Test
     public void when_rateIsNegative_then_throws() {
-        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM TABLE(GENERATE_STREAM(-1))"))
+        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM TABLE(GENERATE_STREAM(-1))").iterator().next())
                 .hasMessageContaining("rate cannot be less than zero");
     }
 
@@ -112,8 +112,8 @@ public class SqlStreamGeneratorTest extends SqlTestSupport {
 
     @Test
     public void test_nullArgument() {
-        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM TABLE(GENERATE_STREAM(null))"))
-                .hasMessage("rate cannot be null");
+        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM TABLE(GENERATE_STREAM(null))").iterator().next())
+                .hasMessageContaining("rate cannot be null");
     }
 
     @Test
