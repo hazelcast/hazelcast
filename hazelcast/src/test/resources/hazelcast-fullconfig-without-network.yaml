@@ -868,12 +868,6 @@ hazelcast:
       minimum-cluster-size: 3
       protect-on: READ_WRITE
 
-#    member-count-split-brain-protection:
-#      enabled: true
-#      protect-on: read_write
-#      minimum-cluster-size: 3
-#      member-count-split-brain-protection: {}
-
     probabilistic-split-brain-protection:
       enabled: true
       minimum-cluster-size: 3

@@ -1666,8 +1666,7 @@ hazelcast:
       expiry-policy-factory:
         class-name: com.example.cache.MyExpirePolicyFactory
       cache-entry-listeners:
-        cache-entry-listener:
-          old-value-required: false
+        - old-value-required: false
           synchronous: false
           cache-entry-listener-factory:
             class-name: com.example.cache.MyEntryListenerFactory
