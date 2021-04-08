@@ -44,13 +44,13 @@ public class PojoUpsertTargetDescriptor implements UpsertTargetDescriptor {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(className);
+        out.writeString(className);
         out.writeObject(typeNamesByPaths);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        className = in.readUTF();
+        className = in.readString();
         typeNamesByPaths = in.readObject();
     }
 }

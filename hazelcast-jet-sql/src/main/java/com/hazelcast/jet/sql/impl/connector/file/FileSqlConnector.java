@@ -129,7 +129,7 @@ public class FileSqlConnector implements SqlConnector {
         Vertex vStart = dag.newUniqueVertex(table.toString(), table.processorMetaSupplier());
 
         Vertex vEnd = dag.newUniqueVertex(
-                "Project(" + table.toString() + ")",
+                "Project(" + table + ")",
                 SqlProcessors.rowProjector(
                         table.paths(),
                         table.types(),

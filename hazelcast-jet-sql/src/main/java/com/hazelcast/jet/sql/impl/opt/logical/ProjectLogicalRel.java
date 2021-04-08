@@ -25,6 +25,8 @@ import org.apache.calcite.rex.RexNode;
 
 import java.util.List;
 
+import static java.util.Collections.emptyList;
+
 public class ProjectLogicalRel extends Project implements LogicalRel {
 
     ProjectLogicalRel(
@@ -34,7 +36,7 @@ public class ProjectLogicalRel extends Project implements LogicalRel {
             List<? extends RexNode> projects,
             RelDataType rowType
     ) {
-        super(cluster, traits, input, projects, rowType);
+        super(cluster, traits, emptyList(), input, projects, rowType);
     }
 
     @Override

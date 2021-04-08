@@ -59,13 +59,13 @@ class DistinctSqlAggregation implements SqlAggregation {
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) {
         // this class is never serialized - we use it only in single-stage aggregations
         throw new UnsupportedOperationException("Should not be called");
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in) {
         // this class is never serialized - we use it only in single-stage aggregations
         throw new UnsupportedOperationException("Should not be called");
     }
