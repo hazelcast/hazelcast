@@ -46,7 +46,7 @@ public class LoggerSinkTest extends JetTestSupport {
     @Test
     public void loggerSink() {
         // Given
-        JetInstance jet = createJetMember(smallInstanceConfig());
+        JetInstance jet = createJetMember();
         String srcName = randomName();
 
         jet.getList(srcName).add(0);

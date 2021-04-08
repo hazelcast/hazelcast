@@ -63,8 +63,8 @@ public class JmsSourceIntegration_NonSharedClusterTest extends JetTestSupport {
 
     @Test
     public void when_memberTerminated_then_transactionsRolledBack() throws Exception {
-        JetInstance instance1 = createJetMember(smallInstanceConfig());
-        JetInstance instance2 = createJetMember(smallInstanceConfig());
+        JetInstance instance1 = createJetMember();
+        JetInstance instance2 = createJetMember();
 
         // use higher number of messages so that each of the parallel processors gets some
         JmsTestUtil.sendMessages(getConnectionFactory(), "queue", true, MESSAGE_COUNT);

@@ -71,7 +71,7 @@ public class ParallelStressTest extends JetTestSupport {
          */
         DAG dag = new DAG();
         dag.newVertex("p", TestProcessors.DummyStatefulP::new);
-        JetInstance instance = createJetMember(smallInstanceConfig());
+        JetInstance instance = createJetMember();
         JobConfig jobConfig = new JobConfig();
         jobConfig.setSnapshotIntervalMillis(0).setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
         List<Job> jobs = new ArrayList<>();

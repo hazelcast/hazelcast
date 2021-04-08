@@ -121,7 +121,7 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
         Pipeline pipeline = initPipeline(containerIpAddress, port);
 
         // when job starts
-        JetInstance jet = createJetMembers(smallInstanceConfig(), 2)[0];
+        JetInstance jet = createJetMembers(2)[0];
         Job job = jet.newJob(pipeline);
         // then
         boolean neverReconnect = reconnectBehavior.getMaxAttempts() == 0;
@@ -156,7 +156,7 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
             ToxiproxyContainer.ContainerProxy proxy = initProxy(toxiproxy, mysql);
             Pipeline pipeline = initPipeline(proxy.getContainerIpAddress(), proxy.getProxyPort());
             // when job starts
-            JetInstance jet = createJetMembers(smallInstanceConfig(), 2)[0];
+            JetInstance jet = createJetMembers(2)[0];
             Job job = jet.newJob(pipeline);
             assertJobStatusEventually(job, RUNNING);
 
@@ -189,7 +189,7 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
 
         Pipeline pipeline = initPipeline(mysql.getContainerIpAddress(), port);
         // when job starts
-        JetInstance jet = createJetMembers(smallInstanceConfig(), 2)[0];
+        JetInstance jet = createJetMembers(2)[0];
         Job job = jet.newJob(pipeline);
         assertJobStatusEventually(job, RUNNING);
 
@@ -228,7 +228,7 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
             ToxiproxyContainer.ContainerProxy proxy = initProxy(toxiproxy, mysql);
             Pipeline pipeline = initPipeline(proxy.getContainerIpAddress(), proxy.getProxyPort());
             // when connector is up and transitions to binlog reading
-            JetInstance jet = createJetMembers(smallInstanceConfig(), 2)[0];
+            JetInstance jet = createJetMembers(2)[0];
             Job job = jet.newJob(pipeline);
             assertEqualsEventually(() -> jet.getMap("results").size(), 4);
             insertRecords(mysql, 1005);
@@ -262,7 +262,7 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
 
         Pipeline pipeline = initPipeline(mysql.getContainerIpAddress(), port);
         // when connector is up and transitions to binlog reading
-        JetInstance jet = createJetMembers(smallInstanceConfig(), 2)[0];
+        JetInstance jet = createJetMembers(2)[0];
         Job job = jet.newJob(pipeline);
         assertEqualsEventually(() -> jet.getMap("results").size(), 4);
         SECONDS.sleep(3);

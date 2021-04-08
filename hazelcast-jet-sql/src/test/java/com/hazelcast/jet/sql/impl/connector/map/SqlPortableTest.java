@@ -93,7 +93,7 @@ public class SqlPortableTest extends SqlTestSupport {
     @BeforeClass
     // reusing ClassDefinitions as schema does not change
     public static void beforeClass() {
-        initialize(1, smallInstanceConfig());
+        initialize(1, null);
         sqlService = instance().getSql();
 
         serializationService = ((HazelcastInstanceImpl) instance().getHazelcastInstance()).getSerializationService();

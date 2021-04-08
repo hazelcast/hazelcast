@@ -42,7 +42,7 @@ public class PostponedSnapshotTestBase extends JetTestSupport {
 
     @Before
     public void setup() {
-        instance = createJetMember(smallInstanceConfig());
+        instance = createJetMember();
         latches = new AtomicIntegerArray(2);
     }
 

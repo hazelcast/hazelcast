@@ -77,7 +77,7 @@ class AbstractKinesisTest extends JetTestSupport {
     public void before() {
         helper.deleteStream();
 
-        cluster = createJetMembers(smallInstanceConfig(), MEMBER_COUNT);
+        cluster = createJetMembers(MEMBER_COUNT);
         results = jet().getMap(RESULTS);
     }
 

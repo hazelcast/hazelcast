@@ -67,7 +67,7 @@ public class ExceptionUtilTest extends JetTestSupport {
     @Test
     public void test_serializationFromNodeToClient() {
         // create one member and one client
-        createJetMember(smallInstanceConfig());
+        createJetMember();
         JetInstance client = createJetClient();
 
         RuntimeException exc = new RuntimeException("myException");

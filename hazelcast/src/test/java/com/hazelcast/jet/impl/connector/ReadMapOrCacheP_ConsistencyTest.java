@@ -73,7 +73,7 @@ public class ReadMapOrCacheP_ConsistencyTest extends JetTestSupport {
 
     @Before
     public void setup() {
-        jet = createJetMember(smallInstanceConfig());
+        jet = createJetMember();
 
         processedCount = new AtomicInteger();
         startLatch = new CountDownLatch(1);
@@ -118,7 +118,7 @@ public class ReadMapOrCacheP_ConsistencyTest extends JetTestSupport {
 
     @Test
     public void test_migration_local() throws Exception {
-        test_migration(jet.getMap(MAP_NAME), null, () -> createJetMember(smallInstanceConfig()));
+        test_migration(jet.getMap(MAP_NAME), null, () -> createJetMember());
     }
 
     @Test

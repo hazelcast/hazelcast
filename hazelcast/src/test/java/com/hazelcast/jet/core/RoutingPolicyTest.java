@@ -47,7 +47,7 @@ public class RoutingPolicyTest extends SimpleTestInClusterSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        initialize(1, smallInstanceConfig());
+        initialize(1, null);
     }
 
     @Before

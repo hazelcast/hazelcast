@@ -57,7 +57,7 @@ public class AvroSinkTest extends JetTestSupport {
 
     @Before
     public void setup() throws Exception {
-        jet = createJetMember(smallInstanceConfig());
+        jet = createJetMember();
         directory = createTempDirectory();
         list = jet.getList("writer");
         IntStream.range(0, TOTAL_RECORD_COUNT)

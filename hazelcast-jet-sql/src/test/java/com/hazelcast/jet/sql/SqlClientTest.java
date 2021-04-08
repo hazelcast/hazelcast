@@ -41,7 +41,7 @@ public class SqlClientTest extends SqlTestSupport {
 
     @BeforeClass
     public static void setUpClass() {
-        initialize(2, smallInstanceConfig());
+        initialize(2, null);
     }
 
     @Test

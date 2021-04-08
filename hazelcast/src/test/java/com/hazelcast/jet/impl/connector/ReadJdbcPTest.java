@@ -46,7 +46,7 @@ public class ReadJdbcPTest extends SimpleTestInClusterSupport {
 
     @BeforeClass
     public static void setupClass() throws SQLException {
-        initialize(2, smallInstanceConfig());
+        initialize(2, null);
         dbConnectionUrl = "jdbc:h2:mem:" + ReadJdbcPTest.class.getSimpleName() + ";DB_CLOSE_DELAY=-1";
         // create and fill a table
         try (Connection conn = DriverManager.getConnection(dbConnectionUrl);

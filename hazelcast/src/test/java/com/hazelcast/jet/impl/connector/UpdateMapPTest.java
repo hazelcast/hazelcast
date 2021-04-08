@@ -70,7 +70,7 @@ public class UpdateMapPTest extends JetTestSupport {
 
     @Before
     public void setup() {
-        jet = createJetMember(smallInstanceConfig());
+        jet = createJetMember();
         client = new HazelcastClientProxy((HazelcastClientInstanceImpl) createJetClient().getHazelcastInstance());
         sinkMap = jet.getMap("results");
     }

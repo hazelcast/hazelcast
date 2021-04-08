@@ -64,7 +64,7 @@ public class SqlPojoTest extends SqlTestSupport {
 
     @BeforeClass
     public static void setUpClass() throws IOException {
-        initialize(1, smallInstanceConfig());
+        initialize(1, null);
         sqlService = instance().getSql();
 
         kafkaTestSupport = new KafkaTestSupport();

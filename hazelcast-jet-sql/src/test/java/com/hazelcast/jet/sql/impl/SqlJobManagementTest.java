@@ -43,7 +43,7 @@ public class SqlJobManagementTest extends SimpleTestInClusterSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        initialize(1, smallInstanceConfig());
+        initialize(1, null);
         sqlService = instance().getSql();
     }
 

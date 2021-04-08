@@ -32,7 +32,7 @@ public class MappingStorageTest extends SimpleTestInClusterSupport {
 
     @BeforeClass
     public static void setUpClass() {
-        initialize(1, smallInstanceConfig());
+        initialize(1, null);
     }
 
     @Before

@@ -44,7 +44,7 @@ public class TerminalSnapshotSynchronizationTest extends JetTestSupport {
     }
 
     private Job setup(boolean snapshotting) {
-        JetInstance[] instances = createJetMembers(smallInstanceConfig(), NODE_COUNT);
+        JetInstance[] instances = createJetMembers(NODE_COUNT);
 
         DAG dag = new DAG();
         dag.newVertex("generator", () -> new NoOutputSourceP()).localParallelism(1);

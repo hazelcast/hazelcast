@@ -45,7 +45,7 @@ public class MySqlCdcAuthIntegrationTest extends AbstractMySqlCdcIntegrationTest
 
         Pipeline pipeline = pipeline(source);
 
-        JetInstance jet = createJetMembers(smallInstanceConfig(), 2)[0];
+        JetInstance jet = createJetMembers(2)[0];
 
         // when
         Job job = jet.newJob(pipeline);

@@ -91,8 +91,8 @@ public class WriteSocketTest extends JetTestSupport {
             }
         }));
 
-        JetInstance jetInstance = createJetMember(smallInstanceConfig());
-        createJetMember(smallInstanceConfig());
+        JetInstance jetInstance = createJetMember();
+        createJetMember();
         IMap<Integer, String> map = jetInstance.getMap("map");
         range(0, ITEM_COUNT).forEach(i -> map.put(i, String.valueOf(i)));
 

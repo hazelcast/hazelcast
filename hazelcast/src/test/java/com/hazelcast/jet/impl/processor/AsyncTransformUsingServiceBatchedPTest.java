@@ -59,7 +59,7 @@ public class AsyncTransformUsingServiceBatchedPTest extends SimpleTestInClusterS
 
     @BeforeClass
     public static void setUp() {
-        initialize(1, smallInstanceConfig());
+        initialize(1, null);
     }
 
     @Test

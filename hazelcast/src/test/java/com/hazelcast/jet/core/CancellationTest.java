@@ -76,7 +76,7 @@ public class CancellationTest extends JetTestSupport {
     @Test
     public void when_jobCancelledOnSingleNode_then_terminatedEventually() {
         // Given
-        JetInstance instance = createJetMember(smallInstanceConfig());
+        JetInstance instance = createJetMember();
 
         DAG dag = new DAG();
         dag.newVertex("slow", StuckSource::new);
@@ -96,8 +96,8 @@ public class CancellationTest extends JetTestSupport {
     @Test
     public void when_jobCancelledOnMultipleNodes_then_terminatedEventually() {
         // Given
-        createJetMember(smallInstanceConfig());
-        JetInstance instance = createJetMember(smallInstanceConfig());
+        createJetMember();
+        JetInstance instance = createJetMember();
 
         DAG dag = new DAG();
         dag.newVertex("slow", StuckSource::new);
@@ -117,7 +117,7 @@ public class CancellationTest extends JetTestSupport {
     @Test
     public void when_jobCancelled_then_jobStatusIsSetEventually() {
         // Given
-        JetInstance instance = createJetMember(smallInstanceConfig());
+        JetInstance instance = createJetMember();
 
         DAG dag = new DAG();
         dag.newVertex("slow", StuckSource::new);
@@ -135,8 +135,8 @@ public class CancellationTest extends JetTestSupport {
     @Test
     public void when_jobCancelledFromClient_then_terminatedEventually() {
         // Given
-        createJetMember(smallInstanceConfig());
-        createJetMember(smallInstanceConfig());
+        createJetMember();
+        createJetMember();
         JetInstance client = createJetClient();
 
         DAG dag = new DAG();
@@ -157,8 +157,8 @@ public class CancellationTest extends JetTestSupport {
     @Test
     public void when_jobCancelledFromClient_then_jobStatusIsSetEventually() {
         // Given
-        createJetMember(smallInstanceConfig());
-        createJetMember(smallInstanceConfig());
+        createJetMember();
+        createJetMember();
         JetInstance client = createJetClient();
 
         DAG dag = new DAG();
@@ -177,8 +177,8 @@ public class CancellationTest extends JetTestSupport {
     @Test
     public void when_jobCancelled_then_trackedJobsGetNotified() {
         // Given
-        JetInstance instance1 = createJetMember(smallInstanceConfig());
-        JetInstance instance2 = createJetMember(smallInstanceConfig());
+        JetInstance instance1 = createJetMember();
+        JetInstance instance2 = createJetMember();
 
         DAG dag = new DAG();
         dag.newVertex("slow", StuckSource::new);
@@ -199,8 +199,8 @@ public class CancellationTest extends JetTestSupport {
     @Test
     public void when_jobCancelled_then_jobStatusIsSetDuringCancellation() {
         // Given
-        JetInstance instance1 = createJetMember(smallInstanceConfig());
-        JetInstance instance2 = createJetMember(smallInstanceConfig());
+        JetInstance instance1 = createJetMember();
+        JetInstance instance2 = createJetMember();
         rejectOperationsBetween(instance1.getHazelcastInstance(), instance2.getHazelcastInstance(),
                 JetInitDataSerializerHook.FACTORY_ID, singletonList(JetInitDataSerializerHook.COMPLETE_EXECUTION_OP));
 
@@ -224,8 +224,8 @@ public class CancellationTest extends JetTestSupport {
     @Test
     public void when_jobFailsOnOnInitiatorNode_then_cancelledOnOtherNodes() throws Throwable {
         // Given
-        JetInstance instance = createJetMember(smallInstanceConfig());
-        createJetMember(smallInstanceConfig());
+        JetInstance instance = createJetMember();
+        createJetMember();
 
         RuntimeException fault = new RuntimeException("fault");
         DAG dag = new DAG();
@@ -252,8 +252,8 @@ public class CancellationTest extends JetTestSupport {
     @Test
     public void when_jobFailsOnOnNonInitiatorNode_then_cancelledOnInitiatorNode() throws Throwable {
         // Given
-        JetInstance instance = createJetMember(smallInstanceConfig());
-        JetInstance other = createJetMember(smallInstanceConfig());
+        JetInstance instance = createJetMember();
+        JetInstance other = createJetMember();
 
         RuntimeException fault = new RuntimeException("fault");
         DAG dag = new DAG();
@@ -287,7 +287,7 @@ public class CancellationTest extends JetTestSupport {
     }
 
     private void when_shutdown_then_jobFuturesCanceled(boolean graceful) {
-        JetInstance jet = createJetMember(smallInstanceConfig());
+        JetInstance jet = createJetMember();
         DAG dag = new DAG();
         dag.newVertex("blocking", BlockingProcessor::new).localParallelism(1);
         jet.newJob(dag);
@@ -302,7 +302,7 @@ public class CancellationTest extends JetTestSupport {
 
     @Test
     public void when_jobCanceled_then_jobFutureCanceled() {
-        JetInstance jet = createJetMember(smallInstanceConfig());
+        JetInstance jet = createJetMember();
         DAG dag = new DAG();
         dag.newVertex("blocking", BlockingProcessor::new).localParallelism(1);
         Job job = jet.newJob(dag);
@@ -313,7 +313,7 @@ public class CancellationTest extends JetTestSupport {
 
     @Test
     public void when_cancellingCompletedJob_then_succeeds() {
-        JetInstance jet = createJetMember(smallInstanceConfig());
+        JetInstance jet = createJetMember();
         DAG dag = new DAG();
         dag.newVertex("blocking", MockP::new).localParallelism(1);
         Job job = jet.newJob(dag);
@@ -326,7 +326,7 @@ public class CancellationTest extends JetTestSupport {
 
     @Test
     public void when_multipleClientsCancel_then_allSucceed() throws Exception {
-        JetInstance jet = createJetMember(smallInstanceConfig());
+        JetInstance jet = createJetMember();
         DAG dag = new DAG();
         dag.newVertex("blocking", BlockingProcessor::new).localParallelism(1);
         Job job = jet.newJob(dag);
@@ -349,7 +349,7 @@ public class CancellationTest extends JetTestSupport {
 
     @Test
     public void when_cancelledDuringSnapshotPhase1_then_cancelled() {
-        JetInstance jet = createJetMember(smallInstanceConfig());
+        JetInstance jet = createJetMember();
         SnapshotPhase1Operation.postponeResponses = true;
         DAG dag = new DAG();
         dag.newVertex("blocking", DummyStatefulP::new).localParallelism(1);
@@ -360,8 +360,8 @@ public class CancellationTest extends JetTestSupport {
 
     @Test
     public void when_cancelledDuringSnapshotPhase2_then_cancelled() {
-        JetInstance jet = createJetMember(smallInstanceConfig());
-        createJetMember(smallInstanceConfig());
+        JetInstance jet = createJetMember();
+        createJetMember();
         PacketFiltersUtil.dropOperationsFrom(jet.getHazelcastInstance(), JetInitDataSerializerHook.FACTORY_ID,
                 singletonList(JetInitDataSerializerHook.SNAPSHOT_PHASE2_OPERATION));
 

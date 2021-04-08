@@ -65,7 +65,7 @@ public class GracefulShutdownTest extends JetTestSupport {
     @Before
     public void setup() {
         TestProcessors.reset(0);
-        instances = createJetMembers(smallInstanceConfig(), NODE_COUNT);
+        instances = createJetMembers(NODE_COUNT);
         client = createJetClient();
         EmitIntegersP.savedCounters.clear();
     }
@@ -157,7 +157,7 @@ public class GracefulShutdownTest extends JetTestSupport {
         Job job = instances[0].newJob(dag);
         assertJobStatusEventually(job, JobStatus.RUNNING, 10);
         Future future = spawn(() -> {
-            JetInstance nonParticipatingMember = createJetMember(smallInstanceConfig());
+            JetInstance nonParticipatingMember = createJetMember();
             sleepSeconds(1);
             nonParticipatingMember.shutdown();
         });

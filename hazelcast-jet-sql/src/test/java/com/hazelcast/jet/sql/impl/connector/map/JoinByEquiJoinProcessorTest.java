@@ -60,7 +60,7 @@ public class JoinByEquiJoinProcessorTest extends SqlTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        initialize(2, smallInstanceConfig());
+        initialize(2, null);
     }
 
     @Before

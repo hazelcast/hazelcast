@@ -58,7 +58,7 @@ public class MySqlCdcListenBeforeExistIntegrationTest extends AbstractMySqlCdcIn
         Pipeline pipeline = pipeline(source);
 
         // when
-        JetInstance jet = createJetMembers(smallInstanceConfig(), 2)[0];
+        JetInstance jet = createJetMembers(2)[0];
         Job job = jet.newJob(pipeline);
         assertJobStatusEventually(job, RUNNING);
 
@@ -92,7 +92,7 @@ public class MySqlCdcListenBeforeExistIntegrationTest extends AbstractMySqlCdcIn
         Pipeline pipeline = pipeline(source);
 
         // when
-        JetInstance jet = createJetMembers(smallInstanceConfig(), 2)[0];
+        JetInstance jet = createJetMembers(2)[0];
         Job job = jet.newJob(pipeline);
         assertJobStatusEventually(job, RUNNING);
 
@@ -128,7 +128,7 @@ public class MySqlCdcListenBeforeExistIntegrationTest extends AbstractMySqlCdcIn
         Pipeline pipeline = pipeline(source);
 
         // when
-        JetInstance jet = createJetMembers(smallInstanceConfig(), 2)[0];
+        JetInstance jet = createJetMembers(2)[0];
         Job job = jet.newJob(pipeline);
         assertJobStatusEventually(job, RUNNING);
 

@@ -31,7 +31,7 @@ public class JetClassLoaderTest extends JetTestSupport {
         DAG dag = new DAG();
         dag.newVertex("v", LeakClassLoaderP::new).localParallelism(1);
 
-        JetInstance instance = createJetMember(smallInstanceConfig());
+        JetInstance instance = createJetMember();
 
         // When
         instance.newJob(dag).join();

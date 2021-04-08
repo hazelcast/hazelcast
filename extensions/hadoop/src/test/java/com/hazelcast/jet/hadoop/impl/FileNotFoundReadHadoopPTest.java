@@ -63,7 +63,7 @@ public class FileNotFoundReadHadoopPTest extends HadoopTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        initialize(2, smallInstanceConfig());
+        initialize(2, null);
     }
 
     @Before

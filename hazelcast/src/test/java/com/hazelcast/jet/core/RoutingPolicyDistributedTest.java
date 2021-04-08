@@ -59,7 +59,7 @@ public class RoutingPolicyDistributedTest extends SimpleTestInClusterSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        initialize(2, smallInstanceConfig());
+        initialize(2, null);
         address1 = instances()[1].getHazelcastInstance().getCluster().getLocalMember().getAddress();
     }
 

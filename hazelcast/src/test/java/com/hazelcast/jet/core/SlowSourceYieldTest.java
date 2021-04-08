@@ -34,7 +34,7 @@ public class SlowSourceYieldTest extends SimpleTestInClusterSupport {
 
     @Before
     public void before() {
-        initialize(1, smallInstanceConfig());
+        initialize(1, null);
     }
 
     @Test

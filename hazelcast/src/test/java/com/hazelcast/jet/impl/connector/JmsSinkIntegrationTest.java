@@ -57,7 +57,7 @@ public class JmsSinkIntegrationTest extends SimpleTestInClusterSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        initialize(2, smallInstanceConfig());
+        initialize(2, null);
     }
 
     @Test

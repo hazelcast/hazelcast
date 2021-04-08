@@ -53,7 +53,7 @@ public class TopologyChangeDuringJobSubmissionTest extends JetTestSupport {
         NoOutputSourceP.executionStarted = new CountDownLatch(PARALLELISM);
 
         instance1 = createJetMember(smallInstanceConfig().setLiteMember(true));
-        instance2 = createJetMember(smallInstanceConfig());
+        instance2 = createJetMember();
 
         warmUpPartitions(instance1.getHazelcastInstance(), instance2.getHazelcastInstance());
     }

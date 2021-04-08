@@ -63,7 +63,7 @@ public class StreamFilesP_integrationTest extends JetTestSupport {
 
     @Before
     public void setup() throws Exception {
-        instance = createJetMember(smallInstanceConfig());
+        instance = createJetMember();
         directory = createTempDirectory();
         list = instance.getList("writer");
     }

@@ -35,7 +35,7 @@ public class JetClientInstanceImplTest extends JetTestSupport {
     @Test
     public void given_singleMapOnMember_when_getDistributedObjectsCalled_then_ReturnedObjectInfo() {
         // Given
-        JetInstance member = createJetMember(smallInstanceConfig());
+        JetInstance member = createJetMember();
         JetClientInstanceImpl client = (JetClientInstanceImpl) createJetClient();
         String mapName = randomMapName();
         member.getMap(mapName);

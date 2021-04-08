@@ -96,7 +96,7 @@ public abstract class JmsSourceIntegrationTestBase extends SimpleTestInClusterSu
 
     @BeforeClass
     public static void beforeClass() {
-        initialize(2, smallInstanceConfig());
+        initialize(2, null);
     }
 
     @Before

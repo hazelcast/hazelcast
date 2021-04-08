@@ -60,8 +60,8 @@ abstract class S3TestBase extends JetTestSupport {
 
     @Before
     public void setupCluster() {
-        jet = createJetMember(smallInstanceConfig());
-        createJetMember(smallInstanceConfig());
+        jet = createJetMember();
+        createJetMember();
     }
 
     void testSink(String bucketName, String prefix, int itemCount) {

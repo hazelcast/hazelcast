@@ -60,7 +60,7 @@ public class GrpcServiceTest extends SimpleTestInClusterSupport {
 
     @BeforeClass
     public static void setup() {
-        initialize(2, smallInstanceConfig());
+        initialize(2, null);
     }
 
     @After
