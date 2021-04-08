@@ -1,6 +1,7 @@
 package com.hazelcast.sql.impl.expression;
 
 import com.hazelcast.sql.SqlColumnType;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import org.junit.Test;
 
@@ -9,6 +10,8 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+
+import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 
 public class NullIfFunctionIntegrationTest extends ExpressionTestSupport {
     @Test
@@ -60,5 +63,59 @@ public class NullIfFunctionIntegrationTest extends ExpressionTestSupport {
     public void fail_whenCantInferNullIfParameterTypes() {
         put(1);
         checkFailure0("select nullif(?, ?) from map", SqlErrorCode.PARSING, "Cannot apply 'NULLIF' function to [UNKNOWN, UNKNOWN] (consider adding an explicit CAST)");
+    }
+
+    @Test
+    public void nonCoercibleTypes() {
+        put(1);
+        checkFailure0(
+                "select nullif(1, 'abc') from map",
+                SqlErrorCode.PARSING,
+                "Cannot apply 'NULLIF' function to [TINYINT, VARCHAR] (consider adding an explicit CAST)");
+        checkFailure0(
+                "select nullif('abc', CAST('2021-01-02' as DATE)) from map",
+                SqlErrorCode.GENERIC,
+                "while converting NULLIF(CAST('abc' AS DATE), CAST('2021-01-02' AS DATE))");
+        checkFailure0(
+                "select nullif('abc', CAST('13:00:00' as TIME)) from map",
+                SqlErrorCode.GENERIC,
+                "while converting NULLIF(CAST('abc' AS TIME(0)), CAST('13:00:00' AS TIME))");
+        checkFailure0(
+                "select nullif('abc', CAST('2021-01-02T13:00' as TIMESTAMP)) from map",
+                SqlErrorCode.GENERIC,
+                "while converting NULLIF(CAST('abc' AS TIMESTAMP(0)), CAST('2021-01-02T13:00' AS TIMESTAMP))");
+        checkFailure0(
+                "select nullif(1, CAST('2021-01-02' as DATE)) from map",
+                SqlErrorCode.PARSING,
+                "Cannot apply 'NULLIF' function to [TINYINT, DATE] (consider adding an explicit CAST)");
+        checkFailure0(
+                "select nullif(1, CAST('13:00:00' as TIME)) from map",
+                SqlErrorCode.PARSING,
+                "Cannot apply 'NULLIF' function to [TINYINT, TIME] (consider adding an explicit CAST)");
+        checkFailure0(
+                "select nullif(1, CAST('2021-01-02T13:00' as TIMESTAMP)) from map",
+                SqlErrorCode.PARSING,
+                "Cannot apply 'NULLIF' function to [TINYINT, TIMESTAMP] (consider adding an explicit CAST)");
+    }
+
+    @Test
+    public void testEquality() {
+        checkEquals(
+                NullIfExpression.create(ConstantExpression.create(1, INT), ConstantExpression.create(1, INT)),
+                NullIfExpression.create(ConstantExpression.create(1, INT), ConstantExpression.create(1, INT)),
+                true);
+
+        checkEquals(
+                NullIfExpression.create(ConstantExpression.create(1, INT), ConstantExpression.create(1, INT)),
+                NullIfExpression.create(ConstantExpression.create(1, INT), ConstantExpression.create(10, INT)),
+                false);
+    }
+
+    @Test
+    public void testSerialization() {
+        NullIfExpression<?> original = NullIfExpression.create(ConstantExpression.create(1, INT), ConstantExpression.create(1, INT));
+        NullIfExpression<?> restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_NULLIF);
+
+        checkEquals(original, restored, true);
     }
 }

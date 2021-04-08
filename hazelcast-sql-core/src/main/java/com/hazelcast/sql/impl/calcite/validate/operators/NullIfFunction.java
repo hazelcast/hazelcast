@@ -22,6 +22,7 @@ import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastComp
 import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperandCountRange;
+import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
 
 import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference.wrap;
@@ -30,7 +31,7 @@ public class NullIfFunction extends HazelcastFunction {
     public static final NullIfFunction INSTANCE = new NullIfFunction();
 
     private NullIfFunction() {
-        super("NULLIF", SqlKind.NULLIF, wrap(opBinding -> opBinding.getOperandType(0)), VariableLengthOperandTypeInference.INSTANCE, SqlFunctionCategory.SYSTEM);
+        super("NULLIF", SqlKind.NULLIF, wrap(ReturnTypes.ARG0_NULLABLE), BinaryOperatorOperandTypeInference.INSTANCE, SqlFunctionCategory.SYSTEM);
     }
 
     @Override

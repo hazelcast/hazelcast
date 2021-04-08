@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.expression;
 
 import com.hazelcast.sql.SqlColumnType;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import org.junit.Test;
 
@@ -25,6 +26,8 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+
+import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 
 public class CoalesceFunctionIntegrationTest extends ExpressionTestSupport {
     @Test
@@ -40,6 +43,7 @@ public class CoalesceFunctionIntegrationTest extends ExpressionTestSupport {
     public void fails_whenReturnTypeCantBeInferred() {
         put(1);
         checkFailure0("select coalesce(null) from map", SqlErrorCode.PARSING, "Cannot apply 'COALESCE' function to [UNKNOWN] (consider adding an explicit CAST)");
+        checkFailure0("select coalesce(?) from map", SqlErrorCode.PARSING, "Cannot apply 'COALESCE' function to [UNKNOWN] (consider adding an explicit CAST)");
     }
 
     @Test
@@ -66,5 +70,43 @@ public class CoalesceFunctionIntegrationTest extends ExpressionTestSupport {
         OffsetDateTime offsetDateTime = OffsetDateTime.of(localDateTime, ZoneOffset.ofHours(2));
         put(offsetDateTime);
         checkValue0("select coalesce(this, '2021-01-02T13:00+01:00') from map", SqlColumnType.TIMESTAMP_WITH_TIME_ZONE, offsetDateTime);
+
+        checkValue0("select coalesce(this, CAST('2021-01-02' as DATE), CAST('2021-01-02T13:00' as TIMESTAMP), '2021-01-02T13:00+01:00') from map", SqlColumnType.TIMESTAMP_WITH_TIME_ZONE, offsetDateTime);
+
+        checkValue0("select CAST('13:00:00' as TIME) from map", SqlColumnType.TIME, localTime.plusHours(1));
+        checkValue0("select coalesce(this, CAST(? as TIMESTAMP), CAST('2021-01-02T13:00' as TIMESTAMP), '2021-01-02T13:00+01:00') from map", SqlColumnType.TIMESTAMP_WITH_TIME_ZONE, offsetDateTime, localTime);
+    }
+
+    @Test
+    public void nonCoercibleTypes() {
+        put(1);
+        checkFailure0("select coalesce(1, 'abc') from map", SqlErrorCode.PARSING, "Cannot infer return type for COALESCE among [TINYINT, VARCHAR]");
+        checkFailure0("select coalesce('abc', CAST('2021-01-02' as DATE)) from map", SqlErrorCode.GENERIC, "while converting COALESCE(CAST('abc' AS DATE), CAST('2021-01-02' AS DATE))");
+        checkFailure0("select coalesce('abc', CAST('13:00:00' as TIME)) from map", SqlErrorCode.GENERIC, "while converting COALESCE(CAST('abc' AS TIME(0)), CAST('13:00:00' AS TIME))");
+        checkFailure0("select coalesce('abc', CAST('2021-01-02T13:00' as TIMESTAMP)) from map", SqlErrorCode.GENERIC, "while converting COALESCE(CAST('abc' AS TIMESTAMP(0)), CAST('2021-01-02T13:00' AS TIMESTAMP))");
+        checkFailure0("select coalesce(1, CAST('2021-01-02' as DATE)) from map", SqlErrorCode.PARSING, "Cannot infer return type for COALESCE among [TINYINT, DATE]");
+        checkFailure0("select coalesce(1, CAST('13:00:00' as TIME)) from map", SqlErrorCode.PARSING, "Cannot infer return type for COALESCE among [TINYINT, TIME]");
+        checkFailure0("select coalesce(1, CAST('2021-01-02T13:00' as TIMESTAMP)) from map", SqlErrorCode.PARSING, "Cannot infer return type for COALESCE among [TINYINT, TIMESTAMP]");
+    }
+
+    @Test
+    public void testEquality() {
+        checkEquals(
+                CoalesceExpression.create(ConstantExpression.create(1, INT), ConstantExpression.create(1, INT)),
+                CoalesceExpression.create(ConstantExpression.create(1, INT), ConstantExpression.create(1, INT)),
+                true);
+
+        checkEquals(
+                CoalesceExpression.create(ConstantExpression.create(1, INT), ConstantExpression.create(1, INT)),
+                CoalesceExpression.create(ConstantExpression.create(1, INT), ConstantExpression.create(10, INT)),
+                false);
+    }
+
+    @Test
+    public void testSerialization() {
+        CoalesceExpression<?> original = CoalesceExpression.create(ConstantExpression.create(1, INT), ConstantExpression.create(1, INT));
+        CoalesceExpression<?> restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_COALESCE);
+
+        checkEquals(original, restored, true);
     }
 }

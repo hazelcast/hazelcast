@@ -16,55 +16,40 @@
 
 package com.hazelcast.sql.impl.expression;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
-import java.io.IOException;
-
-public class CoalesceExpression implements Expression, IdentifiedDataSerializable {
-    private Expression<?>[] operands;
-
-    public static CoalesceExpression create(Expression<?>[] operands) {
-        assert operands.length > 1;
-        return new CoalesceExpression(operands);
+public class CoalesceExpression<T> extends VariExpression<T> implements IdentifiedDataSerializable {
+    public static CoalesceExpression<?> create(Expression<?>... operands) {
+        assert operands.length > 0;
+        return new CoalesceExpression<>(operands);
     }
 
     public CoalesceExpression() {
     }
 
     private CoalesceExpression(Expression<?>[] operands) {
-        this.operands = operands;
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-
+        super(operands);
     }
 
     @Override
     public int getFactoryId() {
-        return 0;
+        return SqlDataSerializerHook.F_ID;
     }
 
     @Override
     public int getClassId() {
-        return 0;
+        return SqlDataSerializerHook.EXPRESSION_COALESCE;
     }
 
     @Override
-    public Object eval(Row row, ExpressionEvalContext context) {
+    public T eval(Row row, ExpressionEvalContext context) {
         for (Expression<?> expr : operands) {
             Object value = expr.eval(row, context);
             if (value != null) {
-                return value;
+                return (T)value;
             }
         }
         return null;

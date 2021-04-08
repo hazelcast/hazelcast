@@ -16,27 +16,25 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators;
 
-import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
-import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlCallBinding;
-import org.apache.calcite.sql.SqlKind;
-import org.apache.calcite.sql.type.SqlOperandTypeInference;
 import org.apache.calcite.sql.type.SqlTypeName;
 
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils.createType;
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils.toHazelcastType;
 
-public final class BinaryOperatorOperandTypeInference implements SqlOperandTypeInference {
-
+public final class BinaryOperatorOperandTypeInference extends AbstractOperandTypeInference<BinaryOperatorOperandTypeInference.IndexState> {
     public static final BinaryOperatorOperandTypeInference INSTANCE = new BinaryOperatorOperandTypeInference();
 
     private BinaryOperatorOperandTypeInference() {
-        // No-op.
     }
 
     @Override
-    public void inferOperandTypes(SqlCallBinding binding, RelDataType returnType, RelDataType[] operandTypes) {
+    protected IndexState createLocalState() {
+        return new IndexState();
+    }
+
+    @Override
+    protected void precondition(RelDataType[] operandTypes, SqlCallBinding binding) {
         assert operandTypes.length == 2;
         assert binding.getOperandCount() == 2;
 
@@ -82,6 +80,29 @@ public final class BinaryOperatorOperandTypeInference implements SqlOperandTypeI
             operandTypes[1 - knownTypeOperandIndex] = createType(binding.getTypeFactory(), SqlTypeName.TIMESTAMP, true);
         } else {
             operandTypes[1 - knownTypeOperandIndex] = knownType;
+        }
+    }
+
+    @Override
+    protected void updateUnresolvedTypes(SqlCallBinding binding, RelDataType knownType, RelDataType[] operandTypes, IndexState state) {
+        // If there is an operand with an unresolved type, set it to the known type.
+        if (state.unknownTypeOperandIndex != -1) {
+            if (SqlTypeName.INTERVAL_TYPES.contains(knownType.getSqlTypeName())) {
+                // If there is an interval on the one side, assume that the other side is a timestamp,
+                // because this is the only viable overload.
+                operandTypes[state.unknownTypeOperandIndex] = createType(binding.getTypeFactory(), SqlTypeName.TIMESTAMP, true);
+            } else {
+                operandTypes[state.unknownTypeOperandIndex] = knownType;
+            }
+        }
+    }
+
+    static class IndexState implements AbstractOperandTypeInference.State {
+        int unknownTypeOperandIndex;
+
+        @Override
+        public void update(int index) {
+            unknownTypeOperandIndex = index;
         }
     }
 }

@@ -16,18 +16,12 @@
 
 package com.hazelcast.sql.impl.expression;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
-import java.io.IOException;
-
-public class NullIfExpression<T> implements Expression<T>, IdentifiedDataSerializable {
-    private Expression<T> left;
-    private Expression<T> right;
-
+public class NullIfExpression<T> extends BiExpression<T> implements IdentifiedDataSerializable {
     public NullIfExpression() {
     }
 
@@ -36,34 +30,23 @@ public class NullIfExpression<T> implements Expression<T>, IdentifiedDataSeriali
     }
 
     private NullIfExpression(Expression<T> left, Expression<T> right) {
-        this.left = left;
-        this.right = right;
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-
+        super(left, right);
     }
 
     @Override
     public int getFactoryId() {
-        return 0;
+        return SqlDataSerializerHook.F_ID;
     }
 
     @Override
     public int getClassId() {
-        return 0;
+        return SqlDataSerializerHook.EXPRESSION_NULLIF;
     }
 
     @Override
     public T eval(Row row, ExpressionEvalContext context) {
-        T leftResult = left.eval(row, context);
-        T rightResult = right.eval(row, context);
+        T leftResult = (T) operand1.eval(row, context);
+        T rightResult = (T) operand2.eval(row, context);
         if (leftResult.equals(rightResult)) {
             return null;
         }
@@ -72,6 +55,6 @@ public class NullIfExpression<T> implements Expression<T>, IdentifiedDataSeriali
 
     @Override
     public QueryDataType getType() {
-        return left.getType();
+        return operand1.getType();
     }
 }
