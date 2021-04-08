@@ -64,7 +64,7 @@ class SeriesTable extends JetTable {
                     Integer stop = evaluate(argumentExpressions.get(1), null, context);
                     Integer step = evaluate(argumentExpressions.get(2), 1, context);
                     if (start == null || stop == null || step == null) {
-                        throw QueryException.error("null arguments to GENERATE_SERIES functions");
+                        throw QueryException.error("null argument to GENERATE_SERIES function");
                     }
                     if (step == 0) {
                         throw QueryException.error("step cannot equal zero");
