@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql;
 
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
@@ -87,7 +88,7 @@ public class SqlOrderByTest extends SqlTestSupport {
     private static final int DATA_SET_SIZE = 4096;
     private static final int DATA_SET_MAX_POSITIVE = DATA_SET_SIZE / 2 ;
 
-    private static final SqlTestInstanceFactory FACTORY = SqlTestInstanceFactory.create();
+    private static final TestHazelcastFactory FACTORY = new TestHazelcastFactory();
 
     private static List<HazelcastInstance> members;
 

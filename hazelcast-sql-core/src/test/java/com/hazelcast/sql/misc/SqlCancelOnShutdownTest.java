@@ -16,12 +16,12 @@
 
 package com.hazelcast.sql.misc;
 
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
-import com.hazelcast.sql.SqlTestInstanceFactory;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.state.QueryStateRegistry;
@@ -50,7 +50,7 @@ public class SqlCancelOnShutdownTest extends SqlTestSupport {
     private static final String MAP_NAME = "map";
     private static final int KEY_COUNT = 100_000;
 
-    private final SqlTestInstanceFactory factory = SqlTestInstanceFactory.create();
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     private HazelcastInstance instance;
 
