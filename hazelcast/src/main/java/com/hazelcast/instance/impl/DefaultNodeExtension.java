@@ -162,10 +162,7 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
         checkPersistenceAllowed();
         createAndSetPhoneHome();
         if (!jetDisabled(node)) {
-            systemLogger.info("Jet extension is enabled.");
             jetExtension = new JetExtension(node, createService(JetService.class));
-        } else {
-            systemLogger.info("Jet extension is disabled.");
         }
     }
 
@@ -210,7 +207,10 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
     @Override
     public void beforeStart() {
         if (jetExtension != null) {
+            systemLogger.info("Jet extension is enabled.");
             jetExtension.beforeStart();
+        } else {
+            systemLogger.info("Jet extension is disabled.");
         }
     }
 

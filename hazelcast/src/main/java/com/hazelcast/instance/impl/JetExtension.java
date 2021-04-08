@@ -51,7 +51,6 @@ public class JetExtension {
         this.node = node;
         this.logger = node.getLogger(getClass().getName());
         this.jetService = jetService;
-        checkLosslessRestartAllowed();
     }
 
     private void checkLosslessRestartAllowed() {
@@ -86,6 +85,8 @@ public class JetExtension {
         config.addMapConfig(internalMapConfig)
                 .addMapConfig(resultsMapConfig)
                 .addMapConfig(metricsMapConfig);
+
+        checkLosslessRestartAllowed();
     }
 
     public void afterStart() {
