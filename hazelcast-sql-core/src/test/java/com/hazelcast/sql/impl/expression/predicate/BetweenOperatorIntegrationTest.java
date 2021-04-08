@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.expression.predicate;
 
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlRow;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -28,6 +29,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runners.Parameterized;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Comparator;
 import java.util.List;
@@ -35,6 +37,7 @@ import java.util.List;
 import static com.hazelcast.sql.SqlColumnType.DATE;
 import static com.hazelcast.sql.SqlColumnType.INTEGER;
 import static com.hazelcast.sql.SqlColumnType.TIME;
+import static com.hazelcast.sql.SqlColumnType.TIMESTAMP;
 import static com.hazelcast.sql.SqlColumnType.VARCHAR;
 import static org.junit.Assert.assertEquals;
 
@@ -56,6 +59,14 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
         checkValues(sqlQuery("NOT BETWEEN SYMMETRIC 0 AND 25"), INTEGER, new Integer[]{30});
         checkValues(sqlQuery("BETWEEN ? AND ?"), INTEGER, new Integer[]{0, 1, 25}, 0, 25);
         checkValues(sqlQuery("NOT BETWEEN ? AND ?"), INTEGER, new Integer[]{0, 1, 25, 30}, 25, 0);
+    }
+
+    @Test
+    public void betweenPredicateNullcheckTest() {
+        putAll(0, 1, 25, 30);
+        checkValues(sqlQuery("BETWEEN NULL AND 2"), INTEGER, new Integer[]{});
+        checkValues(sqlQuery("BETWEEN 2 AND NULL"), INTEGER, new Integer[]{});
+        checkValues(sqlQuery("BETWEEN NULL AND NULL"), INTEGER, new Integer[]{});
     }
 
     @Test
@@ -103,10 +114,86 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
     }
 
     @Test
+    public void betweenPredicateTimestampsTest() {
+        LocalDateTime time1 = LocalDateTime.of(2000, 1, 1, 8, 0, 0);
+        LocalDateTime time2 = LocalDateTime.of(2010, 1, 1, 10, 0, 0);
+        LocalDateTime time3 = LocalDateTime.of(2020, 1, 1, 20, 0, 0);
+        putAll(time1, time2, time3);
+
+        checkValues(
+            sqlQuery("BETWEEN CAST('2000-01-01T08:00:00' AS TIMESTAMP) AND CAST('2020-01-01T20:00:00' AS TIMESTAMP)"),
+            TIMESTAMP,
+            new LocalDateTime[]{time1, time2, time3}
+        );
+        checkValues(
+            sqlQuery("BETWEEN CAST('2000-01-01T08:00:00' AS TIMESTAMP) AND CAST('2020-01-01T19:00:00' AS TIMESTAMP)"),
+            TIMESTAMP,
+            new LocalDateTime[]{time1, time2}
+        );
+        checkValues(
+            sqlQuery("BETWEEN CAST('2000-01-01T08:00:01' AS TIMESTAMP) AND CAST('2020-01-01T19:00:00' AS TIMESTAMP)"),
+            TIMESTAMP,
+            new LocalDateTime[]{time2})
+        ;
+        checkValues(
+            sqlQuery("NOT BETWEEN CAST('2000-01-01T08:00:00' AS TIMESTAMP) AND CAST('2020-01-01T20:00:00' AS TIMESTAMP)"),
+            TIMESTAMP,
+            new LocalDateTime[]{}
+        );
+        checkValues(
+            sqlQuery("BETWEEN SYMMETRIC CAST('2020-01-01T20:00:00' AS TIMESTAMP) AND CAST('2000-01-01T08:00:00' AS TIMESTAMP)"),
+            TIMESTAMP,
+            new LocalDateTime[]{time1, time2, time3}
+        );
+        checkValues(
+            sqlQuery("BETWEEN SYMMETRIC CAST('2000-01-01T08:00:00' AS TIMESTAMP) AND CAST('2020-01-01T20:00:00' AS TIMESTAMP)"),
+            TIMESTAMP,
+            new LocalDateTime[]{time1, time2, time3}
+        );
+        checkValues(
+            sqlQuery("NOT BETWEEN SYMMETRIC CAST('2020-01-01T20:00:00' AS TIMESTAMP) AND CAST('2000-01-01T08:00:00' AS TIMESTAMP)"),
+            TIMESTAMP,
+            new LocalDateTime[]{}
+        );
+    }
+
+    @Test
+    public void betweenPredicateDifferentTypesTest() {
+        LocalDate date = LocalDate.of(2000, 1, 1);
+        LocalTime time = LocalTime.of(8, 0, 0);
+        putAll(time, 1, "Argentina", "Bulgaria", "Ukraine", 2, date);
+
+        checkFailure0(sqlQuery("BETWEEN 1 AND 2"),
+            SqlErrorCode.DATA_EXCEPTION,
+            "Cannot parse VARCHAR value to BIGINT"
+        );
+        checkFailure0(
+            sqlQuery("BETWEEN SYMMETRIC CAST('2000-01-01' AS DATE) AND 'Ukraine'"),
+            SqlErrorCode.GENERIC,
+            "Unexpected value: DATE"
+        );
+        checkFailure0(
+            sqlQuery("BETWEEN SYMMETRIC 2 AND CAST('2000-01-01' AS DATE)"),
+            SqlErrorCode.DATA_EXCEPTION,
+            "Cannot parse VARCHAR value to DATE"
+        );
+        checkFailure0(
+            sqlQuery("BETWEEN SYMMETRIC CAST('08:00:00' AS TIME) AND 'Bulgaria'"),
+            SqlErrorCode.GENERIC,
+            "Unexpected value: TIME"
+        );
+        checkFailure0(
+            sqlQuery("BETWEEN SYMMETRIC 2 AND CAST('08:00:00' AS TIME)"),
+            SqlErrorCode.DATA_EXCEPTION,
+            "Cannot parse VARCHAR value to TIME"
+        );
+    }
+
+    @Test
     @Ignore(value = "Un-ignore after engines merge")
     public void rowNumericBetweenPredicateTest() {
         putAll(0, 1, 5, 10, 15, 25, 30);
-        checkValues(sqlQuery("BETWEEN ROW(0, 0) AND ROW(3, 10)"), INTEGER, new Integer[][]{
+        checkValues(rowSqlQuery("BETWEEN ROW(0, 0) AND ROW(3, 10)"), INTEGER, new Integer[][]{
             new Integer[]{0, 0}, new Integer[]{1, 1}, new Integer[]{2, 5}, new Integer[]{3, 10},
         });
     }
@@ -142,7 +229,7 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
     }
 
     private String rowSqlQuery(String inClause) {
-        return "SELECT this FROM map WHERE this " + inClause;
+        return "SELECT * FROM map WHERE this " + inClause;
     }
 
 }
