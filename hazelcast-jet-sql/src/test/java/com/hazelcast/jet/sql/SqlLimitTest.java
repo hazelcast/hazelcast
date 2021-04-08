@@ -19,9 +19,9 @@ package com.hazelcast.jet.sql;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlService;
-import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import org.assertj.core.api.Assertions;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -31,10 +31,6 @@ import java.util.Collections;
 import java.util.List;
 
 import static java.util.Arrays.asList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class SqlLimitTest extends SqlTestSupport {
@@ -80,7 +76,10 @@ public class SqlLimitTest extends SqlTestSupport {
                 new String[]{"Joey", "3"}
         );
 
-        checkFailure0("SELECT name FROM " + tableName + " LIMIT -10", SqlErrorCode.PARSING, "Encountered \"-\"");
+        Assertions.assertThatThrownBy(() -> instance().getSql().execute("SELECT name FROM " + tableName + " LIMIT -10"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Encountered \"-\"")
+                .extracting(e -> ((HazelcastSqlException)e).getCode()).isEqualTo(SqlErrorCode.PARSING);
     }
 
     @Test
@@ -156,30 +155,6 @@ public class SqlLimitTest extends SqlTestSupport {
                 new Row(8L),
                 new Row(9L))
         );
-    }
-
-    protected void checkFailure0(
-            String sql,
-            int expectedErrorCode,
-            String expectedErrorMessage,
-            Object... params
-    ) {
-        try {
-            SqlStatement statement = new SqlStatement(sql);
-            statement.setParameters(asList(params));
-            sqlService.execute(statement);
-
-            fail("Must fail");
-        } catch (HazelcastSqlException e) {
-            assertTrue(expectedErrorMessage.length() != 0);
-            assertNotNull(e.getMessage());
-            assertTrue(
-                    "\nExpected: " + expectedErrorMessage + "\nActual: " + e.getMessage(),
-                    e.getMessage().contains(expectedErrorMessage)
-            );
-
-            assertEquals(e.getCode() + ": " + e.getMessage(), expectedErrorCode, e.getCode());
-        }
     }
 
     private static void assertContainsOnlyOneOfRows(String sql, Collection<Row> expectedRows) {

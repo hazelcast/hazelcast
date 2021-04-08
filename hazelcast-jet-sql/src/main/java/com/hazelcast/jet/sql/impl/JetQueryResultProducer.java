@@ -80,8 +80,8 @@ public class JetQueryResultProducer implements QueryResultProducer {
                 limit -= 1;
                 if (limit < 1) {
                     done.compareAndSet(null, new ResultLimitReachedException());
+                    ensureNotDone();
                 }
-                ensureNotDone();
             }
         }
     }
