@@ -106,7 +106,7 @@ class AzureComputeApi {
                     JsonObject ipProps = ipConfiguration.asObject().get("properties").asObject();
                     String privateIp = ipProps.getString("privateIPAddress", null);
                     String publicIpId = toJsonObject(ipProps.get("publicIPAddress")).getString("id", null);
-                    if (!isEmpty(publicIpId)) {
+                    if (!isEmpty(privateIp)) {
                         interfaces.put(publicIpId, new AzureNetworkInterface(privateIp, publicIpId, tagList));
                     }
                 }
