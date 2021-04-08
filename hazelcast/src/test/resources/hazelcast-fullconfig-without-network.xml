@@ -518,7 +518,7 @@
         <cache-loader-factory class-name="com.example.cache.MyCacheLoaderFactory"/>
         <cache-writer-factory class-name="com.example.cache.MyCacheWriterFactory"/>
         <expiry-policy-factory>
-            <timed-expiry-policy-factory expiry-policy-type="ETERNAL" duration-amount="123" time-unit="MICROSECONDS"/>
+            <timed-expiry-policy-factory expiry-policy-type="TOUCHED" duration-amount="123" time-unit="MICROSECONDS"/>
         </expiry-policy-factory>
 
         <cache-entry-listeners>
