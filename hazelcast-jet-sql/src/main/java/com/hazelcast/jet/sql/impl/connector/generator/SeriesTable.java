@@ -67,7 +67,7 @@ class SeriesTable extends JetTable {
                         throw QueryException.error("null argument to GENERATE_SERIES function");
                     }
                     if (step == 0) {
-                        throw QueryException.error("step cannot equal zero");
+                        throw QueryException.error("step cannot be equal to zero");
                     }
 
                     return new DataGenerator(start, stop, step, predicate, projections, context);
