@@ -37,6 +37,12 @@ public class PlanCheckContext {
         this.partitions = partitions;
     }
 
+    public boolean isValid(Set<PlanObjectKey> expectedObjectVersions) {
+        // If some of objects used in the plan have changed, then the plan should be re-created.
+        // Examples are index creation, map destroy, external object redefinition.
+        return objectIds.containsAll(expectedObjectVersions);
+    }
+
     public boolean isValid(Set<PlanObjectKey> expectedObjectVersions, Map<UUID, PartitionIdSet> expectedPartitions) {
         // If some of objects used in the plan have changed, then the plan should be re-created.
         // Examples are index creation, map destroy, external object redefinition.

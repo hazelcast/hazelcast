@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl;
 
-import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.sql.impl.JetPlan.SelectOrSinkPlan;
@@ -81,9 +80,7 @@ import org.apache.calcite.sql2rel.SqlToRelConverter.Config;
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 
 import static java.util.stream.Collectors.toList;
 
@@ -269,18 +266,16 @@ class JetSqlBackend implements SqlBackend {
 
         boolean isInsert = physicalRel instanceof TableModify;
 
-        Map<UUID, PartitionIdSet> partitions =
-                QueryUtils.createPartitionMap(nodeEngine, nodeEngine.getLocalMember().getVersion(), true);
         List<Permission> permissions = extractPermissions(physicalRel);
 
         if (isInsert) {
             Tuple2<DAG, Set<PlanObjectKey>> result = createDag(physicalRel);
-            return JetPlan.toSelectOrSink(id, result.f1(), partitions, result.f0(), isInfiniteRows, true, null,
+            return JetPlan.toSelectOrSink(id, result.f1(), result.f0(), isInfiniteRows, true, null,
                     planExecutor, permissions);
         } else {
             Tuple2<DAG, Set<PlanObjectKey>> result = createDag(new JetRootRel(physicalRel, nodeEngine.getThisAddress()));
             SqlRowMetadata rowMetadata = createRowMetadata(fieldNames, physicalRel.schema().getTypes());
-            return JetPlan.toSelectOrSink(id, result.f1(), partitions, result.f0(), isInfiniteRows, false, rowMetadata,
+            return JetPlan.toSelectOrSink(id, result.f1(), result.f0(), isInfiniteRows, false, rowMetadata,
                     planExecutor, permissions);
         }
     }

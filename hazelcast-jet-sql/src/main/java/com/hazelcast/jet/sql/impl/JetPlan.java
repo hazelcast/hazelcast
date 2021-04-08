@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl;
 
-import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.sql.impl.parse.SqlAlterJob.AlterJobOperation;
@@ -34,9 +33,7 @@ import com.hazelcast.sql.impl.security.SqlSecurityContext;
 
 import java.security.Permission;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 
 interface JetPlan extends SqlPlan {
 
@@ -115,7 +112,6 @@ interface JetPlan extends SqlPlan {
     static SelectOrSinkPlan toSelectOrSink(
             PlanCacheKey id,
             Set<PlanObjectKey> objectKeys,
-            Map<UUID, PartitionIdSet> partitions,
             DAG dag,
             boolean isStreaming,
             boolean isInsert,
@@ -125,7 +121,7 @@ interface JetPlan extends SqlPlan {
     ) {
         return objectKeys.contains(PlanObjectKey.NON_CACHEABLE_OBJECT_KEY)
                 ? new NonCacheableSelectOrSinkPlan(dag, isStreaming, isInsert, rowMetadata, planExecutor, permissions)
-                : new CacheableSelectOrSinkPlan(id, objectKeys, partitions, dag, isStreaming, isInsert, rowMetadata,
+                : new CacheableSelectOrSinkPlan(id, objectKeys, dag, isStreaming, isInsert, rowMetadata,
                 planExecutor, permissions);
     }
 
@@ -615,7 +611,6 @@ interface JetPlan extends SqlPlan {
 
     class CacheableSelectOrSinkPlan extends CacheableJetPlan implements SelectOrSinkPlan {
         private final Set<PlanObjectKey> objectKeys;
-        private final Map<UUID, PartitionIdSet> partitions;
 
         private final DAG dag;
         private final boolean isStreaming;
@@ -627,7 +622,6 @@ interface JetPlan extends SqlPlan {
         private CacheableSelectOrSinkPlan(
                 PlanCacheKey id,
                 Set<PlanObjectKey> objectKeys,
-                Map<UUID, PartitionIdSet> partitions,
                 DAG dag,
                 boolean isStreaming,
                 boolean isInsert,
@@ -638,7 +632,6 @@ interface JetPlan extends SqlPlan {
             super(id);
 
             this.objectKeys = objectKeys;
-            this.partitions = partitions;
 
             this.dag = dag;
             this.isStreaming = isStreaming;
@@ -682,7 +675,7 @@ interface JetPlan extends SqlPlan {
 
         @Override
         public boolean isPlanValid(PlanCheckContext context) {
-            return context.isValid(objectKeys, partitions);
+            return context.isValid(objectKeys);
         }
 
         @Override

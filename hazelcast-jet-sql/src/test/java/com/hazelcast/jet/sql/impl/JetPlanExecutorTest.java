@@ -125,7 +125,6 @@ public class JetPlanExecutorTest {
         SelectOrSinkPlan plan = JetPlan.toSelectOrSink(
                 planId(),
                 emptySet(),
-                emptyMap(),
                 dag,
                 false,
                 true,
@@ -152,7 +151,6 @@ public class JetPlanExecutorTest {
         SelectOrSinkPlan plan = JetPlan.toSelectOrSink(
                 planId(),
                 emptySet(),
-                emptyMap(),
                 dag,
                 true,
                 true,
