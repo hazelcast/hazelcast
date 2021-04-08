@@ -20,7 +20,7 @@ import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
 import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastInfixOperator;
 import org.apache.calcite.rel.type.RelDataTypeComparability;
 import org.apache.calcite.sql.SqlKind;
-import org.apache.calcite.sql.fun.SqlBetweenOperator;
+import org.apache.calcite.sql.fun.SqlBetweenOperator.Flag;
 import org.apache.calcite.sql.type.ComparableOperandTypeChecker;
 import org.apache.calcite.sql.type.InferTypes;
 import org.apache.calcite.sql.type.ReturnTypes;
@@ -41,28 +41,30 @@ public final class HazelcastBetweenOperator extends HazelcastInfixOperator {
 
     private static final String[] BETWEEN_NAMES = {"BETWEEN ASYMMETRIC", "AND"};
     private static final String[] NOT_BETWEEN_NAMES = {"NOT BETWEEN ASYMMETRIC", "AND"};
+    private static final String[] SYMMETRIC_BETWEEN_NAMES = {"BETWEEN SYMMETRIC", "AND"};
+    private static final String[] SYMMETRIC_NOT_BETWEEN_NAMES = {"NOT BETWEEN SYMMETRIC", "AND"};
     private static final int PRECEDENCE = 32;
 
     static {
-        BETWEEN_ASYMMETRIC = new HazelcastBetweenOperator(false, SqlBetweenOperator.Flag.ASYMMETRIC);
-        NOT_BETWEEN_ASYMMETRIC = new HazelcastBetweenOperator(true, SqlBetweenOperator.Flag.ASYMMETRIC);
-        BETWEEN_SYMMETRIC = new HazelcastBetweenOperator(false, SqlBetweenOperator.Flag.SYMMETRIC);
-        NOT_BETWEEN_SYMMETRIC = new HazelcastBetweenOperator(true, SqlBetweenOperator.Flag.SYMMETRIC);
+        BETWEEN_ASYMMETRIC = new HazelcastBetweenOperator(false, Flag.ASYMMETRIC);
+        NOT_BETWEEN_ASYMMETRIC = new HazelcastBetweenOperator(true, Flag.ASYMMETRIC);
+        BETWEEN_SYMMETRIC = new HazelcastBetweenOperator(false, Flag.SYMMETRIC);
+        NOT_BETWEEN_SYMMETRIC = new HazelcastBetweenOperator(true, Flag.SYMMETRIC);
     }
 
     private final boolean negated;
-    private final SqlBetweenOperator.Flag flag;
+    private final Flag flag;
 
-    protected HazelcastBetweenOperator(boolean negated, SqlBetweenOperator.Flag symmetricalFlag) {
-        super(
-            negated ? NOT_BETWEEN_NAMES : BETWEEN_NAMES,
+    protected HazelcastBetweenOperator(boolean negated, Flag symmetricalFlag) {
+        super(negated
+                ? (symmetricalFlag == Flag.ASYMMETRIC) ? NOT_BETWEEN_NAMES : SYMMETRIC_NOT_BETWEEN_NAMES
+                : (symmetricalFlag == Flag.ASYMMETRIC) ? BETWEEN_NAMES : SYMMETRIC_BETWEEN_NAMES,
             SqlKind.BETWEEN,
             PRECEDENCE,
             ReturnTypes.BOOLEAN_NULLABLE,
             InferTypes.FIRST_KNOWN,
             new ComparableOperandTypeChecker(3, RelDataTypeComparability.ALL,
-                SqlOperandTypeChecker.Consistency.COMPARE)
-        );
+                SqlOperandTypeChecker.Consistency.COMPARE));
         this.negated = negated;
         this.flag = symmetricalFlag;
     }
@@ -72,7 +74,7 @@ public final class HazelcastBetweenOperator extends HazelcastInfixOperator {
         return false;
     }
 
-    public SqlBetweenOperator.Flag getFlag() {
+    public Flag getFlag() {
         return flag;
     }
 
