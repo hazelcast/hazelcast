@@ -79,7 +79,7 @@ public class SqlLimitTest extends SqlTestSupport {
         Assertions.assertThatThrownBy(() -> instance().getSql().execute("SELECT name FROM " + tableName + " LIMIT -10"))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageContaining("Encountered \"-\"")
-                .extracting(e -> ((HazelcastSqlException)e).getCode()).isEqualTo(SqlErrorCode.PARSING);
+                .extracting(e -> ((HazelcastSqlException) e).getCode()).isEqualTo(SqlErrorCode.PARSING);
     }
 
     @Test
