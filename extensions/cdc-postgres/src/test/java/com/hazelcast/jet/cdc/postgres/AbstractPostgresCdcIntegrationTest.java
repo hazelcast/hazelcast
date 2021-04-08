@@ -38,11 +38,12 @@ import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
 @Category({IgnoreInJenkinsOnWindows.class})
 public abstract class AbstractPostgresCdcIntegrationTest extends AbstractCdcIntegrationTest {
 
+    public static final DockerImageName DOCKER_IMAGE = DockerImageName.parse("debezium/example-postgres:1.3")
+            .asCompatibleSubstituteFor("postgres");
+
     protected static final String DATABASE_NAME = "postgres";
     protected static final String REPLICATION_SLOT_NAME = "debezium";
 
-    private static final DockerImageName DOCKER_IMAGE = DockerImageName.parse("debezium/example-postgres:1.3")
-            .asCompatibleSubstituteFor("postgres");
     private static final String SCHEMA = "inventory";
 
     @Rule
