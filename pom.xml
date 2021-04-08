@@ -118,6 +118,7 @@
         <affinity.version>3.2.3</affinity.version>
         <aws.sdk.version>1.11.934</aws.sdk.version>
         <kotlin.version>1.3.61</kotlin.version>
+        <netty.version>4.1.63.Final</netty.version>
 
         <hazelcast.aws.version>3.3</hazelcast.aws.version>
         <hazelcast.kubernetes.version>2.2.1</hazelcast.kubernetes.version>
@@ -1310,12 +1311,12 @@
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-handler</artifactId>
-                <version>4.1.39.Final</version>
+                <version>${netty.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-codec-http</artifactId>
-                <version>4.1.39.Final</version>
+                <version>${netty.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.auto.value</groupId>
