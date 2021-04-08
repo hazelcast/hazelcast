@@ -64,10 +64,12 @@ class SeriesTable extends JetTable {
                     Integer stop = evaluate(argumentExpressions.get(1), null, context);
                     Integer step = evaluate(argumentExpressions.get(2), 1, context);
                     if (start == null || stop == null || step == null) {
-                        throw QueryException.error("null argument to GENERATE_SERIES function");
+                        throw QueryException.error("Invalid argument of a call to function GENERATE_SERIES" +
+                                " - null argument(s)");
                     }
                     if (step == 0) {
-                        throw QueryException.error("step cannot be equal to zero");
+                        throw QueryException.error("Invalid argument of a call to function GENERATE_SERIES" +
+                                " - step cannot be equal to zero");
                     }
 
                     return new DataGenerator(start, stop, step, predicate, projections, context);
@@ -103,11 +105,11 @@ class SeriesTable extends JetTable {
                 SimpleExpressionEvalContext context
         ) {
             this.iterator = IntStream.iterate(start, i -> i + step)
-                                     .limit(numberOfItems(start, stop, step))
-                                     .mapToObj(i -> ExpressionUtil.evaluate(predicate, projections, new Object[]{i},
-                                             context))
-                                     .filter(Objects::nonNull)
-                                     .iterator();
+                    .limit(numberOfItems(start, stop, step))
+                    .mapToObj(i -> ExpressionUtil.evaluate(predicate, projections, new Object[]{i},
+                            context))
+                    .filter(Objects::nonNull)
+                    .iterator();
         }
 
         private void fillBuffer(SourceBuffer<Object[]> buffer) {

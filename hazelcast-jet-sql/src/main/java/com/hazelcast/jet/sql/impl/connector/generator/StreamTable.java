@@ -62,10 +62,12 @@ class StreamTable extends JetTable {
 
                     Integer rate = evaluate(argumentExpressions.get(0), context);
                     if (rate == null) {
-                        throw QueryException.error("rate cannot be null");
+                        throw QueryException.error("Invalid argument of a call to function GENERATE_STREAM" +
+                                " - rate cannot be null");
                     }
                     if (rate < 0) {
-                        throw QueryException.error("rate cannot be less than zero");
+                        throw QueryException.error("Invalid argument of a call to function GENERATE_STREAM" +
+                                " - rate cannot be less than zero");
                     }
 
                     return new DataGenerator(rate, predicate, projections, context);
