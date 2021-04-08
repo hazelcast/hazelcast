@@ -18,13 +18,17 @@ package com.hazelcast.sql.impl.calcite.validate.operators.predicate;
 
 import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
 import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastInfixOperator;
+import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeComparability;
+import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlKind;
+import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.fun.SqlBetweenOperator.Flag;
 import org.apache.calcite.sql.type.ComparableOperandTypeChecker;
 import org.apache.calcite.sql.type.InferTypes;
 import org.apache.calcite.sql.type.ReturnTypes;
-import org.apache.calcite.sql.type.SqlOperandTypeChecker;
+import org.apache.calcite.sql.type.SqlOperandCountRanges;
+import org.apache.calcite.sql.type.SqlOperandTypeChecker.Consistency;
 
 /*
  *  Grammar
@@ -43,7 +47,9 @@ public final class HazelcastBetweenOperator extends HazelcastInfixOperator {
     private static final String[] NOT_BETWEEN_NAMES = {"NOT BETWEEN ASYMMETRIC", "AND"};
     private static final String[] SYMMETRIC_BETWEEN_NAMES = {"BETWEEN SYMMETRIC", "AND"};
     private static final String[] SYMMETRIC_NOT_BETWEEN_NAMES = {"NOT BETWEEN SYMMETRIC", "AND"};
+
     private static final int PRECEDENCE = 32;
+    private static final int OPERANDS = 3;
 
     static {
         BETWEEN_ASYMMETRIC = new HazelcastBetweenOperator(false, Flag.ASYMMETRIC);
@@ -63,15 +69,32 @@ public final class HazelcastBetweenOperator extends HazelcastInfixOperator {
             PRECEDENCE,
             ReturnTypes.BOOLEAN_NULLABLE,
             InferTypes.FIRST_KNOWN,
-            new ComparableOperandTypeChecker(3, RelDataTypeComparability.ALL,
-                SqlOperandTypeChecker.Consistency.COMPARE));
+            new ComparableOperandTypeChecker(3, RelDataTypeComparability.ALL, Consistency.COMPARE)
+        );
         this.negated = negated;
         this.flag = symmetricalFlag;
     }
 
     @Override
+    public SqlOperandCountRange getOperandCountRange() {
+        return SqlOperandCountRanges.of(OPERANDS);
+    }
+
+    @Override
     protected boolean checkOperandTypes(HazelcastCallBinding callBinding, boolean throwOnFailure) {
-        return false;
+        assert callBinding.getOperandCount() == OPERANDS;
+        boolean flag = true;
+        for (int i = 0; i < OPERANDS; ++i) {
+            RelDataType type = callBinding.getOperandType(i);
+            if (!checkType(callBinding, throwOnFailure, type)) {
+                flag = false;
+                break;
+            }
+        }
+        if (!flag && throwOnFailure) {
+            throw callBinding.newValidationSignatureError();
+        }
+        return flag;
     }
 
     public Flag getFlag() {
@@ -80,5 +103,17 @@ public final class HazelcastBetweenOperator extends HazelcastInfixOperator {
 
     public boolean isNegated() {
         return negated;
+    }
+
+    private boolean checkType(SqlCallBinding callBinding, boolean throwOnFailure, RelDataType type) {
+        if (type.getComparability().ordinal() < RelDataTypeComparability.ALL.ordinal()) {
+            if (throwOnFailure) {
+                throw callBinding.newValidationSignatureError();
+            } else {
+                return false;
+            }
+        } else {
+            return true;
+        }
     }
 }
