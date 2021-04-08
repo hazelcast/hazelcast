@@ -152,7 +152,7 @@ public class SqlNoSerializationTest extends SqlTestSupport {
         }
 
         @Override
-        public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+        public void readExternal(ObjectInput in) throws IOException {
             key = in.readInt();
         }
 
@@ -199,7 +199,7 @@ public class SqlNoSerializationTest extends SqlTestSupport {
         }
 
         @Override
-        public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+        public void readExternal(ObjectInput in) throws IOException {
             val = in.readInt();
         }
     }

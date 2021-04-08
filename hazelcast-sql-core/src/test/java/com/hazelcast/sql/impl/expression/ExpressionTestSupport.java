@@ -198,7 +198,7 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
         StringJoiner joiner = new StringJoiner(", ");
         Arrays.stream(columnTypes).forEach((columnType) -> joiner.add(columnType.name()));
 
-        return "Cannot apply '" + functionName + "' function to [" + joiner.toString() + "] (consider adding an explicit CAST)";
+        return "Cannot apply '" + functionName + "' function to [" + joiner + "] (consider adding an explicit CAST)";
     }
 
     protected static String signatureErrorOperator(String operatorName, Object... columnTypes) {
@@ -207,7 +207,7 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
         StringJoiner joiner = new StringJoiner(", ");
         Arrays.stream(columnTypes).forEach((columnType) -> joiner.add(columnType == SqlColumnType.NULL ? "UNKNOWN" : columnType.toString()));
 
-        return "Cannot apply '" + operatorName + "' operator to [" + joiner.toString() + "] (consider adding an explicit CAST)";
+        return "Cannot apply '" + operatorName + "' operator to [" + joiner + "] (consider adding an explicit CAST)";
     }
 
     protected static String parameterError(int position, SqlColumnType expectedType, SqlColumnType actualType) {

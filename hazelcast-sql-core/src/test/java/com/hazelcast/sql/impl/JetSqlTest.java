@@ -87,7 +87,7 @@ public class JetSqlTest extends SqlTestSupport {
 
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
+        MockitoAnnotations.openMocks(this);
     }
 
     @AfterClass

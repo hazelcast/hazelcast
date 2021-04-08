@@ -87,7 +87,7 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
 
             missingMethodNames.forEach(joiner::add);
 
-            fail("Tests not implemented: \n" + joiner.toString());
+            fail("Tests not implemented: \n" + joiner);
         }
     }
 
