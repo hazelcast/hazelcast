@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql.impl.plan.cache;
 
+import com.hazelcast.sql.impl.optimizer.SqlPlan;
+
 /**
  * A callback that is invoked when the engine detects that the plan is no longer valid.
  */
@@ -23,5 +25,5 @@ public interface CachedPlanInvalidationCallback {
     /**
      * Invalidate the given plan.
      */
-    void invalidate(CacheablePlan plan);
+    void invalidate(SqlPlan plan);
 }

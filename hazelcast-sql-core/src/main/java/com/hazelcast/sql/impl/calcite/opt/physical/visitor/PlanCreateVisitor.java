@@ -41,8 +41,8 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.plan.PlanFragmentMapping;
-import com.hazelcast.sql.impl.plan.cache.PlanCacheKey;
-import com.hazelcast.sql.impl.plan.cache.PlanObjectKey;
+import com.hazelcast.sql.impl.optimizer.PlanKey;
+import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.plan.node.EmptyPlanNode;
 import com.hazelcast.sql.impl.plan.node.FetchOffsetPlanNodeFieldTypeProvider;
 import com.hazelcast.sql.impl.plan.node.FetchPlanNode;
@@ -96,7 +96,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     private final Map<UUID, PartitionIdSet> partMap;
     private final Set<UUID> memberIds;
     private final Map<PhysicalRel, List<Integer>> relIdMap;
-    private final PlanCacheKey planKey;
+    private final PlanKey planKey;
     private final List<String> rootColumnNames;
     private final QueryParameterMetadata parameterMetadata;
     private final List<PlanNode> fragments = new ArrayList<>();
@@ -114,7 +114,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         UUID localMemberId,
         Map<UUID, PartitionIdSet> partMap,
         Map<PhysicalRel, List<Integer>> relIdMap,
-        PlanCacheKey planKey,
+        PlanKey planKey,
         List<String> rootColumnNames,
         QueryParameterMetadata parameterMetadata
     ) {

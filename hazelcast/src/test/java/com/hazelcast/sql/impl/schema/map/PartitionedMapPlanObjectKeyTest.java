@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.plan.cache;
+package com.hazelcast.sql.impl.schema.map;
 
 import com.hazelcast.config.IndexType;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -27,8 +27,7 @@ import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTarget;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.schema.TableField;
-import com.hazelcast.sql.impl.schema.map.MapTableField;
-import com.hazelcast.sql.impl.schema.map.MapTableIndex;
+import com.hazelcast.sql.impl.schema.map.PartitionedMapTable.PartitionedMapPlanObjectKey;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -46,7 +45,7 @@ import static java.util.Collections.singletonList;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class MapPlanObjectKeyTest extends SqlTestSupport {
+public class PartitionedMapPlanObjectKeyTest extends SqlTestSupport {
     @Test
     public void test_partitioned() {
         String schema1 = "schema1";

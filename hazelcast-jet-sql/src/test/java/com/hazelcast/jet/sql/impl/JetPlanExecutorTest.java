@@ -31,7 +31,7 @@ import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryResultProducer;
-import com.hazelcast.sql.impl.plan.cache.PlanCacheKey;
+import com.hazelcast.sql.impl.optimizer.PlanKey;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import org.junit.Before;
@@ -89,7 +89,7 @@ public class JetPlanExecutorTest {
     public void test_createMappingExecution(boolean replace, boolean ifNotExists) {
         // given
         Mapping mapping = mapping();
-        CreateMappingPlan plan = JetPlan.toCreateMapping(mapping, replace, ifNotExists, planExecutor);
+        CreateMappingPlan plan = new CreateMappingPlan(planKey(), mapping, replace, ifNotExists, planExecutor);
 
         // when
         SqlResult result = planExecutor.execute(plan);
@@ -107,7 +107,7 @@ public class JetPlanExecutorTest {
     public void test_dropMappingExecution(boolean ifExists) {
         // given
         String name = "name";
-        DropMappingPlan plan = JetPlan.toDropMapping(name, ifExists, planExecutor);
+        DropMappingPlan plan = new DropMappingPlan(planKey(), name, ifExists, planExecutor);
 
         // when
         SqlResult result = planExecutor.execute(plan);
@@ -122,8 +122,8 @@ public class JetPlanExecutorTest {
         // given
         QueryId queryId = QueryId.create(UuidUtil.newSecureUUID());
         SqlRowMetadata rowMetadata = rowMetadata();
-        SelectOrSinkPlan plan = JetPlan.toSelectOrSink(
-                planId(),
+        SelectOrSinkPlan plan = new SelectOrSinkPlan(
+                planKey(),
                 emptySet(),
                 dag,
                 false,
@@ -148,8 +148,8 @@ public class JetPlanExecutorTest {
         // given
         QueryId queryId = QueryId.create(UuidUtil.newSecureUUID());
         SqlRowMetadata rowMetadata = rowMetadata();
-        SelectOrSinkPlan plan = JetPlan.toSelectOrSink(
-                planId(),
+        SelectOrSinkPlan plan = new SelectOrSinkPlan(
+                planKey(),
                 emptySet(),
                 dag,
                 true,
@@ -168,8 +168,8 @@ public class JetPlanExecutorTest {
         verifyNoInteractions(job);
     }
 
-    private static PlanCacheKey planId() {
-        return new PlanCacheKey(emptyList(), "");
+    private static PlanKey planKey() {
+        return new PlanKey(emptyList(), "");
     }
 
     private static Mapping mapping() {

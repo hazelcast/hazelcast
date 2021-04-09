@@ -34,7 +34,7 @@ import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
-import com.hazelcast.sql.impl.plan.cache.PlanCacheKey;
+import com.hazelcast.sql.impl.optimizer.PlanKey;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable.ViewExpander;
 import org.apache.calcite.plan.RelTraitSet;
@@ -120,7 +120,7 @@ public class HazelcastSqlBackend implements SqlBackend {
             localMember.getUuid(),
             QueryUtils.createPartitionMap(nodeEngine, localMember.getVersion(), true),
             relIdMap,
-            new PlanCacheKey(task.getSearchPaths(), sql),
+            new PlanKey(task.getSearchPaths(), sql),
             convertResult.getFieldNames(),
             parseResult.getParameterMetadata()
         );

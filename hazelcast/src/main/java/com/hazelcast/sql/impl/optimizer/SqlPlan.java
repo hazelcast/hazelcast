@@ -21,16 +21,49 @@ import com.hazelcast.sql.impl.security.SqlSecurityContext;
 /**
  * Abstraction over execution plan that allows for specialization for an execution backend.
  */
-public interface SqlPlan {
+public abstract class SqlPlan {
+
+    /** Key of the plan. */
+    private final PlanKey planKey;
+
+    /** Time when the plan was used for the last time. */
+    private volatile long planLastUsed;
+
+    protected SqlPlan(PlanKey planKey) {
+        this.planKey = planKey;
+    }
+
+    public PlanKey getPlanKey() {
+        return planKey;
+    }
+
+    public void onPlanUsed() {
+        planLastUsed = System.currentTimeMillis();
+    }
+
+    public long getPlanLastUsed() {
+        return planLastUsed;
+    }
+
+    /**
+     * @return {@code true} if the plan is eligible for caching, {@code false} otherwise
+     */
+    public abstract boolean isCacheable();
+
+    /**
+     * @return {@code true} if the plan is valid, {@code false} otherwise
+     */
+    public abstract boolean isPlanValid(PlanCheckContext context);
+
     /**
      * Check whether the user has enough permissions to execute this plan.
      *
      * @param context security context
      */
-    void checkPermissions(SqlSecurityContext context);
+    public abstract void checkPermissions(SqlSecurityContext context);
 
     /**
      * @return {@code true} if the query produces rows, {@code false} otherwise
      */
-    boolean producesRows();
+    public abstract boolean producesRows();
 }

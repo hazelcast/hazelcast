@@ -20,7 +20,7 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.parse.SqlExtendedInsert.Keyword;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
-import com.hazelcast.sql.impl.plan.cache.PlanObjectKey;
+import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import org.apache.calcite.runtime.Resources.ExInst;
 import org.apache.calcite.sql.SqlIdentifier;
@@ -125,8 +125,7 @@ public class SqlExtendedInsertTest {
         return new JetTable(connector, emptyList(), "schema", TABLE_NAME, new ConstantTableStatistics(0)) {
             @Override
             public PlanObjectKey getObjectKey() {
-                return new PlanObjectKey() {
-                };
+                return null;
             }
         };
     }

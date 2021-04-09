@@ -25,146 +25,38 @@ import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
-import com.hazelcast.sql.impl.plan.cache.CacheablePlan;
-import com.hazelcast.sql.impl.plan.cache.PlanCacheKey;
-import com.hazelcast.sql.impl.plan.cache.PlanCheckContext;
-import com.hazelcast.sql.impl.plan.cache.PlanObjectKey;
+import com.hazelcast.sql.impl.optimizer.PlanKey;
+import com.hazelcast.sql.impl.optimizer.PlanCheckContext;
+import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.security.SqlSecurityContext;
 
 import java.security.Permission;
 import java.util.List;
 import java.util.Set;
 
-interface JetPlan extends SqlPlan {
+abstract class JetPlan extends SqlPlan {
 
-    SqlResult execute(QueryId queryId);
-
-    static CreateMappingPlan toCreateMapping(
-            Mapping mapping,
-            boolean replace,
-            boolean ifNotExists,
-            JetPlanExecutor planExecutor
-    ) {
-        return new CreateMappingPlan(mapping, replace, ifNotExists, planExecutor);
+    protected JetPlan(PlanKey planKey) {
+        super(planKey);
     }
 
-    static DropMappingPlan toDropMapping(
-            String name,
-            boolean ifExists,
-            JetPlanExecutor planExecutor
-    ) {
-        return new DropMappingPlan(name, ifExists, planExecutor);
-    }
+    abstract SqlResult execute(QueryId queryId);
 
-    static CreateJobPlan toCreateJob(
-            PlanCacheKey id,
-            JobConfig jobConfig,
-            boolean ifNotExists,
-            SelectOrSinkPlan dmlPlan,
-            JetPlanExecutor planExecutor
-    ) {
-        return dmlPlan instanceof CacheableJetPlan
-                ? new CacheableCreateJobPlan(id, jobConfig, ifNotExists, (CacheableSelectOrSinkPlan) dmlPlan, planExecutor)
-                : new NonCacheableCreateJobPlan(jobConfig, ifNotExists, dmlPlan, planExecutor);
-    }
-
-    static AlterJobPlan toAlterJob(
-            String jobName,
-            AlterJobOperation operation,
-            JetPlanExecutor planExecutor
-    ) {
-        return new AlterJobPlan(jobName, operation, planExecutor);
-    }
-
-    static CreateSnapshotPlan toCreateSnapshot(
-            String snapshotName,
-            String jobName,
-            JetPlanExecutor planExecutor
-    ) {
-        return new CreateSnapshotPlan(snapshotName, jobName, planExecutor);
-    }
-
-    static DropJobPlan toDropJob(
-            String jobName,
-            boolean ifExists,
-            String withSnapshotName,
-            JetPlanExecutor planExecutor
-    ) {
-        return new DropJobPlan(jobName, ifExists, withSnapshotName, planExecutor);
-    }
-
-    static DropSnapshotPlan toDropSnapshot(
-            String snapshotName,
-            boolean ifExists,
-            JetPlanExecutor planExecutor
-    ) {
-        return new DropSnapshotPlan(snapshotName, ifExists, planExecutor);
-    }
-
-    static ShowStatementPlan toShowStatement(
-            ShowStatementTarget showTarget,
-            JetPlanExecutor planExecutor
-    ) {
-        return new ShowStatementPlan(showTarget, planExecutor);
-    }
-
-    @SuppressWarnings("checkstyle:ParameterNumber")
-    static SelectOrSinkPlan toSelectOrSink(
-            PlanCacheKey id,
-            Set<PlanObjectKey> objectKeys,
-            DAG dag,
-            boolean isStreaming,
-            boolean isInsert,
-            SqlRowMetadata rowMetadata,
-            JetPlanExecutor planExecutor,
-            List<Permission> permissions
-    ) {
-        return objectKeys.contains(PlanObjectKey.NON_CACHEABLE_OBJECT_KEY)
-                ? new NonCacheableSelectOrSinkPlan(dag, isStreaming, isInsert, rowMetadata, planExecutor, permissions)
-                : new CacheableSelectOrSinkPlan(id, objectKeys, dag, isStreaming, isInsert, rowMetadata,
-                planExecutor, permissions);
-    }
-
-    abstract class CacheableJetPlan implements JetPlan, CacheablePlan {
-
-        private final PlanCacheKey id;
-
-        private volatile long lastUsed;
-
-        protected CacheableJetPlan(PlanCacheKey id) {
-            this.id = id;
-        }
-
-        @Override
-        public final PlanCacheKey getPlanKey() {
-            assert id != null;
-
-            return id;
-        }
-
-        @Override
-        public final long getPlanLastUsed() {
-            return lastUsed;
-        }
-
-        @Override
-        public final void onPlanUsed() {
-            lastUsed = System.currentTimeMillis();
-        }
-    }
-
-    class CreateMappingPlan implements JetPlan {
+    static class CreateMappingPlan extends JetPlan {
         private final Mapping mapping;
         private final boolean replace;
         private final boolean ifNotExists;
         private final JetPlanExecutor planExecutor;
 
-        private CreateMappingPlan(
+        CreateMappingPlan(
+                PlanKey planKey,
                 Mapping mapping,
                 boolean replace,
                 boolean ifNotExists,
                 JetPlanExecutor planExecutor
         ) {
+            super(planKey);
+
             this.mapping = mapping;
             this.replace = replace;
             this.ifNotExists = ifNotExists;
@@ -184,6 +76,16 @@ interface JetPlan extends SqlPlan {
         }
 
         @Override
+        public boolean isCacheable() {
+            return false;
+        }
+
+        @Override
+        public boolean isPlanValid(PlanCheckContext context) {
+            return true;
+        }
+
+        @Override
         public void checkPermissions(SqlSecurityContext context) {
         }
 
@@ -198,16 +100,19 @@ interface JetPlan extends SqlPlan {
         }
     }
 
-    class DropMappingPlan implements JetPlan {
+    static class DropMappingPlan extends JetPlan {
         private final String name;
         private final boolean ifExists;
         private final JetPlanExecutor planExecutor;
 
-        private DropMappingPlan(
+        DropMappingPlan(
+                PlanKey planKey,
                 String name,
                 boolean ifExists,
                 JetPlanExecutor planExecutor
         ) {
+            super(planKey);
+
             this.name = name;
             this.ifExists = ifExists;
             this.planExecutor = planExecutor;
@@ -222,6 +127,16 @@ interface JetPlan extends SqlPlan {
         }
 
         @Override
+        public boolean isCacheable() {
+            return false;
+        }
+
+        @Override
+        public boolean isPlanValid(PlanCheckContext context) {
+            return true;
+        }
+
+        @Override
         public void checkPermissions(SqlSecurityContext context) {
         }
 
@@ -236,77 +151,20 @@ interface JetPlan extends SqlPlan {
         }
     }
 
-    interface CreateJobPlan extends JetPlan {
-        JobConfig getJobConfig();
-
-        boolean isIfNotExists();
-
-        SelectOrSinkPlan getExecutionPlan();
-    }
-
-    class NonCacheableCreateJobPlan implements CreateJobPlan {
+    static class CreateJobPlan extends JetPlan {
         private final JobConfig jobConfig;
         private final boolean ifNotExists;
         private final SelectOrSinkPlan dmlPlan;
         private final JetPlanExecutor planExecutor;
 
-        private NonCacheableCreateJobPlan(
+        CreateJobPlan(
+                PlanKey planKey,
                 JobConfig jobConfig,
                 boolean ifNotExists,
                 SelectOrSinkPlan dmlPlan,
                 JetPlanExecutor planExecutor
         ) {
-            this.jobConfig = jobConfig;
-            this.ifNotExists = ifNotExists;
-            this.dmlPlan = dmlPlan;
-            this.planExecutor = planExecutor;
-        }
-
-        @Override
-        public JobConfig getJobConfig() {
-            return jobConfig;
-        }
-
-        @Override
-        public boolean isIfNotExists() {
-            return ifNotExists;
-        }
-
-        @Override
-        public SelectOrSinkPlan getExecutionPlan() {
-            return dmlPlan;
-        }
-
-        @Override
-        public void checkPermissions(SqlSecurityContext context) {
-            dmlPlan.checkPermissions(context);
-        }
-
-        @Override
-        public boolean producesRows() {
-            return false;
-        }
-
-        @Override
-        public SqlResult execute(QueryId queryId) {
-            return planExecutor.execute(this);
-        }
-    }
-
-    class CacheableCreateJobPlan extends CacheableJetPlan implements CreateJobPlan {
-        private final JobConfig jobConfig;
-        private final boolean ifNotExists;
-        private final CacheableSelectOrSinkPlan dmlPlan;
-        private final JetPlanExecutor planExecutor;
-
-        private CacheableCreateJobPlan(
-                PlanCacheKey id,
-                JobConfig jobConfig,
-                boolean ifNotExists,
-                CacheableSelectOrSinkPlan dmlPlan,
-                JetPlanExecutor planExecutor
-        ) {
-            super(id);
+            super(planKey);
 
             this.jobConfig = jobConfig;
             this.ifNotExists = ifNotExists;
@@ -314,29 +172,21 @@ interface JetPlan extends SqlPlan {
             this.planExecutor = planExecutor;
         }
 
-        @Override
-        public JobConfig getJobConfig() {
+        JobConfig getJobConfig() {
             return jobConfig;
         }
 
-        @Override
-        public boolean isIfNotExists() {
+        boolean isIfNotExists() {
             return ifNotExists;
         }
 
-        @Override
-        public SelectOrSinkPlan getExecutionPlan() {
+        SelectOrSinkPlan getExecutionPlan() {
             return dmlPlan;
         }
 
         @Override
-        public void checkPermissions(SqlSecurityContext context) {
-            dmlPlan.checkPermissions(context);
-        }
-
-        @Override
-        public boolean producesRows() {
-            return false;
+        public boolean isCacheable() {
+            return dmlPlan.isCacheable();
         }
 
         @Override
@@ -345,21 +195,34 @@ interface JetPlan extends SqlPlan {
         }
 
         @Override
+        public void checkPermissions(SqlSecurityContext context) {
+            dmlPlan.checkPermissions(context);
+        }
+
+        @Override
+        public boolean producesRows() {
+            return false;
+        }
+
+        @Override
         public SqlResult execute(QueryId queryId) {
             return planExecutor.execute(this);
         }
     }
 
-    class AlterJobPlan implements JetPlan {
+    static class AlterJobPlan extends JetPlan {
         private final String jobName;
         private final AlterJobOperation operation;
         private final JetPlanExecutor planExecutor;
 
-        private AlterJobPlan(
+        AlterJobPlan(
+                PlanKey planKey,
                 String jobName,
                 AlterJobOperation operation,
                 JetPlanExecutor planExecutor
         ) {
+            super(planKey);
+
             this.jobName = jobName;
             this.operation = operation;
             this.planExecutor = planExecutor;
@@ -374,6 +237,16 @@ interface JetPlan extends SqlPlan {
         }
 
         @Override
+        public boolean isCacheable() {
+            return false;
+        }
+
+        @Override
+        public boolean isPlanValid(PlanCheckContext context) {
+            return true;
+        }
+
+        @Override
         public void checkPermissions(SqlSecurityContext context) {
         }
 
@@ -388,18 +261,21 @@ interface JetPlan extends SqlPlan {
         }
     }
 
-    class DropJobPlan implements JetPlan {
+    static class DropJobPlan extends JetPlan {
         private final String jobName;
         private final boolean ifExists;
         private final String withSnapshotName;
         private final JetPlanExecutor planExecutor;
 
-        private DropJobPlan(
+        DropJobPlan(
+                PlanKey planKey,
                 String jobName,
                 boolean ifExists,
                 String withSnapshotName,
                 JetPlanExecutor planExecutor
         ) {
+            super(planKey);
+
             this.jobName = jobName;
             this.ifExists = ifExists;
             this.withSnapshotName = withSnapshotName;
@@ -419,6 +295,16 @@ interface JetPlan extends SqlPlan {
         }
 
         @Override
+        public boolean isCacheable() {
+            return false;
+        }
+
+        @Override
+        public boolean isPlanValid(PlanCheckContext context) {
+            return true;
+        }
+
+        @Override
         public void checkPermissions(SqlSecurityContext context) {
         }
 
@@ -433,16 +319,19 @@ interface JetPlan extends SqlPlan {
         }
     }
 
-    class CreateSnapshotPlan implements JetPlan {
+    static class CreateSnapshotPlan extends JetPlan {
         private final String snapshotName;
         private final String jobName;
         private final JetPlanExecutor planExecutor;
 
-        private CreateSnapshotPlan(
+        CreateSnapshotPlan(
+                PlanKey planKey,
                 String snapshotName,
                 String jobName,
                 JetPlanExecutor planExecutor
         ) {
+            super(planKey);
+
             this.snapshotName = snapshotName;
             this.jobName = jobName;
             this.planExecutor = planExecutor;
@@ -457,6 +346,16 @@ interface JetPlan extends SqlPlan {
         }
 
         @Override
+        public boolean isCacheable() {
+            return false;
+        }
+
+        @Override
+        public boolean isPlanValid(PlanCheckContext context) {
+            return true;
+        }
+
+        @Override
         public void checkPermissions(SqlSecurityContext context) {
         }
 
@@ -471,16 +370,19 @@ interface JetPlan extends SqlPlan {
         }
     }
 
-    class DropSnapshotPlan implements JetPlan {
+    static class DropSnapshotPlan extends JetPlan {
         private final String snapshotName;
         private final boolean ifExists;
         private final JetPlanExecutor planExecutor;
 
-        private DropSnapshotPlan(
+        DropSnapshotPlan(
+                PlanKey planKey,
                 String snapshotName,
                 boolean ifExists,
                 JetPlanExecutor planExecutor
         ) {
+            super(planKey);
+
             this.snapshotName = snapshotName;
             this.ifExists = ifExists;
             this.planExecutor = planExecutor;
@@ -495,6 +397,16 @@ interface JetPlan extends SqlPlan {
         }
 
         @Override
+        public boolean isCacheable() {
+            return false;
+        }
+
+        @Override
+        public boolean isPlanValid(PlanCheckContext context) {
+            return true;
+        }
+
+        @Override
         public void checkPermissions(SqlSecurityContext context) {
         }
 
@@ -509,17 +421,29 @@ interface JetPlan extends SqlPlan {
         }
     }
 
-    class ShowStatementPlan implements JetPlan {
+    static class ShowStatementPlan extends JetPlan {
         private final ShowStatementTarget showTarget;
         private final JetPlanExecutor planExecutor;
 
-        private ShowStatementPlan(ShowStatementTarget showTarget, JetPlanExecutor planExecutor) {
+        ShowStatementPlan(PlanKey planKey, ShowStatementTarget showTarget, JetPlanExecutor planExecutor) {
+            super(planKey);
+
             this.showTarget = showTarget;
             this.planExecutor = planExecutor;
         }
 
         ShowStatementTarget getShowTarget() {
             return showTarget;
+        }
+
+        @Override
+        public boolean isCacheable() {
+            return false;
+        }
+
+        @Override
+        public boolean isPlanValid(PlanCheckContext context) {
+            return true;
         }
 
         @Override
@@ -537,81 +461,8 @@ interface JetPlan extends SqlPlan {
         }
     }
 
-    interface SelectOrSinkPlan extends JetPlan {
-        DAG getDag();
-
-        boolean isStreaming();
-
-        boolean isInsert();
-
-        SqlRowMetadata getRowMetadata();
-    }
-
-    class NonCacheableSelectOrSinkPlan implements SelectOrSinkPlan {
-        private final DAG dag;
-        private final boolean isStreaming;
-        private final boolean isInsert;
-        private final SqlRowMetadata rowMetadata;
-        private final JetPlanExecutor planExecutor;
-        private final List<Permission> permissions;
-
-        private NonCacheableSelectOrSinkPlan(
-                DAG dag,
-                boolean isStreaming,
-                boolean isInsert,
-                SqlRowMetadata rowMetadata,
-                JetPlanExecutor planExecutor,
-                List<Permission> permissions
-        ) {
-            this.dag = dag;
-            this.isStreaming = isStreaming;
-            this.isInsert = isInsert;
-            this.rowMetadata = rowMetadata;
-            this.planExecutor = planExecutor;
-            this.permissions = permissions;
-        }
-
-        @Override
-        public DAG getDag() {
-            return dag;
-        }
-
-        @Override
-        public boolean isStreaming() {
-            return isStreaming;
-        }
-
-        @Override
-        public boolean isInsert() {
-            return isInsert;
-        }
-
-        @Override
-        public SqlRowMetadata getRowMetadata() {
-            return rowMetadata;
-        }
-
-        @Override
-        public void checkPermissions(SqlSecurityContext context) {
-            for (Permission permission : permissions) {
-                context.checkPermission(permission);
-            }
-        }
-
-        @Override
-        public boolean producesRows() {
-            return !isInsert;
-        }
-
-        @Override
-        public SqlResult execute(QueryId queryId) {
-            return planExecutor.execute(this, queryId);
-        }
-    }
-
-    class CacheableSelectOrSinkPlan extends CacheableJetPlan implements SelectOrSinkPlan {
+    static class SelectOrSinkPlan extends JetPlan {
         private final Set<PlanObjectKey> objectKeys;
-
         private final DAG dag;
         private final boolean isStreaming;
         private final boolean isInsert;
@@ -619,8 +470,8 @@ interface JetPlan extends SqlPlan {
         private final JetPlanExecutor planExecutor;
         private final List<Permission> permissions;
 
-        private CacheableSelectOrSinkPlan(
-                PlanCacheKey id,
+        SelectOrSinkPlan(
+                PlanKey planKey,
                 Set<PlanObjectKey> objectKeys,
                 DAG dag,
                 boolean isStreaming,
@@ -629,9 +480,7 @@ interface JetPlan extends SqlPlan {
                 JetPlanExecutor planExecutor,
                 List<Permission> permissions
         ) {
-            super(id);
-
-            this.objectKeys = objectKeys;
+            super(planKey);
 
             this.dag = dag;
             this.isStreaming = isStreaming;
@@ -639,26 +488,33 @@ interface JetPlan extends SqlPlan {
             this.rowMetadata = rowMetadata;
             this.planExecutor = planExecutor;
             this.permissions = permissions;
+            this.objectKeys = objectKeys;
         }
 
-        @Override
-        public DAG getDag() {
+        DAG getDag() {
             return dag;
         }
 
-        @Override
-        public boolean isStreaming() {
+        boolean isStreaming() {
             return isStreaming;
         }
 
-        @Override
-        public boolean isInsert() {
+        boolean isInsert() {
             return isInsert;
         }
 
-        @Override
-        public SqlRowMetadata getRowMetadata() {
+        SqlRowMetadata getRowMetadata() {
             return rowMetadata;
+        }
+
+        @Override
+        public boolean isCacheable() {
+            return !objectKeys.contains(PlanObjectKey.NON_CACHEABLE_OBJECT_KEY);
+        }
+
+        @Override
+        public boolean isPlanValid(PlanCheckContext context) {
+            return context.isValid(objectKeys);
         }
 
         @Override
@@ -671,11 +527,6 @@ interface JetPlan extends SqlPlan {
         @Override
         public boolean producesRows() {
             return !isInsert;
-        }
-
-        @Override
-        public boolean isPlanValid(PlanCheckContext context) {
-            return context.isValid(objectKeys);
         }
 
         @Override

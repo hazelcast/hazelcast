@@ -20,6 +20,8 @@ import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.SqlTestSupport;
+import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
+import com.hazelcast.sql.impl.optimizer.PlanKey;
 import com.hazelcast.sql.impl.plan.Plan;
 
 import java.util.Collections;
@@ -49,11 +51,11 @@ public class PlanCacheTestSupport extends SqlTestSupport {
         PART_MAP_1 = Collections.singletonMap(memberId, partitions1);
         PART_MAP_2 = Collections.singletonMap(memberId, partitions2);
     }
-    public static PlanCacheKey createKey(String sql) {
-        return new PlanCacheKey(Collections.emptyList(), sql);
+    public static PlanKey createKey(String sql) {
+        return new PlanKey(Collections.emptyList(), sql);
     }
 
-    public static Plan createPlan(PlanCacheKey key, Map<UUID, PartitionIdSet> partMap, int... objectIds) {
+    public static Plan createPlan(PlanKey key, Map<UUID, PartitionIdSet> partMap, int... objectIds) {
         Set<PlanObjectKey> objectIds0 = new HashSet<>();
 
         if (objectIds != null) {

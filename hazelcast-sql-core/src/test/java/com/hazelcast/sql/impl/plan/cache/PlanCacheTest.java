@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.plan.cache;
 
+import com.hazelcast.sql.impl.optimizer.PlanKey;
 import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -37,7 +38,7 @@ public class PlanCacheTest extends PlanCacheTestSupport {
     public void testBasicOperations() {
         PlanCache cache = new PlanCache(10);
 
-        PlanCacheKey key = createKey("sql");
+        PlanKey key = createKey("sql");
 
         // Put plan
         Plan plan1 = createPlan(key, PART_MAP_1);
@@ -78,7 +79,7 @@ public class PlanCacheTest extends PlanCacheTestSupport {
         PlanCache cache = new PlanCache(size);
 
         for (int i = 0; i < size; i++) {
-            PlanCacheKey key = createKey(Integer.toString(i));
+            PlanKey key = createKey(Integer.toString(i));
 
             cache.put(key, createPlan(key, PART_MAP_1));
 
@@ -88,13 +89,13 @@ public class PlanCacheTest extends PlanCacheTestSupport {
         assertEquals(size, cache.size());
 
         // Overflow happens here
-        PlanCacheKey overflowKey = createKey(Integer.toString(size));
+        PlanKey overflowKey = createKey(Integer.toString(size));
         cache.put(overflowKey, createPlan(overflowKey, PART_MAP_1));
 
         assertEquals(size, cache.size());
 
         for (int i = 0; i < size; i++) {
-            PlanCacheKey key = createKey(Integer.toString(i + 1));
+            PlanKey key = createKey(Integer.toString(i + 1));
 
             assertNotNull(cache.get(key));
         }
@@ -103,7 +104,7 @@ public class PlanCacheTest extends PlanCacheTestSupport {
     @Test
     public void testPlanUsageUpdate() {
         PlanCache cache = new PlanCache(10);
-        PlanCacheKey key = createKey("sql");
+        PlanKey key = createKey("sql");
         Plan plan = createPlan(key, PART_MAP_1);
 
         cache.put(key, plan);
