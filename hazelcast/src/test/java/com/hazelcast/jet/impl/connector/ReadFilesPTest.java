@@ -23,9 +23,12 @@ import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.io.File;
 import java.io.IOException;
@@ -41,6 +44,7 @@ import static com.hazelcast.jet.Util.entry;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ReadFilesPTest extends SimpleTestInClusterSupport {
 
     private File directory;

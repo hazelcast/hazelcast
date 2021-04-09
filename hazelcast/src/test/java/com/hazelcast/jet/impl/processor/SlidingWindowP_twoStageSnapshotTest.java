@@ -33,9 +33,12 @@ import com.hazelcast.jet.core.test.TestOutbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.jet.datamodel.KeyedWindowResult;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
@@ -61,6 +64,7 @@ import static org.junit.Assert.assertTrue;
  */
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class SlidingWindowP_twoStageSnapshotTest {
 
     private static final Long KEY = 77L;

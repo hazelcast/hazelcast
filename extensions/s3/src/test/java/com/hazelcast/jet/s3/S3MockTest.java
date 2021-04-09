@@ -24,12 +24,15 @@ import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -38,7 +41,6 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.junit.experimental.categories.Category;
 
 import static java.lang.System.lineSeparator;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -47,7 +49,7 @@ import static org.junit.Assert.assertEquals;
 import static software.amazon.awssdk.core.sync.ResponseTransformer.toInputStream;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({IgnoreInJenkinsOnWindows.class})
+@Category({QuickTest.class, ParallelJVMTest.class, IgnoreInJenkinsOnWindows.class})
 public class S3MockTest extends S3TestBase {
 
     @ClassRule

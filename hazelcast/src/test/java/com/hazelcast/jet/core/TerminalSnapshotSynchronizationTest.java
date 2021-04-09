@@ -22,9 +22,12 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.jet.impl.operation.SnapshotPhase1Operation;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
@@ -34,6 +37,7 @@ import static java.util.concurrent.TimeUnit.DAYS;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class TerminalSnapshotSynchronizationTest extends JetTestSupport {
 
     private static final int NODE_COUNT = 2;

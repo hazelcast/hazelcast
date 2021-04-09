@@ -17,15 +17,22 @@
 package com.hazelcast.jet.core.test;
 
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class TestOutboxTest {
 
     @Rule

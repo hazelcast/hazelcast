@@ -27,8 +27,11 @@ import com.hazelcast.jet.datamodel.ItemsByTag;
 import com.hazelcast.jet.datamodel.Tag;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,6 +54,7 @@ import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.summingLong;
 import static org.junit.Assert.assertEquals;
 
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class BatchAggregateTest extends PipelineTestSupport {
 
     static final FunctionEx<Entry<Integer, Long>, String> FORMAT_FN =

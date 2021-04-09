@@ -19,6 +19,9 @@ package com.hazelcast.jet.elastic.impl;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.elastic.impl.Shard.Prirep;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
@@ -36,6 +39,8 @@ import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.slice.SliceBuilder;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 
 import java.io.Serializable;
@@ -55,7 +60,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ElasticSourcePTest {
 
     public static final String HIT_SOURCE = "{\"name\": \"Frantisek\"}";

@@ -19,9 +19,12 @@ package com.hazelcast.jet.impl.util;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.json.JsonUtil;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
@@ -41,7 +44,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class JsonUtilTest extends JetTestSupport {
 
     static String jsonString;

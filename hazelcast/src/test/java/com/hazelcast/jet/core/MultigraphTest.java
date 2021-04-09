@@ -19,7 +19,12 @@ package com.hazelcast.jet.core;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.core.TestProcessors.ListSource;
 import com.hazelcast.jet.core.processor.SinkProcessors;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -31,6 +36,8 @@ import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 import static org.junit.Assert.assertEquals;
 
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MultigraphTest extends JetTestSupport {
 
     @Test

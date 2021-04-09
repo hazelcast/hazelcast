@@ -29,10 +29,13 @@ import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.pipeline.test.SimpleEvent;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.ringbuffer.impl.RingbufferProxy;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -57,6 +60,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ObservableResultsTest extends TestInClusterSupport {
 
     private String observableName;

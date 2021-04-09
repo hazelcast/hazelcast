@@ -20,8 +20,11 @@ import com.hazelcast.jet.aggregate.AggregateOperations;
 import com.hazelcast.jet.pipeline.PipelineTestSupport;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
 import java.util.Arrays;
@@ -41,6 +44,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class AssertionsTest extends PipelineTestSupport {
 
     @Rule

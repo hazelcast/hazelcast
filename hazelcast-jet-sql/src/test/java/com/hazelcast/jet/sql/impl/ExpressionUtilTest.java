@@ -23,7 +23,12 @@ import com.hazelcast.sql.impl.expression.FunctionalPredicateExpression;
 import com.hazelcast.sql.impl.expression.math.MultiplyFunction;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonMode;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonPredicate;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.util.List;
 
@@ -34,6 +39,8 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ExpressionUtilTest {
 
     @SuppressWarnings("unchecked")

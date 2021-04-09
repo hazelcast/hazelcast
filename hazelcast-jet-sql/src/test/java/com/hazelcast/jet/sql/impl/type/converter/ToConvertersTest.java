@@ -16,7 +16,12 @@
 
 package com.hazelcast.jet.sql.impl.type.converter;
 
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -35,6 +40,8 @@ import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR_CHARACTER;
 import static java.time.ZoneOffset.UTC;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ToConvertersTest {
 
     @Test

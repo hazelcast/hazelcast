@@ -28,6 +28,7 @@ import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -44,7 +45,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(NightlyTest.class)
+@Category({NightlyTest.class, ParallelJVMTest.class})
 public class JobMetrics_StressTest extends JetTestSupport {
 
     private static final int RESTART_COUNT = 10;

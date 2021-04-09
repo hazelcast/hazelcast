@@ -16,14 +16,21 @@
 
 package com.hazelcast.jet.impl.execution;
 
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.NO_NEW_WM;
 import static org.junit.Assert.assertEquals;
 
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class WatermarkCoalescerTest {
 
     @Rule

@@ -20,8 +20,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hazelcast.jet.cdc.AbstractCdcIntegrationTest;
 import com.hazelcast.jet.retry.RetryStrategies;
 import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import org.junit.Rule;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
@@ -35,7 +38,8 @@ import java.util.concurrent.TimeUnit;
 
 import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
 
-@Category({IgnoreInJenkinsOnWindows.class})
+@Category({ParallelJVMTest.class, IgnoreInJenkinsOnWindows.class})
+@RunWith(HazelcastSerialClassRunner.class)
 public abstract class AbstractPostgresCdcIntegrationTest extends AbstractCdcIntegrationTest {
 
     public static final DockerImageName DOCKER_IMAGE = DockerImageName.parse("debezium/example-postgres:1.3")

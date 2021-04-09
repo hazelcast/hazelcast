@@ -25,7 +25,12 @@ import com.hazelcast.sql.impl.expression.math.MultiplyFunction;
 import com.hazelcast.sql.impl.extract.QueryExtractor;
 import com.hazelcast.sql.impl.extract.QueryTarget;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static com.hazelcast.sql.impl.type.QueryDataType.BOOLEAN;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
@@ -34,6 +39,8 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class RowProjectorTest {
 
     @Test

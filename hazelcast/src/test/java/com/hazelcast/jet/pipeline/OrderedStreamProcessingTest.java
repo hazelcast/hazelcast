@@ -32,11 +32,14 @@ import com.hazelcast.jet.pipeline.test.GeneratorFunction;
 import com.hazelcast.jet.pipeline.test.ParallelStreamP;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
@@ -61,6 +64,7 @@ import static java.util.stream.Collectors.toList;
 
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class OrderedStreamProcessingTest extends JetTestSupport implements Serializable {
 
     // Used to set the LP of the stage with the higher value than upstream parallelism

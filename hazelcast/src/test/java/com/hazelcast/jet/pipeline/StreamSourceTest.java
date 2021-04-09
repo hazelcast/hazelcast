@@ -18,7 +18,10 @@ package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.Processor.Context;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
 import static com.hazelcast.jet.core.EventTimePolicy.DEFAULT_IDLE_TIMEOUT;
@@ -26,6 +29,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class StreamSourceTest extends PipelineTestSupport {
 
     @Test

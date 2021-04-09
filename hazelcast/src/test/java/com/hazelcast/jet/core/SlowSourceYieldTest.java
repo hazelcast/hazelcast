@@ -18,8 +18,11 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.Traverser;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import javax.annotation.Nonnull;
 import java.util.stream.IntStream;
@@ -30,6 +33,7 @@ import static com.hazelcast.jet.core.processor.Processors.noopP;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static org.junit.Assert.assertTrue;
 
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class SlowSourceYieldTest extends SimpleTestInClusterSupport {
 
     @Before

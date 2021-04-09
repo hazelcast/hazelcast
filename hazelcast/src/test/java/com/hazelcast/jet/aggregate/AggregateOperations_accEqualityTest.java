@@ -17,7 +17,10 @@
 package com.hazelcast.jet.aggregate;
 
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
@@ -41,6 +44,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class AggregateOperations_accEqualityTest {
 
     @Parameter

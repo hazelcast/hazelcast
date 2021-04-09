@@ -19,7 +19,12 @@ package com.hazelcast.jet.retry.impl;
 import com.hazelcast.jet.retry.IntervalFunction;
 import com.hazelcast.jet.retry.RetryStrategies;
 import com.hazelcast.jet.retry.RetryStrategy;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.util.function.LongSupplier;
 
@@ -27,6 +32,8 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class RetryTrackerTest {
 
     private final NanoTimeSupplier timeSupplier = new NanoTimeSupplier();

@@ -32,6 +32,7 @@ import com.hazelcast.jet.impl.util.ImdgUtil;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.PacketFiltersUtil;
 import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -54,7 +55,7 @@ import static org.junit.Assert.assertNotNull;
 
 // TODO this test does not test when responses are lost. There is currently no test
 //   harness to simulate that.
-@Category(NightlyTest.class)
+@Category({NightlyTest.class, ParallelJVMTest.class})
 public class OperationLossTest extends SimpleTestInClusterSupport {
 
     @BeforeClass

@@ -20,6 +20,8 @@ import com.hazelcast.jet.kafka.KafkaSources;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.pipeline.StreamSourceStageTestBase;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.serialization.IntegerDeserializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -27,6 +29,7 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
@@ -35,6 +38,7 @@ import java.util.Properties;
 import static java.util.Arrays.asList;
 
 @RunWith(HazelcastSerialClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class StreamKafkaP_TimestampModesTest extends StreamSourceStageTestBase {
 
     private static KafkaTestSupport kafkaTestSupport = new KafkaTestSupport();

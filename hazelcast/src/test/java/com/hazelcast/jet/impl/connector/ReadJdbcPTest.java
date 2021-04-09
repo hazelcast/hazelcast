@@ -19,9 +19,12 @@ package com.hazelcast.jet.impl.connector;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sources;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -37,6 +40,7 @@ import static com.hazelcast.jet.pipeline.test.AssertionSinks.assertAnyOrder;
 import static com.hazelcast.jet.pipeline.test.AssertionSinks.assertOrdered;
 import static java.util.stream.Collectors.toList;
 
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ReadJdbcPTest extends SimpleTestInClusterSupport {
 
     private static final int ITEM_COUNT = 100;

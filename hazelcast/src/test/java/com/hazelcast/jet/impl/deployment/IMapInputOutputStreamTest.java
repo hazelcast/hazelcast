@@ -19,13 +19,14 @@ package com.hazelcast.jet.impl.deployment;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.map.IMap;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -41,7 +42,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class IMapInputOutputStreamTest extends SimpleTestInClusterSupport {
 
     @Rule

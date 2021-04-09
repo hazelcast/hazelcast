@@ -22,8 +22,11 @@ import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.List;
@@ -33,6 +36,7 @@ import static com.hazelcast.jet.TestContextSupport.adaptSupplier;
 import static java.util.stream.Collectors.toList;
 
 @RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ReadIListPTest extends JetTestSupport {
 
     private JetInstance instance;

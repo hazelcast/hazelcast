@@ -21,8 +21,11 @@ import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.logging.impl.LoggingServiceImpl;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.config.InstanceConfig.DEFAULT_FLOW_CONTROL_PERIOD_MS;
@@ -36,6 +39,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ReceiverTaskletSendLimitTest {
 
     private static final long START = SECONDS.toNanos(10);

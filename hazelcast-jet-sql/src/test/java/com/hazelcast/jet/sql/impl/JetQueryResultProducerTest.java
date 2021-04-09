@@ -22,7 +22,12 @@ import com.hazelcast.jet.impl.util.ProgressTracker;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.ResultIterator;
 import com.hazelcast.sql.impl.row.Row;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.util.NoSuchElementException;
 import java.util.concurrent.Future;
@@ -36,6 +41,8 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class JetQueryResultProducerTest extends JetTestSupport {
 
     private final JetQueryResultProducer producer = new JetQueryResultProducer();

@@ -31,12 +31,13 @@ import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.pipeline.test.TestSources;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.experimental.categories.Category;
 
 import javax.annotation.Nonnull;
 import java.io.BufferedWriter;
@@ -77,7 +78,7 @@ import static java.util.stream.Collectors.joining;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class WriteFilePTest extends SimpleTestInClusterSupport {
 
     private static final Semaphore semaphore = new Semaphore(0);

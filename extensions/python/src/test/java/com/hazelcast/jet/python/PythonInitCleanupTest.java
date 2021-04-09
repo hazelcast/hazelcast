@@ -21,6 +21,7 @@ import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -42,7 +43,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-@Category({NightlyTest.class})
+@Category({NightlyTest.class, ParallelJVMTest.class})
 public class PythonInitCleanupTest extends SimpleTestInClusterSupport {
 
     private static final String ECHO_HANDLER_FUNCTION

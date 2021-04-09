@@ -23,6 +23,9 @@ import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
+import org.junit.experimental.categories.Category;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -46,6 +49,7 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLA
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Category({QuickTest.class, ParallelJVMTest.class})
 public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
 
     /**

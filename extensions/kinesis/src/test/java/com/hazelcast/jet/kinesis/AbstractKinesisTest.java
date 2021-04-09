@@ -32,8 +32,13 @@ import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.jet.retry.RetryStrategies;
 import com.hazelcast.map.IMap;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
 import java.math.BigInteger;
@@ -51,6 +56,8 @@ import static java.lang.Math.min;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 
+@RunWith(HazelcastSerialClassRunner.class)
+@Category({SlowTest.class, ParallelJVMTest.class})
 class AbstractKinesisTest extends JetTestSupport {
 
     protected static final int KEYS = 250;

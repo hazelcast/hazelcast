@@ -26,14 +26,12 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.jet.test.SerialTest;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.ToxiproxyContainer;
 import org.testcontainers.containers.ToxiproxyContainer.ContainerProxy;
@@ -55,7 +53,6 @@ import static org.junit.Assert.assertFalse;
 import static org.testcontainers.shaded.org.apache.commons.lang.StringUtils.repeat;
 import static org.testcontainers.utility.DockerImageName.parse;
 
-@RunWith(HazelcastSerialClassRunner.class)
 public class KinesisFailureTest extends AbstractKinesisTest {
 
     @ClassRule

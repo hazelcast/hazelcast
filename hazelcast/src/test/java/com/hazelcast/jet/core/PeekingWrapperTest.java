@@ -26,8 +26,11 @@ import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
@@ -56,6 +59,7 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class PeekingWrapperTest {
 
     private static final JetEvent<Integer> TEST_JET_EVENT = jetEvent(123, 2);

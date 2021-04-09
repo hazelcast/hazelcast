@@ -19,7 +19,10 @@ package com.hazelcast.jet.core;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.Future;
@@ -29,6 +32,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class PostponedSnapshotTest extends PostponedSnapshotTestBase {
 
     @Test

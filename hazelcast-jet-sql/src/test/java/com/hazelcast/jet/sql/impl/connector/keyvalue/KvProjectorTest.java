@@ -23,13 +23,20 @@ import com.hazelcast.jet.sql.impl.inject.UpsertInjector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTarget;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import javax.annotation.Nullable;
 import java.util.Map.Entry;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class KvProjectorTest {
 
     @Test

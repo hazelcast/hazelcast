@@ -23,6 +23,8 @@ import com.hazelcast.jet.pipeline.StreamStage;
 import com.hazelcast.jet.pipeline.test.AssertionSinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -46,6 +48,7 @@ import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class PythonServiceTest extends SimpleTestInClusterSupport {
 
     private static final int ITEM_COUNT = 10_000;

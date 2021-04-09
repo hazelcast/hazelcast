@@ -25,6 +25,7 @@ import com.hazelcast.jet.impl.util.ImdgUtil;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -39,7 +40,7 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(NightlyTest.class)
+@Category({NightlyTest.class, ParallelJVMTest.class})
 public class MemberReconnectionStressTest extends JetTestSupport {
 
     private final AtomicBoolean terminated = new AtomicBoolean();
