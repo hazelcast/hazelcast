@@ -136,11 +136,11 @@ import static com.hazelcast.map.impl.MapServiceConstructor.getDefaultMapServiceC
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity", "checkstyle:classdataabstractioncoupling"})
 public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
     private static final String PLATFORM_LOGO
-            = "\to  o   O  o---o o--o o      o-o   O   o-o  o-O-o     o--o  o      O  o-O-o o--o  o-o  o--o  o   o \n"
-            + "\t|  |  / \\    /  |    |     /     / \\ |       |       |   | |     / \\   |   |    o   o |   | |\\ /| \n"
-            + "\tO--O o---o -O-  O-o  |    O     o---o o-o    |       O--o  |    o---o  |   O-o  |   | O-Oo  | O | \n"
-            + "\t|  | |   | /    |    |     \\    |   |    |   |       |     |    |   |  |   |    o   o |  \\  |   | \n"
-            + "\to  o o   oo---o o--o O---o  o-o o   oo--o    o       o     O---oo   o  o   o     o-o  o   o o   o";
+            = "\to  o   O   o---o o--o o      o-o   O    o-o  o-O-o     o--o  o       O  o-O-o o--o  o-o  o--o  o   o \n"
+            + "\t|  |  / \\     /  |    |     /     / \\  |       |       |   | |      / \\   |   |    o   o |   | |\\ /| \n"
+            + "\tO--O o---o  -O-  O-o  |    O     o---o  o-o    |       O--o  |     o---o  |   O-o  |   | O-Oo  | O | \n"
+            + "\t|  | |   |  /    |    |     \\    |   |     |   |       |     |     |   |  |   |    o   o |  \\  |   | \n"
+            + "\to  o o   o o---o o--o O---o  o-o o   o o--o    o       o     O---o o   o  o   o     o-o  o   o o   o";
 
     private static final String COPYRIGHT_LINE = "Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.";
     private static final String JET_DISABLED_PROPERTY = "hazelcast.jet.disabled";
