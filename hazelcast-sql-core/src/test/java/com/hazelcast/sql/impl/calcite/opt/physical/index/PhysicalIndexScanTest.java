@@ -521,8 +521,7 @@ public class PhysicalIndexScanTest extends IndexOptimizerTestSupport {
 
         RelDataType booleanType = typeFactory.createSqlType(SqlTypeName.BOOLEAN);
 
-        RexNode rexNode = rexBuild.makeCall(booleanType, predicate1, asList(operand1, operand2));
-        return rexNode;
+        return rexBuild.makeCall(booleanType, predicate1, asList(operand1, operand2));
     }
 
     private RexNode makeAndFilter() {

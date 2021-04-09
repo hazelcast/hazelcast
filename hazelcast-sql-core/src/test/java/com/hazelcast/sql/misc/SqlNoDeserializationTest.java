@@ -289,7 +289,7 @@ public class SqlNoDeserializationTest extends SqlTestSupport {
         }
 
         @Override
-        public void writePortable(PortableWriter writer) throws IOException {
+        public void writePortable(PortableWriter writer) {
             // No-op
         }
 

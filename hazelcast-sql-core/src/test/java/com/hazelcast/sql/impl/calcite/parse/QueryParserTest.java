@@ -42,7 +42,7 @@ import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -76,7 +76,7 @@ public class QueryParserTest {
 
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
+        MockitoAnnotations.openMocks(this);
 
         parser = new QueryParser(HazelcastTypeFactory.INSTANCE, catalogReader, conformance, sqlBackend, jetSqlBackend);
 
@@ -109,7 +109,7 @@ public class QueryParserTest {
         assertEquals(sqlBackend, result.getSqlBackend());
         assertEquals(sqlValidator, result.getValidator());
 
-        verifyZeroInteractions(jetSqlBackend);
+        verifyNoMoreInteractions(jetSqlBackend);
     }
 
     @Test(expected = QueryException.class)

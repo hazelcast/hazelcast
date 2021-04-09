@@ -343,7 +343,7 @@ public class AndOrPredicateIntegrationTest extends ExpressionTestSupport {
             condition.append(operands[i]);
         }
 
-        return "SELECT " + condition.toString() + " FROM map";
+        return "SELECT " + condition + " FROM map";
     }
 
     private Boolean result(Boolean... values) {

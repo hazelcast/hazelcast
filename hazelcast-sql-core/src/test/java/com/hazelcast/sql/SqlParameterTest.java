@@ -69,7 +69,7 @@ public class SqlParameterTest {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         member = null;
         client = null;
 
