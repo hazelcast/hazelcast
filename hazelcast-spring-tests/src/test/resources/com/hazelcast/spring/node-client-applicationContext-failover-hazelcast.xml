@@ -67,7 +67,7 @@
 
             <hz:connection-strategy async-start="true">
                 <hz:connection-retry>
-                    <hz:cluster-connect-timeout-millis>30_000</hz:cluster-connect-timeout-millis>
+                    <hz:cluster-connect-timeout-millis>30000</hz:cluster-connect-timeout-millis>
                 </hz:connection-retry>
             </hz:connection-strategy>
         </hz:client>
