@@ -40,6 +40,7 @@ public abstract class AbstractOperandTypeInference<S extends AbstractOperandType
 
         RelDataType knownType = null;
 
+        RelDataTypeFactory typeFactory = binding.getTypeFactory();
         for (int i = 0; i < binding.getOperandCount(); i++) {
             RelDataType operandType = binding.getOperandType(i);
 
@@ -52,7 +53,7 @@ public abstract class AbstractOperandTypeInference<S extends AbstractOperandType
                     // We upcast the type of the numeric expression to BIGINT, so that an expression `1 > ?` is resolved to
                     // `(BIGINT)1 > (BIGINT)?` rather than `(TINYINT)1 > (TINYINT)?`
                     operandType = createType(
-                            binding.getTypeFactory(),
+                            typeFactory,
                             SqlTypeName.BIGINT,
                             operandType.isNullable()
                     );
@@ -73,10 +74,20 @@ public abstract class AbstractOperandTypeInference<S extends AbstractOperandType
             throw new HazelcastCallBinding(binding).newValidationSignatureError();
         }
 
-        updateUnresolvedTypes(knownType, operandTypes, localState, binding.getTypeFactory(), SqlTypeName.INTERVAL_TYPES.contains(knownType.getSqlTypeName()));
+        updateUnresolvedTypes(
+                knownType,
+                operandTypes,
+                localState,
+                typeFactory,
+                SqlTypeName.INTERVAL_TYPES.contains(knownType.getSqlTypeName()));
     }
 
-    protected final void assignType(RelDataType targetType, RelDataType[] operandTypes, boolean targetTypeIsInterval, int index, RelDataTypeFactory typeFactory) {
+    protected final void assignType(
+            RelDataType targetType,
+            RelDataType[] operandTypes,
+            boolean targetTypeIsInterval,
+            int index,
+            RelDataTypeFactory typeFactory) {
         // If there is an operand with an unresolved type, set it to the known type.
         if (targetTypeIsInterval) {
             // If there is an interval on the one side, assume that the other side is a timestamp,

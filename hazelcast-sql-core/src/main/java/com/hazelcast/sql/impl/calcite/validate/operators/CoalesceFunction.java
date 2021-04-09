@@ -78,7 +78,13 @@ public final class CoalesceFunction extends HazelcastFunction {
 
         for (int i = 0, argTypesSize = operandList.size(); i < argTypesSize; i++) {
             int index = i;
-            if (!typeCoercion.rowTypeElementCoercion(scope, operandList.get(i), returnType, cast -> call.setOperand(index, cast))) {
+            boolean elementTypeCoerced = typeCoercion.rowTypeElementCoercion(
+                    scope,
+                    operandList.get(i),
+                    returnType,
+                    sqlNode -> call.setOperand(index, sqlNode));
+
+            if (!elementTypeCoerced) {
                 if (throwOnFailure) {
                     throw QueryException.error(SqlErrorCode.GENERIC, "Cannot infer return type for COALESCE among " + argTypes);
                 } else {
