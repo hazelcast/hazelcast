@@ -22,6 +22,7 @@ import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.pipeline.Pipeline;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -77,14 +78,15 @@ public abstract class TestInClusterSupport extends JetTestSupport {
 
     protected static Config prepareConfig() {
         parallelism = Runtime.getRuntime().availableProcessors() / MEMBER_COUNT / 2;
-        Config config = new Config();
+        Config config = smallInstanceConfig();
+
         JetConfig jetConfig = config.getJetConfig();
         jetConfig.getInstanceConfig().setCooperativeThreadCount(max(2, parallelism));
         config.getMetricsConfig().setCollectionFrequencySeconds(1);
         // Set partition count to match the parallelism of IMap sources.
         // Their preferred local parallelism is 2, therefore partition count
         // should be 2 * MEMBER_COUNT.
-        config.getProperties().setProperty("hazelcast.partition.count", "" + 2 * MEMBER_COUNT);
+        config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "" + 2 * MEMBER_COUNT);
         config.addCacheConfig(new CacheSimpleConfig().setName("*"));
         config.getMapConfig(JOURNALED_MAP_PREFIX + '*').getEventJournalConfig().setEnabled(true);
         config.getCacheConfig(JOURNALED_CACHE_PREFIX + '*').getEventJournalConfig().setEnabled(true);

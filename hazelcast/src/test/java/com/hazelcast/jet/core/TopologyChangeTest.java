@@ -116,13 +116,13 @@ public class TopologyChangeTest extends JetTestSupport {
         }
         TestProcessors.reset(nodeCount * PARALLELISM);
 
-        config = new Config();
+        config = smallInstanceConfig();
         config.getJetConfig().getInstanceConfig().setCooperativeThreadCount(PARALLELISM);
 
         instances = new JetInstance[NODE_COUNT];
 
         for (int i = 0; i < NODE_COUNT; i++) {
-            Config config = new Config();
+            Config config = smallInstanceConfig();
             config.setLiteMember(liteMemberFlags[i]);
             config.getJetConfig().getInstanceConfig().setCooperativeThreadCount(PARALLELISM);
 
@@ -138,7 +138,7 @@ public class TopologyChangeTest extends JetTestSupport {
         // When
         Job job = instances[0].newJob(dag);
         NoOutputSourceP.executionStarted.await();
-        createJetMember();
+        createJetMember(config);
         NoOutputSourceP.proceedLatch.countDown();
         job.join();
 
@@ -159,7 +159,7 @@ public class TopologyChangeTest extends JetTestSupport {
         // When
         Job job = instances[0].newJob(dag);
         NoOutputSourceP.executionStarted.await();
-        JetInstance instance = createJetMember();
+        JetInstance instance = createJetMember(config);
         instance.shutdown();
         NoOutputSourceP.proceedLatch.countDown();
         job.join();

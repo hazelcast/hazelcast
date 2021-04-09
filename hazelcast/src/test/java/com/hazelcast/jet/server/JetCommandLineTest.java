@@ -104,7 +104,7 @@ public class JetCommandLineTest extends JetTestSupport {
 
     @Before
     public void before() {
-        Config cfg = new Config();
+        Config cfg = smallInstanceConfig();
         cfg.getMapConfig(SOURCE_NAME).getEventJournalConfig().setEnabled(true);
         String clusterName = randomName();
         cfg.setClusterName(clusterName);

@@ -40,7 +40,7 @@ public class OperationTimeoutTest extends JetTestSupport {
 
     @Before
     public void setup() {
-        config = new Config();
+        config = smallInstanceConfig();
         config.setProperty(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), Integer.toString(TIMEOUT_MILLIS));
     }
 

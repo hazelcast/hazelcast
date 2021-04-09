@@ -61,7 +61,7 @@ public class SuspendResumeTest extends JetTestSupport {
     public void before() {
         TestProcessors.reset(NODE_COUNT * PARALLELISM);
         instances = new JetInstance[NODE_COUNT];
-        config = new Config();
+        config = smallInstanceConfig();
         config.getJetConfig().getInstanceConfig().setCooperativeThreadCount(PARALLELISM);
         for (int i = 0; i < NODE_COUNT; i++) {
             instances[i] = createJetMember(config);

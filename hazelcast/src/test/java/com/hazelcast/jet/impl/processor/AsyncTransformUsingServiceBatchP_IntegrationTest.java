@@ -84,7 +84,7 @@ public class AsyncTransformUsingServiceBatchP_IntegrationTest extends SimpleTest
 
     @BeforeClass
     public static void beforeClass() {
-        Config config = new Config();
+        Config config = smallInstanceConfig();
         config.getMapConfig("journaledMap*")
               .getEventJournalConfig()
               .setEnabled(true)
