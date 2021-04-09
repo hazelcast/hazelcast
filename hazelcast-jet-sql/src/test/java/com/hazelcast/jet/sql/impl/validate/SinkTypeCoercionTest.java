@@ -735,50 +735,65 @@ public class SinkTypeCoercionTest extends SqlTestSupport {
                     '}';
         }
 
+        @SuppressWarnings("BooleanMethodIsAlwaysInverted")
         public boolean exceptionMatches(Exception e) {
             return expectedFailureRegex.matcher(e.getMessage()).find();
         }
     }
 
+    @SuppressWarnings("unused") // used through reflection
     public static final class StringRef implements Serializable {
         public String field;
     }
+    @SuppressWarnings("unused") // used through reflection
     public static final class BooleanRef implements Serializable {
         public Boolean field;
     }
+    @SuppressWarnings("unused") // used through reflection
     public static final class ByteRef implements Serializable {
         public Byte field;
     }
+    @SuppressWarnings("unused") // used through reflection
     public static final class ShortRef implements Serializable {
         public Short field;
     }
+    @SuppressWarnings("unused") // used through reflection
     public static final class IntegerRef implements Serializable {
         public Integer field;
     }
+    @SuppressWarnings("unused") // used through reflection
     public static final class LongRef implements Serializable {
         public Long field;
     }
+    @SuppressWarnings("unused") // used through reflection
     public static final class BigDecimalRef implements Serializable {
         public BigDecimal field;
     }
+    @SuppressWarnings("unused") // used through reflection
     public static final class FloatRef implements Serializable {
         public Float field;
     }
+    @SuppressWarnings("unused") // used through reflection
     public static final class DoubleRef implements Serializable {
         public Double field;
     }
+    @SuppressWarnings("unused") // used through reflection
     public static final class LocalTimeRef implements Serializable {
         public LocalTime field;
     }
+    @SuppressWarnings("unused") // used through reflection
     public static final class LocalDateRef implements Serializable {
         public LocalDate field;
     }
+    @SuppressWarnings("unused") // used through reflection
     public static final class LocalDateTimeRef implements Serializable {
         public LocalDateTime field;
     }
+    @SuppressWarnings("unused") // used through reflection
     public static final class OffsetDateTimeRef implements Serializable {
         public OffsetDateTime field;
     }
+    @SuppressWarnings("unused") // used through reflection
     public static final class ObjectRef implements Serializable {
         public Object field;
     }

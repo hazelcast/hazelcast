@@ -220,7 +220,7 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
     }
 
     /**
-     * This method overrides Apache Calcite approach for IN operator.
+     * This method overrides Apache Calcite's approach for IN operator.
      *
      * @see org.apache.calcite.sql2rel.SqlToRelConverter##substituteSubQuery
      * @see org.apache.calcite.sql2rel.SqlToRelConverter##convertInToOr
@@ -250,7 +250,7 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
             );
         }
         throw QueryException.error(SqlErrorCode.GENERIC,
-                "Hazelcast SQL engine doesn't support subqueries within IN operator.");
+                "Hazelcast SQL engine doesn't support subqueries for IN operator.");
     }
 
     /**
@@ -351,7 +351,8 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
     private List<RexNode> constructComparisons(
         Blackboard bb,
         List<RexNode> leftKeys,
-        SqlNodeList valuesList) {
+        SqlNodeList valuesList
+    ) {
         final List<RexNode> comparisons = new ArrayList<>();
 
         for (SqlNode rightValues : valuesList) {
