@@ -364,7 +364,8 @@
                 <artifactId>maven-shade-plugin</artifactId>
                 <executions>
                     <execution>
-                        <phase>package</phase>
+                        <id>jar-with-dependencies</id>
+                        <phase>${shade.jar-with-dependencies.phase}</phase>
                         <goals>
                             <goal>shade</goal>
                         </goals>
