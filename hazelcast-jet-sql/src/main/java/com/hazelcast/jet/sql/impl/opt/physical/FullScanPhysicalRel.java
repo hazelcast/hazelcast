@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.jet.impl.util.Util.toList;
+import static java.util.Collections.emptyList;
 
 public class FullScanPhysicalRel extends TableScan implements PhysicalRel {
 
@@ -44,7 +45,7 @@ public class FullScanPhysicalRel extends TableScan implements PhysicalRel {
             RelTraitSet traitSet,
             RelOptTable table
     ) {
-        super(cluster, traitSet, table);
+        super(cluster, traitSet, emptyList(), table);
     }
 
     public Expression<Boolean> filter() {
