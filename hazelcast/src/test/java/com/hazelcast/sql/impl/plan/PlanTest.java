@@ -66,7 +66,7 @@ public class PlanTest extends SqlTestSupport {
             null,
             QueryParameterMetadata.EMPTY,
             null,
-                objectKeys,
+            objectKeys,
             permissions
         );
 
