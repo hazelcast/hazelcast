@@ -17,13 +17,11 @@
 package com.hazelcast.sql.impl.calcite.validate.operators;
 
 import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.sql.SqlCallBinding;
-import org.apache.calcite.sql.type.SqlTypeName;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils.createType;
 
 public final class VariableLengthOperandTypeInference
         extends AbstractOperandTypeInference<VariableLengthOperandTypeInference.OperandsIndexState> {
@@ -43,22 +41,15 @@ public final class VariableLengthOperandTypeInference
 
     @Override
     protected void updateUnresolvedTypes(
-            SqlCallBinding binding,
             RelDataType knownType,
             RelDataType[] operandTypes,
-            OperandsIndexState state
+            OperandsIndexState state,
+            RelDataTypeFactory typeFactory,
+            boolean knownTypeIsIntervalType
     ) {
-        // If there is an operand with an unresolved type, set it to the known type.
         if (!state.unknownTypeOperandIndexes.isEmpty()) {
-            boolean knownTypeIsIntervalType = SqlTypeName.INTERVAL_TYPES.contains(knownType.getSqlTypeName());
             for (int unknownTypeOperandIndex : state.unknownTypeOperandIndexes) {
-                if (knownTypeIsIntervalType) {
-                    // If there is an interval on the one side, assume that the other side is a timestamp,
-                    // because this is the only viable overload.
-                    operandTypes[unknownTypeOperandIndex] = createType(binding.getTypeFactory(), SqlTypeName.TIMESTAMP, true);
-                } else {
-                    operandTypes[unknownTypeOperandIndex] = knownType;
-                }
+                assignType(knownType, operandTypes, knownTypeIsIntervalType, unknownTypeOperandIndex, typeFactory);
             }
         }
     }

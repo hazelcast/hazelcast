@@ -16,8 +16,10 @@
 
 package com.hazelcast.sql.impl.calcite.validate.types;
 
+import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
+import com.hazelcast.sql.impl.calcite.validate.param.NumericPrecedenceParameterConverter;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import org.apache.calcite.rel.type.RelDataType;
@@ -26,6 +28,9 @@ import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlDataTypeSpec;
+import org.apache.calcite.sql.SqlDynamicParam;
+import org.apache.calcite.sql.SqlFunction;
+import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlInsert;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
@@ -157,12 +162,12 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
         switch (query.getKind()) {
             case SELECT:
                 SqlSelect selectNode = (SqlSelect) query;
-                SqlValidatorScope scope1 = validator.getSelectScope(selectNode);
-                if (!rowTypeElementCoercion(scope1, selectNode.getSelectList().get(columnIndex), targetType,
+                SqlValidatorScope selectScope = validator.getSelectScope(selectNode);
+                if (!rowTypeElementCoercion(selectScope, selectNode.getSelectList().get(columnIndex), targetType,
                         newNode -> selectNode.getSelectList().set(columnIndex, newNode))) {
                     return false;
                 }
-                updateInferredColumnType(scope1, query, columnIndex, targetType);
+                updateInferredColumnType(selectScope, query, columnIndex, targetType);
                 return true;
             case VALUES:
                 for (SqlNode rowConstructor : ((SqlCall) query).getOperandList()) {

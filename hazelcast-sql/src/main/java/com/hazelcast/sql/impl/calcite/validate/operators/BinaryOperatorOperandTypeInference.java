@@ -17,10 +17,8 @@
 package com.hazelcast.sql.impl.calcite.validate.operators;
 
 import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.sql.SqlCallBinding;
-import org.apache.calcite.sql.type.SqlTypeName;
-
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils.createType;
 
 public final class BinaryOperatorOperandTypeInference
         extends AbstractOperandTypeInference<BinaryOperatorOperandTypeInference.IndexState> {
@@ -86,21 +84,13 @@ public final class BinaryOperatorOperandTypeInference
 
     @Override
     protected void updateUnresolvedTypes(
-            SqlCallBinding binding,
             RelDataType knownType,
             RelDataType[] operandTypes,
-            IndexState state
+            IndexState state,
+            RelDataTypeFactory typeFactory,
+            boolean knownTypeIsIntervalType
     ) {
-        // If there is an operand with an unresolved type, set it to the known type.
-        if (state.unknownTypeOperandIndex != -1) {
-            if (SqlTypeName.INTERVAL_TYPES.contains(knownType.getSqlTypeName())) {
-                // If there is an interval on the one side, assume that the other side is a timestamp,
-                // because this is the only viable overload.
-                operandTypes[state.unknownTypeOperandIndex] = createType(binding.getTypeFactory(), SqlTypeName.TIMESTAMP, true);
-            } else {
-                operandTypes[state.unknownTypeOperandIndex] = knownType;
-            }
-        }
+        assignType(knownType, operandTypes, knownTypeIsIntervalType, state.unknownTypeOperandIndex, typeFactory);
     }
 
     static class IndexState implements AbstractOperandTypeInference.State {

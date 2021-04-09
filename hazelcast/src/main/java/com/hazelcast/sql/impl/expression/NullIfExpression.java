@@ -21,6 +21,8 @@ import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
+import java.util.Objects;
+
 public class NullIfExpression<T> extends BiExpression<T> implements IdentifiedDataSerializable {
     public NullIfExpression() {
         super();
@@ -48,7 +50,9 @@ public class NullIfExpression<T> extends BiExpression<T> implements IdentifiedDa
     public T eval(Row row, ExpressionEvalContext context) {
         T leftResult = (T) operand1.eval(row, context);
         T rightResult = (T) operand2.eval(row, context);
-        if (leftResult.equals(rightResult)) {
+        // This is a "paranoid" check ...
+        // calcite actually simplifies NULLIF(NULL, X) into NULL
+        if (Objects.equals(leftResult, rightResult)) {
             return null;
         }
         return leftResult;

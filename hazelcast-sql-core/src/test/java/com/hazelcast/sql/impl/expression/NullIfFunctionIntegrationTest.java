@@ -38,6 +38,16 @@ public class NullIfFunctionIntegrationTest extends ExpressionTestSupport {
     }
 
     @Test
+    public void nullsAsParameters() {
+        put(1);
+
+        checkValue0("select nullif(null, this) from map", SqlColumnType.INTEGER, null);
+        checkValue0("select nullif(this, null) from map", SqlColumnType.INTEGER, 1);
+        checkValue0("select nullif(CAST(null as INT), null) from map", SqlColumnType.INTEGER, null);
+        checkValue0("select nullif(nullif(CAST(null as INT), null), null) from map", SqlColumnType.INTEGER, null);
+    }
+
+    @Test
     public void notEqualParameters() {
         put(1);
 

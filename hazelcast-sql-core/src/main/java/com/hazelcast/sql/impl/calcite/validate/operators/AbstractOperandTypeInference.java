@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.calcite.validate.operators;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.SqlOperandTypeInference;
@@ -72,7 +73,18 @@ public abstract class AbstractOperandTypeInference<S extends AbstractOperandType
             throw new HazelcastCallBinding(binding).newValidationSignatureError();
         }
 
-        updateUnresolvedTypes(binding, knownType, operandTypes, localState);
+        updateUnresolvedTypes(knownType, operandTypes, localState, binding.getTypeFactory(), SqlTypeName.INTERVAL_TYPES.contains(knownType.getSqlTypeName()));
+    }
+
+    protected final void assignType(RelDataType targetType, RelDataType[] operandTypes, boolean targetTypeIsInterval, int index, RelDataTypeFactory typeFactory) {
+        // If there is an operand with an unresolved type, set it to the known type.
+        if (targetTypeIsInterval) {
+            // If there is an interval on the one side, assume that the other side is a timestamp,
+            // because this is the only viable overload.
+            operandTypes[index] = createType(typeFactory, SqlTypeName.TIMESTAMP, true);
+        } else {
+            operandTypes[index] = targetType;
+        }
     }
 
     public interface State {
@@ -84,9 +96,10 @@ public abstract class AbstractOperandTypeInference<S extends AbstractOperandType
     protected abstract void precondition(RelDataType[] operandTypes, SqlCallBinding binding);
 
     protected abstract void updateUnresolvedTypes(
-            SqlCallBinding binding,
             RelDataType knownType,
             RelDataType[] operandTypes,
-            S state
+            S state,
+            RelDataTypeFactory typeFactory,
+            boolean knownTypeIsIntervalType
     );
 }

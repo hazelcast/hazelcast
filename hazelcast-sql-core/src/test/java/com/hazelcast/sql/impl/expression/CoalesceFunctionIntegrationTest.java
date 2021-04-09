@@ -37,6 +37,7 @@ public class CoalesceFunctionIntegrationTest extends ExpressionTestSupport {
         checkValue0("select coalesce(this, 2) from map", SqlColumnType.INTEGER, 1);
         checkValue0("select coalesce(null, this, 2) from map", SqlColumnType.INTEGER, 1);
         checkValue0("select coalesce(null, 2, this) from map", SqlColumnType.INTEGER, 2);
+        checkValue0("select coalesce(CAST(null as INT), null) from map", SqlColumnType.INTEGER, null);
     }
 
     @Test
