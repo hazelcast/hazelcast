@@ -138,8 +138,8 @@ public class SqlSeriesGeneratorTest extends SqlTestSupport {
 
     @Test
     public void when_stepIsZero_then_throws() {
-        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM TABLE(GENERATE_SERIES(0, 5, 0))"))
-                .hasMessageContaining("step cannot equal zero");
+        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM TABLE(GENERATE_SERIES(0, 5, 0))").iterator().next())
+                .hasMessageContaining("GENERATE_SERIES - step cannot be equal to zero");
     }
 
     @Test
@@ -150,8 +150,8 @@ public class SqlSeriesGeneratorTest extends SqlTestSupport {
 
     @Test
     public void test_nullArgument() {
-        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM TABLE(GENERATE_SERIES(null, null))"))
-                .hasMessage("null arguments to GENERATE_SERIES functions");
+        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM TABLE(GENERATE_SERIES(null, null))").iterator().next())
+                .hasMessageContaining("GENERATE_SERIES - null argument(s)");
     }
 
     @Test

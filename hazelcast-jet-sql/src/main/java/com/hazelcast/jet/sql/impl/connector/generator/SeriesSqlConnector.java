@@ -78,8 +78,8 @@ class SeriesSqlConnector implements SqlConnector {
 
     @Nonnull
     @SuppressWarnings("SameParameterValue")
-    static SeriesTable createTable(String schemaName, String name, Integer start, Integer stop, Integer step) {
-        return new SeriesTable(INSTANCE, FIELDS, schemaName, name, start, stop, step);
+    static SeriesTable createTable(String schemaName, String name, List<Expression<?>> argumentExpressions) {
+        return new SeriesTable(INSTANCE, FIELDS, schemaName, name, argumentExpressions);
     }
 
     @Override
