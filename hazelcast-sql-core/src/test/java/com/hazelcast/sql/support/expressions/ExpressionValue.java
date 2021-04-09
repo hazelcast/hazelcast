@@ -23,6 +23,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 @SuppressWarnings({"unused", "unchecked, checkstyle:MultipleVariableDeclarations"})
@@ -134,7 +135,7 @@ public abstract class ExpressionValue implements Serializable {
 
             ObjectVal objectVal = (ObjectVal) o;
 
-            return field1 != null ? field1.equals(objectVal.field1) : objectVal.field1 == null;
+            return Objects.equals(field1, objectVal.field1);
         }
 
         @Override

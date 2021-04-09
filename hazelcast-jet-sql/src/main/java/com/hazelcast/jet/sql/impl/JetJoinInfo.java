@@ -124,7 +124,7 @@ public class JetJoinInfo implements DataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(joinType.name());
+        out.writeString(joinType.name());
         out.writeObject(leftEquiJoinIndices);
         out.writeObject(rightEquiJoinIndices);
         out.writeObject(nonEquiCondition);
@@ -133,7 +133,7 @@ public class JetJoinInfo implements DataSerializable {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        joinType = JoinRelType.valueOf(in.readUTF());
+        joinType = JoinRelType.valueOf(in.readString());
         leftEquiJoinIndices = in.readObject();
         rightEquiJoinIndices = in.readObject();
         nonEquiCondition = in.readObject();

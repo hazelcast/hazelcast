@@ -106,7 +106,7 @@ final class InfoSchemaConnector implements SqlConnector {
 
         private final Expression<Boolean> predicate;
         private final List<Expression<?>> projection;
-        private List<Object[]> rows;
+        private final List<Object[]> rows;
 
         private Traverser<Object[]> traverser;
 
