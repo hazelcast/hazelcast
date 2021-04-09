@@ -135,7 +135,14 @@ import static com.hazelcast.map.impl.MapServiceConstructor.getDefaultMapServiceC
 
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity", "checkstyle:classdataabstractioncoupling"})
 public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
+    private static final String PLATFORM_LOGO
+            = "\to  o   O   o---o o--o o      o-o   O    o-o  o-O-o     o--o  o       O  o-O-o o--o  o-o  o--o  o   o \n"
+            + "\t|  |  / \\     /  |    |     /     / \\  |       |       |   | |      / \\   |   |    o   o |   | |\\ /| \n"
+            + "\tO--O o---o  -O-  O-o  |    O     o---o  o-o    |       O--o  |     o---o  |   O-o  |   | O-Oo  | O | \n"
+            + "\t|  | |   |  /    |    |     \\    |   |     |   |       |     |     |   |  |   |    o   o |  \\  |   | \n"
+            + "\to  o o   o o---o o--o O---o  o-o o   o o--o    o       o     O---o o   o  o   o     o-o  o   o o   o";
 
+    private static final String COPYRIGHT_LINE = "Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.";
     private static final String JET_DISABLED_PROPERTY = "hazelcast.jet.disabled";
 
     protected final Node node;
@@ -200,22 +207,19 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
     @Override
     public void beforeStart() {
         if (jetExtension != null) {
+            systemLogger.info("Jet extension is enabled.");
             jetExtension.beforeStart();
+        } else {
+            systemLogger.info("Jet extension is disabled.");
         }
     }
 
     @Override
     public void printNodeInfo() {
-        if (jetExtension != null) {
-            jetExtension.printNodeInfo(systemLogger, "Hazelcast Platform");
-        } else {
-            BuildInfo buildInfo = node.getBuildInfo();
-
-            printBannersBeforeNodeInfo();
-
-            String build = constructBuildString(buildInfo);
-            printNodeInfoInternal(buildInfo, build);
-        }
+        BuildInfo buildInfo = node.getBuildInfo();
+        printBannersBeforeNodeInfo();
+        String build = constructBuildString(buildInfo);
+        printNodeInfoInternal(buildInfo, build);
     }
 
     @Override
@@ -247,6 +251,8 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
     }
 
     protected void printBannersBeforeNodeInfo() {
+        systemLogger.info('\n' + PLATFORM_LOGO);
+        systemLogger.info(COPYRIGHT_LINE);
     }
 
     protected String constructBuildString(BuildInfo buildInfo) {
@@ -261,11 +267,12 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
     private void printNodeInfoInternal(BuildInfo buildInfo, String build) {
         systemLogger.info(getEditionString() + " " + buildInfo.getVersion()
                 + " (" + build + ") starting at " + node.getThisAddress());
+        systemLogger.info("Cluster name: " + node.getConfig().getClusterName());
         systemLogger.fine("Configured Hazelcast Serialization version: " + buildInfo.getSerializationVersion());
     }
 
     protected String getEditionString() {
-        return "Hazelcast";
+        return "Hazelcast Platform";
     }
 
     @Override

@@ -58,7 +58,7 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
     public void before() throws Exception {
         reset(MEMBER_COUNT);
 
-        Config config = new Config();
+        Config config = smallInstanceConfig();
         config.setProperty("hazelcast.jmx", "true");
         config.getMetricsConfig().setCollectionFrequencySeconds(1);
 

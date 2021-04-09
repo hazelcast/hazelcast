@@ -67,7 +67,7 @@ public class WatermarkCoalescer_TerminalSnapshotTest extends JetTestSupport {
 
     @Before
     public void setUp() {
-        Config config = new Config();
+        Config config = smallInstanceConfig();
         EventJournalConfig journalConfig = new EventJournalConfig()
                 .setCapacity(1_000_000)
                 .setEnabled(true);

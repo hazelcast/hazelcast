@@ -46,7 +46,7 @@ public class GracefulShutdown_LiteMasterTest extends JetTestSupport {
     @Before
     public void setup() {
         TestProcessors.reset(0);
-        Config liteMemberConfig = new Config();
+        Config liteMemberConfig = smallInstanceConfig();
         liteMemberConfig.setLiteMember(true);
         liteMaster = createJetMember(liteMemberConfig);
         instance = createJetMember();

@@ -85,13 +85,13 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
 
     @BeforeClass
     public static void setUp() {
-        Config config = new Config();
+        Config config = smallInstanceConfig();
         config.addCacheConfig(new CacheSimpleConfig().setName("*"));
 
         jet = factory.newMember(config);
         JetInstance jet2 = factory.newMember(config);
 
-        Config remoteClusterConfig = new Config();
+        Config remoteClusterConfig = smallInstanceConfig();
         CacheSimpleConfig cacheConfig = new CacheSimpleConfig().setName("*");
         cacheConfig.getEventJournalConfig().setEnabled(true);
         remoteClusterConfig.addCacheConfig(cacheConfig);

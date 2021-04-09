@@ -52,7 +52,7 @@ public class Job_StaleInstanceTest extends JetTestSupport {
     public static void beforeClass() {
         TestProcessors.reset(1);
         instanceFactory = new JetTestInstanceFactory();
-        JetInstance instance = instanceFactory.newMember();
+        JetInstance instance = instanceFactory.newMember(smallInstanceConfig());
         DAG dag = new DAG();
         dag.newVertex("v", () -> new NoOutputSourceP());
         client = instanceFactory.newClient();
@@ -60,7 +60,7 @@ public class Job_StaleInstanceTest extends JetTestSupport {
         assertJobStatusEventually(job, RUNNING);
 
         instance.getHazelcastInstance().getLifecycleService().terminate();
-        instance = instanceFactory.newMember();
+        instance = instanceFactory.newMember(smallInstanceConfig());
         assertEqualsEventually(() -> firstItem(client.getHazelcastInstance().getCluster().getMembers())
                         .map(Member::getAddress).orElse(null),
                 instance.getHazelcastInstance().getCluster().getLocalMember().getAddress());

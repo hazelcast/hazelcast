@@ -95,7 +95,7 @@ public class SourceBuilder_TopologyChangeTest extends JetTestSupport {
                 })
                 .build();
 
-        Config config = new Config();
+        Config config = smallInstanceConfig();
         config.getJetConfig().getInstanceConfig().setScaleUpDelayMillis(1000); // restart sooner after member add
         JetInstance jet = createJetMember(config);
         JetInstance possibleSecondNode = secondMemberSupplier.get();

@@ -132,7 +132,7 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
         phoneHome.phoneHome(false);
 
         verify(1, getRequestedFor(urlPathEqualTo("/ping"))
-                .withQueryParam("mpct", equalTo("8"))
+                .withQueryParam("mpct", equalTo("2"))
                 .withQueryParam("mpbrct", equalTo("1"))
                 .withQueryParam("mpmsct", equalTo("1"))
                 .withQueryParam("mpaoqcct", equalTo("1"))
@@ -161,7 +161,7 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
         phoneHome.phoneHome(false);
 
         verify(1, getRequestedFor(urlPathEqualTo("/ping"))
-                .withQueryParam("mpct", equalTo("7"))
+                .withQueryParam("mpct", equalTo("1"))
                 .withQueryParam("sect", equalTo("1"))
                 .withQueryParam("quct", equalTo("1"))
                 .withQueryParam("mmct", equalTo("1"))
@@ -171,7 +171,7 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
                 .withQueryParam("rpct", equalTo("1"))
                 .withQueryParam("cect", equalTo("1"))
                 .withQueryParam("pncct", equalTo("1"))
-                .withQueryParam("figct", equalTo("2")));
+                .withQueryParam("figct", equalTo("1")));
     }
 
     @Test
@@ -294,7 +294,7 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
         phoneHome.phoneHome(false);
         phoneHome.phoneHome(false);
 
-        verify(2, getRequestedFor(urlPathEqualTo("/ping")).withQueryParam("mpct", equalTo("7")));
+        verify(2, getRequestedFor(urlPathEqualTo("/ping")).withQueryParam("mpct", equalTo("1")));
     }
 
     @Test

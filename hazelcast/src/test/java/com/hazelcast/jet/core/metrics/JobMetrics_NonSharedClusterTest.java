@@ -53,7 +53,7 @@ public class JobMetrics_NonSharedClusterTest extends JetTestSupport {
 
     @Test
     public void when_metricsCollectionOff_then_emptyMetrics() {
-        Config config = new Config();
+        Config config = smallInstanceConfig();
         config.getMetricsConfig().setEnabled(false);
         JetInstance inst = createJetMember(config);
 
@@ -65,7 +65,7 @@ public class JobMetrics_NonSharedClusterTest extends JetTestSupport {
 
     @Test
     public void when_noMetricCollectionYet_then_emptyMetrics() {
-        Config config = new Config();
+        Config config = smallInstanceConfig();
         config.getMetricsConfig().setCollectionFrequencySeconds(10_000);
         JetInstance inst = createJetMember(config);
 

@@ -29,6 +29,7 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLA
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Tests for the {@code information_schema}.
@@ -62,7 +63,6 @@ public class SqlInfoSchemaTest extends SqlTestSupport {
 
     @Test
     public void test_mappings() {
-        // when
         assertRowsAnyOrder(
                 "SELECT * FROM information_schema.mappings",
                 singletonList(
@@ -102,6 +102,36 @@ public class SqlInfoSchemaTest extends SqlTestSupport {
                         new Row(mappingName, "HAZELCAST", "__value", "VARCHAR")
                 )
         );
+    }
+
+    @Test
+    public void test_planCache_mappings() {
+        assertRowsAnyOrder(
+                "SELECT mapping_name FROM information_schema.mappings",
+                singletonList(new Row(mappingName))
+        );
+        assertThat(planCache(instance()).size()).isEqualTo(1);
+
+        assertRowsAnyOrder(
+                "SELECT mapping_external_name FROM information_schema.mappings",
+                singletonList(new Row(mappingExternalName))
+        );
+        assertThat(planCache(instance()).size()).isEqualTo(2);
+    }
+
+    @Test
+    public void test_planCache_columns() {
+        assertRowsAnyOrder(
+                "SELECT column_name FROM information_schema.columns WHERE ordinal_position = 2",
+                singletonList(new Row("__value"))
+        );
+        assertThat(planCache(instance()).size()).isEqualTo(1);
+
+        assertRowsAnyOrder(
+                "SELECT column_external_name FROM information_schema.columns WHERE ordinal_position = 2",
+                singletonList(new Row("this.value"))
+        );
+        assertThat(planCache(instance()).size()).isEqualTo(2);
     }
 
     public static final class Value {

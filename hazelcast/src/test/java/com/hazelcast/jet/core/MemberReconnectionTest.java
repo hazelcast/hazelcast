@@ -38,7 +38,7 @@ public class MemberReconnectionTest extends JetTestSupport {
     @Test
     public void when_connectionDropped_then_detectedInReceiverTaskletAndFails() {
         // we use real-network instances, closing the mock connection doesn't cause them to reconnect
-        Config config = new Config();
+        Config config = smallInstanceConfig();
         config.setClusterName(randomName());
 
         JetInstance inst1 = Hazelcast.newHazelcastInstance(config).getJetInstance();

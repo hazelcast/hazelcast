@@ -142,7 +142,7 @@ public class GracefulShutdownTest extends JetTestSupport {
 
     @Test
     public void when_liteMemberShutDown_then_jobKeepsRunning() throws Exception {
-        Config liteMemberConfig = new Config();
+        Config liteMemberConfig = smallInstanceConfig();
         liteMemberConfig.setLiteMember(true);
         JetInstance liteMember = createJetMember(liteMemberConfig);
         DAG dag = new DAG();

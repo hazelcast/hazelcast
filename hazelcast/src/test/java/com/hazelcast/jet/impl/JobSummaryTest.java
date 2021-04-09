@@ -54,7 +54,7 @@ public class JobSummaryTest extends JetTestSupport {
 
     @Before
     public void setup() {
-        Config config = new Config();
+        Config config = smallInstanceConfig();
         MapConfig mapConfig = new MapConfig(SOURCE_NAME);
         mapConfig.getEventJournalConfig().setEnabled(true);
         config.addMapConfig(mapConfig);
@@ -135,7 +135,6 @@ public class JobSummaryTest extends JetTestSupport {
             assertEquals(numJobs, list.size());
 
             Collections.reverse(list);
-
             // jobs are sorted by submission time in descending order
             for (int i = 0; i < numJobs; i++) {
                 JobSummary summary = list.get(i);

@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.core;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
@@ -57,7 +56,7 @@ public class TopologyChangeDuringJobSubmissionTest extends JetTestSupport {
         NoOutputSourceP.proceedLatch = new CountDownLatch(1);
         NoOutputSourceP.executionStarted = new CountDownLatch(PARALLELISM);
 
-        instance1 = createJetMember(new Config().setLiteMember(true));
+        instance1 = createJetMember(smallInstanceConfig().setLiteMember(true));
         instance2 = createJetMember();
 
         warmUpPartitions(instance1.getHazelcastInstance(), instance2.getHazelcastInstance());

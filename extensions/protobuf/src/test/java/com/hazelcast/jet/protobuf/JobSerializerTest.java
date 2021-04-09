@@ -54,7 +54,7 @@ public class JobSerializerTest extends SimpleTestInClusterSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        Config config = new Config();
+        Config config = smallInstanceConfig();
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getSerializationConfig()

@@ -54,7 +54,7 @@ public class NonSmartClientTest extends JetTestSupport {
 
     @Before
     public void setUp() {
-        Config config = new Config();
+        Config config = smallInstanceConfig();
         config.getMapConfig("journal*").getEventJournalConfig().setEnabled(true);
         instance = createJetMember(config);
         JetInstance jetInstance = createJetMember(config);

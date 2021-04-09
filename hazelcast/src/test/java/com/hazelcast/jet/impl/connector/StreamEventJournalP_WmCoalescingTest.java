@@ -67,7 +67,7 @@ public class StreamEventJournalP_WmCoalescingTest extends JetTestSupport {
 
     @Before
     public void setUp() {
-        Config config = new Config();
+        Config config = smallInstanceConfig();
 
         String mapName = randomMapName();
         MapConfig mapConfig = new MapConfig();

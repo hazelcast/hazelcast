@@ -75,6 +75,7 @@ public class OrderedProcessingMultipleMemberTest extends JetTestSupport implemen
     // Used to set the LP of the stage with the smaller value than upstream parallelism
     private static final int LOW_LOCAL_PARALLELISM = 2;
     private static final int INSTANCE_COUNT = 2;
+    private static final String JOURNALED_MAP_PREFIX = "test-map-";
 
     private static Pipeline p;
     private static JetInstance[] instances;
@@ -90,15 +91,12 @@ public class OrderedProcessingMultipleMemberTest extends JetTestSupport implemen
 
     @BeforeClass
     public static void setupClass() {
-        int testCount = 16;
-        Config config = new Config();
-        for (int idx = 0; idx < testCount; idx++) {
-            EventJournalConfig eventJournalConfig = config
-                    .getMapConfig("test-map-" + idx)
-                    .getEventJournalConfig();
-            eventJournalConfig.setEnabled(true);
-            eventJournalConfig.setCapacity(30000); // 30000/271 ~= 111 item per partition
-        }
+        Config config = smallInstanceConfig();
+        EventJournalConfig eventJournalConfig = config
+                .getMapConfig(JOURNALED_MAP_PREFIX + '*')
+                .getEventJournalConfig();
+        eventJournalConfig.setEnabled(true);
+        eventJournalConfig.setCapacity(30000); // 30000/271 ~= 111 item per partition
         instances = new JetInstance[INSTANCE_COUNT];
         for (int i = 0; i < INSTANCE_COUNT; i++) {
             instances[i] = Hazelcast.newHazelcastInstance(config).getJetInstance();

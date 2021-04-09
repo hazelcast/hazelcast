@@ -76,7 +76,7 @@ public class StreamEventJournalPTest extends JetTestSupport {
 
     @Before
     public void setUp() {
-        Config config = new Config();
+        Config config = smallInstanceConfig();
         config.setProperty(PARTITION_COUNT.getName(), String.valueOf(NUM_PARTITIONS));
         config.getMapConfig("*")
               .getEventJournalConfig().setEnabled(true)

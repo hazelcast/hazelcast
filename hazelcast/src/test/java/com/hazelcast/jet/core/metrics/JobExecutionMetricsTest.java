@@ -44,7 +44,7 @@ public class JobExecutionMetricsTest extends SimpleTestInClusterSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        Config config = new Config();
+        Config config = smallInstanceConfig();
         config.getMetricsConfig().setCollectionFrequencySeconds(1);
         initialize(1, config);
     }

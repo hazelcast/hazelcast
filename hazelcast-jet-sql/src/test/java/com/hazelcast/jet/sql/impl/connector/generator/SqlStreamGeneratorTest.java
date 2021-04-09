@@ -26,6 +26,7 @@ import org.junit.Test;
 import java.util.concurrent.Future;
 
 import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -100,8 +101,8 @@ public class SqlStreamGeneratorTest extends SqlTestSupport {
 
     @Test
     public void when_rateIsNegative_then_throws() {
-        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM TABLE(GENERATE_STREAM(-1))"))
-                .hasMessageContaining("rate cannot be less than zero");
+        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM TABLE(GENERATE_STREAM(-1))").iterator().next())
+                .hasMessageContaining("GENERATE_STREAM - rate cannot be less than zero");
     }
 
     @Test
@@ -112,8 +113,8 @@ public class SqlStreamGeneratorTest extends SqlTestSupport {
 
     @Test
     public void test_nullArgument() {
-        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM TABLE(GENERATE_STREAM(null))"))
-                .hasMessage("rate cannot be null");
+        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM TABLE(GENERATE_STREAM(null))").iterator().next())
+                .hasMessageContaining("GENERATE_STREAM - rate cannot be null");
     }
 
     @Test
@@ -128,5 +129,26 @@ public class SqlStreamGeneratorTest extends SqlTestSupport {
     public void when_unknownIdentifier_then_throws() {
         assertThatThrownBy(() -> sqlService.execute("SELECT * FROM TABLE(GENERATE_STREAM(non_existing => 0))"))
                 .hasMessageContaining("Unknown argument name 'non_existing'");
+    }
+
+    @Test
+    public void test_planCache() {
+        assertRowsEventuallyInAnyOrder(
+                "SELECT * FROM TABLE(GENERATE_STREAM(100))",
+                asList(
+                        new Row(0L),
+                        new Row(1L)
+                )
+        );
+        assertThat(planCache(instance()).size()).isEqualTo(1);
+
+        assertRowsEventuallyInAnyOrder(
+                "SELECT * FROM TABLE(GENERATE_STREAM(200))",
+                asList(
+                        new Row(0L),
+                        new Row(1L)
+                )
+        );
+        assertThat(planCache(instance()).size()).isEqualTo(2);
     }
 }

@@ -69,7 +69,7 @@ public class JobSerializerTest extends SimpleTestInClusterSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        Config config = new Config();
+        Config config = smallInstanceConfig();
         config.addCacheConfig(new CacheSimpleConfig().setName(SOURCE_CACHE_NAME))
               .addCacheConfig(new CacheSimpleConfig().setName(SINK_CACHE_NAME));
 

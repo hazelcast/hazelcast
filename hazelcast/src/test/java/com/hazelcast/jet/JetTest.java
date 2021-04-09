@@ -36,7 +36,7 @@ public class JetTest extends JetTestSupport {
     @Test
     public void when_defaultMapConfig_then_notUsed() {
         // When
-        Config config = new Config();
+        Config config = smallInstanceConfig();
         config.getMapConfig("default")
                 .setTimeToLiveSeconds(MapConfig.DEFAULT_TTL_SECONDS + 1);
         JetInstance instance = createJetMember(config);

@@ -22,6 +22,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Objects;
 
 public class PojoUpsertTargetDescriptor implements UpsertTargetDescriptor {
 
@@ -52,5 +53,22 @@ public class PojoUpsertTargetDescriptor implements UpsertTargetDescriptor {
     public void readData(ObjectDataInput in) throws IOException {
         className = in.readString();
         typeNamesByPaths = in.readObject();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        PojoUpsertTargetDescriptor that = (PojoUpsertTargetDescriptor) o;
+        return Objects.equals(className, that.className) && Objects.equals(typeNamesByPaths, that.typeNamesByPaths);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(className, typeNamesByPaths);
     }
 }

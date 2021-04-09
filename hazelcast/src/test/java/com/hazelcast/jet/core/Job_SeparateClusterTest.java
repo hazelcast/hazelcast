@@ -72,7 +72,7 @@ public class Job_SeparateClusterTest extends JetTestSupport {
     public void setup() {
         TestProcessors.reset(NODE_COUNT * LOCAL_PARALLELISM);
 
-        Config config = new Config();
+        Config config = smallInstanceConfig();
         config.getJetConfig().getInstanceConfig().setCooperativeThreadCount(LOCAL_PARALLELISM);
         config.getJetConfig().getInstanceConfig().setScaleUpDelayMillis(10);
         instance1 = createJetMember(config);

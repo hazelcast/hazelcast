@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.plan.cache;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
 
 /**
- * Plan that could be cached.
+ * Plan that can be cached.
  */
 public interface CacheablePlan extends SqlPlan {
     PlanCacheKey getPlanKey();

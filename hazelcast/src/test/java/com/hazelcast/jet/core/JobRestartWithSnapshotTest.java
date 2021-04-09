@@ -91,7 +91,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
 
     @Before
     public void setup() {
-        Config config = new Config();
+        Config config = smallInstanceConfig();
         config.getJetConfig().getInstanceConfig().setCooperativeThreadCount(LOCAL_PARALLELISM);
 
         instance1 = createJetMember(config);

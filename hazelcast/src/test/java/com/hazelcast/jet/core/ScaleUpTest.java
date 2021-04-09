@@ -50,7 +50,7 @@ public class ScaleUpTest extends JetTestSupport {
         TestProcessors.reset(NODE_COUNT * LOCAL_PARALLELISM);
 
         dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, NODE_COUNT)));
-        config = new Config();
+        config = smallInstanceConfig();
         config.getJetConfig().getInstanceConfig().setScaleUpDelayMillis(scaleUpDelay);
         instances = createJetMembers(config, NODE_COUNT);
     }
@@ -81,7 +81,7 @@ public class ScaleUpTest extends JetTestSupport {
         instances[0].newJob(dag);
         assertTrueEventually(() -> assertEquals(NODE_COUNT, MockPS.initCount.get()));
 
-        createJetMember(new Config().setLiteMember(true));
+        createJetMember(smallInstanceConfig().setLiteMember(true));
         assertTrueEventually(() -> assertEquals(NODE_COUNT, MockPS.initCount.get()));
     }
 

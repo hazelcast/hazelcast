@@ -97,7 +97,7 @@ public class AsyncTransformUsingServiceP_IntegrationTest extends SimpleTestInClu
 
     @BeforeClass
     public static void beforeClass() {
-        Config config = new Config();
+        Config config = smallInstanceConfig();
         config.getMapConfig("journaledMap*")
               .getEventJournalConfig()
               .setEnabled(true)

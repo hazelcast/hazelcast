@@ -17,7 +17,6 @@
 package com.hazelcast.jet.cdc;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.JetInstance;
@@ -78,7 +77,8 @@ public class CdcSinksTest extends PipelineTestSupport {
 
     @Test
     public void insertIntoRemoteMap() {
-        HazelcastInstance remoteHz = createRemoteCluster(new Config().setClusterName(randomName()), 1).get(0);
+        HazelcastInstance remoteHz =
+                createRemoteCluster(smallInstanceConfig().setClusterName(randomName()), 1).get(0);
         ClientConfig clientConfig = getClientConfigForRemoteCluster(remoteHz);
 
         p.readFrom(items(() -> Arrays.asList(SYNC1, INSERT2).iterator()))
@@ -104,7 +104,7 @@ public class CdcSinksTest extends PipelineTestSupport {
 
     @Test
     public void updateRemoteMap() {
-        HazelcastInstance remoteHz = createRemoteCluster(new Config().setClusterName(randomName()), 1).get(0);
+        HazelcastInstance remoteHz = createRemoteCluster(smallInstanceConfig().setClusterName(randomName()), 1).get(0);
         ClientConfig clientConfig = getClientConfigForRemoteCluster(remoteHz);
 
         p.readFrom(items(() -> Arrays.asList(SYNC1, INSERT2, UPDATE1).iterator()))
@@ -130,7 +130,8 @@ public class CdcSinksTest extends PipelineTestSupport {
 
     @Test
     public void deleteFromRemoteMap() {
-        HazelcastInstance remoteHz = createRemoteCluster(new Config().setClusterName(randomName()), 1).get(0);
+        HazelcastInstance remoteHz =
+                createRemoteCluster(smallInstanceConfig().setClusterName(randomName()), 1).get(0);
         ClientConfig clientConfig = getClientConfigForRemoteCluster(remoteHz);
 
         p.readFrom(items(() -> Arrays.asList(SYNC1, INSERT2, DELETE2).iterator()))
@@ -164,7 +165,8 @@ public class CdcSinksTest extends PipelineTestSupport {
 
     @Test
     public void deleteFromRemoteMap_ViaValueProjection() {
-        HazelcastInstance remoteHz = createRemoteCluster(new Config().setClusterName(randomName()), 2).get(0);
+        HazelcastInstance remoteHz =
+                createRemoteCluster(smallInstanceConfig().setClusterName(randomName()), 2).get(0);
         ClientConfig clientConfig = getClientConfigForRemoteCluster(remoteHz);
 
         p.readFrom(items(() -> Arrays.asList(SYNC1, INSERT2).iterator()))
