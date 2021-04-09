@@ -76,7 +76,7 @@ public class SqlLimitTest extends SqlTestSupport {
                 new String[]{"Joey", "3"}
         );
 
-        Assertions.assertThatThrownBy(() -> instance().getSql().execute("SELECT name FROM " + tableName + " LIMIT -10"))
+        Assertions.assertThatThrownBy(() -> sqlService.execute("SELECT name FROM " + tableName + " LIMIT -10"))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageContaining("Encountered \"-\"")
                 .extracting(e -> ((HazelcastSqlException) e).getCode()).isEqualTo(SqlErrorCode.PARSING);
@@ -165,8 +165,7 @@ public class SqlLimitTest extends SqlTestSupport {
      * Asserts that the result of {@code sql} contains a subset of {@code expectedRows}, but
      * only a subset of them with size of {@code subsetSize}.
      */
-    private  static void assertContainsSubsetOfRows(String sql, int subsetSize, Collection<Row> expectedRows) {
-        SqlService sqlService = instance().getSql();
+    private static void assertContainsSubsetOfRows(String sql, int subsetSize, Collection<Row> expectedRows) {
         List<Row> actualRows = new ArrayList<>();
         sqlService.execute(sql).iterator().forEachRemaining(sqlRow -> {
             int columnCount = sqlRow.getMetadata().getColumnCount();
