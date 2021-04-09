@@ -526,8 +526,8 @@ public class JobRepository {
 
     Set<Long> getAllJobIds() {
         Set<Long> ids = new HashSet<>();
-        ids.addAll(jobRecords.get().keySet());
-        ids.addAll(jobResults.get().keySet());
+        ids.addAll(jobRecordsMap().keySet());
+        ids.addAll(jobResultsMap().keySet());
         return ids;
     }
 
