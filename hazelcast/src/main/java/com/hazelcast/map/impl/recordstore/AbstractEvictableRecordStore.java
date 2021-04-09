@@ -56,7 +56,10 @@ import static com.hazelcast.map.impl.record.Record.UNSET;
  */
 public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
-    private static final int MAX_SCAN = 16;
+    // MAX_SAMPLE_AT_A_TIME and SAMPLING_QUEUE is used for background expiry task.
+    private static final int MAX_SAMPLE_AT_A_TIME = 16;
+    private static final ThreadLocal<Queue> SAMPLING_QUEUE
+            = ThreadLocal.withInitial(() -> new ArrayDeque(MAX_SAMPLE_AT_A_TIME));
 
     protected final long expiryDelayMillis;
     protected final Address thisAddress;
@@ -72,8 +75,6 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     protected Iterator<Map.Entry<Data, Record>> expirationIterator;
 
     protected volatile boolean hasEntryWithCustomExpiration;
-
-    private final ArrayDeque keyValuePairs = new ArrayDeque<>(MAX_SCAN);
 
     protected AbstractEvictableRecordStore(MapContainer mapContainer, int partitionId) {
         super(mapContainer, partitionId);
@@ -100,13 +101,13 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     public void evictExpiredEntries(int percentage, boolean backup) {
         long now = getNow();
         int size = size();
-        int maxIterationCount = getMaxIterationCount(size, percentage);
+        int maxSample = getMaxSampleCount(size, percentage);
         int maxRetry = 3;
         int loop = 0;
         int evictedEntryCount = 0;
         while (true) {
-            evictedEntryCount += evictExpiredEntriesInternal(maxIterationCount, now, backup);
-            if (evictedEntryCount >= maxIterationCount) {
+            evictedEntryCount += evictExpiredEntriesInternal(maxSample, now, backup);
+            if (evictedEntryCount >= maxSample) {
                 break;
             }
             loop++;
@@ -124,67 +125,75 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     }
 
     /**
-     * Intended to put an upper bound to iterations. Used in evictions.
+     * Intended to put an upper bound to sampling. Used in evictions.
      *
      * @param size       of iterate-able.
      * @param percentage percentage of size.
-     * @return 100 If calculated iteration count is less than 100, otherwise returns calculated iteration count.
+     * @return 100 If calculated sample count is less than
+     * 100, otherwise returns calculated sample count.
      */
-    private int getMaxIterationCount(int size, int percentage) {
-        final int defaultMaxIterationCount = 100;
+    private int getMaxSampleCount(int size, int percentage) {
+        final int defaultMaxSample = 100;
         final float oneHundred = 100F;
-        float maxIterationCount = size * (percentage / oneHundred);
-        if (maxIterationCount <= defaultMaxIterationCount) {
-            return defaultMaxIterationCount;
+        float maxSample = size * (percentage / oneHundred);
+        if (maxSample <= defaultMaxSample) {
+            return defaultMaxSample;
         }
-        return Math.round(maxIterationCount);
+        return Math.round(maxSample);
     }
 
-    private int evictExpiredEntriesInternal(int maxIterationCount, long now, boolean backup) {
-        int checkedEntryCount = 0;
+    private int evictExpiredEntriesInternal(int maxSample, long now, boolean backup) {
+        int sampledCount = 0;
         int evictedCount = 0;
         do {
-            checkedEntryCount += findKeys();
-            evictedCount += evictKeys(now, backup);
-        } while (expirationIterator.hasNext() && checkedEntryCount < maxIterationCount);
+            sampledCount += sampleForExpiry();
+            evictedCount += evictExpiredSamples(now, backup);
+        } while (expirationIterator.hasNext() && sampledCount < maxSample);
 
         return evictedCount;
     }
 
-    private int findKeys() {
-        initExpirationIterator();
+    private int sampleForExpiry() {
+        Iterator<Map.Entry<Data, Record>> expirationIterator = initExpirationIterator();
 
-        int checkedEntryCount = 0;
+        Queue sampledPairs = SAMPLING_QUEUE.get();
+        int sampledCount = 0;
         while (expirationIterator.hasNext()) {
             Map.Entry<Data, Record> entry = expirationIterator.next();
-            keyValuePairs.add(entry.getKey());
-            keyValuePairs.add(entry.getValue());
-            checkedEntryCount++;
+            sampledPairs.add(entry.getKey());
+            sampledPairs.add(entry.getValue());
 
-            if (checkedEntryCount == MAX_SCAN) {
+            if (++sampledCount == MAX_SAMPLE_AT_A_TIME) {
                 break;
             }
         }
-        return checkedEntryCount;
+        return sampledCount;
     }
 
-    private int evictKeys(long now, boolean backup) {
-        int evictedEntryCount = 0;
+    /**
+     * Evict expired keys among sampled ones.
+     *
+     * @return number of evicted keys.
+     */
+    private int evictExpiredSamples(long now, boolean backup) {
+        int evictedCount = 0;
 
+        Queue sampledPairs = SAMPLING_QUEUE.get();
         Data key;
-        while ((key = (Data) keyValuePairs.poll()) != null) {
-            Record record = (Record) keyValuePairs.poll();
+        while ((key = (Data) sampledPairs.poll()) != null) {
+            Record record = (Record) sampledPairs.poll();
             if (getOrNullIfExpired(key, record, now, backup) == null) {
-                evictedEntryCount++;
+                evictedCount++;
             }
         }
-        return evictedEntryCount;
+        return evictedCount;
     }
 
-    private void initExpirationIterator() {
+    private Iterator<Map.Entry<Data, Record>> initExpirationIterator() {
         if (expirationIterator == null || !expirationIterator.hasNext()) {
             expirationIterator = storage.mutationTolerantIterator();
         }
+        return expirationIterator;
     }
 
     @Override
