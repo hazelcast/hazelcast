@@ -18,7 +18,6 @@ package com.hazelcast.spring;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientCloudConfig;
-import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.config.ClientFlakeIdGeneratorConfig;
 import com.hazelcast.client.config.ClientIcmpPingConfig;
@@ -52,6 +51,7 @@ import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
+import com.hazelcast.spring.config.ConfigFactory;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinitionHolder;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
@@ -136,7 +136,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             this.parserContext = parserContext;
             this.builder = builder;
 
-            this.configBuilder = rootBeanDefinition(ClientConfig.class);
+            this.configBuilder = rootBeanDefinition(ConfigFactory.class, "newClientConfig");
             configBuilder.addPropertyValue("nearCacheConfigMap", nearCacheConfigMap);
             configBuilder.addPropertyValue("flakeIdGeneratorConfigMap", flakeIdGeneratorConfigMap);
             configBuilder.addPropertyValue("reliableTopicConfigMap", reliableTopicConfigMap);

@@ -1004,7 +1004,7 @@
             </hz:instance-tracking>
 
             <hz:sql>
-                <hz:executor-pool-size>10</hz:executor-pool-size>
+                <hz:executor-pool-size>5</hz:executor-pool-size>
                 <hz:statement-timeout-millis>30</hz:statement-timeout-millis>
             </hz:sql>
 
