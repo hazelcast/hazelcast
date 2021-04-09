@@ -39,4 +39,14 @@ public final class JsonUpsertTargetDescriptor implements UpsertTargetDescriptor 
     @Override
     public void readData(ObjectDataInput in) {
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof JsonUpsertTargetDescriptor;
+    }
+
+    @Override
+    public int hashCode() {
+        return 0;
+    }
 }

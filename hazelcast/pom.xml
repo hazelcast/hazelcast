@@ -594,7 +594,7 @@
         <dependency>
             <groupId>org.roaringbitmap</groupId>
             <artifactId>RoaringBitmap</artifactId>
-            <version>0.8.11</version>
+            <version>0.9.3</version>
             <scope>test</scope>
         </dependency>
         <dependency>

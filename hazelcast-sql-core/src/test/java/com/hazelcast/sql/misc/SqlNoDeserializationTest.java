@@ -20,6 +20,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SqlExecuteCodec;
 import com.hazelcast.client.impl.protocol.codec.SqlFetchCodec;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
@@ -33,7 +34,6 @@ import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlExpectedResultType;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
-import com.hazelcast.sql.SqlTestInstanceFactory;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.SqlRowImpl;
@@ -60,7 +60,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-@SuppressWarnings("StatementWithEmptyBody")
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlNoDeserializationTest extends SqlTestSupport {
@@ -77,7 +76,7 @@ public class SqlNoDeserializationTest extends SqlTestSupport {
     private static final String ERROR_KEY = "KEY FAILURE";
     private static final String ERROR_VALUE = "VALUE FAILURE";
 
-    private final SqlTestInstanceFactory factory = SqlTestInstanceFactory.create();
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     private HazelcastInstance member;
     private HazelcastInstance client;
@@ -290,7 +289,7 @@ public class SqlNoDeserializationTest extends SqlTestSupport {
         }
 
         @Override
-        public void writePortable(PortableWriter writer) throws IOException {
+        public void writePortable(PortableWriter writer) {
             // No-op
         }
 

@@ -21,30 +21,32 @@ import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.convert.ConverterRule;
-import org.apache.calcite.rel.logical.LogicalValues;
+import org.apache.calcite.rel.core.Union;
+import org.apache.calcite.rel.logical.LogicalUnion;
 
+import static com.hazelcast.jet.impl.util.Util.toList;
 import static com.hazelcast.jet.sql.impl.opt.JetConventions.LOGICAL;
 
-final class ValuesLogicalRule extends ConverterRule {
+final class UnionLogicalRule extends ConverterRule {
 
-    static final RelOptRule INSTANCE = new ValuesLogicalRule();
+    static final RelOptRule INSTANCE = new UnionLogicalRule();
 
-    private ValuesLogicalRule() {
+    private UnionLogicalRule() {
         super(
-                LogicalValues.class, Convention.NONE, LOGICAL,
-                ValuesLogicalRule.class.getSimpleName()
+                LogicalUnion.class, Convention.NONE, LOGICAL,
+                UnionLogicalRule.class.getSimpleName()
         );
     }
 
     @Override
     public RelNode convert(RelNode rel) {
-        LogicalValues values = (LogicalValues) rel;
+        Union union = (Union) rel;
 
-        return new ValuesLogicalRel(
-                values.getCluster(),
-                OptUtils.toLogicalConvention(values.getTraitSet()),
-                values.getRowType(),
-                OptUtils.convert(values.getTuples())
+        return new UnionLogicalRel(
+                union.getCluster(),
+                OptUtils.toLogicalConvention(union.getTraitSet()),
+                toList(union.getInputs(), OptUtils::toLogicalInput),
+                union.all
         );
     }
 }

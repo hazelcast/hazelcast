@@ -112,7 +112,7 @@ public class JmsSourceIntegration_NonSharedClusterTest extends JetTestSupport {
     private void when_snapshotFails(ProcessingGuarantee guarantee, boolean expectFailure) {
         storeFailed = false;
         // force snapshots to fail by adding a failing map store configuration for snapshot data maps
-        Config config = new Config();
+        Config config = smallInstanceConfig();
         MapConfig mapConfig = new MapConfig(JobRepository.SNAPSHOT_DATA_MAP_PREFIX + '*');
         MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
         mapStoreConfig.setEnabled(true);

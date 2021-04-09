@@ -138,7 +138,7 @@ public class KafkaSqlConnector implements SqlConnector {
         );
 
         Vertex vEnd = dag.newUniqueVertex(
-                "Project(" + table.toString() + ")",
+                "Project(" + table + ")",
                 KvProcessors.rowProjector(
                         table.paths(),
                         table.types(),
@@ -171,7 +171,7 @@ public class KafkaSqlConnector implements SqlConnector {
         KafkaTable table = (KafkaTable) table0;
 
         Vertex vStart = dag.newUniqueVertex(
-                "Project(" + table.toString() + ")",
+                "Project(" + table + ")",
                 KvProcessors.entryProjector(
                         table.paths(),
                         table.types(),

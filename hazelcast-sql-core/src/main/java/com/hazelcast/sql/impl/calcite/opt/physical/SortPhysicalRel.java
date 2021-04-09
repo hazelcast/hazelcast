@@ -32,7 +32,7 @@ import org.apache.calcite.rex.RexNode;
 public class SortPhysicalRel extends Sort implements PhysicalRel {
 
     // Whether the input is actually requires sorting
-    private boolean requiresSort;
+    private final boolean requiresSort;
 
     public SortPhysicalRel(
         RelOptCluster cluster,

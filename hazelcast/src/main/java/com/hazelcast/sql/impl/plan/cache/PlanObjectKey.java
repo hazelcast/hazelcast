@@ -22,6 +22,6 @@ package com.hazelcast.sql.impl.plan.cache;
 @SuppressWarnings("checkstyle:interfaceistype")
 public interface PlanObjectKey {
 
-    PlanObjectKey NON_CACHEABLE_OBJECT_ID = new PlanObjectKey() {
+    PlanObjectKey NON_CACHEABLE_OBJECT_KEY = new PlanObjectKey() {
     };
 }

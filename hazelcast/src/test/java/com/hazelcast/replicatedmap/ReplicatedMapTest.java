@@ -945,7 +945,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
         replicatedMap.put(1, 1);
         replicatedMap.destroy();
         Collection<DistributedObject> objects = instance.getDistributedObjects();
-        assertEquals(6, objects.size());
+        assertEquals(0, objects.size());
     }
 
     class DescendingComparator implements Comparator<Integer> {

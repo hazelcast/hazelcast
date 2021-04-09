@@ -16,12 +16,12 @@
 
 package com.hazelcast.sql.impl.expression;
 
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlRow;
-import com.hazelcast.sql.SqlTestInstanceFactory;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue;
 import com.hazelcast.sql.support.expressions.ExpressionValue;
@@ -69,7 +69,7 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
     protected static final Object SKIP_VALUE_CHECK = new Object();
     protected HazelcastInstance member;
 
-    private final SqlTestInstanceFactory factory = SqlTestInstanceFactory.create();
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
     protected IMap map;
 
     @Before
@@ -198,7 +198,7 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
         StringJoiner joiner = new StringJoiner(", ");
         Arrays.stream(columnTypes).forEach((columnType) -> joiner.add(columnType.name()));
 
-        return "Cannot apply '" + functionName + "' function to [" + joiner.toString() + "] (consider adding an explicit CAST)";
+        return "Cannot apply '" + functionName + "' function to [" + joiner + "] (consider adding an explicit CAST)";
     }
 
     protected static String signatureErrorOperator(String operatorName, Object... columnTypes) {
@@ -207,7 +207,7 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
         StringJoiner joiner = new StringJoiner(", ");
         Arrays.stream(columnTypes).forEach((columnType) -> joiner.add(columnType == SqlColumnType.NULL ? "UNKNOWN" : columnType.toString()));
 
-        return "Cannot apply '" + operatorName + "' operator to [" + joiner.toString() + "] (consider adding an explicit CAST)";
+        return "Cannot apply '" + operatorName + "' operator to [" + joiner + "] (consider adding an explicit CAST)";
     }
 
     protected static String parameterError(int position, SqlColumnType expectedType, SqlColumnType actualType) {
