@@ -56,6 +56,7 @@ public class HazelcastInOperator extends SqlInOperator implements HazelcastOpera
         super(name, negated ? SqlKind.NOT_IN : SqlKind.IN);
     }
 
+    @Override
     public RelDataType deriveType(
             SqlValidator validator,
             SqlValidatorScope scope,
@@ -86,7 +87,7 @@ public class HazelcastInOperator extends SqlInOperator implements HazelcastOpera
             // SQL:2003 Part 2 Section 8.4, <in predicate>).
             if (null == rightType && validator.config().typeCoercionEnabled()) {
                 // Do implicit type cast if it is allowed to.
-                rightType = validator.getTypeCoercion().getWiderTypeFor(rightTypeList, true);
+                rightType = validator.getTypeCoercion().getWiderTypeFor(rightTypeList, false);
             }
             if (null == rightType) {
                 throw validator.newValidationError(right,
