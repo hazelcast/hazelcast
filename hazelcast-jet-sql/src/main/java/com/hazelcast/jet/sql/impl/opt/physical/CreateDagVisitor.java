@@ -39,11 +39,14 @@ import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.plan.cache.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.Table;
 import org.apache.calcite.rel.RelNode;
 
 import javax.annotation.Nullable;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -60,6 +63,7 @@ import static java.util.Collections.singletonList;
 public class CreateDagVisitor {
 
     private final DAG dag = new DAG();
+    private final Set<PlanObjectKey> objectKeys = new HashSet<>();
     private final Address localMemberAddress;
 
     public CreateDagVisitor(Address localMemberAddress) {
@@ -86,6 +90,7 @@ public class CreateDagVisitor {
 
     public Vertex onInsert(InsertPhysicalRel rel) {
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
+        collectObjectKeys(table);
 
         Vertex vertex = getJetSqlConnector(table).sink(dag, table);
         connectInput(rel.getInput(), vertex, null);
@@ -94,6 +99,7 @@ public class CreateDagVisitor {
 
     public Vertex onFullScan(FullScanPhysicalRel rel) {
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
+        collectObjectKeys(table);
 
         return getJetSqlConnector(table)
                 .fullScanReader(dag, table, rel.filter(), rel.projection());
@@ -205,6 +211,7 @@ public class CreateDagVisitor {
         assert rel.getRight() instanceof FullScanPhysicalRel : rel.getRight().getClass();
 
         Table rightTable = rel.getRight().getTable().unwrap(HazelcastTable.class).getTarget();
+        collectObjectKeys(rightTable);
 
         VertexWithInputConfig vertexWithConfig = getJetSqlConnector(rightTable).nestedLoopReader(
                 dag,
@@ -232,6 +239,10 @@ public class CreateDagVisitor {
         return dag;
     }
 
+    public Set<PlanObjectKey> getObjectKeys() {
+        return objectKeys;
+    }
+
     /**
      * Converts the {@code inputRel} into a {@code Vertex} by visiting it and
      * create an edge from the input vertex into {@code thisVertex}.
@@ -249,6 +260,13 @@ public class CreateDagVisitor {
             configureEdgeFn.accept(edge);
         }
         dag.edge(edge);
+    }
+
+    private void collectObjectKeys(Table table) {
+        PlanObjectKey objectKey = table.getObjectKey();
+        if (objectKey != null) {
+            objectKeys.add(objectKey);
+        }
     }
 
     private static ExpressionEvalContext toExpressionEvalContext(Processor.Context ctx) {

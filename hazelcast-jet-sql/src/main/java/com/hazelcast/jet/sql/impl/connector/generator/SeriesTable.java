@@ -28,6 +28,7 @@ import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.plan.cache.PlanObjectKey;
 import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.TableField;
@@ -90,6 +91,12 @@ class SeriesTable extends JetTable {
         return value == null ? defaultValue : value;
     }
 
+    @Override
+    public PlanObjectKey getObjectKey() {
+        // table is always available and its field list does not change
+        return null;
+    }
+
     private static final class DataGenerator {
 
         private static final int MAX_BATCH_SIZE = 1024;
@@ -106,8 +113,7 @@ class SeriesTable extends JetTable {
         ) {
             this.iterator = IntStream.iterate(start, i -> i + step)
                     .limit(numberOfItems(start, stop, step))
-                    .mapToObj(i -> ExpressionUtil.evaluate(predicate, projections, new Object[]{i},
-                            context))
+                    .mapToObj(i -> ExpressionUtil.evaluate(predicate, projections, new Object[]{i}, context))
                     .filter(Objects::nonNull)
                     .iterator();
         }
