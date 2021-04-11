@@ -27,11 +27,9 @@ import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.expiry.ExpirySystem;
 
-import java.util.AbstractMap;
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.map.impl.OwnedEntryCostEstimatorFactory.createMapSizeEstimator;
@@ -43,7 +41,7 @@ import static com.hazelcast.map.impl.OwnedEntryCostEstimatorFactory.createMapSiz
  */
 public class StorageImpl<R extends Record> implements Storage<Data, R> {
 
-    private final StorageSCHM<R> records;
+    private final ConcurrentHashMap<Data, R> records;
     private final SerializationService serializationService;
     private final InMemoryFormat inMemoryFormat;
 
@@ -54,7 +52,8 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
                 SerializationService serializationService) {
         this.entryCostEstimator = createMapSizeEstimator(inMemoryFormat);
         this.inMemoryFormat = inMemoryFormat;
-        this.records = new StorageSCHM<>(serializationService, expirySystem);
+//        this.records = new StorageSCHM<>(serializationService, expirySystem);
+        this.records = new ConcurrentHashMap<>();
         this.serializationService = serializationService;
     }
 
@@ -67,7 +66,7 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
 
     @Override
     public Iterator<Map.Entry<Data, R>> mutationTolerantIterator() {
-        return records.cachedEntrySet().iterator();
+        return records.entrySet().iterator();
     }
 
     @Override
@@ -143,27 +142,29 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
 
     @Override
     public Iterable getRandomSamples(int sampleCount) {
-        return records.getRandomSamples(sampleCount);
+        return null;//records.getRandomSamples(sampleCount);
     }
 
     @Override
     public MapKeysWithCursor fetchKeys(IterationPointer[] pointers, int size) {
-        List<Data> keys = new ArrayList<>(size);
-        IterationPointer[] newPointers = records.fetchKeys(pointers, size, keys);
-        return new MapKeysWithCursor(keys, newPointers);
+//        List<Data> keys = new ArrayList<>(size);
+//        IterationPointer[] newPointers = records.fetchKeys(pointers, size, keys);
+//        return new MapKeysWithCursor(keys, newPointers);
+        return null;
     }
 
     @Override
     public MapEntriesWithCursor fetchEntries(IterationPointer[] pointers, int size) {
-        List<Map.Entry<Data, R>> entries = new ArrayList<>(size);
-        IterationPointer[] newPointers = records.fetchEntries(pointers, size, entries);
-        List<Map.Entry<Data, Data>> entriesData = new ArrayList<>(entries.size());
-        for (Map.Entry<Data, R> entry : entries) {
-            R record = entry.getValue();
-            Data dataValue = serializationService.toData(record.getValue());
-            entriesData.add(new AbstractMap.SimpleEntry<>(entry.getKey(), dataValue));
-        }
-        return new MapEntriesWithCursor(entriesData, newPointers);
+//        List<Map.Entry<Data, R>> entries = new ArrayList<>(size);
+//        IterationPointer[] newPointers = records.fetchEntries(pointers, size, entries);
+//        List<Map.Entry<Data, Data>> entriesData = new ArrayList<>(entries.size());
+//        for (Map.Entry<Data, R> entry : entries) {
+//            R record = entry.getValue();
+//            Data dataValue = serializationService.toData(record.getValue());
+//            entriesData.add(new AbstractMap.SimpleEntry<>(entry.getKey(), dataValue));
+//        }
+//        return new MapEntriesWithCursor(entriesData, newPointers);
+        return null;
     }
 
     @Override
