@@ -21,7 +21,6 @@ import com.hazelcast.internal.eviction.ClearExpiredRecordsTask;
 import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.internal.util.ConcurrentReferenceHashMap;
 import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.ExpirationTimeSetter;
@@ -360,7 +359,7 @@ public class ExpirySystem {
 
     // this method is overridden
     protected Iterator<Map.Entry<Data, ExpiryMetadata>> initIteratorOf(Map<Data, ExpiryMetadata> expireTimeByKey) {
-        return ((ConcurrentReferenceHashMap) expireTimeByKey).cachedEntrySet().iterator();
+        return expireTimeByKey.entrySet().iterator();
     }
 
     // this method is overridden
