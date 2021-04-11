@@ -264,7 +264,7 @@ public class ExpirySystem {
         do {
             scannedCount += findExpiredKeys(now, backup);
             expiredCount += evictExpiredKeys(backup);
-        } while ((scannedCount < maxScannableCount && getOrInitCachedIterator().hasNext())
+        } while (scannedCount < maxScannableCount && getOrInitCachedIterator().hasNext()
                 && (System.nanoTime() - scanLoopStartNanos) < expiredKeyScanTimeoutNanos);
 
         // 3. Send expired keys to backups(only valid for max-idle-expiry)
