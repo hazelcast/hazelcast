@@ -31,7 +31,6 @@ import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.test.annotation.ParallelJVMTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -56,7 +55,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({NightlyTest.class, ParallelJVMTest.class})
+@Category({NightlyTest.class})
 public class BackpressureTest extends JetTestSupport {
 
     private static final int CLUSTER_SIZE = 2;

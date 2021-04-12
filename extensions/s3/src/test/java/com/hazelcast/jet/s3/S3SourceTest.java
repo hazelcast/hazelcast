@@ -19,7 +19,6 @@ package com.hazelcast.jet.s3;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.test.annotation.ParallelJVMTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -29,7 +28,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import java.util.ArrayList;
 import java.util.List;
 
-@Category({NightlyTest.class, ParallelJVMTest.class})
+@Category({NightlyTest.class})
 @RunWith(HazelcastSerialClassRunner.class)
 public class S3SourceTest extends S3TestBase {
 

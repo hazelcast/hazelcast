@@ -27,7 +27,6 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.test.annotation.ParallelJVMTest;
 import org.junit.Assume;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -49,7 +48,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.testcontainers.containers.MySQLContainer.MYSQL_PORT;
 import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
 
-@Category({NightlyTest.class, ParallelJVMTest.class})
+@Category({NightlyTest.class})
 @RunWith(HazelcastSerialClassRunner.class)
 public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
 
