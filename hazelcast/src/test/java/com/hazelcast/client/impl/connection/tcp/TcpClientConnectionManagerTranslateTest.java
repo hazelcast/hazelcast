@@ -98,11 +98,11 @@ public class TcpClientConnectionManagerTranslateTest extends ClientTestSupport {
         clientConnectionManager.start();
         clientConnectionManager.reset();
 
-        clientConnectionManager.getOrConnectToAddress(privateAddress);
+        clientConnectionManager.getOrConnectToAddress(privateAddress, false);
         provider.shouldTranslate = true;
 
         // when
-        Connection connection = clientConnectionManager.getOrConnectToAddress(privateAddress);
+        Connection connection = clientConnectionManager.getOrConnectToAddress(privateAddress, false);
 
         // then
         assertNotNull(connection);
@@ -126,7 +126,7 @@ public class TcpClientConnectionManagerTranslateTest extends ClientTestSupport {
                 new Address("127.0.0.1", 5701));
 
         // when
-        Connection connection = clientConnectionManager.getOrConnectToMember(member);
+        Connection connection = clientConnectionManager.getOrConnectToMember(member, false);
 
         // then
         assertNotNull(connection);
@@ -149,7 +149,7 @@ public class TcpClientConnectionManagerTranslateTest extends ClientTestSupport {
         member.getAddressMap().put(EndpointQualifier.resolve(ProtocolType.CLIENT, "public"), new Address("127.0.0.1", 5701));
 
         // when
-        clientConnectionManager.getOrConnectToMember(member);
+        clientConnectionManager.getOrConnectToMember(member, false);
 
         // then
         // throws exception because it can't connect to the incorrect member address
@@ -176,7 +176,7 @@ public class TcpClientConnectionManagerTranslateTest extends ClientTestSupport {
                 new Address("127.0.0.1", 5701));
 
         // when
-        clientConnectionManager.getOrConnectToMember(member);
+        clientConnectionManager.getOrConnectToMember(member, false);
 
         // then
         // throws exception because it can't connect to the incorrect address
