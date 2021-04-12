@@ -20,7 +20,6 @@ import com.hazelcast.function.SupplierEx;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.util.StringUtil;
-import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.core.Edge.RoutingPolicy;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -41,6 +40,7 @@ import java.util.Set;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
+import static com.hazelcast.jet.config.EdgeConfig.DEFAULT_QUEUE_SIZE;
 import static com.hazelcast.jet.core.Vertex.LOCAL_PARALLELISM_USE_DEFAULT;
 import static com.hazelcast.jet.impl.TopologicalSorter.topologicalSort;
 import static com.hazelcast.jet.core.Edge.DISTRIBUTE_TO_ALL;
@@ -441,25 +441,33 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
      */
     @Nonnull
     public String toDotString() {
-        return toDotString(LOCAL_PARALLELISM_USE_DEFAULT);
+        return toDotString(LOCAL_PARALLELISM_USE_DEFAULT, DEFAULT_QUEUE_SIZE);
     }
 
     /**
-     * Returns a DOT format (graphviz) representation of the DAG and annotates
-     * the vertices using default parallelism with the supplied value.
+     * Returns a DOT format (graphviz) representation of the DAG, annotates
+     * the vertices using supplied default parallelism value, and the edges
+     * using supplied default queue size value.
+     *
+     * @param defaultLocalParallelism the local parallelism that will be shown if
+     *                                neither overridden on the vertex nor the
+     *                                preferred parallelism is defined by
+     *                                meta-supplier
+     * @param defaultQueueSize the queue size that will be shown if not overridden
+     *                         on the edge
      */
     @Nonnull
-    public String toDotString(int defaultParallelism) {
+    public String toDotString(int defaultLocalParallelism, int defaultQueueSize) {
         final StringBuilder builder = new StringBuilder(512);
         builder.append("digraph DAG {\n");
         int clusterCount = 0;
 
         for (Vertex v : this) {
-            int localParallelism = v.determineLocalParallelism(defaultParallelism);
+            int localParallelism = v.determineLocalParallelism(defaultLocalParallelism);
             String parallelism = localParallelism == LOCAL_PARALLELISM_USE_DEFAULT ?
-                defaultParallelism == LOCAL_PARALLELISM_USE_DEFAULT ?
+                defaultLocalParallelism == LOCAL_PARALLELISM_USE_DEFAULT ?
                     "default"
-                    : String.valueOf(defaultParallelism)
+                    : String.valueOf(defaultLocalParallelism)
                 : String.valueOf(localParallelism);
             builder.append("\t\"")
                    .append(escapeGraphviz(v.getName()))
@@ -487,7 +495,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
                 if (inOutCounts.get(e.getSourceName())[0] > 1) {
                     attributes.add("taillabel=" + e.getSourceOrdinal());
                 }
-                int queueSize = e.getConfig() == null ? EdgeConfig.DEFAULT_QUEUE_SIZE :
+                int queueSize = e.getConfig() == null ? defaultQueueSize :
                         e.getConfig().getQueueSize();
                 attributes.add("queueSize=" + queueSize);
 
