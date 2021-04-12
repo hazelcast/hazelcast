@@ -190,6 +190,7 @@ public class InOperatorIntegrationTest extends ExpressionTestSupport {
 
     @Test
     public void test_mixedTypesInTheInList() {
+        putAll(true);
         // we do not support values of mixed types
         checkFailure0(sqlQuery("IN (1, 'abc')"), PARSING, "Values in expression list must have compatible types");
         checkFailure0(sqlQuery("IN ('abc', 1)"), PARSING, "Values in expression list must have compatible types");
@@ -201,7 +202,7 @@ public class InOperatorIntegrationTest extends ExpressionTestSupport {
         checkValues(sqlQuery("IN (1, 194919940239)"), SqlColumnType.VARCHAR, new String[]{"1"});
         checkValues(sqlQuery("IN (cast(1.0 as REAL), cast(2.3 as DOUBLE))"), SqlColumnType.VARCHAR, new String[]{"1"});
         putAll("2021-01-02T00:00:00+01:00", "2021-01-02T01:03:04+01:00");
-        checkValues(sqlQuery("IN (CAST('2021-01-02' AS DATE), CAST('2021-01-02T03:04:05+01:00' AS TIMESTAMP_WITH_TIME_ZONE))"),
+        checkValues(sqlQuery("NOT IN (CAST('2021-01-02' AS DATE), CAST('2021-01-02T01:03:04+01:00' AS TIMESTAMP_WITH_TIME_ZONE))"),
                 SqlColumnType.VARCHAR, new String[]{"2021-01-02T00:00:00+01:00"});
 
         // this is a bug in Calcite that when an integer is followed by temporal type, it will try to coerce all right-hand values
