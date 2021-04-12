@@ -78,7 +78,11 @@
                 <hz:member>127.0.0.1:5702</hz:member>
             </hz:network>
 
-            <hz:connection-strategy async-start="true"/>
+            <hz:connection-strategy async-start="true">
+                <hz:connection-retry>
+                    <hz:cluster-connect-timeout-millis>30000</hz:cluster-connect-timeout-millis>
+                </hz:connection-retry>
+            </hz:connection-strategy>
         </hz:client>
     </hz:client-failover>
 
