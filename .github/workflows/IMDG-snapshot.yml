@@ -10,7 +10,7 @@ jobs:
       matrix:
         java: [ '8' ]
         architecture: [ 'x64' ]
-        hazelcast: [ '4.2-SNAPSHOT' ]
+        hazelcast: [ '5.0-SNAPSHOT' ]
     name: Build against IMDG ${{ matrix.hazelcast }} with JDK ${{ matrix.java }} on ${{ matrix.architecture }}
     steps:
       - uses: actions/checkout@v2.3.4
