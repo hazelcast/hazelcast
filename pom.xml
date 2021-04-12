@@ -353,7 +353,7 @@
         <profile>
             <id>master</id>
             <properties>
-                <hazelcast.version>4.2-SNAPSHOT</hazelcast.version>
+                <hazelcast.version>5.0-SNAPSHOT</hazelcast.version>
             </properties>
             <dependencies>
                 <dependency>
