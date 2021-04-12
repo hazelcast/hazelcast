@@ -58,6 +58,8 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
     // MAX_SAMPLE_AT_A_TIME and SAMPLING_QUEUE is used for background expiry task.
     private static final int MAX_SAMPLE_AT_A_TIME = 16;
+    private static final int MIN_TOTAL_NUMBER_OF_KEYS_TO_SCAN = 100;
+    private static final int ONE_HUNDRED_PERCENT = 100;
     private static final ThreadLocal<Queue> SAMPLING_QUEUE
             = ThreadLocal.withInitial(() -> new ArrayDeque(MAX_SAMPLE_AT_A_TIME));
 
@@ -133,33 +135,32 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
      * 100, otherwise returns calculated sample count.
      */
     private int getMaxSampleCount(int size, int percentage) {
-        final int defaultMaxSample = 100;
-        final float oneHundred = 100F;
-        float maxSample = size * (percentage / oneHundred);
-        if (maxSample <= defaultMaxSample) {
-            return defaultMaxSample;
+        if (size <= MIN_TOTAL_NUMBER_OF_KEYS_TO_SCAN) {
+            return size;
         }
-        return Math.round(maxSample);
+
+        int numberOfKeysInPercentage = (int) (1D * size * percentage / ONE_HUNDRED_PERCENT);
+        return Math.max(MIN_TOTAL_NUMBER_OF_KEYS_TO_SCAN, numberOfKeysInPercentage);
     }
 
     private int evictExpiredEntriesInternal(int maxSample, long now, boolean backup) {
         int sampledCount = 0;
         int evictedCount = 0;
+        Iterator<Map.Entry<Data, Record>> iterator = initExpirationIterator();
         do {
             sampledCount += sampleForExpiry();
             evictedCount += evictExpiredSamples(now, backup);
-        } while (expirationIterator.hasNext() && sampledCount < maxSample);
+        } while (sampledCount < maxSample && iterator.hasNext());
 
         return evictedCount;
     }
 
     private int sampleForExpiry() {
-        Iterator<Map.Entry<Data, Record>> expirationIterator = initExpirationIterator();
-
         Queue sampledPairs = SAMPLING_QUEUE.get();
         int sampledCount = 0;
-        while (expirationIterator.hasNext()) {
-            Map.Entry<Data, Record> entry = expirationIterator.next();
+        Iterator<Map.Entry<Data, Record>> iterator = expirationIterator;
+        while (iterator.hasNext()) {
+            Map.Entry<Data, Record> entry = iterator.next();
             sampledPairs.add(entry.getKey());
             sampledPairs.add(entry.getValue());
 
