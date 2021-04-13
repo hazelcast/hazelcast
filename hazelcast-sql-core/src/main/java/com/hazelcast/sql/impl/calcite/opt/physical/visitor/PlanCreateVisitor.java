@@ -107,7 +107,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     private int nextEdgeGenerator;
     private RootPhysicalRel rootPhysicalRel;
     private SqlRowMetadata rowMetadata;
-    private final Set<PlanObjectKey> objectIds = new HashSet<>();
+    private final Set<PlanObjectKey> objectKeys = new HashSet<>();
     private final Set<String> mapNames = new HashSet<>();
 
     public PlanCreateVisitor(
@@ -172,7 +172,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             rowMetadata,
             parameterMetadata,
             planKey,
-            objectIds,
+                objectKeys,
             permissions
         );
     }
@@ -240,7 +240,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
         pushUpstream(scanNode);
 
-        objectIds.add(table.getObjectKey());
+        objectKeys.add(table.getObjectKey());
         mapNames.add(table.getMapName());
     }
 
@@ -269,7 +269,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
         pushUpstream(scanNode);
 
-        objectIds.add(table.getObjectKey());
+        objectKeys.add(table.getObjectKey());
         mapNames.add(table.getMapName());
     }
 

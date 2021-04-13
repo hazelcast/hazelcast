@@ -55,12 +55,12 @@ public class PlanCacheTestSupport extends SqlTestSupport {
         return new PlanKey(Collections.emptyList(), sql);
     }
 
-    public static Plan createPlan(PlanKey key, Map<UUID, PartitionIdSet> partMap, int... objectIds) {
-        Set<PlanObjectKey> objectIds0 = new HashSet<>();
+    public static Plan createPlan(PlanKey key, Map<UUID, PartitionIdSet> partMap, int... objectKeys) {
+        Set<PlanObjectKey> objectKeys0 = new HashSet<>();
 
-        if (objectIds != null) {
-            for (int objectId : objectIds) {
-                objectIds0.add(createObjectId(objectId));
+        if (objectKeys != null) {
+            for (int objectId : objectKeys) {
+                objectKeys0.add(createObjectId(objectId));
             }
         }
 
@@ -74,7 +74,7 @@ public class PlanCacheTestSupport extends SqlTestSupport {
             null,
             QueryParameterMetadata.EMPTY,
             key,
-            objectIds0,
+            objectKeys0,
             Collections.emptyList()
         );
 
