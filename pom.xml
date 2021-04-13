@@ -118,6 +118,7 @@
         <affinity.version>3.2.3</affinity.version>
         <aws.sdk.version>1.11.934</aws.sdk.version>
         <kotlin.version>1.3.61</kotlin.version>
+        <netty.version>4.1.63.Final</netty.version>
 
         <hazelcast.aws.version>3.3</hazelcast.aws.version>
         <hazelcast.kubernetes.version>2.2.1</hazelcast.kubernetes.version>
@@ -144,6 +145,7 @@
         <felix.utils.version>1.11.6</felix.utils.version>
         <findbugs.annotations.version>3.0.1u2</findbugs.annotations.version>
         <http.components.version>4.3.6</http.components.version>
+        <guava.version>30.1.1-jre</guava.version>
 
         <sonar.jacoco.jar>${basedir}/lib/jacocoagent.jar</sonar.jacoco.jar>
         <!--<sonar.phase>post-integration-test</sonar.phase>-->
@@ -1254,7 +1256,7 @@
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>29.0-jre</version>
+                <version>${guava.version}</version>
             </dependency>
             <dependency>
                 <groupId>commons-codec</groupId>
@@ -1310,12 +1312,12 @@
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-handler</artifactId>
-                <version>4.1.39.Final</version>
+                <version>${netty.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-codec-http</artifactId>
-                <version>4.1.39.Final</version>
+                <version>${netty.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.auto.value</groupId>

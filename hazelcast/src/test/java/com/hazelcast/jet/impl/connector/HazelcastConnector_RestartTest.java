@@ -37,8 +37,10 @@ import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.JobExecutionService;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
 import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -58,6 +60,9 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 public class HazelcastConnector_RestartTest extends JetTestSupport {
 
+    @ClassRule
+    public static ChangeLoggingRule changeLoggingRule =
+            new ChangeLoggingRule("log4j2-trace-hazelcast-connector-restart-test.xml");
     private JetInstance instance1;
     private JetInstance instance2;
 
@@ -99,9 +104,12 @@ public class HazelcastConnector_RestartTest extends JetTestSupport {
 
         // Then - assert that the job stopped producing output
         waitExecutionDoneOnMember(instance1, job);
+        logger.info("Job execution is done on instance1");
         waitExecutionDoneOnMember(instance2, job);
+        logger.info("Job execution is done on instance2");
         assertTrueEventually(() -> assertFalse("node engine is running",
                 ((HazelcastInstanceImpl) instance2.getHazelcastInstance()).node.nodeEngine.isRunning()));
+        logger.info("instance2 is not running");
         int sizeAfterShutdown = sinkList.size();
         assertTrueAllTheTime(() -> assertEquals("output continues after shutdown", sizeAfterShutdown, sinkList.size()), 3);
 
