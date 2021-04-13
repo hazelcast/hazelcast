@@ -311,6 +311,7 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
 
                 return;
             case DESCENDING:
+            case POSITION:
             case OTHER:
             case OTHER_FUNCTION:
                 processOther(call);

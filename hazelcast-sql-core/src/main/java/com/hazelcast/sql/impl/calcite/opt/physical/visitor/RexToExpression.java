@@ -288,6 +288,7 @@ public final class RexToExpression {
 
                 break;
 
+            case POSITION:
             case OTHER_FUNCTION:
                 SqlFunction function = (SqlFunction) operator;
 
@@ -379,7 +380,8 @@ public final class RexToExpression {
                 } else if (function == HazelcastSqlOperatorTable.REPLACE) {
                     return ReplaceFunction.create(operands[0], operands[1], operands[2]);
                 } else if (function == HazelcastSqlOperatorTable.POSITION) {
-                    return PositionFunction.create(operands[0], operands[1]);
+                    Expression<?> start = operands.length > 2 ? operands[2] : null;
+                    return PositionFunction.create(operands[0], operands[1], start);
                 }
 
                 break;

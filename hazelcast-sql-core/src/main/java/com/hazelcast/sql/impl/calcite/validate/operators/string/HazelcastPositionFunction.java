@@ -21,9 +21,11 @@ import com.hazelcast.sql.impl.calcite.validate.operand.OperandCheckerProgram;
 import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.operators.ReplaceUnknownOperandTypeInference;
 import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastFunction;
+import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperandCountRange;
+import org.apache.calcite.sql.SqlWriter;
 import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import org.apache.calcite.sql.type.SqlTypeName;
@@ -34,31 +36,67 @@ public class HazelcastPositionFunction extends HazelcastFunction {
     public HazelcastPositionFunction() {
         super(
                 "POSITION",
-                SqlKind.OTHER_FUNCTION,
+                SqlKind.POSITION,
                 ReturnTypes.INTEGER_NULLABLE,
-                new ReplaceUnknownOperandTypeInference(SqlTypeName.VARCHAR),
-                SqlFunctionCategory.STRING
+                new ReplaceUnknownOperandTypeInference(
+                        new SqlTypeName[] {
+                                SqlTypeName.VARCHAR,
+                                SqlTypeName.VARCHAR,
+                                SqlTypeName.INTEGER
+                        }),
+                SqlFunctionCategory.NUMERIC
         );
     }
 
     @Override
     public String getSignatureTemplate(int operandCount) {
-        if (operandCount != 2) {
-            throw new AssertionError("The number of operands must be 2");
+        switch (operandCount) {
+            case 2:
+                return "{0}({1} IN {2})";
+            case 3:
+                return "{0}({1} IN {2} FROM {3})";
+            default:
+                throw new AssertionError("The number of operands must be 2 or 3");
         }
-        return "{0}({1} IN {2})";
     }
 
     @Override
     public SqlOperandCountRange getOperandCountRange() {
-        return SqlOperandCountRanges.of(2);
+        return SqlOperandCountRanges.between(2, 3);
     }
 
     @Override
     protected boolean checkOperandTypes(HazelcastCallBinding callBinding, boolean throwOnFailure) {
-        return new OperandCheckerProgram(
-                TypedOperandChecker.VARCHAR,
-                TypedOperandChecker.VARCHAR
-        ).check(callBinding, throwOnFailure);
+        switch (callBinding.getOperandCount()) {
+            case 2:
+                return new OperandCheckerProgram(
+                        TypedOperandChecker.VARCHAR,
+                        TypedOperandChecker.VARCHAR
+                ).check(callBinding, throwOnFailure);
+            case 3:
+                return new OperandCheckerProgram(
+                        TypedOperandChecker.VARCHAR,
+                        TypedOperandChecker.VARCHAR,
+                        TypedOperandChecker.INTEGER
+                ).check(callBinding, throwOnFailure);
+            default:
+                return false;
+        }
+    }
+
+    @Override
+    public void unparse(SqlWriter writer, SqlCall call, int leftPrec, int rightPrec) {
+        SqlWriter.Frame frame = writer.startFunCall(getName());
+
+        call.operand(0).unparse(writer, leftPrec, rightPrec);
+        writer.sep("IN");
+        call.operand(1).unparse(writer, leftPrec, rightPrec);
+
+        if (call.operandCount() == 3) {
+            writer.sep("FROM");
+            call.operand(2).unparse(writer, leftPrec, rightPrec);
+        }
+
+        writer.endFunCall(frame);
     }
 }

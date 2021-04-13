@@ -31,12 +31,24 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.List;
+import java.util.regex.Pattern;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class PositionFunctionIntegrationTest extends ExpressionTestSupport {
+    private static final Pattern ERROR1 = Pattern.compile(
+            "Parameter at position \\d+ must be of ((VARCHAR)|(INTEGER)) type,"
+                    + " but \\w+ was found \\(consider adding an explicit CAST\\)"
+    );
+
+    private static final Pattern ERROR2 = Pattern.compile(
+            "Cannot apply 'POSITION' function to \\[\\w+(, \\w+)+]"
+                    + " \\(consider adding an explicit CAST\\)"
+    );
 
     @Test
     public void test() {
@@ -45,6 +57,20 @@ public class PositionFunctionIntegrationTest extends ExpressionTestSupport {
         check(sql("'ABCD'", "'BC'"), 2);
         check(sql("'ABCD'", "''"), 1);
         check(sql("'ABCD'", "'NO_MATCH'"), 0);
+
+
+        // Test with start argument, slide the search index to right.
+        // Valid start indices are between 0 and 4.
+        check(sql("'ABCD'", "'BC'", 0), 0); // Invalid index
+        check(sql("'ABCD'", "'BC'", 1), 2);
+        check(sql("'ABCD'", "'BC'", 2), 2);
+        check(sql("'ABCD'", "'BC'", 3), 0);
+        check(sql("'ABCD'", "'BC'", 4), 0);
+        check(sql("'ABCD'", "'BC'", 5), 0); // Invalid index
+
+        // Repeated string
+        check(sql("'ABAB'", "'AB'", 1), 1);
+        check(sql("'ABAB'", "'AB'", 2), 3);
     }
 
     @Test
@@ -54,6 +80,9 @@ public class PositionFunctionIntegrationTest extends ExpressionTestSupport {
         check(sql("'BC'", "NULL"), null);
         check(sql("NULL", "'BC'"), null);
         check(sql("NULL", "NULL"), null);
+
+        check(sql("NULL", "NULL", 1), null);
+        check(sql("'ABC'", "'ABC'", "NULL"), null);
     }
 
     @Test
@@ -63,6 +92,9 @@ public class PositionFunctionIntegrationTest extends ExpressionTestSupport {
         check(sql("?", "'BC'"), 2, "ABCD");
         check(sql("'ABCD'", "?"), 2, "BC");
         check(sql("?", "?"), 2, "BC", "ABCD");
+
+        check(sql("?", "?", "?"), 2, "BC", "ABCD", 1);
+        check(sql("?", "?", "?"), 0, "BC", "ABCD", 3);
     }
 
     @Test
@@ -77,6 +109,9 @@ public class PositionFunctionIntegrationTest extends ExpressionTestSupport {
         checkError(sql("'ABC'", "TRUE"));
         checkError(sql("TRUE", "'ABC'"));
 
+        checkError(sql("'ABCD'", "'BC'", "'CC'"));
+        checkError(sql("'ABCD'", "'BC'", "TRUE"));
+
         checkError(sql("?", "?"), INTEGER_VAL, INTEGER_VAL);
         checkError(sql("?", "?"), STRING_VAL, INTEGER_VAL);
         checkError(sql("?", "?"), INTEGER_VAL, STRING_VAL);
@@ -88,22 +123,39 @@ public class PositionFunctionIntegrationTest extends ExpressionTestSupport {
         checkError(sql("?", "?"), OFFSET_DATE_TIME_VAL, OFFSET_DATE_TIME_VAL);
         checkError(sql("?", "?"), STRING_VAL, OFFSET_DATE_TIME_VAL);
         checkError(sql("?", "?"), OFFSET_DATE_TIME_VAL, STRING_VAL);
+
+        checkError(sql("?", "?", "?"), STRING_VAL, STRING_VAL, STRING_VAL);
+        checkError(sql("?", "?", "?"), STRING_VAL, STRING_VAL, BOOLEAN_VAL);
+        checkError(sql("?", "?", "?"), STRING_VAL, STRING_VAL, OFFSET_DATE_TIME_VAL);
     }
 
     @Test
     public void test_equality() {
-        PositionFunction f = createFunction("AB", "ABCD");
+        PositionFunction f = createFunctionWithoutStart("AB", "ABCD");
 
-        checkEquals(f, createFunction("AB", "ABCD"), true);
+        checkEquals(f, createFunctionWithoutStart("AB", "ABCD"), true);
 
-        checkEquals(f, createFunction("AB", "ABC"), false);
-        checkEquals(f, createFunction("ABC", "ABCD"), false);
+        checkEquals(f, createFunctionWithoutStart("AB", "ABC"), false);
+        checkEquals(f, createFunctionWithoutStart("ABC", "ABCD"), false);
+
+        f = createFunction("AB", "ABCD", 2);
+
+        checkEquals(f, createFunction("AB", "ABCD", 2), true);
+
+        checkEquals(f, createFunction("AB", "ABC", 2), false);
+        checkEquals(f, createFunction("ABC", "ABCD", 3), false);
+        checkEquals(f, createFunctionWithoutStart("AB", "ABCD"), false);
     }
 
     @Test
     public void test_serialization() {
-        PositionFunction f = createFunction("AB", "ABCD");
+        PositionFunction f = createFunctionWithoutStart("AB", "ABCD");
         PositionFunction deserialized = serializeAndCheck(f, SqlDataSerializerHook.EXPRESSION_POSITION);
+
+        checkEquals(f, deserialized, true);
+
+        f = createFunction("AB", "ABCD", 2);
+        deserialized = serializeAndCheck(f, SqlDataSerializerHook.EXPRESSION_POSITION);
 
         checkEquals(f, deserialized, true);
     }
@@ -118,19 +170,41 @@ public class PositionFunctionIntegrationTest extends ExpressionTestSupport {
     }
 
     private void checkError(String sql, Object ...parameters) {
-        assertThrows(HazelcastSqlException.class, () -> {
+        try {
             execute(member, sql, parameters);
-        });
+            fail("did not throw exception");
+        } catch (Exception e) {
+            assertInstanceOf(HazelcastSqlException.class, e);
+
+            String message = e.getMessage();
+            assertTrue(
+                    String.format("got unexpected error message: %s", message),
+                    ERROR1.matcher(message).find() || ERROR2.matcher(message).find());
+
+        }
     }
 
     private String sql(Object text, Object search) {
         return String.format("SELECT POSITION(%s IN %s) FROM map", search, text);
     }
 
-    private PositionFunction createFunction(String search, String text) {
+    private String sql(Object text, Object search, Object start) {
+        return String.format("SELECT POSITION(%s IN %s FROM %s) FROM map", search, text, start);
+    }
+
+    private PositionFunction createFunction(String search, String text, int start) {
         return PositionFunction.create(
                 ConstantExpression.create(search, QueryDataType.VARCHAR),
-                ConstantExpression.create(text, QueryDataType.VARCHAR)
+                ConstantExpression.create(text, QueryDataType.VARCHAR),
+                ConstantExpression.create(start, QueryDataType.INT)
+        );
+    }
+
+    private PositionFunction createFunctionWithoutStart(String search, String text) {
+        return PositionFunction.create(
+                ConstantExpression.create(search, QueryDataType.VARCHAR),
+                ConstantExpression.create(text, QueryDataType.VARCHAR),
+                null
         );
     }
 }

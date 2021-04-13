@@ -109,6 +109,6 @@ public final class StringFunctionUtils {
     }
 
     public static Integer search(String text, String search, int start) {
-        return 1 + text.indexOf(search, start);
+        return text.indexOf(search, start);
     }
 }
