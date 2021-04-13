@@ -172,7 +172,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             rowMetadata,
             parameterMetadata,
             planKey,
-                objectKeys,
+            objectKeys,
             permissions
         );
     }
