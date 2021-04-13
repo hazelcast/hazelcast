@@ -21,6 +21,9 @@ import com.hazelcast.jet.accumulator.LongLongAccumulator;
 import com.hazelcast.jet.datamodel.KeyedWindowResult;
 import com.hazelcast.jet.datamodel.WindowResult;
 import com.hazelcast.jet.pipeline.test.TestSources;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
+import org.junit.experimental.categories.Category;
 
 import java.util.List;
 import java.util.Map.Entry;
@@ -32,6 +35,7 @@ import java.util.stream.Stream;
 
 import static java.lang.Long.max;
 
+@Category({QuickTest.class, ParallelJVMTest.class})
 public abstract class PipelineStreamTestSupport extends PipelineTestSupport {
     static final int ASSERT_TIMEOUT_SECONDS = 30;
     static final long EARLY_RESULTS_PERIOD = 200L;

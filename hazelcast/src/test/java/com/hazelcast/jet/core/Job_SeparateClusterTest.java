@@ -27,12 +27,17 @@ import com.hazelcast.jet.JobAlreadyExistsException;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.MockPS;
 import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,6 +55,8 @@ import static org.junit.Assert.assertEquals;
 /**
  * Tests for {@link Job} with a separate cluster for each test.
  */
+@RunWith(HazelcastSerialClassRunner.class)
+@Category({SlowTest.class, ParallelJVMTest.class})
 public class Job_SeparateClusterTest extends JetTestSupport {
 
     private static final int NODE_COUNT = 2;

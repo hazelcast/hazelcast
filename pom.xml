@@ -485,7 +485,7 @@
                                 <configuration combine.self="override">
                                     <useFile>false</useFile>
                                     <trimStackTrace>false</trimStackTrace>
-                                    <!-- 1C means 1 process per cpu core -->
+                                    <!-- 0.5C means half as many forks as cpu cores -->
                                     <forkCount>0.5C</forkCount>
                                     <reuseForks>true</reuseForks>
                                     <argLine>

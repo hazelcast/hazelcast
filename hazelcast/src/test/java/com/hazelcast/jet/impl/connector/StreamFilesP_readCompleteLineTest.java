@@ -17,7 +17,10 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.StringReader;
@@ -26,6 +29,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class StreamFilesP_readCompleteLineTest {
 
     private StreamFilesP<String> p = new StreamFilesP<>("", UTF_8, "*", false, (file, line) -> line);

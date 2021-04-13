@@ -29,6 +29,7 @@ import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -53,7 +54,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
-@Category(ParallelJVMTest.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @SuppressWarnings("checkstyle:declarationorder")

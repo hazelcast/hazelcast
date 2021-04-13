@@ -30,7 +30,6 @@ import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.test.AssertionSinks;
-import com.hazelcast.jet.test.SerialTest;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -58,7 +57,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({SerialTest.class, NightlyTest.class})
+@Category({NightlyTest.class})
 public class ReadMapOrCacheP_ConsistencyTest extends JetTestSupport {
 
     private static final String MAP_NAME = "map";

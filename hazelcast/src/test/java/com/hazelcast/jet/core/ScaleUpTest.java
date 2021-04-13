@@ -35,7 +35,7 @@ import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(NightlyTest.class)
+@Category({NightlyTest.class})
 public class ScaleUpTest extends JetTestSupport {
 
     private static final int NODE_COUNT = 2;

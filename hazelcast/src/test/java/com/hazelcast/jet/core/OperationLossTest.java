@@ -54,7 +54,7 @@ import static org.junit.Assert.assertNotNull;
 
 // TODO this test does not test when responses are lost. There is currently no test
 //   harness to simulate that.
-@Category(NightlyTest.class)
+@Category({NightlyTest.class})
 public class OperationLossTest extends SimpleTestInClusterSupport {
 
     @BeforeClass

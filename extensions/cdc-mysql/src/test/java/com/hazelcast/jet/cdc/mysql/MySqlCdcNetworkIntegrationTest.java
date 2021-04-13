@@ -30,7 +30,6 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.retry.RetryStrategies;
 import com.hazelcast.jet.retry.RetryStrategy;
-import com.hazelcast.jet.test.SerialTest;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.After;
@@ -70,7 +69,7 @@ import static org.testcontainers.containers.MySQLContainer.MYSQL_PORT;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
-@Category({SerialTest.class, NightlyTest.class})
+@Category({NightlyTest.class})
 public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
 
     private static final long RECONNECT_INTERVAL_MS = SECONDS.toMillis(1);
