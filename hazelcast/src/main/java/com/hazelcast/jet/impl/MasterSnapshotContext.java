@@ -22,9 +22,9 @@ import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.impl.JobExecutionRecord.SnapshotStats;
 import com.hazelcast.jet.impl.execution.SnapshotFlags;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
-import com.hazelcast.jet.impl.operation.SnapshotPhase2Operation;
 import com.hazelcast.jet.impl.operation.SnapshotPhase1Operation;
 import com.hazelcast.jet.impl.operation.SnapshotPhase1Operation.SnapshotPhase1Result;
+import com.hazelcast.jet.impl.operation.SnapshotPhase2Operation;
 import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.IMap;
@@ -47,6 +47,7 @@ import static com.hazelcast.jet.impl.JobRepository.EXPORTED_SNAPSHOTS_PREFIX;
 import static com.hazelcast.jet.impl.JobRepository.exportedSnapshotMapName;
 import static com.hazelcast.jet.impl.JobRepository.snapshotDataMapName;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
+import static com.hazelcast.jet.impl.util.Util.jobNameAndExecutionId;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
 /**
@@ -161,9 +162,10 @@ class MasterSnapshotContext {
             int snapshotFlags = SnapshotFlags.create(isTerminal, isExport);
             String finalMapName = isExport ? exportedSnapshotMapName(snapshotMapName)
                     : snapshotDataMapName(mc.jobId(), mc.jobExecutionRecord().ongoingDataMapIndex());
-                mc.nodeEngine().getHazelcastInstance().getMap(finalMapName).clear();
+            mc.nodeEngine().getHazelcastInstance().getMap(finalMapName).clear();
             logFine(logger, "Starting snapshot %d for %s, flags: %s, writing to: %s",
-                    newSnapshotId, mc.jobIdString(), SnapshotFlags.toString(snapshotFlags), snapshotMapName);
+                    newSnapshotId, jobNameAndExecutionId(mc.jobName(), localExecutionId),
+                    SnapshotFlags.toString(snapshotFlags), snapshotMapName);
 
             Function<ExecutionPlan, Operation> factory = plan ->
                     new SnapshotPhase1Operation(mc.jobId(), localExecutionId, newSnapshotId, finalMapName, snapshotFlags);
@@ -338,7 +340,7 @@ class MasterSnapshotContext {
                         // If the terminal snapshot failed, the executions might not terminate on some members
                         // normally and we don't care if they do - the snapshot is done and we have to bring the
                         // execution down. Let's execute the CompleteExecutionOperation to terminate them.
-                        mc.jobContext().cancelExecutionInvocations(mc.jobId(), mc.executionId(), null);
+                        mc.jobContext().cancelExecutionInvocations(mc.jobId(), mc.executionId(), null, null);
                     }
                 } else if (!SnapshotFlags.isExport(snapshotFlags)) {
                     // if this snapshot was an automatic snapshot, schedule the next one

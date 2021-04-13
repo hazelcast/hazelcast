@@ -24,7 +24,6 @@ import com.hazelcast.internal.metrics.ProbeUnit;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.jet.RestartableException;
@@ -92,7 +91,7 @@ public class ReceiverTasklet implements Tasklet {
     private final String destinationVertexName;
     private final Connection memberConnection;
 
-    private final Queue<BufferObjectDataInput> incoming = new MPSCQueue<>(null);
+    private Queue<BufferObjectDataInput> incoming;
     private final ProgressTracker tracker = new ProgressTracker();
     private final ArrayDeque<ObjWithPtionIdAndSize> inbox = new ArrayDeque<>();
     private final OutboundCollector collector;
@@ -175,11 +174,6 @@ public class ReceiverTasklet implements Tasklet {
         ackItem(ackItemLocal);
         numWaitingInInbox = inbox.size();
         return tracker.toProgressState();
-    }
-
-    void receiveStreamPacket(byte[] payload, int offset) {
-        BufferObjectDataInput input = serializationService.createObjectDataInput(payload, offset);
-        incoming.add(input);
     }
 
     /**
@@ -313,6 +307,10 @@ public class ReceiverTasklet implements Tasklet {
         } catch (IOException e) {
             throw rethrow(e);
         }
+    }
+
+    public void initIncomingQueue(Queue<BufferObjectDataInput> incomingQueue) {
+        incoming = incomingQueue;
     }
 
     private static class ObjWithPtionIdAndSize extends ObjectWithPartitionId {

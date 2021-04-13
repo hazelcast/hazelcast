@@ -35,6 +35,8 @@ import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.JobResult;
+import com.hazelcast.jet.impl.TerminationMode;
+import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder;
@@ -215,7 +217,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         Job job = runJobExpectFailure(dag, false);
 
         // Then
-        assertPsClosedWithError(MOCK_ERROR);
+        assertPsClosedWithError(new CancellationException());
         assertPmsClosedWithError(MOCK_ERROR);
         assertJobFailed(job, MOCK_ERROR);
     }
@@ -230,7 +232,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         Job job = runJobExpectFailure(dag, false);
 
         // Then
-        assertPsClosedWithError(MOCK_ERROR);
+        assertPsClosedWithError(new CancellationException());
         assertPmsClosedWithError(MOCK_ERROR);
         assertJobFailed(job, MOCK_ERROR);
     }
@@ -410,7 +412,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         cancelAndJoin(job);
         assertTrueEventually(() -> {
             assertJobFailed(job, new CancellationException());
-            assertPsClosedWithError(new CancellationException());
+            assertPsClosedWithError(new JobTerminateRequestedException(TerminationMode.CANCEL_FORCEFUL));
             assertPmsClosedWithError(new CancellationException());
         });
     }
@@ -430,7 +432,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         JetService jetService = getJetService(instance());
         final Map<MemberInfo, ExecutionPlan> executionPlans =
                 ExecutionPlanBuilder.createExecutionPlans(nodeEngineImpl, membersView, dag, 1, 1,
-                        new JobConfig(), NO_SNAPSHOT);
+                        new JobConfig(), NO_SNAPSHOT, false);
         ExecutionPlan executionPlan = executionPlans.get(membersView.getMember(localAddress));
         long jobId = 0;
         long executionId = 1;
@@ -444,7 +446,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         executionContext.terminateExecution(null);
 
         // When
-        CompletableFuture<Void> future = executionContext.beginExecution();
+        CompletableFuture<Void> future = executionContext.beginExecution(jetService.getTaskletExecutionService());
 
         // Then
         expectedException.expect(CancellationException.class);

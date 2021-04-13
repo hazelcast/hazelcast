@@ -21,14 +21,19 @@ import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectsCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
+import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.LightJob;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.impl.client.protocol.codec.JetExistsDistributedObjectCodec;
 import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobIdsByNameCodec;
 import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobIdsCodec;
 import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobSummaryListCodec;
+import com.hazelcast.jet.impl.client.protocol.codec.JetSubmitLightJobCodec;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 
@@ -56,8 +61,18 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
         ExceptionUtil.registerJetExceptions(hazelcastInstance.getClientExceptionFactory());
     }
 
-    @Nonnull
-    @Override
+    @Nonnull @Override
+    public LightJob newLightJob(DAG dag) {
+        Data dagSerialized = serializationService.toData(dag);
+        ClientMessage message = JetSubmitLightJobCodec.encodeRequest(newJobId(), dagSerialized);
+        // TODO [viliam] ensure it's not executed on a lite member
+        ClientInvocation invocation = new ClientInvocation(client, message, null);
+
+        ClientInvocationFuture future = invocation.invoke();
+        return new ClientLightJobProxy(future);
+    }
+
+    @Nonnull @Override
     public JetConfig getConfig() {
         throw new UnsupportedOperationException("Jet Configuration is not available on the client");
     }
@@ -142,5 +157,4 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
             throw rethrow(t);
         }
     }
-
 }

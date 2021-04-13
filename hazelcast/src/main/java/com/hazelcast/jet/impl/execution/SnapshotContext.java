@@ -177,7 +177,7 @@ public class SnapshotContext {
         return lastPhase1Successful;
     }
 
-    ProcessingGuarantee processingGuarantee() {
+    public ProcessingGuarantee processingGuarantee() {
         return guarantee;
     }
 

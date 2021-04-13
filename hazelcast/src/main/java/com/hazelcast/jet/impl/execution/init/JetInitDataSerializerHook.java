@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.execution.init;
 
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.impl.JobExecutionRecord;
 import com.hazelcast.jet.impl.JobExecutionRecord.SnapshotStats;
 import com.hazelcast.jet.impl.JobRecord;
@@ -28,7 +29,6 @@ import com.hazelcast.jet.impl.JobSummary;
 import com.hazelcast.jet.impl.JobSuspensionCauseImpl;
 import com.hazelcast.jet.impl.SnapshotValidationRecord;
 import com.hazelcast.jet.impl.connector.WriteFileP;
-import com.hazelcast.jet.impl.operation.CompleteExecutionOperation;
 import com.hazelcast.jet.impl.operation.GetJobConfigOperation;
 import com.hazelcast.jet.impl.operation.GetJobIdsByNameOperation;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation;
@@ -43,13 +43,15 @@ import com.hazelcast.jet.impl.operation.JoinSubmittedJobOperation;
 import com.hazelcast.jet.impl.operation.NotifyMemberShutdownOperation;
 import com.hazelcast.jet.impl.operation.PrepareForPassiveClusterOperation;
 import com.hazelcast.jet.impl.operation.ResumeJobOperation;
-import com.hazelcast.jet.impl.operation.SnapshotPhase2Operation;
 import com.hazelcast.jet.impl.operation.SnapshotPhase1Operation;
 import com.hazelcast.jet.impl.operation.SnapshotPhase1Operation.SnapshotPhase1Result;
+import com.hazelcast.jet.impl.operation.SnapshotPhase2Operation;
 import com.hazelcast.jet.impl.operation.StartExecutionOperation;
 import com.hazelcast.jet.impl.operation.SubmitJobOperation;
+import com.hazelcast.jet.impl.operation.SubmitLightJobOperation;
 import com.hazelcast.jet.impl.operation.TerminateExecutionOperation;
 import com.hazelcast.jet.impl.operation.TerminateJobOperation;
+import com.hazelcast.jet.impl.processor.ProcessorSupplierFromSimpleSupplier;
 import com.hazelcast.jet.impl.processor.SessionWindowP;
 import com.hazelcast.jet.impl.processor.SlidingWindowP.SnapshotKey;
 import com.hazelcast.jet.impl.util.AsyncSnapshotWriterImpl;
@@ -68,7 +70,6 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
     public static final int JOB_RESULT = 4;
     public static final int INIT_EXECUTION_OP = 5;
     public static final int START_EXECUTION_OP = 6;
-    public static final int COMPLETE_EXECUTION_OP = 7;
     public static final int SUBMIT_JOB_OP = 8;
     public static final int GET_JOB_STATUS_OP = 9;
     public static final int SNAPSHOT_PHASE1_OPERATION = 10;
@@ -102,6 +103,9 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
     public static final int WRITE_FILE_P_FILE_ID = 42;
     public static final int JOB_SUSPENSION_CAUSE = 43;
     public static final int GET_JOB_SUSPENSION_CAUSE_OP = 44;
+    public static final int SUBMIT_LIGHT_JOB_OP = 45;
+    public static final int PROCESSOR_SUPPLIER_FROM_SIMPLE_SUPPLIER = 46;
+    public static final int NOOP_PROCESSOR_SUPPLIER = 47;
 
     public static final int FACTORY_ID = FactoryIdHelper.getFactoryId(JET_IMPL_DS_FACTORY, JET_IMPL_DS_FACTORY_ID);
 
@@ -134,8 +138,6 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
                     return new InitExecutionOperation();
                 case START_EXECUTION_OP:
                     return new StartExecutionOperation();
-                case COMPLETE_EXECUTION_OP:
-                    return new CompleteExecutionOperation();
                 case SUBMIT_JOB_OP:
                     return new SubmitJobOperation();
                 case GET_JOB_STATUS_OP:
@@ -198,6 +200,12 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
                     return new JobSuspensionCauseImpl();
                 case GET_JOB_SUSPENSION_CAUSE_OP:
                     return new GetJobSuspensionCauseOperation();
+                case SUBMIT_LIGHT_JOB_OP:
+                    return new SubmitLightJobOperation();
+                case PROCESSOR_SUPPLIER_FROM_SIMPLE_SUPPLIER:
+                    return new ProcessorSupplierFromSimpleSupplier();
+                case NOOP_PROCESSOR_SUPPLIER:
+                    return new Processors.NoopPSupplier();
                 default:
                     throw new IllegalArgumentException("Unknown type id " + typeId);
             }

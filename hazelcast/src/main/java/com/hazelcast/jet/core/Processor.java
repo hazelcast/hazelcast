@@ -453,6 +453,17 @@ public interface Processor {
     }
 
     /**
+     * Returns {@code true} if the {@link #close()} method of this processor is
+     * cooperative. If it's not, the call to the {@code close()} method is
+     * off-loaded to another thread.
+     * <p>
+     * This flag is ignored for non-cooperative processors.
+     */
+    default boolean closeIsCooperative() {
+        return false;
+    }
+
+    /**
      * Context passed to the processor in the
      * {@link #init(Outbox, Context) init()} call.
      *

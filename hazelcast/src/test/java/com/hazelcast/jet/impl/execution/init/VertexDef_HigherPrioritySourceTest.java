@@ -128,7 +128,7 @@ public class VertexDef_HigherPrioritySourceTest extends SimpleTestInClusterSuppo
 
     private void assertHigherPriorityVertices(Vertex... vertices) {
         Map<MemberInfo, ExecutionPlan> executionPlans =
-                createExecutionPlans(nodeEngineImpl, membersView, dag, 0, 0, new JobConfig(), 0);
+                createExecutionPlans(nodeEngineImpl, membersView, dag, 0, 0, new JobConfig(), 0, false);
         ExecutionPlan plan = executionPlans.values().iterator().next();
         SnapshotContext ssContext = new SnapshotContext(mock(ILogger.class), "job", 0, EXACTLY_ONCE);
         plan.initialize(nodeEngineImpl, 0, 0, ssContext, null,

@@ -17,15 +17,12 @@
 package com.hazelcast.jet.impl.execution.init;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.util.MutableInteger;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
-import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.groupingBy;
+import java.util.Map.Entry;
 
 /**
  * Collaborator of {@link ExecutionPlan} that takes care of assigning
@@ -45,17 +42,35 @@ class PartitionArrangement {
     private final int[] localPartitions;
 
     PartitionArrangement(Address[] partitionOwners, Address thisAddress) {
-        localPartitions = IntStream.range(0, partitionOwners.length)
-                .filter(partitionId -> thisAddress.equals(partitionOwners[partitionId]))
-                .toArray();
+        Map<Address, MutableInteger> memberCounts = new HashMap<>();
+        for (Address partitionOwner : partitionOwners) {
+            memberCounts.computeIfAbsent(partitionOwner, x -> new MutableInteger()).value++;
+        }
+        localPartitions = new int[memberCounts.get(thisAddress).value];
+        remotePartitionAssignment = new HashMap<>();
+        for (Entry<Address, MutableInteger> en : memberCounts.entrySet()) {
+            if (en.getKey() != thisAddress) {
+                MutableInteger count = en.getValue();
+                remotePartitionAssignment.put(en.getKey(), new int[count.value]);
+                count.value = 0;
+            }
+        }
 
-        allPartitions = IntStream.range(0, partitionOwners.length).toArray();
+        int localPartitionIndex = 0;
+        for (int i = 0; i < partitionOwners.length; i++) {
+            Address address = partitionOwners[i];
+            if (address == thisAddress) {
+                localPartitions[localPartitionIndex++] = i;
+            } else {
+                int index = memberCounts.get(address).value++;
+                remotePartitionAssignment.get(address)[index] = i;
+            }
+        }
 
-        remotePartitionAssignment = IntStream.range(0, partitionOwners.length)
-                .filter(partitionId -> !thisAddress.equals(partitionOwners[partitionId]))
-                .boxed()
-                .collect(groupingBy(partitionId -> partitionOwners[partitionId],
-                        collectingAndThen(Collectors.toList(), l -> l.stream().mapToInt(i -> i).toArray())));
+        allPartitions = new int[partitionOwners.length];
+        for (int i = 0; i < allPartitions.length; i++) {
+            allPartitions[i] = i;
+        }
     }
 
     Map<Address, int[]> getRemotePartitionAssignment() {

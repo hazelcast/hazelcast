@@ -141,18 +141,20 @@ public class Networking {
                 // dest vertex id --> dest ordinal --> sender addr --> receiver tasklet
                 Map<Integer, Map<Integer, Map<Address, ReceiverTasklet>>> receiverMap =
                         executionIdAndCtx.getValue().receiverMap();
-                output.writeInt(receiverMap.values().stream().mapToInt(Map::size).sum());
-                for (Entry<Integer, Map<Integer, Map<Address, ReceiverTasklet>>> e1 : receiverMap.entrySet()) {
-                    int vertexId = e1.getKey();
-                    Map<Integer, Map<Address, ReceiverTasklet>> ordinalToMemberToTasklet = e1.getValue();
-                    for (Entry<Integer, Map<Address, ReceiverTasklet>> e2 : ordinalToMemberToTasklet.entrySet()) {
-                        int ordinal = e2.getKey();
-                        Map<Address, ReceiverTasklet> memberToTasklet = e2.getValue();
-                        output.writeInt(vertexId);
-                        output.writeInt(ordinal);
-                        ReceiverTasklet receiverTasklet = memberToTasklet.get(member);
-                        output.writeInt(receiverTasklet.updateAndGetSendSeqLimitCompressed(expectedConnection));
-                        hasData = true;
+                if (receiverMap != null) {
+                    output.writeInt(receiverMap.values().stream().mapToInt(Map::size).sum());
+                    for (Entry<Integer, Map<Integer, Map<Address, ReceiverTasklet>>> e1 : receiverMap.entrySet()) {
+                        int vertexId = e1.getKey();
+                        Map<Integer, Map<Address, ReceiverTasklet>> ordinalToMemberToTasklet = e1.getValue();
+                        for (Entry<Integer, Map<Address, ReceiverTasklet>> e2 : ordinalToMemberToTasklet.entrySet()) {
+                            int ordinal = e2.getKey();
+                            Map<Address, ReceiverTasklet> memberToTasklet = e2.getValue();
+                            output.writeInt(vertexId);
+                            output.writeInt(ordinal);
+                            ReceiverTasklet receiverTasklet = memberToTasklet.get(member);
+                            output.writeInt(receiverTasklet.updateAndGetSendSeqLimitCompressed(expectedConnection));
+                            hasData = true;
+                        }
                     }
                 }
             }

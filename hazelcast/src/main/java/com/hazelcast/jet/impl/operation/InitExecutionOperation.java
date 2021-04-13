@@ -19,18 +19,21 @@ package com.hazelcast.jet.impl.operation;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.Timers;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
+import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isRestartableException;
@@ -42,36 +45,46 @@ import static com.hazelcast.spi.impl.operationservice.ExceptionAction.THROW_EXCE
  * After it is successfully handled on all members, {@link
  * StartExecutionOperation} is sent.
  */
-public class InitExecutionOperation extends AbstractJobOperation {
+public class InitExecutionOperation extends AsyncJobOperation {
 
     private long executionId;
     private int coordinatorMemberListVersion;
     private Set<MemberInfo> participants;
     private Data serializedPlan;
+    private boolean isLightJob;
 
     public InitExecutionOperation() {
     }
 
     public InitExecutionOperation(long jobId, long executionId, int coordinatorMemberListVersion,
-                                  Set<MemberInfo> participants, Data serializedPlan) {
+                                  Set<MemberInfo> participants, Data serializedPlan, boolean isLightJob) {
         super(jobId);
         this.executionId = executionId;
         this.coordinatorMemberListVersion = coordinatorMemberListVersion;
         this.participants = participants;
         this.serializedPlan = serializedPlan;
+        this.isLightJob = isLightJob;
     }
 
     @Override
-    public void run() {
+    protected CompletableFuture<Void> doRun() {
         ILogger logger = getLogger();
         JetService service = getService();
-
         Address caller = getCallerAddress();
-        logger.fine("Initializing execution plan for " + jobIdAndExecutionId(jobId(), executionId) + " from " + caller);
+        LoggingUtil.logFine(logger, "Initializing execution plan for %s from %s", jobIdAndExecutionId(jobId(), executionId), caller);
 
+        Timers.i().initExecOp_deserializePlan.start();
         ExecutionPlan plan = deserializePlan(serializedPlan);
-        service.getJobExecutionService().initExecution(jobId(), executionId, caller,
-                coordinatorMemberListVersion, participants, plan);
+        Timers.i().initExecOp_deserializePlan.stop();
+        if (isLightJob) {
+            return service.getJobExecutionService().runLightJob(jobId(), executionId, caller,
+                    coordinatorMemberListVersion, participants, plan)
+                    .whenComplete((r, t) -> Timers.i().initResponseTime.start());
+        } else {
+            service.getJobExecutionService().initExecution(jobId(), executionId, caller,
+                    coordinatorMemberListVersion, participants, plan);
+            return CompletableFuture.completedFuture(null);
+        }
     }
 
     @Override
@@ -89,6 +102,7 @@ public class InitExecutionOperation extends AbstractJobOperation {
         super.writeInternal(out);
 
         out.writeLong(executionId);
+        out.writeBoolean(isLightJob);
         out.writeInt(coordinatorMemberListVersion);
         out.writeInt(participants.size());
         for (MemberInfo participant : participants) {
@@ -102,6 +116,7 @@ public class InitExecutionOperation extends AbstractJobOperation {
         super.readInternal(in);
 
         executionId = in.readLong();
+        isLightJob = in.readBoolean();
         coordinatorMemberListVersion = in.readInt();
         int count = in.readInt();
         participants = new HashSet<>();
@@ -112,8 +127,12 @@ public class InitExecutionOperation extends AbstractJobOperation {
     }
 
     private ExecutionPlan deserializePlan(Data planBlob) {
-        JetService service = getService();
-        ClassLoader cl = service.getClassLoader(jobId());
-        return deserializeWithCustomClassLoader(getNodeEngine().getSerializationService(), cl, planBlob);
+        if (isLightJob) {
+            return getNodeEngine().getSerializationService().toObject(planBlob);
+        } else {
+            JetService service = getService();
+            ClassLoader cl = service.getClassLoader(jobId());
+            return deserializeWithCustomClassLoader(getNodeEngine().getSerializationService(), cl, planBlob);
+        }
     }
 }

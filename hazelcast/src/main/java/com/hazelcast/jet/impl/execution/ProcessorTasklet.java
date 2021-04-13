@@ -34,6 +34,7 @@ import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.metrics.MetricNames;
 import com.hazelcast.jet.core.metrics.MetricTags;
+import com.hazelcast.jet.impl.Timers;
 import com.hazelcast.jet.impl.metrics.MetricsContext;
 import com.hazelcast.jet.impl.processor.ProcessorWrapper;
 import com.hazelcast.jet.impl.util.ArrayDequeInbox;
@@ -45,6 +46,7 @@ import com.hazelcast.logging.Logger;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.BitSet;
@@ -157,7 +159,7 @@ public class ProcessorTasklet implements Tasklet {
             @Nonnull List<? extends InboundEdgeStream> instreams,
             @Nonnull List<? extends OutboundEdgeStream> outstreams,
             @Nonnull SnapshotContext ssContext,
-            @Nonnull OutboundCollector ssCollector,
+            @Nullable OutboundCollector ssCollector,
             boolean isSource
     ) {
         Preconditions.checkNotNull(processor, "processor");
@@ -201,13 +203,18 @@ public class ProcessorTasklet implements Tasklet {
                 : Logger.getLogger(getClass());
     }
 
-    private OutboxImpl createOutbox(@Nonnull OutboundCollector ssCollector) {
-        OutboundCollector[] collectors = new OutboundCollector[outstreams.length + 1];
+    private OutboxImpl createOutbox(@Nullable OutboundCollector ssCollector) {
+        OutboundCollector[] collectors;
+        if (ssCollector != null) {
+            collectors = new OutboundCollector[outstreams.length + 1];
+            collectors[outstreams.length] = ssCollector;
+        } else {
+            collectors = new OutboundCollector[outstreams.length];
+        }
         for (int i = 0; i < outstreams.length; i++) {
             collectors[i] = outstreams[i].getCollector();
         }
-        collectors[outstreams.length] = ssCollector;
-        return new OutboxImpl(collectors, true, progTracker,
+        return new OutboxImpl(collectors, ssCollector != null, progTracker,
                 serializationService, OUTBOX_BATCH_SIZE, emittedCounts);
     }
 
@@ -382,14 +389,16 @@ public class ProcessorTasklet implements Tasklet {
                 return;
 
             case CLOSE:
-                if (isCooperative()) {
+                if (isCooperative() && !processor.closeIsCooperative()) {
                     if (closeFuture == null) {
+                        Timers.i().processorClose.start();
                         closeFuture = executionService.submit(this::closeProcessor);
                         progTracker.madeProgress();
                     }
                     if (!closeFuture.isDone()) {
                         return;
                     }
+                    Timers.i().processorClose.stop();
                     progTracker.madeProgress();
                 } else {
                     closeProcessor();
