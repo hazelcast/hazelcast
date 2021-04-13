@@ -45,7 +45,7 @@ public class MobyNamesTest extends HazelcastTestSupport {
 
     @Test
     public void allValuesReturnedFair() {
-        int totalCombinations = 99 * 231; // MobyNames.LEFT.length * MobyNames.RIGHT.length
+        int totalCombinations = 98 * 240; // MobyNames.LEFT.length * MobyNames.RIGHT.length
         Map<String, AtomicInteger> namesCounts = new HashMap<>();
         for (int i = 0; i < totalCombinations * 2; i++) {
             String randomName = MobyNames.getRandomName(i);
