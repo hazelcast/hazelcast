@@ -28,18 +28,18 @@ final class MobyNames {
     private static final String NAME_FORMAT = "%s_%s";
 
     private static final String[] LEFT = {"admiring", "adoring", "affectionate", "agitated", "amazing", "angry", "awesome",
-                                          "blissful", "boring", "brave", "charming", "clever", "cocky", "cool", "compassionate",
-                                          "competent", "condescending", "confident", "cranky", "crazy", "dazzling", "determined",
-                                          "distracted", "dreamy", "eager", "ecstatic", "elastic", "elated", "elegant", "eloquent",
-                                          "epic", "fervent", "festive", "flamboyant", "focused", "friendly", "frosty", "gallant",
-                                          "gifted", "goofy", "gracious", "happy", "hardcore", "heuristic", "hopeful", "hungry",
-                                          "infallible", "inspiring", "jolly", "jovial", "keen", "kind", "laughing", "loving",
-                                          "lucid", "magical", "mystifying", "modest", "musing", "naughty", "nervous", "nifty",
-                                          "nostalgic", "objective", "optimistic", "peaceful", "pedantic", "pensive", "practical",
-                                          "priceless", "quirky", "quizzical", "recursing", "relaxed", "reverent", "romantic",
-                                          "sad", "serene", "sharp", "silly", "sleepy", "stoic", "stupefied", "suspicious",
-                                          "sweet", "tender", "thirsty", "trusting", "unruffled", "upbeat", "vibrant", "vigilant",
-                                          "vigorous", "wizardly", "wonderful", "xenodochial", "youthful", "zealous", "zen"};
+            "blissful", "boring", "brave", "charming", "clever", "cool", "compassionate",
+            "competent", "condescending", "confident", "cranky", "crazy", "dazzling", "determined",
+            "distracted", "dreamy", "eager", "ecstatic", "elastic", "elated", "elegant", "eloquent",
+            "epic", "fervent", "festive", "flamboyant", "focused", "friendly", "frosty", "gallant",
+            "gifted", "goofy", "gracious", "happy", "hardcore", "heuristic", "hopeful", "hungry",
+            "infallible", "inspiring", "jolly", "jovial", "keen", "kind", "laughing", "loving",
+            "lucid", "magical", "mystifying", "modest", "musing", "naughty", "nervous", "nifty",
+            "nostalgic", "objective", "optimistic", "peaceful", "pedantic", "pensive", "practical",
+            "priceless", "quirky", "quizzical", "recursing", "relaxed", "reverent", "romantic",
+            "sad", "serene", "sharp", "silly", "sleepy", "stoic", "stupefied", "suspicious",
+            "sweet", "tender", "thirsty", "trusting", "unruffled", "upbeat", "vibrant", "vigilant",
+            "vigorous", "wizardly", "wonderful", "xenodochial", "youthful", "zealous", "zen"};
     // Docker, starting from 0.7.x, generates names from notable scientists and hackers.
     // Please, for any amazing man that you add to the list, consider adding an equally amazing woman to it, and vice versa.
     private static final String[] RIGHT = {
@@ -122,6 +122,11 @@ final class MobyNames {
             // by over half a millennium - https://en.wikipedia.org/wiki/Bh%C4%81skara_II#Calculus
             "bhaskara",
 
+            // Sue Black - British computer scientist and campaigner. She has been instrumental in saving
+            // Bletchley Park, the site of World War II codebreaking -
+            // https://en.wikipedia.org/wiki/Sue_Black_(computer_scientist)
+            "black",
+
             // Elizabeth Helen Blackburn - Australian-American Nobel laureate; best known for co-discovering telomerase.
             // https://en.wikipedia.org/wiki/Elizabeth_Blackburn
             "blackburn",
@@ -144,6 +149,12 @@ final class MobyNames {
             // Satyendra Nath Bose - He provided the foundation for Bose–Einstein statistics and the theory of the
             // Bose–Einstein condensate. - https://en.wikipedia.org/wiki/Satyendra_Nath_Bose
             "bose",
+
+            // Katherine Louise Bouman is an imaging scientist and Assistant Professor of Computer Science at the
+            // California Institute of Technology. She researches computational methods for imaging, and developed an
+            // algorithm that made possible the picture first visualization of a black hole using the
+            // Event Horizon Telescope. - https://en.wikipedia.org/wiki/Katie_Bouman
+            "bouman",
 
             // Evelyn Boyd Granville - She was one of the first African-American woman to receive a Ph.D. in mathematics; she
             // earned it in 1949 from Yale University. https://en.wikipedia.org/wiki/Evelyn_Boyd_Granville
@@ -180,6 +191,15 @@ final class MobyNames {
             // https://en.wikipedia.org/wiki/Mary_Cartwright
             "cartwright",
 
+            // George Washington Carver - American agricultural scientist and inventor. He was the most prominent black
+            // scientist of the early 20th century. https://en.wikipedia.org/wiki/George_Washington_Carver
+            "carver",
+
+            // Vinton Gray Cerf - American Internet pioneer, recognised as one of "the fathers of the Internet". With
+            // Robert Elliot Kahn, he designed TCP and IP, the primary data communication protocols of the Internet and
+            // other computer networks. https://en.wikipedia.org/wiki/Vint_Cerf
+            "cerf",
+
             // Subrahmanyan Chandrasekhar - Astrophysicist known for his mathematical theory on different stages and evolution
             // in structures of the stars. He has won nobel prize for physics
             // - https://en.wikipedia.org/wiki/Subrahmanyan_Chandrasekhar
@@ -207,7 +227,7 @@ final class MobyNames {
             // Clifford Christopher Cocks - British mathematician and cryptographer employed by the GCHQ. Invented in 1973
             // an equivalent of what is now known as the RSA public-key cryptosystem (Rivest, Shamir and Adleman first
             // publicly described RSA in 1978). https://en.wikipedia.org/wiki/Clifford_Cocks
-            "cocks",
+            "clifford",
 
             // Bram Cohen - American computer programmer and author of the BitTorrent peer-to-peer protocol.
             // https://en.wikipedia.org/wiki/Bram_Cohen
@@ -391,6 +411,11 @@ final class MobyNames {
             // foremost expert on chimpanzees - https://en.wikipedia.org/wiki/Jane_Goodall
             "goodall",
 
+            // Stephen Jay Gould was was an American paleontologist, evolutionary biologist, and historian of science.
+            // He is most famous for the theory of punctuated equilibrium -
+            // https://en.wikipedia.org/wiki/Stephen_Jay_Gould
+            "gould",
+
             // Carolyn Widney Greider - American molecular biologist and joint winner of the 2009 Nobel Prize for Physiology or
             // Medicine for the discovery of telomerase. https://en.wikipedia.org/wiki/Carol_W._Greider
             "greider",
@@ -480,6 +505,11 @@ final class MobyNames {
             // Yeong-Sil Jang was a Korean scientist and astronomer during the Joseon Dynasty; he invented the first metal
             // printing press and water gauge. https://en.wikipedia.org/wiki/Jang_Yeong-sil
             "jang",
+
+            // Mae Carol Jemison -  is an American engineer, physician, and former NASA astronaut. She became the first
+            // black woman to travel in space when she served as a mission specialist aboard the
+            // Space Shuttle Endeavour - https://en.wikipedia.org/wiki/Mae_Jemison
+            "jemison",
 
             // Betty Jennings - one of the original programmers of the ENIAC. https://en.wikipedia.org/wiki/ENIAC - https://en
             // .wikipedia.org/wiki/Jean_Bartik
@@ -822,8 +852,13 @@ final class MobyNames {
             // https://en.wikipedia.org/wiki/Mildred_Sanderson
             "sanderson",
 
-            // Claude Shannon - The father of information theory and founder of digital circuit design theory. (https://en
-            // .wikipedia.org/wiki/Claude_Shannon)
+            // Satoshi Nakamoto is the name used by the unknown person or group of people who developed bitcoin, authored the bitcoin white paper, and created and deployed bitcoin's original reference implementation. https://en.wikipedia.org/wiki/Satoshi_Nakamoto
+            "satoshi",
+
+            // Adi Shamir - Israeli cryptographer whose numerous inventions and contributions to cryptography include the Ferge Fiat Shamir identification scheme, the Rivest Shamir Adleman (RSA) public-key cryptosystem, the Shamir's secret sharing scheme, the breaking of the Merkle-Hellman cryptosystem, the TWINKLE and TWIRL factoring devices and the discovery of differential cryptanalysis (with Eli Biham). https://en.wikipedia.org/wiki/Adi_Shamir
+            "shamir",
+
+            // Claude Shannon - The father of information theory and founder of digital circuit design theory. (https://en.wikipedia.org/wiki/Claude_Shannon)
             "shannon",
 
             // Carol Shaw - Originally an Atari employee, Carol Shaw is said to be the first female video game designer.
@@ -939,12 +974,17 @@ final class MobyNames {
             // differential geometry and statistical mechanics. https://en.wikipedia.org/wiki/C%C3%A9dric_Villani
             "villani",
 
-            // Marlyn Wescoff - one of the original programmers of the ENIAC. https://en.wikipedia.org/wiki/ENIAC - https://en
-            // .wikipedia.org/wiki/Marlyn_Meltzer
+            // Marlyn Wescoff - one of the original programmers of the ENIAC. https://en.wikipedia.org/wiki/ENIAC -
+            // https://en.wikipedia.org/wiki/Marlyn_Meltzer
             "wescoff",
 
-            // Andrew Wiles - Notable British mathematician who proved the enigmatic Fermat's Last Theorem - https://en
-            // .wikipedia.org/wiki/Andrew_Wiles
+            // Sylvia B. Wilbur - British computer scientist who helped develop the ARPANET, was one of the first to
+            // exchange email in the UK and a leading researcher in computer-supported collaborative work.
+            // https://en.wikipedia.org/wiki/Sylvia_Wilbur
+            "wilbur",
+
+            // Andrew Wiles - Notable British mathematician who proved the enigmatic Fermat's Last Theorem -
+            // https://en.wikipedia.org/wiki/Andrew_Wiles
             "wiles",
 
             // Roberta Williams, did pioneering work in graphical adventure games for personal computers, particularly the
