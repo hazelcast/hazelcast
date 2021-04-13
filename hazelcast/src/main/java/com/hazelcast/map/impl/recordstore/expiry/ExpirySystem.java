@@ -148,8 +148,7 @@ public class ExpirySystem {
     private void addExpirableKey(Data key, long ttlMillis, long maxIdleMillis, long expirationTime) {
         if (expirationTime == Long.MAX_VALUE) {
             if (!isEmpty()) {
-                Data nativeKey = recordStore.getStorage().toBackingDataKeyFormat(key);
-                callRemove(nativeKey, expireTimeByKey);
+                callRemove(key, expireTimeByKey);
             }
             return;
         }
@@ -249,6 +248,11 @@ public class ExpirySystem {
 
     @SuppressWarnings("checkstyle:magicnumber")
     public final void evictExpiredEntries(final int percentage, final long now, final boolean backup) {
+        // 0. Prepare queue for the first use. This
+        // is to remove leftovers which can remain
+        // in the queue after possible exceptions.
+        BATCH_OF_EXPIRED.get().clear();
+
         // 1. Find how many keys we can scan at max.
         final int maxScannableCount = findMaxScannableCount(percentage);
         if (maxScannableCount == 0) {
@@ -312,7 +316,7 @@ public class ExpirySystem {
 
         int scannedCount = 0;
         Iterator<Map.Entry<Data, ExpiryMetadata>> cachedIterator = getOrInitCachedIterator();
-        while (cachedIterator.hasNext()) {
+        while (scannedCount++ < MAX_SAMPLE_AT_A_TIME && cachedIterator.hasNext()) {
             Map.Entry<Data, ExpiryMetadata> entry = cachedIterator.next();
             Data key = entry.getKey();
             ExpiryMetadata expiryMetadata = entry.getValue();
@@ -322,12 +326,6 @@ public class ExpirySystem {
                 // add key and expiryReason to list to evict them later
                 batchOfExpired.add(key);
                 batchOfExpired.add(expiryReason);
-                // remove expired key from expirySystem
-                callIterRemove(cachedIterator);
-            }
-
-            if (++scannedCount == MAX_SAMPLE_AT_A_TIME) {
-                break;
             }
         }
         return scannedCount;
@@ -341,6 +339,8 @@ public class ExpirySystem {
         while ((key = (Data) batchOfExpired.poll()) != null) {
             ExpiryReason reason = (ExpiryReason) batchOfExpired.poll();
             recordStore.evictExpiredEntryAndPublishExpiryEvent(key, reason, backup);
+            // remove expired key from expirySystem
+            callRemove(key, expireTimeByKey);
             evictedCount++;
         }
         return evictedCount;
@@ -350,11 +350,6 @@ public class ExpirySystem {
     protected ExpiryMetadata getExpiryMetadataForExpiryCheck(Data key,
                                                              Map<Data, ExpiryMetadata> expireTimeByKey) {
         return expireTimeByKey.get(key);
-    }
-
-    // this method is overridden
-    protected void callIterRemove(Iterator<Map.Entry<Data, ExpiryMetadata>> expirationIterator) {
-        expirationIterator.remove();
     }
 
     // this method is overridden
