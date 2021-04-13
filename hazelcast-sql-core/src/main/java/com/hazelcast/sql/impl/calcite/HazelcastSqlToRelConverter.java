@@ -222,8 +222,8 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
 
     /**
      * Convert "val BETWEEN lower_bound AND upper_bound" expression to
-     * 1. If ASYMMETRIC : val >= lower_bound AND val =< upper_bound " expression. Default mode.
-     * 2. If SYMMETRIC : (val >= lower_bound AND val =< upper_bound) OR (val <= lower_bound AND val >= upper_bound)
+     * 1. If ASYMMETRIC : "val >= lower_bound AND val =< upper_bound" expression. Default mode.
+     * 2. If SYMMETRIC : "(val >= lower_bound AND val =< upper_bound) OR (val <= lower_bound AND val >= upper_bound)"
      * expression
      */
     public RexNode convertBetween(SqlCall call, Blackboard blackboard) {

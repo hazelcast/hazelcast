@@ -52,24 +52,22 @@ public final class HazelcastBetweenOperator extends HazelcastInfixOperator {
     private static final int OPERANDS = 3;
 
     static {
-        BETWEEN_ASYMMETRIC = new HazelcastBetweenOperator(false, Flag.ASYMMETRIC);
-        NOT_BETWEEN_ASYMMETRIC = new HazelcastBetweenOperator(true, Flag.ASYMMETRIC);
-        BETWEEN_SYMMETRIC = new HazelcastBetweenOperator(false, Flag.SYMMETRIC);
-        NOT_BETWEEN_SYMMETRIC = new HazelcastBetweenOperator(true, Flag.SYMMETRIC);
+        BETWEEN_ASYMMETRIC = new HazelcastBetweenOperator(false, Flag.ASYMMETRIC, BETWEEN_NAMES);
+        NOT_BETWEEN_ASYMMETRIC = new HazelcastBetweenOperator(true, Flag.ASYMMETRIC, NOT_BETWEEN_NAMES);
+        BETWEEN_SYMMETRIC = new HazelcastBetweenOperator(false, Flag.SYMMETRIC, SYMMETRIC_BETWEEN_NAMES);
+        NOT_BETWEEN_SYMMETRIC = new HazelcastBetweenOperator(true, Flag.SYMMETRIC, SYMMETRIC_NOT_BETWEEN_NAMES);
     }
 
     private final boolean negated;
     private final Flag flag;
 
-    protected HazelcastBetweenOperator(boolean negated, Flag symmetricalFlag) {
-        super(negated
-                ? (symmetricalFlag == Flag.ASYMMETRIC) ? NOT_BETWEEN_NAMES : SYMMETRIC_NOT_BETWEEN_NAMES
-                : (symmetricalFlag == Flag.ASYMMETRIC) ? BETWEEN_NAMES : SYMMETRIC_BETWEEN_NAMES,
-            SqlKind.BETWEEN,
-            PRECEDENCE,
-            ReturnTypes.BOOLEAN_NULLABLE,
-            InferTypes.FIRST_KNOWN,
-            new ComparableOperandTypeChecker(3, RelDataTypeComparability.ALL, Consistency.COMPARE)
+    protected HazelcastBetweenOperator(boolean negated, Flag symmetricalFlag, String[] names) {
+        super(names,
+                SqlKind.BETWEEN,
+                PRECEDENCE,
+                ReturnTypes.BOOLEAN_NULLABLE,
+                InferTypes.FIRST_KNOWN,
+                new ComparableOperandTypeChecker(3, RelDataTypeComparability.ALL, Consistency.COMPARE)
         );
         this.negated = negated;
         this.flag = symmetricalFlag;
