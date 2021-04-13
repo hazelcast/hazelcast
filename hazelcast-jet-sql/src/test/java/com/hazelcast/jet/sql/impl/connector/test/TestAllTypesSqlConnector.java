@@ -21,9 +21,10 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.impl.pipeline.transform.BatchSourceTransform;
 import com.hazelcast.jet.pipeline.BatchSource;
-import com.hazelcast.jet.pipeline.test.TestSources;
+import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
+import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.jet.sql.impl.schema.MappingField;
@@ -31,6 +32,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.Table;
@@ -49,10 +51,8 @@ import java.util.Map;
 import java.util.Objects;
 
 import static com.hazelcast.jet.impl.util.Util.toList;
-import static com.hazelcast.jet.sql.impl.ExpressionUtil.NOT_IMPLEMENTED_ARGUMENTS_CONTEXT;
 import static java.time.ZoneOffset.UTC;
 import static java.util.Arrays.asList;
-import static java.util.Collections.singletonList;
 
 /**
  * A SQL source yielding a single row with all supported types.
@@ -149,8 +149,13 @@ public class TestAllTypesSqlConnector implements SqlConnector {
             @Nullable Expression<Boolean> predicate,
             @Nonnull List<Expression<?>> projection
     ) {
-        Object[] row = ExpressionUtil.evaluate(predicate, projection, VALUES, NOT_IMPLEMENTED_ARGUMENTS_CONTEXT);
-        BatchSource<Object[]> source = TestSources.items(singletonList(row));
+        BatchSource<Object[]> source = SourceBuilder
+                .batch("batch", ctx -> {
+                    ExpressionEvalContext evalContext = SimpleExpressionEvalContext.from(ctx);
+                    return new TestAllTypesDataGenerator(VALUES, predicate, projection, evalContext);
+                })
+                .fillBufferFn(TestAllTypesDataGenerator::fillBuffer)
+                .build();
         ProcessorMetaSupplier pms = ((BatchSourceTransform<Object[]>) source).metaSupplier;
         return dag.newUniqueVertex(table.toString(), pms);
     }
@@ -196,6 +201,25 @@ public class TestAllTypesSqlConnector implements SqlConnector {
         @Override
         public int hashCode() {
             return Objects.hash(schemaName, name);
+        }
+    }
+
+    private static final class TestAllTypesDataGenerator {
+
+        private final Object[] row;
+
+        private TestAllTypesDataGenerator(
+                Object[] row,
+                Expression<Boolean> predicate,
+                List<Expression<?>> projections,
+                ExpressionEvalContext evalContext
+        ) {
+            this.row = ExpressionUtil.evaluate(predicate, projections, row, evalContext);
+        }
+
+        private void fillBuffer(SourceBuilder.SourceBuffer<Object[]> buffer) {
+            buffer.add(row);
+            buffer.close();
         }
     }
 }

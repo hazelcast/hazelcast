@@ -103,6 +103,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     private Address[] partitionOwners;
 
     private JobConfig jobConfig;
+    private List<Object> sqlArguments;
     private List<VertexDef> vertices = new ArrayList<>();
 
     private int memberIndex;
@@ -140,10 +141,11 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     ExecutionPlan() {
     }
 
-    ExecutionPlan(Address[] partitionOwners, JobConfig jobConfig, long lastSnapshotId,
+    ExecutionPlan(Address[] partitionOwners, JobConfig jobConfig, List<Object> sqlArguments, long lastSnapshotId,
                   int memberIndex, int memberCount) {
         this.partitionOwners = partitionOwners;
         this.jobConfig = jobConfig;
+        this.sqlArguments = sqlArguments;
         this.lastSnapshotId = lastSnapshotId;
         this.memberIndex = memberIndex;
         this.memberCount = memberCount;
@@ -207,7 +209,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                         memberIndex,
                         memberCount,
                         tempDirectories,
-                        jobSerializationService
+                        jobSerializationService,
+                        sqlArguments
                 );
 
                 // createOutboundEdgeStreams() populates localConveyorMap and edgeSenderConveyorMap.
@@ -286,6 +289,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             out.writeObject(address);
         }
         out.writeObject(jobConfig);
+        out.writeObject(sqlArguments);
         out.writeInt(memberIndex);
         out.writeInt(memberCount);
     }
@@ -300,6 +304,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             partitionOwners[i] = in.readObject();
         }
         jobConfig = in.readObject();
+        sqlArguments = in.readObject();
         memberIndex = in.readInt();
         memberCount = in.readInt();
     }
@@ -329,7 +334,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                         memberCount,
                         jobConfig.getProcessingGuarantee(),
                         tempDirectories,
-                        jobSerializationService
+                        jobSerializationService,
+                        sqlArguments
                 ));
             } catch (Exception e) {
                 throw sneakyThrow(e);

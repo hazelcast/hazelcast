@@ -188,7 +188,7 @@ public class JetSqlValidator extends HazelcastSqlValidator {
         return isInfiniteRows;
     }
 
-    public boolean isInfiniteRows(SqlNode node) {
+    private boolean isInfiniteRows(SqlNode node) {
         isInfiniteRows |= containsStreamingSource(node);
         return isInfiniteRows;
     }

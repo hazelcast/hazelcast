@@ -32,6 +32,7 @@ import java.time.OffsetDateTime;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.CSV_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_FORMAT;
 import static java.time.ZoneOffset.UTC;
+import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -64,6 +65,25 @@ public class SqlCsvTest extends SqlTestSupport {
         assertRowsAnyOrder(
                 "SELECT * FROM " + name,
                 singletonList(new Row((Object) null))
+        );
+    }
+
+    @Test
+    public void test_dynamicParameters() {
+        String name = randomName();
+        sqlService.execute("CREATE MAPPING " + name + " "
+                + "TYPE " + FileSqlConnector.TYPE_NAME + ' '
+                + "OPTIONS ("
+                + '\'' + OPTION_FORMAT + "'='" + CSV_FORMAT + '\''
+                + ", '" + FileSqlConnector.OPTION_PATH + "'='" + RESOURCES_PATH + '\''
+                + ", '" + FileSqlConnector.OPTION_GLOB + "'='" + "file.csv" + '\''
+                + ")"
+        );
+
+        assertRowsAnyOrder(
+                "SELECT CAST(long AS BIGINT) - ? FROM " + name + " WHERE byte = ?",
+                asList((byte) 3, "127"),
+                singletonList(new Row(9223372036854775804L))
         );
     }
 
@@ -223,6 +243,23 @@ public class SqlCsvTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_tableFunctionWithDynamicParameters() {
+        assertRowsAnyOrder(
+                "SELECT CAST(long AS BIGINT) - ?"
+                        + " FROM TABLE ("
+                        + "csv_file ("
+                        + " path => '" + RESOURCES_PATH + "'"
+                        + " , glob => 'file.csv'"
+                        + " , options => MAP['key', 'value']"
+                        + ")"
+                        + ")"
+                        + "WHERE byte = ?",
+                asList(6, "127"),
+                singletonList(new Row(9223372036854775801L))
+        );
+    }
+
+    @Test
     public void when_conversionFails_then_queryFails() {
         String name = randomName();
         sqlService.execute("CREATE MAPPING " + name + " (string INT) "
@@ -289,11 +326,11 @@ public class SqlCsvTest extends SqlTestSupport {
         String path = hadoopNonExistingPath();
         assertThatThrownBy(() -> sqlService.execute(
                 "SELECT *"
-                + " FROM TABLE ("
-                + "csv_file (path => '" + path + "')"
-                + ")"
+                        + " FROM TABLE ("
+                        + "csv_file (path => '" + path + "')"
+                        + ")"
         )).isInstanceOf(HazelcastSqlException.class)
-          .hasMessageContaining("The directory '" + path + "' does not exist");
+                .hasMessageContaining("The directory '" + path + "' does not exist");
     }
 
     @Test

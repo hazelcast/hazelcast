@@ -18,13 +18,11 @@ package com.hazelcast.jet.sql.impl.connector.map;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.impl.execution.init.Contexts.ProcSupplierCtx;
 import com.hazelcast.jet.impl.processor.TransformP;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
@@ -76,9 +74,8 @@ final class JoinByEquiJoinProcessorSupplier implements ProcessorSupplier, DataSe
     private KvRowProjector.Supplier rightRowProjectorSupplier;
 
     private transient MapProxyImpl<Object, Object> map;
-    private transient InternalSerializationService serializationService;
+    private transient ExpressionEvalContext evalContext;
     private transient Extractors extractors;
-    private transient SimpleExpressionEvalContext evalContext;
 
     @SuppressWarnings("unused")
     private JoinByEquiJoinProcessorSupplier() {
@@ -103,9 +100,8 @@ final class JoinByEquiJoinProcessorSupplier implements ProcessorSupplier, DataSe
     @Override
     public void init(@Nonnull Context context) {
         map = (MapProxyImpl<Object, Object>) context.jetInstance().getMap(mapName);
-        serializationService = ((ProcSupplierCtx) context).serializationService();
-        extractors = Extractors.newBuilder(serializationService).build();
-        this.evalContext = new SimpleExpressionEvalContext(((ProcSupplierCtx) context).serializationService());
+        evalContext = SimpleExpressionEvalContext.from(context);
+        extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
     }
 
     @Nonnull
@@ -117,7 +113,7 @@ final class JoinByEquiJoinProcessorSupplier implements ProcessorSupplier, DataSe
                     ? null
                     : new PartitionIdSet(partitionCount, this.partitions);
             QueryPath[] rightPaths = rightRowProjectorSupplier.paths();
-            KvRowProjector rightProjector = rightRowProjectorSupplier.get(serializationService, extractors);
+            KvRowProjector rightProjector = rightRowProjectorSupplier.get(evalContext, extractors);
             Processor processor = new TransformP<Object[], Object[]>(
                             joinFn(joinInfo, map, partitions, rightPaths, rightProjector, evalContext)
                     ) {
@@ -137,7 +133,7 @@ final class JoinByEquiJoinProcessorSupplier implements ProcessorSupplier, DataSe
             PartitionIdSet partitions,
             QueryPath[] rightPaths,
             KvRowProjector rightRowProjector,
-            ExpressionEvalContext context
+            ExpressionEvalContext evalContext
     ) {
         return left -> {
             Predicate<Object, Object> predicate = QueryUtil.toPredicate(
@@ -155,7 +151,7 @@ final class JoinByEquiJoinProcessorSupplier implements ProcessorSupplier, DataSe
             Set<Entry<Object, Object>> matchingRows = joinInfo.isInner()
                     ? map.entrySet(predicate, partitions.copy())
                     : map.entrySet(predicate);
-            List<Object[]> joined = join(left, matchingRows, rightRowProjector, joinInfo.nonEquiCondition(), context);
+            List<Object[]> joined = join(left, matchingRows, rightRowProjector, joinInfo.nonEquiCondition(), evalContext);
             return joined.isEmpty() && joinInfo.isLeftOuter()
                     ? singleton(extendArray(left, rightRowProjector.getColumnCount()))
                     : traverseIterable(joined);
@@ -167,7 +163,7 @@ final class JoinByEquiJoinProcessorSupplier implements ProcessorSupplier, DataSe
             Set<Entry<Object, Object>> entries,
             KvRowProjector rightRowProjector,
             Expression<Boolean> condition,
-            ExpressionEvalContext context
+            ExpressionEvalContext evalContext
     ) {
         List<Object[]> rows = new ArrayList<>();
         for (Entry<Object, Object> entry : entries) {
@@ -176,7 +172,7 @@ final class JoinByEquiJoinProcessorSupplier implements ProcessorSupplier, DataSe
                 continue;
             }
 
-            Object[] joined = ExpressionUtil.join(left, right, condition, context);
+            Object[] joined = ExpressionUtil.join(left, right, condition, evalContext);
             if (joined != null) {
                 rows.add(joined);
             }

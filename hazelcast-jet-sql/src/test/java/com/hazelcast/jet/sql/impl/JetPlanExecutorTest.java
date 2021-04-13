@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.impl.AbstractJetInstance;
 import com.hazelcast.jet.sql.impl.JetPlan.CreateMappingPlan;
@@ -30,6 +31,7 @@ import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.QueryResultProducer;
 import com.hazelcast.sql.impl.optimizer.PlanKey;
 import junitparams.JUnitParamsRunner;
@@ -50,6 +52,8 @@ import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -124,6 +128,7 @@ public class JetPlanExecutorTest {
         SqlRowMetadata rowMetadata = rowMetadata();
         SelectOrSinkPlan plan = new SelectOrSinkPlan(
                 planKey(),
+                QueryParameterMetadata.EMPTY,
                 emptySet(),
                 dag,
                 false,
@@ -133,10 +138,10 @@ public class JetPlanExecutorTest {
                 emptyList()
         );
 
-        given(jetInstance.newJob(dag)).willReturn(job);
+        given(jetInstance.newJob(eq(dag), isA(JobConfig.class), eq(emptyList()))).willReturn(job);
 
         // when
-        SqlResult result = planExecutor.execute(plan, queryId);
+        SqlResult result = planExecutor.execute(plan, queryId, emptyList());
 
         // then
         assertThat(result.updateCount()).isEqualTo(0);
@@ -150,6 +155,7 @@ public class JetPlanExecutorTest {
         SqlRowMetadata rowMetadata = rowMetadata();
         SelectOrSinkPlan plan = new SelectOrSinkPlan(
                 planKey(),
+                QueryParameterMetadata.EMPTY,
                 emptySet(),
                 dag,
                 true,
@@ -162,7 +168,7 @@ public class JetPlanExecutorTest {
         given(jetInstance.newJob(dag)).willReturn(job);
 
         // when, then
-        assertThatThrownBy(() -> planExecutor.execute(plan, queryId))
+        assertThatThrownBy(() -> planExecutor.execute(plan, queryId, emptyList()))
                 .hasMessageContaining("Cannot execute a streaming DML statement without a CREATE JOB command");
 
         verifyNoInteractions(job);

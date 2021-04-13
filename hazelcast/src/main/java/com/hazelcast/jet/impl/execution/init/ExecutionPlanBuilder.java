@@ -57,7 +57,7 @@ public final class ExecutionPlanBuilder {
 
     public static Map<MemberInfo, ExecutionPlan> createExecutionPlans(
             NodeEngine nodeEngine, MembersView membersView, DAG dag, long jobId, long executionId,
-            JobConfig jobConfig, long lastSnapshotId
+            JobConfig jobConfig, List<Object> sqlArguments, long lastSnapshotId
     ) {
         final JetInstance instance = getJetInstance(nodeEngine);
         final int defaultParallelism = instance.getConfig().getInstanceConfig().getCooperativeThreadCount();
@@ -72,7 +72,9 @@ public final class ExecutionPlanBuilder {
         final Map<MemberInfo, ExecutionPlan> plans = new HashMap<>();
         int memberIndex = 0;
         for (MemberInfo member : members) {
-            plans.put(member, new ExecutionPlan(partitionOwners, jobConfig, lastSnapshotId, memberIndex++, clusterSize));
+            ExecutionPlan executionPlan = new ExecutionPlan(partitionOwners, jobConfig, sqlArguments, lastSnapshotId,
+                    memberIndex++, clusterSize);
+            plans.put(member, executionPlan);
         }
         final Map<String, Integer> vertexIdMap = assignVertexIds(dag);
         for (Entry<String, Integer> entry : vertexIdMap.entrySet()) {

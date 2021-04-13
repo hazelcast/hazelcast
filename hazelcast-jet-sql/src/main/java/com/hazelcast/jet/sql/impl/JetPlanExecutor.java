@@ -37,12 +37,15 @@ import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRowMetadata;
+import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.SqlResultImpl;
 import com.hazelcast.sql.impl.row.HeapRow;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CancellationException;
@@ -76,11 +79,12 @@ class JetPlanExecutor {
         return SqlResultImpl.createUpdateCountResult(0);
     }
 
-    SqlResult execute(CreateJobPlan plan) {
+    SqlResult execute(CreateJobPlan plan, List<Object> arguments) {
+        List<Object> args = prepareArguments(plan.getParameterMetadata(), arguments);
         if (plan.isIfNotExists()) {
-            jetInstance.newJobIfAbsent(plan.getExecutionPlan().getDag(), plan.getJobConfig());
+            jetInstance.newJobIfAbsent(plan.getExecutionPlan().getDag(), plan.getJobConfig(), args);
         } else {
-            jetInstance.newJob(plan.getExecutionPlan().getDag(), plan.getJobConfig());
+            jetInstance.newJob(plan.getExecutionPlan().getDag(), plan.getJobConfig(), args);
         }
         return SqlResultImpl.createUpdateCountResult(0);
     }
@@ -176,13 +180,15 @@ class JetPlanExecutor {
                 false);
     }
 
-    SqlResult execute(SelectOrSinkPlan plan, QueryId queryId) {
+    SqlResult execute(SelectOrSinkPlan plan, QueryId queryId, List<Object> arguments) {
+        List<Object> args = prepareArguments(plan.getParameterMetadata(), arguments);
+
         if (plan.isInsert()) {
             if (plan.isStreaming()) {
                 throw QueryException.error("Cannot execute a streaming DML statement without a CREATE JOB command");
             }
 
-            Job job = jetInstance.newJob(plan.getDag());
+            Job job = jetInstance.newJob(plan.getDag(), new JobConfig(), args);
             job.join();
 
             return SqlResultImpl.createUpdateCountResult(0);
@@ -192,7 +198,7 @@ class JetPlanExecutor {
             Object oldValue = resultConsumerRegistry.put(jobId, queryResultProducer);
             assert oldValue == null : oldValue;
             try {
-                Job job = jetInstance.newJob(jobId, plan.getDag(), new JobConfig());
+                Job job = jetInstance.newJob(jobId, plan.getDag(), new JobConfig(), args);
                 job.getFuture().whenComplete((r, t) -> {
                     if (t != null) {
                         int errorCode = t instanceof QueryException
@@ -209,5 +215,31 @@ class JetPlanExecutor {
 
             return new JetSqlResultImpl(queryId, queryResultProducer, plan.getRowMetadata(), plan.isStreaming());
         }
+    }
+
+    private List<Object> prepareArguments(QueryParameterMetadata parameterMetadata, List<Object> arguments) {
+        assert arguments != null;
+
+        int parameterCount = parameterMetadata.getParameterCount();
+        if (parameterCount != arguments.size()) {
+            throw QueryException.error(
+                    SqlErrorCode.DATA_EXCEPTION,
+                    "Unexpected parameter count: expected " + parameterCount + ", got " + arguments.size()
+            );
+        }
+
+        for (int i = 0; i < arguments.size(); ++i) {
+            Object value = arguments.get(i);
+
+            ParameterConverter parameterConverter = parameterMetadata.getParameterConverter(i);
+
+            Object newValue = parameterConverter.convert(value);
+
+            if (newValue != value) {
+                arguments.set(i, newValue);
+            }
+        }
+
+        return arguments;
     }
 }

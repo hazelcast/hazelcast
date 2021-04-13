@@ -422,8 +422,8 @@ public final class JetBootstrap {
         }
 
         @Override
-        public Job newJobProxy(long jobId, Object jobDefinition, JobConfig config) {
-            return instance.newJobProxy(jobId, jobDefinition, config);
+        public Job newJobProxy(long jobId, Object jobDefinition, JobConfig config, List<Object> sqlArguments) {
+            return instance.newJobProxy(jobId, jobDefinition, config, sqlArguments);
         }
 
         @Override

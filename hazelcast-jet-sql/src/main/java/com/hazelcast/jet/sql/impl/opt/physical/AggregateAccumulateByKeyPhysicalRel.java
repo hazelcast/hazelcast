@@ -20,6 +20,7 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.aggregate.ObjectArrayKey;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
@@ -57,7 +58,7 @@ public class AggregateAccumulateByKeyPhysicalRel extends SingleRel implements Ph
     }
 
     @Override
-    public PlanNodeSchema schema() {
+    public PlanNodeSchema schema(QueryParameterMetadata parameterMetadata) {
         // intermediate operator, schema should not be ever needed
         throw new UnsupportedOperationException();
     }

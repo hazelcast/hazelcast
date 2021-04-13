@@ -26,6 +26,7 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.impl.plan.cache.PlanCache;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -53,6 +54,7 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMA
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static com.hazelcast.sql.impl.SqlTestSupport.nodeEngine;
+import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -77,11 +79,30 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
      * @param expected Expected IMap contents after executing the query
      */
     public static <K, V> void assertMapEventually(String mapName, String sql, Map<K, V> expected) {
-        instance().getSql().execute(sql);
+        assertMapEventually(mapName, sql, emptyList(), expected);
+    }
+
+    /**
+     * Execute a query and assert that it eventually contains the expected entries.
+     *
+     * @param mapName   The IMap name
+     * @param sql       The query
+     * @param arguments The query arguments
+     * @param expected  Expected IMap contents after executing the query
+     */
+    public static <K, V> void assertMapEventually(String mapName, String sql, List<Object> arguments, Map<K, V> expected) {
+        SqlStatement statement = new SqlStatement(sql);
+        arguments.forEach(statement::addParameter);
+
+        instance().getSql().execute(statement);
 
         Map<K, V> map = instance().getMap(mapName);
         assertTrueEventually(() ->
-                assertThat(new HashMap<>(map)).containsExactlyEntriesOf(expected), 10);
+                assertThat(new HashMap<>(map)).containsExactlyInAnyOrderEntriesOf(expected), 10);
+    }
+
+    public static void assertRowsEventuallyInAnyOrder(String sql, Collection<Row> expectedRows) {
+        assertRowsEventuallyInAnyOrder(sql, emptyList(), expectedRows);
     }
 
     /**
@@ -90,15 +111,19 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
      * Suitable for streaming queries that don't terminate.
      *
      * @param sql          The query
+     * @param arguments   The query arguments
      * @param expectedRows Expected rows
      */
-    public static void assertRowsEventuallyInAnyOrder(String sql, Collection<Row> expectedRows) {
+    public static void assertRowsEventuallyInAnyOrder(String sql, List<Object> arguments, Collection<Row> expectedRows) {
         SqlService sqlService = instance().getSql();
         CompletableFuture<Void> future = new CompletableFuture<>();
         Deque<Row> rows = new ArrayDeque<>();
 
         Thread thread = new Thread(() -> {
-            try (SqlResult result = sqlService.execute(sql)) {
+            SqlStatement statement = new SqlStatement(sql);
+            arguments.forEach(statement::addParameter);
+
+            try (SqlResult result = sqlService.execute(statement)) {
                 Iterator<SqlRow> iterator = result.iterator();
                 for (int i = 0; i < expectedRows.size() && iterator.hasNext(); i++) {
                     rows.add(new Row(iterator.next()));
@@ -135,9 +160,24 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
      * @param expectedRows Expected rows
      */
     public static void assertRowsAnyOrder(String sql, Collection<Row> expectedRows) {
+        assertRowsAnyOrder(sql, emptyList(), expectedRows);
+    }
+
+    /**
+     * Execute a query and wait until it completes. Assert that the returned
+     * rows contain the expected rows, in any order.
+     *
+     * @param sql          The query
+     * @param arguments    The query arguments
+     * @param expectedRows Expected rows
+     */
+    public static void assertRowsAnyOrder(String sql, List<Object> arguments, Collection<Row> expectedRows) {
+        SqlStatement statement = new SqlStatement(sql);
+        arguments.forEach(statement::addParameter);
+
         SqlService sqlService = instance().getSql();
         List<Row> actualRows = new ArrayList<>();
-        sqlService.execute(sql).iterator().forEachRemaining(r -> actualRows.add(new Row(r)));
+        sqlService.execute(statement).iterator().forEachRemaining(row -> actualRows.add(new Row(row)));
         assertThat(actualRows).containsExactlyInAnyOrderElementsOf(expectedRows);
     }
 

@@ -16,8 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.connector.generator;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.jet.impl.execution.init.Contexts.ProcSupplierCtx;
 import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.pipeline.SourceBuilder.SourceBuffer;
 import com.hazelcast.jet.pipeline.StreamSource;
@@ -58,10 +56,9 @@ class StreamTable extends JetTable {
         List<Expression<?>> argumentExpressions = this.argumentExpressions;
         return SourceBuilder
                 .stream("stream", ctx -> {
-                    InternalSerializationService serializationService = ((ProcSupplierCtx) ctx).serializationService();
-                    SimpleExpressionEvalContext context = new SimpleExpressionEvalContext(serializationService);
+                    ExpressionEvalContext evalContext = SimpleExpressionEvalContext.from(ctx);
 
-                    Integer rate = evaluate(argumentExpressions.get(0), context);
+                    Integer rate = evaluate(argumentExpressions.get(0), evalContext);
                     if (rate == null) {
                         throw QueryException.error("Invalid argument of a call to function GENERATE_STREAM" +
                                 " - rate cannot be null");
@@ -71,17 +68,17 @@ class StreamTable extends JetTable {
                                 " - rate cannot be less than zero");
                     }
 
-                    return new DataGenerator(rate, predicate, projections, context);
+                    return new DataGenerator(rate, predicate, projections, evalContext);
                 })
                 .fillBufferFn(DataGenerator::fillBuffer)
                 .build();
     }
 
-    private static Integer evaluate(Expression<?> argumentExpression, ExpressionEvalContext context) {
+    private static Integer evaluate(Expression<?> argumentExpression, ExpressionEvalContext evalContext) {
         if (argumentExpression == null) {
             return null;
         }
-        return (Integer) argumentExpression.eval(EmptyRow.INSTANCE, context);
+        return (Integer) argumentExpression.eval(EmptyRow.INSTANCE, evalContext);
     }
 
     @Override
@@ -100,7 +97,7 @@ class StreamTable extends JetTable {
         private final int rate;
         private final Expression<Boolean> predicate;
         private final List<Expression<?>> projections;
-        private final ExpressionEvalContext context;
+        private final ExpressionEvalContext evalContext;
 
         private long sequence;
 
@@ -108,20 +105,20 @@ class StreamTable extends JetTable {
                 int rate,
                 Expression<Boolean> predicate,
                 List<Expression<?>> projections,
-                ExpressionEvalContext context
+                ExpressionEvalContext evalContext
         ) {
             this.startTime = System.nanoTime();
             this.rate = rate;
             this.predicate = predicate;
             this.projections = projections;
-            this.context = context;
+            this.evalContext = evalContext;
         }
 
         private void fillBuffer(SourceBuffer<Object[]> buffer) {
             long now = System.nanoTime();
             long emitValuesUpTo = (now - startTime) / NANOS_PER_MICRO * rate / MICROS_PER_SECOND;
             for (int i = 0; i < MAX_BATCH_SIZE && sequence < emitValuesUpTo; i++) {
-                Object[] row = ExpressionUtil.evaluate(predicate, projections, new Object[]{sequence}, context);
+                Object[] row = ExpressionUtil.evaluate(predicate, projections, new Object[]{sequence}, evalContext);
                 if (row != null) {
                     buffer.add(row);
                 }

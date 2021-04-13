@@ -48,7 +48,6 @@ import com.hazelcast.jet.impl.observer.ObservableImpl;
 import com.hazelcast.jet.impl.observer.WrappedThrowable;
 import com.hazelcast.jet.impl.operation.NotifyMemberShutdownOperation;
 import com.hazelcast.jet.impl.pipeline.PipelineImpl;
-import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
 import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.ringbuffer.OverflowPolicy;
@@ -184,12 +183,19 @@ public class JobCoordinationService {
         executionService.schedule(COORDINATOR_EXECUTOR_NAME, this::scanJobs, 0, MILLISECONDS);
     }
 
-    public CompletableFuture<Void> submitJob(long jobId, Data serializedJobDefinition, Data serializedConfig) {
+    public CompletableFuture<Void> submitJob(
+            long jobId,
+            Data serializedJobDefinition,
+            Data serializedConfig,
+            Data serializedSqlArguments
+    ) {
         CompletableFuture<Void> res = new CompletableFuture<>();
         submitToCoordinatorThread(() -> {
             MasterContext masterContext;
             try {
                 JobConfig jobConfig = nodeEngine.getSerializationService().toObject(serializedConfig);
+                List<Object> sqlArguments = nodeEngine.getSerializationService().toObject(serializedSqlArguments);
+
                 assertIsMaster("Cannot submit job " + idToString(jobId) + " to non-master node");
                 checkOperationalState();
 
@@ -209,18 +215,15 @@ public class JobCoordinationService {
                 Data serializedDag;
                 if (jobDefinition instanceof PipelineImpl) {
                     int coopThreadCount = config.getInstanceConfig().getCooperativeThreadCount();
-                    dag = ((PipelineImpl) jobDefinition).toDag(new Context() {
-                        @Override public int defaultLocalParallelism() {
-                            return coopThreadCount;
-                        }
-                    });
+                    dag = ((PipelineImpl) jobDefinition).toDag(() -> coopThreadCount);
                     serializedDag = nodeEngine().getSerializationService().toData(dag);
                 } else {
                     dag = (DAG) jobDefinition;
                     serializedDag = serializedJobDefinition;
                 }
                 Set<String> ownedObservables = ownedObservables(dag);
-                JobRecord jobRecord = new JobRecord(jobId, serializedDag, dagToJson(dag), jobConfig, ownedObservables);
+                JobRecord jobRecord =
+                        new JobRecord(jobId, serializedDag, dagToJson(dag), jobConfig, ownedObservables, sqlArguments);
                 JobExecutionRecord jobExecutionRecord = new JobExecutionRecord(jobId, quorumSize);
                 masterContext = createMasterContext(jobRecord, jobExecutionRecord);
 

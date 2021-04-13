@@ -94,6 +94,21 @@ public class SqlFilterProjectTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_valuesSelectDynamicParameters() {
+        assertRowsAnyOrder(
+                "SELECT ? - b FROM ("
+                        + "VALUES (1, ? + 1), (3, 5), (CAST(? AS TINYINT), 11)"
+                        + ") AS t (a, b) "
+                        + "WHERE a + b + ? + CAST('1' AS TINYINT) > ?",
+                asList(42, 1, "7", 0, 4),
+                asList(
+                        new Row(37L),
+                        new Row(31L)
+                )
+        );
+    }
+
+    @Test
     public void test_valuesInsert() {
         sqlService.execute(javaSerializableMapDdl("m", Integer.class, Integer.class));
 
@@ -114,6 +129,18 @@ public class SqlFilterProjectTest extends SqlTestSupport {
                         + "(CAST(1 AS INTEGER), CAST(1 + 0 AS INTEGER))"
                         + ", (CAST(2 AS INTEGER), CAST(2 AS INTEGER))",
                 createMap(1, 1, 2, 2)
+        );
+    }
+
+    @Test
+    public void test_valuesInsertDynamicParameter() {
+        sqlService.execute(javaSerializableMapDdl("m", Integer.class, String.class));
+
+        assertMapEventually(
+                "m",
+                "SINK INTO m(__key, this) VALUES (? + 1, ?), (?, UPPER(?))",
+                asList(0, "a", 2, "b"),
+                createMap(1, "a", 2, "B")
         );
     }
 
@@ -630,5 +657,14 @@ public class SqlFilterProjectTest extends SqlTestSupport {
         SqlResult result = sqlService.execute("SINK INTO m(__key, this) VALUES (1, 1), (2, 2)");
 
         assertThat(result.updateCount()).isEqualTo(0);
+    }
+
+    @Test
+    public void test_dynamicParameterMetadata() {
+        TestBatchSqlConnector.create(sqlService, "t", 1);
+
+        SqlResult result = sqlService.execute("SELECT CAST(? AS VARCHAR) FROM t", 1);
+        assertThat(result.getRowMetadata().getColumnCount()).isEqualTo(1);
+        assertThat(result.getRowMetadata().getColumn(0).getType()).isEqualTo(SqlColumnType.VARCHAR);
     }
 }

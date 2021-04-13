@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -44,13 +45,13 @@ public class ProjectPhysicalRel extends Project implements PhysicalRel {
         super(cluster, traits, emptyList(), input, projects, rowType);
     }
 
-    public List<Expression<?>> projection() {
-        return project(((PhysicalRel) getInput()).schema(), getProjects());
+    public List<Expression<?>> projection(QueryParameterMetadata parameterMetadata) {
+        return project(((PhysicalRel) getInput()).schema(parameterMetadata), getProjects(), parameterMetadata);
     }
 
     @Override
-    public PlanNodeSchema schema() {
-        List<QueryDataType> fieldTypes = toList(projection(), Expression::getType);
+    public PlanNodeSchema schema(QueryParameterMetadata parameterMetadata) {
+        List<QueryDataType> fieldTypes = toList(projection(parameterMetadata), Expression::getType);
         return new PlanNodeSchema(fieldTypes);
     }
 

@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.impl.JobExecutionRecord.NO_SNAPSHOT;
+import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -89,7 +90,7 @@ public class DetermineLocalParallelismTest extends SimpleTestInClusterSupport {
         ExecutionPlanBuilder.createExecutionPlans(
                 nodeEngine,
                 ((ClusterServiceImpl) nodeEngine.getClusterService()).getMembershipManager().getMembersView(),
-                dag, 1, 1, new JobConfig(), NO_SNAPSHOT);
+                dag, 1, 1, new JobConfig(), emptyList(), NO_SNAPSHOT);
     }
 
     private static class ValidatingMetaSupplier implements ProcessorMetaSupplier {

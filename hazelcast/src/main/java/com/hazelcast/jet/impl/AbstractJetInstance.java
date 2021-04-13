@@ -51,6 +51,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.impl.util.Util.toList;
+import static java.util.Collections.emptyList;
 
 public abstract class AbstractJetInstance implements JetInstance {
 
@@ -72,40 +73,58 @@ public abstract class AbstractJetInstance implements JetInstance {
 
     @Nonnull @Override
     public Job newJob(@Nonnull DAG dag, @Nonnull JobConfig config) {
-        long jobId = newJobId();
-        return newJob(jobId, dag, config);
+        return newJob(dag, config, emptyList());
     }
 
     @Nonnull
-    public Job newJob(long jobId, @Nonnull DAG dag, @Nonnull JobConfig config) {
-        uploadResources(jobId, config);
-        return newJobProxy(jobId, dag, config);
+    public Job newJob(@Nonnull DAG dag, @Nonnull JobConfig config, @Nonnull List<Object> sqlArguments) {
+        long jobId = newJobId();
+        return newJob(jobId, dag, config, sqlArguments);
+    }
+
+    @Nonnull
+    public Job newJob(long jobId, @Nonnull DAG dag, @Nonnull JobConfig config, @Nonnull List<Object> sqlArguments) {
+        return newJobProxy(jobId, dag, config, sqlArguments);
     }
 
     @Nonnull @Override
     public Job newJob(@Nonnull Pipeline pipeline, @Nonnull JobConfig config) {
-        long jobId = newJobId();
-        return newJob(jobId, pipeline, config);
+        return newJob(pipeline, config, emptyList());
     }
 
     @Nonnull
-    public Job newJob(long jobId, @Nonnull Pipeline pipeline, @Nonnull JobConfig config) {
-        config = config.attachAll(((PipelineImpl) pipeline).attachedFiles());
-        uploadResources(jobId, config);
-        return newJobProxy(jobId, pipeline, config);
+    public Job newJob(@Nonnull Pipeline pipeline, @Nonnull JobConfig config, @Nonnull List<Object> sqlArguments) {
+        long jobId = newJobId();
+        return newJob(jobId, pipeline, config, sqlArguments);
     }
 
-    private Job newJobInt(@Nonnull Object jobDefinition, @Nonnull JobConfig config) {
+    @Nonnull
+    public Job newJob(
+            long jobId,
+            @Nonnull Pipeline pipeline,
+            @Nonnull JobConfig config,
+            @Nonnull List<Object> sqlArguments
+    ) {
+        config = config.attachAll(((PipelineImpl) pipeline).attachedFiles());
+        uploadResources(jobId, config);
+        return newJobProxy(jobId, pipeline, config, sqlArguments);
+    }
+
+    private Job newJobInt(@Nonnull Object jobDefinition, @Nonnull JobConfig config, @Nonnull List<Object> sqlArguments) {
         if (jobDefinition instanceof PipelineImpl) {
-            return newJob((PipelineImpl) jobDefinition, config);
+            return newJob((PipelineImpl) jobDefinition, config, sqlArguments);
         } else {
-            return newJob((DAG) jobDefinition, config);
+            return newJob((DAG) jobDefinition, config, sqlArguments);
         }
     }
 
-    private Job newJobIfAbsent(@Nonnull Object jobDefinition, @Nonnull JobConfig config) {
+    private Job newJobIfAbsent(
+            @Nonnull Object jobDefinition,
+            @Nonnull JobConfig config,
+            @Nonnull List<Object> sqlArguments
+    ) {
         if (config.getName() == null) {
-            return newJobInt(jobDefinition, config);
+            return newJobInt(jobDefinition, config, sqlArguments);
         } else {
             while (true) {
                 Job job = getJob(config.getName());
@@ -116,7 +135,7 @@ public abstract class AbstractJetInstance implements JetInstance {
                     }
                 }
                 try {
-                    return newJobInt(jobDefinition, config);
+                    return newJobInt(jobDefinition, config, sqlArguments);
                 } catch (JobAlreadyExistsException e) {
                     logFine(getLogger(), "Could not submit job with duplicate name: %s, ignoring", config.getName());
                 }
@@ -126,12 +145,17 @@ public abstract class AbstractJetInstance implements JetInstance {
 
     @Nonnull @Override
     public Job newJobIfAbsent(@Nonnull DAG dag, @Nonnull JobConfig config) {
-        return newJobIfAbsent((Object) dag, config);
+        return newJobIfAbsent(dag, config, emptyList());
+    }
+
+    @Nonnull
+    public Job newJobIfAbsent(@Nonnull DAG dag, @Nonnull JobConfig config, @Nonnull List<Object> sqlArguments) {
+        return newJobIfAbsent((Object) dag, config, sqlArguments);
     }
 
     @Nonnull @Override
     public Job newJobIfAbsent(@Nonnull Pipeline pipeline, @Nonnull JobConfig config) {
-        return newJobIfAbsent((Object) pipeline, config);
+        return newJobIfAbsent(pipeline, config, emptyList());
     }
 
     @Override
@@ -236,7 +260,7 @@ public abstract class AbstractJetInstance implements JetInstance {
 
     public abstract Job newJobProxy(long jobId);
 
-    public abstract Job newJobProxy(long jobId, Object jobDefinition, JobConfig config);
+    public abstract Job newJobProxy(long jobId, Object jobDefinition, JobConfig config, List<Object> sqlArguments);
 
     public abstract List<Long> getJobIdsByName(String name);
 }

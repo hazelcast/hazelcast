@@ -22,12 +22,14 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.ResettableSingletonTraverser;
 import com.hazelcast.jet.impl.execution.init.Contexts.ProcSupplierCtx;
 import com.hazelcast.jet.impl.processor.TransformP;
+import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -83,7 +85,7 @@ public final class KvProcessors {
 
         private KvRowProjector.Supplier projectorSupplier;
 
-        private transient InternalSerializationService serializationService;
+        private transient ExpressionEvalContext evalContext;
         private transient Extractors extractors;
 
         @SuppressWarnings("unused")
@@ -96,8 +98,8 @@ public final class KvProcessors {
 
         @Override
         public void init(@Nonnull Context context) {
-            serializationService = ((ProcSupplierCtx) context).serializationService();
-            extractors = Extractors.newBuilder(serializationService).build();
+            evalContext = SimpleExpressionEvalContext.from(context);
+            extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
         }
 
         @Nonnull
@@ -106,7 +108,7 @@ public final class KvProcessors {
             List<Processor> processors = new ArrayList<>(count);
             for (int i = 0; i < count; i++) {
                 ResettableSingletonTraverser<Object[]> traverser = new ResettableSingletonTraverser<>();
-                KvRowProjector projector = projectorSupplier.get(serializationService, extractors);
+                KvRowProjector projector = projectorSupplier.get(evalContext, extractors);
                 Processor processor = new TransformP<Entry<Object, Object>, Object[]>(entry -> {
                     traverser.accept(projector.project(entry));
                     return traverser;

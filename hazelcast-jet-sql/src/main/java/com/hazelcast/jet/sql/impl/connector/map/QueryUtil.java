@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.connector.map;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceAware;
+import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -30,10 +31,12 @@ import com.hazelcast.query.PredicateBuilder.EntryObject;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map.Entry;
 
 final class QueryUtil {
@@ -90,9 +93,10 @@ final class QueryUtil {
     }
 
     static Projection<Entry<Object, Object>, Object[]> toProjection(
-            KvRowProjector.Supplier rightRowProjectorSupplier
+            KvRowProjector.Supplier rightRowProjectorSupplier,
+            List<Object> arguments
     ) {
-        return new JoinProjection(rightRowProjectorSupplier);
+        return new JoinProjection(rightRowProjectorSupplier, arguments);
     }
 
     @SuppressFBWarnings(
@@ -103,37 +107,42 @@ final class QueryUtil {
             implements Projection<Entry<Object, Object>, Object[]>, DataSerializable, SerializationServiceAware {
 
         private KvRowProjector.Supplier rightRowProjectorSupplier;
+        private List<Object> arguments;
 
-        private transient InternalSerializationService serializationService;
+        private transient ExpressionEvalContext evalContext;
         private transient Extractors extractors;
 
         @SuppressWarnings("unused")
         private JoinProjection() {
         }
 
-        private JoinProjection(KvRowProjector.Supplier rightRowProjectorSupplier) {
+        private JoinProjection(KvRowProjector.Supplier rightRowProjectorSupplier, List<Object> arguments) {
             this.rightRowProjectorSupplier = rightRowProjectorSupplier;
+            this.arguments = arguments;
         }
 
         @Override
         public Object[] transform(Entry<Object, Object> entry) {
-            return rightRowProjectorSupplier.get(serializationService, extractors).project(entry);
+            return rightRowProjectorSupplier.get(evalContext, extractors).project(entry);
         }
 
         @Override
         public void setSerializationService(SerializationService serializationService) {
-            this.serializationService = (InternalSerializationService) serializationService;
-            this.extractors = Extractors.newBuilder(this.serializationService).build();
+            this.evalContext =
+                    SimpleExpressionEvalContext.from(arguments, (InternalSerializationService) serializationService);
+            this.extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
         }
 
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeObject(rightRowProjectorSupplier);
+            out.writeObject(arguments);
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
             rightRowProjectorSupplier = in.readObject();
+            arguments = in.readObject();
         }
     }
 }

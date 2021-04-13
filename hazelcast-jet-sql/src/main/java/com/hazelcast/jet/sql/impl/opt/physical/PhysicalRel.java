@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider;
@@ -35,19 +36,27 @@ import java.util.List;
  */
 public interface PhysicalRel extends RelNode {
 
-    PlanNodeSchema schema();
+    PlanNodeSchema schema(QueryParameterMetadata parameterMetadata);
 
     @SuppressWarnings("unchecked")
-    default Expression<Boolean> filter(PlanNodeFieldTypeProvider schema, RexNode node) {
+    default Expression<Boolean> filter(
+            PlanNodeFieldTypeProvider schema,
+            RexNode node,
+            QueryParameterMetadata parameterMetadata
+    ) {
         if (node == null) {
             return null;
         }
-        RexVisitor<Expression<?>> visitor = OptUtils.createRexToExpressionVisitor(schema);
+        RexVisitor<Expression<?>> visitor = OptUtils.createRexToExpressionVisitor(schema, parameterMetadata);
         return (Expression<Boolean>) node.accept(visitor);
     }
 
-    default List<Expression<?>> project(PlanNodeFieldTypeProvider schema, List<RexNode> nodes) {
-        RexVisitor<Expression<?>> visitor = OptUtils.createRexToExpressionVisitor(schema);
+    default List<Expression<?>> project(
+            PlanNodeFieldTypeProvider schema,
+            List<RexNode> nodes,
+            QueryParameterMetadata parameterMetadata
+    ) {
+        RexVisitor<Expression<?>> visitor = OptUtils.createRexToExpressionVisitor(schema, parameterMetadata);
         return Util.toList(nodes, node -> node.accept(visitor));
     }
 

@@ -93,6 +93,19 @@ public class SqlInfoSchemaTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_dynamicParameters() {
+        assertRowsAnyOrder(
+                "SELECT table_name, UPPER(table_catalog || ?), column_name, data_type "
+                        + "FROM information_schema.columns "
+                        + "WHERE column_name = ?",
+                asList("-p", "__value"),
+                singletonList(
+                        new Row(mappingName, "HAZELCAST-P", "__value", "VARCHAR")
+                )
+        );
+    }
+
+    @Test
     public void when_predicateAndProjectionIsUsed_then_correctRowsAndColumnsAreReturned() {
         assertRowsAnyOrder(
                 "SELECT table_name, UPPER(table_catalog), column_name, data_type "

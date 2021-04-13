@@ -71,6 +71,7 @@ import static com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook.ST
 import static com.hazelcast.test.PacketFiltersUtil.dropOperationsBetween;
 import static com.hazelcast.test.PacketFiltersUtil.rejectOperationsBetween;
 import static com.hazelcast.test.PacketFiltersUtil.resetPacketFiltersFrom;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.Matchers.empty;
 import static org.junit.Assert.assertEquals;
@@ -511,7 +512,7 @@ public class TopologyChangeTest extends JetTestSupport {
             memberInfos.add(new MemberInfo(getNode(instances[i]).getLocalMember()));
         }
 
-        JobRecord jobRecord = new JobRecord(jobId, null, "", new JobConfig(), Collections.emptySet());
+        JobRecord jobRecord = new JobRecord(jobId, null, "", new JobConfig(), Collections.emptySet(), Collections.emptyList());
         instances[0].getMap(JOB_RECORDS_MAP_NAME).put(jobId, jobRecord);
 
         InitExecutionOperation op = new InitExecutionOperation(jobId, executionId, memberListVersion, memberInfos, null);

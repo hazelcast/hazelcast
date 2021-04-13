@@ -152,6 +152,7 @@ public final class Contexts {
         private final int memberIndex;
         private final ConcurrentHashMap<String, File> tempDirectories;
         private final InternalSerializationService serializationService;
+        private final List<Object> sqlArguments;
 
         @SuppressWarnings("checkstyle:ParameterNumber")
         ProcSupplierCtx(
@@ -167,13 +168,15 @@ public final class Contexts {
                 int memberCount,
                 ProcessingGuarantee processingGuarantee,
                 ConcurrentHashMap<String, File> tempDirectories,
-                InternalSerializationService serializationService
+                InternalSerializationService serializationService,
+                List<Object> sqlArguments
         ) {
             super(jetInstance, jobId, executionId, jobConfig, logger, vertexName, localParallelism, totalParallelism,
                     memberCount, processingGuarantee);
             this.memberIndex = memberIndex;
             this.tempDirectories = tempDirectories;
             this.serializationService = serializationService;
+            this.sqlArguments = sqlArguments;
         }
 
         @Override
@@ -277,6 +280,11 @@ public final class Contexts {
         public InternalSerializationService serializationService() {
             return serializationService;
         }
+
+        @Nonnull
+        public List<Object> getSqlArguments() {
+            return sqlArguments;
+        }
     }
 
     public static class ProcCtx extends ProcSupplierCtx implements Processor.Context {
@@ -298,10 +306,11 @@ public final class Contexts {
                        int memberIndex,
                        int memberCount,
                        ConcurrentHashMap<String, File> tempDirectories,
-                       InternalSerializationService serializationService) {
+                       InternalSerializationService serializationService,
+                       List<Object> sqlArguments) {
             super(instance, jobId, executionId, jobConfig, logger, vertexName, localParallelism,
                     memberCount * localParallelism, memberIndex, memberCount, processingGuarantee,
-                    tempDirectories, serializationService);
+                    tempDirectories, serializationService, sqlArguments);
             this.localProcessorIndex = localProcessorIndex;
             this.globalProcessorIndex = globalProcessorIndex;
         }

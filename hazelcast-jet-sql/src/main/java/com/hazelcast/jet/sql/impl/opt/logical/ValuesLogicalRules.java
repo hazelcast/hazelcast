@@ -21,6 +21,7 @@ import com.hazelcast.jet.sql.impl.opt.ExpressionValues.SimpleExpressionValues;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues.TransformedExpressionValues;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import org.apache.calcite.plan.Convention;
+import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelOptRuleOperand;
@@ -76,7 +77,8 @@ final class ValuesLogicalRules {
                             filter.getCondition(),
                             null,
                             values.getRowType(),
-                            values.values()
+                            values.values(),
+                            ((HazelcastRelOptCluster) filter.getCluster()).getParameterMetadata()
                     );
                     RelNode rel = new ValuesLogicalRel(
                             filter.getCluster(),
@@ -101,7 +103,8 @@ final class ValuesLogicalRules {
                             null,
                             project.getProjects(),
                             values.getRowType(),
-                            values.values()
+                            values.values(),
+                            ((HazelcastRelOptCluster) project.getCluster()).getParameterMetadata()
                     );
                     RelNode rel = new ValuesLogicalRel(
                             project.getCluster(),
@@ -128,7 +131,8 @@ final class ValuesLogicalRules {
                             filter.getCondition(),
                             project.getProjects(),
                             values.getRowType(),
-                            values.values()
+                            values.values(),
+                            ((HazelcastRelOptCluster) project.getCluster()).getParameterMetadata()
                     );
                     RelNode rel = new ValuesLogicalRel(
                             project.getCluster(),

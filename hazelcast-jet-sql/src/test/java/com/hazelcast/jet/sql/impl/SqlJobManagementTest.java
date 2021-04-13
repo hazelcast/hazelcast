@@ -31,6 +31,7 @@ import org.junit.experimental.categories.Category;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
+import static com.hazelcast.jet.core.TestUtil.createMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
@@ -84,22 +85,22 @@ public class SqlJobManagementTest extends SqlTestSupport {
     @Test
     public void when_createJobUnknownOption_then_fail() {
         assertThatThrownBy(() -> sqlService.execute("CREATE JOB foo OPTIONS ('badOption'='value') AS "
-                        + "INSERT INTO t1 VALUES(1)"))
+                + "INSERT INTO t1 VALUES(1)"))
                 .hasMessage("From line 1, column 25 to line 1, column 35: Unknown job option: badOption");
     }
 
     @Test
     public void when_snapshotIntervalNotNumber_then_fail() {
         assertThatThrownBy(() -> sqlService.execute("CREATE JOB foo OPTIONS ('snapshotIntervalMillis'='foo') AS "
-                        + "INSERT INTO t1 VALUES(1)"))
-               .hasMessage("From line 1, column 50 to line 1, column 54: Invalid number for snapshotIntervalMillis: foo");
+                + "INSERT INTO t1 VALUES(1)"))
+                .hasMessage("From line 1, column 50 to line 1, column 54: Invalid number for snapshotIntervalMillis: foo");
     }
 
     @Test
     public void when_badProcessingGuarantee_then_fail() {
         assertThatThrownBy(() -> sqlService.execute("CREATE JOB foo OPTIONS ('processingGuarantee'='foo') AS "
-                        + "INSERT INTO t1 VALUES(1)"))
-               .hasMessage("From line 1, column 47 to line 1, column 51: Unsupported value for processingGuarantee: foo");
+                + "INSERT INTO t1 VALUES(1)"))
+                .hasMessage("From line 1, column 47 to line 1, column 51: Unsupported value for processingGuarantee: foo");
     }
 
     @Test
@@ -191,6 +192,23 @@ public class SqlJobManagementTest extends SqlTestSupport {
         assertTrue("isSplitBrainProtectionEnabled", config.isSplitBrainProtectionEnabled());
         assertFalse("isMetricsEnabled", config.isMetricsEnabled());
         assertEquals("fooSnapshot", config.getInitialSnapshotName());
+    }
+
+    @Test
+    public void test_dynamicParameters() {
+        TestBatchSqlConnector.create(sqlService, "src", 3);
+        sqlService.execute(javaSerializableMapDdl("dest", Integer.class, String.class));
+
+        sqlService.execute(
+                "CREATE JOB testJob AS SINK INTO dest SELECT v * ?, ? || v FROM src WHERE v > ?",
+                2, "value-", 0
+        );
+
+        assertMapEventually(
+                "dest",
+                "SELECT * FROM dest",
+                createMap(2, "value-1", 4, "value-2")
+        );
     }
 
     @Test

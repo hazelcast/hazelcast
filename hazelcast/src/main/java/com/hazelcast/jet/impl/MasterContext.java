@@ -30,6 +30,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
@@ -143,6 +144,10 @@ public class MasterContext {
 
     public JobConfig jobConfig() {
         return jobRecord.getConfig();
+    }
+
+    public List<Object> sqlArguments() {
+        return jobRecord.getSqlArguments();
     }
 
     public JobRecord jobRecord() {
