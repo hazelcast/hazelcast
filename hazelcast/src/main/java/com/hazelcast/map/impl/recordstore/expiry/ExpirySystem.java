@@ -33,11 +33,11 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
 import javax.annotation.Nonnull;
-import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -62,8 +62,8 @@ public class ExpirySystem {
     private static final int ONE_HUNDRED_PERCENT = 100;
     private static final int MIN_TOTAL_NUMBER_OF_KEYS_TO_SCAN = 100;
     private static final int MAX_SAMPLE_AT_A_TIME = 16;
-    private static final ThreadLocal<Queue> BATCH_OF_EXPIRED
-            = ThreadLocal.withInitial(() -> new ArrayDeque(MAX_SAMPLE_AT_A_TIME));
+    private static final ThreadLocal<List> BATCH_OF_EXPIRED
+            = ThreadLocal.withInitial(() -> new ArrayList<>(MAX_SAMPLE_AT_A_TIME));
 
     private final long expiryDelayMillis;
     private final long expiredKeyScanTimeoutNanos;
@@ -248,11 +248,6 @@ public class ExpirySystem {
 
     @SuppressWarnings("checkstyle:magicnumber")
     public final void evictExpiredEntries(final int percentage, final long now, final boolean backup) {
-        // 0. Prepare queue for the first use. This
-        // is to remove leftovers which can remain
-        // in the queue after possible exceptions.
-        BATCH_OF_EXPIRED.get().clear();
-
         // 1. Find how many keys we can scan at max.
         final int maxScannableCount = findMaxScannableCount(percentage);
         if (maxScannableCount == 0) {
@@ -312,7 +307,7 @@ public class ExpirySystem {
     }
 
     private int findExpiredKeys(long now, boolean backup) {
-        Queue batchOfExpired = BATCH_OF_EXPIRED.get();
+        List batchOfExpired = BATCH_OF_EXPIRED.get();
 
         int scannedCount = 0;
         Iterator<Map.Entry<Data, ExpiryMetadata>> cachedIterator = getOrInitCachedIterator();
@@ -334,14 +329,17 @@ public class ExpirySystem {
     private int evictExpiredKeys(boolean backup) {
         int evictedCount = 0;
 
-        Queue batchOfExpired = BATCH_OF_EXPIRED.get();
-        Data key;
-        while ((key = (Data) batchOfExpired.poll()) != null) {
-            ExpiryReason reason = (ExpiryReason) batchOfExpired.poll();
-            recordStore.evictExpiredEntryAndPublishExpiryEvent(key, reason, backup);
-            // remove expired key from expirySystem
-            callRemove(key, expireTimeByKey);
-            evictedCount++;
+        List batchOfExpired = BATCH_OF_EXPIRED.get();
+        try {
+            for (int i = 0; i < batchOfExpired.size(); i += 2) {
+                Data key = (Data) batchOfExpired.get(i);
+                ExpiryReason expiryReason = (ExpiryReason) batchOfExpired.get(i + 1);
+                recordStore.evictExpiredEntryAndPublishExpiryEvent(key, expiryReason, backup);
+                callRemove(key, expireTimeByKey);
+                evictedCount++;
+            }
+        } finally {
+            batchOfExpired.clear();
         }
         return evictedCount;
     }
