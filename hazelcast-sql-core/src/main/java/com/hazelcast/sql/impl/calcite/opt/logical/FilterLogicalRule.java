@@ -40,10 +40,10 @@ public final class FilterLogicalRule extends ConverterRule {
         RelNode input = filter.getInput();
 
         return new FilterLogicalRel(
-            filter.getCluster(),
-            OptUtils.toLogicalConvention(filter.getTraitSet()),
-            OptUtils.toLogicalInput(input),
-            filter.getCondition()
+                filter.getCluster(),
+                OptUtils.toLogicalConvention(filter.getTraitSet()),
+                OptUtils.toLogicalInput(input),
+                filter.getCondition()
         );
     }
 }

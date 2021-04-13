@@ -53,10 +53,10 @@ public final class FilterIntoScanLogicalRule extends RelOptRule {
 
     private FilterIntoScanLogicalRule() {
         super(
-            operand(LogicalFilter.class,
-                operandJ(LogicalTableScan.class, null, OptUtils::isHazelcastTable, none())),
-            RelFactories.LOGICAL_BUILDER,
-            FilterIntoScanLogicalRule.class.getSimpleName()
+                operand(LogicalFilter.class,
+                        operandJ(LogicalTableScan.class, null, OptUtils::isHazelcastTable, none())),
+                RelFactories.LOGICAL_BUILDER,
+                FilterIntoScanLogicalRule.class.getSimpleName()
         );
     }
 
@@ -83,8 +83,8 @@ public final class FilterIntoScanLogicalRule extends RelOptRule {
 
         // Create a scan with a new filter.
         LogicalTableScan newScan = OptUtils.createLogicalScanWithNewTable(
-            scan,
-            originalTable.withFilter(newCondition)
+                scan,
+                originalTable.withFilter(newCondition)
         );
 
         call.transformTo(newScan);
@@ -111,7 +111,7 @@ public final class FilterIntoScanLogicalRule extends RelOptRule {
      * LogicalScan[table=t[projects=[1, 0], filter=[$0>?]]] // f0 is referenced as $0
      * </pre>
      *
-     * @param originalHazelcastTable The original table from the {@code TableScan} before the pushdown
+     * @param originalHazelcastTable  The original table from the {@code TableScan} before the pushdown
      * @param originalFilterCondition The original condition from the {@code Filter}.
      * @return New condition that is going to be pushed down to a {@code TableScan}.
      */

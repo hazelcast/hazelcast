@@ -29,11 +29,11 @@ import org.apache.calcite.sql.type.SqlOperandCountRanges;
 public class HazelcastNotPredicate extends HazelcastPrefixOperator {
     public HazelcastNotPredicate() {
         super(
-            "NOT",
-            SqlKind.NOT,
-            SqlStdOperatorTable.NOT.getLeftPrec(),
-            ReturnTypes.BOOLEAN_NULLABLE,
-            InferTypes.BOOLEAN
+                "NOT",
+                SqlKind.NOT,
+                SqlStdOperatorTable.NOT.getLeftPrec(),
+                ReturnTypes.BOOLEAN_NULLABLE,
+                InferTypes.BOOLEAN
         );
     }
 

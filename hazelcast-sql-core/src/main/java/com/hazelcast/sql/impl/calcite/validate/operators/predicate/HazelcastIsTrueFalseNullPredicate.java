@@ -39,32 +39,32 @@ import static org.apache.calcite.sql.type.SqlTypeName.NULL;
 public final class HazelcastIsTrueFalseNullPredicate extends HazelcastPostfixOperator {
 
     public static final HazelcastIsTrueFalseNullPredicate IS_TRUE =
-        new HazelcastIsTrueFalseNullPredicate(SqlStdOperatorTable.IS_TRUE, false);
+            new HazelcastIsTrueFalseNullPredicate(SqlStdOperatorTable.IS_TRUE, false);
 
     public static final HazelcastIsTrueFalseNullPredicate IS_FALSE =
-        new HazelcastIsTrueFalseNullPredicate(SqlStdOperatorTable.IS_FALSE, false);
+            new HazelcastIsTrueFalseNullPredicate(SqlStdOperatorTable.IS_FALSE, false);
 
     public static final HazelcastIsTrueFalseNullPredicate IS_NOT_TRUE =
-        new HazelcastIsTrueFalseNullPredicate(SqlStdOperatorTable.IS_NOT_TRUE, false);
+            new HazelcastIsTrueFalseNullPredicate(SqlStdOperatorTable.IS_NOT_TRUE, false);
 
     public static final HazelcastIsTrueFalseNullPredicate IS_NOT_FALSE =
-        new HazelcastIsTrueFalseNullPredicate(SqlStdOperatorTable.IS_NOT_FALSE, false);
+            new HazelcastIsTrueFalseNullPredicate(SqlStdOperatorTable.IS_NOT_FALSE, false);
 
     public static final HazelcastIsTrueFalseNullPredicate IS_NULL =
-        new HazelcastIsTrueFalseNullPredicate(SqlStdOperatorTable.IS_NULL, true);
+            new HazelcastIsTrueFalseNullPredicate(SqlStdOperatorTable.IS_NULL, true);
 
     public static final HazelcastIsTrueFalseNullPredicate IS_NOT_NULL =
-        new HazelcastIsTrueFalseNullPredicate(SqlStdOperatorTable.IS_NOT_NULL, true);
+            new HazelcastIsTrueFalseNullPredicate(SqlStdOperatorTable.IS_NOT_NULL, true);
 
     private final boolean objectOperand;
 
     private HazelcastIsTrueFalseNullPredicate(SqlPostfixOperator base, boolean objectOperand) {
         super(
-            base.getName(),
-            base.getKind(),
-            base.getLeftPrec(),
-            ReturnTypes.BOOLEAN_NOT_NULL,
-            objectOperand ? OperandTypeInference.OBJECT : OperandTypeInference.BOOLEAN
+                base.getName(),
+                base.getKind(),
+                base.getLeftPrec(),
+                ReturnTypes.BOOLEAN_NOT_NULL,
+                objectOperand ? OperandTypeInference.OBJECT : OperandTypeInference.BOOLEAN
         );
 
         this.objectOperand = objectOperand;

@@ -40,11 +40,11 @@ public final class HazelcastFloorCeilFunction extends HazelcastFunction {
 
     private HazelcastFloorCeilFunction(SqlKind kind) {
         super(
-            kind.name(),
-            kind,
-            ReturnTypes.ARG0_OR_EXACT_NO_SCALE,
-            new ReplaceUnknownOperandTypeInference(DECIMAL),
-            SqlFunctionCategory.NUMERIC
+                kind.name(),
+                kind,
+                ReturnTypes.ARG0_OR_EXACT_NO_SCALE,
+                new ReplaceUnknownOperandTypeInference(DECIMAL),
+                SqlFunctionCategory.NUMERIC
         );
     }
 
@@ -58,12 +58,14 @@ public final class HazelcastFloorCeilFunction extends HazelcastFunction {
         return NumericOperandChecker.INSTANCE.check(binding, throwOnFailure, 0);
     }
 
-    @Override public SqlMonotonicity getMonotonicity(SqlOperatorBinding call) {
+    @Override
+    public SqlMonotonicity getMonotonicity(SqlOperatorBinding call) {
         return call.getOperandMonotonicity(0).unstrict();
     }
 
     @SuppressWarnings("checkstyle:MagicNumber")
-    @Override public void unparse(SqlWriter writer, SqlCall call, int leftPrec, int rightPrec) {
+    @Override
+    public void unparse(SqlWriter writer, SqlCall call, int leftPrec, int rightPrec) {
         SqlWriter.Frame frame = writer.startFunCall(getName());
 
         if (call.operandCount() == 2) {

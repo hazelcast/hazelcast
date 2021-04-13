@@ -33,10 +33,10 @@ public final class NumericLiteral extends Literal {
     private final int bitWidth;
 
     private NumericLiteral(
-        Object value,
-        SqlTypeName typeName,
-        Mode mode,
-        int bitWidth
+            Object value,
+            SqlTypeName typeName,
+            Mode mode,
+            int bitWidth
     ) {
         super(value, typeName);
 

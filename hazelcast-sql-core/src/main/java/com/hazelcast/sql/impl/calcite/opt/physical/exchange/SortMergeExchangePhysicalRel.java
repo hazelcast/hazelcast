@@ -43,12 +43,12 @@ public class SortMergeExchangePhysicalRel extends AbstractExchangePhysicalRel {
     private final RexNode offset;
 
     public SortMergeExchangePhysicalRel(
-        RelOptCluster cluster,
-        RelTraitSet traitSet,
-        RelNode input,
-        RelCollation collation,
-        RexNode fetch,
-        RexNode offset
+            RelOptCluster cluster,
+            RelTraitSet traitSet,
+            RelNode input,
+            RelCollation collation,
+            RexNode fetch,
+            RexNode offset
     ) {
         super(cluster, traitSet, input);
 
@@ -86,6 +86,6 @@ public class SortMergeExchangePhysicalRel extends AbstractExchangePhysicalRel {
         super.explainTerms(pw);
 
         return pw.item("collation", collation.getFieldCollations())
-            .item("fetch", fetch).item("offset", offset);
+                 .item("fetch", fetch).item("offset", offset);
     }
 }

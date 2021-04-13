@@ -374,13 +374,13 @@ public class RemainderOperatorIntegrationTest extends ArithmeticOperatorIntegrat
     @Test
     public void testEquality() {
         checkEquals(RemainderFunction.create(create(3, INT), create(2, INT), INT),
-            RemainderFunction.create(create(3, INT), create(2, INT), INT), true);
+                RemainderFunction.create(create(3, INT), create(2, INT), INT), true);
 
         checkEquals(RemainderFunction.create(create(3, INT), create(2, INT), INT),
-            RemainderFunction.create(create(3, INT), create(2, INT), QueryDataType.BIGINT), false);
+                RemainderFunction.create(create(3, INT), create(2, INT), QueryDataType.BIGINT), false);
 
         checkEquals(RemainderFunction.create(create(3, INT), create(2, INT), INT),
-            RemainderFunction.create(create(3, INT), create(100, INT), INT), false);
+                RemainderFunction.create(create(3, INT), create(100, INT), INT), false);
     }
 
     @Test

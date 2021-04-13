@@ -47,11 +47,11 @@ public final class HazelcastCastFunction extends HazelcastFunction {
 
     private HazelcastCastFunction() {
         super(
-            "CAST",
-            SqlKind.CAST,
-            new CastReturnTypeInference(),
-            new CastOperandTypeInference(),
-            SqlFunctionCategory.SYSTEM
+                "CAST",
+                SqlKind.CAST,
+                new CastReturnTypeInference(),
+                new CastOperandTypeInference(),
+                SqlFunctionCategory.SYSTEM
         );
     }
 
@@ -141,8 +141,8 @@ public final class HazelcastCastFunction extends HazelcastFunction {
 
             // Target type must take in count nullability of the source type
             RelDataType targetType = opBinding.getTypeFactory().createTypeWithNullability(
-                opBinding.getOperandType(1),
-                sourceType.isNullable()
+                    opBinding.getOperandType(1),
+                    sourceType.isNullable()
             );
 
             return targetType;

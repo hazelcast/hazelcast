@@ -27,10 +27,10 @@ import org.apache.calcite.sql.SqlOperatorTable;
  */
 public class SqlValidatorImplBridge extends SqlValidatorImpl {
     public SqlValidatorImplBridge(
-        SqlOperatorTable opTab,
-        SqlValidatorCatalogReader catalogReader,
-        RelDataTypeFactory typeFactory,
-        Config config
+            SqlOperatorTable opTab,
+            SqlValidatorCatalogReader catalogReader,
+            RelDataTypeFactory typeFactory,
+            Config config
     ) {
         super(opTab, catalogReader, typeFactory, config);
     }

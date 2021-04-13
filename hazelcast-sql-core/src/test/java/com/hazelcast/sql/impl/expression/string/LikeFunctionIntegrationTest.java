@@ -132,12 +132,12 @@ public class LikeFunctionIntegrationTest extends ExpressionTestSupport {
         // First parameter
         put("te_t");
         check(sql("?", "this"), true, "test");
-        check(sql("?", "this"), null, new Object[] { null });
+        check(sql("?", "this"), null, new Object[]{null});
 
         // Second parameter
         put("test");
         check(sql("this", "?"), true, "te_t");
-        check(sql("this", "?"), null, new Object[] { null });
+        check(sql("this", "?"), null, new Object[]{null});
 
         // Both parameters
         put("foo");

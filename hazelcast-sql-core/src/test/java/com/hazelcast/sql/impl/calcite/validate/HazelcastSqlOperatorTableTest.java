@@ -65,13 +65,13 @@ public class HazelcastSqlOperatorTableTest {
     public void testOperandTypeChecker() {
         for (SqlOperator operator : HazelcastSqlOperatorTable.instance().getOperatorList()) {
             boolean valid = operator instanceof HazelcastFunction
-                || operator instanceof HazelcastPrefixOperator
-                || operator instanceof HazelcastPostfixOperator
-                || operator instanceof HazelcastBinaryOperator
-                || operator instanceof HazelcastSpecialOperator;
+                    || operator instanceof HazelcastPrefixOperator
+                    || operator instanceof HazelcastPostfixOperator
+                    || operator instanceof HazelcastBinaryOperator
+                    || operator instanceof HazelcastSpecialOperator;
 
             assertTrue("Operator must implement one of classes from " + HazelcastFunction.class.getPackage().toString()
-                + ": " + operator.getClass().getSimpleName(), valid);
+                    + ": " + operator.getClass().getSimpleName(), valid);
         }
     }
 

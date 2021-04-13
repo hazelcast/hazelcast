@@ -34,8 +34,8 @@ import java.util.List;
 @Category({SlowTest.class, ParallelJVMTest.class})
 public class SqlBasicSlowTest extends SqlBasicTest {
 
-    private static final int[] PAGE_SIZES = { 1, 16, 256, 4096 };
-    private static final int[] DATA_SET_SIZES = { 1, 256, 4096 };
+    private static final int[] PAGE_SIZES = {1, 16, 256, 4096};
+    private static final int[] DATA_SET_SIZES = {1, 256, 4096};
 
     @Parameterized.Parameters(name = "cursorBufferSize:{0}, dataSetSize:{1}, serializationMode:{2}, inMemoryFormat:{3}")
     public static Collection<Object[]> parameters() {
@@ -44,12 +44,12 @@ public class SqlBasicSlowTest extends SqlBasicTest {
         for (int pageSize : PAGE_SIZES) {
             for (int dataSetSize : DATA_SET_SIZES) {
                 for (SerializationMode serializationMode : SerializationMode.values()) {
-                    for (InMemoryFormat format : new InMemoryFormat[] { InMemoryFormat.OBJECT, InMemoryFormat.BINARY }) {
-                        res.add(new Object[] {
-                            pageSize,
-                            dataSetSize,
-                            serializationMode,
-                            format
+                    for (InMemoryFormat format : new InMemoryFormat[]{InMemoryFormat.OBJECT, InMemoryFormat.BINARY}) {
+                        res.add(new Object[]{
+                                pageSize,
+                                dataSetSize,
+                                serializationMode,
+                                format
                         });
                     }
                 }

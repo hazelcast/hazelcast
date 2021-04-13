@@ -39,10 +39,10 @@ public final class ValuesLogicalRule extends ConverterRule {
         LogicalValues values = (LogicalValues) rel;
 
         return new ValuesLogicalRel(
-            values.getCluster(),
-            values.getRowType(),
-            values.getTuples(),
-            OptUtils.toLogicalConvention(values.getTraitSet())
+                values.getCluster(),
+                values.getRowType(),
+                values.getTuples(),
+                OptUtils.toLogicalConvention(values.getTraitSet())
         );
     }
 }

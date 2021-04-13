@@ -63,8 +63,8 @@ public class SubstringFunctionIntegrationTest extends ExpressionTestSupport {
     @Parameterized.Parameters(name = "useFunctionalSyntax:{0}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
-            { true },
-            { false },
+                {true},
+                {false},
         });
     }
 
@@ -149,7 +149,7 @@ public class SubstringFunctionIntegrationTest extends ExpressionTestSupport {
         putAndCheckValue((byte) 2, sql2("'abcde'", "this"), VARCHAR, "bcde");
         putAndCheckValue((short) 2, sql2("'abcde'", "this"), VARCHAR, "bcde");
         putAndCheckValue(2, sql2("'abcde'", "this"), VARCHAR, "bcde");
-        putAndCheckFailure(2L, sql2("'abcde'", "this"), PARSING,  signatureError(VARCHAR, BIGINT));
+        putAndCheckFailure(2L, sql2("'abcde'", "this"), PARSING, signatureError(VARCHAR, BIGINT));
         putAndCheckFailure(BigInteger.ONE, sql2("'abcde'", "this"), PARSING, signatureError(VARCHAR, DECIMAL));
         putAndCheckFailure(BigDecimal.ONE, sql2("'abcde'", "this"), PARSING, signatureError(VARCHAR, DECIMAL));
         putAndCheckFailure(2f, sql2("'abcde'", "this"), PARSING, signatureError(VARCHAR, REAL));
@@ -195,7 +195,7 @@ public class SubstringFunctionIntegrationTest extends ExpressionTestSupport {
         putAndCheckValue((byte) 2, sql3("'abcde'", "2", "this"), VARCHAR, "bc");
         putAndCheckValue((short) 2, sql3("'abcde'", "2", "this"), VARCHAR, "bc");
         putAndCheckValue(2, sql3("'abcde'", "2", "this"), VARCHAR, "bc");
-        putAndCheckFailure(2L, sql3("'abcde'", "2", "this"), PARSING,  signatureError(VARCHAR, INTEGER, BIGINT));
+        putAndCheckFailure(2L, sql3("'abcde'", "2", "this"), PARSING, signatureError(VARCHAR, INTEGER, BIGINT));
         putAndCheckFailure(BigInteger.ONE, sql3("'abcde'", "2", "this"), PARSING, signatureError(VARCHAR, INTEGER, DECIMAL));
         putAndCheckFailure(BigDecimal.ONE, sql3("'abcde'", "2", "this"), PARSING, signatureError(VARCHAR, INTEGER, DECIMAL));
         putAndCheckFailure(2f, sql3("'abcde'", "2", "this"), PARSING, signatureError(VARCHAR, INTEGER, REAL));
@@ -272,9 +272,9 @@ public class SubstringFunctionIntegrationTest extends ExpressionTestSupport {
     @Test
     public void testSerialization() {
         SubstringFunction original = SubstringFunction.create(
-            ConstantExpression.create("a", QueryDataType.VARCHAR),
-            ConstantExpression.create(1, QueryDataType.INT),
-            ConstantExpression.create(10, QueryDataType.INT)
+                ConstantExpression.create("a", QueryDataType.VARCHAR),
+                ConstantExpression.create(1, QueryDataType.INT),
+                ConstantExpression.create(10, QueryDataType.INT)
         );
 
         SubstringFunction restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_SUBSTRING);

@@ -49,6 +49,7 @@ public class PlanCacheTestSupport extends SqlTestSupport {
         PART_MAP_1 = Collections.singletonMap(memberId, partitions1);
         PART_MAP_2 = Collections.singletonMap(memberId, partitions2);
     }
+
     public static PlanCacheKey createKey(String sql) {
         return new PlanCacheKey(Collections.emptyList(), sql);
     }
@@ -63,17 +64,17 @@ public class PlanCacheTestSupport extends SqlTestSupport {
         }
 
         Plan plan = new Plan(
-            partMap,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            QueryParameterMetadata.EMPTY,
-            key,
-            objectIds0,
-            Collections.emptyList()
+                partMap,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                QueryParameterMetadata.EMPTY,
+                key,
+                objectIds0,
+                Collections.emptyList()
         );
 
         assertEquals(key, plan.getPlanKey());

@@ -43,22 +43,22 @@ public class HazelcastSchemaUtilsTest {
         checkSearchPaths(paths);
 
         paths = prepareSearchPaths(
-            Collections.singletonList(Arrays.asList(QueryUtils.CATALOG, "test1")),
-            null
+                Collections.singletonList(Arrays.asList(QueryUtils.CATALOG, "test1")),
+                null
         );
 
         checkSearchPaths(paths, "test1");
 
         paths = prepareSearchPaths(
-            null,
-            Arrays.asList(TestTableResolver.create("test1"), TestTableResolver.create("test2"))
+                null,
+                Arrays.asList(TestTableResolver.create("test1"), TestTableResolver.create("test2"))
         );
 
         checkSearchPaths(paths, "test1", "test2");
 
         paths = prepareSearchPaths(
-            Collections.singletonList(Arrays.asList(QueryUtils.CATALOG, "test1")),
-            Arrays.asList(TestTableResolver.create("test2"), TestTableResolver.create("test3"))
+                Collections.singletonList(Arrays.asList(QueryUtils.CATALOG, "test1")),
+                Arrays.asList(TestTableResolver.create("test2"), TestTableResolver.create("test3"))
         );
 
         checkSearchPaths(paths, "test1", "test2", "test3");

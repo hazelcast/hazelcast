@@ -170,8 +170,8 @@ public class ColumnIntegrationTest extends ExpressionTestSupport {
 
             SqlColumnType expectedType = type.getFieldConverterType().getTypeFamily().getPublicType();
             Object expectedResult = type.getFieldConverterType().getConverter().convertToSelf(
-                type.getFieldConverterType().getConverter(),
-                type.valueFrom()
+                    type.getFieldConverterType().getConverter(),
+                    type.valueFrom()
             );
 
             putAndCheckValue(value, sql("field1"), expectedType, expectedResult);

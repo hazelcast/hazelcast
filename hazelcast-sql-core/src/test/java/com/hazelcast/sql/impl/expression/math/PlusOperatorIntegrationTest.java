@@ -448,12 +448,12 @@ public class PlusOperatorIntegrationTest extends ArithmeticOperatorIntegrationTe
         putAndCheckValue(date, sql("this", "INTERVAL '1' HOUR"), TIMESTAMP, date.atStartOfDay().plus(1, HOURS));
         putAndCheckValue(date, sql("this", "INTERVAL '1' DAY"), TIMESTAMP, date.atStartOfDay().plus(1, DAYS));
         putAndCheckValue(date, sql("this", "INTERVAL '1 00:00:01' DAY TO SECOND"), TIMESTAMP,
-            date.atStartOfDay().plus(1, DAYS).plus(1, SECONDS));
+                date.atStartOfDay().plus(1, DAYS).plus(1, SECONDS));
 
         putAndCheckValue(date, sql("this", "INTERVAL '1' MONTH"), TIMESTAMP, date.atStartOfDay().plus(1, MONTHS));
         putAndCheckValue(date, sql("this", "INTERVAL '1' YEAR"), TIMESTAMP, date.atStartOfDay().plus(1, YEARS));
         putAndCheckValue(date, sql("this", "INTERVAL '1-1' YEAR TO MONTH"), TIMESTAMP,
-            date.atStartOfDay().plus(1, YEARS).plus(1, MONTHS));
+                date.atStartOfDay().plus(1, YEARS).plus(1, MONTHS));
 
         // Check the inverse order of operands
         putAndCheckValue(date, sql("INTERVAL '1' SECOND", "this"), TIMESTAMP, date.atStartOfDay().plus(1, SECONDS));
@@ -495,9 +495,9 @@ public class PlusOperatorIntegrationTest extends ArithmeticOperatorIntegrationTe
 
         // Check parameter as temporal operand. TIME is extended to TIMESTAMP
         putAndCheckValue(time, sql("?", "INTERVAL '1' SECOND"), TIMESTAMP,
-            time.atDate(LocalDate.now()).plus(1, SECONDS), time);
+                time.atDate(LocalDate.now()).plus(1, SECONDS), time);
         putAndCheckValue(time, sql("INTERVAL '1' SECOND", "?"), TIMESTAMP,
-            time.atDate(LocalDate.now()).plus(1, SECONDS), time);
+                time.atDate(LocalDate.now()).plus(1, SECONDS), time);
 
         // Parameter on the other side of temporal operand should fail, because we do not expose interval literals.
         putAndCheckFailure(time, sql("this", "?"), PARSING, signatureError(TIME, TIME));
@@ -522,12 +522,12 @@ public class PlusOperatorIntegrationTest extends ArithmeticOperatorIntegrationTe
         putAndCheckValue(timestamp, sql("this", "INTERVAL '1' HOUR"), TIMESTAMP, timestamp.plus(1, HOURS));
         putAndCheckValue(timestamp, sql("this", "INTERVAL '1' DAY"), TIMESTAMP, timestamp.plus(1, DAYS));
         putAndCheckValue(timestamp, sql("this", "INTERVAL '1 00:00:01' DAY TO SECOND"), TIMESTAMP,
-            timestamp.plus(1, DAYS).plus(1, SECONDS));
+                timestamp.plus(1, DAYS).plus(1, SECONDS));
 
         putAndCheckValue(timestamp, sql("this", "INTERVAL '1' MONTH"), TIMESTAMP, timestamp.plus(1, MONTHS));
         putAndCheckValue(timestamp, sql("this", "INTERVAL '1' YEAR"), TIMESTAMP, timestamp.plus(1, YEARS));
         putAndCheckValue(timestamp, sql("this", "INTERVAL '1-1' YEAR TO MONTH"), TIMESTAMP,
-            timestamp.plus(1, YEARS).plus(1, MONTHS));
+                timestamp.plus(1, YEARS).plus(1, MONTHS));
 
         // Check the inverse order of operands
         putAndCheckValue(timestamp, sql("INTERVAL '1' SECOND", "this"), TIMESTAMP, timestamp.plus(1, SECONDS));
@@ -551,9 +551,9 @@ public class PlusOperatorIntegrationTest extends ArithmeticOperatorIntegrationTe
 
         // Check null values when one side is temporal type. Since we cannot deduce the type of the other side, we fail.
         putAndCheckFailure(timestamp, sql("this", null), PARSING,
-            signatureError(TIMESTAMP_WITH_TIME_ZONE, TIMESTAMP_WITH_TIME_ZONE));
+                signatureError(TIMESTAMP_WITH_TIME_ZONE, TIMESTAMP_WITH_TIME_ZONE));
         putAndCheckFailure(timestamp, sql(null, "this"), PARSING,
-            signatureError(TIMESTAMP_WITH_TIME_ZONE, TIMESTAMP_WITH_TIME_ZONE));
+                signatureError(TIMESTAMP_WITH_TIME_ZONE, TIMESTAMP_WITH_TIME_ZONE));
 
         // Check normal operations
         putAndCheckValue(timestamp, sql("this", "INTERVAL '1' SECOND"), TIMESTAMP_WITH_TIME_ZONE, timestamp.plus(1, SECONDS));
@@ -561,40 +561,40 @@ public class PlusOperatorIntegrationTest extends ArithmeticOperatorIntegrationTe
         putAndCheckValue(timestamp, sql("this", "INTERVAL '1' HOUR"), TIMESTAMP_WITH_TIME_ZONE, timestamp.plus(1, HOURS));
         putAndCheckValue(timestamp, sql("this", "INTERVAL '1' DAY"), TIMESTAMP_WITH_TIME_ZONE, timestamp.plus(1, DAYS));
         putAndCheckValue(timestamp, sql("this", "INTERVAL '1 00:00:01' DAY TO SECOND"), TIMESTAMP_WITH_TIME_ZONE,
-            timestamp.plus(1, DAYS).plus(1, SECONDS));
+                timestamp.plus(1, DAYS).plus(1, SECONDS));
 
         putAndCheckValue(timestamp, sql("this", "INTERVAL '1' MONTH"), TIMESTAMP_WITH_TIME_ZONE, timestamp.plus(1, MONTHS));
         putAndCheckValue(timestamp, sql("this", "INTERVAL '1' YEAR"), TIMESTAMP_WITH_TIME_ZONE, timestamp.plus(1, YEARS));
         putAndCheckValue(timestamp, sql("this", "INTERVAL '1-1' YEAR TO MONTH"), TIMESTAMP_WITH_TIME_ZONE,
-            timestamp.plus(1, YEARS).plus(1, MONTHS));
+                timestamp.plus(1, YEARS).plus(1, MONTHS));
 
         // Check the inverse order of operands
         putAndCheckValue(timestamp, sql("INTERVAL '1' SECOND", "this"), TIMESTAMP_WITH_TIME_ZONE, timestamp.plus(1, SECONDS));
 
         // Check parameter as temporal operand
         putAndCheckFailure(timestamp, sql("?", "INTERVAL '1' SECOND"), DATA_EXCEPTION,
-            parameterError(0, TIMESTAMP, TIMESTAMP_WITH_TIME_ZONE), timestamp);
+                parameterError(0, TIMESTAMP, TIMESTAMP_WITH_TIME_ZONE), timestamp);
         putAndCheckFailure(timestamp, sql("INTERVAL '1' SECOND", "?"), DATA_EXCEPTION,
-            parameterError(0, TIMESTAMP, TIMESTAMP_WITH_TIME_ZONE), timestamp);
+                parameterError(0, TIMESTAMP, TIMESTAMP_WITH_TIME_ZONE), timestamp);
 
         // Parameter on the other side of temporal operand should fail, because we do not expose interval literals.
         putAndCheckFailure(timestamp, sql("this", "?"), PARSING,
-            signatureError(TIMESTAMP_WITH_TIME_ZONE, TIMESTAMP_WITH_TIME_ZONE));
+                signatureError(TIMESTAMP_WITH_TIME_ZONE, TIMESTAMP_WITH_TIME_ZONE));
         putAndCheckFailure(timestamp, sql("?", "this"), PARSING,
-            signatureError(TIMESTAMP_WITH_TIME_ZONE, TIMESTAMP_WITH_TIME_ZONE));
+                signatureError(TIMESTAMP_WITH_TIME_ZONE, TIMESTAMP_WITH_TIME_ZONE));
     }
 
     @Test
     public void testEquality() {
         checkEquals(PlusFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT),
-            PlusFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT), true);
+                PlusFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT), true);
 
         checkEquals(PlusFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT),
-            PlusFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), QueryDataType.BIGINT),
-            false);
+                PlusFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), QueryDataType.BIGINT),
+                false);
 
         checkEquals(PlusFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT),
-            PlusFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(100, INT), INT), false);
+                PlusFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(100, INT), INT), false);
     }
 
     @Test

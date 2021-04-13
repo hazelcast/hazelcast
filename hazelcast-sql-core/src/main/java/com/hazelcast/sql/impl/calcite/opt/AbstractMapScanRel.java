@@ -31,9 +31,9 @@ import org.apache.calcite.rel.metadata.RelMetadataQuery;
  */
 public abstract class AbstractMapScanRel extends AbstractScanRel {
     public AbstractMapScanRel(
-        RelOptCluster cluster,
-        RelTraitSet traitSet,
-        RelOptTable table
+            RelOptCluster cluster,
+            RelTraitSet traitSet,
+            RelOptTable table
     ) {
         super(cluster, traitSet, table);
     }
@@ -47,22 +47,22 @@ public abstract class AbstractMapScanRel extends AbstractScanRel {
         HazelcastTable table0 = getTableUnwrapped();
 
         return computeSelfCost(
-            planner,
-            table0.getTotalRowCount(),
-            CostUtils.TABLE_SCAN_CPU_MULTIPLIER,
-            table0.getFilter() != null,
-            table.getRowCount(),
-            table0.getProjects().size()
+                planner,
+                table0.getTotalRowCount(),
+                CostUtils.TABLE_SCAN_CPU_MULTIPLIER,
+                table0.getFilter() != null,
+                table.getRowCount(),
+                table0.getProjects().size()
         );
     }
 
     protected RelOptCost computeSelfCost(
-        RelOptPlanner planner,
-        double scanRowCount,
-        double scanCostMultiplier,
-        boolean hasFilter,
-        double filterRowCount,
-        int projectCount
+            RelOptPlanner planner,
+            double scanRowCount,
+            double scanCostMultiplier,
+            boolean hasFilter,
+            double filterRowCount,
+            int projectCount
     ) {
         // 1. Get cost of the scan itself.
         double scanCpu = scanRowCount * scanCostMultiplier;
@@ -75,9 +75,9 @@ public abstract class AbstractMapScanRel extends AbstractScanRel {
 
         // 4. Finally, return sum of both scan and project.
         return planner.getCostFactory().makeCost(
-            filterRowCount,
-            scanCpu + filterCpu + projectCpu,
-            0
+                filterRowCount,
+                scanCpu + filterCpu + projectCpu,
+                0
         );
     }
 }

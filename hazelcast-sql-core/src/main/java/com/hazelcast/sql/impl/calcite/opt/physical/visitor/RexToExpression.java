@@ -154,7 +154,7 @@ public final class RexToExpression {
      *                        converted.
      */
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:MethodLength", "checkstyle:ReturnCount",
-        "checkstyle:NPathComplexity"})
+            "checkstyle:NPathComplexity"})
     public static Expression<?> convertCall(RexCall call, Expression<?>[] operands) {
         SqlOperator operator = call.getOperator();
         QueryDataType resultType = HazelcastTypeUtils.toHazelcastType(call.getType().getSqlTypeName());
@@ -272,10 +272,10 @@ public final class RexToExpression {
                 SqlTrimFunction.Flag trimFlag = ((SymbolExpression) operands[0]).getSymbol();
 
                 return TrimFunction.create(
-                    operands[2],
-                    operands[1],
-                    trimFlag.getLeft() == 1,
-                    trimFlag.getRight() == 1
+                        operands[2],
+                        operands[1],
+                        trimFlag.getLeft() == 1,
+                        trimFlag.getRight() == 1
                 );
 
             case OTHER:
@@ -337,17 +337,17 @@ public final class RexToExpression {
                     return DoubleFunction.create(operands[0], DoubleFunction.RADIANS);
                 } else if (function == HazelcastSqlOperatorTable.ROUND) {
                     return RoundTruncateFunction.create(
-                        operands[0],
-                        operands.length == 1 ? null : operands[1],
-                        resultType,
-                        false
+                            operands[0],
+                            operands.length == 1 ? null : operands[1],
+                            resultType,
+                            false
                     );
                 } else if (function == HazelcastSqlOperatorTable.TRUNCATE) {
                     return RoundTruncateFunction.create(
-                        operands[0],
-                        operands.length == 1 ? null : operands[1],
-                        resultType,
-                        true
+                            operands[0],
+                            operands.length == 1 ? null : operands[1],
+                            resultType,
+                            true
                     );
                 }
 
@@ -370,7 +370,7 @@ public final class RexToExpression {
 
                     return SubstringFunction.create(input, start, length);
                 } else if (function == HazelcastSqlOperatorTable.LTRIM) {
-                   return TrimFunction.create(operands[0], null, true, false);
+                    return TrimFunction.create(operands[0], null, true, false);
                 } else if (function == HazelcastSqlOperatorTable.RTRIM) {
                     return TrimFunction.create(operands[0], null, false, true);
                 } else if (function == HazelcastSqlOperatorTable.BTRIM) {

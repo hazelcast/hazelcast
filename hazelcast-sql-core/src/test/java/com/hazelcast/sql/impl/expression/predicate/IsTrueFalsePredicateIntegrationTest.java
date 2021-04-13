@@ -135,16 +135,16 @@ public class IsTrueFalsePredicateIntegrationTest extends ExpressionTestSupport {
 
         // Function in the condition
         checkFailure0(
-            "SELECT key FROM map WHERE field1 " + function,
-            SqlErrorCode.PARSING,
-            expectedErrorMessage
+                "SELECT key FROM map WHERE field1 " + function,
+                SqlErrorCode.PARSING,
+                expectedErrorMessage
         );
 
         // Function in the column
         checkFailure0(
-            "SELECT field1 " + function + " FROM map",
-            SqlErrorCode.PARSING,
-            expectedErrorMessage
+                "SELECT field1 " + function + " FROM map",
+                SqlErrorCode.PARSING,
+                expectedErrorMessage
         );
     }
 
@@ -240,19 +240,19 @@ public class IsTrueFalsePredicateIntegrationTest extends ExpressionTestSupport {
 
         assertEquals(set(key), keys("SELECT key FROM map WHERE ? IS TRUE", true));
         assertEquals(set(), keys("SELECT key FROM map WHERE ? IS TRUE", false));
-        assertEquals(set(), keys("SELECT key FROM map WHERE ? IS TRUE", new Object[] { null }));
+        assertEquals(set(), keys("SELECT key FROM map WHERE ? IS TRUE", new Object[]{null}));
 
         assertEquals(set(), keys("SELECT key FROM map WHERE ? IS FALSE", true));
         assertEquals(set(key), keys("SELECT key FROM map WHERE ? IS FALSE", false));
-        assertEquals(set(), keys("SELECT key FROM map WHERE ? IS FALSE", new Object[] { null }));
+        assertEquals(set(), keys("SELECT key FROM map WHERE ? IS FALSE", new Object[]{null}));
 
         assertEquals(set(), keys("SELECT key FROM map WHERE ? IS NOT TRUE", true));
         assertEquals(set(key), keys("SELECT key FROM map WHERE ? IS NOT TRUE", false));
-        assertEquals(set(key), keys("SELECT key FROM map WHERE ? IS NOT TRUE", new Object[] { null }));
+        assertEquals(set(key), keys("SELECT key FROM map WHERE ? IS NOT TRUE", new Object[]{null}));
 
         assertEquals(set(key), keys("SELECT key FROM map WHERE ? IS NOT FALSE", true));
         assertEquals(set(), keys("SELECT key FROM map WHERE ? IS NOT FALSE", false));
-        assertEquals(set(key), keys("SELECT key FROM map WHERE ? IS NOT FALSE", new Object[] { null }));
+        assertEquals(set(key), keys("SELECT key FROM map WHERE ? IS NOT FALSE", new Object[]{null}));
 
         checkUnsupportedParameter("true", SqlColumnType.VARCHAR);
         checkUnsupportedParameter((byte) 1, SqlColumnType.TINYINT);
@@ -283,10 +283,10 @@ public class IsTrueFalsePredicateIntegrationTest extends ExpressionTestSupport {
         String expectedErrorMessage = parameterError(0, SqlColumnType.BOOLEAN, paramType);
 
         checkFailure0(
-            sql,
-            SqlErrorCode.DATA_EXCEPTION,
-            expectedErrorMessage,
-            param
+                sql,
+                SqlErrorCode.DATA_EXCEPTION,
+                expectedErrorMessage,
+                param
         );
     }
 

@@ -100,11 +100,11 @@ public class LiteralTypeResolutionTest {
     }
 
     private void checkLiteral(
-        SqlLiteral literal,
-        Object expectedValue,
-        Object expectedStringValue,
-        SqlTypeName expectedTypeName,
-        boolean expectedNullable
+            SqlLiteral literal,
+            Object expectedValue,
+            Object expectedStringValue,
+            SqlTypeName expectedTypeName,
+            boolean expectedNullable
     ) {
         String expectedStringValue0 = expectedStringValue != null ? expectedStringValue.toString() : null;
 

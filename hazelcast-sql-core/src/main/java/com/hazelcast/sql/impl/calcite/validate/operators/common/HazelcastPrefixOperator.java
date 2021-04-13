@@ -32,11 +32,11 @@ import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnT
  */
 public abstract class HazelcastPrefixOperator extends SqlPrefixOperator implements HazelcastOperandTypeCheckerAware {
     protected HazelcastPrefixOperator(
-        String name,
-        SqlKind kind,
-        int prec,
-        SqlReturnTypeInference returnTypeInference,
-        SqlOperandTypeInference operandTypeInference
+            String name,
+            SqlKind kind,
+            int prec,
+            SqlReturnTypeInference returnTypeInference,
+            SqlOperandTypeInference operandTypeInference
     ) {
         super(name, kind, prec, wrap(returnTypeInference), operandTypeInference, null);
     }

@@ -89,15 +89,15 @@ public final class ExpressionTypes {
     }
 
     public static ExpressionType<?>[] numeric() {
-        return new ExpressionType[] {
-            BYTE,
-            SHORT,
-            INTEGER,
-            LONG,
-            BIG_INTEGER,
-            BIG_DECIMAL,
-            FLOAT,
-            DOUBLE
+        return new ExpressionType[]{
+                BYTE,
+                SHORT,
+                INTEGER,
+                LONG,
+                BIG_INTEGER,
+                BIG_DECIMAL,
+                FLOAT,
+                DOUBLE
         };
     }
 

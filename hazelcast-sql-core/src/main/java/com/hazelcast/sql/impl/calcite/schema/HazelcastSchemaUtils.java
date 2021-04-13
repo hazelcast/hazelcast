@@ -42,8 +42,8 @@ public final class HazelcastSchemaUtils {
      */
     public static HazelcastSchema createCatalog(Schema schema) {
         return new HazelcastSchema(
-            Collections.singletonMap(QueryUtils.CATALOG, schema),
-            Collections.emptyMap()
+                Collections.singletonMap(QueryUtils.CATALOG, schema),
+                Collections.emptyMap()
         );
     }
 
@@ -70,8 +70,8 @@ public final class HazelcastSchemaUtils {
                 Table table = tableEntry.getValue();
 
                 HazelcastTable convertedTable = new HazelcastTable(
-                    table,
-                    createTableStatistic(table)
+                        table,
+                        createTableStatistic(table)
                 );
 
                 schemaTables.put(tableName, convertedTable);

@@ -47,12 +47,12 @@ public final class HazelcastLikeOperator extends HazelcastSpecialOperator {
 
     private HazelcastLikeOperator(String name, boolean negated) {
         super(
-            name,
-            SqlKind.LIKE,
-            PRECEDENCE,
-            false,
-            ReturnTypes.BOOLEAN_NULLABLE,
-            new ReplaceUnknownOperandTypeInference(VARCHAR)
+                name,
+                SqlKind.LIKE,
+                PRECEDENCE,
+                false,
+                ReturnTypes.BOOLEAN_NULLABLE,
+                new ReplaceUnknownOperandTypeInference(VARCHAR)
         );
 
         this.negated = negated;
@@ -71,16 +71,16 @@ public final class HazelcastLikeOperator extends HazelcastSpecialOperator {
     public boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure) {
         if (binding.getOperandCount() == 2) {
             return new OperandCheckerProgram(
-                TypedOperandChecker.VARCHAR,
-                TypedOperandChecker.VARCHAR
+                    TypedOperandChecker.VARCHAR,
+                    TypedOperandChecker.VARCHAR
             ).check(binding, throwOnFailure);
         } else {
             assert binding.getOperandCount() == 3;
 
             return new OperandCheckerProgram(
-                TypedOperandChecker.VARCHAR,
-                TypedOperandChecker.VARCHAR,
-                TypedOperandChecker.VARCHAR
+                    TypedOperandChecker.VARCHAR,
+                    TypedOperandChecker.VARCHAR,
+                    TypedOperandChecker.VARCHAR
             ).check(binding, throwOnFailure);
         }
     }

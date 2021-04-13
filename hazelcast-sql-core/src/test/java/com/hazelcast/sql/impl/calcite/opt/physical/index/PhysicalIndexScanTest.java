@@ -89,15 +89,15 @@ public class PhysicalIndexScanTest extends IndexOptimizerTestSupport {
         Map<String, Table> tableMap = new HashMap<>();
 
         HazelcastTable pTable = partitionedTable(
-            "p",
-            fields("ret", INT, "f1", INT, "f2", INT, "f3", INT),
-            Arrays.asList(
-                new MapTableIndex("sorted_f1", IndexType.SORTED, 1, singletonList(1), singletonList(INT)),
-                new MapTableIndex("sorted_f1_f3", IndexType.SORTED, 2, asList(1, 3), asList(INT, INT)),
-                new MapTableIndex("sorted_f1_f2", IndexType.HASH, 2, asList(1, 2), asList(INT, INT))
-            ),
-            100,
-            false
+                "p",
+                fields("ret", INT, "f1", INT, "f2", INT, "f3", INT),
+                Arrays.asList(
+                        new MapTableIndex("sorted_f1", IndexType.SORTED, 1, singletonList(1), singletonList(INT)),
+                        new MapTableIndex("sorted_f1_f3", IndexType.SORTED, 2, asList(1, 3), asList(INT, INT)),
+                        new MapTableIndex("sorted_f1_f2", IndexType.HASH, 2, asList(1, 2), asList(INT, INT))
+                ),
+                100,
+                false
         );
 
         tableMap.put("p", pTable);
@@ -109,11 +109,11 @@ public class PhysicalIndexScanTest extends IndexOptimizerTestSupport {
         Map<String, Table> tableMap = new HashMap<>();
 
         HazelcastTable pTable = partitionedTable(
-            "p",
-            fields("ret", INT, "f1", INT, "f2", INT, "f3", INT),
-            indexes,
-            100,
-            false
+                "p",
+                fields("ret", INT, "f1", INT, "f2", INT, "f3", INT),
+                indexes,
+                100,
+                false
         );
 
         tableMap.put("p", pTable);
@@ -130,10 +130,10 @@ public class PhysicalIndexScanTest extends IndexOptimizerTestSupport {
     @Test
     public void testFullScanOneIndex() {
         Collection<RelNode> rels = createIndexScans(
-            Arrays.asList(
-                new MapTableIndex("sorted_f1", IndexType.SORTED, 1, singletonList(1), singletonList(INT))
-            ),
-            null);
+                Arrays.asList(
+                        new MapTableIndex("sorted_f1", IndexType.SORTED, 1, singletonList(1), singletonList(INT))
+                ),
+                null);
 
         assertEquals(2, rels.size());
         List<RelNode> orderedRels = orderRels(rels);
@@ -161,13 +161,13 @@ public class PhysicalIndexScanTest extends IndexOptimizerTestSupport {
     @Test
     public void testFullScanManyIndexes() {
         Collection<RelNode> rels = createIndexScans(
-            Arrays.asList(
-                new MapTableIndex("sorted_f1", IndexType.SORTED, 1, singletonList(1), singletonList(INT)),
-                new MapTableIndex("sorted_f1_f2", IndexType.SORTED, 2, Arrays.asList(1, 2), Arrays.asList(INT, INT)),
-                new MapTableIndex("sorted_f1_f2_f3", IndexType.SORTED, 3, Arrays.asList(1, 2, 3), Arrays.asList(INT, INT, INT)),
-                new MapTableIndex("sorted_f2_f3", IndexType.SORTED, 2, Arrays.asList(2, 3), Arrays.asList(INT, INT))
-            ),
-            null);
+                Arrays.asList(
+                        new MapTableIndex("sorted_f1", IndexType.SORTED, 1, singletonList(1), singletonList(INT)),
+                        new MapTableIndex("sorted_f1_f2", IndexType.SORTED, 2, Arrays.asList(1, 2), Arrays.asList(INT, INT)),
+                        new MapTableIndex("sorted_f1_f2_f3", IndexType.SORTED, 3, Arrays.asList(1, 2, 3), Arrays.asList(INT, INT, INT)),
+                        new MapTableIndex("sorted_f2_f3", IndexType.SORTED, 2, Arrays.asList(2, 3), Arrays.asList(INT, INT))
+                ),
+                null);
 
         // sorted_f1 and sorted_f1_f2_f3 covered
         assertEquals(4, rels.size());
@@ -229,12 +229,12 @@ public class PhysicalIndexScanTest extends IndexOptimizerTestSupport {
     @Test
     public void testFullScanManyIndexesWithSimpleFilter() {
         Collection<RelNode> rels = createIndexScans(
-            Arrays.asList(
-                new MapTableIndex("hash_f1", IndexType.HASH, 1, singletonList(1), singletonList(INT)),
-                new MapTableIndex("sorted_f1_f2_f3", IndexType.SORTED, 3, Arrays.asList(1, 2, 3), Arrays.asList(INT, INT, INT)),
-                new MapTableIndex("sorted_f2_f3", IndexType.SORTED, 2, Arrays.asList(2, 3), Arrays.asList(INT, INT))
-            ),
-            makeFiler(1));
+                Arrays.asList(
+                        new MapTableIndex("hash_f1", IndexType.HASH, 1, singletonList(1), singletonList(INT)),
+                        new MapTableIndex("sorted_f1_f2_f3", IndexType.SORTED, 3, Arrays.asList(1, 2, 3), Arrays.asList(INT, INT, INT)),
+                        new MapTableIndex("sorted_f2_f3", IndexType.SORTED, 2, Arrays.asList(2, 3), Arrays.asList(INT, INT))
+                ),
+                makeFiler(1));
 
         // sorted_f1 and sorted_f1_f2_f3 covered
         assertEquals(5, rels.size());
@@ -308,13 +308,13 @@ public class PhysicalIndexScanTest extends IndexOptimizerTestSupport {
     @Test
     public void testFullScanManyIndexesWithComplexFilter() {
         Collection<RelNode> rels = createIndexScans(
-            Arrays.asList(
-                new MapTableIndex("hash_f1", IndexType.HASH, 1, singletonList(1), singletonList(INT)),
-                new MapTableIndex("sorted_f2", IndexType.SORTED, 1, singletonList(2), singletonList(INT)),
-                new MapTableIndex("sorted_f1_f2_f3", IndexType.SORTED, 3, Arrays.asList(1, 2, 3), Arrays.asList(INT, INT, INT)),
-                new MapTableIndex("sorted_f2_f3", IndexType.SORTED, 2, Arrays.asList(2, 3), Arrays.asList(INT, INT))
-            ),
-            makeAndFilter());
+                Arrays.asList(
+                        new MapTableIndex("hash_f1", IndexType.HASH, 1, singletonList(1), singletonList(INT)),
+                        new MapTableIndex("sorted_f2", IndexType.SORTED, 1, singletonList(2), singletonList(INT)),
+                        new MapTableIndex("sorted_f1_f2_f3", IndexType.SORTED, 3, Arrays.asList(1, 2, 3), Arrays.asList(INT, INT, INT)),
+                        new MapTableIndex("sorted_f2_f3", IndexType.SORTED, 2, Arrays.asList(2, 3), Arrays.asList(INT, INT))
+                ),
+                makeAndFilter());
 
         assertEquals(7, rels.size());
         List<RelNode> orderedRels = orderRels(rels);
@@ -428,27 +428,27 @@ public class PhysicalIndexScanTest extends IndexOptimizerTestSupport {
         assertTrue(cmp < 0);
 
         coll2 = RelCollations.of(new RelFieldCollation(0, DESCENDING),
-            new RelFieldCollation(1, ASCENDING));
+                new RelFieldCollation(1, ASCENDING));
         cmp = comparator.compare(coll2, coll1);
         assertTrue(cmp > 0);
 
         coll1 = RelCollations.of(new RelFieldCollation(0, DESCENDING),
-            new RelFieldCollation(1, DESCENDING));
+                new RelFieldCollation(1, DESCENDING));
 
         coll2 = RelCollations.of(new RelFieldCollation(0, DESCENDING),
-            new RelFieldCollation(1, DESCENDING),
-            new RelFieldCollation(2, ASCENDING));
+                new RelFieldCollation(1, DESCENDING),
+                new RelFieldCollation(2, ASCENDING));
 
         // prefix
         cmp = comparator.compare(coll1, coll2);
         assertTrue(cmp < 0);
 
         coll1 = RelCollations.of(new RelFieldCollation(0, DESCENDING),
-            new RelFieldCollation(3, DESCENDING));
+                new RelFieldCollation(3, DESCENDING));
 
         coll2 = RelCollations.of(new RelFieldCollation(0, DESCENDING),
-            new RelFieldCollation(1, DESCENDING),
-            new RelFieldCollation(2, ASCENDING));
+                new RelFieldCollation(1, DESCENDING),
+                new RelFieldCollation(2, ASCENDING));
 
         cmp = comparator.compare(coll1, coll2);
         assertTrue(cmp > 0);
@@ -472,30 +472,30 @@ public class PhysicalIndexScanTest extends IndexOptimizerTestSupport {
 
     private MapScanLogicalRel createMapScanLogicalRel(HazelcastSchema schema, RexNode filter) {
         OptimizerContext context = OptimizerContext.create(
-            HazelcastSchemaUtils.createCatalog(schema),
-            QueryUtils.prepareSearchPaths(null, null),
-            2,
-            new HazelcastSqlBackend(null),
-            null
+                HazelcastSchemaUtils.createCatalog(schema),
+                QueryUtils.prepareSearchPaths(null, null),
+                2,
+                new HazelcastSqlBackend(null),
+                null
         );
 
         RelOptCluster cluster = context.getCluster();
 
         RelTraitSet traitSet = OptUtils.traitPlus(RelTraitSet.createEmpty(),
-            buildCollationTrait()
+                buildCollationTrait()
         );
 
         HazelcastRelOptTable relOptTable =
-            (HazelcastRelOptTable) context.getCatalogReader().getTable(Collections.singletonList("p"));
+                (HazelcastRelOptTable) context.getCatalogReader().getTable(Collections.singletonList("p"));
 
         RelOptTable newRelTable = OptUtils.createRelTable(
-            relOptTable,
-            relOptTable.unwrap(HazelcastTable.class).withFilter(filter),
-            cluster.getTypeFactory()
+                relOptTable,
+                relOptTable.unwrap(HazelcastTable.class).withFilter(filter),
+                cluster.getTypeFactory()
         );
 
         return new MapScanLogicalRel(cluster, traitSet,
-            newRelTable);
+                newRelTable);
     }
 
     private static RelCollation getScanCollation(MapIndexScanPhysicalRel scan) {

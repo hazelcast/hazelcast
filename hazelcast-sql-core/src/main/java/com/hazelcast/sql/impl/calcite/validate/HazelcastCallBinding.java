@@ -77,9 +77,9 @@ public class HazelcastCallBinding extends SqlCallBinding {
     }
 
     private static String getOperandTypes(
-        SqlValidator validator,
-        SqlCall call,
-        SqlValidatorScope scope
+            SqlValidator validator,
+            SqlCall call,
+            SqlValidatorScope scope
     ) {
         StringJoiner res = new StringJoiner(", ", "[", "]");
 

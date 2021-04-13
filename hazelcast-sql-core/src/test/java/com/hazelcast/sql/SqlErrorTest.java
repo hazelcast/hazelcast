@@ -99,8 +99,8 @@ public class SqlErrorTest extends SqlErrorAbstractTest {
         // Start query
         HazelcastSqlException error = assertSqlException(instance1, query());
         assertTrue(
-            "Error code: " + error.getCode(),
-            error.getCode() == SqlErrorCode.CONNECTION_PROBLEM || error.getCode() == SqlErrorCode.PARTITION_DISTRIBUTION
+                "Error code: " + error.getCode(),
+                error.getCode() == SqlErrorCode.CONNECTION_PROBLEM || error.getCode() == SqlErrorCode.PARTITION_DISTRIBUTION
         );
         assertEquals(instance1.getLocalEndpoint().getUuid(), error.getOriginatingMemberId());
     }

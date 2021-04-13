@@ -31,8 +31,8 @@ public final class RootPhysicalRule extends RelOptRule {
 
     private RootPhysicalRule() {
         super(
-            OptUtils.parentChild(RootLogicalRel.class, RelNode.class, HazelcastConventions.LOGICAL),
-            RootPhysicalRule.class.getSimpleName()
+                OptUtils.parentChild(RootLogicalRel.class, RelNode.class, HazelcastConventions.LOGICAL),
+                RootPhysicalRule.class.getSimpleName()
         );
     }
 
@@ -44,9 +44,9 @@ public final class RootPhysicalRule extends RelOptRule {
         RelNode convertedInput = OptUtils.toPhysicalInput(input, OptUtils.getDistributionDef(input).getTraitRoot());
 
         RootPhysicalRel transformedRoot = new RootPhysicalRel(
-            logicalRoot.getCluster(),
-            convertedInput.getTraitSet(),
-            convertedInput
+                logicalRoot.getCluster(),
+                convertedInput.getTraitSet(),
+                convertedInput
         );
 
         call.transformTo(transformedRoot);

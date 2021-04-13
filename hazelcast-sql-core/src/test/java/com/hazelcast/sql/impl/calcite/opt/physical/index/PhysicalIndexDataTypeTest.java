@@ -78,10 +78,10 @@ public class PhysicalIndexDataTypeTest extends IndexOptimizerTestSupport {
     @Parameterized.Parameters(name = "indexType:{0}, hd:{1}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
-            {IndexType.SORTED, true},
-            {IndexType.SORTED, false},
-            {IndexType.HASH, true},
-            {IndexType.HASH, false}
+                {IndexType.SORTED, true},
+                {IndexType.SORTED, false},
+                {IndexType.HASH, true},
+                {IndexType.HASH, false}
         });
     }
 
@@ -90,40 +90,40 @@ public class PhysicalIndexDataTypeTest extends IndexOptimizerTestSupport {
         Map<String, Table> tableMap = new HashMap<>();
 
         HazelcastTable pTable = OptimizerTestSupport.partitionedTable(
-            "p",
-            OptimizerTestSupport.fields(
-                "ret", INT,
-                "f_boolean", BOOLEAN,
-                "f_tinyint", TINYINT,
-                "f_smallint", SMALLINT,
-                "f_int", INT,
-                "f_bigint", BIGINT,
-                "f_decimal", DECIMAL,
-                "f_decimal_bigint", DECIMAL_BIG_INTEGER,
-                "f_real", REAL,
-                "f_double", DOUBLE,
-                "f_varchar", VARCHAR,
-                "f_varchar_char", VARCHAR_CHARACTER,
-                "f_object", OBJECT,
-                "f_composite", VARCHAR
-            ),
-            Arrays.asList(
-                new MapTableIndex(FIRST_INDEX, indexType, 1, singletonList(0), singletonList(INT)),
-                createIndex("index_boolean", 1, BOOLEAN),
-                createIndex("index_tinyint", 2, TINYINT),
-                createIndex("index_smallint", 3, SMALLINT),
-                createIndex("index_int", 4, INT),
-                createIndex("index_bigint", 5, BIGINT),
-                createIndex("index_decimal", 6, DECIMAL),
-                createIndex("index_decimal_bigint", 7, DECIMAL_BIG_INTEGER),
-                createIndex("index_real", 8, REAL),
-                createIndex("index_double", 9, DOUBLE),
-                createIndex("index_varchar", 10, VARCHAR),
-                createIndex("index_varchar_char", 11, VARCHAR_CHARACTER),
-                createIndex("index_object", 12, OBJECT)
-            ),
-            100,
-            hd
+                "p",
+                OptimizerTestSupport.fields(
+                        "ret", INT,
+                        "f_boolean", BOOLEAN,
+                        "f_tinyint", TINYINT,
+                        "f_smallint", SMALLINT,
+                        "f_int", INT,
+                        "f_bigint", BIGINT,
+                        "f_decimal", DECIMAL,
+                        "f_decimal_bigint", DECIMAL_BIG_INTEGER,
+                        "f_real", REAL,
+                        "f_double", DOUBLE,
+                        "f_varchar", VARCHAR,
+                        "f_varchar_char", VARCHAR_CHARACTER,
+                        "f_object", OBJECT,
+                        "f_composite", VARCHAR
+                ),
+                Arrays.asList(
+                        new MapTableIndex(FIRST_INDEX, indexType, 1, singletonList(0), singletonList(INT)),
+                        createIndex("index_boolean", 1, BOOLEAN),
+                        createIndex("index_tinyint", 2, TINYINT),
+                        createIndex("index_smallint", 3, SMALLINT),
+                        createIndex("index_int", 4, INT),
+                        createIndex("index_bigint", 5, BIGINT),
+                        createIndex("index_decimal", 6, DECIMAL),
+                        createIndex("index_decimal_bigint", 7, DECIMAL_BIG_INTEGER),
+                        createIndex("index_real", 8, REAL),
+                        createIndex("index_double", 9, DOUBLE),
+                        createIndex("index_varchar", 10, VARCHAR),
+                        createIndex("index_varchar_char", 11, VARCHAR_CHARACTER),
+                        createIndex("index_object", 12, OBJECT)
+                ),
+                100,
+                hd
         );
 
         tableMap.put("p", pTable);
@@ -290,12 +290,12 @@ public class PhysicalIndexDataTypeTest extends IndexOptimizerTestSupport {
     }
 
     private void checkIndexForConditionNumeric(
-        String conditionTemplate,
-        String columnName,
-        String expectedFilterTemplate,
-        String expectedFilterColumn,
-        String expectedIndexName,
-        QueryDataType... parameterTypes
+            String conditionTemplate,
+            String columnName,
+            String expectedFilterTemplate,
+            String expectedFilterColumn,
+            String expectedIndexName,
+            QueryDataType... parameterTypes
     ) {
         String condition = conditionTemplate.replace("{col}", columnName);
         String expectedFilter = expectedFilterTemplate.replace("{col}", expectedFilterColumn);
@@ -343,10 +343,10 @@ public class PhysicalIndexDataTypeTest extends IndexOptimizerTestSupport {
     }
 
     private void checkIndexForCondition(
-        String condition,
-        String indexName,
-        String expectedIndexFilter,
-        QueryDataType... parameterTypes
+            String condition,
+            String indexName,
+            String expectedIndexFilter,
+            QueryDataType... parameterTypes
     ) {
         String sql = "SELECT ret FROM p WHERE " + condition;
 

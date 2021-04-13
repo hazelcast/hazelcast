@@ -129,8 +129,8 @@ public class RandFunctionIntegrationTest extends ExpressionTestSupport {
     public void testParameter() {
         put(0);
 
-        double nullRes1 = checkValue("?", SKIP_VALUE_CHECK, new Object[] { null });
-        double nullRes2 = checkValue("?", SKIP_VALUE_CHECK, new Object[] { null });
+        double nullRes1 = checkValue("?", SKIP_VALUE_CHECK, new Object[]{null});
+        double nullRes2 = checkValue("?", SKIP_VALUE_CHECK, new Object[]{null});
         assertNotEquals(nullRes1, nullRes2);
 
         checkParameter((byte) 1, 1L);

@@ -65,8 +65,8 @@ public class FloorCeilFunctionIntegrationTest extends ExpressionTestSupport {
     @Parameterized.Parameters(name = "mode: {0}")
     public static Collection<Object[]> parameters() {
         return Arrays.asList(new Object[][]{
-            { true },
-            { false }
+                {true},
+                {false}
         });
     }
 
@@ -132,7 +132,7 @@ public class FloorCeilFunctionIntegrationTest extends ExpressionTestSupport {
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, DECIMAL, VARCHAR), "1.1");
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, DECIMAL, VARCHAR), '1');
 
-        checkValue("?", DECIMAL, null, new Object[] { null });
+        checkValue("?", DECIMAL, null, new Object[]{null});
 
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, DECIMAL, BOOLEAN), true);
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, DECIMAL, DATE), LOCAL_DATE_VAL);

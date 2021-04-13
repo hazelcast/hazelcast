@@ -44,9 +44,9 @@ public class CharLengthFunctionIntegrationTest extends StringFunctionIntegration
     @Parameterized.Parameters(name = "name: {0}")
     public static Collection<Object[]> parameters() {
         return Arrays.asList(new Object[][]{
-            { "CHAR_LENGTH" },
-            { "CHARACTER_LENGTH" },
-            { "LENGTH" }
+                {"CHAR_LENGTH"},
+                {"CHARACTER_LENGTH"},
+                {"LENGTH"}
         });
     }
 

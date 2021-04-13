@@ -38,16 +38,16 @@ public final class HazelcastArithmeticOperator extends HazelcastBinaryOperator {
     public static final HazelcastArithmeticOperator MULTIPLY = new HazelcastArithmeticOperator(SqlStdOperatorTable.MULTIPLY);
     public static final HazelcastArithmeticOperator DIVIDE = new HazelcastArithmeticOperator(SqlStdOperatorTable.DIVIDE);
     public static final HazelcastArithmeticOperator REMAINDER =
-        new HazelcastArithmeticOperator(SqlStdOperatorTable.PERCENT_REMAINDER);
+            new HazelcastArithmeticOperator(SqlStdOperatorTable.PERCENT_REMAINDER);
 
     private HazelcastArithmeticOperator(SqlBinaryOperator base) {
         super(
-            base.getName(),
-            base.getKind(),
-            base.getLeftPrec(),
-            true,
-            new ArithmeticTypeInference(),
-            BinaryOperatorOperandTypeInference.INSTANCE
+                base.getName(),
+                base.getKind(),
+                base.getLeftPrec(),
+                true,
+                new ArithmeticTypeInference(),
+                BinaryOperatorOperandTypeInference.INSTANCE
         );
     }
 

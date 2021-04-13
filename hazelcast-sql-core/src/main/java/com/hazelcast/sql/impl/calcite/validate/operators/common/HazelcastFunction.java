@@ -36,11 +36,11 @@ import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnT
  */
 public abstract class HazelcastFunction extends SqlFunction implements HazelcastOperandTypeCheckerAware {
     protected HazelcastFunction(
-        String name,
-        SqlKind kind,
-        SqlReturnTypeInference returnTypeInference,
-        SqlOperandTypeInference operandTypeInference,
-        SqlFunctionCategory category
+            String name,
+            SqlKind kind,
+            SqlReturnTypeInference returnTypeInference,
+            SqlOperandTypeInference operandTypeInference,
+            SqlFunctionCategory category
     ) {
         super(name, kind, wrap(returnTypeInference), operandTypeInference, null, category);
     }

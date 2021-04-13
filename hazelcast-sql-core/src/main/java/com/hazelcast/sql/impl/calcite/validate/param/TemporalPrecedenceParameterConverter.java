@@ -31,7 +31,7 @@ public class TemporalPrecedenceParameterConverter extends AbstractParameterConve
         QueryDataTypeFamily valueTypeFamily = valueConverter.getTypeFamily();
 
         return valueTypeFamily.isTemporal()
-            && valueConverter.canConvertTo(targetType.getTypeFamily())
-            && valueTypeFamily.getPrecedence() <= targetType.getTypeFamily().getPrecedence();
+                && valueConverter.canConvertTo(targetType.getTypeFamily())
+                && valueTypeFamily.getPrecedence() <= targetType.getTypeFamily().getPrecedence();
     }
 }

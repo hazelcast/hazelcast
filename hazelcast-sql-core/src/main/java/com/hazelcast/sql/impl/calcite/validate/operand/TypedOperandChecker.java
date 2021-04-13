@@ -84,18 +84,18 @@ public final class TypedOperandChecker extends AbstractOperandChecker {
 
     @Override
     protected boolean coerce(
-        HazelcastSqlValidator validator,
-        HazelcastCallBinding callBinding,
-        SqlNode operand,
-        RelDataType operandType,
-        int operandIndex
+            HazelcastSqlValidator validator,
+            HazelcastCallBinding callBinding,
+            SqlNode operand,
+            RelDataType operandType,
+            int operandIndex
     ) {
         QueryDataType targetType0 = getTargetHazelcastType();
         QueryDataType operandType0 = HazelcastTypeUtils.toHazelcastType(operandType.getSqlTypeName());
 
         // Coerce only numeric or temporal types.
         boolean canCoerce = isTemporalType(operandType) && isTemporalType(targetTypeName)
-            || isNumericType(operandType) && isNumericType(targetTypeName);
+                || isNumericType(operandType) && isNumericType(targetTypeName);
 
         if (!canCoerce) {
             return false;
@@ -111,10 +111,10 @@ public final class TypedOperandChecker extends AbstractOperandChecker {
 
         // Perform coercion
         validator.getTypeCoercion().coerceOperandType(
-            callBinding.getScope(),
-            callBinding.getCall(),
-            operandIndex,
-            newOperandType
+                callBinding.getScope(),
+                callBinding.getCall(),
+                operandIndex,
+                newOperandType
         );
 
         return true;
@@ -126,21 +126,21 @@ public final class TypedOperandChecker extends AbstractOperandChecker {
 
         if (isNumeric()) {
             return new NumericPrecedenceParameterConverter(
-                operand.getIndex(),
-                operand.getParserPosition(),
-                hazelcastType
+                    operand.getIndex(),
+                    operand.getParserPosition(),
+                    hazelcastType
             );
         } else if (isTemporal()) {
             return new TemporalPrecedenceParameterConverter(
-                operand.getIndex(),
-                operand.getParserPosition(),
-                hazelcastType
+                    operand.getIndex(),
+                    operand.getParserPosition(),
+                    hazelcastType
             );
         } else {
             return new StrictParameterConverter(
-                operand.getIndex(),
-                operand.getParserPosition(),
-                hazelcastType
+                    operand.getIndex(),
+                    operand.getParserPosition(),
+                    hazelcastType
             );
         }
     }

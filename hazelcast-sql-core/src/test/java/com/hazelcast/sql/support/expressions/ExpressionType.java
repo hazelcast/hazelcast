@@ -41,7 +41,7 @@ public abstract class ExpressionType<T> {
         return typeName();
     }
 
-    public static class BooleanType extends ExpressionType<Boolean>  {
+    public static class BooleanType extends ExpressionType<Boolean> {
         @Override
         public String typeName() {
             return "Boolean";
@@ -185,12 +185,12 @@ public abstract class ExpressionType<T> {
         @Override
         public List<BigDecimal> values() {
             return Arrays.asList(
-                new BigDecimal("1"),
-                new BigDecimal("2"),
-                new BigDecimal("3"),
-                new BigDecimal("4"),
-                new BigDecimal("5"),
-                null
+                    new BigDecimal("1"),
+                    new BigDecimal("2"),
+                    new BigDecimal("3"),
+                    new BigDecimal("4"),
+                    new BigDecimal("5"),
+                    null
             );
         }
 
@@ -219,12 +219,12 @@ public abstract class ExpressionType<T> {
         @Override
         public List<BigInteger> values() {
             return Arrays.asList(
-                new BigInteger("1"),
-                new BigInteger("2"),
-                new BigInteger("3"),
-                new BigInteger("4"),
-                new BigInteger("5"),
-                null
+                    new BigInteger("1"),
+                    new BigInteger("2"),
+                    new BigInteger("3"),
+                    new BigInteger("4"),
+                    new BigInteger("5"),
+                    null
             );
         }
 
@@ -361,12 +361,12 @@ public abstract class ExpressionType<T> {
         @Override
         public List<Object> values() {
             return Arrays.asList(
-                LocalTime.parse("01:00"),
-                LocalTime.parse("02:00"),
-                LocalTime.parse("03:00"),
-                LocalTime.parse("04:00"),
-                LocalTime.parse("05:00"),
-                null);
+                    LocalTime.parse("01:00"),
+                    LocalTime.parse("02:00"),
+                    LocalTime.parse("03:00"),
+                    LocalTime.parse("04:00"),
+                    LocalTime.parse("05:00"),
+                    null);
         }
 
         @Override
@@ -394,12 +394,12 @@ public abstract class ExpressionType<T> {
         @Override
         public List<Object> values() {
             return Arrays.asList(
-                LocalDate.parse("2020-01-01"),
-                LocalDate.parse("2020-01-02"),
-                LocalDate.parse("2020-01-03"),
-                LocalDate.parse("2020-01-04"),
-                LocalDate.parse("2020-01-05"),
-                null);
+                    LocalDate.parse("2020-01-01"),
+                    LocalDate.parse("2020-01-02"),
+                    LocalDate.parse("2020-01-03"),
+                    LocalDate.parse("2020-01-04"),
+                    LocalDate.parse("2020-01-05"),
+                    null);
         }
 
         @Override
@@ -427,12 +427,12 @@ public abstract class ExpressionType<T> {
         @Override
         public List<Object> values() {
             return Arrays.asList(
-                LocalDateTime.parse("2020-01-01T00:00:00"),
-                LocalDateTime.parse("2020-01-02T00:00:00"),
-                LocalDateTime.parse("2020-01-03T00:00:00"),
-                LocalDateTime.parse("2020-01-04T00:00:00"),
-                LocalDateTime.parse("2020-01-05T00:00:00"),
-                null);
+                    LocalDateTime.parse("2020-01-01T00:00:00"),
+                    LocalDateTime.parse("2020-01-02T00:00:00"),
+                    LocalDateTime.parse("2020-01-03T00:00:00"),
+                    LocalDateTime.parse("2020-01-04T00:00:00"),
+                    LocalDateTime.parse("2020-01-05T00:00:00"),
+                    null);
         }
 
         @Override
@@ -460,12 +460,12 @@ public abstract class ExpressionType<T> {
         @Override
         public List<Object> values() {
             return Arrays.asList(
-                OffsetDateTime.parse("2020-01-01T00:00:00+00:00"),
-                OffsetDateTime.parse("2020-01-02T00:00:00+00:00"),
-                OffsetDateTime.parse("2020-01-03T00:00:00+00:00"),
-                OffsetDateTime.parse("2020-01-04T00:00:00+00:00"),
-                OffsetDateTime.parse("2020-01-05T00:00:00+00:00"),
-                null);
+                    OffsetDateTime.parse("2020-01-01T00:00:00+00:00"),
+                    OffsetDateTime.parse("2020-01-02T00:00:00+00:00"),
+                    OffsetDateTime.parse("2020-01-03T00:00:00+00:00"),
+                    OffsetDateTime.parse("2020-01-04T00:00:00+00:00"),
+                    OffsetDateTime.parse("2020-01-05T00:00:00+00:00"),
+                    null);
         }
 
         @Override
@@ -493,12 +493,12 @@ public abstract class ExpressionType<T> {
         @Override
         public List<Object> values() {
             return Arrays.asList(
-                new ObjectHolder(1),
-                new ObjectHolder(2),
-                new ObjectHolder(3),
-                new ObjectHolder(4),
-                new ObjectHolder(5),
-                null);
+                    new ObjectHolder(1),
+                    new ObjectHolder(2),
+                    new ObjectHolder(3),
+                    new ObjectHolder(4),
+                    new ObjectHolder(5),
+                    null);
         }
 
         @Override

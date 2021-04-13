@@ -32,12 +32,12 @@ import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnT
  */
 public abstract class HazelcastBinaryOperator extends SqlBinaryOperator implements HazelcastOperandTypeCheckerAware {
     protected HazelcastBinaryOperator(
-        String name,
-        SqlKind kind,
-        int prec,
-        boolean leftAssoc,
-        SqlReturnTypeInference returnTypeInference,
-        SqlOperandTypeInference operandTypeInference
+            String name,
+            SqlKind kind,
+            int prec,
+            boolean leftAssoc,
+            SqlReturnTypeInference returnTypeInference,
+            SqlOperandTypeInference operandTypeInference
     ) {
         super(name, kind, prec, leftAssoc, wrap(returnTypeInference), operandTypeInference, null);
     }

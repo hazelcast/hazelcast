@@ -35,10 +35,10 @@ import org.apache.calcite.rex.RexNode;
  */
 public class FilterPhysicalRel extends AbstractFilterRel implements PhysicalRel {
     public FilterPhysicalRel(
-        RelOptCluster cluster,
-        RelTraitSet traits,
-        RelNode input,
-        RexNode condition
+            RelOptCluster cluster,
+            RelTraitSet traits,
+            RelNode input,
+            RexNode condition
     ) {
         super(cluster, traits, input, condition);
     }

@@ -100,8 +100,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     private final SqlBackend jetSqlBackend;
 
     public CalciteSqlOptimizer(
-        NodeEngine nodeEngine,
-        @Nullable JetSqlCoreBackend jetSqlCoreBackend
+            NodeEngine nodeEngine,
+            @Nullable JetSqlCoreBackend jetSqlCoreBackend
     ) {
         this.nodeEngine = nodeEngine;
 
@@ -115,11 +115,11 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         int memberCount = nodeEngine.getClusterService().getSize(MemberSelectors.DATA_MEMBER_SELECTOR);
 
         OptimizerContext context = OptimizerContext.create(
-            task.getSchema(),
-            task.getSearchPaths(),
-            memberCount,
-            sqlBackend,
-            jetSqlBackend
+                task.getSchema(),
+                task.getSearchPaths(),
+                memberCount,
+                sqlBackend,
+                jetSqlBackend
         );
 
         // 2. Parse SQL string and validate it.

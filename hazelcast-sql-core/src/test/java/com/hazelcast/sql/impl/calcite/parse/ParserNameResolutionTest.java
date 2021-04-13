@@ -177,30 +177,30 @@ public class ParserNameResolutionTest {
 
     private static OptimizerContext createContext(String additionalSearchPath) {
         TableResolver resolverWithoutSearchPath = TestTableResolver.create(
-            TestMapTable.create(SCHEMA_1, TABLE_1, TestMapTable.field(FIELD_1))
+                TestMapTable.create(SCHEMA_1, TABLE_1, TestMapTable.field(FIELD_1))
         );
 
         TableResolver resolverWithSearchPath = TestTableResolver.create(
-            SCHEMA_2,
-            TestMapTable.create(SCHEMA_2, TABLE_2, TestMapTable.field(FIELD_2))
+                SCHEMA_2,
+                TestMapTable.create(SCHEMA_2, TABLE_2, TestMapTable.field(FIELD_2))
         );
 
         List<TableResolver> tableResolvers = Arrays.asList(resolverWithoutSearchPath, resolverWithSearchPath);
 
         List<List<String>> additionalSearchPaths = additionalSearchPath != null
-            ? Collections.singletonList(Arrays.asList(CATALOG, additionalSearchPath)) : Collections.emptyList();
+                ? Collections.singletonList(Arrays.asList(CATALOG, additionalSearchPath)) : Collections.emptyList();
 
         List<List<String>> searchPaths = QueryUtils.prepareSearchPaths(
-            additionalSearchPaths,
-            tableResolvers
+                additionalSearchPaths,
+                tableResolvers
         );
 
         return OptimizerContext.create(
-            new SqlCatalog(tableResolvers),
-            searchPaths,
-            1,
-            new HazelcastSqlBackend(null),
-            null
+                new SqlCatalog(tableResolvers),
+                searchPaths,
+                1,
+                new HazelcastSqlBackend(null),
+                null
         );
     }
 

@@ -125,11 +125,11 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
     }
 
     protected void putAndCheckValue(
-        Object value,
-        String sql,
-        SqlColumnType expectedType,
-        Object expectedResult,
-        Object... params
+            Object value,
+            String sql,
+            SqlColumnType expectedType,
+            Object expectedResult,
+            Object... params
     ) {
         put(value);
 
@@ -137,10 +137,10 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
     }
 
     protected Object checkValue0(
-        String sql,
-        SqlColumnType expectedType,
-        Object expectedResult,
-        Object... params
+            String sql,
+            SqlColumnType expectedType,
+            Object expectedResult,
+            Object... params
     ) {
         List<SqlRow> rows = execute(member, sql, params);
         assertEquals(1, rows.size());
@@ -159,11 +159,11 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
     }
 
     protected void putAndCheckFailure(
-        Object value,
-        String sql,
-        int expectedErrorCode,
-        String expectedErrorMessage,
-        Object... params
+            Object value,
+            String sql,
+            int expectedErrorCode,
+            String expectedErrorMessage,
+            Object... params
     ) {
         put(value);
 
@@ -171,10 +171,10 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
     }
 
     protected void checkFailure0(
-        String sql,
-        int expectedErrorCode,
-        String expectedErrorMessage,
-        Object... params
+            String sql,
+            int expectedErrorCode,
+            String expectedErrorMessage,
+            Object... params
     ) {
         try {
             execute(member, sql, params);
@@ -184,8 +184,8 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
             assertTrue(expectedErrorMessage.length() != 0);
             assertNotNull(e.getMessage());
             assertTrue(
-                "\nExpected: " + expectedErrorMessage + "\nActual: " + e.getMessage(),
-                e.getMessage().contains(expectedErrorMessage)
+                    "\nExpected: " + expectedErrorMessage + "\nActual: " + e.getMessage(),
+                    e.getMessage().contains(expectedErrorMessage)
             );
 
             assertEquals(e.getCode() + ": " + e.getMessage(), expectedErrorCode, e.getCode());
@@ -212,10 +212,10 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
 
     protected static String parameterError(int position, SqlColumnType expectedType, SqlColumnType actualType) {
         return String.format(
-            "Parameter at position %d must be of %s type, but %s was found (consider adding an explicit CAST)",
-            position,
-            expectedType,
-            actualType
+                "Parameter at position %d must be of %s type, but %s was found (consider adding an explicit CAST)",
+                position,
+                expectedType,
+                actualType
         );
     }
 

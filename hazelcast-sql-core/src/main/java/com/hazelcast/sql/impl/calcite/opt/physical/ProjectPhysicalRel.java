@@ -38,11 +38,11 @@ import java.util.List;
  */
 public class ProjectPhysicalRel extends AbstractProjectRel implements PhysicalRel {
     public ProjectPhysicalRel(
-        RelOptCluster cluster,
-        RelTraitSet traits,
-        RelNode input,
-        List<? extends RexNode> projects,
-        RelDataType rowType
+            RelOptCluster cluster,
+            RelTraitSet traits,
+            RelNode input,
+            List<? extends RexNode> projects,
+            RelDataType rowType
     ) {
         super(cluster, traits, input, projects, rowType);
     }

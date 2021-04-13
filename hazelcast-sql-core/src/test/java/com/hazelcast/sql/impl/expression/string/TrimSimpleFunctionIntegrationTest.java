@@ -39,10 +39,10 @@ public class TrimSimpleFunctionIntegrationTest extends StringFunctionIntegration
     @Parameterized.Parameters(name = "name: {0}")
     public static Collection<Object[]> parameters() {
         return Arrays.asList(new Object[][]{
-            { Mode.TRIM },
-            { Mode.BTRIM },
-            { Mode.LTRIM },
-            { Mode.RTRIM }
+                {Mode.TRIM},
+                {Mode.BTRIM},
+                {Mode.LTRIM},
+                {Mode.RTRIM}
         });
     }
 
@@ -81,13 +81,13 @@ public class TrimSimpleFunctionIntegrationTest extends StringFunctionIntegration
         checkLiteral("''", "");
 
         checkLiteral("'a'", trim("a"));
-        checkLiteral("'abc'",  trim("abc"));
-        checkLiteral("'abc '",  trim("abc "));
-        checkLiteral("'abc   '",  trim("abc   "));
-        checkLiteral("' abc'",  trim(" abc"));
-        checkLiteral("'   abc'",  trim("   abc"));
-        checkLiteral("' abc '",  trim(" abc "));
-        checkLiteral("'   abc   '",  trim("   abc   "));
+        checkLiteral("'abc'", trim("abc"));
+        checkLiteral("'abc '", trim("abc "));
+        checkLiteral("'abc   '", trim("abc   "));
+        checkLiteral("' abc'", trim(" abc"));
+        checkLiteral("'   abc'", trim("   abc"));
+        checkLiteral("' abc '", trim(" abc "));
+        checkLiteral("'   abc   '", trim("   abc   "));
     }
 
     @Override
@@ -98,13 +98,13 @@ public class TrimSimpleFunctionIntegrationTest extends StringFunctionIntegration
 
         checkParameter("", "");
         checkParameter("a", trim("a"));
-        checkParameter("abc",  trim("abc"));
-        checkParameter("abc ",  trim("abc "));
-        checkParameter("abc   ",  trim("abc   "));
-        checkParameter(" abc",  trim(" abc"));
-        checkParameter("   abc",  trim("   abc"));
-        checkParameter(" abc ",  trim(" abc "));
-        checkParameter("   abc   ",  trim("   abc   "));
+        checkParameter("abc", trim("abc"));
+        checkParameter("abc ", trim("abc "));
+        checkParameter("abc   ", trim("abc   "));
+        checkParameter(" abc", trim(" abc"));
+        checkParameter("   abc", trim("   abc"));
+        checkParameter(" abc ", trim(" abc "));
+        checkParameter("   abc   ", trim("   abc   "));
     }
 
     private String trim(String value) {

@@ -36,11 +36,11 @@ import java.util.List;
  */
 public abstract class AbstractProjectRel extends Project implements HazelcastRelNode {
     public AbstractProjectRel(
-        RelOptCluster cluster,
-        RelTraitSet traits,
-        RelNode input,
-        List<? extends RexNode> projects,
-        RelDataType rowType
+            RelOptCluster cluster,
+            RelTraitSet traits,
+            RelNode input,
+            List<? extends RexNode> projects,
+            RelDataType rowType
     ) {
         super(cluster, traits, ImmutableList.of(), input, projects, rowType);
     }

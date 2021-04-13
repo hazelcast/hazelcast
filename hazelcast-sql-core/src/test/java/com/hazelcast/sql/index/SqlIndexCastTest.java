@@ -59,9 +59,9 @@ public class SqlIndexCastTest extends SqlIndexTestSupport {
     @Before
     public void before() {
         IndexConfig indexConfig = new IndexConfig()
-            .setName("index")
-            .setType(IndexType.SORTED)
-            .addAttribute("field1");
+                .setName("index")
+                .setType(IndexType.SORTED)
+                .addAttribute("field1");
 
         MapConfig mapConfig = new MapConfig().setName(MAP_NAME).addIndexConfig(indexConfig);
 

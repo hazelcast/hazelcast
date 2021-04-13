@@ -56,8 +56,8 @@ public class DoubleBiFunctionIntegrationTest extends ExpressionTestSupport {
     @Parameterized.Parameters(name = "function: {0}")
     public static Collection<Object[]> parameters() {
         return Arrays.asList(new Object[][]{
-            { new FunctionInfo("ATAN2", DoubleBiFunction.ATAN2) },
-            { new FunctionInfo("POWER", DoubleBiFunction.POWER) }
+                {new FunctionInfo("ATAN2", DoubleBiFunction.ATAN2)},
+                {new FunctionInfo("POWER", DoubleBiFunction.POWER)}
         });
     }
 

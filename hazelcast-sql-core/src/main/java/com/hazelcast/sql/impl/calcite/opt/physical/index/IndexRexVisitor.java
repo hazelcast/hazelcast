@@ -96,11 +96,13 @@ public final class IndexRexVisitor extends RexVisitorImpl<Void> {
         return markInvalid();
     }
 
-    @Override public Void visitTableInputRef(RexTableInputRef ref) {
+    @Override
+    public Void visitTableInputRef(RexTableInputRef ref) {
         return markInvalid();
     }
 
-    @Override public Void visitPatternFieldRef(RexPatternFieldRef fieldRef) {
+    @Override
+    public Void visitPatternFieldRef(RexPatternFieldRef fieldRef) {
         return markInvalid();
     }
 

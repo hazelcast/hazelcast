@@ -34,11 +34,11 @@ import static org.apache.calcite.sql.type.SqlTypeName.DOUBLE;
 public class HazelcastDoubleBiFunction extends HazelcastFunction {
     public HazelcastDoubleBiFunction(String name) {
         super(
-            name,
-            SqlKind.OTHER_FUNCTION,
-            ReturnTypes.DOUBLE_NULLABLE,
-            new ReplaceUnknownOperandTypeInference(DOUBLE),
-            SqlFunctionCategory.NUMERIC
+                name,
+                SqlKind.OTHER_FUNCTION,
+                ReturnTypes.DOUBLE_NULLABLE,
+                new ReplaceUnknownOperandTypeInference(DOUBLE),
+                SqlFunctionCategory.NUMERIC
         );
     }
 

@@ -75,11 +75,11 @@ public class PhysicalIndexHDFullScanTest extends IndexOptimizerTestSupport {
         }
 
         HazelcastTable pTable = OptimizerTestSupport.partitionedTable(
-            "p",
-            OptimizerTestSupport.fields("ret", INT, "f", INT),
-            indexes,
-            100,
-            true
+                "p",
+                OptimizerTestSupport.fields("ret", INT, "f", INT),
+                indexes,
+                100,
+                true
         );
 
         tableMap.put("p", pTable);

@@ -39,9 +39,9 @@ public final class MapScanLogicalRule extends ConverterRule {
         LogicalTableScan scan = (LogicalTableScan) rel;
 
         return new MapScanLogicalRel(
-            scan.getCluster(),
-            OptUtils.toLogicalConvention(scan.getTraitSet()),
-            scan.getTable()
+                scan.getCluster(),
+                OptUtils.toLogicalConvention(scan.getTraitSet()),
+                scan.getTable()
         );
     }
 }

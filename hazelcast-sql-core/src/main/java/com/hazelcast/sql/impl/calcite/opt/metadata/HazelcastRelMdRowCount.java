@@ -27,7 +27,7 @@ import org.apache.calcite.util.BuiltInMethod;
 public final class HazelcastRelMdRowCount extends RelMdRowCount {
     /** Do not change the name (see {@code RelMetadataQueryBase} JavaDoc). */
     public static final RelMetadataProvider SOURCE =
-        ReflectiveRelMetadataProvider.reflectiveSource(BuiltInMethod.ROW_COUNT.method, new HazelcastRelMdRowCount());
+            ReflectiveRelMetadataProvider.reflectiveSource(BuiltInMethod.ROW_COUNT.method, new HazelcastRelMdRowCount());
 
     private HazelcastRelMdRowCount() {
         // No-op.

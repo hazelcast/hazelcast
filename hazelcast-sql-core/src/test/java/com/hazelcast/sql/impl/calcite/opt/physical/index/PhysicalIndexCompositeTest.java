@@ -62,10 +62,10 @@ public class PhysicalIndexCompositeTest extends IndexOptimizerTestSupport {
     @Parameterized.Parameters(name = "indexType:{0}, hd:{1}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
-            {IndexType.SORTED, true},
-            {IndexType.SORTED, false},
-            {IndexType.HASH, true},
-            {IndexType.HASH, false}
+                {IndexType.SORTED, true},
+                {IndexType.SORTED, false},
+                {IndexType.HASH, true},
+                {IndexType.HASH, false}
         });
     }
 
@@ -74,13 +74,13 @@ public class PhysicalIndexCompositeTest extends IndexOptimizerTestSupport {
         Map<String, Table> tableMap = new HashMap<>();
 
         HazelcastTable pTable = OptimizerTestSupport.partitionedTable(
-            "p",
-            OptimizerTestSupport.fields("ret", INT, "f1", INT, "f2", INT),
-            Collections.singletonList(
-                new MapTableIndex(INDEX_NAME, indexType, 2, asList(1, 2), asList(INT, INT))
-            ),
-            100,
-            hd
+                "p",
+                OptimizerTestSupport.fields("ret", INT, "f1", INT, "f2", INT),
+                Collections.singletonList(
+                        new MapTableIndex(INDEX_NAME, indexType, 2, asList(1, 2), asList(INT, INT))
+                ),
+                100,
+                hd
         );
 
         tableMap.put("p", pTable);
@@ -176,18 +176,18 @@ public class PhysicalIndexCompositeTest extends IndexOptimizerTestSupport {
     }
 
     private void checkIndexForCondition(
-        String condition,
-        String expectedIndexFilter,
-        QueryDataType... parameterTypes
+            String condition,
+            String expectedIndexFilter,
+            QueryDataType... parameterTypes
     ) {
         checkIndexForConditionWithRemainder(condition, expectedIndexFilter, "null", parameterTypes);
     }
 
     private void checkIndexForConditionWithRemainder(
-        String condition,
-        String expectedIndexFilter,
-        String expectedRemainderFilter,
-        QueryDataType... parameterTypes
+            String condition,
+            String expectedIndexFilter,
+            String expectedRemainderFilter,
+            QueryDataType... parameterTypes
     ) {
         String sql = "SELECT ret FROM p WHERE " + condition;
 

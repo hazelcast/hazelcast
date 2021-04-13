@@ -56,21 +56,21 @@ public class DoubleFunctionIntegrationTest extends ExpressionTestSupport {
     @Parameterized.Parameters(name = "function: {0}")
     public static Collection<Object[]> parameters() {
         return Arrays.asList(new Object[][]{
-            { new FunctionInfo("COS") },
-            { new FunctionInfo("SIN") },
-            { new FunctionInfo("TAN") },
-            { new FunctionInfo("COT") },
-            { new FunctionInfo("ACOS") },
-            { new FunctionInfo("ASIN") },
-            { new FunctionInfo("ATAN") },
-            { new FunctionInfo("EXP") },
-            { new FunctionInfo("LN") },
-            { new FunctionInfo("LOG10") },
-            { new FunctionInfo("DEGREES") },
-            { new FunctionInfo("RADIANS") },
-            { new FunctionInfo("SQUARE") },
-            { new FunctionInfo("SQRT") },
-            { new FunctionInfo("CBRT") },
+                {new FunctionInfo("COS")},
+                {new FunctionInfo("SIN")},
+                {new FunctionInfo("TAN")},
+                {new FunctionInfo("COT")},
+                {new FunctionInfo("ACOS")},
+                {new FunctionInfo("ASIN")},
+                {new FunctionInfo("ATAN")},
+                {new FunctionInfo("EXP")},
+                {new FunctionInfo("LN")},
+                {new FunctionInfo("LOG10")},
+                {new FunctionInfo("DEGREES")},
+                {new FunctionInfo("RADIANS")},
+                {new FunctionInfo("SQUARE")},
+                {new FunctionInfo("SQRT")},
+                {new FunctionInfo("CBRT")},
         });
     }
 
@@ -120,7 +120,7 @@ public class DoubleFunctionIntegrationTest extends ExpressionTestSupport {
     public void testParameter() {
         put(0);
 
-        checkValue0(sql("?"), DOUBLE, null, new Object[] { null });
+        checkValue0(sql("?"), DOUBLE, null, new Object[]{null});
 
         checkValue0(sql("?"), DOUBLE, function.process(1d), (byte) 1);
         checkValue0(sql("?"), DOUBLE, function.process(1d), (short) 1);

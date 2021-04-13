@@ -101,11 +101,11 @@ public class QueryParser {
         node.accept(visitor);
 
         return new QueryParseResult(
-            node,
-            new QueryParameterMetadata(validator.getParameterConverters(node)),
-            validator,
-            sqlBackend,
-            validator.isInfiniteRows()
+                node,
+                new QueryParameterMetadata(validator.getParameterConverters(node)),
+                validator,
+                sqlBackend,
+                validator.isInfiniteRows()
         );
     }
 

@@ -34,11 +34,11 @@ public final class HazelcastRandFunction extends HazelcastFunction {
 
     private HazelcastRandFunction() {
         super(
-            "RAND",
-            SqlKind.OTHER_FUNCTION,
-            ReturnTypes.DOUBLE,
-            new ReplaceUnknownOperandTypeInference(BIGINT),
-            SqlFunctionCategory.NUMERIC
+                "RAND",
+                SqlKind.OTHER_FUNCTION,
+                ReturnTypes.DOUBLE,
+                new ReplaceUnknownOperandTypeInference(BIGINT),
+                SqlFunctionCategory.NUMERIC
         );
     }
 

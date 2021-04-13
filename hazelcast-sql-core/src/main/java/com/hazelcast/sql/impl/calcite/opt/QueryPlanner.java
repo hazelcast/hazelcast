@@ -39,11 +39,11 @@ public class QueryPlanner {
         Program program = Programs.of(rules);
 
         return program.run(
-            planner,
-            node,
-            traitSet,
-            ImmutableList.of(),
-            ImmutableList.of()
+                planner,
+                node,
+                traitSet,
+                ImmutableList.of(),
+                ImmutableList.of()
         );
     }
 }

@@ -155,18 +155,18 @@ public class SqlNoDeserializationTest extends SqlTestSupport {
         QueryId queryId = QueryId.create(UUID.randomUUID());
 
         ClientMessage executeRequest = SqlExecuteCodec.encodeRequest(
-            SQL,
-            Collections.emptyList(),
-            Long.MAX_VALUE,
-            pageSize,
-            null,
-            SqlClientUtils.expectedResultTypeToByte(SqlExpectedResultType.ROWS),
-            queryId
+                SQL,
+                Collections.emptyList(),
+                Long.MAX_VALUE,
+                pageSize,
+                null,
+                SqlClientUtils.expectedResultTypeToByte(SqlExpectedResultType.ROWS),
+                queryId
 
         );
 
         SqlExecuteCodec.ResponseParameters executeResponse = SqlExecuteCodec.decodeResponse(
-            clientService.invokeOnConnection(connection, executeRequest)
+                clientService.invokeOnConnection(connection, executeRequest)
         );
 
         if (executeResponse.error != null) {
@@ -178,12 +178,12 @@ public class SqlNoDeserializationTest extends SqlTestSupport {
 
         // Get the second page through the "execute" request
         ClientMessage fetchRequest = SqlFetchCodec.encodeRequest(
-            queryId,
-            pageSize
+                queryId,
+                pageSize
         );
 
         SqlFetchCodec.ResponseParameters fetchResponse = SqlFetchCodec.decodeResponse(
-            clientService.invokeOnConnection(connection, fetchRequest)
+                clientService.invokeOnConnection(connection, fetchRequest)
         );
 
         if (fetchResponse.error != null) {

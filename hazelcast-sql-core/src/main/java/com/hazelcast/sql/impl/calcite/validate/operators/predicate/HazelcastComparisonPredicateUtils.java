@@ -51,52 +51,52 @@ public final class HazelcastComparisonPredicateUtils {
     }
 
     private static boolean checkOperandTypes(
-        HazelcastCallBinding callBinding,
-        boolean throwOnFailure,
-        HazelcastSqlValidator validator,
-        SqlNode first,
-        RelDataType firstType,
-        SqlNode second,
-        RelDataType secondType
+            HazelcastCallBinding callBinding,
+            boolean throwOnFailure,
+            HazelcastSqlValidator validator,
+            SqlNode first,
+            RelDataType firstType,
+            SqlNode second,
+            RelDataType secondType
     ) {
         RelDataType winningType = HazelcastTypeUtils.withHigherPrecedence(firstType, secondType);
 
         if (winningType == firstType) {
             return checkOperandTypesWithPrecedence(
-                callBinding,
-                throwOnFailure,
-                validator,
-                first,
-                firstType,
-                second,
-                secondType,
-                1
+                    callBinding,
+                    throwOnFailure,
+                    validator,
+                    first,
+                    firstType,
+                    second,
+                    secondType,
+                    1
             );
         } else {
             assert winningType == secondType;
 
             return checkOperandTypesWithPrecedence(
-                callBinding,
-                throwOnFailure,
-                validator,
-                second,
-                secondType,
-                first,
-                firstType,
-                0
+                    callBinding,
+                    throwOnFailure,
+                    validator,
+                    second,
+                    secondType,
+                    first,
+                    firstType,
+                    0
             );
         }
     }
 
     private static boolean checkOperandTypesWithPrecedence(
-        HazelcastCallBinding callBinding,
-        boolean throwOnFailure,
-        HazelcastSqlValidator validator,
-        SqlNode high,
-        RelDataType highType,
-        SqlNode low,
-        RelDataType lowType,
-        int lowIndex
+            HazelcastCallBinding callBinding,
+            boolean throwOnFailure,
+            HazelcastSqlValidator validator,
+            SqlNode high,
+            RelDataType highType,
+            SqlNode low,
+            RelDataType lowType,
+            int lowIndex
     ) {
         QueryDataType highHZType = HazelcastTypeUtils.toHazelcastType(highType.getSqlTypeName());
         QueryDataType lowHZType = HazelcastTypeUtils.toHazelcastType(lowType.getSqlTypeName());
@@ -156,9 +156,9 @@ public final class HazelcastComparisonPredicateUtils {
             SqlDynamicParam node0 = (SqlDynamicParam) node;
 
             ParameterConverter converter = new NumericPrecedenceParameterConverter(
-                node0.getIndex(),
-                node.getParserPosition(),
-                type
+                    node0.getIndex(),
+                    node.getParserPosition(),
+                    type
             );
 
             validator.setParameterConverter(node0.getIndex(), converter);

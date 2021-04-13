@@ -154,13 +154,13 @@ public class SqlClientExecuteCloseRaceTest {
 
     private ClientMessage sendExecuteRequest(Connection connection, QueryId queryId) {
         ClientMessage executeRequest = SqlExecuteCodec.encodeRequest(
-            SQL,
-            Collections.emptyList(),
-            0L,
-            1,
-            null,
-            SqlClientUtils.expectedResultTypeToByte(SqlExpectedResultType.ANY),
-            queryId
+                SQL,
+                Collections.emptyList(),
+                0L,
+                1,
+                null,
+                SqlClientUtils.expectedResultTypeToByte(SqlExpectedResultType.ANY),
+                queryId
         );
 
         return clientService.invokeOnConnection(connection, executeRequest);

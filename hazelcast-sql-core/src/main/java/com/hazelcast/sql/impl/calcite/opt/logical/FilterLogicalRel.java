@@ -28,10 +28,10 @@ import org.apache.calcite.rex.RexNode;
  */
 public class FilterLogicalRel extends AbstractFilterRel implements LogicalRel {
     public FilterLogicalRel(
-        RelOptCluster cluster,
-        RelTraitSet traits,
-        RelNode input,
-        RexNode condition
+            RelOptCluster cluster,
+            RelTraitSet traits,
+            RelNode input,
+            RexNode condition
     ) {
         super(cluster, traits, input, condition);
     }

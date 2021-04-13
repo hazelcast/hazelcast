@@ -357,19 +357,19 @@ public class MultiplyOperatorIntegrationTest extends ArithmeticOperatorIntegrati
     @Test
     public void testEquality() {
         checkEquals(MultiplyFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT),
-            MultiplyFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT), true);
+                MultiplyFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT), true);
 
         checkEquals(MultiplyFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT),
-            MultiplyFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), QueryDataType.BIGINT), false);
+                MultiplyFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), QueryDataType.BIGINT), false);
 
         checkEquals(MultiplyFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT),
-            MultiplyFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(100, INT), INT), false);
+                MultiplyFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(100, INT), INT), false);
     }
 
     @Test
     public void testSerialization() {
         MultiplyFunction<?> original =
-            MultiplyFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT);
+                MultiplyFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT);
         MultiplyFunction<?> restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_MULTIPLY);
 
         checkEquals(original, restored, true);

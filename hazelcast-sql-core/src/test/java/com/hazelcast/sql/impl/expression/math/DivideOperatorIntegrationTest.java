@@ -395,19 +395,19 @@ public class DivideOperatorIntegrationTest extends ArithmeticOperatorIntegration
     @Test
     public void testEquality() {
         checkEquals(DivideFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT),
-            DivideFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT), true);
+                DivideFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT), true);
 
         checkEquals(DivideFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT),
-            DivideFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), QueryDataType.BIGINT), false);
+                DivideFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), QueryDataType.BIGINT), false);
 
         checkEquals(DivideFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT),
-            DivideFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(100, INT), INT), false);
+                DivideFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(100, INT), INT), false);
     }
 
     @Test
     public void testSerialization() {
         DivideFunction<?> original =
-            DivideFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT);
+                DivideFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT);
         DivideFunction<?> restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_DIVIDE);
 
         checkEquals(original, restored, true);
