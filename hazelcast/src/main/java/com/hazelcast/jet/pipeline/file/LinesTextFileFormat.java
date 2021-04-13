@@ -18,6 +18,7 @@ package com.hazelcast.jet.pipeline.file;
 
 import javax.annotation.Nonnull;
 import java.nio.charset.Charset;
+import java.util.Objects;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
@@ -66,5 +67,18 @@ public class LinesTextFileFormat implements FileFormat<String> {
     @Nonnull @Override
     public String format() {
         return FORMAT_LINES;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        LinesTextFileFormat that = (LinesTextFileFormat) o;
+        return Objects.equals(charset, that.charset);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(charset);
     }
 }
