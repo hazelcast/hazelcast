@@ -101,21 +101,16 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
     @Override
     public void evictExpiredEntries(int percentage, boolean backup) {
+        SAMPLING_QUEUE.get().clear();
+
         long now = getNow();
         int size = size();
         int maxSample = getMaxSampleCount(size, percentage);
         int maxRetry = 3;
         int loop = 0;
         int evictedEntryCount = 0;
-        while (true) {
+        while (loop++ < maxRetry && evictedEntryCount < maxSample) {
             evictedEntryCount += evictExpiredEntriesInternal(maxSample, now, backup);
-            if (evictedEntryCount >= maxSample) {
-                break;
-            }
-            loop++;
-            if (loop > maxRetry) {
-                break;
-            }
         }
 
         accumulateOrSendExpiredKey(null, null);
@@ -143,15 +138,14 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         return Math.max(MIN_TOTAL_NUMBER_OF_KEYS_TO_SCAN, numberOfKeysInPercentage);
     }
 
-    private int evictExpiredEntriesInternal(int maxSample, long now, boolean backup) {
+    private int evictExpiredEntriesInternal(final int maxSample, long now, boolean backup) {
         int sampledCount = 0;
         int evictedCount = 0;
         Iterator<Map.Entry<Data, Record>> iterator = initExpirationIterator();
-        do {
+        while (sampledCount < maxSample && iterator.hasNext()) {
             sampledCount += sampleForExpiry();
             evictedCount += evictExpiredSamples(now, backup);
-        } while (sampledCount < maxSample && iterator.hasNext());
-
+        }
         return evictedCount;
     }
 
