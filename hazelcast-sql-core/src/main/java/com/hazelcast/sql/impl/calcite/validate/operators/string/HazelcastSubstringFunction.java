@@ -75,7 +75,8 @@ public final class HazelcastSubstringFunction extends HazelcastFunction {
             );
             ret.append(NL);
             ret.append(
-                    SqlUtil.getAliasedSignature(this, opName, ImmutableList.of(typeName.e, SqlTypeName.INTEGER, SqlTypeName.INTEGER))
+                    SqlUtil.getAliasedSignature(this, opName, ImmutableList.of(typeName.e, SqlTypeName.INTEGER,
+                            SqlTypeName.INTEGER))
             );
         }
         return ret.toString();

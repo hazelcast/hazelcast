@@ -69,8 +69,10 @@ public final class OptUtils {
      * @param convention Convention.
      * @return Operand.
      */
-    public static <R1 extends RelNode, R2 extends RelNode> RelOptRuleOperand parentChild(Class<R1> cls,
-                                                                                         Class<R2> childCls, Convention convention) {
+    public static <R1 extends RelNode, R2 extends RelNode> RelOptRuleOperand parentChild(
+            Class<R1> cls,
+            Class<R2> childCls, Convention convention
+    ) {
         RelOptRuleOperand childOperand = RelOptRule.operand(childCls, RelOptRule.any());
 
         return RelOptRule.operand(cls, convention, RelOptRule.some(childOperand));

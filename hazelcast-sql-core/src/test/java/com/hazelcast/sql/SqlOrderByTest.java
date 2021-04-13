@@ -752,7 +752,7 @@ public class SqlOrderByTest extends SqlTestSupport {
         assertSqlResultOrdered(sql, checkOrderFields, orderDirections, map.size());
     }
 
-    private void assertOrdered(SqlRow prevRow, SqlRow row, 
+    private void assertOrdered(SqlRow prevRow, SqlRow row,
             List<String> orderFields, List<Boolean> orderDirections, SqlRowMetadata rowMetadata
     ) {
         if (prevRow == null) {
