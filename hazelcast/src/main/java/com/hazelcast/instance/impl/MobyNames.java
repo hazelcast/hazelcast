@@ -852,13 +852,20 @@ final class MobyNames {
             // https://en.wikipedia.org/wiki/Mildred_Sanderson
             "sanderson",
 
-            // Satoshi Nakamoto is the name used by the unknown person or group of people who developed bitcoin, authored the bitcoin white paper, and created and deployed bitcoin's original reference implementation. https://en.wikipedia.org/wiki/Satoshi_Nakamoto
+            // Satoshi Nakamoto is the name used by the unknown person or group of people who developed bitcoin,
+            // authored the bitcoin white paper, and created and deployed bitcoin's original reference implementation.
+            // https://en.wikipedia.org/wiki/Satoshi_Nakamoto
             "satoshi",
 
-            // Adi Shamir - Israeli cryptographer whose numerous inventions and contributions to cryptography include the Ferge Fiat Shamir identification scheme, the Rivest Shamir Adleman (RSA) public-key cryptosystem, the Shamir's secret sharing scheme, the breaking of the Merkle-Hellman cryptosystem, the TWINKLE and TWIRL factoring devices and the discovery of differential cryptanalysis (with Eli Biham). https://en.wikipedia.org/wiki/Adi_Shamir
+            // Adi Shamir - Israeli cryptographer whose numerous inventions and contributions to cryptography include
+            // the Ferge Fiat Shamir identification scheme, the Rivest Shamir Adleman (RSA) public-key cryptosystem,
+            // the Shamir's secret sharing scheme, the breaking of the Merkle-Hellman cryptosystem, the TWINKLE and
+            // TWIRL factoring devices and the discovery of differential cryptanalysis (with Eli Biham).
+            // https://en.wikipedia.org/wiki/Adi_Shamir
             "shamir",
 
-            // Claude Shannon - The father of information theory and founder of digital circuit design theory. (https://en.wikipedia.org/wiki/Claude_Shannon)
+            // Claude Shannon - The father of information theory and founder of digital circuit design theory.
+            // (https://en.wikipedia.org/wiki/Claude_Shannon)
             "shannon",
 
             // Carol Shaw - Originally an Atari employee, Carol Shaw is said to be the first female video game designer.
