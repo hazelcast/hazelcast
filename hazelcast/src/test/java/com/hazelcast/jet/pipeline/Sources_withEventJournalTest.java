@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.pipeline;
 
-import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.EventJournalCacheEvent;
+import com.hazelcast.cache.ICache;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.collection.IList;
 import com.hazelcast.config.CacheSimpleConfig;
@@ -27,11 +27,13 @@ import com.hazelcast.function.PredicateEx;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.map.IMap;
 import com.hazelcast.map.EventJournalMapEvent;
+import com.hazelcast.map.IMap;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -51,6 +53,7 @@ import static java.util.stream.IntStream.range;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+@Category({QuickTest.class})
 public class Sources_withEventJournalTest extends PipelineTestSupport {
     private static HazelcastInstance remoteHz;
     private static ClientConfig clientConfig;

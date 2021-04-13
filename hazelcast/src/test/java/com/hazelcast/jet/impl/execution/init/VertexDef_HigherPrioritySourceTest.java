@@ -31,8 +31,11 @@ import com.hazelcast.jet.impl.MasterJobContext;
 import com.hazelcast.jet.impl.execution.SnapshotContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;
@@ -48,6 +51,7 @@ import static java.util.stream.Collectors.joining;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class VertexDef_HigherPrioritySourceTest extends SimpleTestInClusterSupport {
 
     private static final ProcessorMetaSupplier MOCK_PMS =

@@ -447,31 +447,6 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>org.jacoco</groupId>
-                        <artifactId>jacoco-maven-plugin</artifactId>
-                        <version>${maven.jacoco.plugin.version}</version>
-                        <configuration>
-                            <skip>false</skip>
-                            <append>true</append>
-                            <propertyName>jacocoArgLine</propertyName>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <id>prepare-unit-tests</id>
-                                <goals>
-                                    <goal>prepare-agent</goal>
-                                </goals>
-                            </execution>
-                            <execution>
-                                <id>jacoco-site</id>
-                                <phase>verify</phase>
-                                <goals>
-                                    <goal>report</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <version>${maven.surefire.plugin.version}</version>
@@ -485,7 +460,7 @@
                                 <configuration combine.self="override">
                                     <useFile>false</useFile>
                                     <trimStackTrace>false</trimStackTrace>
-                                    <!-- 1C means 1 process per cpu core -->
+                                    <!-- 0.5C means half as many forks as cpu cores -->
                                     <forkCount>0.5C</forkCount>
                                     <reuseForks>true</reuseForks>
                                     <argLine>
@@ -499,7 +474,6 @@
                                         -Dlog4j.configurationFile=log4j2.xml
                                         -Dlog4j.skipJansi=true
                                         ${extraVmArgs}
-                                        ${jacocoArgLine}
                                     </argLine>
                                     <includes>
                                         <include>**/**.java</include>
@@ -537,7 +511,6 @@
                                         -Dlog4j.configurationFile=log4j2.xml
                                         -Dlog4j.skipJansi=true
                                         ${extraVmArgs}
-                                        ${jacocoArgLine}
                                     </argLine>
                                     <includes>
                                         <include>**/**.java</include>
@@ -570,7 +543,6 @@
                                 -Dlog4j.configurationFile=log4j2.xml
                                 -Dlog4j.skipJansi=true
                                 ${extraVmArgs}
-                                ${jacocoArgLine}
                             </argLine>
                             <useManifestOnlyJar>false</useManifestOnlyJar>
                             <useSystemClassLoader>true</useSystemClassLoader>

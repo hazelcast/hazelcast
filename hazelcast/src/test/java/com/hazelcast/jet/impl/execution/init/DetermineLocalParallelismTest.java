@@ -25,8 +25,11 @@ import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -35,6 +38,7 @@ import java.util.function.Function;
 import static com.hazelcast.jet.impl.JobExecutionRecord.NO_SNAPSHOT;
 import static org.junit.Assert.assertEquals;
 
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class DetermineLocalParallelismTest extends SimpleTestInClusterSupport {
 
     private static final int DEFAULT_PARALLELISM = 2;

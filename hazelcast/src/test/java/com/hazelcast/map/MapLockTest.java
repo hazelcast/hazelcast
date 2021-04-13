@@ -199,7 +199,7 @@ public class MapLockTest extends HazelcastTestSupport {
 
     @Category(NightlyTest.class)
     @Test
-    public void testLockEvictionWithMigration() throws Exception {
+    public void testLockEvictionWithMigration() {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         final Config config = getConfig();
         final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);

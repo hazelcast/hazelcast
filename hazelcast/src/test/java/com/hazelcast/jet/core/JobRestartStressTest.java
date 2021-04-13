@@ -17,7 +17,10 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.locks.LockSupport;
@@ -25,6 +28,7 @@ import java.util.concurrent.locks.LockSupport;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 @RunWith(HazelcastSerialClassRunner.class)
+@Category({SlowTest.class, ParallelJVMTest.class})
 public class JobRestartStressTest extends JobRestartStressTestBase {
     @Test
     public void stressTest_restart() throws Exception {

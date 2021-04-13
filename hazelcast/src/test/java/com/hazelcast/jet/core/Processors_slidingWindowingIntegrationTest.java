@@ -29,6 +29,7 @@ import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.datamodel.KeyedWindowResult;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -57,7 +58,7 @@ import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
-@Category(ParallelJVMTest.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 public class Processors_slidingWindowingIntegrationTest extends JetTestSupport {
 
