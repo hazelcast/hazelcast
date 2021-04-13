@@ -48,7 +48,6 @@ import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-@Category({QuickTest.class, ParallelJVMTest.class})
 public class PythonServiceTest extends SimpleTestInClusterSupport {
 
     private static final int ITEM_COUNT = 10_000;
@@ -80,7 +79,7 @@ public class PythonServiceTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    //category intentionally left out, we want this one test to run in standard test suits
+    @Category({QuickTest.class, ParallelJVMTest.class})
     public void batchStage_mapUsingPython() {
         // Given
         PythonServiceConfig cfg = new PythonServiceConfig()

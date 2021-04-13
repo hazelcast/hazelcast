@@ -46,7 +46,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
-import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -72,7 +71,7 @@ import static java.util.stream.Collectors.toMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-@Category({SlowTest.class, ParallelJVMTest.class})
+@Category({SlowTest.class})
 public class SinksTest extends PipelineTestSupport {
 
     private static HazelcastInstance remoteHz;

@@ -23,7 +23,6 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.TestProcessors.MockP;
 import com.hazelcast.jet.impl.util.ImdgUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -32,7 +31,7 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.jet.core.Edge.between;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({SlowTest.class, ParallelJVMTest.class})
+@Category({SlowTest.class})
 public class MemberReconnectionTest extends JetTestSupport {
 
     @Test
