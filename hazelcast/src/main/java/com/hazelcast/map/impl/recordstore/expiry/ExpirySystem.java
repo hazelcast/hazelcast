@@ -63,7 +63,7 @@ public class ExpirySystem {
     private static final int MIN_TOTAL_NUMBER_OF_KEYS_TO_SCAN = 100;
     private static final int MAX_SAMPLE_AT_A_TIME = 16;
     private static final ThreadLocal<List> BATCH_OF_EXPIRED
-            = ThreadLocal.withInitial(() -> new ArrayList<>(MAX_SAMPLE_AT_A_TIME));
+            = ThreadLocal.withInitial(() -> new ArrayList<>(MAX_SAMPLE_AT_A_TIME << 1));
 
     private final long expiryDelayMillis;
     private final long expiredKeyScanTimeoutNanos;
