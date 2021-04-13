@@ -58,12 +58,11 @@ import static com.hazelcast.map.impl.record.Record.UNSET;
  */
 public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
-    // MAX_SAMPLE_AT_A_TIME and SAMPLING_LIST is used for background expiry task.
+    private static final int ONE_HUNDRED_PERCENT = 100;
     private static final int MAX_SAMPLE_AT_A_TIME = 16;
     private static final int MIN_TOTAL_NUMBER_OF_KEYS_TO_SCAN = 100;
-    private static final int ONE_HUNDRED_PERCENT = 100;
     private static final ThreadLocal<List> SAMPLING_LIST
-            = ThreadLocal.withInitial(() -> new ArrayList<>(MAX_SAMPLE_AT_A_TIME));
+            = ThreadLocal.withInitial(() -> new ArrayList<>(MAX_SAMPLE_AT_A_TIME << 1));
 
     protected final long expiryDelayMillis;
     protected final Address thisAddress;
