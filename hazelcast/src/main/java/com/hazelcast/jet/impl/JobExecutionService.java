@@ -54,6 +54,7 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static com.hazelcast.jet.Util.idToString;
@@ -93,12 +94,16 @@ public class JobExecutionService implements DynamicMetricsProvider {
     @Probe(name = MetricNames.JOB_EXECUTIONS_COMPLETED)
     private final Counter executionCompleted = MwCounter.newMwCounter();
 
+    private final Function<? super Long, ? extends ExecutionContext> newLightJobExecutionContextFunction;
+
     JobExecutionService(NodeEngineImpl nodeEngine, TaskletExecutionService taskletExecutionService,
                         JobRepository jobRepository) {
         this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(getClass());
         this.taskletExecutionService = taskletExecutionService;
         this.jobRepository = jobRepository;
+
+        newLightJobExecutionContextFunction = execId -> new ExecutionContext(nodeEngine, execId, execId, true);
 
         // register metrics
         MetricsRegistry registry = nodeEngine.getMetricsRegistry();
@@ -128,6 +133,15 @@ public class JobExecutionService implements DynamicMetricsProvider {
 
     public ExecutionContext getExecutionContext(long executionId) {
         return executionContexts.get(executionId);
+    }
+
+    /**
+     * Gets the execution context or creates it, if it doesn't exist. If
+     * we're creating it, we assume it's for a light job and that the
+     * jobId == executionId.
+     */
+    public ExecutionContext getOrCreateExecutionContext(long executionId) {
+        return executionContexts.computeIfAbsent(executionId, newLightJobExecutionContextFunction);
     }
 
     Map<Long, ExecutionContext> getExecutionContextsFor(Address member) {

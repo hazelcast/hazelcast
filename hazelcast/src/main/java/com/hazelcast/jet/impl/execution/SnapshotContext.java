@@ -184,8 +184,7 @@ public class SnapshotContext {
     synchronized void initTaskletCount(int numPTasklets, int numSsTasklets, int numPrioritySsTasklets) {
         assert this.numSsTasklets == Integer.MIN_VALUE && this.numPTasklets == Integer.MIN_VALUE
                 : "Tasklet count already set";
-        assert numSsTasklets >= 1
-                && numPrioritySsTasklets >= 0
+        assert numPrioritySsTasklets >= 0
                 && numSsTasklets >= numPrioritySsTasklets
                 && numPTasklets >= numSsTasklets
                 : "numPTasklets=" + numPTasklets + ", numSsTasklets=" + numSsTasklets + ", numPrioritySsTasklets="

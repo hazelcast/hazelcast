@@ -91,7 +91,7 @@ public class ReceiverTasklet implements Tasklet {
     private final String destinationVertexName;
     private final Connection memberConnection;
 
-    private Queue<BufferObjectDataInput> incoming;
+    private Queue<byte[]> incoming;
     private final ProgressTracker tracker = new ProgressTracker();
     private final ArrayDeque<ObjWithPtionIdAndSize> inbox = new ArrayDeque<>();
     private final OutboundCollector collector;
@@ -289,17 +289,18 @@ public class ReceiverTasklet implements Tasklet {
         try {
             long totalBytes = 0;
             long totalItems = 0;
-            for (BufferObjectDataInput received; (received = incoming.poll()) != null; ) {
-                final int itemCount = received.readInt();
+            for (byte[] payload; (payload = incoming.poll()) != null; ) {
+                BufferObjectDataInput input = serializationService.createObjectDataInput(payload, 16);
+                final int itemCount = input.readInt();
                 for (int i = 0; i < itemCount; i++) {
-                    final int mark = received.position();
-                    final Object item = received.readObject();
-                    final int itemSize = received.position() - mark;
-                    inbox.add(new ObjWithPtionIdAndSize(item, received.readInt(), itemSize));
+                    final int mark = input.position();
+                    final Object item = input.readObject();
+                    final int itemSize = input.position() - mark;
+                    inbox.add(new ObjWithPtionIdAndSize(item, input.readInt(), itemSize));
                 }
                 totalItems += itemCount;
-                totalBytes += received.position();
-                received.close();
+                totalBytes += input.position();
+                input.close();
                 tracker.madeProgress();
             }
             bytesInCounter.inc(totalBytes);
@@ -309,7 +310,7 @@ public class ReceiverTasklet implements Tasklet {
         }
     }
 
-    public void initIncomingQueue(Queue<BufferObjectDataInput> incomingQueue) {
+    public void initIncomingQueue(Queue<byte[]> incomingQueue) {
         incoming = incomingQueue;
     }
 

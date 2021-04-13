@@ -16,13 +16,12 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.collection.IList;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
-import com.hazelcast.jet.core.TestProcessors.ListSource;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.core.processor.SinkProcessors;
+import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -31,10 +30,13 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
 import static com.hazelcast.jet.core.Edge.between;
-import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastSerialClassRunner.class)
 public class LightJobTest extends JetTestSupport {
@@ -63,14 +65,16 @@ public class LightJobTest extends JetTestSupport {
     }
 
     private void test(JetInstance submittingInstance) {
+        List<Integer> items = IntStream.range(0, 1_000).boxed().collect(Collectors.toList());
+
         DAG dag = new DAG();
-        Vertex src = dag.newVertex("src", ListSource.supplier(asList(1, 2, 3)));
+        Vertex src = dag.newVertex("src", processorFromPipelineSource(TestSources.items(items)));
         Vertex sink = dag.newVertex("sink", SinkProcessors.writeListP("sink"));
         dag.edge(between(src, sink).distributed());
 
         submittingInstance.newLightJob(dag).join();
-        IList<Integer> result = inst.getList("sink");
-        assertEquals(asList(1, 2, 3), result);
+        List<Integer> result = inst.getList("sink");
+        assertThat(result).containsExactlyInAnyOrderElementsOf(items);
     }
 
     @Test

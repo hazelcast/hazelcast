@@ -49,7 +49,7 @@ class PartitionArrangement {
         localPartitions = new int[memberCounts.get(thisAddress).value];
         remotePartitionAssignment = new HashMap<>();
         for (Entry<Address, MutableInteger> en : memberCounts.entrySet()) {
-            if (en.getKey() != thisAddress) {
+            if (!en.getKey().equals(thisAddress)) {
                 MutableInteger count = en.getValue();
                 remotePartitionAssignment.put(en.getKey(), new int[count.value]);
                 count.value = 0;
@@ -59,7 +59,7 @@ class PartitionArrangement {
         int localPartitionIndex = 0;
         for (int i = 0; i < partitionOwners.length; i++) {
             Address address = partitionOwners[i];
-            if (address == thisAddress) {
+            if (address.equals(thisAddress)) {
                 localPartitions[localPartitionIndex++] = i;
             } else {
                 int index = memberCounts.get(address).value++;

@@ -87,17 +87,13 @@ public class Networking {
 
     private void handleStreamPacket(Packet packet) {
         byte[] payload = packet.toByteArray();
-        int offset = 0;
 
-        long executionId = memoryReader.readLong(payload, offset);
-        offset += Long.BYTES;
-        int vertexId = memoryReader.readInt(payload, offset);
-        offset += Integer.BYTES;
-        int ordinal = memoryReader.readInt(payload, offset);
-        offset += Integer.BYTES;
+        long executionId = memoryReader.readLong(payload, 0);
+        int vertexId = memoryReader.readInt(payload, Long.BYTES);
+        int ordinal = memoryReader.readInt(payload, Long.BYTES + Integer.BYTES);
 
-        ExecutionContext executionContext = jobExecutionService.getExecutionContext(executionId);
-        executionContext.handlePacket(vertexId, ordinal, packet.getConn().getRemoteAddress(), payload, offset);
+        ExecutionContext executionContext = jobExecutionService.getOrCreateExecutionContext(executionId);
+        executionContext.handlePacket(vertexId, ordinal, packet.getConn().getRemoteAddress(), payload);
     }
 
     public static byte[] createStreamPacketHeader(NodeEngine nodeEngine,

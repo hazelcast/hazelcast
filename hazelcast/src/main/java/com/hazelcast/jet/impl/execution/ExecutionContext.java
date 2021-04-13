@@ -22,7 +22,6 @@ import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.ProbeUnit;
-import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
@@ -57,6 +56,7 @@ import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.metrics.MetricNames.EXECUTION_COMPLETION_TIME;
@@ -91,7 +91,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
     // dest vertex id --> dest ordinal --> sender addr --> receiver tasklet
     private Map<Integer, Map<Integer, Map<Address, ReceiverTasklet>>> receiverMap;
 
-    private Map<SenderReceiverKey, Queue<BufferObjectDataInput>> receiverQueuesMap;
+    private final Map<SenderReceiverKey, Queue<byte[]>> receiverQueuesMap;
     private final boolean isLightJob;
 
     // dest vertex id --> dest ordinal --> dest addr --> sender tasklet
@@ -116,6 +116,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
     private volatile RawJobMetrics jobMetrics = RawJobMetrics.empty();
 
     private InternalSerializationService serializationService;
+    private Function<? super SenderReceiverKey, ? extends Queue<byte[]>> createReceiverQueueFn;
 
     public ExecutionContext(NodeEngine nodeEngine, long jobId, long executionId, boolean isLightJob) {
         this.jobId = jobId;
@@ -131,6 +132,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
         // initialized. For regular jobs we use non-concurrent map for performance
         // TODO [viliam] convert to non-concurrent map after initialization
         receiverQueuesMap = isLightJob ? new ConcurrentHashMap<>() : new HashMap<>();
+        createReceiverQueueFn = key -> new MPSCQueue<>(null);
     }
 
     public ExecutionContext initialize(Address coordinator, Set<Address> participants, ExecutionPlan plan) {
@@ -159,7 +161,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
             for (Entry<Integer, Map<Address, ReceiverTasklet>> ordinalEntry : vertexIdEntry.getValue().entrySet()) {
                 for (Entry<Address, ReceiverTasklet> addressEntry : ordinalEntry.getValue().entrySet()) {
                     SenderReceiverKey key = new SenderReceiverKey(vertexIdEntry.getKey(), ordinalEntry.getKey(), addressEntry.getKey());
-                    Queue<BufferObjectDataInput> queue = receiverQueuesMap.computeIfAbsent(key, x -> new MPSCQueue<>(null));
+                    Queue<byte[]> queue = receiverQueuesMap.computeIfAbsent(key, createReceiverQueueFn);
                     addressEntry.getValue().initIncomingQueue(queue);
                 }
             }
@@ -307,10 +309,9 @@ public class ExecutionContext implements DynamicMetricsProvider {
         }
     }
 
-    public void handlePacket(int vertexId, int ordinal, Address sender, byte[] payload, int offset) {
-        BufferObjectDataInput input = serializationService.createObjectDataInput(payload, offset);
-        receiverQueuesMap.get(new SenderReceiverKey(vertexId, ordinal, sender))
-                   .add(input);
+    public void handlePacket(int vertexId, int ordinal, Address sender, byte[] payload) {
+        receiverQueuesMap.computeIfAbsent(new SenderReceiverKey(vertexId, ordinal, sender), createReceiverQueueFn)
+                   .add(payload);
     }
 
     public boolean hasParticipant(Address member) {

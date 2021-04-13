@@ -31,6 +31,8 @@ import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.JobExecutionRecord;
 import com.hazelcast.jet.impl.JobExecutionService;
 import com.hazelcast.jet.impl.JobRepository;
+import com.hazelcast.jet.impl.pipeline.transform.BatchSourceTransform;
+import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.IMap;
@@ -360,5 +362,9 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
         assertEquals(String.format("Expected collection: `%s`, actual collection: `%s`", expected, actual),
                 expected.size(), actual.size());
         assertContainsAll(expected, actual);
+    }
+
+    public static <T> ProcessorMetaSupplier processorFromPipelineSource(BatchSource<T> source) {
+        return ((BatchSourceTransform<T>) source).metaSupplier;
     }
 }
