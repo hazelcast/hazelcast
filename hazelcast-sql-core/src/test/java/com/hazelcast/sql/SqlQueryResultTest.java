@@ -143,7 +143,7 @@ public class SqlQueryResultTest extends SqlTestSupport {
                     plan.getRowMetadata(),
                     plan.getParameterMetadata(),
                     plan.getPlanKey(),
-                    plan.getObjectIds(),
+                    plan.getObjectKeys(),
                     plan.getPermissions()
             );
         }

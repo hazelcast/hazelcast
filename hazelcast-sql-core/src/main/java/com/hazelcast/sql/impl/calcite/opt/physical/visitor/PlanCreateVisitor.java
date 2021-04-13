@@ -39,10 +39,10 @@ import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryPath;
+import com.hazelcast.sql.impl.optimizer.PlanKey;
+import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.plan.PlanFragmentMapping;
-import com.hazelcast.sql.impl.plan.cache.PlanCacheKey;
-import com.hazelcast.sql.impl.plan.cache.PlanObjectKey;
 import com.hazelcast.sql.impl.plan.node.EmptyPlanNode;
 import com.hazelcast.sql.impl.plan.node.FetchOffsetPlanNodeFieldTypeProvider;
 import com.hazelcast.sql.impl.plan.node.FetchPlanNode;
@@ -96,7 +96,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     private final Map<UUID, PartitionIdSet> partMap;
     private final Set<UUID> memberIds;
     private final Map<PhysicalRel, List<Integer>> relIdMap;
-    private final PlanCacheKey planKey;
+    private final PlanKey planKey;
     private final List<String> rootColumnNames;
     private final QueryParameterMetadata parameterMetadata;
     private final List<PlanNode> fragments = new ArrayList<>();
@@ -107,14 +107,14 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     private int nextEdgeGenerator;
     private RootPhysicalRel rootPhysicalRel;
     private SqlRowMetadata rowMetadata;
-    private final Set<PlanObjectKey> objectIds = new HashSet<>();
+    private final Set<PlanObjectKey> objectKeys = new HashSet<>();
     private final Set<String> mapNames = new HashSet<>();
 
     public PlanCreateVisitor(
             UUID localMemberId,
             Map<UUID, PartitionIdSet> partMap,
             Map<PhysicalRel, List<Integer>> relIdMap,
-            PlanCacheKey planKey,
+            PlanKey planKey,
             List<String> rootColumnNames,
             QueryParameterMetadata parameterMetadata
     ) {
@@ -172,7 +172,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
                 rowMetadata,
                 parameterMetadata,
                 planKey,
-                objectIds,
+                objectKeys,
                 permissions
         );
     }
@@ -240,7 +240,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
         pushUpstream(scanNode);
 
-        objectIds.add(table.getObjectKey());
+        objectKeys.add(table.getObjectKey());
         mapNames.add(table.getMapName());
     }
 
@@ -269,7 +269,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
         pushUpstream(scanNode);
 
-        objectIds.add(table.getObjectKey());
+        objectKeys.add(table.getObjectKey());
         mapNames.add(table.getMapName());
     }
 

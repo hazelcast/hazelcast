@@ -28,8 +28,11 @@ import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.HashSet;
@@ -53,6 +56,7 @@ import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class StreamEventJournalP_WmCoalescingTest extends JetTestSupport {
 
     private static final int JOURNAL_CAPACITY = 10;

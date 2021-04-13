@@ -24,9 +24,12 @@ import com.hazelcast.jet.pipeline.JournalInitialPosition;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.util.Collection;
 import java.util.List;
@@ -40,6 +43,7 @@ import static com.hazelcast.jet.core.metrics.MetricNames.EMITTED_COUNT;
 import static com.hazelcast.jet.core.metrics.MetricNames.RECEIVED_COUNT;
 import static org.junit.Assert.assertEquals;
 
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class JobMetrics_StreamTest extends TestInClusterSupport {
 
     private static final String NOT_FILTER_OUT_PREFIX = "ok";
