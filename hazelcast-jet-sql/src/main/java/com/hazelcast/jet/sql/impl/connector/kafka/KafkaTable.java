@@ -110,7 +110,7 @@ class KafkaTable extends JetTable {
         return new KafkaPlanObjectKey(getSchemaName(), getSqlName(), topicName(), getFields(), options);
     }
 
-    private static final class KafkaPlanObjectKey implements PlanObjectKey {
+    static final class KafkaPlanObjectKey implements PlanObjectKey {
 
         private final String schemaName;
         private final String tableName;
@@ -118,7 +118,7 @@ class KafkaTable extends JetTable {
         private final List<TableField> fields;
         private final Map<String, String> options;
 
-        private KafkaPlanObjectKey(
+        KafkaPlanObjectKey(
                 String schemaName,
                 String tableName,
                 String topicName,

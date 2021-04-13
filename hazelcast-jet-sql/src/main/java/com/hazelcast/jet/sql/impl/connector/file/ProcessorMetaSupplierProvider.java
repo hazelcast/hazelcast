@@ -90,11 +90,11 @@ class ProcessorMetaSupplierProvider implements Supplier<ProcessorMetaSupplier> {
             return false;
         }
         ProcessorMetaSupplierProvider that = (ProcessorMetaSupplierProvider) o;
-        return Objects.equals(options, that.options) && Objects.equals(format, that.format);
+        return Objects.equals(options, that.options) && Objects.equals(format.format(), that.format.format());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(options, format);
+        return Objects.hash(options, format.format());
     }
 }
