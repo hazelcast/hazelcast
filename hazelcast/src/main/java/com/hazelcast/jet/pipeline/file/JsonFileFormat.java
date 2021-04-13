@@ -104,8 +104,12 @@ public class JsonFileFormat<T> implements FileFormat<T> {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         JsonFileFormat<?> that = (JsonFileFormat<?>) o;
         return multiline == that.multiline && Objects.equals(clazz, that.clazz);
     }

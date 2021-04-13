@@ -64,15 +64,20 @@ public class LinesTextFileFormat implements FileFormat<String> {
         return Charset.forName(charset);
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public String format() {
         return FORMAT_LINES;
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         LinesTextFileFormat that = (LinesTextFileFormat) o;
         return Objects.equals(charset, that.charset);
     }

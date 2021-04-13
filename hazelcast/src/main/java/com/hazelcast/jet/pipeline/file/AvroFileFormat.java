@@ -66,15 +66,20 @@ public class AvroFileFormat<T> implements FileFormat<T> {
         return reflectClass;
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public String format() {
         return FORMAT_AVRO;
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         AvroFileFormat<?> that = (AvroFileFormat<?>) o;
         return Objects.equals(reflectClass, that.reflectClass);
     }

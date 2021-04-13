@@ -82,8 +82,12 @@ public class CsvFileFormat<T> implements FileFormat<T> {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         CsvFileFormat<?> that = (CsvFileFormat<?>) o;
         return Objects.equals(clazz, that.clazz) && Objects.equals(fieldNames, that.fieldNames);
     }
