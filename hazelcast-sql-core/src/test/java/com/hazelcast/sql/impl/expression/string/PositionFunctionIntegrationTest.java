@@ -70,8 +70,24 @@ public class PositionFunctionIntegrationTest extends ExpressionTestSupport {
         put("XYZ");
 
         checkError(sql("123", "23"));
+        checkError(sql("'123'", "23"));
+        checkError(sql("123", "'23'"));
+
         checkError(sql("TRUE", "FALSE"));
-        checkError(sql("?", "?"), 123, 23);
+        checkError(sql("'ABC'", "TRUE"));
+        checkError(sql("TRUE", "'ABC'"));
+
+        checkError(sql("?", "?"), INTEGER_VAL, INTEGER_VAL);
+        checkError(sql("?", "?"), STRING_VAL, INTEGER_VAL);
+        checkError(sql("?", "?"), INTEGER_VAL, STRING_VAL);
+
+        checkError(sql("?", "?"), BOOLEAN_VAL, BOOLEAN_VAL);
+        checkError(sql("?", "?"), STRING_VAL, BOOLEAN_VAL);
+        checkError(sql("?", "?"), BOOLEAN_VAL, STRING_VAL);
+
+        checkError(sql("?", "?"), OFFSET_DATE_TIME_VAL, OFFSET_DATE_TIME_VAL);
+        checkError(sql("?", "?"), STRING_VAL, OFFSET_DATE_TIME_VAL);
+        checkError(sql("?", "?"), OFFSET_DATE_TIME_VAL, STRING_VAL);
     }
 
     @Test
@@ -92,13 +108,9 @@ public class PositionFunctionIntegrationTest extends ExpressionTestSupport {
         checkEquals(f, deserialized, true);
     }
 
-    private String name() {
-        return "POSITION";
-    }
-
     private void check(String sql, Integer expectedResult, Object ...parameters) {
         List<SqlRow> rows =  execute(member, sql, parameters);
-        assertGreaterOrEquals("size must be greater than 0", rows.size(), 0);
+        assertEquals("size must be equal to 1", rows.size(), 1);
         SqlRow row = rows.get(0);
 
         assertEquals(SqlColumnType.INTEGER, row.getMetadata().getColumn(0).getType());
@@ -112,7 +124,7 @@ public class PositionFunctionIntegrationTest extends ExpressionTestSupport {
     }
 
     private String sql(Object text, Object search) {
-        return String.format("SELECT %s(%s IN %s) FROM map", name(), search, text);
+        return String.format("SELECT POSITION(%s IN %s) FROM map", search, text);
     }
 
     private PositionFunction createFunction(String search, String text) {
