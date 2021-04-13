@@ -21,7 +21,7 @@ import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.SqlTestSupport;
-import com.hazelcast.sql.impl.plan.cache.PlanObjectKey;
+import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.plan.node.MockPlanNode;
 import com.hazelcast.sql.impl.plan.node.PlanNode;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -53,7 +53,7 @@ public class PlanTest extends SqlTestSupport {
         Map<Integer, Integer> inboundEdgeMap = Collections.singletonMap(2, 2);
         Map<Integer, Integer> inboundEdgeMemberCountMap = Collections.singletonMap(3, 3);
 
-        Set<PlanObjectKey> objectIds = Collections.singleton(new TestPlanObjectKey(1));
+        Set<PlanObjectKey> objectKeys = Collections.singleton(new TestPlanObjectKey(1));
         List<Permission> permissions = Collections.singletonList(new MapPermission("map", ActionConstants.ACTION_READ));
 
         Plan plan = new Plan(
@@ -66,7 +66,7 @@ public class PlanTest extends SqlTestSupport {
             null,
             QueryParameterMetadata.EMPTY,
             null,
-            objectIds,
+            objectKeys,
             permissions
         );
 
@@ -80,7 +80,7 @@ public class PlanTest extends SqlTestSupport {
         assertSame(inboundEdgeMap, plan.getInboundEdgeMap());
         assertSame(inboundEdgeMemberCountMap, plan.getInboundEdgeMemberCountMap());
 
-        assertSame(objectIds, plan.getObjectIds());
+        assertSame(objectKeys, plan.getObjectKeys());
         assertSame(permissions, plan.getPermissions());
     }
 

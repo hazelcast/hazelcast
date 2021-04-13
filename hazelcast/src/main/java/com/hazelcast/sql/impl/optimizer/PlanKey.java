@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.plan.cache;
+package com.hazelcast.sql.impl.optimizer;
 
 import java.util.List;
 
-public class PlanCacheKey {
+public class PlanKey {
 
     private final List<List<String>> searchPaths;
     private final String sql;
 
-    public PlanCacheKey(List<List<String>> searchPaths, String sql) {
+    public PlanKey(List<List<String>> searchPaths, String sql) {
         this.searchPaths = searchPaths;
         this.sql = sql;
     }
@@ -38,7 +38,7 @@ public class PlanCacheKey {
             return false;
         }
 
-        PlanCacheKey that = (PlanCacheKey) o;
+        PlanKey that = (PlanKey) o;
 
         return sql.equals(that.sql) && searchPaths.equals(that.searchPaths);
     }

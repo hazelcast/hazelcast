@@ -14,16 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.plan.cache;
-
-import com.hazelcast.sql.impl.optimizer.SqlPlan;
+package com.hazelcast.sql.impl.optimizer;
 
 /**
- * Plan that can be cached.
+ * ID of an object used in the plan.
  */
-public interface CacheablePlan extends SqlPlan {
-    PlanCacheKey getPlanKey();
-    long getPlanLastUsed();
-    void onPlanUsed();
-    boolean isPlanValid(PlanCheckContext context);
+@SuppressWarnings("checkstyle:interfaceistype")
+public interface PlanObjectKey {
+
+    PlanObjectKey NON_CACHEABLE_OBJECT_KEY = new PlanObjectKey() {
+    };
 }

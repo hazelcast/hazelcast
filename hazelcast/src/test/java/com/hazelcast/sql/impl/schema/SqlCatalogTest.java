@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.schema;
 
-import com.hazelcast.sql.impl.plan.cache.PlanObjectKey;
+import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
