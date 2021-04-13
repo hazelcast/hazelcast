@@ -108,7 +108,7 @@ class PojoUpsertTarget implements UpsertTarget {
             pojo = clazz.newInstance();
         } catch (Exception e) {
             throw QueryException.error("Unable to instantiate class \"" + clazz.getName() + "\" : "
-                                       + e.getMessage(), e);
+                    + e.getMessage(), e);
         }
     }
 

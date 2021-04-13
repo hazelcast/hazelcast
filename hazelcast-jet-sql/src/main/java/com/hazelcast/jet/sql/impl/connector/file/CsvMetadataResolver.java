@@ -54,8 +54,8 @@ final class CsvMetadataResolver extends MetadataResolver<Map<String, String>> {
     @Nonnull
     private static List<String> createFieldList(List<MappingField> resolvedFields) {
         return resolvedFields.stream()
-                      .map(field -> field.externalName() != null ? field.externalName() : field.name())
-                      .distinct()
-                      .collect(Collectors.toList());
+                .map(field -> field.externalName() != null ? field.externalName() : field.name())
+                .distinct()
+                .collect(Collectors.toList());
     }
 }

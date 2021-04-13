@@ -52,8 +52,8 @@ public final class ObjectArrayKey implements DataSerializable {
     @Override
     public String toString() {
         return "ObjectArray{" +
-               "array=" + Arrays.toString(array) +
-               '}';
+                "array=" + Arrays.toString(array) +
+                '}';
     }
 
     @Override

@@ -143,11 +143,11 @@ public class JetJoinInfo implements DataSerializable {
     @Override
     public String toString() {
         return "JetJoinInfo{" +
-               "joinType=" + joinType.name() +
-               ", leftEquiJoinIndices=" + Arrays.toString(leftEquiJoinIndices) +
-               ", rightEquiJoinIndices=" + Arrays.toString(rightEquiJoinIndices) +
-               ", nonEquiCondition=" + nonEquiCondition +
-               ", condition=" + condition +
-               '}';
+                "joinType=" + joinType.name() +
+                ", leftEquiJoinIndices=" + Arrays.toString(leftEquiJoinIndices) +
+                ", rightEquiJoinIndices=" + Arrays.toString(rightEquiJoinIndices) +
+                ", nonEquiCondition=" + nonEquiCondition +
+                ", condition=" + condition +
+                '}';
     }
 }

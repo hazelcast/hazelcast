@@ -184,8 +184,8 @@ class PortableUpsertTarget implements UpsertTarget {
                 }
             } catch (Exception e) {
                 throw QueryException.error("Cannot set value " +
-                                           (value == null ? "null" : " of type " + value.getClass().getName())
-                                           + " to field \"" + name + "\" of type " + type + ": " + e.getMessage(), e);
+                        (value == null ? "null" : " of type " + value.getClass().getName())
+                        + " to field \"" + name + "\" of type " + type + ": " + e.getMessage(), e);
             }
         }
         return portable.build();

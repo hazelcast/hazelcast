@@ -100,8 +100,8 @@ public class JetSqlParserTest {
     public void test_createMappingWithExternalName() throws SqlParseException {
         // given
         String sql = "CREATE MAPPING "
-                     + "mapping_name EXTERNAL NAME \"external.mapping.name\""
-                     + "TYPE mapping_type";
+                + "mapping_name EXTERNAL NAME \"external.mapping.name\""
+                + "TYPE mapping_type";
 
         // when
         SqlCreateMapping node = (SqlCreateMapping) parse(sql);

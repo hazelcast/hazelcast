@@ -247,13 +247,13 @@ public class SqlJsonTest extends SqlTestSupport {
     public void test_topLevelFieldExtraction() {
         String name = randomName();
         sqlService.execute("CREATE MAPPING " + name + " ("
-                           + "id INT EXTERNAL NAME \"__key.id\""
-                           + ", name VARCHAR EXTERNAL NAME \"this.name\""
-                           + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
-                           + "OPTIONS ("
-                           + '\'' + OPTION_KEY_FORMAT + "'='" + JSON_FORMAT + '\''
-                           + ", '" + OPTION_VALUE_FORMAT + "'='" + JSON_FORMAT + '\''
-                           + ")"
+                + "id INT EXTERNAL NAME \"__key.id\""
+                + ", name VARCHAR EXTERNAL NAME \"this.name\""
+                + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
+                + "OPTIONS ("
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JSON_FORMAT + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + JSON_FORMAT + '\''
+                + ")"
         );
         sqlService.execute("SINK INTO " + name + " VALUES (1, 'Alice')");
 

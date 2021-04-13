@@ -115,9 +115,9 @@ public final class JetSqlUserDefinedTableFunction extends SqlUserDefinedTableFun
             return extractMapValue(functionName, parameter, (SqlCall) node);
         }
         throw QueryException.error("Invalid argument of a call to function " + functionName + " - #"
-                                   + parameter.getOrdinal() + " (" + parameter.getName() + "). Expected: " + parameterType
-                                   + ", actual: "
-                                   + (SqlUtil.isLiteral(node) ? ((SqlLiteral) node).getTypeName() : node.getKind()));
+                + parameter.getOrdinal() + " (" + parameter.getName() + "). Expected: " + parameterType
+                + ", actual: "
+                + (SqlUtil.isLiteral(node) ? ((SqlLiteral) node).getTypeName() : node.getKind()));
     }
 
     private static Integer extractIntegerValue(SqlLiteral literal) {

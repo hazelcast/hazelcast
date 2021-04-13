@@ -290,8 +290,8 @@ public class MetadataPortableResolverTest {
                         "timestampTz",
                         QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME,
                         false,
-                        QueryPath.create(prefix + ".timestampTz"
-                )),
+                        QueryPath.create(prefix + ".timestampTz")
+                ),
                 new MapTableField(prefix, QueryDataType.OBJECT, true, QueryPath.create(prefix))
         );
         assertThat(metadata.getQueryTargetDescriptor()).isEqualTo(GenericQueryTargetDescriptor.DEFAULT);

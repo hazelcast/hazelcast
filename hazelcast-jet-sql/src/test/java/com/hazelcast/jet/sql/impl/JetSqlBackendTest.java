@@ -135,7 +135,7 @@ public class JetSqlBackendTest {
     }
 
     private static OptimizationTask task() {
-       return new OptimizationTask("", emptyList(), null);
+        return new OptimizationTask("", emptyList(), null);
     }
 
     private static SqlOption option(String key, String value) {

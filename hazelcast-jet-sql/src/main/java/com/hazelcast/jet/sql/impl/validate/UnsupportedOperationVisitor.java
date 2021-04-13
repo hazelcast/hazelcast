@@ -287,15 +287,15 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
                 }
 
                 if (symbolValue == JoinType.INNER
-                    || symbolValue == JoinType.COMMA
-                    || symbolValue == JoinType.CROSS
-                    || symbolValue == JoinType.LEFT
+                        || symbolValue == JoinType.COMMA
+                        || symbolValue == JoinType.CROSS
+                        || symbolValue == JoinType.LEFT
                 ) {
                     return null;
                 }
                 if (symbolValue == JoinConditionType.ON
-                    || symbolValue == JoinConditionType.NONE
-                    || symbolValue == JoinConditionType.USING
+                        || symbolValue == JoinConditionType.NONE
+                        || symbolValue == JoinConditionType.USING
                 ) {
                     return null;
                 }
@@ -355,9 +355,9 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         JoinType joinType = join.getJoinType();
 
         if (joinType != JoinType.INNER
-            && joinType != JoinType.COMMA
-            && joinType != JoinType.CROSS
-            && joinType != JoinType.LEFT
+                && joinType != JoinType.COMMA
+                && joinType != JoinType.CROSS
+                && joinType != JoinType.LEFT
         ) {
             throw unsupported(join, joinType.name() + " join");
         }
@@ -375,10 +375,10 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
 
     private void processOtherDdl(SqlCall call) {
         if (!(call instanceof SqlCreateJob)
-            && !(call instanceof SqlDropJob)
-            && !(call instanceof SqlAlterJob)
-            && !(call instanceof SqlCreateSnapshot)
-            && !(call instanceof SqlDropSnapshot)
+                && !(call instanceof SqlDropJob)
+                && !(call instanceof SqlAlterJob)
+                && !(call instanceof SqlCreateSnapshot)
+                && !(call instanceof SqlDropSnapshot)
         ) {
             throw unsupported(call, "OTHER DDL class (" + call.getClass().getSimpleName() + ")");
         }

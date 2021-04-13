@@ -44,7 +44,7 @@ abstract class MetadataResolver<T> {
             String externalName = userField.externalName();
             if (externalName != null && externalName.indexOf('.') >= 0) {
                 throw QueryException.error("Invalid field external name - '" + externalName +
-                                           "'. Nested fields are not supported.");
+                        "'. Nested fields are not supported.");
             }
         }
         return userFields;

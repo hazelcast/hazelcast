@@ -76,16 +76,16 @@ class AvroUpsertTarget implements UpsertTarget {
                 record.set(path, null);
             } else if (value instanceof GenericContainer) {
                 throw QueryException.error("Cannot set value of type " + value.getClass().getName()
-                                           + " to field \"" + path + "\"");
+                        + " to field \"" + path + "\"");
             } else if (value instanceof Byte) {
                 record.set(path, ((Byte) value).intValue());
             } else if (value instanceof Short) {
                 record.set(path, ((Short) value).intValue());
             } else if (value instanceof Boolean
-                       || value instanceof Integer
-                       || value instanceof Long
-                       || value instanceof Float
-                       || value instanceof Double
+                    || value instanceof Integer
+                    || value instanceof Long
+                    || value instanceof Float
+                    || value instanceof Double
             ) {
                 record.set(path, value);
             } else {
