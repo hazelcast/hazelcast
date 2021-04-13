@@ -33,9 +33,10 @@ import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
-import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.TimeUnit;
@@ -56,12 +57,12 @@ import static com.hazelcast.map.impl.record.Record.UNSET;
  */
 public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
-    // MAX_SAMPLE_AT_A_TIME and SAMPLING_QUEUE is used for background expiry task.
+    // MAX_SAMPLE_AT_A_TIME and SAMPLING_LIST is used for background expiry task.
     private static final int MAX_SAMPLE_AT_A_TIME = 16;
     private static final int MIN_TOTAL_NUMBER_OF_KEYS_TO_SCAN = 100;
     private static final int ONE_HUNDRED_PERCENT = 100;
-    private static final ThreadLocal<Queue> SAMPLING_QUEUE
-            = ThreadLocal.withInitial(() -> new ArrayDeque(MAX_SAMPLE_AT_A_TIME));
+    private static final ThreadLocal<List> SAMPLING_LIST
+            = ThreadLocal.withInitial(() -> new ArrayList<>(MAX_SAMPLE_AT_A_TIME));
 
     protected final long expiryDelayMillis;
     protected final Address thisAddress;
@@ -69,7 +70,6 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     protected final MapEventPublisher mapEventPublisher;
     protected final ClearExpiredRecordsTask clearExpiredRecordsTask;
     protected final InvalidationQueue<ExpiredKey> expiredKeys = new InvalidationQueue<>();
-
     /**
      * Iterates over a pre-set entry count/percentage in one round.
      * Used in expiration logic for traversing entries. Initializes lazily.
@@ -101,8 +101,6 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
     @Override
     public void evictExpiredEntries(int percentage, boolean backup) {
-        SAMPLING_QUEUE.get().clear();
-
         long now = getNow();
         int size = size();
         int maxSample = getMaxSampleCount(size, percentage);
@@ -150,17 +148,13 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     }
 
     private int sampleForExpiry() {
-        Queue sampledPairs = SAMPLING_QUEUE.get();
+        List sampledPairs = SAMPLING_LIST.get();
         int sampledCount = 0;
         Iterator<Map.Entry<Data, Record>> iterator = expirationIterator;
-        while (iterator.hasNext()) {
+        while (iterator.hasNext() && sampledCount++ < MAX_SAMPLE_AT_A_TIME) {
             Map.Entry<Data, Record> entry = iterator.next();
             sampledPairs.add(entry.getKey());
             sampledPairs.add(entry.getValue());
-
-            if (++sampledCount == MAX_SAMPLE_AT_A_TIME) {
-                break;
-            }
         }
         return sampledCount;
     }
@@ -173,14 +167,19 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     private int evictExpiredSamples(long now, boolean backup) {
         int evictedCount = 0;
 
-        Queue sampledPairs = SAMPLING_QUEUE.get();
-        Data key;
-        while ((key = (Data) sampledPairs.poll()) != null) {
-            Record record = (Record) sampledPairs.poll();
-            if (getOrNullIfExpired(key, record, now, backup) == null) {
-                evictedCount++;
+        List sampledPairs = SAMPLING_LIST.get();
+        try {
+            for (int i = 0; i < sampledPairs.size(); i += 2) {
+                Data key = (Data) sampledPairs.get(i);
+                Record record = (Record) sampledPairs.get(i + 1);
+                if (getOrNullIfExpired(key, record, now, backup) == null) {
+                    evictedCount++;
+                }
             }
+        } finally {
+            sampledPairs.clear();
         }
+
         return evictedCount;
     }
 
