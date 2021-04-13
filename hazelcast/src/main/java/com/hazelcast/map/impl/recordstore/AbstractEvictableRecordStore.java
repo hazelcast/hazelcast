@@ -23,6 +23,7 @@ import com.hazelcast.internal.eviction.ClearExpiredRecordsTask;
 import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.eviction.Evictor;
@@ -137,12 +138,17 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     }
 
     private int evictExpiredEntriesInternal(final int maxSample, long now, boolean backup) {
-        int sampledCount = 0;
         int evictedCount = 0;
-        Iterator<Map.Entry<Data, Record>> iterator = initExpirationIterator();
-        while (sampledCount < maxSample && iterator.hasNext()) {
-            sampledCount += sampleForExpiry();
-            evictedCount += evictExpiredSamples(now, backup);
+        int sampledCount = 0;
+        try {
+            Iterator<Map.Entry<Data, Record>> iterator = initExpirationIterator();
+            while (sampledCount < maxSample && iterator.hasNext()) {
+                sampledCount += sampleForExpiry();
+                evictedCount += evictExpiredSamples(now, backup);
+            }
+        } catch (Exception t) {
+            SAMPLING_LIST.get().clear();
+            throw ExceptionUtil.rethrow(t);
         }
         return evictedCount;
     }
