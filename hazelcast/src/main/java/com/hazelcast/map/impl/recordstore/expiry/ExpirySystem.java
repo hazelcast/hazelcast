@@ -21,6 +21,7 @@ import com.hazelcast.internal.eviction.ClearExpiredRecordsTask;
 import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.ExpirationTimeSetter;
@@ -258,12 +259,17 @@ public class ExpirySystem {
         // 2. Do scanning and evict expired keys.
         int scannedCount = 0;
         int expiredCount = 0;
-        long scanLoopStartNanos = System.nanoTime();
-        do {
-            scannedCount += findExpiredKeys(now, backup);
-            expiredCount += evictExpiredKeys(backup);
-        } while (scannedCount < maxScannableCount && getOrInitCachedIterator().hasNext()
-                && (System.nanoTime() - scanLoopStartNanos) < expiredKeyScanTimeoutNanos);
+        try {
+            long scanLoopStartNanos = System.nanoTime();
+            do {
+                scannedCount += findExpiredKeys(now, backup);
+                expiredCount += evictExpiredKeys(backup);
+            } while (scannedCount < maxScannableCount && getOrInitCachedIterator().hasNext()
+                    && (System.nanoTime() - scanLoopStartNanos) < expiredKeyScanTimeoutNanos);
+        } catch (Exception e) {
+            BATCH_OF_EXPIRED.get().clear();
+            throw ExceptionUtil.rethrow(e);
+        }
 
         // 3. Send expired keys to backups(only valid for max-idle-expiry)
         tryToSendBackupExpiryOp();
