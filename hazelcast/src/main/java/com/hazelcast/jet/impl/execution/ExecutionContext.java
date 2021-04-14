@@ -89,6 +89,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
     private String jobName;
 
     // dest vertex id --> dest ordinal --> sender addr --> receiver tasklet
+    // TODO [viliam] Also use SenderReceiverKey?
     private Map<Integer, Map<Integer, Map<Address, ReceiverTasklet>>> receiverMap;
 
     private final Map<SenderReceiverKey, Queue<byte[]>> receiverQueuesMap;
@@ -130,7 +131,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
 
         // The map is only concurrent for light jobs because they can receive packets before they are
         // initialized. For regular jobs we use non-concurrent map for performance
-        // TODO [viliam] convert to non-concurrent map after initialization
+        // TODO [viliam] convert to non-concurrent map after initialization?
         receiverQueuesMap = isLightJob ? new ConcurrentHashMap<>() : new HashMap<>();
         createReceiverQueueFn = key -> new MPSCQueue<>(null);
     }

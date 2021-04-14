@@ -44,6 +44,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Function;
 
+import static com.hazelcast.jet.impl.operation.LightMasterContext.LIGHT_JOB_CONFIG;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefix;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefixedLogger;
@@ -60,6 +61,7 @@ public final class ExecutionPlanBuilder {
             NodeEngine nodeEngine, MembersView membersView, DAG dag, long jobId, long executionId,
             JobConfig jobConfig, long lastSnapshotId, boolean isLightJob
     ) {
+        assert !isLightJob || jobConfig == LIGHT_JOB_CONFIG;
         Timers.i().execPlanBuilder_createPlans.start();
         final JetInstance instance = getJetInstance(nodeEngine);
         final int defaultParallelism = instance.getConfig().getInstanceConfig().getCooperativeThreadCount();
@@ -74,7 +76,8 @@ public final class ExecutionPlanBuilder {
         final Map<MemberInfo, ExecutionPlan> plans = new HashMap<>();
         int memberIndex = 0;
         for (MemberInfo member : members) {
-            plans.put(member, new ExecutionPlan(partitionOwners, jobConfig, lastSnapshotId, memberIndex++, clusterSize));
+            plans.put(member,
+                    new ExecutionPlan(partitionOwners, jobConfig, lastSnapshotId, memberIndex++, clusterSize, isLightJob));
         }
         final Map<String, Integer> vertexIdMap = assignVertexIds(dag);
         for (Entry<String, Integer> entry : vertexIdMap.entrySet()) {
@@ -104,7 +107,7 @@ public final class ExecutionPlanBuilder {
             Function<? super Address, ? extends ProcessorSupplier> procSupplierFn = metaSupplier.get(addresses);
             for (Entry<MemberInfo, ExecutionPlan> e : plans.entrySet()) {
                 final ProcessorSupplier processorSupplier = procSupplierFn.apply(e.getKey().getAddress());
-                if (!isLightJob) {
+                if (!isLightJob) { // TODO [viliam] why this?
                     checkSerializable(processorSupplier, "ProcessorSupplier in vertex '" + vertex.getName() + '\'');
                 }
                 final VertexDef vertexDef = new VertexDef(vertexId, vertex.getName(), processorSupplier, localParallelism);

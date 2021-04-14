@@ -80,6 +80,7 @@ import static com.hazelcast.jet.config.EdgeConfig.DEFAULT_QUEUE_SIZE;
 import static com.hazelcast.jet.core.Edge.DISTRIBUTE_TO_ALL;
 import static com.hazelcast.jet.impl.execution.OutboundCollector.compositeCollector;
 import static com.hazelcast.jet.impl.execution.TaskletExecutionService.TASKLET_INIT_CLOSE_EXECUTOR_NAME;
+import static com.hazelcast.jet.impl.operation.LightMasterContext.LIGHT_JOB_CONFIG;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.ImdgUtil.getMemberConnection;
 import static com.hazelcast.jet.impl.util.ImdgUtil.readList;
@@ -101,8 +102,6 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     // want to make this configurable
     private static final int SNAPSHOT_QUEUE_SIZE = DEFAULT_QUEUE_SIZE;
 
-    private static final JobConfig LIGHT_JOB_CONFIG = new JobConfig();
-
     /** Snapshot of partition table used to route items on partitioned edges */
     private Address[] partitionOwners;
 
@@ -112,6 +111,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     private int memberIndex;
     private int memberCount;
     private long lastSnapshotId;
+    private boolean isLightJob;
 
     // *** Transient state below, used during #initialize() ***
 
@@ -145,12 +145,13 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     }
 
     ExecutionPlan(Address[] partitionOwners, JobConfig jobConfig, long lastSnapshotId,
-                  int memberIndex, int memberCount) {
+                  int memberIndex, int memberCount, boolean isLightJob) {
         this.partitionOwners = partitionOwners;
         this.jobConfig = jobConfig;
         this.lastSnapshotId = lastSnapshotId;
         this.memberIndex = memberIndex;
         this.memberCount = memberCount;
+        this.isLightJob = isLightJob;
     }
 
     /**
@@ -295,8 +296,10 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         for (Address address : partitionOwners) {
             out.writeObject(address);
         }
-        // TODO [viliam] avoid jobConfig for light jobs
-        out.writeObject(jobConfig);
+        out.writeBoolean(isLightJob);
+        if (!isLightJob) {
+            out.writeObject(jobConfig);
+        }
         out.writeInt(memberIndex);
         out.writeInt(memberCount);
     }
@@ -310,7 +313,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         for (int i = 0; i < len; i++) {
             partitionOwners[i] = in.readObject();
         }
-        jobConfig = in.readObject();
+        isLightJob = in.readBoolean();
+        jobConfig = isLightJob ? LIGHT_JOB_CONFIG : in.readObject();
         memberIndex = in.readInt();
         memberCount = in.readInt();
     }

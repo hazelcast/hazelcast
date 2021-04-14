@@ -65,7 +65,7 @@ public class LightMasterContext {
         }
     };
 
-    private static final JobConfig LIGHT_JOB_CONFIG = new JobConfig()
+    public static final JobConfig LIGHT_JOB_CONFIG = new JobConfig()
             .setMetricsEnabled(false)
             .setAutoScaling(false);
 

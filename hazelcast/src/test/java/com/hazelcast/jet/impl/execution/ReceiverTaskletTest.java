@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.impl.execution;
 
+// TODO [viliam] fix this test
+
 //@RunWith(HazelcastSerialClassRunner.class)
 //@Category({QuickTest.class, ParallelJVMTest.class})
 //public class ReceiverTaskletTest {
