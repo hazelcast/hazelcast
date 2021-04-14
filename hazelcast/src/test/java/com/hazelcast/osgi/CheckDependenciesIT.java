@@ -55,7 +55,6 @@ public class CheckDependenciesIT extends HazelcastTestSupport {
             // as it contains e.g. javax.servlet which is not part of the SE platform!
             "javax.annotation",
             "javax.crypto",
-            "javax.jms",
             "javax.management",
             "javax.naming",
             "javax.net.ssl",
