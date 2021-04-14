@@ -71,7 +71,6 @@ import static com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook.ST
 import static com.hazelcast.test.PacketFiltersUtil.dropOperationsBetween;
 import static com.hazelcast.test.PacketFiltersUtil.rejectOperationsBetween;
 import static com.hazelcast.test.PacketFiltersUtil.resetPacketFiltersFrom;
-import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.Matchers.empty;
 import static org.junit.Assert.assertEquals;
@@ -430,11 +429,11 @@ public class TopologyChangeTest extends JetTestSupport {
 
         assertTrueEventually(() -> {
             Arrays.stream(instances)
-                  .filter(instance -> !instance.getHazelcastInstance().getCluster().getLocalMember().isLiteMember())
-                  .filter(instance -> instance != instances[2])
-                  .map(JetTestSupport::getJetService)
-                  .map(service -> service.getJobExecutionService().getExecutionContext(executionId))
-                  .forEach(Assert::assertNotNull);
+                    .filter(instance -> !instance.getHazelcastInstance().getCluster().getLocalMember().isLiteMember())
+                    .filter(instance -> instance != instances[2])
+                    .map(JetTestSupport::getJetService)
+                    .map(service -> service.getJobExecutionService().getExecutionContext(executionId))
+                    .forEach(Assert::assertNotNull);
         });
 
         newInstance.getHazelcastInstance().getLifecycleService().terminate();
