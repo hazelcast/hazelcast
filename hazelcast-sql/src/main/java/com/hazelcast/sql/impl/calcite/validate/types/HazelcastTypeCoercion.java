@@ -61,17 +61,6 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
     @Override
     public boolean coerceOperandType(SqlValidatorScope scope, SqlCall call, int index, RelDataType targetType) {
         SqlNode operand = call.operand(index);
-        if (operand instanceof SqlNodeList) {
-            SqlNodeList list = (SqlNodeList) operand;
-            for (int i = 0; i < list.size(); i++) {
-                final int j = i;
-                boolean coerced = coerceNode(scope, list.get(i), targetType, cast -> list.set(j, cast));
-                if (!coerced) {
-                    return false;
-                }
-            }
-            return true;
-        }
         return coerceNode(scope, operand, targetType, cast -> call.setOperand(index, cast));
     }
 
@@ -182,7 +171,7 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
         }
     }
 
-    private boolean rowTypeElementCoercion(
+    public boolean rowTypeElementCoercion(
             SqlValidatorScope scope,
             SqlNode rowElement,
             RelDataType targetType,
@@ -200,7 +189,8 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
 
         boolean valid = sourceAndTargetAreNumeric(targetHzType, sourceHzType)
                 || sourceAndTargetAreTemporalAndSourceCanBeConvertedToTarget(targetHzType, sourceHzType)
-                || targetIsTemporalAndSourceIsVarcharLiteral(targetHzType, sourceHzType, rowElement);
+                || targetIsTemporalAndSourceIsVarcharLiteral(targetHzType, sourceHzType, rowElement)
+                || sourceHzType.getTypeFamily() == QueryDataTypeFamily.NULL;
 
         if (!valid) {
             // Types cannot be converted to each other, fail to coerce

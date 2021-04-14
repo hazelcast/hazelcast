@@ -20,9 +20,8 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlCase;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeCoercion;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
-import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlCallBinding;
@@ -47,6 +46,8 @@ import org.apache.calcite.util.Pair;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference.wrap;
 import static org.apache.calcite.util.Static.RESOURCE;
@@ -54,7 +55,6 @@ import static org.apache.calcite.util.Static.RESOURCE;
 public final class HazelcastCaseOperator extends SqlOperator {
     public static final HazelcastCaseOperator INSTANCE = new HazelcastCaseOperator();
 
-    private static final int THEN_BRANCHES_OPERAND_INDEX = 2;
     private static final int ELSE_BRANCHES_OPERAND_INDEX = 3;
 
     private HazelcastCaseOperator() {
@@ -109,10 +109,10 @@ public final class HazelcastCaseOperator extends SqlOperator {
             argTypes.add(validator.deriveType(scope, node));
             foundNotNull |= !SqlUtil.isNullLiteral(node, false);
         }
-        SqlNode node = sqlCall.getElseOperand();
-        allReturnNodes.add(node);
-        argTypes.add(validator.deriveType(scope, node));
-        foundNotNull |= !SqlUtil.isNullLiteral(node, false);
+        SqlNode elseOperand = sqlCall.getElseOperand();
+        allReturnNodes.add(elseOperand);
+        argTypes.add(validator.deriveType(scope, elseOperand));
+        foundNotNull |= !SqlUtil.isNullLiteral(elseOperand, false);
 
         if (!foundNotNull) {
             if (throwOnFailure) {
@@ -126,19 +126,57 @@ public final class HazelcastCaseOperator extends SqlOperator {
             caseReturnType = HazelcastTypeUtils.withHigherPrecedence(caseReturnType, argTypes.get(i));
         }
 
-        QueryDataType caseHzReturnType = HazelcastTypeUtils.toHazelcastType(caseReturnType.getSqlTypeName());
+        HazelcastTypeCoercion typeCoercion = validator.getTypeCoercion();
 
-        if (!allBranchTypesCanBeConvertedToReturnType(argTypes, allReturnNodes, caseReturnType, caseHzReturnType)) {
-            if (throwOnFailure) {
-                throw QueryException.error(SqlErrorCode.GENERIC, "Cannot infer return type for CASE among " + argTypes);
-            } else {
+        Supplier<QueryException> exceptionSupplier =
+                () -> QueryException.error(SqlErrorCode.GENERIC, "Cannot infer return type for CASE among " + argTypes);
+
+        for (int i = 0, argTypesSize = thenList.size(); i < argTypesSize; i++) {
+            int index = i;
+            if (!coerceItem(
+                    typeCoercion,
+                    scope,
+                    thenList.get(i),
+                    caseReturnType,
+                    sqlNode -> thenList.getList().set(index, sqlNode),
+                    throwOnFailure,
+                    exceptionSupplier)
+            ) {
                 return false;
             }
         }
 
-        validator.getTypeCoercion().coerceOperandType(scope, callBinding.getCall(), THEN_BRANCHES_OPERAND_INDEX, caseReturnType);
-        validator.getTypeCoercion().coerceOperandType(scope, callBinding.getCall(), ELSE_BRANCHES_OPERAND_INDEX, caseReturnType);
+        return coerceItem(
+                typeCoercion,
+                scope,
+                elseOperand,
+                caseReturnType,
+                sqlNode -> sqlCall.setOperand(ELSE_BRANCHES_OPERAND_INDEX, sqlNode),
+                throwOnFailure,
+                exceptionSupplier);
+    }
 
+    private boolean coerceItem(
+            HazelcastTypeCoercion typeCoercion,
+            SqlValidatorScope scope,
+            SqlNode item,
+            RelDataType type,
+            Consumer<SqlNode> replaceFn,
+            boolean throwOnFailure,
+            Supplier<QueryException> exceptionSupplier) {
+        boolean elementTypeCoerced = typeCoercion.rowTypeElementCoercion(
+                scope,
+                item,
+                type,
+                replaceFn);
+
+        if (!elementTypeCoerced) {
+            if (throwOnFailure) {
+                throw exceptionSupplier.get();
+            } else {
+                return false;
+            }
+        }
         return true;
     }
 
@@ -146,28 +184,6 @@ public final class HazelcastCaseOperator extends SqlOperator {
         for (SqlNode node : whenList) {
             RelDataType type = validator.deriveType(scope, node);
             if (!SqlTypeUtil.inBooleanFamily(type)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private boolean allBranchTypesCanBeConvertedToReturnType(
-            List<RelDataType> argTypes,
-            List<SqlNode> allReturnNodes,
-            RelDataType caseReturnType,
-            QueryDataType caseHzReturnType) {
-        for (int i = 0, argTypesSize = argTypes.size(); i < argTypesSize; i++) {
-            RelDataType type = argTypes.get(i);
-            QueryDataType hzType = HazelcastTypeUtils.toHazelcastType(type.getSqlTypeName());
-
-            SqlNode sqlNode = allReturnNodes.get(i);
-
-            if (!(hzType.getTypeFamily() == QueryDataTypeFamily.NULL
-                    || type.equals(caseReturnType)
-                    || bothParametersAreNumeric(caseHzReturnType, hzType)
-                    || bothOperandsAreTemporalAndLowOperandCanBeConvertedToHighOperand(caseHzReturnType, hzType)
-                    || highOperandIsTemporalAndLowOperandIsLiteralOfVarcharType(caseHzReturnType, hzType, sqlNode))) {
                 return false;
             }
         }
@@ -213,23 +229,5 @@ public final class HazelcastCaseOperator extends SqlOperator {
         public RelDataType inferReturnType(SqlOperatorBinding binding) {
             return binding.getOperandType(binding.getOperandCount() - 1);
         }
-    }
-
-    private static boolean bothParametersAreNumeric(QueryDataType highHZType, QueryDataType lowHZType) {
-        return (highHZType.getTypeFamily().isNumeric() && lowHZType.getTypeFamily().isNumeric());
-    }
-
-    private static boolean bothOperandsAreTemporalAndLowOperandCanBeConvertedToHighOperand(QueryDataType highHZType,
-                                                                                           QueryDataType lowHZType) {
-        return highHZType.getTypeFamily().isTemporal()
-                && lowHZType.getTypeFamily().isTemporal()
-                && lowHZType.getConverter().canConvertTo(highHZType.getTypeFamily());
-    }
-
-    private static boolean highOperandIsTemporalAndLowOperandIsLiteralOfVarcharType(QueryDataType highHZType,
-                                                                                    QueryDataType lowHZType, SqlNode low) {
-        return highHZType.getTypeFamily().isTemporal()
-                && lowHZType.getTypeFamily() == QueryDataTypeFamily.VARCHAR
-                && low instanceof SqlLiteral;
     }
 }
