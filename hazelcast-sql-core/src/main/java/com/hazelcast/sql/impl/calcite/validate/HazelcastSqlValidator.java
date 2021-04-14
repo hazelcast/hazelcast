@@ -147,13 +147,6 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
     @Override
     public void validateCall(SqlCall call, SqlValidatorScope scope) {
-        // Our HazelcastInOperator extends Calcite's SqlInOperator,
-        // and it requires to skip deriveType() call during call validation phase.
-        if (call.getKind() == SqlKind.IN || call.getKind() == SqlKind.NOT_IN) {
-            assert call.getOperandList().size() == 2;
-            super.validateCall(call, scope);
-        }
-
         // Enforce type derivation for all calls before validation. Calcite may
         // skip it if a call has a fixed type, for instance AND always has
         // BOOLEAN type, so operands may end up having no validated type.
