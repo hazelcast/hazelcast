@@ -404,13 +404,13 @@ public class SqlPrimitiveTest extends SqlTestSupport {
     public void test_noKeyFormat() {
         String topicName = createRandomTopic();
         sqlService.execute("CREATE MAPPING " + topicName + ' '
-                           + "TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
-                           + "OPTIONS ("
-                           + '\'' + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + "',"
-                           + '\'' + OPTION_VALUE_CLASS + "'='" + Integer.class.getName() + "'"
-                           + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
-                           + ", 'auto.offset.reset'='earliest'"
-                           + ")"
+                + "TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
+                + "OPTIONS ("
+                + '\'' + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + "',"
+                + '\'' + OPTION_VALUE_CLASS + "'='" + Integer.class.getName() + "'"
+                + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
+                + ", 'auto.offset.reset'='earliest'"
+                + ")"
         );
 
         sqlService.execute("SINK INTO " + topicName + " VALUES(42)");
@@ -464,7 +464,7 @@ public class SqlPrimitiveTest extends SqlTestSupport {
                 + ", field BIGINT\n"
                 + ')' + "TYPE " + KafkaSqlConnector.TYPE_NAME + " \n"
                 + "OPTIONS (\n"
-                + '\''  + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + "'\n"
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + "'\n"
                 + ", '" + OPTION_KEY_CLASS + "'='" + Integer.class.getName() + "'\n"
                 + ", '" + OPTION_VALUE_FORMAT + "'='" + JSON_FORMAT + "'\n"
                 + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + "'\n"

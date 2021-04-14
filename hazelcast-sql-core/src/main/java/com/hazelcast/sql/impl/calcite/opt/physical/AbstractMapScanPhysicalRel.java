@@ -26,9 +26,9 @@ import org.apache.calcite.plan.RelTraitSet;
  */
 public abstract class AbstractMapScanPhysicalRel extends AbstractMapScanRel implements PhysicalRel {
     public AbstractMapScanPhysicalRel(
-        RelOptCluster cluster,
-        RelTraitSet traitSet,
-        RelOptTable table
+            RelOptCluster cluster,
+            RelTraitSet traitSet,
+            RelOptTable table
     ) {
         super(cluster, traitSet, table);
     }

@@ -483,17 +483,17 @@ public class SqlPortableTest extends SqlTestSupport {
     public void test_topLevelFieldExtraction() {
         String name = randomName();
         sqlService.execute("CREATE MAPPING " + name + ' '
-                           + "TYPE " + IMapSqlConnector.TYPE_NAME + ' '
-                           + "OPTIONS ("
-                           + '\'' + OPTION_KEY_FORMAT + "'='" + PORTABLE_FORMAT + '\''
-                           + ", '" + OPTION_KEY_FACTORY_ID + "'='" + PERSON_ID_FACTORY_ID + '\''
-                           + ", '" + OPTION_KEY_CLASS_ID + "'='" + PERSON_ID_CLASS_ID + '\''
-                           + ", '" + OPTION_KEY_CLASS_VERSION + "'='" + PERSON_ID_CLASS_VERSION + '\''
-                           + ", '" + OPTION_VALUE_FORMAT + "'='" + PORTABLE_FORMAT + '\''
-                           + ", '" + OPTION_VALUE_FACTORY_ID + "'='" + PERSON_FACTORY_ID + '\''
-                           + ", '" + OPTION_VALUE_CLASS_ID + "'='" + PERSON_CLASS_ID + '\''
-                           + ", '" + OPTION_VALUE_CLASS_VERSION + "'='" + PERSON_CLASS_VERSION + '\''
-                           + ")"
+                + "TYPE " + IMapSqlConnector.TYPE_NAME + ' '
+                + "OPTIONS ("
+                + '\'' + OPTION_KEY_FORMAT + "'='" + PORTABLE_FORMAT + '\''
+                + ", '" + OPTION_KEY_FACTORY_ID + "'='" + PERSON_ID_FACTORY_ID + '\''
+                + ", '" + OPTION_KEY_CLASS_ID + "'='" + PERSON_ID_CLASS_ID + '\''
+                + ", '" + OPTION_KEY_CLASS_VERSION + "'='" + PERSON_ID_CLASS_VERSION + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + PORTABLE_FORMAT + '\''
+                + ", '" + OPTION_VALUE_FACTORY_ID + "'='" + PERSON_FACTORY_ID + '\''
+                + ", '" + OPTION_VALUE_CLASS_ID + "'='" + PERSON_CLASS_ID + '\''
+                + ", '" + OPTION_VALUE_CLASS_VERSION + "'='" + PERSON_CLASS_VERSION + '\''
+                + ")"
         );
         sqlService.execute("SINK INTO " + name + " (id, name) VALUES (1, 'Alice')");
 
@@ -519,49 +519,49 @@ public class SqlPortableTest extends SqlTestSupport {
 
         String to = randomName();
         sqlService.execute("CREATE MAPPING " + to + " ("
-                           + "id INT EXTERNAL NAME \"__key.id\""
-                           + ", string VARCHAR"
-                           + ", \"boolean\" BOOLEAN"
-                           + ", byte TINYINT"
-                           + ", short SMALLINT"
-                           + ", \"int\" INT"
-                           + ", long BIGINT"
-                           + ", \"float\" REAL"
-                           + ", \"double\" DOUBLE"
-                           + ", \"decimal\" DECIMAL"
-                           + ", \"time\" TIME"
-                           + ", \"date\" DATE"
-                           + ", \"timestamp\" TIMESTAMP"
-                           + ", timestampTz TIMESTAMP WITH TIME ZONE"
-                           + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
-                           + "OPTIONS ("
-                           + '\'' + OPTION_KEY_FORMAT + "'='" + PORTABLE_FORMAT + '\''
-                           + ", '" + OPTION_KEY_FACTORY_ID + "'='" + PERSON_ID_FACTORY_ID + '\''
-                           + ", '" + OPTION_KEY_CLASS_ID + "'='" + PERSON_ID_CLASS_ID + '\''
-                           + ", '" + OPTION_KEY_CLASS_VERSION + "'='" + PERSON_ID_CLASS_VERSION + '\''
-                           + ", '" + OPTION_VALUE_FORMAT + "'='" + PORTABLE_FORMAT + '\''
-                           + ", '" + OPTION_VALUE_FACTORY_ID + "'='" + 997 + '\''
-                           + ", '" + OPTION_VALUE_CLASS_ID + "'='" + 998 + '\''
-                           + ", '" + OPTION_VALUE_CLASS_VERSION + "'='" + 999 + '\''
-                           + ")"
+                + "id INT EXTERNAL NAME \"__key.id\""
+                + ", string VARCHAR"
+                + ", \"boolean\" BOOLEAN"
+                + ", byte TINYINT"
+                + ", short SMALLINT"
+                + ", \"int\" INT"
+                + ", long BIGINT"
+                + ", \"float\" REAL"
+                + ", \"double\" DOUBLE"
+                + ", \"decimal\" DECIMAL"
+                + ", \"time\" TIME"
+                + ", \"date\" DATE"
+                + ", \"timestamp\" TIMESTAMP"
+                + ", timestampTz TIMESTAMP WITH TIME ZONE"
+                + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
+                + "OPTIONS ("
+                + '\'' + OPTION_KEY_FORMAT + "'='" + PORTABLE_FORMAT + '\''
+                + ", '" + OPTION_KEY_FACTORY_ID + "'='" + PERSON_ID_FACTORY_ID + '\''
+                + ", '" + OPTION_KEY_CLASS_ID + "'='" + PERSON_ID_CLASS_ID + '\''
+                + ", '" + OPTION_KEY_CLASS_VERSION + "'='" + PERSON_ID_CLASS_VERSION + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + PORTABLE_FORMAT + '\''
+                + ", '" + OPTION_VALUE_FACTORY_ID + "'='" + 997 + '\''
+                + ", '" + OPTION_VALUE_CLASS_ID + "'='" + 998 + '\''
+                + ", '" + OPTION_VALUE_CLASS_VERSION + "'='" + 999 + '\''
+                + ")"
         );
 
         sqlService.execute("SINK INTO " + to + " SELECT "
-                           + "13"
-                           + ", string "
-                           + ", \"boolean\" "
-                           + ", byte "
-                           + ", short "
-                           + ", \"int\" "
-                           + ", long "
-                           + ", \"float\" "
-                           + ", \"double\" "
-                           + ", \"decimal\" "
-                           + ", \"time\" "
-                           + ", \"date\" "
-                           + ", \"timestamp\" "
-                           + ", timestampTz "
-                           + "FROM " + from
+                + "13"
+                + ", string "
+                + ", \"boolean\" "
+                + ", byte "
+                + ", short "
+                + ", \"int\" "
+                + ", long "
+                + ", \"float\" "
+                + ", \"double\" "
+                + ", \"decimal\" "
+                + ", \"time\" "
+                + ", \"date\" "
+                + ", \"timestamp\" "
+                + ", timestampTz "
+                + "FROM " + from
         );
 
         InternalGenericRecord valueRecord = serializationService

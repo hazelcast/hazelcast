@@ -144,13 +144,13 @@ public class UnaryMinusIntegrationTest extends ExpressionTestSupport {
     @Test
     public void testEquality() {
         checkEquals(UnaryMinusFunction.create(ConstantExpression.create(1, INT), INT),
-            UnaryMinusFunction.create(ConstantExpression.create(1, INT), INT), true);
+                UnaryMinusFunction.create(ConstantExpression.create(1, INT), INT), true);
 
         checkEquals(UnaryMinusFunction.create(ConstantExpression.create(1, INT), INT),
-            UnaryMinusFunction.create(ConstantExpression.create(1, INT), QueryDataType.BIGINT), false);
+                UnaryMinusFunction.create(ConstantExpression.create(1, INT), QueryDataType.BIGINT), false);
 
         checkEquals(UnaryMinusFunction.create(ConstantExpression.create(1, INT), INT),
-            UnaryMinusFunction.create(ConstantExpression.create(2, INT), QueryDataType.BIGINT), false);
+                UnaryMinusFunction.create(ConstantExpression.create(2, INT), QueryDataType.BIGINT), false);
     }
 
     @Test

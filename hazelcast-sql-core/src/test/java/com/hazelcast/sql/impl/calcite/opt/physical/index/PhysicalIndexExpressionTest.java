@@ -55,8 +55,8 @@ public class PhysicalIndexExpressionTest extends IndexOptimizerTestSupport {
     @Parameterized.Parameters(name = "hd:{0}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
-            {true},
-            {false},
+                {true},
+                {false},
         });
     }
 
@@ -65,11 +65,11 @@ public class PhysicalIndexExpressionTest extends IndexOptimizerTestSupport {
         Map<String, Table> tableMap = new HashMap<>();
 
         HazelcastTable pTable = OptimizerTestSupport.partitionedTable(
-            "p",
-            OptimizerTestSupport.fields("ret", INT, "f", INT),
-            Collections.singletonList(new MapTableIndex(INDEX_NAME, IndexType.SORTED, 1, singletonList(1), singletonList(INT))),
-            100,
-            hd
+                "p",
+                OptimizerTestSupport.fields("ret", INT, "f", INT),
+                Collections.singletonList(new MapTableIndex(INDEX_NAME, IndexType.SORTED, 1, singletonList(1), singletonList(INT))),
+                100,
+                hd
         );
 
         tableMap.put("p", pTable);

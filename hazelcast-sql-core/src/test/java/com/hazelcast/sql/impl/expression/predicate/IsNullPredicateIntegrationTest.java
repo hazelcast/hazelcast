@@ -176,8 +176,8 @@ public class IsNullPredicateIntegrationTest extends ExpressionTestSupport {
 
         put(key, value);
 
-        assertEquals(set(key), keys("SELECT key FROM map WHERE ? IS NULL", new Object[] { null }));
-        assertEquals(set(), keys("SELECT key FROM map WHERE ? IS NOT NULL", new Object[] { null }));
+        assertEquals(set(key), keys("SELECT key FROM map WHERE ? IS NULL", new Object[]{null}));
+        assertEquals(set(), keys("SELECT key FROM map WHERE ? IS NOT NULL", new Object[]{null}));
 
         checkParameter(key, BOOLEAN);
 

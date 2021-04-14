@@ -33,10 +33,10 @@ public final class SortLogicalRule extends ConverterRule {
 
     private SortLogicalRule() {
         super(
-            LogicalSort.class,
-            Convention.NONE,
-            HazelcastConventions.LOGICAL,
-            SortLogicalRule.class.getSimpleName()
+                LogicalSort.class,
+                Convention.NONE,
+                HazelcastConventions.LOGICAL,
+                SortLogicalRule.class.getSimpleName()
         );
     }
 
@@ -46,12 +46,12 @@ public final class SortLogicalRule extends ConverterRule {
         RelNode input = sort.getInput();
 
         return new SortLogicalRel(
-            sort.getCluster(),
-            OptUtils.toLogicalConvention(sort.getTraitSet()),
-            OptUtils.toLogicalInput(input),
-            sort.getCollation(),
-            sort.offset,
-            sort.fetch
+                sort.getCluster(),
+                OptUtils.toLogicalConvention(sort.getTraitSet()),
+                OptUtils.toLogicalInput(input),
+                sort.getCollation(),
+                sort.offset,
+                sort.fetch
         );
     }
 }

@@ -94,72 +94,72 @@ public class LogicalSortTest extends OptimizerTestSupport {
     @Test
     public void testSimpleOrderByAndOffset() {
         assertPlan(
-            optimizeLogical("SELECT f0, f1 FROM p ORDER BY f0 OFFSET 10 ROWS"),
-            plan(
-                planRow(0, RootLogicalRel.class, "", 90d),
-                planRow(1, SortLogicalRel.class, "sort0=[$0], dir0=[ASC], offset=[10]", 90d),
-                planRow(2, MapScanLogicalRel.class, "table=[[hazelcast, p[projects=[0, 1]]]]", 100d)
-            )
+                optimizeLogical("SELECT f0, f1 FROM p ORDER BY f0 OFFSET 10 ROWS"),
+                plan(
+                        planRow(0, RootLogicalRel.class, "", 90d),
+                        planRow(1, SortLogicalRel.class, "sort0=[$0], dir0=[ASC], offset=[10]", 90d),
+                        planRow(2, MapScanLogicalRel.class, "table=[[hazelcast, p[projects=[0, 1]]]]", 100d)
+                )
         );
     }
 
     @Test
     public void testSimpleOrderByAndFetch() {
         assertPlan(
-            optimizeLogical("SELECT f0, f1 FROM p ORDER BY f0 FETCH FIRST 10 ROWS ONLY"),
-            plan(
-                planRow(0, RootLogicalRel.class, "", 10d),
-                planRow(1, SortLogicalRel.class, "sort0=[$0], dir0=[ASC], fetch=[10]", 10d),
-                planRow(2, MapScanLogicalRel.class, "table=[[hazelcast, p[projects=[0, 1]]]]", 100d)
-            )
+                optimizeLogical("SELECT f0, f1 FROM p ORDER BY f0 FETCH FIRST 10 ROWS ONLY"),
+                plan(
+                        planRow(0, RootLogicalRel.class, "", 10d),
+                        planRow(1, SortLogicalRel.class, "sort0=[$0], dir0=[ASC], fetch=[10]", 10d),
+                        planRow(2, MapScanLogicalRel.class, "table=[[hazelcast, p[projects=[0, 1]]]]", 100d)
+                )
         );
     }
 
     @Test
     public void testSimpleOrderByAndFetchAndOffset() {
         assertPlan(
-            optimizeLogical("SELECT f0, f1 FROM p ORDER BY f0 OFFSET 10 ROWS FETCH NEXT 10 ROWS ONLY"),
-            plan(
-                planRow(0, RootLogicalRel.class, "", 10d),
-                planRow(1, SortLogicalRel.class, "sort0=[$0], dir0=[ASC], offset=[10], fetch=[10]", 10d),
-                planRow(2, MapScanLogicalRel.class, "table=[[hazelcast, p[projects=[0, 1]]]]", 100d)
-            )
+                optimizeLogical("SELECT f0, f1 FROM p ORDER BY f0 OFFSET 10 ROWS FETCH NEXT 10 ROWS ONLY"),
+                plan(
+                        planRow(0, RootLogicalRel.class, "", 10d),
+                        planRow(1, SortLogicalRel.class, "sort0=[$0], dir0=[ASC], offset=[10], fetch=[10]", 10d),
+                        planRow(2, MapScanLogicalRel.class, "table=[[hazelcast, p[projects=[0, 1]]]]", 100d)
+                )
         );
     }
 
     @Test
     public void testFetchOnly() {
         assertPlan(
-            optimizeLogical("SELECT f0, f1 FROM p FETCH FIRST 10 ROWS ONLY"),
-            plan(
-                planRow(0, RootLogicalRel.class, "", 10d),
-                planRow(1, SortLogicalRel.class, "fetch=[10]", 10d),
-                planRow(2, MapScanLogicalRel.class, "table=[[hazelcast, p[projects=[0, 1]]]]", 100d)
-            )
+                optimizeLogical("SELECT f0, f1 FROM p FETCH FIRST 10 ROWS ONLY"),
+                plan(
+                        planRow(0, RootLogicalRel.class, "", 10d),
+                        planRow(1, SortLogicalRel.class, "fetch=[10]", 10d),
+                        planRow(2, MapScanLogicalRel.class, "table=[[hazelcast, p[projects=[0, 1]]]]", 100d)
+                )
         );
     }
 
     @Test
     public void testOffsetOnly() {
         assertPlan(
-            optimizeLogical("SELECT f0, f1 FROM p OFFSET 10 ROWS"),
-            plan(
-                planRow(0, RootLogicalRel.class, "", 90d),
-                planRow(1, SortLogicalRel.class, "offset=[10]", 90d),
-                planRow(2, MapScanLogicalRel.class, "table=[[hazelcast, p[projects=[0, 1]]]]", 100d)
-            )
+                optimizeLogical("SELECT f0, f1 FROM p OFFSET 10 ROWS"),
+                plan(
+                        planRow(0, RootLogicalRel.class, "", 90d),
+                        planRow(1, SortLogicalRel.class, "offset=[10]", 90d),
+                        planRow(2, MapScanLogicalRel.class, "table=[[hazelcast, p[projects=[0, 1]]]]", 100d)
+                )
         );
     }
 
     @Test
     public void testFetchAndOffsetOnly() {
         assertPlan(
-            optimizeLogical("SELECT f0, f1 FROM p OFFSET 5 ROWS FETCH FIRST 10 ROWS ONLY"),
-            plan(
-                planRow(0, RootLogicalRel.class, "", 10d),
-                planRow(1, SortLogicalRel.class, "offset=[5], fetch=[10]", 10d),
-                planRow(2, MapScanLogicalRel.class, "table=[[hazelcast, p[projects=[0, 1]]]]", 100d)
-            )
+                optimizeLogical("SELECT f0, f1 FROM p OFFSET 5 ROWS FETCH FIRST 10 ROWS ONLY"),
+                plan(
+                        planRow(0, RootLogicalRel.class, "", 10d),
+                        planRow(1, SortLogicalRel.class, "offset=[5], fetch=[10]", 10d),
+                        planRow(2, MapScanLogicalRel.class, "table=[[hazelcast, p[projects=[0, 1]]]]", 100d)
+                )
         );
     }
 

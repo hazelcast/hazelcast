@@ -45,8 +45,8 @@ public final class SortPhysicalRule extends RelOptRule {
 
     private SortPhysicalRule() {
         super(
-            OptUtils.parentChild(SortLogicalRel.class, RelNode.class, HazelcastConventions.LOGICAL),
-            SortPhysicalRule.class.getSimpleName()
+                OptUtils.parentChild(SortLogicalRel.class, RelNode.class, HazelcastConventions.LOGICAL),
+                SortPhysicalRule.class.getSimpleName()
         );
     }
 
@@ -76,8 +76,8 @@ public final class SortPhysicalRule extends RelOptRule {
         for (RelNode physicalInput : OptUtils.getPhysicalRelsFromSubset(convertedInput)) {
             // Check whether local sorting is needed
             boolean requiresLocalSort = requiresLocalSort(
-                logicalSort.getCollation(),
-                physicalInput.getTraitSet().getTrait(RelCollationTraitDef.INSTANCE)
+                    logicalSort.getCollation(),
+                    physicalInput.getTraitSet().getTrait(RelCollationTraitDef.INSTANCE)
             );
 
             RelNode rel;
@@ -152,35 +152,35 @@ public final class SortPhysicalRule extends RelOptRule {
                                                    boolean isFullResultOnAll) {
         // Input traits are propagated, but new collation is used.
         RelTraitSet traitSet = OptUtils.traitPlus(physicalInput.getTraitSet(),
-            logicalSort.getCollation()
+                logicalSort.getCollation()
         );
 
         // Don't push down the fetch/offset operators if merging phase is needed
         return new SortPhysicalRel(
-            logicalSort.getCluster(),
-            traitSet,
-            physicalInput,
-            logicalSort.getCollation(),
-            requiresLocalSort,
-            isFullResultOnAll ? logicalSort.offset : null,
-            isFullResultOnAll ? logicalSort.fetch : null
+                logicalSort.getCluster(),
+                traitSet,
+                physicalInput,
+                logicalSort.getCollation(),
+                requiresLocalSort,
+                isFullResultOnAll ? logicalSort.offset : null,
+                isFullResultOnAll ? logicalSort.fetch : null
         );
     }
 
     private static RelNode createMerge(RelNode physicalInput, SortLogicalRel logicalSort) {
         RelTraitSet traitSet = OptUtils.traitPlus(physicalInput.getTraitSet(),
-            logicalSort.getCollation(),
-            OptUtils.getDistributionDef(physicalInput).getTraitRoot()
+                logicalSort.getCollation(),
+                OptUtils.getDistributionDef(physicalInput).getTraitRoot()
         );
 
         // Empty collation means the fetch-only operation
         return new SortMergeExchangePhysicalRel(
-            logicalSort.getCluster(),
-            traitSet,
-            physicalInput,
-            logicalSort.getCollation(),
-            logicalSort.fetch,
-            logicalSort.offset
+                logicalSort.getCluster(),
+                traitSet,
+                physicalInput,
+                logicalSort.getCollation(),
+                logicalSort.fetch,
+                logicalSort.offset
         );
     }
 }

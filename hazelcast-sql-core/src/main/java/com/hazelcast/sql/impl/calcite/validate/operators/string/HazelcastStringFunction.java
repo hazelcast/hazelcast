@@ -48,11 +48,11 @@ public final class HazelcastStringFunction extends HazelcastFunction {
 
     private HazelcastStringFunction(String name, SqlReturnTypeInference returnTypeInference) {
         super(
-            name,
-            SqlKind.OTHER_FUNCTION,
-            returnTypeInference,
-            new ReplaceUnknownOperandTypeInference(VARCHAR),
-            SqlFunctionCategory.STRING
+                name,
+                SqlKind.OTHER_FUNCTION,
+                returnTypeInference,
+                new ReplaceUnknownOperandTypeInference(VARCHAR),
+                SqlFunctionCategory.STRING
         );
     }
 

@@ -64,34 +64,34 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
     @Parameterized.Parameters(name = "mode:{0}")
     public static Collection<Object[]> parameters() {
         return Arrays.asList(new Object[][]{
-            { Mode.EQ },
-            { Mode.NEQ },
-            { Mode.LT },
-            { Mode.LTE },
-            { Mode.GT },
-            { Mode.GTE },
+                {Mode.EQ},
+                {Mode.NEQ},
+                {Mode.LT},
+                {Mode.LTE},
+                {Mode.GT},
+                {Mode.GTE},
         });
     }
 
-    protected static final Object[] NUMERICS_QUICK = new Object[] {
-        Byte.MIN_VALUE, Byte.MAX_VALUE,
-        Short.MIN_VALUE, Short.MAX_VALUE,
-        Integer.MIN_VALUE, Integer.MAX_VALUE,
-        Long.MIN_VALUE, Long.MAX_VALUE,
-        BigDecimal.ONE.negate(), BigDecimal.ONE,
-        Float.MIN_VALUE, Float.MAX_VALUE,
-        Double.MIN_VALUE, Double.MAX_VALUE,
+    protected static final Object[] NUMERICS_QUICK = new Object[]{
+            Byte.MIN_VALUE, Byte.MAX_VALUE,
+            Short.MIN_VALUE, Short.MAX_VALUE,
+            Integer.MIN_VALUE, Integer.MAX_VALUE,
+            Long.MIN_VALUE, Long.MAX_VALUE,
+            BigDecimal.ONE.negate(), BigDecimal.ONE,
+            Float.MIN_VALUE, Float.MAX_VALUE,
+            Double.MIN_VALUE, Double.MAX_VALUE,
     };
 
-    protected static final Object[] NUMERICS_SLOW = new Object[] {
-        Byte.MIN_VALUE, (byte) -1, (byte) 0, (byte) 1, Byte.MAX_VALUE,
-        Short.MIN_VALUE, (short) -1, (short) 0, (short) 1, Short.MAX_VALUE,
-        Integer.MIN_VALUE, -1, 0, 1, Integer.MAX_VALUE,
-        Long.MIN_VALUE, -1L, 0L, 1L, Long.MAX_VALUE,
-        BigInteger.ONE.negate(), BigInteger.ZERO, BigInteger.ONE,
-        BigDecimal.ONE.negate(), BigDecimal.ZERO, BigDecimal.ONE,
-        Float.MIN_VALUE, -1f, 0f, 1f, Float.MAX_VALUE,
-        Double.MIN_VALUE, -1d, 0d, 1d, Double.MAX_VALUE,
+    protected static final Object[] NUMERICS_SLOW = new Object[]{
+            Byte.MIN_VALUE, (byte) -1, (byte) 0, (byte) 1, Byte.MAX_VALUE,
+            Short.MIN_VALUE, (short) -1, (short) 0, (short) 1, Short.MAX_VALUE,
+            Integer.MIN_VALUE, -1, 0, 1, Integer.MAX_VALUE,
+            Long.MIN_VALUE, -1L, 0L, 1L, Long.MAX_VALUE,
+            BigInteger.ONE.negate(), BigInteger.ZERO, BigInteger.ONE,
+            BigDecimal.ONE.negate(), BigDecimal.ZERO, BigDecimal.ONE,
+            Float.MIN_VALUE, -1f, 0f, 1f, Float.MAX_VALUE,
+            Double.MIN_VALUE, -1d, 0d, 1d, Double.MAX_VALUE,
     };
 
     private static final Literal LITERAL_BOOLEAN = new Literal("true", SqlColumnType.BOOLEAN);
@@ -305,9 +305,9 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
     @Test
     public void testCompare_LocalDate_with_LocalDate() {
         putBiValue(
-            LocalDate.of(2020, 12, 30),
-            LocalDate.of(2020, 12, 30),
-            ExpressionTypes.LOCAL_DATE, ExpressionTypes.LOCAL_DATE
+                LocalDate.of(2020, 12, 30),
+                LocalDate.of(2020, 12, 30),
+                ExpressionTypes.LOCAL_DATE, ExpressionTypes.LOCAL_DATE
         );
 
         check("field1", "field2", LocalDate.of(2020, 12, 30).compareTo(LocalDate.of(2020, 12, 30)));
@@ -324,9 +324,9 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
     @Test
     public void testCompare_LocalTime_with_LocalTime() {
         putBiValue(
-            LocalTime.of(14, 2, 0),
-            LocalTime.of(14, 2, 0),
-            ExpressionTypes.LOCAL_TIME, ExpressionTypes.LOCAL_TIME
+                LocalTime.of(14, 2, 0),
+                LocalTime.of(14, 2, 0),
+                ExpressionTypes.LOCAL_TIME, ExpressionTypes.LOCAL_TIME
         );
 
         check("field1", "field2", LocalTime.of(14, 2, 0).compareTo(LocalTime.of(14, 2, 0)));
@@ -343,9 +343,9 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
     @Test
     public void testCompare_LocalDateTime_with_LocalDateTime() {
         putBiValue(
-            LocalDateTime.of(2020, 12, 30, 14, 2, 0),
-            LocalDateTime.of(2020, 12, 30, 14, 2, 0),
-            ExpressionTypes.LOCAL_DATE_TIME, ExpressionTypes.LOCAL_DATE_TIME
+                LocalDateTime.of(2020, 12, 30, 14, 2, 0),
+                LocalDateTime.of(2020, 12, 30, 14, 2, 0),
+                ExpressionTypes.LOCAL_DATE_TIME, ExpressionTypes.LOCAL_DATE_TIME
         );
 
         check("field1", "field2", LocalDateTime.of(2020, 12, 30, 14, 2, 0).compareTo(LocalDateTime.of(2020, 12, 30, 14, 2, 0)));
@@ -363,17 +363,17 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
     @Test
     public void testCompare_LocalDateTime_with_LocalDate() {
         putBiValue(
-            LocalDateTime.of(2020, 12, 30, 14, 2, 0),
-            LocalDate.of(2020, 12, 30),
-            ExpressionTypes.LOCAL_DATE_TIME, ExpressionTypes.LOCAL_DATE
+                LocalDateTime.of(2020, 12, 30, 14, 2, 0),
+                LocalDate.of(2020, 12, 30),
+                ExpressionTypes.LOCAL_DATE_TIME, ExpressionTypes.LOCAL_DATE
         );
 
         check("field1", "field2", LocalDateTime.of(2020, 12, 30, 14, 2, 0).compareTo(LocalDate.of(2020, 12, 30).atStartOfDay()));
 
         putBiValue(
-            LocalDate.of(2020, 12, 30),
-            LocalDateTime.of(2020, 12, 30, 14, 2, 0),
-            ExpressionTypes.LOCAL_DATE, ExpressionTypes.LOCAL_DATE_TIME
+                LocalDate.of(2020, 12, 30),
+                LocalDateTime.of(2020, 12, 30, 14, 2, 0),
+                ExpressionTypes.LOCAL_DATE, ExpressionTypes.LOCAL_DATE_TIME
         );
 
         check("field1", "field2", LocalDate.of(2020, 12, 30).atStartOfDay().compareTo(LocalDateTime.of(2020, 12, 30, 14, 2, 0)));
@@ -403,9 +403,9 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
     @Test
     public void testCompare_LocalDateTimeWithTZ_with_LocalDateTimeWithTZ() {
         putBiValue(
-            OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC),
-            OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC),
-            ExpressionTypes.OFFSET_DATE_TIME, ExpressionTypes.OFFSET_DATE_TIME
+                OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC),
+                OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC),
+                ExpressionTypes.OFFSET_DATE_TIME, ExpressionTypes.OFFSET_DATE_TIME
         );
 
         check("field1", "field2",
@@ -578,9 +578,9 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
     private void checkUnsupportedColumnColumn(ExpressionType<?> type, ExpressionType<?>... excludeTypes) {
         for (ExpressionType<?> expressionType : excludeTypes) {
             ExpressionBiValue value = ExpressionBiValue.createBiValue(
-                ExpressionBiValue.createBiClass(type, expressionType),
-                null,
-                null
+                    ExpressionBiValue.createBiClass(type, expressionType),
+                    null,
+                    null
             );
 
             put(value);
@@ -588,9 +588,9 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
             String sql = sql(mode.token(), "field1", "field2");
 
             String errorMessage = signatureErrorOperator(
-                mode.token(),
-                type.getFieldConverterType().getTypeFamily().getPublicType(),
-                expressionType.getFieldConverterType().getTypeFamily().getPublicType()
+                    mode.token(),
+                    type.getFieldConverterType().getTypeFamily().getPublicType(),
+                    expressionType.getFieldConverterType().getTypeFamily().getPublicType()
             );
 
             checkFailure0(sql, SqlErrorCode.PARSING, errorMessage);
@@ -604,9 +604,9 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
             String sql = sql(mode.token(), "this", literal.value);
 
             String errorMessage = signatureErrorOperator(
-                mode.token(),
-                columnType,
-                literal.type
+                    mode.token(),
+                    columnType,
+                    literal.type
             );
 
             checkFailure0(sql, SqlErrorCode.PARSING, errorMessage);
@@ -620,9 +620,9 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
             String sql = sql(mode.token(), "this", "?");
 
             String errorMessage = parameterError(
-                paramPos,
-                columnType,
-                parameterType.getFieldConverterType().getTypeFamily().getPublicType()
+                    paramPos,
+                    columnType,
+                    parameterType.getFieldConverterType().getTypeFamily().getPublicType()
             );
 
             checkFailure0(sql, SqlErrorCode.DATA_EXCEPTION, errorMessage, parameterType.valueFrom());
@@ -636,9 +636,9 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
             String sql = sql(mode.token(), literalValue, literal.value);
 
             String errorMessage = signatureErrorOperator(
-                mode.token(),
-                literalType,
-                literal.type
+                    mode.token(),
+                    literalType,
+                    literal.type
             );
 
             checkFailure0(sql, SqlErrorCode.PARSING, errorMessage);
@@ -657,10 +657,10 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
     }
 
     private void check(
-        String operand1,
-        String operand2,
-        Integer expectedRes,
-        Object... params
+            String operand1,
+            String operand2,
+            Integer expectedRes,
+            Object... params
     ) {
         Boolean expectedValue = compare(expectedRes);
 
@@ -670,11 +670,11 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
     }
 
     private void checkFailure(
-        String operand1,
-        String operand2,
-        int expectedErrorCode,
-        String expectedErrorMessage,
-        Object... params
+            String operand1,
+            String operand2,
+            int expectedErrorCode,
+            String expectedErrorMessage,
+            Object... params
     ) {
         String sql = sql(mode.token(), operand1, operand2);
 

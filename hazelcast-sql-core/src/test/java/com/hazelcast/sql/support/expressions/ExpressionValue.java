@@ -48,7 +48,7 @@ public abstract class ExpressionValue implements Serializable {
             return (Class<? extends ExpressionValue>) Class.forName(className);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException("Cannot create " + ExpressionValue.class.getSimpleName() + " for type \""
-                + type + "\"", e);
+                    + type + "\"", e);
         }
     }
 

@@ -30,7 +30,6 @@ import com.hazelcast.sql.impl.JetSqlCoreBackend;
 import com.hazelcast.sql.impl.QueryException;
 
 import javax.annotation.Nonnull;
-
 import java.util.concurrent.CancellationException;
 
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelismOne;

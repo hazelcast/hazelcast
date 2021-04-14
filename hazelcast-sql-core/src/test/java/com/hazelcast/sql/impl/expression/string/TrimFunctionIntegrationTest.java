@@ -91,9 +91,9 @@ public class TrimFunctionIntegrationTest extends ExpressionTestSupport {
         checkFailure0("SELECT TRIM(LEADING 1) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", TINYINT));
 
         // Parameters
-        checkValue0("SELECT TRIM(LEADING ?) FROM map", VARCHAR, null, new Object[] { null });
-        checkValue0("SELECT TRIM(TRAILING ?) FROM map", VARCHAR, null, new Object[] { null });
-        checkValue0("SELECT TRIM(BOTH ?) FROM map", VARCHAR, null, new Object[] { null });
+        checkValue0("SELECT TRIM(LEADING ?) FROM map", VARCHAR, null, new Object[]{null});
+        checkValue0("SELECT TRIM(TRAILING ?) FROM map", VARCHAR, null, new Object[]{null});
+        checkValue0("SELECT TRIM(BOTH ?) FROM map", VARCHAR, null, new Object[]{null});
 
         checkValue0("SELECT TRIM(LEADING ?) FROM map", VARCHAR, "abc ", " abc ");
         checkValue0("SELECT TRIM(TRAILING ?) FROM map", VARCHAR, " abc", " abc ");

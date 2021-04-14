@@ -29,9 +29,9 @@ import java.util.List;
  */
 public class MapScanLogicalRel extends AbstractMapScanRel implements LogicalRel {
     public MapScanLogicalRel(
-        RelOptCluster cluster,
-        RelTraitSet traitSet,
-        RelOptTable table
+            RelOptCluster cluster,
+            RelTraitSet traitSet,
+            RelOptTable table
     ) {
         super(cluster, traitSet, table);
     }

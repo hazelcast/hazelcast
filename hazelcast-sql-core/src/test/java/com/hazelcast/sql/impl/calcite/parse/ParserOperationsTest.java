@@ -102,53 +102,53 @@ public class ParserOperationsTest {
     @Test
     public void testUnsupportedSelectScalar() {
         checkFailure(
-            "SELECT (SELECT a FROM t) FROM t",
-            "SCALAR QUERY is not supported"
+                "SELECT (SELECT a FROM t) FROM t",
+                "SCALAR QUERY is not supported"
         );
     }
 
     @Test
     public void testUnsupportedWhereScalar() {
         checkFailure(
-            "SELECT a, b FROM t WHERE (SELECT a FROM t) IS NULL",
-            "SCALAR QUERY is not supported"
+                "SELECT a, b FROM t WHERE (SELECT a FROM t) IS NULL",
+                "SCALAR QUERY is not supported"
         );
     }
 
     @Test
     public void testUnsupportedNullsFirstLast() {
         checkFailure(
-            "SELECT a, b FROM t ORDER BY a DESC NULLS FIRST",
-            "Function 'NULLS FIRST' does not exist"
+                "SELECT a, b FROM t ORDER BY a DESC NULLS FIRST",
+                "Function 'NULLS FIRST' does not exist"
         );
 
         checkFailure(
-            "SELECT a, b FROM t ORDER BY a DESC NULLS LAST",
-            "Function 'NULLS LAST' does not exist"
+                "SELECT a, b FROM t ORDER BY a DESC NULLS LAST",
+                "Function 'NULLS LAST' does not exist"
         );
     }
 
     @Test
     public void testUnsupportedGroupBy() {
         checkFailure(
-            "SELECT a FROM t GROUP BY a",
-            "GROUP BY is not supported"
+                "SELECT a FROM t GROUP BY a",
+                "GROUP BY is not supported"
         );
     }
 
     @Test
     public void testUnsupportedAggregate() {
         checkFailure(
-            "SELECT SUM(a) FROM t",
-            "Function 'SUM' does not exist"
+                "SELECT SUM(a) FROM t",
+                "Function 'SUM' does not exist"
         );
     }
 
     @Test
     public void testUnsupportedJoin() {
         checkFailure(
-            "SELECT t1.a, t2.a FROM t t1 JOIN t t2 ON t1.a = t2.a",
-            "JOIN is not supported"
+                "SELECT t1.a, t2.a FROM t t1 JOIN t t2 ON t1.a = t2.a",
+                "JOIN is not supported"
         );
     }
 
@@ -175,23 +175,23 @@ public class ParserOperationsTest {
 
     private static OptimizerContext createContext() {
         TableResolver resolver = TestTableResolver.create(
-            "public",
-            TestMapTable.create("public", "t", TestMapTable.field("a"), TestMapTable.field("b"))
+                "public",
+                TestMapTable.create("public", "t", TestMapTable.field("a"), TestMapTable.field("b"))
         );
 
         List<TableResolver> tableResolvers = Collections.singletonList(resolver);
 
         List<List<String>> searchPaths = QueryUtils.prepareSearchPaths(
-            Collections.emptyList(),
-            tableResolvers
+                Collections.emptyList(),
+                tableResolvers
         );
 
         return OptimizerContext.create(
-            new SqlCatalog(tableResolvers),
-            searchPaths,
-            1,
-            new HazelcastSqlBackend(null),
-            null
+                new SqlCatalog(tableResolvers),
+                searchPaths,
+                1,
+                new HazelcastSqlBackend(null),
+                null
         );
     }
 }

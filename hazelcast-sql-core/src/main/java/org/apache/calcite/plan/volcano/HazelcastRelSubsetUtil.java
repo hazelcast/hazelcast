@@ -30,6 +30,7 @@ public final class HazelcastRelSubsetUtil {
 
     /**
      * Gets all subsets from the input's set
+     *
      * @param input the input
      * @return the subset
      */

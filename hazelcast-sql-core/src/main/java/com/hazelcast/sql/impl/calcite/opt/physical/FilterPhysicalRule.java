@@ -33,8 +33,8 @@ public final class FilterPhysicalRule extends RelOptRule {
 
     private FilterPhysicalRule() {
         super(
-            OptUtils.parentChild(FilterLogicalRel.class, RelNode.class, HazelcastConventions.LOGICAL),
-            FilterPhysicalRule.class.getSimpleName()
+                OptUtils.parentChild(FilterLogicalRel.class, RelNode.class, HazelcastConventions.LOGICAL),
+                FilterPhysicalRule.class.getSimpleName()
         );
     }
 
@@ -47,10 +47,10 @@ public final class FilterPhysicalRule extends RelOptRule {
 
         for (RelNode transformedInput : transformedInputs) {
             FilterPhysicalRel newFilter = new FilterPhysicalRel(
-                filter.getCluster(),
-                transformedInput.getTraitSet(),
-                transformedInput,
-                filter.getCondition()
+                    filter.getCluster(),
+                    transformedInput.getTraitSet(),
+                    transformedInput,
+                    filter.getCondition()
             );
 
             call.transformTo(newFilter);
