@@ -82,70 +82,64 @@
         <maven.jacoco.plugin.version>0.8.6</maven.jacoco.plugin.version>
         <maven.failsafe.plugin.version>2.22.2</maven.failsafe.plugin.version>
         <maven.cobertura.plugin.version>2.7</maven.cobertura.plugin.version>
-        <maven.enforcer.plugin.version>3.0.0-M2</maven.enforcer.plugin.version>
+        <maven.enforcer.plugin.version>3.0.0-M3</maven.enforcer.plugin.version>
         <maven.os.plugin.version>1.6.2</maven.os.plugin.version>
         <maven.protobuf.plugin.version>0.6.1</maven.protobuf.plugin.version>
         <maven.resources.plugin.version>3.2.0</maven.resources.plugin.version>
 
-        <log4j.version>1.2.17</log4j.version>
-
-        <log4j2.version>2.14.0</log4j2.version>
-        <slf4j.api.version>1.7.30</slf4j.api.version>
-
-        <jms.api.version>2.0.1</jms.api.version>
-        <jsr107.api.version>1.0.0</jsr107.api.version> <!-- JCache -->
-        <jsr250.api.version>1.2</jsr250.api.version> <!-- javax.annotations -->
-        <log4j.version>1.2.17</log4j.version>
-        <log4j2.version>2.13.3</log4j2.version>
-        <slf4j.api.version>1.7.28</slf4j.api.version>
-        <reflections.version>0.9.10</reflections.version>
-        <osgi.version>4.2.0</osgi.version>
-        <prometheus.version>0.13.0</prometheus.version>
-        <hadoop.version>3.3.0</hadoop.version>
-        <spring.version>4.3.0.RELEASE</spring.version>
-        <avro.version>1.10.2</avro.version>
-        <parquet.version>1.11.1</parquet.version>
-        <scala.version>2.12</scala.version>
-        <zookeeper.version>3.5.8</zookeeper.version>
-        <kafka.version>2.2.0</kafka.version>
-        <grpc.version>1.34.0</grpc.version>
-        <protobuf.version>3.13.0</protobuf.version>
-        <picocli.version>3.9.0</picocli.version>
-        <jline.version>3.16.0</jline.version>
-        <classgraph.version>4.8.66</classgraph.version>
-        <jackson.version>2.12.1</jackson.version>
-        <snakeyaml.engine.version>1.0</snakeyaml.engine.version>
-        <affinity.version>3.2.3</affinity.version>
-        <aws.sdk.version>1.11.934</aws.sdk.version>
-        <kotlin.version>1.3.61</kotlin.version>
-        <netty.version>4.1.63.Final</netty.version>
-
+        <!-- External Hazelcast modules -->
         <hazelcast.aws.version>3.3</hazelcast.aws.version>
-        <hazelcast.kubernetes.version>2.2.1</hazelcast.kubernetes.version>
+        <hazelcast.kubernetes.version>2.2.2</hazelcast.kubernetes.version>
         <hazelcast.gcp.version>2.1</hazelcast.gcp.version>
         <hazelcast.azure.version>2.1</hazelcast.azure.version>
 
-        <!-- test dependencies -->
-        <activemq.version>5.15.11</activemq.version>
-        <activemq-artemis.version>2.11.0</activemq-artemis.version>
-        <junit.version>4.13.2</junit.version>
-        <assertj.version>3.15.0</assertj.version>
-        <mockito.version>3.5.13</mockito.version>
-        <powermock.version>2.0.0</powermock.version>
+        <!-- Third-party dependencies (sorted alphabetically) -->
+        <!--<affinity.version>3.2.3</affinity.version>-->
+        <avro.version>1.10.2</avro.version>
+        <aws.sdk.version>1.11.976</aws.sdk.version>
+        <classgraph.version>4.8.66</classgraph.version>
+        <grpc.version>1.34.0</grpc.version>
+        <guava.version>30.1.1-jre</guava.version>
+        <hadoop.version>3.3.0</hadoop.version>
+        <jackson.version>2.12.1</jackson.version>
+        <jline.version>3.16.0</jline.version>
+        <jms.api.version>2.0.1</jms.api.version>
+        <jsr107.api.version>1.1.1</jsr107.api.version> <!-- JCache -->
+        <jsr250.api.version>1.2</jsr250.api.version> <!-- javax.annotations -->
+        <kafka.version>2.2.2</kafka.version>
+        <kotlin.version>1.3.61</kotlin.version>
+        <log4j.version>1.2.17</log4j.version>
+        <log4j2.version>2.14.0</log4j2.version>
+        <mysql.connector.version>8.0.20</mysql.connector.version>
+        <netty.version>4.1.63.Final</netty.version>
+        <osgi.version>4.2.0</osgi.version>
+        <parquet.version>1.12.0</parquet.version>
+        <picocli.version>3.9.0</picocli.version>
+        <prometheus.version>0.13.0</prometheus.version>
+        <protobuf.version>3.13.0</protobuf.version>
+        <scala.version>2.12</scala.version>
+        <slf4j.api.version>1.7.30</slf4j.api.version>
+        <spring.version>4.3.0.RELEASE</spring.version>
+        <snakeyaml.engine.version>2.1</snakeyaml.engine.version>
 
-        <jackson.version>2.11.2</jackson.version>
-        <junit.version>4.13.1</junit.version>
-        <hamcrest.version>1.3</hamcrest.version>
-        <mockito.version>3.6.0</mockito.version>
-        <powermock.version>2.0.9</powermock.version>
+        <!-- test dependencies -->
+        <activemq-artemis.version>2.11.0</activemq-artemis.version>
+        <activemq.version>5.15.11</activemq.version>
+        <assertj.version>3.15.0</assertj.version>
+        <atomikos.version>3.9.3</atomikos.version>
         <bytebuddy.version>1.10.21</bytebuddy.version>
-        <reflections.version>0.9.10</reflections.version>
-        <jmh.version>1.27</jmh.version>
         <commons-lang3.version>3.11</commons-lang3.version>
         <felix.utils.version>1.11.6</felix.utils.version>
         <findbugs.annotations.version>3.0.1u2</findbugs.annotations.version>
+        <hamcrest.version>1.3</hamcrest.version>
         <http.components.version>4.3.6</http.components.version>
-        <guava.version>30.1.1-jre</guava.version>
+        <jmh.version>1.27</jmh.version>
+        <jsr107.tck.version>1.1.1</jsr107.tck.version>
+        <junit.version>4.13.2</junit.version>
+        <mockito.version>3.6.0</mockito.version>
+        <powermock.version>2.0.9</powermock.version>
+        <reflections.version>0.9.10</reflections.version>
+        <zookeeper.version>3.5.8</zookeeper.version>
 
         <sonar.jacoco.jar>${basedir}/lib/jacocoagent.jar</sonar.jacoco.jar>
         <!--<sonar.phase>post-integration-test</sonar.phase>-->
@@ -153,18 +147,7 @@
         <sonar.language>java</sonar.language>
         <sonar.verbose>true</sonar.verbose>
 
-        <checkstyle.version>8.38</checkstyle.version>
-
         <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
-
-        <jsr107.api.version>1.1.1</jsr107.api.version>
-        <jsr107.tck.version>1.1.1</jsr107.tck.version>
-
-        <snakeyaml.engine.version>2.1</snakeyaml.engine.version>
-        <classgraph.version>4.8.66</classgraph.version>
-
-        <h2.version>1.3.160</h2.version>
-        <atomikos.version>3.9.3</atomikos.version>
 
         <!-- The path to relocated external dependencies. -->
         <relocation.root>com.hazelcast</relocation.root>
@@ -176,6 +159,7 @@
         <javaModuleArgs/>
 
         <!-- needed for CheckStyle -->
+        <checkstyle.version>8.38</checkstyle.version>
         <checkstyle.configLocation>${main.basedir}/checkstyle/checkstyle.xml</checkstyle.configLocation>
         <checkstyle.supressionsLocation>${main.basedir}/checkstyle/suppressions.xml</checkstyle.supressionsLocation>
         <checkstyle.headerLocation>${main.basedir}/checkstyle/ClassHeader.txt</checkstyle.headerLocation>
@@ -1204,6 +1188,13 @@
                 <type>pom</type>
             </dependency>
             <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-bom</artifactId>
+                <version>${netty.version}</version>
+                <scope>import</scope>
+                <type>pom</type>
+            </dependency>
+            <dependency>
                 <groupId>com.google.protobuf</groupId>
                 <artifactId>protobuf-bom</artifactId>
                 <version>${protobuf.version}</version>
@@ -1282,16 +1273,6 @@
                 <version>4.5.12</version>
             </dependency>
             <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-handler</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-codec-http</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>com.google.auto.value</groupId>
                 <artifactId>auto-value-annotations</artifactId>
                 <version>1.7.4</version>
@@ -1348,12 +1329,12 @@
             <dependency>
                 <groupId>net.bytebuddy</groupId>
                 <artifactId>byte-buddy</artifactId>
-                <version>1.10.15</version>
+                <version>${bytebuddy.version}</version>
             </dependency>
             <dependency>
                 <groupId>net.bytebuddy</groupId>
                 <artifactId>byte-buddy-agent</artifactId>
-                <version>1.10.15</version>
+                <version>${bytebuddy.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.javassist</groupId>
@@ -1364,6 +1345,12 @@
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>${junit.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+                <version>${mockito.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <!--
@@ -1382,7 +1369,12 @@
             <dependency>
                 <groupId>com.google.code.findbugs</groupId>
                 <artifactId>annotations</artifactId>
-                <version>3.0.0</version>
+                <version>${findbugs.annotations.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.code.findbugs</groupId>
+                <artifactId>jsr305</artifactId>
+                <version>3.0.2</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
