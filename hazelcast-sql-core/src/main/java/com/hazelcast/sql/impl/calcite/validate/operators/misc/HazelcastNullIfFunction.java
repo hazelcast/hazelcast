@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.validate.operators;
+package com.hazelcast.sql.impl.calcite.validate.operators.misc;
 
 import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
+import com.hazelcast.sql.impl.calcite.validate.operators.BinaryOperatorOperandTypeInference;
 import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastComparisonPredicateUtils;
 import org.apache.calcite.sql.SqlFunctionCategory;
@@ -27,10 +28,10 @@ import org.apache.calcite.sql.type.SqlOperandCountRanges;
 
 import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference.wrap;
 
-public final class NullIfFunction extends HazelcastFunction {
-    public static final NullIfFunction INSTANCE = new NullIfFunction();
+public final class HazelcastNullIfFunction extends HazelcastFunction {
+    public static final HazelcastNullIfFunction INSTANCE = new HazelcastNullIfFunction();
 
-    private NullIfFunction() {
+    private HazelcastNullIfFunction() {
         super(
                 "NULLIF",
                 SqlKind.NULLIF,

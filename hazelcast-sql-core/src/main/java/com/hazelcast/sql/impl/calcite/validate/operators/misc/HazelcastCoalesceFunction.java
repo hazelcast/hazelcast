@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.validate.operators;
+package com.hazelcast.sql.impl.calcite.validate.operators.misc;
 
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
+import com.hazelcast.sql.impl.calcite.validate.operators.VariableLengthOperandTypeInference;
 import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastFunction;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeCoercion;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
@@ -38,10 +39,10 @@ import java.util.List;
 
 import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference.wrap;
 
-public final class CoalesceFunction extends HazelcastFunction {
-    public static final CoalesceFunction INSTANCE = new CoalesceFunction();
+public final class HazelcastCoalesceFunction extends HazelcastFunction {
+    public static final HazelcastCoalesceFunction INSTANCE = new HazelcastCoalesceFunction();
 
-    private CoalesceFunction() {
+    private HazelcastCoalesceFunction() {
         super(
                 "COALESCE",
                 SqlKind.COALESCE,
@@ -52,7 +53,7 @@ public final class CoalesceFunction extends HazelcastFunction {
 
     @Override
     public SqlOperandCountRange getOperandCountRange() {
-        return SqlOperandCountRanges.any();
+        return SqlOperandCountRanges.from(1);
     }
 
     @Override

@@ -18,8 +18,8 @@ package com.hazelcast.sql.impl.calcite.validate;
 
 import com.hazelcast.sql.impl.calcite.validate.operators.datetime.HazelcastExtractFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlCase;
-import com.hazelcast.sql.impl.calcite.validate.operators.CoalesceFunction;
-import com.hazelcast.sql.impl.calcite.validate.operators.NullIfFunction;
+import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastCoalesceFunction;
+import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastNullIfFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastAbsFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastDoubleBiFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastDoubleFunction;
@@ -204,8 +204,8 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
     //#region null check functions
 
-    public static final SqlFunction NULL_IF = NullIfFunction.INSTANCE;
-    public static final SqlFunction COALESCE = CoalesceFunction.INSTANCE;
+    public static final SqlFunction NULL_IF = HazelcastNullIfFunction.INSTANCE;
+    public static final SqlFunction COALESCE = HazelcastCoalesceFunction.INSTANCE;
 
     //#endregion
 
