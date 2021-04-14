@@ -19,10 +19,12 @@ package com.hazelcast.jet.s3;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.AfterClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
@@ -35,7 +37,8 @@ import java.util.stream.Collectors;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-@Category(NightlyTest.class)
+@Category({NightlyTest.class})
+@RunWith(HazelcastSerialClassRunner.class)
 public class S3SinkTest extends S3TestBase {
 
     private static final int WAIT_AFTER_CLEANUP_IN_SECS = 5;

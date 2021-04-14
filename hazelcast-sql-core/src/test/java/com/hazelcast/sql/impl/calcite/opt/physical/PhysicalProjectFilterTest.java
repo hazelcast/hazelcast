@@ -34,48 +34,48 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
     @Test
     public void testTrivialProject() {
         assertPlan(
-            optimizePhysical("SELECT f0, f1, f2, f3, f4 FROM p", 2),
-            plan(
-                planRow(0, RootPhysicalRel.class, "", 100d),
-                planRow(1, RootExchangePhysicalRel.class, "", 100d),
-                planRow(2, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2, 3, 4]]]]", 100d)
-            )
+                optimizePhysical("SELECT f0, f1, f2, f3, f4 FROM p", 2),
+                plan(
+                        planRow(0, RootPhysicalRel.class, "", 100d),
+                        planRow(1, RootExchangePhysicalRel.class, "", 100d),
+                        planRow(2, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2, 3, 4]]]]", 100d)
+                )
         );
     }
 
     @Test
     public void testTrivialProjectProject() {
         assertPlan(
-            optimizePhysical("SELECT f0, f1, f2, f3, f4 FROM (SELECT f0, f1, f2, f3, f4 FROM p)", 2),
-            plan(
-                planRow(0, RootPhysicalRel.class, "", 100d),
-                planRow(1, RootExchangePhysicalRel.class, "", 100d),
-                planRow(2, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2, 3, 4]]]]", 100d)
-            )
+                optimizePhysical("SELECT f0, f1, f2, f3, f4 FROM (SELECT f0, f1, f2, f3, f4 FROM p)", 2),
+                plan(
+                        planRow(0, RootPhysicalRel.class, "", 100d),
+                        planRow(1, RootExchangePhysicalRel.class, "", 100d),
+                        planRow(2, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2, 3, 4]]]]", 100d)
+                )
         );
     }
 
     @Test
     public void testTrivialStarProject() {
         assertPlan(
-            optimizePhysical("SELECT * FROM p", 2),
-            plan(
-                planRow(0, RootPhysicalRel.class, "", 100d),
-                planRow(1, RootExchangePhysicalRel.class, "", 100d),
-                planRow(2, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2, 3, 4]]]]", 100d)
-            )
+                optimizePhysical("SELECT * FROM p", 2),
+                plan(
+                        planRow(0, RootPhysicalRel.class, "", 100d),
+                        planRow(1, RootExchangePhysicalRel.class, "", 100d),
+                        planRow(2, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2, 3, 4]]]]", 100d)
+                )
         );
     }
 
     @Test
     public void testTrivialStarProjectProject() {
         assertPlan(
-            optimizePhysical("SELECT * FROM (SELECT * FROM p)", 2),
-            plan(
-                planRow(0, RootPhysicalRel.class, "", 100d),
-                planRow(1, RootExchangePhysicalRel.class, "", 100d),
-                planRow(2, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2, 3, 4]]]]", 100d)
-            )
+                optimizePhysical("SELECT * FROM (SELECT * FROM p)", 2),
+                plan(
+                        planRow(0, RootPhysicalRel.class, "", 100d),
+                        planRow(1, RootExchangePhysicalRel.class, "", 100d),
+                        planRow(2, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2, 3, 4]]]]", 100d)
+                )
         );
     }
 
@@ -86,25 +86,25 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
     @Test
     public void testProjectIntoScan() {
         assertPlan(
-            optimizePhysical("SELECT f0, f1 FROM p", 2),
-            plan(
-                planRow(0, RootPhysicalRel.class, "", 100d),
-                planRow(1, RootExchangePhysicalRel.class, "", 100d),
-                planRow(2, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1]]]]", 100d)
-            )
+                optimizePhysical("SELECT f0, f1 FROM p", 2),
+                plan(
+                        planRow(0, RootPhysicalRel.class, "", 100d),
+                        planRow(1, RootExchangePhysicalRel.class, "", 100d),
+                        planRow(2, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1]]]]", 100d)
+                )
         );
     }
 
     @Test
     public void testProjectWithoutInputReferences() {
         assertPlan(
-            optimizePhysical("SELECT TRUE FROM p", 2),
-            plan(
-                planRow(0, RootPhysicalRel.class, "", 100d),
-                planRow(1, RootExchangePhysicalRel.class, "", 100d),
-                planRow(2, ProjectPhysicalRel.class, "EXPR$0=[true]", 100d),
-                planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[]]]]", 100d)
-            )
+                optimizePhysical("SELECT TRUE FROM p", 2),
+                plan(
+                        planRow(0, RootPhysicalRel.class, "", 100d),
+                        planRow(1, RootExchangePhysicalRel.class, "", 100d),
+                        planRow(2, ProjectPhysicalRel.class, "EXPR$0=[true]", 100d),
+                        planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[]]]]", 100d)
+                )
         );
     }
 
@@ -115,13 +115,13 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
     @Test
     public void testProjectExpressionIntoScan() {
         assertPlan(
-            optimizePhysical("SELECT f0 + f1, f2 FROM p", 2),
-            plan(
-                planRow(0, RootPhysicalRel.class, "", 100d),
-                planRow(1, RootExchangePhysicalRel.class, "", 100d),
-                planRow(2, ProjectPhysicalRel.class, "EXPR$0=[+(CAST($0):BIGINT(32), CAST($1):BIGINT(32))], f2=[$2]", 100d),
-                planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2]]]]", 100d)
-            )
+                optimizePhysical("SELECT f0 + f1, f2 FROM p", 2),
+                plan(
+                        planRow(0, RootPhysicalRel.class, "", 100d),
+                        planRow(1, RootExchangePhysicalRel.class, "", 100d),
+                        planRow(2, ProjectPhysicalRel.class, "EXPR$0=[+(CAST($0):BIGINT(32), CAST($1):BIGINT(32))], f2=[$2]", 100d),
+                        planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2]]]]", 100d)
+                )
         );
     }
 
@@ -132,12 +132,12 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
     @Test
     public void testProjectFilterIntoScan() {
         assertPlan(
-            optimizePhysical("SELECT f0, f1 FROM p WHERE f2 > 1", 2),
-            plan(
-                planRow(0, RootPhysicalRel.class, "", 50d),
-                planRow(1, RootExchangePhysicalRel.class, "", 50d),
-                planRow(2, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1], filter=>($2, 1)]]]", 50d)
-            )
+                optimizePhysical("SELECT f0, f1 FROM p WHERE f2 > 1", 2),
+                plan(
+                        planRow(0, RootPhysicalRel.class, "", 50d),
+                        planRow(1, RootExchangePhysicalRel.class, "", 50d),
+                        planRow(2, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1], filter=>($2, 1)]]]", 50d)
+                )
         );
     }
 
@@ -148,13 +148,13 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
     @Test
     public void testProjectExpressionFilterScan() {
         assertPlan(
-            optimizePhysical("SELECT f0 + f1, f2 FROM p WHERE f3 > 1", 2),
-            plan(
-                planRow(0, RootPhysicalRel.class, "", 50d),
-                planRow(1, RootExchangePhysicalRel.class, "", 50d),
-                planRow(2, ProjectPhysicalRel.class, "EXPR$0=[+(CAST($0):BIGINT(32), CAST($1):BIGINT(32))], f2=[$2]", 50d),
-                planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2], filter=>($3, 1)]]]", 50d)
-            )
+                optimizePhysical("SELECT f0 + f1, f2 FROM p WHERE f3 > 1", 2),
+                plan(
+                        planRow(0, RootPhysicalRel.class, "", 50d),
+                        planRow(1, RootExchangePhysicalRel.class, "", 50d),
+                        planRow(2, ProjectPhysicalRel.class, "EXPR$0=[+(CAST($0):BIGINT(32), CAST($1):BIGINT(32))], f2=[$2]", 50d),
+                        planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2], filter=>($3, 1)]]]", 50d)
+                )
         );
     }
 
@@ -165,12 +165,12 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
     @Test
     public void testProjectProjectIntoScan() {
         assertPlan(
-            optimizePhysical("SELECT f0 FROM (SELECT f0, f1 FROM p)", 2),
-            plan(
-                planRow(0, RootPhysicalRel.class, "", 100d),
-                planRow(1, RootExchangePhysicalRel.class, "", 100d),
-                planRow(2, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0]]]]", 100d)
-            )
+                optimizePhysical("SELECT f0 FROM (SELECT f0, f1 FROM p)", 2),
+                plan(
+                        planRow(0, RootPhysicalRel.class, "", 100d),
+                        planRow(1, RootExchangePhysicalRel.class, "", 100d),
+                        planRow(2, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0]]]]", 100d)
+                )
         );
     }
 
@@ -181,13 +181,13 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
     @Test
     public void testProjectProjectExpressionIntoScan() {
         assertPlan(
-            optimizePhysical("SELECT d1, f2 FROM (SELECT f0 + f1 d1, f2, f3 FROM p)", 2),
-            plan(
-                planRow(0, RootPhysicalRel.class, "", 100d),
-                planRow(1, RootExchangePhysicalRel.class, "", 100d),
-                planRow(2, ProjectPhysicalRel.class, "d1=[+(CAST($0):BIGINT(32), CAST($1):BIGINT(32))], f2=[$2]", 100d),
-                planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2]]]]", 100d)
-            )
+                optimizePhysical("SELECT d1, f2 FROM (SELECT f0 + f1 d1, f2, f3 FROM p)", 2),
+                plan(
+                        planRow(0, RootPhysicalRel.class, "", 100d),
+                        planRow(1, RootExchangePhysicalRel.class, "", 100d),
+                        planRow(2, ProjectPhysicalRel.class, "d1=[+(CAST($0):BIGINT(32), CAST($1):BIGINT(32))], f2=[$2]", 100d),
+                        planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2]]]]", 100d)
+                )
         );
     }
 
@@ -198,13 +198,13 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
     @Test
     public void testProjectExpressionProjectIntoScan() {
         assertPlan(
-            optimizePhysical("SELECT f0 + f1, f2 FROM (SELECT f0, f1, f2, f3 FROM p)", 2),
-            plan(
-                planRow(0, RootPhysicalRel.class, "", 100d),
-                planRow(1, RootExchangePhysicalRel.class, "", 100d),
-                planRow(2, ProjectPhysicalRel.class, "EXPR$0=[+(CAST($0):BIGINT(32), CAST($1):BIGINT(32))], f2=[$2]", 100d),
-                planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2]]]]", 100d)
-            )
+                optimizePhysical("SELECT f0 + f1, f2 FROM (SELECT f0, f1, f2, f3 FROM p)", 2),
+                plan(
+                        planRow(0, RootPhysicalRel.class, "", 100d),
+                        planRow(1, RootExchangePhysicalRel.class, "", 100d),
+                        planRow(2, ProjectPhysicalRel.class, "EXPR$0=[+(CAST($0):BIGINT(32), CAST($1):BIGINT(32))], f2=[$2]", 100d),
+                        planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2]]]]", 100d)
+                )
         );
     }
 
@@ -215,13 +215,13 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
     @Test
     public void testProjectExpressionProjectExpressionIntoScan() {
         assertPlan(
-            optimizePhysical("SELECT d1 + f2 FROM (SELECT f0 + f1 d1, f2, f3 FROM p)", 2),
-            plan(
-                planRow(0, RootPhysicalRel.class, "", 100d),
-                planRow(1, RootExchangePhysicalRel.class, "", 100d),
-                planRow(2, ProjectPhysicalRel.class, "EXPR$0=[+(+(CAST($0):BIGINT(32), CAST($1):BIGINT(32)), CAST($2):BIGINT(33))]", 100d),
-                planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2]]]]", 100d)
-            )
+                optimizePhysical("SELECT d1 + f2 FROM (SELECT f0 + f1 d1, f2, f3 FROM p)", 2),
+                plan(
+                        planRow(0, RootPhysicalRel.class, "", 100d),
+                        planRow(1, RootExchangePhysicalRel.class, "", 100d),
+                        planRow(2, ProjectPhysicalRel.class, "EXPR$0=[+(+(CAST($0):BIGINT(32), CAST($1):BIGINT(32)), CAST($2):BIGINT(33))]", 100d),
+                        planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2]]]]", 100d)
+                )
         );
     }
 
@@ -232,12 +232,12 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
     @Test
     public void testProjectProjectFilterIntoScan() {
         assertPlan(
-            optimizePhysical("SELECT f0 FROM (SELECT f0, f1 FROM p WHERE f2 > 1)", 2),
-            plan(
-                planRow(0, RootPhysicalRel.class, "", 50d),
-                planRow(1, RootExchangePhysicalRel.class, "", 50d),
-                planRow(2, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0], filter=>($2, 1)]]]", 50d)
-            )
+                optimizePhysical("SELECT f0 FROM (SELECT f0, f1 FROM p WHERE f2 > 1)", 2),
+                plan(
+                        planRow(0, RootPhysicalRel.class, "", 50d),
+                        planRow(1, RootExchangePhysicalRel.class, "", 50d),
+                        planRow(2, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0], filter=>($2, 1)]]]", 50d)
+                )
         );
     }
 
@@ -248,13 +248,13 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
     @Test
     public void testProjectProjectExpressionFilterIntoScan() {
         assertPlan(
-            optimizePhysical("SELECT d1, f2 FROM (SELECT f0 + f1 d1, f2, f3 FROM p WHERE f4 > 1)", 2),
-            plan(
-                planRow(0, RootPhysicalRel.class, "", 50d),
-                planRow(1, RootExchangePhysicalRel.class, "", 50d),
-                planRow(2, ProjectPhysicalRel.class, "d1=[+(CAST($0):BIGINT(32), CAST($1):BIGINT(32))], f2=[$2]", 50d),
-                planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2], filter=>($4, 1)]]]", 50d)
-            )
+                optimizePhysical("SELECT d1, f2 FROM (SELECT f0 + f1 d1, f2, f3 FROM p WHERE f4 > 1)", 2),
+                plan(
+                        planRow(0, RootPhysicalRel.class, "", 50d),
+                        planRow(1, RootExchangePhysicalRel.class, "", 50d),
+                        planRow(2, ProjectPhysicalRel.class, "d1=[+(CAST($0):BIGINT(32), CAST($1):BIGINT(32))], f2=[$2]", 50d),
+                        planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2], filter=>($4, 1)]]]", 50d)
+                )
         );
     }
 
@@ -265,13 +265,13 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
     @Test
     public void testProjectExpressionProjectFilterIntoScan() {
         assertPlan(
-            optimizePhysical("SELECT f0 + f1 FROM (SELECT f0, f1, f2, f3 FROM p WHERE f2 > 1)", 2),
-            plan(
-                planRow(0, RootPhysicalRel.class, "", 50d),
-                planRow(1, RootExchangePhysicalRel.class, "", 50d),
-                planRow(2, ProjectPhysicalRel.class, "EXPR$0=[+(CAST($0):BIGINT(32), CAST($1):BIGINT(32))]", 50d),
-                planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1], filter=>($2, 1)]]]", 50d)
-            )
+                optimizePhysical("SELECT f0 + f1 FROM (SELECT f0, f1, f2, f3 FROM p WHERE f2 > 1)", 2),
+                plan(
+                        planRow(0, RootPhysicalRel.class, "", 50d),
+                        planRow(1, RootExchangePhysicalRel.class, "", 50d),
+                        planRow(2, ProjectPhysicalRel.class, "EXPR$0=[+(CAST($0):BIGINT(32), CAST($1):BIGINT(32))]", 50d),
+                        planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1], filter=>($2, 1)]]]", 50d)
+                )
         );
     }
 
@@ -282,13 +282,13 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
     @Test
     public void testProjectExpressionProjectExpressionFilterIntoScan() {
         assertPlan(
-            optimizePhysical("SELECT d1 + f2 FROM (SELECT f0 + f1 d1, f2, f3 FROM p WHERE f4 > 1)", 2),
-            plan(
-                planRow(0, RootPhysicalRel.class, "", 50d),
-                planRow(1, RootExchangePhysicalRel.class, "", 50d),
-                planRow(2, ProjectPhysicalRel.class, "EXPR$0=[+(+(CAST($0):BIGINT(32), CAST($1):BIGINT(32)), CAST($2):BIGINT(33))]", 50d),
-                planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2], filter=>($4, 1)]]]", 50d)
-            )
+                optimizePhysical("SELECT d1 + f2 FROM (SELECT f0 + f1 d1, f2, f3 FROM p WHERE f4 > 1)", 2),
+                plan(
+                        planRow(0, RootPhysicalRel.class, "", 50d),
+                        planRow(1, RootExchangePhysicalRel.class, "", 50d),
+                        planRow(2, ProjectPhysicalRel.class, "EXPR$0=[+(+(CAST($0):BIGINT(32), CAST($1):BIGINT(32)), CAST($2):BIGINT(33))]", 50d),
+                        planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2], filter=>($4, 1)]]]", 50d)
+                )
         );
     }
 
@@ -299,66 +299,63 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
     @Test
     public void testProjectFilterProjectIntoScan() {
         assertPlan(
-            optimizePhysical("SELECT f0 FROM (SELECT f0, f1, f2 FROM p) WHERE f1 > 1", 2),
-            plan(
-                planRow(0, RootPhysicalRel.class, "", 50d),
-                planRow(1, RootExchangePhysicalRel.class, "", 50d),
-                planRow(2, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0], filter=>($1, 1)]]]", 50d)
-            )
+                optimizePhysical("SELECT f0 FROM (SELECT f0, f1, f2 FROM p) WHERE f1 > 1", 2),
+                plan(
+                        planRow(0, RootPhysicalRel.class, "", 50d),
+                        planRow(1, RootExchangePhysicalRel.class, "", 50d),
+                        planRow(2, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0], filter=>($1, 1)]]]", 50d)
+                )
         );
     }
 
     /**
      * Before: Project2 <- Filter <- Project1(expression) <- Scan
      * After : Project <- Project <- Scan(Project2, Filter)
-     *
      */
     @Test
     public void testProjectFilterProjectExpressionIntoScan() {
         assertPlan(
-            optimizePhysical("SELECT d1, f2 FROM (SELECT f0 + f1 d1, f2, f3, f4 FROM p) WHERE f3 > 1", 2),
-            plan(
-                planRow(0, RootPhysicalRel.class, "", 50d),
-                planRow(1, RootExchangePhysicalRel.class, "", 50d),
-                planRow(2, ProjectPhysicalRel.class, "d1=[+(CAST($0):BIGINT(32), CAST($1):BIGINT(32))], f2=[$2]", 50d),
-                planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2], filter=>($3, 1)]]]", 50d)
-            )
+                optimizePhysical("SELECT d1, f2 FROM (SELECT f0 + f1 d1, f2, f3, f4 FROM p) WHERE f3 > 1", 2),
+                plan(
+                        planRow(0, RootPhysicalRel.class, "", 50d),
+                        planRow(1, RootExchangePhysicalRel.class, "", 50d),
+                        planRow(2, ProjectPhysicalRel.class, "d1=[+(CAST($0):BIGINT(32), CAST($1):BIGINT(32))], f2=[$2]", 50d),
+                        planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2], filter=>($3, 1)]]]", 50d)
+                )
         );
     }
 
     /**
      * Before: Project2(expression) <- Filter <- Project1 <- Scan
      * After : Project <-  Scan(Project, Filter)
-     *
      */
     @Test
     public void testProjectExpressionFilterProjectIntoScan() {
         assertPlan(
-            optimizePhysical("SELECT f0 + f1 FROM (SELECT f0, f1, f2, f3 FROM p) WHERE f2 > 1", 2),
-            plan(
-                planRow(0, RootPhysicalRel.class, "", 50d),
-                planRow(1, RootExchangePhysicalRel.class, "", 50d),
-                planRow(2, ProjectPhysicalRel.class, "EXPR$0=[+(CAST($0):BIGINT(32), CAST($1):BIGINT(32))]", 50d),
-                planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1], filter=>($2, 1)]]]", 50d)
-            )
+                optimizePhysical("SELECT f0 + f1 FROM (SELECT f0, f1, f2, f3 FROM p) WHERE f2 > 1", 2),
+                plan(
+                        planRow(0, RootPhysicalRel.class, "", 50d),
+                        planRow(1, RootExchangePhysicalRel.class, "", 50d),
+                        planRow(2, ProjectPhysicalRel.class, "EXPR$0=[+(CAST($0):BIGINT(32), CAST($1):BIGINT(32))]", 50d),
+                        planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1], filter=>($2, 1)]]]", 50d)
+                )
         );
     }
 
     /**
      * Before: Project2(expression) <- Filter <- Project1(expression) <- Scan
      * After : Project <- Project <- Scan(Project, Filter)
-     *
      */
     @Test
     public void testProjectExpressionFilterProjectExpressionIntoScan() {
         assertPlan(
-            optimizePhysical("SELECT d1 + f2 FROM (SELECT f0 + f1 d1, f2, f3, f4 FROM p) WHERE f3 > 1", 2),
-            plan(
-                planRow(0, RootPhysicalRel.class, "", 50d),
-                planRow(1, RootExchangePhysicalRel.class, "", 50d),
-                planRow(2, ProjectPhysicalRel.class, "EXPR$0=[+(+(CAST($0):BIGINT(32), CAST($1):BIGINT(32)), CAST($2):BIGINT(33))]", 50d),
-                planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2], filter=>($3, 1)]]]", 50d)
-            )
+                optimizePhysical("SELECT d1 + f2 FROM (SELECT f0 + f1 d1, f2, f3, f4 FROM p) WHERE f3 > 1", 2),
+                plan(
+                        planRow(0, RootPhysicalRel.class, "", 50d),
+                        planRow(1, RootExchangePhysicalRel.class, "", 50d),
+                        planRow(2, ProjectPhysicalRel.class, "EXPR$0=[+(+(CAST($0):BIGINT(32), CAST($1):BIGINT(32)), CAST($2):BIGINT(33))]", 50d),
+                        planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2], filter=>($3, 1)]]]", 50d)
+                )
         );
     }
 
@@ -369,12 +366,12 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
     @Test
     public void testProjectFilterProjectFilterIntoScan() {
         assertPlan(
-            optimizePhysical("SELECT f0 FROM (SELECT f0, f1, f2 FROM p WHERE f3 > 1) WHERE f1 > 1", 2),
-            plan(
-                planRow(0, RootPhysicalRel.class, "", 25d),
-                planRow(1, RootExchangePhysicalRel.class, "", 25d),
-                planRow(2, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0], filter=AND(>($3, 1), >($1, 1))]]]", 25d)
-            )
+                optimizePhysical("SELECT f0 FROM (SELECT f0, f1, f2 FROM p WHERE f3 > 1) WHERE f1 > 1", 2),
+                plan(
+                        planRow(0, RootPhysicalRel.class, "", 25d),
+                        planRow(1, RootExchangePhysicalRel.class, "", 25d),
+                        planRow(2, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0], filter=AND(>($3, 1), >($1, 1))]]]", 25d)
+                )
         );
     }
 
@@ -385,13 +382,13 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
     @Test
     public void testProjectFilterProjectExpressionFilterIntoScan() {
         assertPlan(
-            optimizePhysical("SELECT d1, f2 FROM (SELECT f0 + f1 d1, f2, f3, f4 FROM p WHERE f3 > 1) WHERE f2 > 2", 2),
-            plan(
-                planRow(0, RootPhysicalRel.class, "", 25d),
-                planRow(1, RootExchangePhysicalRel.class, "", 25d),
-                planRow(2, ProjectPhysicalRel.class, "d1=[+(CAST($0):BIGINT(32), CAST($1):BIGINT(32))], f2=[$2]", 25d),
-                planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2], filter=AND(>($3, 1), >($2, 2))]]]", 25d)
-            )
+                optimizePhysical("SELECT d1, f2 FROM (SELECT f0 + f1 d1, f2, f3, f4 FROM p WHERE f3 > 1) WHERE f2 > 2", 2),
+                plan(
+                        planRow(0, RootPhysicalRel.class, "", 25d),
+                        planRow(1, RootExchangePhysicalRel.class, "", 25d),
+                        planRow(2, ProjectPhysicalRel.class, "d1=[+(CAST($0):BIGINT(32), CAST($1):BIGINT(32))], f2=[$2]", 25d),
+                        planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2], filter=AND(>($3, 1), >($2, 2))]]]", 25d)
+                )
         );
     }
 
@@ -402,13 +399,13 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
     @Test
     public void testProjectExpressionFilterProjectFilterIntoScan() {
         assertPlan(
-            optimizePhysical("SELECT f0 + f1 FROM (SELECT f0, f1, f2, f3 FROM p WHERE f3 > 1) WHERE f2 > 1", 2),
-            plan(
-                planRow(0, RootPhysicalRel.class, "", 25d),
-                planRow(1, RootExchangePhysicalRel.class, "", 25d),
-                planRow(2, ProjectPhysicalRel.class, "EXPR$0=[+(CAST($0):BIGINT(32), CAST($1):BIGINT(32))]", 25d),
-                planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1], filter=AND(>($3, 1), >($2, 1))]]]", 25d)
-            )
+                optimizePhysical("SELECT f0 + f1 FROM (SELECT f0, f1, f2, f3 FROM p WHERE f3 > 1) WHERE f2 > 1", 2),
+                plan(
+                        planRow(0, RootPhysicalRel.class, "", 25d),
+                        planRow(1, RootExchangePhysicalRel.class, "", 25d),
+                        planRow(2, ProjectPhysicalRel.class, "EXPR$0=[+(CAST($0):BIGINT(32), CAST($1):BIGINT(32))]", 25d),
+                        planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1], filter=AND(>($3, 1), >($2, 1))]]]", 25d)
+                )
         );
     }
 
@@ -419,25 +416,25 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
     @Test
     public void testProjectExpressionFilterProjectExpressionFilterIntoScan() {
         assertPlan(
-            optimizePhysical("SELECT d1 + f2 FROM (SELECT f0 + f1 d1, f2, f3, f4 FROM p WHERE f3 > 1) WHERE f2 > 2", 2),
-            plan(
-                planRow(0, RootPhysicalRel.class, "", 25d),
-                planRow(1, RootExchangePhysicalRel.class, "", 25d),
-                planRow(2, ProjectPhysicalRel.class, "EXPR$0=[+(+(CAST($0):BIGINT(32), CAST($1):BIGINT(32)), CAST($2):BIGINT(33))]", 25d),
-                planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2], filter=AND(>($3, 1), >($2, 2))]]]", 25d)
-            )
+                optimizePhysical("SELECT d1 + f2 FROM (SELECT f0 + f1 d1, f2, f3, f4 FROM p WHERE f3 > 1) WHERE f2 > 2", 2),
+                plan(
+                        planRow(0, RootPhysicalRel.class, "", 25d),
+                        planRow(1, RootExchangePhysicalRel.class, "", 25d),
+                        planRow(2, ProjectPhysicalRel.class, "EXPR$0=[+(+(CAST($0):BIGINT(32), CAST($1):BIGINT(32)), CAST($2):BIGINT(33))]", 25d),
+                        planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2], filter=AND(>($3, 1), >($2, 2))]]]", 25d)
+                )
         );
     }
 
     @Test
     public void testFilterCompoundExpression() {
         assertPlan(
-            optimizePhysical("SELECT f2 FROM (SELECT f0 + f1 d1, f2 FROM p) WHERE d1 + f2 > 2", 2),
-            plan(
-                planRow(0, RootPhysicalRel.class, "", 50d),
-                planRow(1, RootExchangePhysicalRel.class, "", 50d),
-                planRow(2, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[2], filter=>(+(+(CAST($0):BIGINT(32), CAST($1):BIGINT(32)), CAST($2):BIGINT(33)), 2)]]]", 50d)
-            )
+                optimizePhysical("SELECT f2 FROM (SELECT f0 + f1 d1, f2 FROM p) WHERE d1 + f2 > 2", 2),
+                plan(
+                        planRow(0, RootPhysicalRel.class, "", 50d),
+                        planRow(1, RootExchangePhysicalRel.class, "", 50d),
+                        planRow(2, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[2], filter=>(+(+(CAST($0):BIGINT(32), CAST($1):BIGINT(32)), CAST($2):BIGINT(33)), 2)]]]", 50d)
+                )
         );
     }
 }

@@ -65,7 +65,7 @@ public class HazelcastSqlOperatorTableTest {
             boolean valid = operator instanceof HazelcastOperandTypeCheckerAware;
 
             assertTrue("Operator must implement one of classes from " + HazelcastFunction.class.getPackage().toString()
-                + ": " + operator.getClass().getSimpleName(), valid);
+                    + ": " + operator.getClass().getSimpleName(), valid);
         }
     }
 

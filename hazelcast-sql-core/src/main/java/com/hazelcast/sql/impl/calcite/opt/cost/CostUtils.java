@@ -87,7 +87,7 @@ public final class CostUtils {
     /**
      * Adjust row count based on filter selectivity.
      *
-     * @param rowCount Row count.
+     * @param rowCount    Row count.
      * @param selectivity Selectivity.
      * @return New row count.
      */

@@ -17,8 +17,11 @@
 package com.hazelcast.jet.aggregate;
 
 import com.hazelcast.jet.pipeline.PipelineTestSupport;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
 import java.util.Map;
@@ -30,6 +33,7 @@ import static com.hazelcast.jet.aggregate.AggregateOperations.groupingBy;
 import static com.hazelcast.jet.aggregate.AggregateOperations.toAggregator;
 import static org.junit.Assert.assertEquals;
 
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class AggregateOperationToAggregatorTest extends PipelineTestSupport {
 
     @Rule

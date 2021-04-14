@@ -132,7 +132,7 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * We change the contract of the superclass' return type. According to the
      * superclass contract we're supposed to return true iff we successfully
      * added a CAST. This method returns true if the expression can now be
@@ -224,9 +224,9 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
 
     @Override
     public boolean builtinFunctionCoercion(
-        SqlCallBinding binding,
-        List<RelDataType> operandTypes,
-        List<SqlTypeFamily> expectedFamilies
+            SqlCallBinding binding,
+            List<RelDataType> operandTypes,
+            List<SqlTypeFamily> expectedFamilies
     ) {
         throw new UnsupportedOperationException("Should not be called");
     }
@@ -259,7 +259,7 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * We change the contract of the superclass' return type. According to the
      * superclass contract we're supposed to return true iff any coercion
      * happened. This method returns true if the {@code sourceRowType} was
@@ -273,10 +273,10 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
      */
     @Override
     public boolean querySourceCoercion(
-        SqlValidatorScope scope,
-        RelDataType sourceRowType,
-        RelDataType targetRowType,
-        SqlNode query
+            SqlValidatorScope scope,
+            RelDataType sourceRowType,
+            RelDataType targetRowType,
+            SqlNode query
     ) {
         // the code below copied from superclass implementation, but uses our `canCast` method
         final List<RelDataTypeField> sourceFields = sourceRowType.getFieldList();

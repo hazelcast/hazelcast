@@ -80,7 +80,7 @@ public class SqlIndexResolutionTest extends SqlIndexTestSupport {
 
         for (IndexType indexType : Arrays.asList(IndexType.SORTED, IndexType.HASH)) {
             for (boolean composite : Arrays.asList(true, false)) {
-                res.add(new Object[] { indexType, composite });
+                res.add(new Object[]{indexType, composite});
             }
         }
 
@@ -191,7 +191,7 @@ public class SqlIndexResolutionTest extends SqlIndexTestSupport {
 
                 // Check resolved field converter types. We do not test more than two components.
                 List<QueryDataType> expectedFieldConverterTypes0 = expectedFieldConverterTypes == null
-                    ? Collections.emptyList() : Arrays.asList(expectedFieldConverterTypes);
+                        ? Collections.emptyList() : Arrays.asList(expectedFieldConverterTypes);
 
                 assertTrue(expectedFieldConverterTypes0.size() <= 2);
 
@@ -228,11 +228,11 @@ public class SqlIndexResolutionTest extends SqlIndexTestSupport {
     }
 
     private void checkIndexUsage(
-        IMap<?, ?> map,
-        ExpressionType<?> f1,
-        ExpressionType<?> f2,
-        boolean firstResolved,
-        boolean secondResolved
+            IMap<?, ?> map,
+            ExpressionType<?> f1,
+            ExpressionType<?> f2,
+            boolean firstResolved,
+            boolean secondResolved
     ) {
         String field1Literal = toLiteral(f1, f1.valueFrom());
         String field2Literal = toLiteral(f2, f2.valueFrom());
@@ -260,8 +260,8 @@ public class SqlIndexResolutionTest extends SqlIndexTestSupport {
         }
 
         checkIndexUsage(
-            "SELECT * FROM " + map.getName() + " WHERE field1=" + field1Literal + " AND field2=" + field2Literal,
-            expectedUsage
+                "SELECT * FROM " + map.getName() + " WHERE field1=" + field1Literal + " AND field2=" + field2Literal,
+                expectedUsage
         );
     }
 

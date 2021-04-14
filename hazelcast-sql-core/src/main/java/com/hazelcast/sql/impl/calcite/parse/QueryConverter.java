@@ -56,9 +56,9 @@ public class QueryConverter {
 
     static {
         SqlToRelConverter.ConfigBuilder configBuilder = SqlToRelConverter.configBuilder()
-            .withExpand(EXPAND)
-            .withInSubQueryThreshold(HAZELCAST_IN_ELEMENTS_THRESHOLD)
-            .withTrimUnusedFields(TRIM_UNUSED_FIELDS);
+                                                                         .withExpand(EXPAND)
+                                                                         .withInSubQueryThreshold(HAZELCAST_IN_ELEMENTS_THRESHOLD)
+                                                                         .withTrimUnusedFields(TRIM_UNUSED_FIELDS);
 
         CONFIG = configBuilder.build();
     }
@@ -67,8 +67,8 @@ public class QueryConverter {
     private final RelOptCluster cluster;
 
     public QueryConverter(
-        Prepare.CatalogReader catalogReader,
-        HazelcastRelOptCluster cluster
+            Prepare.CatalogReader catalogReader,
+            HazelcastRelOptCluster cluster
     ) {
         this.catalogReader = catalogReader;
         this.cluster = cluster;
@@ -78,12 +78,12 @@ public class QueryConverter {
         SqlNode node = parseResult.getNode();
 
         SqlToRelConverter converter = parseResult.getSqlBackend().converter(
-            null,
-            parseResult.getValidator(),
-            catalogReader,
-            cluster,
-            StandardConvertletTable.INSTANCE,
-            CONFIG
+                null,
+                parseResult.getValidator(),
+                catalogReader,
+                cluster,
+                StandardConvertletTable.INSTANCE,
+                CONFIG
         );
 
         // 1. Perform initial conversion.

@@ -33,10 +33,10 @@ public final class ProjectLogicalRule extends ConverterRule {
 
     private ProjectLogicalRule() {
         super(
-            LogicalProject.class,
-            Convention.NONE,
-            HazelcastConventions.LOGICAL,
-            ProjectLogicalRule.class.getSimpleName()
+                LogicalProject.class,
+                Convention.NONE,
+                HazelcastConventions.LOGICAL,
+                ProjectLogicalRule.class.getSimpleName()
         );
     }
 
@@ -46,11 +46,11 @@ public final class ProjectLogicalRule extends ConverterRule {
         RelNode input = project.getInput();
 
         return new ProjectLogicalRel(
-            project.getCluster(),
-            OptUtils.toLogicalConvention(project.getTraitSet()),
-            OptUtils.toLogicalInput(input),
-            project.getProjects(),
-            project.getRowType()
+                project.getCluster(),
+                OptUtils.toLogicalConvention(project.getTraitSet()),
+                OptUtils.toLogicalInput(input),
+                project.getProjects(),
+                project.getRowType()
         );
     }
 }

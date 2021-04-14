@@ -189,8 +189,8 @@ public class Cost implements RelOptCost {
         Cost other0 = (Cost) other;
 
         return Double.compare(other0.rows, rows) == 0
-            && Double.compare(other0.cpu, cpu) == 0
-            && Double.compare(other0.network, network) == 0;
+                && Double.compare(other0.cpu, cpu) == 0
+                && Double.compare(other0.network, network) == 0;
     }
 
     @Override

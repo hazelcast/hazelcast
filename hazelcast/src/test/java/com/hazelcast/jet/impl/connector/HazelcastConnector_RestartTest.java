@@ -39,9 +39,13 @@ import com.hazelcast.jet.impl.execution.ExecutionContext;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.CountDownLatch;
@@ -58,6 +62,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
+@Ignore("https://github.com/hazelcast/hazelcast/issues/18469")
 public class HazelcastConnector_RestartTest extends JetTestSupport {
 
     @ClassRule

@@ -17,15 +17,19 @@
 package com.hazelcast.jet.sql.impl.schema;
 
 import com.hazelcast.jet.SimpleTestInClusterSupport;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import static com.hazelcast.sql.impl.SqlTestSupport.nodeEngine;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MappingStorageTest extends SimpleTestInClusterSupport {
 
     private MappingStorage storage;

@@ -70,18 +70,18 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     private final Map<Integer, SqlParserPos> parameterPositionMap = new HashMap<>();
 
     public HazelcastSqlValidator(
-        SqlValidatorCatalogReader catalogReader,
-        HazelcastTypeFactory typeFactory,
-        SqlConformance conformance
+            SqlValidatorCatalogReader catalogReader,
+            HazelcastTypeFactory typeFactory,
+            SqlConformance conformance
     ) {
         this(null, catalogReader, typeFactory, conformance);
     }
 
     public HazelcastSqlValidator(
-        SqlOperatorTable extensionOperatorTable,
-        SqlValidatorCatalogReader catalogReader,
-        HazelcastTypeFactory typeFactory,
-        SqlConformance conformance
+            SqlOperatorTable extensionOperatorTable,
+            SqlValidatorCatalogReader catalogReader,
+            HazelcastTypeFactory typeFactory,
+            SqlConformance conformance
     ) {
         super(operatorTable(extensionOperatorTable), catalogReader, typeFactory, CONFIG.withSqlConformance(conformance));
 
@@ -104,12 +104,12 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
     @Override
     protected void addToSelectList(
-        List<SqlNode> list,
-        Set<String> aliases,
-        List<Map.Entry<String, RelDataType>> fieldList,
-        SqlNode exp,
-        SelectScope scope,
-        boolean includeSystemVars
+            List<SqlNode> list,
+            Set<String> aliases,
+            List<Map.Entry<String, RelDataType>> fieldList,
+            SqlNode exp,
+            SelectScope scope,
+            boolean includeSystemVars
     ) {
         if (isHiddenColumn(exp, scope)) {
             return;
@@ -227,9 +227,9 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
             if (converter == null) {
                 converter = new StrictParameterConverter(
-                    i,
-                    parameterPositionMap.get(i),
-                    HazelcastTypeUtils.toHazelcastType(rowType.getFieldList().get(i).getType().getSqlTypeName())
+                        i,
+                        parameterPositionMap.get(i),
+                        HazelcastTypeUtils.toHazelcastType(rowType.getFieldList().get(i).getType().getSqlTypeName())
                 );
             }
 

@@ -35,9 +35,9 @@ import java.util.List;
  */
 public class MapScanPhysicalRel extends AbstractMapScanPhysicalRel {
     public MapScanPhysicalRel(
-        RelOptCluster cluster,
-        RelTraitSet traitSet,
-        RelOptTable table
+            RelOptCluster cluster,
+            RelTraitSet traitSet,
+            RelOptTable table
     ) {
         super(cluster, traitSet, table);
     }

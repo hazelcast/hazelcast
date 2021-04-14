@@ -94,8 +94,8 @@ public class SqlBasicTest extends SqlTestSupport {
     private static final String MAP_OBJECT = "map_object";
     private static final String MAP_BINARY = "map_binary";
 
-    private static final int[] PAGE_SIZES = { 256 };
-    private static final int[] DATA_SET_SIZES = { 4096 };
+    private static final int[] PAGE_SIZES = {256};
+    private static final int[] DATA_SET_SIZES = {4096};
     private static final TestHazelcastFactory FACTORY = new TestHazelcastFactory();
 
     private static HazelcastInstance member1;
@@ -121,12 +121,12 @@ public class SqlBasicTest extends SqlTestSupport {
         for (int pageSize : PAGE_SIZES) {
             for (int dataSetSize : DATA_SET_SIZES) {
                 for (SerializationMode serializationMode : SerializationMode.values()) {
-                    for (InMemoryFormat format : new InMemoryFormat[] { InMemoryFormat.OBJECT, InMemoryFormat.BINARY }) {
-                        res.add(new Object[] {
-                            pageSize,
-                            dataSetSize,
-                            serializationMode,
-                            format
+                    for (InMemoryFormat format : new InMemoryFormat[]{InMemoryFormat.OBJECT, InMemoryFormat.BINARY}) {
+                        res.add(new Object[]{
+                                pageSize,
+                                dataSetSize,
+                                serializationMode,
+                                format
                         });
                     }
                 }
@@ -226,38 +226,38 @@ public class SqlBasicTest extends SqlTestSupport {
                     checkRowValue(SqlColumnType.TIMESTAMP, val.getTimestampVal(), row, "timestampVal");
 
                     checkRowValue(
-                        SqlColumnType.TIMESTAMP_WITH_TIME_ZONE,
-                        OffsetDateTime.ofInstant(val.getTsTzDateVal().toInstant(), ZoneId.systemDefault()),
-                        row,
-                        "tsTzDateVal"
+                            SqlColumnType.TIMESTAMP_WITH_TIME_ZONE,
+                            OffsetDateTime.ofInstant(val.getTsTzDateVal().toInstant(), ZoneId.systemDefault()),
+                            row,
+                            "tsTzDateVal"
                     );
 
                     checkRowValue(
-                        SqlColumnType.TIMESTAMP_WITH_TIME_ZONE,
-                        val.getTsTzCalendarVal().toZonedDateTime().toOffsetDateTime(),
-                        row,
-                        "tsTzCalendarVal"
+                            SqlColumnType.TIMESTAMP_WITH_TIME_ZONE,
+                            val.getTsTzCalendarVal().toZonedDateTime().toOffsetDateTime(),
+                            row,
+                            "tsTzCalendarVal"
                     );
 
                     checkRowValue(
-                        SqlColumnType.TIMESTAMP_WITH_TIME_ZONE,
-                        OffsetDateTime.ofInstant(val.getTsTzInstantVal(), ZoneId.systemDefault()),
-                        row,
-                        "tsTzInstantVal"
+                            SqlColumnType.TIMESTAMP_WITH_TIME_ZONE,
+                            OffsetDateTime.ofInstant(val.getTsTzInstantVal(), ZoneId.systemDefault()),
+                            row,
+                            "tsTzInstantVal"
                     );
 
                     checkRowValue(
-                        SqlColumnType.TIMESTAMP_WITH_TIME_ZONE,
-                        val.getTsTzOffsetDateTimeVal(),
-                        row,
-                        "tsTzOffsetDateTimeVal"
+                            SqlColumnType.TIMESTAMP_WITH_TIME_ZONE,
+                            val.getTsTzOffsetDateTimeVal(),
+                            row,
+                            "tsTzOffsetDateTimeVal"
                     );
 
                     checkRowValue(
-                        SqlColumnType.TIMESTAMP_WITH_TIME_ZONE,
-                        val.getTsTzZonedDateTimeVal().toOffsetDateTime(),
-                        row,
-                        "tsTzZonedDateTimeVal"
+                            SqlColumnType.TIMESTAMP_WITH_TIME_ZONE,
+                            val.getTsTzZonedDateTimeVal().toOffsetDateTime(),
+                            row,
+                            "tsTzZonedDateTimeVal"
                     );
 
                     checkRowValue(SqlColumnType.OBJECT, val.getObjectVal(), row, "objectVal");
@@ -302,7 +302,7 @@ public class SqlBasicTest extends SqlTestSupport {
 
     private int memberClientCursors() {
         return sqlInternalService(member1).getClientStateRegistry().getCursorCount()
-            + sqlInternalService(member2).getClientStateRegistry().getCursorCount();
+                + sqlInternalService(member2).getClientStateRegistry().getCursorCount();
     }
 
     private void checkRowValue(SqlColumnType expectedType, Object expectedValue, SqlRow row, String columnName) {
@@ -359,43 +359,43 @@ public class SqlBasicTest extends SqlTestSupport {
     private List<String> fields() {
         if (serializationMode == SerializationMode.PORTABLE) {
             return Arrays.asList(
-                "key",
-                "booleanVal",
-                "tinyIntVal",
-                "smallIntVal",
-                "intVal",
-                "bigIntVal",
-                "realVal",
-                "doubleVal",
-                "charVal",
-                "varcharVal",
-                "portableVal",
-                "nullVal"
+                    "key",
+                    "booleanVal",
+                    "tinyIntVal",
+                    "smallIntVal",
+                    "intVal",
+                    "bigIntVal",
+                    "realVal",
+                    "doubleVal",
+                    "charVal",
+                    "varcharVal",
+                    "portableVal",
+                    "nullVal"
             );
         } else {
             return Arrays.asList(
-                "key",
-                "booleanVal",
-                "tinyIntVal",
-                "smallIntVal",
-                "intVal",
-                "bigIntVal",
-                "realVal",
-                "doubleVal",
-                "decimalBigIntegerVal",
-                "decimalVal",
-                "charVal",
-                "varcharVal",
-                "dateVal",
-                "timeVal",
-                "timestampVal",
-                "tsTzDateVal",
-                "tsTzCalendarVal",
-                "tsTzInstantVal",
-                "tsTzOffsetDateTimeVal",
-                "tsTzZonedDateTimeVal",
-                "objectVal",
-                "nullVal"
+                    "key",
+                    "booleanVal",
+                    "tinyIntVal",
+                    "smallIntVal",
+                    "intVal",
+                    "bigIntVal",
+                    "realVal",
+                    "doubleVal",
+                    "decimalBigIntegerVal",
+                    "decimalVal",
+                    "charVal",
+                    "varcharVal",
+                    "dateVal",
+                    "timeVal",
+                    "timestampVal",
+                    "tsTzDateVal",
+                    "tsTzCalendarVal",
+                    "tsTzInstantVal",
+                    "tsTzOffsetDateTimeVal",
+                    "tsTzZonedDateTimeVal",
+                    "objectVal",
+                    "nullVal"
             );
         }
     }
@@ -403,43 +403,43 @@ public class SqlBasicTest extends SqlTestSupport {
     private List<SqlColumnType> fieldTypes() {
         if (serializationMode == SerializationMode.PORTABLE) {
             return Arrays.asList(
-                SqlColumnType.BIGINT,
-                SqlColumnType.BOOLEAN,
-                SqlColumnType.TINYINT,
-                SqlColumnType.SMALLINT,
-                SqlColumnType.INTEGER,
-                SqlColumnType.BIGINT,
-                SqlColumnType.REAL,
-                SqlColumnType.DOUBLE,
-                SqlColumnType.VARCHAR,
-                SqlColumnType.VARCHAR,
-                SqlColumnType.OBJECT,
-                SqlColumnType.VARCHAR
+                    SqlColumnType.BIGINT,
+                    SqlColumnType.BOOLEAN,
+                    SqlColumnType.TINYINT,
+                    SqlColumnType.SMALLINT,
+                    SqlColumnType.INTEGER,
+                    SqlColumnType.BIGINT,
+                    SqlColumnType.REAL,
+                    SqlColumnType.DOUBLE,
+                    SqlColumnType.VARCHAR,
+                    SqlColumnType.VARCHAR,
+                    SqlColumnType.OBJECT,
+                    SqlColumnType.VARCHAR
             );
         } else {
             return Arrays.asList(
-                SqlColumnType.BIGINT,
-                SqlColumnType.BOOLEAN,
-                SqlColumnType.TINYINT,
-                SqlColumnType.SMALLINT,
-                SqlColumnType.INTEGER,
-                SqlColumnType.BIGINT,
-                SqlColumnType.REAL,
-                SqlColumnType.DOUBLE,
-                SqlColumnType.DECIMAL,
-                SqlColumnType.DECIMAL,
-                SqlColumnType.VARCHAR,
-                SqlColumnType.VARCHAR,
-                SqlColumnType.DATE,
-                SqlColumnType.TIME,
-                SqlColumnType.TIMESTAMP,
-                SqlColumnType.TIMESTAMP_WITH_TIME_ZONE,
-                SqlColumnType.TIMESTAMP_WITH_TIME_ZONE,
-                SqlColumnType.TIMESTAMP_WITH_TIME_ZONE,
-                SqlColumnType.TIMESTAMP_WITH_TIME_ZONE,
-                SqlColumnType.TIMESTAMP_WITH_TIME_ZONE,
-                SqlColumnType.OBJECT,
-                SqlColumnType.OBJECT
+                    SqlColumnType.BIGINT,
+                    SqlColumnType.BOOLEAN,
+                    SqlColumnType.TINYINT,
+                    SqlColumnType.SMALLINT,
+                    SqlColumnType.INTEGER,
+                    SqlColumnType.BIGINT,
+                    SqlColumnType.REAL,
+                    SqlColumnType.DOUBLE,
+                    SqlColumnType.DECIMAL,
+                    SqlColumnType.DECIMAL,
+                    SqlColumnType.VARCHAR,
+                    SqlColumnType.VARCHAR,
+                    SqlColumnType.DATE,
+                    SqlColumnType.TIME,
+                    SqlColumnType.TIMESTAMP,
+                    SqlColumnType.TIMESTAMP_WITH_TIME_ZONE,
+                    SqlColumnType.TIMESTAMP_WITH_TIME_ZONE,
+                    SqlColumnType.TIMESTAMP_WITH_TIME_ZONE,
+                    SqlColumnType.TIMESTAMP_WITH_TIME_ZONE,
+                    SqlColumnType.TIMESTAMP_WITH_TIME_ZONE,
+                    SqlColumnType.OBJECT,
+                    SqlColumnType.OBJECT
             );
         }
     }
@@ -536,8 +536,8 @@ public class SqlBasicTest extends SqlTestSupport {
         Config config = new Config().setSerializationConfig(serializationConfig());
 
         config
-            .addMapConfig(new MapConfig(MAP_OBJECT).setInMemoryFormat(InMemoryFormat.OBJECT))
-            .addMapConfig(new MapConfig(MAP_BINARY).setInMemoryFormat(InMemoryFormat.BINARY));
+                .addMapConfig(new MapConfig(MAP_OBJECT).setInMemoryFormat(InMemoryFormat.OBJECT))
+                .addMapConfig(new MapConfig(MAP_BINARY).setInMemoryFormat(InMemoryFormat.BINARY));
 
         return config;
     }

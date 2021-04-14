@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.plan.cache;
+package com.hazelcast.sql.impl.optimizer;
 
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 
@@ -27,26 +27,26 @@ import java.util.UUID;
  */
 public class PlanCheckContext {
     /** Unique IDs of resolved objects. */
-    private final Set<PlanObjectKey> objectIds;
+    private final Set<PlanObjectKey> objectKeys;
 
     /** Current distribution of partitions. */
     private final Map<UUID, PartitionIdSet> partitions;
 
-    public PlanCheckContext(Set<PlanObjectKey> objectIds, Map<UUID, PartitionIdSet> partitions) {
-        this.objectIds = objectIds;
+    public PlanCheckContext(Set<PlanObjectKey> objectKeys, Map<UUID, PartitionIdSet> partitions) {
+        this.objectKeys = objectKeys;
         this.partitions = partitions;
     }
 
     public boolean isValid(Set<PlanObjectKey> expectedObjectVersions) {
         // If some of objects used in the plan have changed, then the plan should be re-created.
         // Examples are index creation, map destroy, external object redefinition.
-        return objectIds.containsAll(expectedObjectVersions);
+        return objectKeys.containsAll(expectedObjectVersions);
     }
 
     public boolean isValid(Set<PlanObjectKey> expectedObjectVersions, Map<UUID, PartitionIdSet> expectedPartitions) {
         // If some of objects used in the plan have changed, then the plan should be re-created.
         // Examples are index creation, map destroy, external object redefinition.
-        if (!objectIds.containsAll(expectedObjectVersions)) {
+        if (!objectKeys.containsAll(expectedObjectVersions)) {
             return false;
         }
 

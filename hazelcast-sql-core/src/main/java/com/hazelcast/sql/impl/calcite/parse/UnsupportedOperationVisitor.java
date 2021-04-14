@@ -272,9 +272,9 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
             case REAL:
             case DOUBLE:
             case VARCHAR:
-            // CHAR is present here to support string literals: Calcite expects
-            // string literals to be of CHAR type, not VARCHAR. Validated type
-            // of string literals is still VARCHAR in HazelcastSqlValidator.
+                // CHAR is present here to support string literals: Calcite expects
+                // string literals to be of CHAR type, not VARCHAR. Validated type
+                // of string literals is still VARCHAR in HazelcastSqlValidator.
             case CHAR:
             case ANY:
             case NULL:
