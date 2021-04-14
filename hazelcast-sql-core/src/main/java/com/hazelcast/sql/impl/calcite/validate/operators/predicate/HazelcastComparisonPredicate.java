@@ -28,37 +28,37 @@ import org.apache.calcite.sql.type.SqlOperandCountRanges;
 public final class HazelcastComparisonPredicate extends HazelcastBinaryOperator {
 
     public static final HazelcastComparisonPredicate EQUALS = new HazelcastComparisonPredicate(
-        SqlStdOperatorTable.EQUALS
+            SqlStdOperatorTable.EQUALS
     );
 
     public static final HazelcastComparisonPredicate NOT_EQUALS = new HazelcastComparisonPredicate(
-        SqlStdOperatorTable.NOT_EQUALS
+            SqlStdOperatorTable.NOT_EQUALS
     );
 
     public static final HazelcastComparisonPredicate GREATER_THAN = new HazelcastComparisonPredicate(
-        SqlStdOperatorTable.GREATER_THAN
+            SqlStdOperatorTable.GREATER_THAN
     );
 
     public static final HazelcastComparisonPredicate GREATER_THAN_OR_EQUAL = new HazelcastComparisonPredicate(
-        SqlStdOperatorTable.GREATER_THAN_OR_EQUAL
+            SqlStdOperatorTable.GREATER_THAN_OR_EQUAL
     );
 
     public static final HazelcastComparisonPredicate LESS_THAN = new HazelcastComparisonPredicate(
-        SqlStdOperatorTable.LESS_THAN
+            SqlStdOperatorTable.LESS_THAN
     );
 
     public static final HazelcastComparisonPredicate LESS_THAN_OR_EQUAL = new HazelcastComparisonPredicate(
-        SqlStdOperatorTable.LESS_THAN_OR_EQUAL
+            SqlStdOperatorTable.LESS_THAN_OR_EQUAL
     );
 
     private HazelcastComparisonPredicate(SqlBinaryOperator base) {
         super(
-            base.getName(),
-            base.getKind(),
-            base.getLeftPrec(),
-            true,
-            ReturnTypes.BOOLEAN_NULLABLE,
-            BinaryOperatorOperandTypeInference.INSTANCE
+                base.getName(),
+                base.getKind(),
+                base.getLeftPrec(),
+                true,
+                ReturnTypes.BOOLEAN_NULLABLE,
+                BinaryOperatorOperandTypeInference.INSTANCE
         );
     }
 

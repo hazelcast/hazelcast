@@ -36,29 +36,29 @@ public final class LogicalRules {
 
     public static RuleSet getRuleSet() {
         return RuleSets.ofList(
-            // Filter rules.
-            FilterMergeRule.INSTANCE,
-            FilterProjectTransposeRule.INSTANCE,
-            FilterIntoScanLogicalRule.INSTANCE,
+                // Filter rules.
+                FilterMergeRule.INSTANCE,
+                FilterProjectTransposeRule.INSTANCE,
+                FilterIntoScanLogicalRule.INSTANCE,
 
-            // Project rules.
-            ProjectMergeRule.INSTANCE,
-            ProjectRemoveRule.INSTANCE,
-            ProjectFilterTransposeRule.INSTANCE,
-            ProjectJoinTransposeRule.INSTANCE,
-            ProjectIntoScanLogicalRule.INSTANCE,
+                // Project rules.
+                ProjectMergeRule.INSTANCE,
+                ProjectRemoveRule.INSTANCE,
+                ProjectFilterTransposeRule.INSTANCE,
+                ProjectJoinTransposeRule.INSTANCE,
+                ProjectIntoScanLogicalRule.INSTANCE,
 
-            // Values rules
-            PruneEmptyRules.PROJECT_INSTANCE,
-            PruneEmptyRules.FILTER_INSTANCE,
+                // Values rules
+                PruneEmptyRules.PROJECT_INSTANCE,
+                PruneEmptyRules.FILTER_INSTANCE,
 
-            // Converter rules
-            MapScanLogicalRule.INSTANCE,
-            FilterLogicalRule.INSTANCE,
-            ProjectLogicalRule.INSTANCE,
-            ValuesLogicalRule.INSTANCE,
+                // Converter rules
+                MapScanLogicalRule.INSTANCE,
+                FilterLogicalRule.INSTANCE,
+                ProjectLogicalRule.INSTANCE,
+                ValuesLogicalRule.INSTANCE,
 
-            SortLogicalRule.INSTANCE
+                SortLogicalRule.INSTANCE
         );
     }
 }

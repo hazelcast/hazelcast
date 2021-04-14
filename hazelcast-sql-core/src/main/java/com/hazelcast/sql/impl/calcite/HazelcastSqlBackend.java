@@ -117,12 +117,12 @@ public class HazelcastSqlBackend implements SqlBackend {
         Member localMember = nodeEngine.getLocalMember();
 
         PlanCreateVisitor visitor = new PlanCreateVisitor(
-            localMember.getUuid(),
-            QueryUtils.createPartitionMap(nodeEngine, localMember.getVersion(), true),
-            relIdMap,
-            new PlanKey(task.getSearchPaths(), sql),
-            convertResult.getFieldNames(),
-            parseResult.getParameterMetadata()
+                localMember.getUuid(),
+                QueryUtils.createPartitionMap(nodeEngine, localMember.getVersion(), true),
+                relIdMap,
+                new PlanKey(task.getSearchPaths(), sql),
+                convertResult.getFieldNames(),
+                parseResult.getParameterMetadata()
         );
 
         physicalRel.visit(visitor);
@@ -131,9 +131,9 @@ public class HazelcastSqlBackend implements SqlBackend {
     }
 
     private PhysicalRel optimize(
-        OptimizerContext context,
-        RelNode rel,
-        QueryParameterMetadata parameterMetadata
+            OptimizerContext context,
+            RelNode rel,
+            QueryParameterMetadata parameterMetadata
     ) {
         // Make metadata available to planner
         context.setParameterMetadata(parameterMetadata);

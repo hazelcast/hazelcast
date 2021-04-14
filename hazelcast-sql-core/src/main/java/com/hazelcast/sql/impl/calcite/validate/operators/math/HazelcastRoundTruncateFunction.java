@@ -39,11 +39,11 @@ public final class HazelcastRoundTruncateFunction extends HazelcastFunction {
 
     private HazelcastRoundTruncateFunction(String name) {
         super(
-            name,
-            SqlKind.OTHER_FUNCTION,
-            ReturnTypes.ARG0_NULLABLE,
-            new ReplaceUnknownOperandTypeInference(new SqlTypeName[] { DECIMAL, INTEGER }),
-            SqlFunctionCategory.NUMERIC
+                name,
+                SqlKind.OTHER_FUNCTION,
+                ReturnTypes.ARG0_NULLABLE,
+                new ReplaceUnknownOperandTypeInference(new SqlTypeName[]{DECIMAL, INTEGER}),
+                SqlFunctionCategory.NUMERIC
         );
     }
 
@@ -60,8 +60,8 @@ public final class HazelcastRoundTruncateFunction extends HazelcastFunction {
             assert binding.getOperandCount() == 2;
 
             return new OperandCheckerProgram(
-                NumericOperandChecker.INSTANCE,
-                TypedOperandChecker.INTEGER
+                    NumericOperandChecker.INSTANCE,
+                    TypedOperandChecker.INTEGER
             ).check(binding, throwOnFailure);
         }
     }

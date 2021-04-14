@@ -41,8 +41,8 @@ public final class MapScanPhysicalRule extends RelOptRule {
 
     private MapScanPhysicalRule() {
         super(
-            OptUtils.single(MapScanLogicalRel.class, HazelcastConventions.LOGICAL),
-            MapScanPhysicalRule.class.getSimpleName()
+                OptUtils.single(MapScanLogicalRel.class, HazelcastConventions.LOGICAL),
+                MapScanPhysicalRule.class.getSimpleName()
         );
     }
 
@@ -57,9 +57,9 @@ public final class MapScanPhysicalRule extends RelOptRule {
         List<RelNode> transforms = new ArrayList<>(1);
 
         MapScanPhysicalRel mapScan = new MapScanPhysicalRel(
-            scan.getCluster(),
-            OptUtils.toPhysicalConvention(scan.getTraitSet(), distribution),
-            scan.getTable()
+                scan.getCluster(),
+                OptUtils.toPhysicalConvention(scan.getTraitSet(), distribution),
+                scan.getTable()
         );
 
         if (!table.isHd()) {

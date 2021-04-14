@@ -37,9 +37,9 @@ public class IndexComponentCandidate {
     private final IndexFilter filter;
 
     public IndexComponentCandidate(
-        RexNode expression,
-        int columnIndex,
-        IndexFilter filter
+            RexNode expression,
+            int columnIndex,
+            IndexFilter filter
     ) {
         this.expression = expression;
         this.columnIndex = columnIndex;

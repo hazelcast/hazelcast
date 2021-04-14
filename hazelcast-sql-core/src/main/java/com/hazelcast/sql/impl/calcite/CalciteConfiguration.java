@@ -37,7 +37,7 @@ import java.util.Properties;
 public final class CalciteConfiguration {
 
     public static final CalciteConfiguration DEFAULT =
-        new CalciteConfiguration(true, Casing.UNCHANGED, Casing.UNCHANGED, Quoting.DOUBLE_QUOTE);
+            new CalciteConfiguration(true, Casing.UNCHANGED, Casing.UNCHANGED, Quoting.DOUBLE_QUOTE);
 
     private final boolean caseSensitive;
     private final Casing unquotedCasing;

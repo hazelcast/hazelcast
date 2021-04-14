@@ -134,17 +134,17 @@ public class SqlQueryResultTest extends SqlTestSupport {
 
         private TestPlan(Plan plan) {
             super(
-                plan.getPartitionMap(),
-                plan.getFragments(),
-                plan.getFragmentMappings(),
-                plan.getOutboundEdgeMap(),
-                plan.getInboundEdgeMap(),
-                plan.getInboundEdgeMemberCountMap(),
-                plan.getRowMetadata(),
-                plan.getParameterMetadata(),
-                plan.getPlanKey(),
-                plan.getObjectKeys(),
-                plan.getPermissions()
+                    plan.getPartitionMap(),
+                    plan.getFragments(),
+                    plan.getFragmentMappings(),
+                    plan.getOutboundEdgeMap(),
+                    plan.getInboundEdgeMap(),
+                    plan.getInboundEdgeMemberCountMap(),
+                    plan.getRowMetadata(),
+                    plan.getParameterMetadata(),
+                    plan.getPlanKey(),
+                    plan.getObjectKeys(),
+                    plan.getPermissions()
             );
         }
 

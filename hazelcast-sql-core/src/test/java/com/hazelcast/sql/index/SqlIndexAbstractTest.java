@@ -102,7 +102,7 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
-         factory = new TestHazelcastInstanceFactory(2);
+        factory = new TestHazelcastInstanceFactory(2);
     }
 
     @Before
@@ -193,7 +193,8 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         return config;
     }
 
-    @Test public void test() {
+    @Test
+    public void test() {
         checkFirstColumn();
         checkSecondColumn();
         checkBothColumns();
@@ -258,34 +259,34 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         // Do not use literals here, because this is already tested with simple conditions
         // Do not exchange operand positions, because this is already tested with simple conditions
         check(
-            query("field1>? AND field1<?", f1.valueFrom(), f1.valueTo()),
-            c_sorted(),
-            and(gt(f1.valueFrom()), lt(f1.valueTo()))
+                query("field1>? AND field1<?", f1.valueFrom(), f1.valueTo()),
+                c_sorted(),
+                and(gt(f1.valueFrom()), lt(f1.valueTo()))
         );
 
         check(
-            query("field1>? AND field1<=?", f1.valueFrom(), f1.valueTo()),
-            c_sorted(),
-            and(gt(f1.valueFrom()), lte(f1.valueTo()))
+                query("field1>? AND field1<=?", f1.valueFrom(), f1.valueTo()),
+                c_sorted(),
+                and(gt(f1.valueFrom()), lte(f1.valueTo()))
         );
 
         check(
-            query("field1>=? AND field1<?", f1.valueFrom(), f1.valueTo()),
-            c_sorted(),
-            and(gte(f1.valueFrom()), lt(f1.valueTo()))
+                query("field1>=? AND field1<?", f1.valueFrom(), f1.valueTo()),
+                c_sorted(),
+                and(gte(f1.valueFrom()), lt(f1.valueTo()))
         );
 
         check(
-            query("field1>=? AND field1<=?", f1.valueFrom(), f1.valueTo()),
-            c_sorted(),
-            and(gte(f1.valueFrom()), lte(f1.valueTo()))
+                query("field1>=? AND field1<=?", f1.valueFrom(), f1.valueTo()),
+                c_sorted(),
+                and(gte(f1.valueFrom()), lte(f1.valueTo()))
         );
 
         // IN
         check(
-            query("field1=? OR field1=?", f1.valueFrom(), f1.valueTo()),
-            c_notHashComposite(),
-            or(eq(f1.valueFrom()), eq(f1.valueTo()))
+                query("field1=? OR field1=?", f1.valueFrom(), f1.valueTo()),
+                c_notHashComposite(),
+                or(eq(f1.valueFrom()), eq(f1.valueTo()))
         );
 
         // Special cases for boolean field
@@ -339,65 +340,65 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
     private void checkBothColumns() {
         // EQ + EQ
         check(
-            query("field1=? AND field2=?", f1.valueFrom(), f2.valueFrom()),
-            c_always(),
-            and(eq(f1.valueFrom()), eq_2(f2.valueFrom()))
+                query("field1=? AND field2=?", f1.valueFrom(), f2.valueFrom()),
+                c_always(),
+                and(eq(f1.valueFrom()), eq_2(f2.valueFrom()))
         );
 
         // EQ + IN
         check(
-            query("field1=? AND (field2=? OR field2=?)", f1.valueFrom(), f2.valueFrom(), f2.valueTo()),
-            c_always(),
-            and(eq(f1.valueFrom()), or(eq_2(f2.valueFrom()), eq_2(f2.valueTo())))
+                query("field1=? AND (field2=? OR field2=?)", f1.valueFrom(), f2.valueFrom(), f2.valueTo()),
+                c_always(),
+                and(eq(f1.valueFrom()), or(eq_2(f2.valueFrom()), eq_2(f2.valueTo())))
         );
 
         // EQ + RANGE
         check(
-            query("field1=? AND field2>? AND field2<?", f1.valueFrom(), f2.valueFrom(), f2.valueTo()),
-            c_sorted() || c_notComposite(),
-            and(eq(f1.valueFrom()), and(gt_2(f2.valueFrom()), lt_2(f2.valueTo())))
+                query("field1=? AND field2>? AND field2<?", f1.valueFrom(), f2.valueFrom(), f2.valueTo()),
+                c_sorted() || c_notComposite(),
+                and(eq(f1.valueFrom()), and(gt_2(f2.valueFrom()), lt_2(f2.valueTo())))
         );
 
         // IN + EQ
         check(
-            query("(field1=? OR field1=?) AND field2=?", f1.valueFrom(), f1.valueTo(), f2.valueFrom()),
-            c_sorted() || c_notComposite(),
-            and(or(eq(f1.valueFrom()), eq(f1.valueTo())), eq_2(f2.valueFrom()))
+                query("(field1=? OR field1=?) AND field2=?", f1.valueFrom(), f1.valueTo(), f2.valueFrom()),
+                c_sorted() || c_notComposite(),
+                and(or(eq(f1.valueFrom()), eq(f1.valueTo())), eq_2(f2.valueFrom()))
         );
 
         // IN + IN
         check(
-            query("(field1=? OR field1=?) AND (field2=? OR field2=?)", f1.valueFrom(), f1.valueTo(), f2.valueFrom(), f2.valueTo()),
-            c_sorted() || c_notComposite(),
-            and(or(eq(f1.valueFrom()), eq(f1.valueTo())), or(eq_2(f2.valueFrom()), eq_2(f2.valueTo())))
+                query("(field1=? OR field1=?) AND (field2=? OR field2=?)", f1.valueFrom(), f1.valueTo(), f2.valueFrom(), f2.valueTo()),
+                c_sorted() || c_notComposite(),
+                and(or(eq(f1.valueFrom()), eq(f1.valueTo())), or(eq_2(f2.valueFrom()), eq_2(f2.valueTo())))
         );
 
         // IN + RANGE
         check(
-            query("(field1=? OR field1=?) AND (field2>? AND field2<?)", f1.valueFrom(), f1.valueTo(), f2.valueFrom(), f2.valueTo()),
-            c_sorted() || c_notComposite(),
-            and(or(eq(f1.valueFrom()), eq(f1.valueTo())), and(gt_2(f2.valueFrom()), lt_2(f2.valueTo())))
+                query("(field1=? OR field1=?) AND (field2>? AND field2<?)", f1.valueFrom(), f1.valueTo(), f2.valueFrom(), f2.valueTo()),
+                c_sorted() || c_notComposite(),
+                and(or(eq(f1.valueFrom()), eq(f1.valueTo())), and(gt_2(f2.valueFrom()), lt_2(f2.valueTo())))
         );
 
         // RANGE + EQ
         check(
-            query("(field1>? AND field1<?) AND field2=?", f1.valueFrom(), f1.valueTo(), f2.valueFrom()),
-            c_sorted(),
-            and(and(gt(f1.valueFrom()), lt(f1.valueTo())), eq_2(f2.valueFrom()))
+                query("(field1>? AND field1<?) AND field2=?", f1.valueFrom(), f1.valueTo(), f2.valueFrom()),
+                c_sorted(),
+                and(and(gt(f1.valueFrom()), lt(f1.valueTo())), eq_2(f2.valueFrom()))
         );
 
         // RANGE + IN
         check(
-            query("(field1>? AND field1<?) AND (field2=? AND field2=?)", f1.valueFrom(), f1.valueTo(), f2.valueFrom(), f2.valueTo()),
-            c_sorted(),
-            and(and(gt(f1.valueFrom()), lt(f1.valueTo())), and(eq_2(f2.valueFrom()), eq_2(f2.valueTo())))
+                query("(field1>? AND field1<?) AND (field2=? AND field2=?)", f1.valueFrom(), f1.valueTo(), f2.valueFrom(), f2.valueTo()),
+                c_sorted(),
+                and(and(gt(f1.valueFrom()), lt(f1.valueTo())), and(eq_2(f2.valueFrom()), eq_2(f2.valueTo())))
         );
 
         // RANGE + RANGE
         check(
-            query("(field1>? AND field1<?) AND (field2>? AND field2<?)", f1.valueFrom(), f1.valueTo(), f2.valueFrom(), f2.valueTo()),
-            c_sorted(),
-            and(and(gt(f1.valueFrom()), lt(f1.valueTo())), and(gt_2(f2.valueFrom()), lt_2(f2.valueTo())))
+                query("(field1>? AND field1<?) AND (field2>? AND field2<?)", f1.valueFrom(), f1.valueTo(), f2.valueFrom(), f2.valueTo()),
+                c_sorted(),
+                and(and(gt(f1.valueFrom()), lt(f1.valueTo())), and(gt_2(f2.valueFrom()), lt_2(f2.valueTo())))
         );
     }
 
@@ -457,10 +458,10 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
     }
 
     private void check0(
-        String sql,
-        List<Object> params,
-        boolean expectedUseIndex,
-        Predicate<ExpressionValue> expectedKeysPredicate
+            String sql,
+            List<Object> params,
+            boolean expectedUseIndex,
+            Predicate<ExpressionValue> expectedKeysPredicate
     ) {
         int runId = runIdGen++;
 
@@ -469,28 +470,28 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
 
         if (!sqlKeys.equals(expectedMapKeys)) {
             failOnDifference(
-                runId,
-                sql,
-                params,
-                sqlKeys,
-                expectedMapKeys,
-                "actual SQL keys differ from expected map keys",
-                "actual SQL keys",
-                "expected map keys"
+                    runId,
+                    sql,
+                    params,
+                    sqlKeys,
+                    expectedMapKeys,
+                    "actual SQL keys differ from expected map keys",
+                    "actual SQL keys",
+                    "expected map keys"
             );
         }
     }
 
     @SuppressWarnings("StringConcatenationInsideStringBufferAppend")
     private void failOnDifference(
-        int runId,
-        String sql,
-        List<Object> params,
-        Set<Integer> first,
-        Set<Integer> second,
-        String mainMessage,
-        String firstCaption,
-        String secondCaption
+            int runId,
+            String sql,
+            List<Object> params,
+            Set<Integer> first,
+            Set<Integer> second,
+            String mainMessage,
+            String firstCaption,
+            String secondCaption
     ) {
         Set<Integer> firstOnly = new TreeSet<>(first);
         Set<Integer> secondOnly = new TreeSet<>(second);
@@ -610,7 +611,7 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
             for (boolean composite : Arrays.asList(true, false)) {
                 for (ExpressionType<?> firstType : baseTypes()) {
                     for (ExpressionType<?> secondType : baseTypes()) {
-                        res.add(new Object[] { indexType, composite, firstType, secondType });
+                        res.add(new Object[]{indexType, composite, firstType, secondType});
                     }
                 }
             }
@@ -626,7 +627,7 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
             for (boolean composite : Arrays.asList(true, false)) {
                 for (ExpressionType<?> firstType : allTypes()) {
                     for (ExpressionType<?> secondType : allTypes()) {
-                        res.add(new Object[] { indexType, composite, firstType, secondType });
+                        res.add(new Object[]{indexType, composite, firstType, secondType});
                     }
                 }
             }
