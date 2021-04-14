@@ -17,7 +17,6 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.collection.IList;
-import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.ServiceConfig;
@@ -26,6 +25,7 @@ import com.hazelcast.internal.partition.MigrationAwareService;
 import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
 import com.hazelcast.internal.services.CoreService;
+import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
@@ -36,6 +36,7 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.JobExecutionService;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -43,11 +44,11 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -63,8 +64,9 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-@Ignore("https://github.com/hazelcast/hazelcast/issues/18469")
 public class HazelcastConnector_RestartTest extends JetTestSupport {
+
+    private static final String SINK_NAME = "sink";
 
     @ClassRule
     public static ChangeLoggingRule changeLoggingRule =
@@ -74,16 +76,13 @@ public class HazelcastConnector_RestartTest extends JetTestSupport {
 
     @Before
     public void setup() {
-        Config config = new Config();
-        CacheSimpleConfig cacheConfig = new CacheSimpleConfig().setName("*");
-        cacheConfig.getEventJournalConfig().setEnabled(true);
-        config.addCacheConfig(cacheConfig);
+        Config config = smallInstanceConfig();
         ConfigAccessor.getServicesConfig(config)
-                      .addServiceConfig(
-                              new ServiceConfig()
-                                      .setName("MigrationBlockingService")
-                                      .setEnabled(true)
-                                      .setImplementation(new MigrationBlockingService()));
+                .addServiceConfig(
+                        new ServiceConfig()
+                                .setName("MigrationBlockingService")
+                                .setEnabled(true)
+                                .setImplementation(new MigrationBlockingService()));
 
         instance1 = createJetMember(config);
         instance2 = createJetMember(config);
@@ -94,13 +93,13 @@ public class HazelcastConnector_RestartTest extends JetTestSupport {
         DAG dag = new DAG();
         Vertex source = dag.newVertex("source",
                 throttle(() -> new ListSource(range(0, 1000).boxed().collect(toList())), 10));
-        Vertex sink = dag.newVertex("sink", writeListP("sink"));
+        Vertex sink = dag.newVertex("sink", writeListP(SINK_NAME));
         dag.edge(between(source, sink));
         source.localParallelism(1);
 
         Job job = instance1.newJob(dag, new JobConfig().setAutoScaling(true));
         // wait for the job to start producing
-        IList<Integer> sinkList = instance1.getHazelcastInstance().getList("sink");
+        IList<Integer> sinkList = instance1.getHazelcastInstance().getList(SINK_NAME);
         assertTrueEventually(() -> assertTrue("no output to sink", sinkList.size() >= 4), 5);
 
         // When
@@ -141,12 +140,31 @@ public class HazelcastConnector_RestartTest extends JetTestSupport {
     // A CoreService with a slow post-join op. Its post-join operation will be executed before map's
     // post-join operation so we can ensure indexes are created via MapReplicationOperation,
     // even though PostJoinMapOperation has not yet been executed.
-    private static class MigrationBlockingService implements CoreService, MigrationAwareService {
+    private static class MigrationBlockingService implements CoreService, MigrationAwareService, ManagedService {
         static CountDownLatch migrationDoneLatch = new CountDownLatch(1);
         private final AtomicBoolean blocked = new AtomicBoolean();
+        private volatile int sinkPartitionId;
+
+        @Override
+        public void init(NodeEngine nodeEngine, Properties properties) {
+            sinkPartitionId = nodeEngine.getPartitionService().getPartitionId(SINK_NAME);
+        }
+
+        @Override
+        public void reset() {
+        }
+
+        @Override
+        public void shutdown(boolean terminate) {
+        }
 
         @Override
         public void beforeMigration(PartitionMigrationEvent event) {
+            // don't block on the partition where the sink(IList) is stored
+            // otherwise the size check on the list is blocked
+            if (event.getPartitionId() == sinkPartitionId) {
+                return;
+            }
             try {
                 if (blocked.compareAndSet(false, true)) {
                     migrationDoneLatch.await();
