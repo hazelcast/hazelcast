@@ -23,6 +23,7 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -32,6 +33,7 @@ import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
+@Ignore("https://github.com/hazelcast/hazelcast/issues/18484")
 public class MemberJmxMetricsTest {
     private static final String DOMAIN_PREFIX = "com.hazelcast";
 

@@ -110,14 +110,14 @@ abstract class FileTable extends JetTable {
         }
     }
 
-    private static final class FilePlanObjectKey implements PlanObjectKey {
+    static final class FilePlanObjectKey implements PlanObjectKey {
 
         private final String schemaName;
         private final String name;
         private final List<TableField> fields;
         private final ProcessorMetaSupplierProvider processorMetaSupplierProvider;
 
-        private FilePlanObjectKey(
+        FilePlanObjectKey(
                 String schemaName,
                 String name,
                 List<TableField> fields,
