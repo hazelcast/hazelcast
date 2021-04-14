@@ -455,7 +455,7 @@ public class ProcessorTaskletTest_Snapshots {
         boolean isStreaming;
         private Outbox outbox;
 
-        private Queue<Map.Entry> snapshotQueue = new ArrayDeque<>();
+        private final Queue<Map.Entry> snapshotQueue = new ArrayDeque<>();
 
         @Override
         public void init(@Nonnull Outbox outbox, @Nonnull Context context) {
