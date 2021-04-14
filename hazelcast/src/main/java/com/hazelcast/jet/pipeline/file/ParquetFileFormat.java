@@ -43,4 +43,14 @@ public class ParquetFileFormat<T> implements FileFormat<T> {
     public String format() {
         return FORMAT_PARQUET;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof ParquetFileFormat;
+    }
+
+    @Override
+    public int hashCode() {
+        return 0;
+    }
 }

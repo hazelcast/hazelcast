@@ -18,6 +18,7 @@ package com.hazelcast.jet.pipeline.file;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Objects;
 
 /**
  * {@link FileFormat} for avro files. See {@link FileFormat#avro} for more
@@ -65,8 +66,26 @@ public class AvroFileFormat<T> implements FileFormat<T> {
         return reflectClass;
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public String format() {
         return FORMAT_AVRO;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        AvroFileFormat<?> that = (AvroFileFormat<?>) o;
+        return Objects.equals(reflectClass, that.reflectClass);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(reflectClass);
     }
 }
