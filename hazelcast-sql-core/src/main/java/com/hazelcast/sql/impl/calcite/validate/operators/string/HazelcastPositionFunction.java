@@ -49,18 +49,6 @@ public class HazelcastPositionFunction extends HazelcastFunction {
     }
 
     @Override
-    public String getSignatureTemplate(int operandCount) {
-        switch (operandCount) {
-            case 2:
-                return "{0}({1} IN {2})";
-            case 3:
-                return "{0}({1} IN {2} FROM {3})";
-            default:
-                throw new AssertionError("The number of operands must be 2 or 3");
-        }
-    }
-
-    @Override
     public SqlOperandCountRange getOperandCountRange() {
         return SqlOperandCountRanges.between(2, 3);
     }
