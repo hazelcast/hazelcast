@@ -126,7 +126,7 @@
         <activemq-artemis.version>2.11.0</activemq-artemis.version>
         <activemq.version>5.15.11</activemq.version>
         <assertj.version>3.15.0</assertj.version>
-        <atomikos.version>3.9.3</atomikos.version>
+        <atomikos.version>5.0.8</atomikos.version>
         <bytebuddy.version>1.10.21</bytebuddy.version>
         <commons-lang3.version>3.11</commons-lang3.version>
         <felix.utils.version>1.11.6</felix.utils.version>
