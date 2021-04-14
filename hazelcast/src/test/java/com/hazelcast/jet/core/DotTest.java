@@ -70,6 +70,35 @@ public class DotTest {
     }
 
     @Test
+    public void when_dagToDotStringNonDefaults() {
+        DAG dag = new DAG();
+        Vertex a = dag.newVertex("a", noopP())
+                      .localParallelism(1);
+        Vertex b = dag.newVertex("b", noopP());
+        Vertex c = dag.newVertex("c", noopP())
+                      .localParallelism(1);
+        Vertex d = dag.newVertex("d", noopP())
+                      .localParallelism(1);
+
+        dag.edge(from(a, 0).to(c, 0)
+                           .partitioned(wholeItem())
+                           .setConfig(new EdgeConfig().setQueueSize(128)));
+        dag.edge(from(a, 1).to(b, 0).broadcast().distributed());
+
+        String actual = dag.toDotString(16, 16384);
+        System.out.println(actual);
+        // contains multiple subgraphs, order isn't stable, we'll assert individual lines and the length
+        assertTrue(actual.startsWith("digraph DAG {"));
+        assertTrue(actual.contains("\"a\" [localParallelism=1];"));
+        assertTrue(actual.contains("\"b\" [localParallelism=16];"));
+        assertTrue(actual.contains("\"c\" [localParallelism=1];"));
+        assertTrue(actual.contains("\"d\" [localParallelism=1];"));
+        assertTrue(actual.contains("\"a\" -> \"c\" [label=\"partitioned\", taillabel=0, queueSize=128];"));
+        assertTrue(actual.contains("\"a\" -> \"b\" [label=\"distributed-broadcast\", taillabel=1, queueSize=16384]"));
+        assertTrue(actual.endsWith("\n}"));
+    }
+
+    @Test
     public void when_pipelineToDotString() {
         Pipeline p = Pipeline.create();
         BatchStage<Entry> source = p.readFrom(Sources.map("source1"));
