@@ -49,7 +49,7 @@ public class ClientJmxMetricsTest extends HazelcastTestSupport {
 
     @Test
     public void testNoMBeanLeak() {
-        helper.assertNoMBeans();
+        helper.clearMBeans();
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getMetricsConfig()

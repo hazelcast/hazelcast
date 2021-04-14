@@ -52,7 +52,7 @@ public class MemberJmxMetricsTest {
 
     @Test
     public void testNoMBeanLeak() {
-        helper.assertNoMBeans();
+        helper.clearMBeans();
 
         Config config = smallInstanceConfig();
         config.getMetricsConfig()
