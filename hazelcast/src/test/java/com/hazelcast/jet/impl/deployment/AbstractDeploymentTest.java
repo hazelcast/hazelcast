@@ -82,7 +82,7 @@ public abstract class AbstractDeploymentTest extends SimpleTestInClusterSupport 
         dag.newVertex("create and print person", () -> new LoadClassesIsolated(true));
 
         JobConfig jobConfig = new JobConfig();
-        URL classUrl = this.getClass().getResource(CLASS_LOADER_PREFIX);
+        URL classUrl = new File("src/test/cp1").toURI().toURL();
         URLClassLoader urlClassLoader = new URLClassLoader(new URL[]{classUrl}, null);
         Class<?> appearance = urlClassLoader.loadClass("com.sample.pojo.person.Person$Appereance");
         jobConfig.addClass(appearance);
@@ -97,7 +97,7 @@ public abstract class AbstractDeploymentTest extends SimpleTestInClusterSupport 
         dag.newVertex("v", () -> new LoadClassesIsolated(false));
 
         JobConfig jobConfig = new JobConfig();
-        URL classUrl = this.getClass().getResource(CLASS_LOADER_PREFIX);
+        URL classUrl = new File("src/test/cp1").toURI().toURL();
         URLClassLoader urlClassLoader = new URLClassLoader(new URL[]{classUrl}, null);
         Class<?> appearanceClz = urlClassLoader.loadClass("com.sample.pojo.person.Person$Appereance");
         jobConfig.addClass(appearanceClz);
@@ -116,7 +116,7 @@ public abstract class AbstractDeploymentTest extends SimpleTestInClusterSupport 
         dag.newVertex("executes lambda from a nested class", NestedClassIsLoaded::new);
 
         JobConfig jobConfig = new JobConfig();
-        URL classUrl = this.getClass().getResource("/cp1/");
+        URL classUrl = new File("src/test/cp1").toURI().toURL();
         URLClassLoader urlClassLoader = new URLClassLoader(new URL[]{classUrl}, null);
         Class<?> worker = urlClassLoader.loadClass("com.sample.lambda.Worker");
         jobConfig.addClass(worker);
