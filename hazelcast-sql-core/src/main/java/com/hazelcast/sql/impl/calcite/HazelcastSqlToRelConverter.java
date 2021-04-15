@@ -357,7 +357,9 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
         }
     }
 
-    private static List<RelDataType> enlargeNumericTypes(Blackboard bb, final int typeCount, List<RelDataType> nonCharacterTypes) {
+    private static List<RelDataType> enlargeNumericTypes(Blackboard bb,
+                                                         final int typeCount,
+                                                         List<RelDataType> nonCharacterTypes) {
         if (nonCharacterTypes.size() < typeCount) {
             final RelDataTypeFamily family = nonCharacterTypes.get(0).getFamily();
             if (family instanceof SqlTypeFamily) {

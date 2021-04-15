@@ -162,8 +162,6 @@ public final class HazelcastTypeFactory extends SqlTypeFactoryImpl {
             return HazelcastIntegerType.create((HazelcastIntegerType) type, nullable);
         } else if (type.getSqlTypeName() == SqlTypeName.ANY) {
             return nullable ? TYPE_OBJECT_NULLABLE : TYPE_OBJECT;
-        } else if (type.getSqlTypeName() == SqlTypeName.NULL) {
-            return nullable ? TYPE_OBJECT_NULLABLE : TYPE_OBJECT;
         } else if (type.getSqlTypeName() == SqlTypeName.TIME) {
             return nullable ? TYPE_TIME_NULLABLE : TYPE_TIME;
         } else if (type.getSqlTypeName() == SqlTypeName.TIMESTAMP) {

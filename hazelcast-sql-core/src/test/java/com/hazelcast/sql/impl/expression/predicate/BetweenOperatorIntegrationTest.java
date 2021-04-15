@@ -34,7 +34,9 @@ import java.time.LocalTime;
 import java.util.Comparator;
 import java.util.List;
 
+import static com.hazelcast.sql.SqlColumnType.BIGINT;
 import static com.hazelcast.sql.SqlColumnType.DATE;
+import static com.hazelcast.sql.SqlColumnType.DOUBLE;
 import static com.hazelcast.sql.SqlColumnType.INTEGER;
 import static com.hazelcast.sql.SqlColumnType.NULL;
 import static com.hazelcast.sql.SqlColumnType.TIME;
@@ -171,7 +173,31 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
     }
 
     @Test
-    public void betweenPredicateDifferentTypesTest() {
+    public void betweenPredicateExplicitCastsAllowedTest() {
+        putAll("1", "2", "3");
+
+        checkValues(sqlQuery("BETWEEN 1 AND 3"), VARCHAR, new String[]{"1", "2", "3"});
+        checkValues(sqlQuery("BETWEEN SYMMETRIC 3 AND 1"), VARCHAR, new String[]{"1", "2", "3"});
+
+        putAll("1.5", "2.5", "3.25");
+        checkValues(sqlQuery("BETWEEN '1' AND '4'"), VARCHAR, new String[]{"1.5", "2.5", "3.25"});
+        checkValues(sqlQuery("BETWEEN SYMMETRIC '4' AND '1'"), VARCHAR, new String[]{"1.5", "2.5", "3.25"});
+
+        putAll(1, 2, 3);
+        checkValues(sqlQuery("BETWEEN '1' AND '3'"), INTEGER, new Integer[]{1, 2, 3});
+        checkValues(sqlQuery("BETWEEN SYMMETRIC '3' AND '1'"), INTEGER, new Integer[]{1, 2, 3});
+
+        putAll(1.5, 2.5, 3.5);
+        checkValues(sqlQuery("BETWEEN '0.99' AND '3.51'"), DOUBLE, new Double[]{1.5, 2.5, 3.5});
+        checkValues(sqlQuery("BETWEEN SYMMETRIC '3.51' AND '0.99'"), DOUBLE, new Double[]{1.5, 2.5, 3.5});
+
+        putAll(1L, 10L, 100L);
+        checkValues(sqlQuery("BETWEEN '1' AND '300'"), BIGINT, new Long[]{1L, 10L, 100L});
+        checkValues(sqlQuery("BETWEEN SYMMETRIC '300' AND '1'"), BIGINT, new Long[]{1L, 10L, 100L});
+    }
+
+    @Test
+    public void betweenPredicateExplicitCastsBannedTest() {
         LocalDate date = LocalDate.of(2000, 1, 1);
         LocalTime time = LocalTime.of(8, 0, 0);
         putAll(time, 1, "Argentina", "Bulgaria", "Ukraine", 2, date);
