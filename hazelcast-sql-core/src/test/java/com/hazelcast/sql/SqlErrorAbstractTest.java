@@ -219,9 +219,9 @@ public class SqlErrorAbstractTest extends SqlTestSupport {
 
         assertErrorCode(SqlErrorCode.DATA_EXCEPTION, error);
         assertEquals(
-            "Failed to extract map entry value because of type mismatch "
-                + "[expectedClass=java.lang.Long, actualClass=java.lang.String]",
-            error.getMessage()
+                "Failed to extract map entry value because of type mismatch "
+                        + "[expectedClass=java.lang.Long, actualClass=java.lang.String]",
+                error.getMessage()
         );
     }
 

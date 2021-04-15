@@ -47,9 +47,9 @@ public class SqlOrderBySlowTest extends SqlOrderByTest {
             for (SerializationMode serializationMode : Arrays.asList(SERIALIZABLE, IDENTIFIED_DATA_SERIALIZABLE)) {
                 for (InMemoryFormat format : new InMemoryFormat[]{InMemoryFormat.OBJECT, InMemoryFormat.BINARY}) {
                     res.add(new Object[]{
-                        serializationMode,
-                        format,
-                        membersCount
+                            serializationMode,
+                            format,
+                            membersCount
                     });
                 }
             }

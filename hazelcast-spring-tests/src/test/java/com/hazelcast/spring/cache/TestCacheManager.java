@@ -165,6 +165,7 @@ public class TestCacheManager extends HazelcastTestSupport {
         Config config = instance.getConfig();
         Config extractedConfig = new Config();
         extractedConfig
+                .setProperties(config.getProperties())
                 .setClusterName(config.getClusterName())
                 .setNetworkConfig(config.getNetworkConfig())
                 .setJetConfig(config.getJetConfig())

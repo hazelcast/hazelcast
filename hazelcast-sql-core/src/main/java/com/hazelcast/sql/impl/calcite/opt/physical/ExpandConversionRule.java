@@ -36,7 +36,7 @@ import org.apache.calcite.tools.RelBuilderFactory;
  */
 public class ExpandConversionRule extends RelOptRule {
     public static final ExpandConversionRule INSTANCE =
-        new ExpandConversionRule(RelFactories.LOGICAL_BUILDER);
+            new ExpandConversionRule(RelFactories.LOGICAL_BUILDER);
 
     /**
      * Creates an ExpandConversionRule.
@@ -52,10 +52,10 @@ public class ExpandConversionRule extends RelOptRule {
         AbstractConverter converter = call.rel(0);
         final RelNode child = converter.getInput();
         RelNode converted =
-            changeTraitsUsingConverters(
-                planner,
-                child,
-                converter.getTraitSet());
+                changeTraitsUsingConverters(
+                        planner,
+                        child,
+                        converter.getTraitSet());
         if (converted != null) {
             call.transformTo(converted);
         }
@@ -69,7 +69,7 @@ public class ExpandConversionRule extends RelOptRule {
         assert fromTraits.size() >= toTraits.size();
 
         final boolean allowInfiniteCostConverters =
-            CalciteSystemProperty.ALLOW_INFINITE_COST_CONVERTERS.value();
+                CalciteSystemProperty.ALLOW_INFINITE_COST_CONVERTERS.value();
 
         // Traits may build on top of another...for example a collation trait
         // would typically come after a distribution trait since distribution
@@ -96,8 +96,7 @@ public class ExpandConversionRule extends RelOptRule {
                 continue;
             }
 
-            rel =
-                traitDef.convert(
+            rel = traitDef.convert(
                     planner,
                     converted,
                     toTrait,

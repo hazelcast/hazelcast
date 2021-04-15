@@ -24,12 +24,12 @@ import org.apache.calcite.rel.core.Values;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexLiteral;
 
-public class ValuesPhysicalRel extends Values implements PhysicalRel  {
+public class ValuesPhysicalRel extends Values implements PhysicalRel {
     public ValuesPhysicalRel(
-        RelOptCluster cluster,
-        RelDataType rowType,
-        ImmutableList<ImmutableList<RexLiteral>> tuples,
-        RelTraitSet traits
+            RelOptCluster cluster,
+            RelDataType rowType,
+            ImmutableList<ImmutableList<RexLiteral>> tuples,
+            RelTraitSet traits
     ) {
         super(cluster, rowType, tuples, traits);
     }

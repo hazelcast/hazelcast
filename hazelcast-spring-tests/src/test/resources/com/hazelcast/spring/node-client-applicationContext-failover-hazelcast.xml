@@ -46,14 +46,6 @@
                     <hz:auto-detection enabled="false"/>
                 </hz:join>
             </hz:network>
-            <hz:jet>
-                <hz:instance>
-                    <hz:cooperative-thread-count>2</hz:cooperative-thread-count>
-                </hz:instance>
-            </hz:jet>
-            <hz:sql>
-                <hz:executor-pool-size>2</hz:executor-pool-size>
-            </hz:sql>
         </hz:config>
     </hz:hazelcast>
 
@@ -73,7 +65,11 @@
                 <hz:member>127.0.0.1:5709</hz:member>
             </hz:network>
 
-            <hz:connection-strategy async-start="true"></hz:connection-strategy>
+            <hz:connection-strategy async-start="true">
+                <hz:connection-retry>
+                    <hz:cluster-connect-timeout-millis>30000</hz:cluster-connect-timeout-millis>
+                </hz:connection-retry>
+            </hz:connection-strategy>
         </hz:client>
 
         <hz:client>
@@ -82,7 +78,11 @@
                 <hz:member>127.0.0.1:5702</hz:member>
             </hz:network>
 
-            <hz:connection-strategy async-start="true"></hz:connection-strategy>
+            <hz:connection-strategy async-start="true">
+                <hz:connection-retry>
+                    <hz:cluster-connect-timeout-millis>30000</hz:cluster-connect-timeout-millis>
+                </hz:connection-retry>
+            </hz:connection-strategy>
         </hz:client>
     </hz:client-failover>
 

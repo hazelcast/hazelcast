@@ -42,4 +42,14 @@ public class RawBytesFileFormat implements FileFormat<byte[]> {
     public String format() {
         return FORMAT_BIN;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof RawBytesFileFormat;
+    }
+
+    @Override
+    public int hashCode() {
+        return 0;
+    }
 }

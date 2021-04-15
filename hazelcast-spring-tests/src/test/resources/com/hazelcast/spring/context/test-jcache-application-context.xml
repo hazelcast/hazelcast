@@ -124,15 +124,6 @@
                       cache-loader="com.hazelcast.config.CacheConfigTest$MyCacheLoader"
                       cache-writer="com.hazelcast.config.CacheConfigTest$EmptyCacheWriter"
             />
-
-            <hz:jet>
-                <hz:instance>
-                    <hz:cooperative-thread-count>2</hz:cooperative-thread-count>
-                </hz:instance>
-            </hz:jet>
-            <hz:sql>
-                <hz:executor-pool-size>2</hz:executor-pool-size>
-            </hz:sql>
         </hz:config>
     </hz:hazelcast>
 

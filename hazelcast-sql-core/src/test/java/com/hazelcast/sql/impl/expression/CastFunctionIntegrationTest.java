@@ -1101,13 +1101,13 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
     @Test
     public void testEquality() {
         checkEquals(CastExpression.create(ConstantExpression.create(1, INT), QueryDataType.BIGINT),
-            CastExpression.create(ConstantExpression.create(1, INT), QueryDataType.BIGINT), true);
+                CastExpression.create(ConstantExpression.create(1, INT), QueryDataType.BIGINT), true);
 
         checkEquals(CastExpression.create(ConstantExpression.create(1, INT), QueryDataType.BIGINT),
-            CastExpression.create(ConstantExpression.create(1, INT), QueryDataType.DOUBLE), false);
+                CastExpression.create(ConstantExpression.create(1, INT), QueryDataType.DOUBLE), false);
 
         checkEquals(CastExpression.create(ConstantExpression.create(1, INT), QueryDataType.BIGINT),
-            CastExpression.create(ConstantExpression.create(2, INT), QueryDataType.BIGINT), false);
+                CastExpression.create(ConstantExpression.create(2, INT), QueryDataType.BIGINT), false);
     }
 
     @Test

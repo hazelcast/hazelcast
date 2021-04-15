@@ -103,10 +103,10 @@ public class Mapping implements DataSerializable {
         }
         Mapping mapping = (Mapping) o;
         return Objects.equals(name, mapping.name) &&
-               Objects.equals(externalName, mapping.externalName) &&
-               Objects.equals(type, mapping.type) &&
-               Objects.equals(mappingFields, mapping.mappingFields) &&
-               Objects.equals(options, mapping.options);
+                Objects.equals(externalName, mapping.externalName) &&
+                Objects.equals(type, mapping.type) &&
+                Objects.equals(mappingFields, mapping.mappingFields) &&
+                Objects.equals(options, mapping.options);
     }
 
     @Override

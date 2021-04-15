@@ -54,7 +54,7 @@ public class SqlParameterTest {
 
     @Parameterized.Parameters(name = "useClient:{0}")
     public static Object[] parameters() {
-        return new Object[] { false, true };
+        return new Object[]{false, true};
     }
 
     @Before
@@ -96,7 +96,7 @@ public class SqlParameterTest {
         HazelcastInstance target = useClient ? client : member;
 
         SqlStatement statement = new SqlStatement(
-            "SELECT "
+                "SELECT "
                 + "CAST(? as BOOLEAN), "
                 + "CAST(? as TINYINT), "
                 + "CAST(? as SMALLINT), "

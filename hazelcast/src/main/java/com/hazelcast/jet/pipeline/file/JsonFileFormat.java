@@ -18,6 +18,7 @@ package com.hazelcast.jet.pipeline.file;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Objects;
 
 /**
  * {@code FileFormat} for the JSON Lines files. See {@link FileFormat#json}
@@ -99,5 +100,22 @@ public class JsonFileFormat<T> implements FileFormat<T> {
     @Override
     public String format() {
         return FORMAT_JSON;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        JsonFileFormat<?> that = (JsonFileFormat<?>) o;
+        return multiline == that.multiline && Objects.equals(clazz, that.clazz);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(clazz, multiline);
     }
 }

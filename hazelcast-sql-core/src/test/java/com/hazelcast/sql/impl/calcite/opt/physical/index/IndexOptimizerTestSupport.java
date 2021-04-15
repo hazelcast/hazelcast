@@ -32,18 +32,18 @@ import static org.junit.Assert.assertEquals;
 public class IndexOptimizerTestSupport extends OptimizerTestSupport {
     protected static PlanRows planWithIndex(String indexName, String indexExp, String remainderExp) {
         return plan(
-            planRow(0, RootPhysicalRel.class, ""),
-            planRow(1, MapIndexScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0]]]], index=[" + indexName
-                + "], indexExp=[" + indexExp + "], remainderExp=[" + remainderExp + "]")
+                planRow(0, RootPhysicalRel.class, ""),
+                planRow(1, MapIndexScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0]]]], index=[" + indexName
+                        + "], indexExp=[" + indexExp + "], remainderExp=[" + remainderExp + "]")
         );
     }
 
     protected void checkIndex(
-        String sql,
-        String expectedIndex,
-        String expectedIndexFilter,
-        String expectedRemainderFilter,
-        QueryDataType... parameterTypes
+            String sql,
+            String expectedIndex,
+            String expectedIndexFilter,
+            String expectedRemainderFilter,
+            QueryDataType... parameterTypes
     ) {
         // Build actual plan
         RelNode actualRel = optimizePhysical(sql, parameterTypes);

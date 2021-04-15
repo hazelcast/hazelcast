@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.connector.infoschema;
 
 import com.hazelcast.jet.json.JsonUtil;
 import com.hazelcast.jet.sql.impl.schema.Mapping;
-import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -82,11 +81,5 @@ public class MappingsTable extends InfoSchemaTable {
             rows.add(row);
         }
         return rows;
-    }
-
-    @Override
-    public PlanObjectKey getObjectKey() {
-        // table is always available and its field list does not change
-        return null;
     }
 }

@@ -34,18 +34,18 @@ import java.util.List;
  */
 public class HazelcastCalciteCatalogReader extends CalciteCatalogReader {
     public HazelcastCalciteCatalogReader(
-        CalciteSchema rootSchema,
-        List<List<String>> schemaPaths,
-        RelDataTypeFactory typeFactory,
-        CalciteConnectionConfig config
+            CalciteSchema rootSchema,
+            List<List<String>> schemaPaths,
+            RelDataTypeFactory typeFactory,
+            CalciteConnectionConfig config
     ) {
         // Call the protected constructor that is not visible otherwise.
         super(
-            rootSchema,
-            SqlNameMatchers.withCaseSensitive(config != null && config.caseSensitive()),
-            schemaPaths,
-            typeFactory,
-            config
+                rootSchema,
+                SqlNameMatchers.withCaseSensitive(config != null && config.caseSensitive()),
+                schemaPaths,
+                typeFactory,
+                config
         );
     }
 

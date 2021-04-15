@@ -326,15 +326,15 @@ public class SqlAvroTest extends SqlTestSupport {
     public void test_writingToTopLevel() {
         String mapName = randomName();
         sqlService.execute("CREATE MAPPING " + mapName + "("
-                           + "id INT EXTERNAL NAME \"__key.id\""
-                           + ", name VARCHAR"
-                           + ") TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
-                           + "OPTIONS ("
-                           + '\'' + OPTION_KEY_FORMAT + "'='" + AVRO_FORMAT + '\''
-                           + ", '" + OPTION_VALUE_FORMAT + "'='" + AVRO_FORMAT + '\''
-                           + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
-                           + ", 'auto.offset.reset'='earliest'"
-                           + ")"
+                + "id INT EXTERNAL NAME \"__key.id\""
+                + ", name VARCHAR"
+                + ") TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
+                + "OPTIONS ("
+                + '\'' + OPTION_KEY_FORMAT + "'='" + AVRO_FORMAT + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + AVRO_FORMAT + '\''
+                + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
+                + ", 'auto.offset.reset'='earliest'"
+                + ")"
         );
 
         assertThatThrownBy(() ->
@@ -412,14 +412,14 @@ public class SqlAvroTest extends SqlTestSupport {
     public void test_schemaIdForTwoQueriesIsEqual() {
         String topicName = createRandomTopic();
         sqlService.execute("CREATE MAPPING " + topicName + " (__key INT, field1 VARCHAR) "
-                           + "TYPE Kafka "
-                           + "OPTIONS ("
-                           + "'keyFormat'='java'"
-                           + ", 'keyJavaClass'='java.lang.Integer'"
-                           + ", 'valueFormat'='avro'"
-                           + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
-                           + ", 'schema.registry.url'='" + schemaRegistry.getURI() + '\''
-                           + ", 'auto.offset.reset'='earliest')"
+                + "TYPE Kafka "
+                + "OPTIONS ("
+                + "'keyFormat'='java'"
+                + ", 'keyJavaClass'='java.lang.Integer'"
+                + ", 'valueFormat'='avro'"
+                + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
+                + ", 'schema.registry.url'='" + schemaRegistry.getURI() + '\''
+                + ", 'auto.offset.reset'='earliest')"
         );
 
         sqlService.execute("INSERT INTO " + topicName + " VALUES(42, 'foo')");

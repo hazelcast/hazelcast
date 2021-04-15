@@ -47,7 +47,7 @@ public final class KvProcessors {
 
     /**
      * Returns a supplier of processors that convert a map entry represented as
-     *  {@code Entry<Object, Object>} to a row represented as {@code Object[]}.
+     * {@code Entry<Object, Object>} to a row represented as {@code Object[]}.
      */
     public static ProcessorSupplier rowProjector(
             QueryPath[] paths,
