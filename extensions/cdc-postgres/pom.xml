@@ -34,7 +34,7 @@
 
     <properties>
         <debezium.version>1.2.5.Final</debezium.version>
-        <testcontainers.version>1.15.2</testcontainers.version>
+        <testcontainers.version>1.14.3</testcontainers.version>
         <log4j2.slf4j.binding.version>2.13.2</log4j2.slf4j.binding.version>
 
         <!-- needed for CheckStyle -->
