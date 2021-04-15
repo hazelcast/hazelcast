@@ -21,7 +21,7 @@ import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
-import com.hazelcast.sql.impl.plan.cache.PlanObjectKey;
+import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableStatistics;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
@@ -110,7 +110,7 @@ class KafkaTable extends JetTable {
         return new KafkaPlanObjectKey(getSchemaName(), getSqlName(), topicName(), getFields(), options);
     }
 
-    private static final class KafkaPlanObjectKey implements PlanObjectKey {
+    static final class KafkaPlanObjectKey implements PlanObjectKey {
 
         private final String schemaName;
         private final String tableName;
@@ -118,7 +118,7 @@ class KafkaTable extends JetTable {
         private final List<TableField> fields;
         private final Map<String, String> options;
 
-        private KafkaPlanObjectKey(
+        KafkaPlanObjectKey(
                 String schemaName,
                 String tableName,
                 String topicName,

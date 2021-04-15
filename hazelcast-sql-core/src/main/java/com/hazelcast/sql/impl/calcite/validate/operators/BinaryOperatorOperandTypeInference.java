@@ -57,9 +57,9 @@ public final class BinaryOperatorOperandTypeInference implements SqlOperandTypeI
                     // We upcast the type of the numeric expression to BIGINT, so that an expression `1 > ?` is resolved to
                     // `(BIGINT)1 > (BIGINT)?` rather than `(TINYINT)1 > (TINYINT)?`
                     RelDataType newOperandType = createType(
-                        binding.getTypeFactory(),
-                        SqlTypeName.BIGINT,
-                        operandType.isNullable()
+                            binding.getTypeFactory(),
+                            SqlTypeName.BIGINT,
+                            operandType.isNullable()
                     );
 
                     operandType = newOperandType;

@@ -29,6 +29,7 @@ import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.datamodel.KeyedWindowResult;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -60,7 +61,7 @@ import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
-@Category(ParallelJVMTest.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 public class SlidingWindowPTest {
 

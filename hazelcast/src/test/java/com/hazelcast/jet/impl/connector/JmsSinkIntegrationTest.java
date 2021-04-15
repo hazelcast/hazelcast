@@ -22,12 +22,15 @@ import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory;
 import org.apache.activemq.artemis.jms.client.ActiveMQXAConnectionFactory;
 import org.apache.activemq.artemis.junit.EmbeddedActiveMQResource;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
@@ -43,6 +46,7 @@ import static com.hazelcast.jet.impl.connector.JmsTestUtil.consumeMessages;
 import static java.util.stream.IntStream.range;
 import static javax.jms.Session.DUPS_OK_ACKNOWLEDGE;
 
+@Category({SlowTest.class, ParallelJVMTest.class})
 public class JmsSinkIntegrationTest extends SimpleTestInClusterSupport {
 
     @ClassRule

@@ -21,7 +21,7 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.sql.impl.extract.QueryTarget;
-import com.hazelcast.sql.impl.plan.cache.PlanObjectKey;
+import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -110,14 +110,14 @@ abstract class FileTable extends JetTable {
         }
     }
 
-    private static final class FilePlanObjectKey implements PlanObjectKey {
+    static final class FilePlanObjectKey implements PlanObjectKey {
 
         private final String schemaName;
         private final String name;
         private final List<TableField> fields;
         private final ProcessorMetaSupplierProvider processorMetaSupplierProvider;
 
-        private FilePlanObjectKey(
+        FilePlanObjectKey(
                 String schemaName,
                 String name,
                 List<TableField> fields,

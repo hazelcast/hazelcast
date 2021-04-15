@@ -38,10 +38,13 @@ import com.hazelcast.jet.impl.operation.InitExecutionOperation;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -80,6 +83,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
+@Category({SlowTest.class, ParallelJVMTest.class})
 public class TopologyChangeTest extends JetTestSupport {
 
     private static final int NODE_COUNT = 3;

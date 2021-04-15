@@ -60,8 +60,8 @@ import java.util.List;
 public final class OptimizerContext {
 
     private static final RelMetadataProvider METADATA_PROVIDER = ChainedRelMetadataProvider.of(ImmutableList.of(
-        HazelcastRelMdRowCount.SOURCE,
-        DefaultRelMetadataProvider.INSTANCE
+            HazelcastRelMdRowCount.SOURCE,
+            DefaultRelMetadataProvider.INSTANCE
     ));
 
     private static final CalciteConnectionConfig CONNECTION_CONFIG = CalciteConfiguration.DEFAULT.toConnectionConfig();
@@ -72,10 +72,10 @@ public final class OptimizerContext {
     private final QueryPlanner planner;
 
     private OptimizerContext(
-        HazelcastRelOptCluster cluster,
-        QueryParser parser,
-        QueryConverter converter,
-        QueryPlanner planner
+            HazelcastRelOptCluster cluster,
+            QueryParser parser,
+            QueryConverter converter,
+            QueryPlanner planner
     ) {
         this.cluster = cluster;
         this.parser = parser;
@@ -91,11 +91,11 @@ public final class OptimizerContext {
      * @return Context.
      */
     public static OptimizerContext create(
-        SqlCatalog schema,
-        List<List<String>> searchPaths,
-        int memberCount,
-        @Nonnull SqlBackend sqlBackend,
-        @Nullable SqlBackend jetSqlBackend
+            SqlCatalog schema,
+            List<List<String>> searchPaths,
+            int memberCount,
+            @Nonnull SqlBackend sqlBackend,
+            @Nullable SqlBackend jetSqlBackend
     ) {
         // Resolve tables.
         HazelcastSchema rootSchema = HazelcastSchemaUtils.createRootSchema(schema);
@@ -104,11 +104,11 @@ public final class OptimizerContext {
     }
 
     public static OptimizerContext create(
-        HazelcastSchema rootSchema,
-        List<List<String>> schemaPaths,
-        int memberCount,
-        @Nonnull SqlBackend sqlBackend,
-        @Nullable SqlBackend jetSqlBackend
+            HazelcastSchema rootSchema,
+            List<List<String>> schemaPaths,
+            int memberCount,
+            @Nonnull SqlBackend sqlBackend,
+            @Nullable SqlBackend jetSqlBackend
     ) {
         DistributionTraitDef distributionTraitDef = new DistributionTraitDef(memberCount);
 
@@ -162,8 +162,8 @@ public final class OptimizerContext {
     /**
      * Apply the given rules to the node.
      *
-     * @param node Node.
-     * @param rules Rules.
+     * @param node     Node.
+     * @param rules    Rules.
      * @param traitSet Required trait set.
      * @return Optimized node.
      */
@@ -172,25 +172,25 @@ public final class OptimizerContext {
     }
 
     private static Prepare.CatalogReader createCatalogReader(
-        HazelcastTypeFactory typeFactory,
-        CalciteConnectionConfig config,
-        HazelcastSchema rootSchema,
-        List<List<String>> searchPaths
+            HazelcastTypeFactory typeFactory,
+            CalciteConnectionConfig config,
+            HazelcastSchema rootSchema,
+            List<List<String>> searchPaths
     ) {
         assert searchPaths != null;
 
         return new HazelcastCalciteCatalogReader(
-            new HazelcastRootCalciteSchema(rootSchema),
-            searchPaths,
-            typeFactory,
-            config
+                new HazelcastRootCalciteSchema(rootSchema),
+                searchPaths,
+                typeFactory,
+                config
         );
     }
 
     private static VolcanoPlanner createPlanner(CalciteConnectionConfig config, DistributionTraitDef distributionTraitDef) {
         VolcanoPlanner planner = new VolcanoPlanner(
-            CostFactory.INSTANCE,
-            Contexts.of(config)
+                CostFactory.INSTANCE,
+                Contexts.of(config)
         );
 
         planner.clearRelTraitDefs();
@@ -202,14 +202,14 @@ public final class OptimizerContext {
     }
 
     private static HazelcastRelOptCluster createCluster(
-        VolcanoPlanner planner,
-        HazelcastTypeFactory typeFactory,
-        DistributionTraitDef distributionTraitDef
+            VolcanoPlanner planner,
+            HazelcastTypeFactory typeFactory,
+            DistributionTraitDef distributionTraitDef
     ) {
         HazelcastRelOptCluster cluster = HazelcastRelOptCluster.create(
-            planner,
-            new HazelcastRexBuilder(typeFactory),
-            distributionTraitDef
+                planner,
+                new HazelcastRexBuilder(typeFactory),
+                distributionTraitDef
         );
 
         // Wire up custom metadata providers.

@@ -52,11 +52,11 @@ public final class HazelcastTrimFunction extends HazelcastFunction implements Ha
 
     private HazelcastTrimFunction() {
         super(
-            "TRIM",
-            SqlKind.TRIM,
-            ReturnTypes.ARG2_NULLABLE,
-            new ReplaceUnknownOperandTypeInference(SqlTypeName.VARCHAR),
-            SqlFunctionCategory.STRING
+                "TRIM",
+                SqlKind.TRIM,
+                ReturnTypes.ARG2_NULLABLE,
+                new ReplaceUnknownOperandTypeInference(SqlTypeName.VARCHAR),
+                SqlFunctionCategory.STRING
         );
     }
 
@@ -69,16 +69,16 @@ public final class HazelcastTrimFunction extends HazelcastFunction implements Ha
     public boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure) {
         if (binding.getOperandCount() == 2) {
             return new OperandCheckerProgram(
-                AnyOperandChecker.INSTANCE,
-                TypedOperandChecker.VARCHAR
+                    AnyOperandChecker.INSTANCE,
+                    TypedOperandChecker.VARCHAR
             ).check(binding, throwOnFailure);
         } else {
             assert binding.getOperandCount() == 3;
 
             return new OperandCheckerProgram(
-                AnyOperandChecker.INSTANCE,
-                TypedOperandChecker.VARCHAR,
-                TypedOperandChecker.VARCHAR
+                    AnyOperandChecker.INSTANCE,
+                    TypedOperandChecker.VARCHAR,
+                    TypedOperandChecker.VARCHAR
             ).check(binding, throwOnFailure);
         }
     }
@@ -126,9 +126,9 @@ public final class HazelcastTrimFunction extends HazelcastFunction implements Ha
                 // This variant occurs when someone writes TRIM(string)
                 // as opposed to the sugared syntax TRIM(string FROM string).
                 operands = new SqlNode[]{
-                    SqlTrimFunction.Flag.BOTH.symbol(SqlParserPos.ZERO),
-                    SqlLiteral.createCharString(" ", pos),
-                    operands[0]
+                        SqlTrimFunction.Flag.BOTH.symbol(SqlParserPos.ZERO),
+                        SqlLiteral.createCharString(" ", pos),
+                        operands[0]
                 };
 
                 break;

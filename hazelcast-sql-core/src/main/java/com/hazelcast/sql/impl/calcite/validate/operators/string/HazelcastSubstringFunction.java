@@ -42,11 +42,11 @@ public final class HazelcastSubstringFunction extends HazelcastFunction {
 
     private HazelcastSubstringFunction() {
         super(
-            "SUBSTRING",
-            SqlKind.OTHER_FUNCTION,
-            ReturnTypes.ARG0_NULLABLE_VARYING,
-            new ReplaceUnknownOperandTypeInference(new SqlTypeName[] { VARCHAR, INTEGER, INTEGER }),
-            SqlFunctionCategory.STRING
+                "SUBSTRING",
+                SqlKind.OTHER_FUNCTION,
+                ReturnTypes.ARG0_NULLABLE_VARYING,
+                new ReplaceUnknownOperandTypeInference(new SqlTypeName[]{VARCHAR, INTEGER, INTEGER}),
+                SqlFunctionCategory.STRING
         );
     }
 
@@ -71,11 +71,12 @@ public final class HazelcastSubstringFunction extends HazelcastFunction {
             }
 
             ret.append(
-                SqlUtil.getAliasedSignature(this, opName, ImmutableList.of(typeName.e, SqlTypeName.INTEGER))
+                    SqlUtil.getAliasedSignature(this, opName, ImmutableList.of(typeName.e, SqlTypeName.INTEGER))
             );
             ret.append(NL);
             ret.append(
-                SqlUtil.getAliasedSignature(this, opName, ImmutableList.of(typeName.e, SqlTypeName.INTEGER, SqlTypeName.INTEGER))
+                    SqlUtil.getAliasedSignature(this, opName, ImmutableList.of(typeName.e, SqlTypeName.INTEGER,
+                            SqlTypeName.INTEGER))
             );
         }
         return ret.toString();
@@ -90,16 +91,16 @@ public final class HazelcastSubstringFunction extends HazelcastFunction {
     public boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure) {
         if (binding.getOperandCount() == 2) {
             return new OperandCheckerProgram(
-                TypedOperandChecker.VARCHAR,
-                TypedOperandChecker.INTEGER
+                    TypedOperandChecker.VARCHAR,
+                    TypedOperandChecker.INTEGER
             ).check(binding, throwOnFailure);
         } else {
             assert binding.getOperandCount() == 3;
 
             return new OperandCheckerProgram(
-                TypedOperandChecker.VARCHAR,
-                TypedOperandChecker.INTEGER,
-                TypedOperandChecker.INTEGER
+                    TypedOperandChecker.VARCHAR,
+                    TypedOperandChecker.INTEGER,
+                    TypedOperandChecker.INTEGER
             ).check(binding, throwOnFailure);
         }
     }

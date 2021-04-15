@@ -39,12 +39,12 @@ public final class HazelcastRelOptCluster extends RelOptCluster {
     private QueryParameterMetadata parameterMetadata;
 
     private HazelcastRelOptCluster(
-        RelOptPlanner planner,
-        RelDataTypeFactory typeFactory,
-        RexBuilder rexBuilder,
-        AtomicInteger nextCorrel,
-        Map<String, RelNode> mapCorrelToRel,
-        DistributionTraitDef distributionTraitDef
+            RelOptPlanner planner,
+            RelDataTypeFactory typeFactory,
+            RexBuilder rexBuilder,
+            AtomicInteger nextCorrel,
+            Map<String, RelNode> mapCorrelToRel,
+            DistributionTraitDef distributionTraitDef
     ) {
         super(planner, typeFactory, rexBuilder, nextCorrel, mapCorrelToRel);
 
@@ -52,17 +52,17 @@ public final class HazelcastRelOptCluster extends RelOptCluster {
     }
 
     public static HazelcastRelOptCluster create(
-        RelOptPlanner planner,
-        RexBuilder rexBuilder,
-        DistributionTraitDef distributionTraitDef
+            RelOptPlanner planner,
+            RexBuilder rexBuilder,
+            DistributionTraitDef distributionTraitDef
     ) {
         return new HazelcastRelOptCluster(
-            planner,
-            rexBuilder.getTypeFactory(),
-            rexBuilder,
-            new AtomicInteger(0),
-            new HashMap<>(),
-            distributionTraitDef
+                planner,
+                rexBuilder.getTypeFactory(),
+                rexBuilder,
+                new AtomicInteger(0),
+                new HashMap<>(),
+                distributionTraitDef
         );
     }
 

@@ -86,8 +86,8 @@ public final class HazelcastArithmeticOperatorUtils {
         TypedOperandChecker checker = TypedOperandChecker.forType(type);
 
         return new OperandCheckerProgram(
-            checker,
-            checker
+                checker,
+                checker
         ).check(binding, throwOnFailure);
     }
 
@@ -96,18 +96,18 @@ public final class HazelcastArithmeticOperatorUtils {
      * and {@code INTERVAL+TEMPORAL} overloads. DATE operands are coerced to TIMESTAMP.
      */
     private static boolean checkTemporalOperands(
-        HazelcastCallBinding binding,
-        boolean throwOnFailure,
-        SqlKind kind,
-        RelDataType firstType,
-        RelDataType secondType
+            HazelcastCallBinding binding,
+            boolean throwOnFailure,
+            SqlKind kind,
+            RelDataType firstType,
+            RelDataType secondType
     ) {
         if (isTemporalType(firstType)) {
             // TEMPORAL + INTERVAL or TEMPORAL - INTERVAL.
             if (isIntervalType(secondType) && (kind == SqlKind.PLUS || kind == SqlKind.MINUS)) {
                 return new OperandCheckerProgram(
-                    TypedOperandChecker.forType(convertToTimestampIfNeeded(binding, firstType)),
-                    TypedOperandChecker.forType(secondType)
+                        TypedOperandChecker.forType(convertToTimestampIfNeeded(binding, firstType)),
+                        TypedOperandChecker.forType(secondType)
                 ).check(binding, throwOnFailure);
             }
         } else {
@@ -116,8 +116,8 @@ public final class HazelcastArithmeticOperatorUtils {
 
             if (isIntervalType(firstType) && kind == SqlKind.PLUS) {
                 return new OperandCheckerProgram(
-                    TypedOperandChecker.forType(firstType),
-                    TypedOperandChecker.forType(convertToTimestampIfNeeded(binding, secondType))
+                        TypedOperandChecker.forType(firstType),
+                        TypedOperandChecker.forType(convertToTimestampIfNeeded(binding, secondType))
                 ).check(binding, throwOnFailure);
             }
         }

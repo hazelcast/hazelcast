@@ -56,10 +56,10 @@ public abstract class AbstractParameterConverter implements ParameterConverter {
             String targetTypeName = targetType.getTypeFamily().getPublicType().name();
 
             String error = String.format(
-                "Parameter at position %d must be of %s type, but %s was found (consider adding an explicit CAST)",
-                ordinal,
-                targetTypeName,
-                actualTypeName
+                    "Parameter at position %d must be of %s type, but %s was found (consider adding an explicit CAST)",
+                    ordinal,
+                    targetTypeName,
+                    actualTypeName
             );
 
             throw QueryException.error(SqlErrorCode.DATA_EXCEPTION, withContext(error));
@@ -70,11 +70,11 @@ public abstract class AbstractParameterConverter implements ParameterConverter {
             return targetType.getConverter().convertToSelf(valueConverter, value);
         } catch (Exception e) {
             String error = String.format(
-                "Failed to convert parameter at position %d from %s to %s: %s",
-                ordinal,
-                valueConverter.getTypeFamily().getPublicType(),
-                targetType.getConverter().getTypeFamily().getPublicType(),
-                e.getMessage()
+                    "Failed to convert parameter at position %d from %s to %s: %s",
+                    ordinal,
+                    valueConverter.getTypeFamily().getPublicType(),
+                    targetType.getConverter().getTypeFamily().getPublicType(),
+                    e.getMessage()
             );
 
             throw QueryException.error(SqlErrorCode.DATA_EXCEPTION, withContext(error), e);

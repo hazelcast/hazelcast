@@ -48,8 +48,8 @@ public class SqlAggregateTest_TypeCoercion extends SqlTestSupport {
     public void test_groupBy() {
         TestAllTypesSqlConnector.create(sqlService, "t");
         String allFields = TestAllTypesSqlConnector.FIELD_LIST.stream()
-                                                          .map(f -> "\"" + f.name() + '"')
-                                                          .collect(Collectors.joining(", "));
+                .map(f -> "\"" + f.name() + '"')
+                .collect(Collectors.joining(", "));
         assertRowsAnyOrder(
                 "SELECT " + allFields + " " +
                         "FROM t " +
@@ -60,8 +60,8 @@ public class SqlAggregateTest_TypeCoercion extends SqlTestSupport {
     @Test
     public void test_count() {
         String allFields = TestAllTypesSqlConnector.FIELD_LIST.stream()
-                                                          .map(f -> "COUNT(\"" + f.name() + "\")")
-                                                          .collect(Collectors.joining(", "));
+                .map(f -> "COUNT(\"" + f.name() + "\")")
+                .collect(Collectors.joining(", "));
 
         assertRowsAnyOrder("select " +
                         allFields +
@@ -73,15 +73,15 @@ public class SqlAggregateTest_TypeCoercion extends SqlTestSupport {
     @Test
     public void test_sum_numberTypes() {
         assertRowsAnyOrder("select " +
-                "sum(byte), " +
-                "sum(short), " +
-                "sum(\"int\"), " +
-                "sum(long), " +
-                "sum(\"float\"), " +
-                "sum(\"double\"), " +
-                "sum(\"decimal\")," +
-                "sum(null) " +
-                "from allTypesTable",
+                        "sum(byte), " +
+                        "sum(short), " +
+                        "sum(\"int\"), " +
+                        "sum(long), " +
+                        "sum(\"float\"), " +
+                        "sum(\"double\"), " +
+                        "sum(\"decimal\")," +
+                        "sum(null) " +
+                        "from allTypesTable",
                 Collections.singleton(new Row(
                         127L,
                         32767L,
@@ -156,8 +156,8 @@ public class SqlAggregateTest_TypeCoercion extends SqlTestSupport {
     public void test_min() {
         TestAllTypesSqlConnector.create(sqlService, "t");
         String allFields = TestAllTypesSqlConnector.FIELD_LIST.stream()
-                                                          .map(f -> "MIN(\"" + f.name() + "\")")
-                                                          .collect(Collectors.joining(", "));
+                .map(f -> "MIN(\"" + f.name() + "\")")
+                .collect(Collectors.joining(", "));
 
         assertRowsAnyOrder("SELECT " + allFields + "FROM t",
                 singletonList(TestAllTypesSqlConnector.ALL_TYPES_ROW));
@@ -169,8 +169,8 @@ public class SqlAggregateTest_TypeCoercion extends SqlTestSupport {
     public void test_max() {
         TestAllTypesSqlConnector.create(sqlService, "t");
         String allFields = TestAllTypesSqlConnector.FIELD_LIST.stream()
-                                                          .map(f -> "MAX(\"" + f.name() + "\")")
-                                                          .collect(Collectors.joining(", "));
+                .map(f -> "MAX(\"" + f.name() + "\")")
+                .collect(Collectors.joining(", "));
 
         assertRowsAnyOrder("SELECT " + allFields + "FROM t",
                 singletonList(TestAllTypesSqlConnector.ALL_TYPES_ROW));

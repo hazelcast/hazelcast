@@ -27,7 +27,10 @@ import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.plan.cache.PlanCache;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
+import org.junit.experimental.categories.Category;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -52,6 +55,7 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FOR
 import static com.hazelcast.sql.impl.SqlTestSupport.nodeEngine;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Category({QuickTest.class, ParallelJVMTest.class})
 public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
 
     private static final ILogger SUPPORT_LOGGER = Logger.getLogger(SqlTestSupport.class);
@@ -157,12 +161,12 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
      */
     public static String javaSerializableMapDdl(String name, Class<?> keyClass, Class<?> valueClass) {
         return "CREATE MAPPING " + name + " TYPE " + IMapSqlConnector.TYPE_NAME + "\n"
-               + "OPTIONS (\n"
-               + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + "',\n"
-               + '\'' + OPTION_KEY_CLASS + "'='" + keyClass.getName() + "',\n"
-               + '\'' + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + "',\n"
-               + '\'' + OPTION_VALUE_CLASS + "'='" + valueClass.getName() + "'\n"
-               + ")";
+                + "OPTIONS (\n"
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + "',\n"
+                + '\'' + OPTION_KEY_CLASS + "'='" + keyClass.getName() + "',\n"
+                + '\'' + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + "',\n"
+                + '\'' + OPTION_VALUE_CLASS + "'='" + valueClass.getName() + "'\n"
+                + ")";
     }
 
     public static String randomName() {

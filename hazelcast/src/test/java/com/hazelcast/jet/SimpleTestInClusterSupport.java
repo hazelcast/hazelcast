@@ -70,9 +70,6 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
             @Nullable Config config,
             @Nullable ClientConfig clientConfig
     ) {
-        if (config == null) {
-            config = new Config();
-        }
         if (clientConfig == null) {
             clientConfig = new ClientConfig();
         }

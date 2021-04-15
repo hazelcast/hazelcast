@@ -49,8 +49,8 @@ public final class ProjectPhysicalRule extends RelOptRule {
 
     private ProjectPhysicalRule() {
         super(
-            OptUtils.parentChild(ProjectLogicalRel.class, RelNode.class, HazelcastConventions.LOGICAL),
-            ProjectPhysicalRule.class.getSimpleName()
+                OptUtils.parentChild(ProjectLogicalRel.class, RelNode.class, HazelcastConventions.LOGICAL),
+                ProjectPhysicalRule.class.getSimpleName()
         );
     }
 
@@ -63,11 +63,11 @@ public final class ProjectPhysicalRule extends RelOptRule {
 
         for (InputAndTraitSet transform : transforms) {
             ProjectPhysicalRel newProject = new ProjectPhysicalRel(
-                logicalProject.getCluster(),
-                transform.getTraitSet(),
-                transform.getInput(),
-                logicalProject.getProjects(),
-                logicalProject.getRowType()
+                    logicalProject.getCluster(),
+                    transform.getTraitSet(),
+                    transform.getInput(),
+                    logicalProject.getProjects(),
+                    logicalProject.getRowType()
             );
 
             call.transformTo(newProject);
@@ -97,7 +97,7 @@ public final class ProjectPhysicalRule extends RelOptRule {
         for (RelNode physicalInput : physicalInputs) {
             RelTraitSet traitSet = createPhysicalTraitSet(physicalInput);
             RelCollation transformedCollation =
-                convertCollation(inputFieldIndex2ProjectIndexMap, traitSet.getTrait(RelCollationTraitDef.INSTANCE));
+                    convertCollation(inputFieldIndex2ProjectIndexMap, traitSet.getTrait(RelCollationTraitDef.INSTANCE));
             RelTraitSet finalTraitSet = OptUtils.traitPlus(traitSet, transformedCollation);
 
             res.add(new InputAndTraitSet(physicalInput, finalTraitSet));
@@ -126,7 +126,7 @@ public final class ProjectPhysicalRule extends RelOptRule {
                 break;
             }
             RelFieldCollation transformedFieldCollation =
-                new RelFieldCollation(projectFiledIndex, fieldCollation.getDirection());
+                    new RelFieldCollation(projectFiledIndex, fieldCollation.getDirection());
             transformedFields.add(transformedFieldCollation);
         }
 

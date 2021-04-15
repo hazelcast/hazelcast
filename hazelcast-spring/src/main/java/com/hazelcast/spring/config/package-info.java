@@ -14,14 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.plan.cache;
-
 /**
- * ID of an object used in the plan.
+ * Contains config factory classes.
  */
-@SuppressWarnings("checkstyle:interfaceistype")
-public interface PlanObjectKey {
-
-    PlanObjectKey NON_CACHEABLE_OBJECT_KEY = new PlanObjectKey() {
-    };
-}
+package com.hazelcast.spring.config;

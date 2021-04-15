@@ -37,11 +37,11 @@ public final class HazelcastAbsFunction extends HazelcastFunction {
 
     private HazelcastAbsFunction() {
         super(
-            "ABS",
-            SqlKind.OTHER_FUNCTION,
-            ReturnTypes.ARG0,
-            new ReplaceUnknownOperandTypeInference(BIGINT),
-            SqlFunctionCategory.NUMERIC
+                "ABS",
+                SqlKind.OTHER_FUNCTION,
+                ReturnTypes.ARG0,
+                new ReplaceUnknownOperandTypeInference(BIGINT),
+                SqlFunctionCategory.NUMERIC
         );
     }
 

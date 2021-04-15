@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.calcite;
 
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
-import com.hazelcast.sql.impl.plan.cache.PlanObjectKey;
+import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableStatistics;
@@ -33,15 +33,15 @@ import java.util.List;
 public class TestMapTable extends AbstractMapTable {
     private TestMapTable(String schemaName, String name, List<TableField> fields, TableStatistics statistics) {
         super(
-            schemaName,
-            name,
-            name,
-            fields,
-            statistics,
-            GenericQueryTargetDescriptor.DEFAULT,
-            GenericQueryTargetDescriptor.DEFAULT,
-            null,
-            null
+                schemaName,
+                name,
+                name,
+                fields,
+                statistics,
+                GenericQueryTargetDescriptor.DEFAULT,
+                GenericQueryTargetDescriptor.DEFAULT,
+                null,
+                null
         );
     }
 

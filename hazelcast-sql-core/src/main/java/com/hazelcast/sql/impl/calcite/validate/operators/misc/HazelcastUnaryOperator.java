@@ -39,15 +39,15 @@ public final class HazelcastUnaryOperator extends HazelcastPrefixOperator {
     private final boolean extend;
 
     private HazelcastUnaryOperator(
-        SqlPrefixOperator base,
-        boolean extend
+            SqlPrefixOperator base,
+            boolean extend
     ) {
         super(
-            base.getName(),
-            base.getKind(),
-            base.getLeftPrec(),
-            ReturnTypes.ARG0,
-            new ReplaceUnknownOperandTypeInference(BIGINT)
+                base.getName(),
+                base.getKind(),
+                base.getLeftPrec(),
+                ReturnTypes.ARG0,
+                new ReplaceUnknownOperandTypeInference(BIGINT)
         );
 
         this.extend = extend;

@@ -65,7 +65,6 @@ import static com.hazelcast.sql.impl.calcite.validate.HazelcastResources.RESOURC
  * All supported operators and functions must be defined in this table, even if they are already defined in the
  * {@link SqlStdOperatorTable}. This is needed to ensure that we have the full control over inference and coercion
  * strategies.
- *
  */
 @SuppressWarnings({"unused", "checkstyle:ClassDataAbstractionCoupling"})
 public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable {
@@ -229,11 +228,11 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
                 List<SqlOperator> resolvedOperators = new ArrayList<>(1);
 
                 validator.getOperatorTable().lookupOperatorOverloads(
-                    operator.getNameAsId(),
-                    null,
-                    operator.getSyntax(),
-                    resolvedOperators,
-                    SqlNameMatchers.withCaseSensitive(false)
+                        operator.getNameAsId(),
+                        null,
+                        operator.getSyntax(),
+                        resolvedOperators,
+                        SqlNameMatchers.withCaseSensitive(false)
                 );
 
                 if (resolvedOperators.isEmpty()) {

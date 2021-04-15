@@ -53,7 +53,7 @@ public final class OptUtils {
     /**
      * Get operand matching a single node.
      *
-     * @param cls Node class.
+     * @param cls        Node class.
      * @param convention Convention.
      * @return Operand.
      */
@@ -64,13 +64,15 @@ public final class OptUtils {
     /**
      * Get operand matching a node with specific child node.
      *
-     * @param cls Node class.
-     * @param childCls Child node class.
+     * @param cls        Node class.
+     * @param childCls   Child node class.
      * @param convention Convention.
      * @return Operand.
      */
-    public static <R1 extends RelNode, R2 extends RelNode> RelOptRuleOperand parentChild(Class<R1> cls,
-        Class<R2> childCls, Convention convention) {
+    public static <R1 extends RelNode, R2 extends RelNode> RelOptRuleOperand parentChild(
+            Class<R1> cls,
+            Class<R2> childCls, Convention convention
+    ) {
         RelOptRuleOperand childOperand = RelOptRule.operand(childCls, RelOptRule.any());
 
         return RelOptRule.operand(cls, convention, RelOptRule.some(childOperand));
@@ -80,7 +82,7 @@ public final class OptUtils {
      * Add a single trait to the trait set.
      *
      * @param traitSet Original trait set.
-     * @param trait Trait to add.
+     * @param trait    Trait to add.
      * @return Resulting trait set.
      */
     public static RelTraitSet traitPlus(RelTraitSet traitSet, RelTrait trait) {
@@ -91,8 +93,8 @@ public final class OptUtils {
      * Add two traits to the trait set.
      *
      * @param traitSet Original trait set.
-     * @param trait1 Trait to add.
-     * @param trait2 Trait to add.
+     * @param trait1   Trait to add.
+     * @param trait2   Trait to add.
      * @return Resulting trait set.
      */
     public static RelTraitSet traitPlus(RelTraitSet traitSet, RelTrait trait1, RelTrait trait2) {
@@ -132,7 +134,7 @@ public final class OptUtils {
     /**
      * Convert the given trait set to physical convention.
      *
-     * @param traitSet Original trait set.
+     * @param traitSet     Original trait set.
      * @param distribution Distribution.
      * @return New trait set with physical convention and provided distribution.
      */
@@ -153,7 +155,7 @@ public final class OptUtils {
     /**
      * Convert the given input into physical input.
      *
-     * @param input Original input.
+     * @param input        Original input.
      * @param distribution Distribution.
      * @return Logical input.
      */
@@ -222,37 +224,37 @@ public final class OptUtils {
     }
 
     public static HazelcastRelOptTable createRelTable(
-        HazelcastRelOptTable originalRelTable,
-        HazelcastTable newHazelcastTable,
-        RelDataTypeFactory typeFactory
+            HazelcastRelOptTable originalRelTable,
+            HazelcastTable newHazelcastTable,
+            RelDataTypeFactory typeFactory
     ) {
         RelOptTableImpl newTable = RelOptTableImpl.create(
-            originalRelTable.getRelOptSchema(),
-            newHazelcastTable.getRowType(typeFactory),
-            originalRelTable.getDelegate().getQualifiedName(),
-            newHazelcastTable,
-            null
+                originalRelTable.getRelOptSchema(),
+                newHazelcastTable.getRowType(typeFactory),
+                originalRelTable.getDelegate().getQualifiedName(),
+                newHazelcastTable,
+                null
         );
 
         return new HazelcastRelOptTable(newTable);
     }
 
     public static LogicalTableScan createLogicalScanWithNewTable(
-        TableScan originalScan,
-        HazelcastTable newHazelcastTable
+            TableScan originalScan,
+            HazelcastTable newHazelcastTable
     ) {
         HazelcastRelOptTable originalRelTable = (HazelcastRelOptTable) originalScan.getTable();
 
         HazelcastRelOptTable newTable = createRelTable(
-            originalRelTable,
-            newHazelcastTable,
-            originalScan.getCluster().getTypeFactory()
+                originalRelTable,
+                newHazelcastTable,
+                originalScan.getCluster().getTypeFactory()
         );
 
         return LogicalTableScan.create(
-            originalScan.getCluster(),
-            newTable,
-            originalScan.getHints()
+                originalScan.getCluster(),
+                newTable,
+                originalScan.getHints()
         );
     }
 }

@@ -39,7 +39,7 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(NightlyTest.class)
+@Category({NightlyTest.class})
 public class MemberReconnectionStressTest extends JetTestSupport {
 
     private final AtomicBoolean terminated = new AtomicBoolean();

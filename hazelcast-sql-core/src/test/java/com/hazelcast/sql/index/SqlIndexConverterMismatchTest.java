@@ -70,8 +70,8 @@ public class SqlIndexConverterMismatchTest extends SqlTestSupport {
     public static Collection<Object[]> parameters() {
         List<Object[]> res = new ArrayList<>();
 
-        res.add(new Object[] { false });
-        res.add(new Object[] { true });
+        res.add(new Object[]{false});
+        res.add(new Object[]{true});
 
         return res;
     }

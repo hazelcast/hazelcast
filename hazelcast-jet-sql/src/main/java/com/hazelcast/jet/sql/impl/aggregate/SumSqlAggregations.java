@@ -69,7 +69,7 @@ public final class SumSqlAggregations {
                 sum = Math.addExact(sum, (long) value);
             } catch (ArithmeticException e) {
                 throw QueryException.dataException(QueryDataTypeFamily.BIGINT + " overflow in 'SUM' function " +
-                                                   "(consider adding explicit CAST to DECIMAL)");
+                        "(consider adding explicit CAST to DECIMAL)");
             }
             initialized = true;
         }

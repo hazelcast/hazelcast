@@ -16,13 +16,16 @@
 
 package com.hazelcast.internal.util.phonehome;
 
+import com.hazelcast.client.Client;
+import com.hazelcast.client.ClientListener;
+import com.hazelcast.client.ClientService;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestAwareInstanceFactory;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -35,6 +38,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.internal.util.phonehome.TestUtil.CLIENT_VERSIONS_SEPARATOR;
 import static com.hazelcast.internal.util.phonehome.TestUtil.CLIENT_VERSIONS_SUFFIX;
@@ -49,7 +53,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
-@Category({QuickTest.class})
+@Category({SlowTest.class})
 public class PhoneHomeClientsTest extends HazelcastTestSupport {
 
     private static final Map<TestUtil.ClientPrefix, String> PREFIX_TO_CLIENT_TYPE = new HashMap<>(6);
@@ -65,6 +69,7 @@ public class PhoneHomeClientsTest extends HazelcastTestSupport {
 
     private final TestAwareInstanceFactory factory = new TestAwareInstanceFactory();
     private final TestUtil.DummyClientFactory clientFactory = new TestUtil.DummyClientFactory();
+    private final AtomicInteger disconnectedClientCount = new AtomicInteger();
     private Node node;
 
     @Parameterized.Parameter
@@ -121,12 +126,13 @@ public class PhoneHomeClientsTest extends HazelcastTestSupport {
 
     @Test
     public void testSingleClient_withSingleMember_whenTheClientIsShutdown() throws IOException {
+        addClientListener(node);
         TestUtil.DummyClient client = clientFactory.newClient(getClientType(), "4.2-BETA");
         TestUtil.DummyConnection connection = client.connectTo(node);
 
         sleepAtLeastMillis(100);
         connection.close();
-        waitUntilExpectedEndpointCountIsReached(node, 0);
+        assertEqualsEventually(1, disconnectedClientCount);
         assertParameters(node, 0, 1, 1, 100, "4.2-BETA");
     }
 
@@ -134,6 +140,8 @@ public class PhoneHomeClientsTest extends HazelcastTestSupport {
     public void testSingleClient_withMultipleMembers_whenTheClientIsShutdown() throws IOException {
         HazelcastInstance instance = factory.newHazelcastInstance(smallInstanceConfig());
         Node node1 = getNode(instance);
+        addClientListener(node);
+        addClientListener(node1);
 
         TestUtil.DummyClient client = clientFactory.newClient(getClientType(), "v4.0");
         TestUtil.DummyConnection connection = client.connectTo(node);
@@ -142,8 +150,7 @@ public class PhoneHomeClientsTest extends HazelcastTestSupport {
         sleepAtLeastMillis(100);
         connection.close();
         connection1.close();
-        waitUntilExpectedEndpointCountIsReached(node, 0);
-        waitUntilExpectedEndpointCountIsReached(node1, 0);
+        assertEqualsEventually(2, disconnectedClientCount);
         assertParameters(node, 0, 1, 1, 100, "v4.0");
         assertParameters(node1, 0, 1, 1, 100, "v4.0");
     }
@@ -161,6 +168,7 @@ public class PhoneHomeClientsTest extends HazelcastTestSupport {
 
     @Test
     public void testMultipleClients_withSingleMember_whenTheClientsAreShutdown() throws IOException {
+        addClientListener(node);
         TestUtil.DummyClient client = clientFactory.newClient(getClientType(), "4.0.1");
         TestUtil.DummyClient client1 = clientFactory.newClient(getClientType(), "4.1");
         TestUtil.DummyConnection connection = client.connectTo(node);
@@ -169,17 +177,18 @@ public class PhoneHomeClientsTest extends HazelcastTestSupport {
         sleepAtLeastMillis(110);
         connection.close();
         connection1.close();
-        waitUntilExpectedEndpointCountIsReached(node, 0);
+        assertEqualsEventually(2, disconnectedClientCount);
         assertParameters(node, 0, 2, 2, 2 * 110, "4.0.1", "4.1");
     }
 
     @Test
     public void testMultipleClients_withSingleMember_whenSomeClientsAreShutdown() throws IOException {
+        addClientListener(node);
         TestUtil.DummyClient client = clientFactory.newClient(getClientType(), "4.0");
         TestUtil.DummyConnection connection = client.connectTo(node);
 
         connection.close();
-        waitUntilExpectedEndpointCountIsReached(node, 0);
+        assertEqualsEventually(1, disconnectedClientCount);
 
         TestUtil.DummyClient client1 = clientFactory.newClient(getClientType(), "4.0");
         client1.connectTo(node);
@@ -211,6 +220,8 @@ public class PhoneHomeClientsTest extends HazelcastTestSupport {
     public void testMultipleClients_withMultipleMembers_whenTheClientsAreShutdown() throws IOException {
         HazelcastInstance instance = factory.newHazelcastInstance(smallInstanceConfig());
         Node node1 = getNode(instance);
+        addClientListener(node);
+        addClientListener(node1);
 
         TestUtil.DummyClient client = clientFactory.newClient(getClientType(), "4.0.1");
         TestUtil.DummyClient client1 = clientFactory.newClient(getClientType(), "4.1");
@@ -224,8 +235,7 @@ public class PhoneHomeClientsTest extends HazelcastTestSupport {
         connection1.close();
         connection2.close();
         connection3.close();
-        waitUntilExpectedEndpointCountIsReached(node, 0);
-        waitUntilExpectedEndpointCountIsReached(node1, 0);
+        assertEqualsEventually(4, disconnectedClientCount);
         assertParameters(node, 0, 2, 2, 2 * 110, "4.0.1", "4.1");
         assertParameters(node1, 0, 2, 2, 2 * 110, "4.0.1", "4.1");
     }
@@ -234,6 +244,8 @@ public class PhoneHomeClientsTest extends HazelcastTestSupport {
     public void testMultipleClients_withMultipleMembers_whenSomeClientsAreShutdown() throws IOException {
         HazelcastInstance instance = factory.newHazelcastInstance(smallInstanceConfig());
         Node node1 = getNode(instance);
+        addClientListener(node);
+        addClientListener(node1);
 
         TestUtil.DummyClient client = clientFactory.newClient(getClientType(), "4.0");
         TestUtil.DummyConnection connection = client.connectTo(node);
@@ -241,8 +253,7 @@ public class PhoneHomeClientsTest extends HazelcastTestSupport {
 
         connection.close();
         connection1.close();
-        waitUntilExpectedEndpointCountIsReached(node, 0);
-        waitUntilExpectedEndpointCountIsReached(node1, 0);
+        assertEqualsEventually(2, disconnectedClientCount);
 
         TestUtil.DummyClient client1 = clientFactory.newClient(getClientType(), "4.0");
         TestUtil.DummyClient client2 = clientFactory.newClient(getClientType(), "4.1");
@@ -258,6 +269,7 @@ public class PhoneHomeClientsTest extends HazelcastTestSupport {
 
     @Test
     public void testConsecutivePhoneHomes() throws IOException {
+        addClientListener(node);
         TestUtil.DummyClient client = clientFactory.newClient(getClientType(), "4.3");
         TestUtil.DummyConnection connection = client.connectTo(node);
 
@@ -265,7 +277,7 @@ public class PhoneHomeClientsTest extends HazelcastTestSupport {
         assertParameters(node, 1, 1, 0, 100, "4.3");
 
         connection.close();
-        waitUntilExpectedEndpointCountIsReached(node, 0);
+        assertEqualsEventually(1, disconnectedClientCount);
         assertParameters(node, 0, 0, 1, 0, "4.3");
         assertParameters(node, 0, 0, 0, 0, "");
     }
@@ -274,6 +286,8 @@ public class PhoneHomeClientsTest extends HazelcastTestSupport {
     public void testUniSocketClients() throws IOException {
         HazelcastInstance instance = factory.newHazelcastInstance(smallInstanceConfig());
         Node node1 = getNode(instance);
+        addClientListener(node);
+        addClientListener(node1);
 
         TestUtil.DummyClient client = clientFactory.newClient(getClientType(), "4.1");
         TestUtil.DummyConnection connection = client.connectTo(node);
@@ -283,8 +297,7 @@ public class PhoneHomeClientsTest extends HazelcastTestSupport {
         TestUtil.DummyConnection connection1 = client1.connectTo(node1);
         connection1.close();
 
-        waitUntilExpectedEndpointCountIsReached(node, 0);
-        waitUntilExpectedEndpointCountIsReached(node1, 0);
+        assertEqualsEventually(2, disconnectedClientCount);
 
         TestUtil.DummyClient client2 = clientFactory.newClient(getClientType(), "4.2");
         TestUtil.DummyConnection connection2 = client2.connectTo(node);
@@ -311,15 +324,10 @@ public class PhoneHomeClientsTest extends HazelcastTestSupport {
         connection5.close();
         connection6.close();
 
-        waitUntilExpectedEndpointCountIsReached(node, 0);
-        waitUntilExpectedEndpointCountIsReached(node1, 0);
+        assertEqualsEventually(7, disconnectedClientCount);
 
         assertParameters(node, 0, 0, 2, 0, "4.2", "4.3");
         assertParameters(node1, 0, 0, 3, 0, "4.0.1", "4.1");
-    }
-
-    private void waitUntilExpectedEndpointCountIsReached(Node node, int expectedEndpointCount) {
-        assertTrueEventually(() -> assertEquals(expectedEndpointCount, node.clientEngine.getClientEndpointCount()));
     }
 
     private void assertParameters(Node node, long activeConnectionCount, long openedConnectionCount,
@@ -358,5 +366,19 @@ public class PhoneHomeClientsTest extends HazelcastTestSupport {
 
     private List<String> getClientVersions(Map<String, String> parameters) {
         return asList(parameters.get(clientPrefix.getPrefix() + CLIENT_VERSIONS_SUFFIX).split(CLIENT_VERSIONS_SEPARATOR));
+    }
+
+    private void addClientListener(Node node) {
+        ClientService clientService = node.getNodeEngine().getHazelcastInstance().getClientService();
+        clientService.addClientListener(new ClientListener() {
+            @Override
+            public void clientConnected(Client client) {
+            }
+
+            @Override
+            public void clientDisconnected(Client client) {
+                disconnectedClientCount.incrementAndGet();
+            }
+        });
     }
 }

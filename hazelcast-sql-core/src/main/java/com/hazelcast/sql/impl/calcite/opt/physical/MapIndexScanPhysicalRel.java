@@ -56,14 +56,14 @@ public class MapIndexScanPhysicalRel extends AbstractMapScanRel implements Physi
     private final RexNode remainderExp;
 
     public MapIndexScanPhysicalRel(
-        RelOptCluster cluster,
-        RelTraitSet traitSet,
-        RelOptTable table,
-        MapTableIndex index,
-        IndexFilter indexFilter,
-        List<QueryDataType> converterTypes,
-        RexNode indexExp,
-        RexNode remainderExp
+            RelOptCluster cluster,
+            RelTraitSet traitSet,
+            RelOptTable table,
+            MapTableIndex index,
+            IndexFilter indexFilter,
+            List<QueryDataType> converterTypes,
+            RexNode indexExp,
+            RexNode remainderExp
     ) {
         super(cluster, traitSet, table);
 
@@ -106,14 +106,14 @@ public class MapIndexScanPhysicalRel extends AbstractMapScanRel implements Physi
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
         return new MapIndexScanPhysicalRel(
-            getCluster(),
-            traitSet,
-            getTable(),
-            index,
-            indexFilter,
-            converterTypes,
-            indexExp,
-            remainderExp
+                getCluster(),
+                traitSet,
+                getTable(),
+                index,
+                indexFilter,
+                converterTypes,
+                indexExp,
+                remainderExp
         );
     }
 
@@ -164,12 +164,12 @@ public class MapIndexScanPhysicalRel extends AbstractMapScanRel implements Physi
         }
 
         return computeSelfCost(
-            planner,
-            scanRowCount,
-            CostUtils.indexScanCpuMultiplier(index.getType()),
-            hasFilter,
-            filterRowCount,
-            getTableUnwrapped().getProjects().size()
+                planner,
+                scanRowCount,
+                CostUtils.indexScanCpuMultiplier(index.getType()),
+                hasFilter,
+                filterRowCount,
+                getTableUnwrapped().getProjects().size()
         );
     }
 }
