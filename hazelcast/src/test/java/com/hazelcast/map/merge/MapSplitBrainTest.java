@@ -30,8 +30,7 @@ import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.SplitBrainTestSupport;
-import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.backup.BackupAccessor;
 import com.hazelcast.test.backup.TestBackupUtils;
 import org.junit.experimental.categories.Category;
@@ -66,7 +65,7 @@ import static org.junit.Assert.fail;
  */
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(SlowTest.class)
 @SuppressWarnings("WeakerAccess")
 public class MapSplitBrainTest extends SplitBrainTestSupport {
 
