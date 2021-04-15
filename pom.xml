@@ -140,6 +140,7 @@
         <powermock.version>2.0.9</powermock.version>
         <reflections.version>0.9.10</reflections.version>
         <zookeeper.version>3.5.8</zookeeper.version>
+        <testcontainers.version>1.14.3</testcontainers.version>
 
         <sonar.jacoco.jar>${basedir}/lib/jacocoagent.jar</sonar.jacoco.jar>
         <!--<sonar.phase>post-integration-test</sonar.phase>-->
