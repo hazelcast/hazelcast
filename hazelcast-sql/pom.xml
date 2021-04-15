@@ -91,8 +91,8 @@
                 <version>${maven.shade.plugin.version}</version>
                 <executions>
                     <execution>
-                        <id>fat-shaded-jar</id>
-                        <phase>package</phase>
+                        <id>jar-with-dependencies</id>
+                        <phase>${shade.jar-with-dependencies.phase}</phase>
                         <goals>
                             <goal>shade</goal>
                         </goals>

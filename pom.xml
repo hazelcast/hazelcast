@@ -163,6 +163,9 @@
         <checkstyle.configLocation>${main.basedir}/checkstyle/checkstyle.xml</checkstyle.configLocation>
         <checkstyle.supressionsLocation>${main.basedir}/checkstyle/suppressions.xml</checkstyle.supressionsLocation>
         <checkstyle.headerLocation>${main.basedir}/checkstyle/ClassHeader.txt</checkstyle.headerLocation>
+
+        <shade.jar-with-dependencies.phase>package</shade.jar-with-dependencies.phase>
+        <fat.dependency.classifier>jar-with-dependencies</fat.dependency.classifier>
     </properties>
     <licenses>
         <license>
@@ -546,6 +549,16 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+
+        <profile>
+            <id>pr-builder</id>
+            <properties>
+                <assembly.skipAssembly>true</assembly.skipAssembly>
+                <!-- Set the classifier to empty in this profile to use regular jar-->
+                <fat.dependency.classifier/>
+                <shade.jar-with-dependencies.phase>none</shade.jar-with-dependencies.phase>
+            </properties>
         </profile>
 
         <profile>
