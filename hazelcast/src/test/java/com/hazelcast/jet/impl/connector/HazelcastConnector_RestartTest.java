@@ -18,175 +18,74 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.collection.IList;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.ConfigAccessor;
-import com.hazelcast.config.ServiceConfig;
-import com.hazelcast.instance.impl.HazelcastInstanceImpl;
-import com.hazelcast.internal.partition.MigrationAwareService;
-import com.hazelcast.internal.partition.PartitionMigrationEvent;
-import com.hazelcast.internal.partition.PartitionReplicationEvent;
-import com.hazelcast.internal.services.CoreService;
-import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
-import com.hazelcast.jet.core.TestProcessors.ListSource;
-import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.JobExecutionService;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
-import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.test.ChangeLoggingRule;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.jet.pipeline.Pipeline;
+import com.hazelcast.jet.pipeline.Sinks;
+import com.hazelcast.jet.pipeline.test.SimpleEvent;
+import com.hazelcast.jet.pipeline.test.TestSources;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Properties;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import static com.hazelcast.jet.core.Edge.between;
-import static com.hazelcast.jet.core.TestUtil.throttle;
-import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.IntStream.range;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class HazelcastConnector_RestartTest extends JetTestSupport {
 
-    private static final String SINK_NAME = "sink";
-
-    @ClassRule
-    public static ChangeLoggingRule changeLoggingRule =
-            new ChangeLoggingRule("log4j2-trace-hazelcast-connector-restart-test.xml");
     private JetInstance instance1;
     private JetInstance instance2;
 
     @Before
     public void setup() {
         Config config = smallInstanceConfig();
-        ConfigAccessor.getServicesConfig(config)
-                .addServiceConfig(
-                        new ServiceConfig()
-                                .setName("MigrationBlockingService")
-                                .setEnabled(true)
-                                .setImplementation(new MigrationBlockingService()));
-
         instance1 = createJetMember(config);
         instance2 = createJetMember(config);
     }
 
     @Test
-    @Ignore // https://github.com/hazelcast/hazelcast/issues/18469
-    public void when_iListWrittenAndMemberShutdown_then_jobRestarts() throws Exception {
-        DAG dag = new DAG();
-        Vertex source = dag.newVertex("source",
-                throttle(() -> new ListSource(range(0, 1000).boxed().collect(toList())), 10));
-        Vertex sink = dag.newVertex("sink", writeListP(SINK_NAME));
-        dag.edge(between(source, sink));
-        source.localParallelism(1);
+    public void when_iListWrittenAndMemberShutdown_then_jobRestarts() {
+        IList<SimpleEvent> sinkList = instance1.getHazelcastInstance().getList("list");
 
-        Job job = instance1.newJob(dag, new JobConfig().setAutoScaling(true));
-        // wait for the job to start producing
-        IList<Integer> sinkList = instance1.getHazelcastInstance().getList(SINK_NAME);
-        assertTrueEventually(() -> assertTrue("no output to sink", sinkList.size() >= 4), 5);
+        Pipeline p = Pipeline.create();
+        p.readFrom(TestSources.itemStream(10))
+                .withoutTimestamps()
+                .writeTo(Sinks.list(sinkList));
 
-        // When
-        // initiate the shutdown. Thanks to the MigrationBlockingService migration will not finish
-        // before the latch is counted down.
-        Future<?> shutdownFuture = spawn(() -> instance2.shutdown());
+        Job job = instance1.newJob(p);
+        assertTrueEventually(() -> assertTrue("no output to sink", sinkList.size() > 0), 10);
+
+        long executionId = executionId(job);
+        instance2.shutdown();
 
         // Then - assert that the job stopped producing output
-        waitExecutionDoneOnMember(instance1, job);
-        logger.info("Job execution is done on instance1");
-        waitExecutionDoneOnMember(instance2, job);
-        logger.info("Job execution is done on instance2");
-        assertTrueEventually(() -> assertFalse("node engine is running",
-                ((HazelcastInstanceImpl) instance2.getHazelcastInstance()).node.nodeEngine.isRunning()));
-        logger.info("instance2 is not running");
+        waitExecutionDoneOnMember(instance1, executionId);
         int sizeAfterShutdown = sinkList.size();
-        assertTrueAllTheTime(() -> assertEquals("output continues after shutdown", sizeAfterShutdown, sinkList.size()), 3);
-
-        // When2 - allow the migration and shutdown to complete
-        MigrationBlockingService.migrationDoneLatch.countDown();
-        logger.info("Latch counted down");
-        // wait for the shutdown to finish
-        shutdownFuture.get();
 
         // Then2 - job restarts and continues production
         assertTrueEventually(() ->
-                assertTrue("no output after migration completed", sinkList.size() > sizeAfterShutdown + 4), 10);
+                assertTrue("no output after migration completed", sinkList.size() > sizeAfterShutdown), 20);
     }
 
-    private void waitExecutionDoneOnMember(JetInstance instance, Job job) {
+    private long executionId(Job job) {
+        JetService jetService = getNodeEngineImpl(instance1).getService(JetService.SERVICE_NAME);
+        JobExecutionService executionService = jetService.getJobExecutionService();
+        return executionService.getExecutionIdForJobId(job.getId());
+    }
+
+    private void waitExecutionDoneOnMember(JetInstance instance, long executionId) {
         JetService jetService = getNodeEngineImpl(instance).getService(JetService.SERVICE_NAME);
         JobExecutionService executionService = jetService.getJobExecutionService();
-        Long executionId = executionService.getExecutionIdForJobId(job.getId());
-        ExecutionContext execCtx = executionId == null ? null : executionService.getExecutionContext(executionId);
+        ExecutionContext execCtx = executionService.getExecutionContext(executionId);
         assertTrueEventually(() -> assertTrue(execCtx == null || execCtx.getExecutionFuture().isDone()));
-    }
-
-    // A CoreService with a slow post-join op. Its post-join operation will be executed before map's
-    // post-join operation so we can ensure indexes are created via MapReplicationOperation,
-    // even though PostJoinMapOperation has not yet been executed.
-    private static class MigrationBlockingService implements CoreService, MigrationAwareService, ManagedService {
-        static CountDownLatch migrationDoneLatch = new CountDownLatch(1);
-        private final AtomicBoolean blocked = new AtomicBoolean();
-        private volatile int sinkPartitionId;
-
-        @Override
-        public void init(NodeEngine nodeEngine, Properties properties) {
-            sinkPartitionId = nodeEngine.getPartitionService().getPartitionId(SINK_NAME);
-        }
-
-        @Override
-        public void reset() {
-        }
-
-        @Override
-        public void shutdown(boolean terminate) {
-        }
-
-        @Override
-        public void beforeMigration(PartitionMigrationEvent event) {
-            // don't block on the partition where the sink(IList) is stored
-            // otherwise the size check on the list is blocked
-            if (event.getPartitionId() == sinkPartitionId) {
-                return;
-            }
-            try {
-                if (blocked.compareAndSet(false, true)) {
-                    migrationDoneLatch.await();
-                }
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        @Override
-        public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
-            return null;
-        }
-
-        @Override
-        public void commitMigration(PartitionMigrationEvent event) {
-        }
-
-        @Override
-        public void rollbackMigration(PartitionMigrationEvent event) {
-        }
     }
 }
