@@ -204,7 +204,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
     //#region null check functions
 
-    public static final SqlFunction NULL_IF = HazelcastNullIfFunction.INSTANCE;
+    public static final SqlFunction NULLIF = HazelcastNullIfFunction.INSTANCE;
     public static final SqlFunction COALESCE = HazelcastCoalesceFunction.INSTANCE;
 
     //#endregion
