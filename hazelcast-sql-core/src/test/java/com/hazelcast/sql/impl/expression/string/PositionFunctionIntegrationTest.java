@@ -31,24 +31,14 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.List;
-import java.util.regex.Pattern;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class PositionFunctionIntegrationTest extends ExpressionTestSupport {
-    private static final Pattern ERROR1 = Pattern.compile(
-            "Parameter at position \\d+ must be of ((VARCHAR)|(INTEGER)) type,"
-                    + " but \\w+ was found \\(consider adding an explicit CAST\\)"
-    );
-
-    private static final Pattern ERROR2 = Pattern.compile(
-            "Cannot apply 'POSITION' function to \\[\\w+(, \\w+)+]"
-                    + " \\(consider adding an explicit CAST\\)"
-    );
 
     @Test
     public void test() {
@@ -101,32 +91,32 @@ public class PositionFunctionIntegrationTest extends ExpressionTestSupport {
     public void test_wrong_type() {
         put("XYZ");
 
-        checkError(sql("123", "23"));
-        checkError(sql("'123'", "23"));
-        checkError(sql("123", "'23'"));
+        checkError(sql("123", "23"), "Cannot apply 'POSITION' function to [TINYINT, TINYINT] (consider adding an explicit CAST)");
+        checkError(sql("'123'", "23"), "Cannot apply 'POSITION' function to [TINYINT, VARCHAR] (consider adding an explicit CAST)");
+        checkError(sql("123", "'23'"), "Cannot apply 'POSITION' function to [VARCHAR, TINYINT] (consider adding an explicit CAST)");
 
-        checkError(sql("TRUE", "FALSE"));
-        checkError(sql("'ABC'", "TRUE"));
-        checkError(sql("TRUE", "'ABC'"));
+        checkError(sql("TRUE", "FALSE"), "Cannot apply 'POSITION' function to [BOOLEAN, BOOLEAN] (consider adding an explicit CAST)");
+        checkError(sql("'ABC'", "TRUE"), "Cannot apply 'POSITION' function to [BOOLEAN, VARCHAR] (consider adding an explicit CAST)");
+        checkError(sql("TRUE", "'ABC'"), "Cannot apply 'POSITION' function to [VARCHAR, BOOLEAN] (consider adding an explicit CAST)");
 
-        checkError(sql("'ABCD'", "'BC'", "'CC'"));
-        checkError(sql("'ABCD'", "'BC'", "TRUE"));
+        checkError(sql("'ABCD'", "'BC'", "'CC'"), "Cannot apply 'POSITION' function to [VARCHAR, VARCHAR, VARCHAR] (consider adding an explicit CAST)");
+        checkError(sql("'ABCD'", "'BC'", "TRUE"), "Cannot apply 'POSITION' function to [VARCHAR, VARCHAR, BOOLEAN] (consider adding an explicit CAST)");
 
-        checkError(sql("?", "?"), INTEGER_VAL, INTEGER_VAL);
-        checkError(sql("?", "?"), STRING_VAL, INTEGER_VAL);
-        checkError(sql("?", "?"), INTEGER_VAL, STRING_VAL);
+        checkError(sql("?", "?"), "Parameter at position 0 must be of VARCHAR type, but INTEGER was found (consider adding an explicit CAST)", INTEGER_VAL, INTEGER_VAL);
+        checkError(sql("?", "?"), "Parameter at position 1 must be of VARCHAR type, but INTEGER was found (consider adding an explicit CAST)", STRING_VAL, INTEGER_VAL);
+        checkError(sql("?", "?"), "Parameter at position 0 must be of VARCHAR type, but INTEGER was found (consider adding an explicit CAST)", INTEGER_VAL, STRING_VAL);
 
-        checkError(sql("?", "?"), BOOLEAN_VAL, BOOLEAN_VAL);
-        checkError(sql("?", "?"), STRING_VAL, BOOLEAN_VAL);
-        checkError(sql("?", "?"), BOOLEAN_VAL, STRING_VAL);
+        checkError(sql("?", "?"), "Parameter at position 0 must be of VARCHAR type, but BOOLEAN was found (consider adding an explicit CAST)", BOOLEAN_VAL, BOOLEAN_VAL);
+        checkError(sql("?", "?"), "Parameter at position 1 must be of VARCHAR type, but BOOLEAN was found (consider adding an explicit CAST)", STRING_VAL, BOOLEAN_VAL);
+        checkError(sql("?", "?"), "Parameter at position 0 must be of VARCHAR type, but BOOLEAN was found (consider adding an explicit CAST)", BOOLEAN_VAL, STRING_VAL);
 
-        checkError(sql("?", "?"), OFFSET_DATE_TIME_VAL, OFFSET_DATE_TIME_VAL);
-        checkError(sql("?", "?"), STRING_VAL, OFFSET_DATE_TIME_VAL);
-        checkError(sql("?", "?"), OFFSET_DATE_TIME_VAL, STRING_VAL);
+        checkError(sql("?", "?"), "Parameter at position 0 must be of VARCHAR type, but TIMESTAMP_WITH_TIME_ZONE was found (consider adding an explicit CAST)", OFFSET_DATE_TIME_VAL, OFFSET_DATE_TIME_VAL);
+        checkError(sql("?", "?"), "Parameter at position 1 must be of VARCHAR type, but TIMESTAMP_WITH_TIME_ZONE was found (consider adding an explicit CAST)", STRING_VAL, OFFSET_DATE_TIME_VAL);
+        checkError(sql("?", "?"), "Parameter at position 0 must be of VARCHAR type, but TIMESTAMP_WITH_TIME_ZONE was found (consider adding an explicit CAST)", OFFSET_DATE_TIME_VAL, STRING_VAL);
 
-        checkError(sql("?", "?", "?"), STRING_VAL, STRING_VAL, STRING_VAL);
-        checkError(sql("?", "?", "?"), STRING_VAL, STRING_VAL, BOOLEAN_VAL);
-        checkError(sql("?", "?", "?"), STRING_VAL, STRING_VAL, OFFSET_DATE_TIME_VAL);
+        checkError(sql("?", "?", "?"), "Parameter at position 2 must be of INTEGER type, but VARCHAR was found (consider adding an explicit CAST)", STRING_VAL, STRING_VAL, STRING_VAL);
+        checkError(sql("?", "?", "?"), "Parameter at position 2 must be of INTEGER type, but BOOLEAN was found (consider adding an explicit CAST)", STRING_VAL, STRING_VAL, BOOLEAN_VAL);
+        checkError(sql("?", "?", "?"), "Parameter at position 2 must be of INTEGER type, but TIMESTAMP_WITH_TIME_ZONE was found (consider adding an explicit CAST)", STRING_VAL, STRING_VAL, OFFSET_DATE_TIME_VAL);
     }
 
     @Test
@@ -169,19 +159,14 @@ public class PositionFunctionIntegrationTest extends ExpressionTestSupport {
         assertEquals(expectedResult, row.getObject(0));
     }
 
-    private void checkError(String sql, Object ...parameters) {
-        try {
-            execute(member, sql, parameters);
-            fail("did not throw exception");
-        } catch (Exception e) {
-            assertInstanceOf(HazelcastSqlException.class, e);
-
-            String message = e.getMessage();
-            assertTrue(
-                    String.format("got unexpected error message: %s", message),
-                    ERROR1.matcher(message).find() || ERROR2.matcher(message).find());
-
-        }
+    private void checkError(String sql, String expectedError, Object... parameters) {
+        assertThatThrownBy(
+                () -> {
+                    execute(member, sql, parameters);
+                    fail("did not throw exception");
+                })
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageEndingWith(expectedError);
     }
 
     private String sql(Object text, Object search) {
