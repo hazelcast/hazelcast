@@ -63,12 +63,13 @@ public class PositionFunction extends TriExpression<Integer> implements Identifi
             return null;
         }
 
-        // Start argument is not given, then search it from the beginning.
+        // In this case the `start` argument is not given, then search it from the beginning.
         if (operand3 == null) {
             return SQL_START_INDEX + StringFunctionUtils.search(text, search, 0);
         }
 
         Integer start = MathFunctionUtils.asInt(operand3, row, context);
+        // In this case the `start` argument is given but it is NULL, then return NULL.
         if (start == null) {
             return null;
         }

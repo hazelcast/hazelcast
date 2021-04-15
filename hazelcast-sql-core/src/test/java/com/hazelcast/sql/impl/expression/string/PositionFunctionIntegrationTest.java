@@ -50,7 +50,7 @@ public class PositionFunctionIntegrationTest extends ExpressionTestSupport {
 
 
         // Test with start argument, slide the search index to right.
-        // Valid start indices are between 0 and 4.
+        // Valid start indices are between 1 and 4.
         check(sql("'ABCD'", "'BC'", 0), 0); // Invalid index
         check(sql("'ABCD'", "'BC'", 1), 2);
         check(sql("'ABCD'", "'BC'", 2), 2);
@@ -152,7 +152,7 @@ public class PositionFunctionIntegrationTest extends ExpressionTestSupport {
 
     private void check(String sql, Integer expectedResult, Object ...parameters) {
         List<SqlRow> rows =  execute(member, sql, parameters);
-        assertEquals("size must be equal to 1", rows.size(), 1);
+        assertEquals("size", 1, rows.size());
         SqlRow row = rows.get(0);
 
         assertEquals(SqlColumnType.INTEGER, row.getMetadata().getColumn(0).getType());
