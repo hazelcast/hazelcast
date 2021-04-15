@@ -58,7 +58,9 @@ public class TerminateExecutionOperation extends AbstractJobOperation {
         Address callerAddress = getCallerAddress();
         ExecutionContext ctx = executionService.assertExecutionContext(callerAddress, jobId(), executionId,
                 getClass().getSimpleName());
-        ctx.terminateExecution(mode);
+        if (ctx != null) {
+            ctx.terminateExecution(mode);
+        }
     }
 
     @Override

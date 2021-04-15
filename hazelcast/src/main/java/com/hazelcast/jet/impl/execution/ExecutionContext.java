@@ -155,8 +155,9 @@ public class ExecutionContext implements DynamicMetricsProvider {
 
         metricsEnabled = jobConfig.isMetricsEnabled() && nodeEngine.getConfig().getMetricsConfig().isEnabled();
         plan.initialize(nodeEngine, jobId, executionId, snapshotContext, tempDirectories, serializationService);
+        int numPrioritySsTasklets = plan.getStoreSnapshotTaskletCount() != 0 ? plan.getHigherPriorityVertexCount() : 0;
         snapshotContext.initTaskletCount(plan.getProcessorTaskletCount(), plan.getStoreSnapshotTaskletCount(),
-                plan.getHigherPriorityVertexCount());
+                numPrioritySsTasklets);
         receiverMap = unmodifiableMap(plan.getReceiverMap());
         for (Entry<Integer, Map<Integer, Map<Address, ReceiverTasklet>>> vertexIdEntry : plan.getReceiverMap().entrySet()) {
             for (Entry<Integer, Map<Address, ReceiverTasklet>> ordinalEntry : vertexIdEntry.getValue().entrySet()) {
