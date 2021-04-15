@@ -267,7 +267,7 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
 
         NoOutputSourceP.executionStarted = new CountDownLatch(clusterSize * PARALLELISM);
         MockPS processorSupplier = new MockPS(NoOutputSourceP::new, clusterSize);
-        DAG dag = new DAG().vertex(new Vertex("test", processorSupplier));
+        DAG dag = new DAG().vertex(new Vertex("test", processorSupplier).localParallelism(PARALLELISM));
         Job job = instances[0].newJob(dag, new JobConfig().setSplitBrainProtection(true));
         assertOpenEventually(NoOutputSourceP.executionStarted);
 
@@ -333,7 +333,7 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
             logger.info("Shutting down 1st instance");
             instances[0].shutdown();
             logger.info("1st instance down, starting another instance");
-            createJetMember();
+            createJetMember(config);
 
             logger.info("Shutting down 2nd instance");
             instances[1].shutdown();
