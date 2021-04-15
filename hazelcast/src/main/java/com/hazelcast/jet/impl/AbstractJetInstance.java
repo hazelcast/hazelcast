@@ -84,6 +84,7 @@ public abstract class AbstractJetInstance implements JetInstance {
 
     @Nonnull
     public Job newJob(long jobId, @Nonnull DAG dag, @Nonnull JobConfig config, @Nonnull List<Object> sqlArguments) {
+        uploadResources(jobId, config);
         return newJobProxy(jobId, dag, config, sqlArguments);
     }
 
