@@ -54,6 +54,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -200,8 +201,7 @@ public class TopologyChangeTest extends JetTestSupport {
             assertEquals(nodeCount, MockPS.receivedCloseErrors.size());
             for (int i = 0; i < MockPS.receivedCloseErrors.size(); i++) {
                 Throwable error = MockPS.receivedCloseErrors.get(i);
-                assertTrue(error instanceof TopologyChangedException
-                        || error instanceof HazelcastInstanceNotActiveException);
+                assertTrue(error instanceof CancellationException);
             }
         });
     }
@@ -298,10 +298,8 @@ public class TopologyChangeTest extends JetTestSupport {
         assertTrueEventually(() -> {
             assertEquals(count, MockPS.closeCount.get());
             assertEquals(nodeCount, MockPS.receivedCloseErrors.size());
-            for (int i = 0; i < MockPS.receivedCloseErrors.size(); i++) {
-                Throwable error = MockPS.receivedCloseErrors.get(i);
-                assertTrue(error instanceof TopologyChangedException
-                        || error instanceof HazelcastInstanceNotActiveException);
+            for (Throwable error : MockPS.receivedCloseErrors) {
+                assertTrue("unexpected exc: " + error, error instanceof CancellationException);
             }
         });
     }

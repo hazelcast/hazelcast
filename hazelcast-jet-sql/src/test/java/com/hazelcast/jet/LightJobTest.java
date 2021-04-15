@@ -37,6 +37,7 @@ import java.util.stream.IntStream;
 import static com.hazelcast.jet.core.Edge.between;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 public class LightJobTest extends JetTestSupport {
@@ -62,6 +63,11 @@ public class LightJobTest extends JetTestSupport {
     @Test
     public void test_client() {
         test(createJetClient());
+    }
+
+    @Test
+    public void test_cancellation() {
+        fail("todo");
     }
 
     private void test(JetInstance submittingInstance) {

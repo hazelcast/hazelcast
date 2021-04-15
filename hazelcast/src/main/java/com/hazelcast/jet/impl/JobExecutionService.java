@@ -45,6 +45,7 @@ import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Map;
@@ -58,6 +59,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static com.hazelcast.jet.Util.idToString;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.jobIdAndExecutionId;
@@ -376,6 +378,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
         }
     }
 
+    @Nullable
     public ExecutionContext assertExecutionContext(Address callerAddress, long jobId, long executionId,
                                                    String callerOpName) {
         Address masterAddress = nodeEngine.getMasterAddress();
@@ -391,9 +394,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
 
         ExecutionContext executionContext = executionContexts.get(executionId);
         if (executionContext == null) {
-            throw new TopologyChangedException(String.format(
-                    "%s not found for coordinator %s for '%s'",
-                    jobIdAndExecutionId(jobId, executionId), callerAddress, callerOpName));
+            return null;
         } else if (!(executionContext.coordinator().equals(callerAddress) && executionContext.jobId() == jobId)) {
             throw new IllegalStateException(String.format(
                     "%s, originally from coordinator %s, cannot do '%s' by coordinator %s and execution %s",
@@ -444,7 +445,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
         executionStarted.inc();
         return execCtx.beginExecution(taskletExecutionService)
               .whenComplete(withTryCatch(logger, (i, e) -> {
-                  completeExecution(execCtx.executionId(), e);
+                  completeExecution(execCtx.executionId(), peel(e));
                   if (e instanceof CancellationException) {
                       logger.fine("Execution of " + execCtx.jobNameAndExecutionId() + " was cancelled");
                   } else if (e != null) {

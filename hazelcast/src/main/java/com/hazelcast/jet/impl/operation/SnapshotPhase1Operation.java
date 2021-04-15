@@ -29,13 +29,17 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static java.util.Objects.requireNonNull;
+import static java.util.concurrent.CompletableFuture.completedFuture;
 
 public class SnapshotPhase1Operation extends AsyncJobOperation {
 
     /** If set to true, responses to SnapshotOperation will be postponed until set back to false. */
     // for test
     public static volatile boolean postponeResponses;
+
     private static final int RETRY_MS = 100;
+    private static final CompletableFuture<SnapshotPhase1Result> EMPTY_RESULT =
+            completedFuture(new SnapshotPhase1Result(0, 0, 0, null));
 
     private long executionId;
     private long snapshotId;
@@ -60,6 +64,10 @@ public class SnapshotPhase1Operation extends AsyncJobOperation {
         ExecutionContext ctx = service.getJobExecutionService().assertExecutionContext(
                 getCallerAddress(), jobId(), executionId, getClass().getSimpleName()
         );
+        if (ctx == null) {
+            // this happens if the execution completed locally, but still runs on other members
+            return EMPTY_RESULT;
+        }
         CompletableFuture<SnapshotPhase1Result> future =
             ctx.beginSnapshotPhase1(snapshotId, mapName, flags)
                 .exceptionally(exc -> new SnapshotPhase1Result(0, 0, 0, exc))
