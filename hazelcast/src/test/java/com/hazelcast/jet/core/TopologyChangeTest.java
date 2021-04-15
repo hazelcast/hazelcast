@@ -429,11 +429,11 @@ public class TopologyChangeTest extends JetTestSupport {
 
         assertTrueEventually(() -> {
             Arrays.stream(instances)
-                    .filter(instance -> !instance.getHazelcastInstance().getCluster().getLocalMember().isLiteMember())
-                    .filter(instance -> instance != instances[2])
-                    .map(JetTestSupport::getJetService)
-                    .map(service -> service.getJobExecutionService().getExecutionContext(executionId))
-                    .forEach(Assert::assertNotNull);
+                  .filter(instance -> !instance.getHazelcastInstance().getCluster().getLocalMember().isLiteMember())
+                  .filter(instance -> instance != instances[2])
+                  .map(JetTestSupport::getJetService)
+                  .map(service -> service.getJobExecutionService().getExecutionContext(executionId))
+                  .forEach(Assert::assertNotNull);
         });
 
         newInstance.getHazelcastInstance().getLifecycleService().terminate();

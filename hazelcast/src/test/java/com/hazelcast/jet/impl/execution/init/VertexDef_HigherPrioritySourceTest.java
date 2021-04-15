@@ -78,7 +78,7 @@ public class VertexDef_HigherPrioritySourceTest extends SimpleTestInClusterSuppo
     @Test
     public void test_simple() {
         dag.edge(from(v1, 0).to(v3, 0).priority(-1))
-                .edge(from(v2, 0).to(v3, 1));
+           .edge(from(v2, 0).to(v3, 1));
 
         assertHigherPriorityVertices(v1);
     }
@@ -86,8 +86,8 @@ public class VertexDef_HigherPrioritySourceTest extends SimpleTestInClusterSuppo
     @Test
     public void test_nested() {
         dag.edge(between(v1, v2))
-                .edge(from(v2, 0).to(v4, 0).priority(-1))
-                .edge(from(v3, 0).to(v4, 1));
+           .edge(from(v2, 0).to(v4, 0).priority(-1))
+           .edge(from(v3, 0).to(v4, 1));
 
         assertHigherPriorityVertices(v1, v2);
     }
@@ -95,9 +95,9 @@ public class VertexDef_HigherPrioritySourceTest extends SimpleTestInClusterSuppo
     @Test
     public void test_nestedMore() {
         dag.edge(from(v1, 0).to(v3, 0))
-                .edge(from(v2, 0).to(v3, 1))
-                .edge(from(v3, 0).to(v5, 0).priority(-1))
-                .edge(from(v4, 0).to(v5, 1));
+           .edge(from(v2, 0).to(v3, 1))
+           .edge(from(v3, 0).to(v5, 0).priority(-1))
+           .edge(from(v4, 0).to(v5, 1));
 
         assertHigherPriorityVertices(v1, v2, v3);
     }
