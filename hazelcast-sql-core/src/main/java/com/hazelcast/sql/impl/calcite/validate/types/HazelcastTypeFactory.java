@@ -44,8 +44,8 @@ public final class HazelcastTypeFactory extends SqlTypeFactoryImpl {
     private static final RelDataType TYPE_TIME = new HazelcastType(SqlTypeName.TIME, false);
     private static final RelDataType TYPE_TIME_NULLABLE = new HazelcastType(SqlTypeName.TIME, true);
 
-    private static final RelDataType TYPE_TIMESTAMP = new HazelcastType(SqlTypeName.TIMESTAMP, false);
-    private static final RelDataType TYPE_TIMESTAMP_NULLABLE = new HazelcastType(SqlTypeName.TIMESTAMP, true);
+    private static final RelDataType TYPE_TIMESTAMP = new HazelcastType(SqlTypeName.TIMESTAMP, false, 6);
+    private static final RelDataType TYPE_TIMESTAMP_NULLABLE = new HazelcastType(SqlTypeName.TIMESTAMP, true, 6);
 
     private static final RelDataType TYPE_TIMESTAMP_WITH_TIME_ZONE = new HazelcastType(
             SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE, false

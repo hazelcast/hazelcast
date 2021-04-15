@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.validate;
 
+import com.hazelcast.sql.impl.calcite.validate.operators.datetime.HazelcastExtractFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastAbsFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastDoubleBiFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastDoubleFunction;
@@ -175,6 +176,8 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
     public static final SqlFunction UPPER = HazelcastStringFunction.UPPER;
 
     public static final SqlFunction REPLACE = HazelcastReplaceFunction.INSTANCE;
+
+    public static final SqlFunction EXTRACT = HazelcastExtractFunction.INSTANCE;
 
     public static final SqlPostfixOperator DESC = HazelcastDescOperator.DESC;
 

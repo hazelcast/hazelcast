@@ -153,6 +153,9 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.BTRIM);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.REPLACE);
 
+        // Datetime
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.EXTRACT);
+
         // Sorting
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.DESC);
 
@@ -274,6 +277,7 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
                 // string literals to be of CHAR type, not VARCHAR. Validated type
                 // of string literals is still VARCHAR in HazelcastSqlValidator.
             case CHAR:
+            case TIMESTAMP:
             case ANY:
             case NULL:
                 return null;
@@ -310,6 +314,7 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
 
                 return;
             case DESCENDING:
+            case EXTRACT:
             case OTHER:
             case OTHER_FUNCTION:
                 processOther(call);
