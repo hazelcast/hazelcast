@@ -17,6 +17,7 @@
 package com.hazelcast.sql.misc;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SqlExecuteCodec;
 import com.hazelcast.client.impl.protocol.codec.SqlFetchCodec;
@@ -25,7 +26,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableReader;
@@ -53,7 +53,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -83,9 +82,7 @@ public class SqlNoDeserializationTest extends SqlTestSupport {
 
     @Before
     public void before() {
-        member = factory.newHazelcastInstance(config());
-        factory.newHazelcastInstance(config());
-
+        member = factory.newInstances(config(), 2)[0];
         client = factory.newHazelcastClient(clientConfig());
 
         prepare();
@@ -149,10 +146,10 @@ public class SqlNoDeserializationTest extends SqlTestSupport {
 
         SqlClientService clientService = (SqlClientService) client.getSql();
 
-        Connection connection = clientService.getRandomConnection();
+        ClientConnection connection = clientService.getRandomConnection();
 
         // Get the first page through the "execute" request
-        QueryId queryId = QueryId.create(UUID.randomUUID());
+        QueryId queryId = QueryId.create(connection.getRemoteUuid());
 
         ClientMessage executeRequest = SqlExecuteCodec.encodeRequest(
                 SQL,
