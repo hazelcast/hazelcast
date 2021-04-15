@@ -20,13 +20,11 @@ import com.hazelcast.config.Config;
 import com.hazelcast.internal.util.FilteringClassLoader;
 import com.hazelcast.jet.JetInstance;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.rules.Timeout;
 
 import static java.util.Collections.singletonList;
 
-@Ignore
 public class ClientDeploymentTest extends AbstractDeploymentTest {
 
     @Rule
@@ -37,8 +35,7 @@ public class ClientDeploymentTest extends AbstractDeploymentTest {
         Config config = new Config();
         FilteringClassLoader filteringClassLoader = new FilteringClassLoader(singletonList("deployment"), null);
         config.setClassLoader(filteringClassLoader);
-        //TODO the config is created but not passed to the initialize method
-        initializeWithClient(2, null, null);
+        initializeWithClient(2, config, null);
     }
 
     @Override
