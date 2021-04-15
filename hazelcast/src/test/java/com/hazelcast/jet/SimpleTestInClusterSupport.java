@@ -56,7 +56,7 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
         factory = new JetTestInstanceFactory();
         instances = new JetInstance[memberCount];
         if (config == null) {
-            config = new Config();
+            config = smallInstanceConfig();
         }
         SimpleTestInClusterSupport.config = config;
         // create members
@@ -70,11 +70,10 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
             @Nullable Config config,
             @Nullable ClientConfig clientConfig
     ) {
-        initialize(memberCount, config);
-
         if (clientConfig == null) {
             clientConfig = new ClientConfig();
         }
+        initialize(memberCount, config);
         client = factory.newClient(clientConfig);
     }
 

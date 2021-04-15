@@ -40,12 +40,12 @@ public final class HazelcastConcatOperator extends HazelcastBinaryOperator {
 
     private HazelcastConcatOperator() {
         super(
-            "||",
-            SqlKind.OTHER,
-            SqlStdOperatorTable.CONCAT.getLeftPrec(),
-            true,
-            ReturnTypes.DYADIC_STRING_SUM_PRECISION_NULLABLE,
-            new ReplaceUnknownOperandTypeInference(VARCHAR)
+                "||",
+                SqlKind.OTHER,
+                SqlStdOperatorTable.CONCAT.getLeftPrec(),
+                true,
+                ReturnTypes.DYADIC_STRING_SUM_PRECISION_NULLABLE,
+                new ReplaceUnknownOperandTypeInference(VARCHAR)
         );
     }
 
@@ -65,16 +65,16 @@ public final class HazelcastConcatOperator extends HazelcastBinaryOperator {
             if (operandType.getSqlTypeName() != VARCHAR) {
                 // Coerce everything to VARCHAR
                 RelDataType newOperandType = HazelcastTypeUtils.createType(
-                    validator.getTypeFactory(),
-                    VARCHAR,
-                    operandType.isNullable()
+                        validator.getTypeFactory(),
+                        VARCHAR,
+                        operandType.isNullable()
                 );
 
                 validator.getTypeCoercion().coerceOperandType(
-                    binding.getScope(),
-                    binding.getCall(),
-                    i,
-                    newOperandType
+                        binding.getScope(),
+                        binding.getCall(),
+                        i,
+                        newOperandType
                 );
             }
 

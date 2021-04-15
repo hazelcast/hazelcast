@@ -23,6 +23,7 @@ import com.hazelcast.nio.serialization.ClassDefinition;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.util.Objects;
 
 public class PortableUpsertTargetDescriptor implements UpsertTargetDescriptor {
 
@@ -49,5 +50,22 @@ public class PortableUpsertTargetDescriptor implements UpsertTargetDescriptor {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         this.classDefinition = in.readObject();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        PortableUpsertTargetDescriptor that = (PortableUpsertTargetDescriptor) o;
+        return Objects.equals(classDefinition, that.classDefinition);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(classDefinition);
     }
 }

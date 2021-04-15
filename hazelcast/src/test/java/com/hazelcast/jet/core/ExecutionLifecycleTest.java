@@ -44,10 +44,13 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
 import javax.annotation.Nonnull;
@@ -84,15 +87,17 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
     private static final int MEMBER_COUNT = 2;
-    private static final int PARALLELISM = Runtime.getRuntime().availableProcessors();
 
     private static final Throwable MOCK_ERROR = new AssertionError("mock error");
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
+
+    private int parallelism;
 
     @BeforeClass
     public static void beforeClass() {
@@ -101,7 +106,8 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
     @Before
     public void before() {
-        TestProcessors.reset(MEMBER_COUNT * PARALLELISM);
+        parallelism = instance().getConfig().getInstanceConfig().getCooperativeThreadCount();
+        TestProcessors.reset(MEMBER_COUNT * parallelism);
     }
 
     @Test
@@ -698,12 +704,12 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     }
 
     private void assertPClosedWithoutError() {
-        assertEquals(MEMBER_COUNT * PARALLELISM, MockP.initCount.get());
-        assertEquals(MEMBER_COUNT * PARALLELISM, MockP.closeCount.get());
+        assertEquals(MEMBER_COUNT * parallelism, MockP.initCount.get());
+        assertEquals(MEMBER_COUNT * parallelism, MockP.closeCount.get());
     }
 
     private void assertPClosedWithError() {
-        assertEquals(MEMBER_COUNT * PARALLELISM, MockP.closeCount.get());
+        assertEquals(MEMBER_COUNT * parallelism, MockP.closeCount.get());
     }
 
     private void assertJobSucceeded(Job job) {

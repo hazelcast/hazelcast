@@ -23,8 +23,11 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.DummyStatefulP;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
@@ -34,6 +37,7 @@ import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class GracefulShutdown_LiteMasterTest extends JetTestSupport {
 
     private JetInstance instance;
@@ -42,7 +46,7 @@ public class GracefulShutdown_LiteMasterTest extends JetTestSupport {
     @Before
     public void setup() {
         TestProcessors.reset(0);
-        Config liteMemberConfig = new Config();
+        Config liteMemberConfig = smallInstanceConfig();
         liteMemberConfig.setLiteMember(true);
         liteMaster = createJetMember(liteMemberConfig);
         instance = createJetMember();

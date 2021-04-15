@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.impl.connector;
 
-import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.EventJournalCacheEvent;
+import com.hazelcast.cache.ICache;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.collection.IList;
@@ -35,11 +35,11 @@ import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.SourceProcessors;
-import com.hazelcast.jet.test.SerialTest;
 import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.projection.Projections;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -70,7 +70,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(SerialTest.class)
+@Category(QuickTest.class)
 public class HazelcastRemoteConnectorTest extends JetTestSupport {
 
     private static final int ITEM_COUNT = 20;
@@ -84,13 +84,13 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
 
     @BeforeClass
     public static void setUp() {
-        Config config = new Config();
+        Config config = smallInstanceConfig();
         config.addCacheConfig(new CacheSimpleConfig().setName("*"));
 
         jet = factory.newMember(config);
         JetInstance jet2 = factory.newMember(config);
 
-        Config remoteClusterConfig = new Config();
+        Config remoteClusterConfig = smallInstanceConfig();
         CacheSimpleConfig cacheConfig = new CacheSimpleConfig().setName("*");
         cacheConfig.getEventJournalConfig().setEnabled(true);
         remoteClusterConfig.addCacheConfig(cacheConfig);

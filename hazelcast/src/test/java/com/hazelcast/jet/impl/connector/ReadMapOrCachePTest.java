@@ -23,10 +23,11 @@ import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.map.IMap;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.experimental.categories.Category;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,7 +37,7 @@ import static com.hazelcast.jet.TestContextSupport.adaptSupplier;
 import static com.hazelcast.jet.Util.entry;
 import static java.util.Collections.emptyList;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ReadMapOrCachePTest extends SimpleTestInClusterSupport {
 
     @BeforeClass

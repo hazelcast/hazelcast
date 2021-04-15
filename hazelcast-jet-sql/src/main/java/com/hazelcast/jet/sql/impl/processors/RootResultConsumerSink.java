@@ -27,10 +27,13 @@ import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.sql.impl.JetQueryResultProducer;
 import com.hazelcast.jet.sql.impl.JetSqlCoreBackendImpl;
 import com.hazelcast.sql.impl.JetSqlCoreBackend;
+import com.hazelcast.sql.impl.QueryException;
 
 import javax.annotation.Nonnull;
+import java.util.concurrent.CancellationException;
 
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelismOne;
+import static com.hazelcast.sql.impl.SqlErrorCode.CANCELLED_BY_USER;
 
 public final class RootResultConsumerSink implements Processor {
 
@@ -49,13 +52,27 @@ public final class RootResultConsumerSink implements Processor {
 
     @Override
     public boolean tryProcess() {
-        rootResultConsumer.ensureNotDone();
+        try {
+            rootResultConsumer.ensureNotDone();
+        } catch (QueryException e) {
+            if (e.getCode() == CANCELLED_BY_USER) {
+                throw new CancellationException();
+            }
+            throw e;
+        }
         return true;
     }
 
     @Override
     public void process(int ordinal, @Nonnull Inbox inbox) {
-        rootResultConsumer.consume(inbox);
+        try {
+            rootResultConsumer.consume(inbox);
+        } catch (QueryException e) {
+            if (e.getCode() == CANCELLED_BY_USER) {
+                throw new CancellationException();
+            }
+            throw e;
+        }
     }
 
     @Override

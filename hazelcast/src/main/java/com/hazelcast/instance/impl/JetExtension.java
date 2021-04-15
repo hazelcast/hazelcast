@@ -19,7 +19,7 @@ package com.hazelcast.instance.impl;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.instance.JetBuildInfo;
+import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JetConfig;
@@ -30,7 +30,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.sql.impl.JetSqlCoreBackend;
 
-import javax.annotation.Nonnull;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -43,14 +42,6 @@ import static com.hazelcast.jet.impl.JobRepository.JOB_RESULTS_MAP_NAME;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
 public class JetExtension {
-    private static final String JET_LOGO
-            = "\to  o   O  o---o o--o o      o-o   O   o-o  o-O-o     o--o  o      O  o-O-o o--o  o-o  o--o  o   o \n"
-            + "\t|  |  / \\    /  |    |     /     / \\ |       |       |   | |     / \\   |   |    o   o |   | |\\ /| \n"
-            + "\tO--O o---o -O-  O-o  |    O     o---o o-o    |       O--o  |    o---o  |   O-o  |   | O-Oo  | O | \n"
-            + "\t|  | |   | /    |    |     \\    |   |    |   |       |     |    |   |  |   |    o   o |  \\  |   | \n"
-            + "\to  o o   oo---o o--o O---o  o-o o   oo--o    o       o     O---oo   o  o   o     o-o  o   o o   o";
-
-    private static final String COPYRIGHT_LINE = "Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.";
 
     private final Node node;
     private final ILogger logger;
@@ -62,14 +53,19 @@ public class JetExtension {
         this.jetService = jetService;
     }
 
+    private void checkLosslessRestartAllowed() {
+        Config config = node.config.getStaticConfig();
+        JetConfig jetConfig = config.getJetConfig();
+        if (jetConfig.getInstanceConfig().isLosslessRestartEnabled()) {
+            if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
+                throw new IllegalStateException("Lossless Restart requires Hazelcast Enterprise Edition");
+            }
+        }
+    }
+
     public void beforeStart() {
         Config config = node.config.getStaticConfig();
         JetConfig jetConfig = config.getJetConfig();
-
-        if (jetConfig.getInstanceConfig().isLosslessRestartEnabled()) {
-            throw new UnsupportedOperationException("Lossless Restart is not available in the open-source version of "
-                    + "Hazelcast Jet");
-        }
 
         MapConfig internalMapConfig = new MapConfig(INTERNAL_JET_OBJECTS_PREFIX + '*')
                 .setBackupCount(jetConfig.getInstanceConfig().getBackupCount())
@@ -89,13 +85,8 @@ public class JetExtension {
         config.addMapConfig(internalMapConfig)
                 .addMapConfig(resultsMapConfig)
                 .addMapConfig(metricsMapConfig);
-        // TODO we should move this to enterprise node extension
-        if (jetConfig.getInstanceConfig().isLosslessRestartEnabled()
-                && !config.getHotRestartPersistenceConfig().isEnabled()) {
-            logger.warning("Lossless Restart is enabled but Hot Restart is disabled. Auto-enabling Hot Restart. "
-                    + "The following path will be used: " + config.getHotRestartPersistenceConfig().getBaseDir());
-            config.getHotRestartPersistenceConfig().setEnabled(true);
-        }
+
+        checkLosslessRestartAllowed();
     }
 
     public void afterStart() {
@@ -133,15 +124,6 @@ public class JetExtension {
         jetService.handlePacket(packet);
     }
 
-    public void printNodeInfo(ILogger log, String addToProductName) {
-        log.info(versionAndAddressMessage(addToProductName));
-        log.info(imdgVersionMessage());
-        log.info(clusterNameMessage());
-        log.fine(serializationVersionMessage());
-        log.info('\n' + JET_LOGO);
-        log.info(COPYRIGHT_LINE);
-    }
-
     public Map<String, Object> createExtensionServices() {
         Map<String, Object> extensionServices = new HashMap<>();
 
@@ -156,34 +138,6 @@ public class JetExtension {
 
     public JetInstance getJetInstance() {
         return jetService.getJetInstance();
-    }
-
-    private String versionAndAddressMessage(@Nonnull String addToName) {
-        JetBuildInfo jetBuildInfo = node.getBuildInfo().getJetBuildInfo();
-        String build = jetBuildInfo.getBuild();
-        String revision = jetBuildInfo.getRevision();
-        if (!revision.isEmpty()) {
-            build += " - " + revision;
-        }
-        return "Hazelcast Jet" + addToName + ' ' + jetBuildInfo.getVersion()
-                + " (" + build + ") starting at " + node.getThisAddress();
-    }
-
-    private String imdgVersionMessage() {
-        String build = node.getBuildInfo().getBuild();
-        String revision = node.getBuildInfo().getRevision();
-        if (!revision.isEmpty()) {
-            build += " - " + revision;
-        }
-        return "Based on Hazelcast IMDG version: " + node.getVersion() + " (" + build + ")";
-    }
-
-    private String serializationVersionMessage() {
-        return "Configured Hazelcast Serialization version: " + node.getBuildInfo().getSerializationVersion();
-    }
-
-    private String clusterNameMessage() {
-        return "Cluster name: " + node.getConfig().getClusterName();
     }
 
 }

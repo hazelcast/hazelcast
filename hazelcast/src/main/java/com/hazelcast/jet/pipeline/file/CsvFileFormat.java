@@ -19,6 +19,7 @@ package com.hazelcast.jet.pipeline.file;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * {@link FileFormat} for CSV files. See {@link FileFormat#csv} for more
@@ -77,5 +78,22 @@ public class CsvFileFormat<T> implements FileFormat<T> {
     @Nullable
     public List<String> fieldNames() {
         return fieldNames;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        CsvFileFormat<?> that = (CsvFileFormat<?>) o;
+        return Objects.equals(clazz, that.clazz) && Objects.equals(fieldNames, that.fieldNames);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(clazz, fieldNames);
     }
 }

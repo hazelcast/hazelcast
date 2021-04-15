@@ -35,28 +35,46 @@
 
     <hz:hazelcast id="instance">
         <hz:config>
+            <hz:cluster-name>${cluster.name}</hz:cluster-name>
             <hz:network port="${cluster.port}" port-auto-increment="false">
                 <hz:join>
-                    <hz:tcp-ip enabled="true">
-                        <hz:members>${cluster.members}</hz:members>
-                    </hz:tcp-ip>
+                    <hz:multicast enabled="false"/>
+                    <hz:auto-detection enabled="false"/>
                 </hz:join>
             </hz:network>
         </hz:config>
     </hz:hazelcast>
 
     <hz:client id="client1">
+        <hz:cluster-name>${cluster.name}</hz:cluster-name>
         <hz:network connection-timeout="1000" smart-routing="false">
             <hz:member>127.0.0.1:5700</hz:member>
             <hz:member>127.0.0.1:5701</hz:member>
+            <hz:member>127.0.0.1:5702</hz:member>
+            <hz:member>127.0.0.1:5703</hz:member>
+            <hz:member>127.0.0.1:5704</hz:member>
+            <hz:member>127.0.0.1:5705</hz:member>
+            <hz:member>127.0.0.1:5706</hz:member>
+            <hz:member>127.0.0.1:5707</hz:member>
+            <hz:member>127.0.0.1:5708</hz:member>
+            <hz:member>127.0.0.1:5709</hz:member>
         </hz:network>
         <hz:load-balancer type="custom" class-name="com.hazelcast.client.test.CustomLoadBalancer"/>
     </hz:client>
 
     <hz:client id="client2">
+        <hz:cluster-name>${cluster.name}</hz:cluster-name>
         <hz:network connection-timeout="1000" smart-routing="false">
             <hz:member>127.0.0.1:5700</hz:member>
             <hz:member>127.0.0.1:5701</hz:member>
+            <hz:member>127.0.0.1:5702</hz:member>
+            <hz:member>127.0.0.1:5703</hz:member>
+            <hz:member>127.0.0.1:5704</hz:member>
+            <hz:member>127.0.0.1:5705</hz:member>
+            <hz:member>127.0.0.1:5706</hz:member>
+            <hz:member>127.0.0.1:5707</hz:member>
+            <hz:member>127.0.0.1:5708</hz:member>
+            <hz:member>127.0.0.1:5709</hz:member>
         </hz:network>
         <hz:load-balancer type="custom" implementation="customLoadBalancer"/>
     </hz:client>

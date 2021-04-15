@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql;
 
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.sql.impl.SqlTestSupport;
@@ -40,7 +41,7 @@ public class SqlQueryResultTest extends SqlTestSupport {
     private static final String MAP_NAME = "map";
     private static final String SQL = "SELECT * FROM " + MAP_NAME;
 
-    private final SqlTestInstanceFactory factory = SqlTestInstanceFactory.create();
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @After
     public void after() {
@@ -133,17 +134,17 @@ public class SqlQueryResultTest extends SqlTestSupport {
 
         private TestPlan(Plan plan) {
             super(
-                plan.getPartitionMap(),
-                plan.getFragments(),
-                plan.getFragmentMappings(),
-                plan.getOutboundEdgeMap(),
-                plan.getInboundEdgeMap(),
-                plan.getInboundEdgeMemberCountMap(),
-                plan.getRowMetadata(),
-                plan.getParameterMetadata(),
-                plan.getPlanKey(),
-                plan.getObjectIds(),
-                plan.getPermissions()
+                    plan.getPartitionMap(),
+                    plan.getFragments(),
+                    plan.getFragmentMappings(),
+                    plan.getOutboundEdgeMap(),
+                    plan.getInboundEdgeMap(),
+                    plan.getInboundEdgeMemberCountMap(),
+                    plan.getRowMetadata(),
+                    plan.getParameterMetadata(),
+                    plan.getPlanKey(),
+                    plan.getObjectKeys(),
+                    plan.getPermissions()
             );
         }
 

@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl;
 
+import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.metrics.impl.MetricsService;
@@ -120,7 +121,7 @@ public class JetService implements ManagedService, MembershipAwareService, LiveO
         nodeEngine.getMetricsRegistry().registerDynamicMetricsProvider(jobExecutionService);
         networking = new Networking(engine, jobExecutionService, config.getInstanceConfig().getFlowControlPeriodMs());
 
-        ClientEngineImpl clientEngine = engine.getService(ClientEngineImpl.SERVICE_NAME);
+        ClientEngine clientEngine = engine.getService(ClientEngineImpl.SERVICE_NAME);
         ExceptionUtil.registerJetExceptions(clientEngine.getExceptionFactory());
 
         logger.info("Setting number of cooperative threads and default parallelism to "

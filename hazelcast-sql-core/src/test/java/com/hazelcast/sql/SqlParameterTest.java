@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql;
 
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -47,13 +48,13 @@ public class SqlParameterTest {
     @Parameterized.Parameter
     public boolean useClient;
 
-    private final SqlTestInstanceFactory factory = SqlTestInstanceFactory.create();
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
     private HazelcastInstance member;
     private HazelcastInstance client;
 
     @Parameterized.Parameters(name = "useClient:{0}")
     public static Object[] parameters() {
-        return new Object[] { false, true };
+        return new Object[]{false, true};
     }
 
     @Before
@@ -68,7 +69,7 @@ public class SqlParameterTest {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         member = null;
         client = null;
 
@@ -95,7 +96,7 @@ public class SqlParameterTest {
         HazelcastInstance target = useClient ? client : member;
 
         SqlStatement statement = new SqlStatement(
-            "SELECT "
+                "SELECT "
                 + "CAST(? as BOOLEAN), "
                 + "CAST(? as TINYINT), "
                 + "CAST(? as SMALLINT), "

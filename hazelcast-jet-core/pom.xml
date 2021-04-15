@@ -128,41 +128,6 @@
                         ${argLine}
                     </argLine>
                 </configuration>
-                <executions>
-                    <execution>
-                        <id>serial-tests</id>
-                        <goals>
-                            <goal>test</goal>
-                        </goals>
-                        <configuration>
-                            <skip>${maven.test.skip}</skip>
-                            <forkCount>1</forkCount>
-                            <groups>com.hazelcast.jet.test.SerialTest</groups>
-                            <excludedGroups>
-                                com.hazelcast.test.annotation.SlowTest,com.hazelcast.test.annotation.NightlyTest
-                            </excludedGroups>
-                            <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>regular-tests</id>
-                        <goals>
-                            <goal>test</goal>
-                        </goals>
-                        <configuration combine.self="override">
-                            <skip>${maven.test.skip}</skip>
-                            <forkCount>4</forkCount>
-                            <includes>
-                                <include>/com/hazelcast/jet/**/**.java</include>
-                            </includes>
-                            <groups/>
-                            <excludedGroups>
-                                com.hazelcast.jet.test.SerialTest,com.hazelcast.test.annotation.SlowTest,com.hazelcast.test.annotation.NightlyTest
-                            </excludedGroups>
-                            <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
 
         </plugins>

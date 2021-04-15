@@ -266,7 +266,7 @@ public interface SqlConnector {
      *     JOIN r ON l.v = r.b
      *     WHERE r.c=10
      * }</pre>
-     *
+     * <p>
      * then the projection will be <code>{1}</code> and the predicate will be
      * <code>{2}=10</code>.
      * <p>

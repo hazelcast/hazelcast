@@ -44,7 +44,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(NightlyTest.class)
+@Category({NightlyTest.class})
 public class JobMetrics_StressTest extends JetTestSupport {
 
     private static final int RESTART_COUNT = 10;

@@ -26,11 +26,13 @@ import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
 import com.hazelcast.sql.impl.calcite.validate.operand.OperandCheckerProgram;
 import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.operators.ReplaceUnknownOperandTypeInference;
+import com.hazelcast.sql.impl.expression.Expression;
 import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
 
 import java.util.List;
 
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.apache.calcite.sql.type.SqlTypeName.INTEGER;
 
@@ -43,7 +45,7 @@ public final class StreamGeneratorTableFunction extends JetSpecificTableFunction
     public StreamGeneratorTableFunction() {
         super(
                 FUNCTION_NAME,
-                binding -> toTable(0).getRowType(binding.getTypeFactory()),
+                binding -> toTable0(emptyList()).getRowType(binding.getTypeFactory()),
                 new ReplaceUnknownOperandTypeInference(INTEGER),
                 StreamSqlConnector.INSTANCE
         );
@@ -73,14 +75,12 @@ public final class StreamGeneratorTableFunction extends JetSpecificTableFunction
     }
 
     @Override
-    public HazelcastTable toTable(List<Object> arguments) {
-        Integer rate = (Integer) arguments.get(0);
-
-        return toTable(rate);
+    public HazelcastTable toTable(List<Expression<?>> argumentExpressions) {
+        return toTable0(argumentExpressions);
     }
 
-    private static HazelcastTable toTable(Integer rate) {
-        StreamTable table = StreamSqlConnector.createTable(SCHEMA_NAME_STREAM, randomName(), rate);
+    private static HazelcastTable toTable0(List<Expression<?>> argumentExpressions) {
+        StreamTable table = StreamSqlConnector.createTable(SCHEMA_NAME_STREAM, randomName(), argumentExpressions);
         return new HazelcastTable(table, new HazelcastTableStatistic(Integer.MAX_VALUE));
     }
 

@@ -34,10 +34,9 @@ import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.optimizer.SqlOptimizer;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.plan.Plan;
-import com.hazelcast.sql.impl.plan.cache.CacheablePlan;
 import com.hazelcast.sql.impl.plan.cache.PlanCache;
 import com.hazelcast.sql.impl.plan.cache.PlanCacheChecker;
-import com.hazelcast.sql.impl.plan.cache.PlanCacheKey;
+import com.hazelcast.sql.impl.optimizer.PlanKey;
 import com.hazelcast.sql.impl.schema.SqlCatalog;
 import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.schema.map.JetMapMetadataResolver;
@@ -278,7 +277,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
     private SqlPlan prepare(String schema, String sql, SqlExpectedResultType expectedResultType) {
         List<List<String>> searchPaths = prepareSearchPaths(schema);
 
-        PlanCacheKey planKey = new PlanCacheKey(searchPaths, sql);
+        PlanKey planKey = new PlanKey(searchPaths, sql);
 
         SqlPlan plan = planCache.get(planKey);
 
@@ -287,10 +286,8 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
 
             plan = optimizer.prepare(new OptimizationTask(sql, searchPaths, catalog));
 
-            if (plan instanceof CacheablePlan) {
-                CacheablePlan plan0 = (CacheablePlan) plan;
-
-                planCache.put(planKey, plan0);
+            if (plan.isCacheable()) {
+                planCache.put(planKey, plan);
             }
         }
 

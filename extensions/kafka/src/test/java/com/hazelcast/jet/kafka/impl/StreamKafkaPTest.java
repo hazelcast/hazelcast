@@ -37,7 +37,8 @@ import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.kafka.KafkaSources;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.RecordMetadata;
@@ -48,8 +49,9 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.experimental.categories.Category;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -83,7 +85,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class StreamKafkaPTest extends SimpleTestInClusterSupport {
 
     private static final int INITIAL_PARTITION_COUNT = 4;
@@ -477,6 +479,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
     }
 
     @Test
+    @Ignore("https://github.com/hazelcast/hazelcast-jet/issues/3011")
     public void when_topicDoesNotExist_then_partitionCountGreaterThanZero() {
         KafkaConsumer<Integer, String> c = kafkaTestSupport.createConsumer("non-existing-topic");
         assertGreaterOrEquals("partition count", c.partitionsFor("non-existing-topic", Duration.ofSeconds(2)).size(), 1);

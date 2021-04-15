@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.misc;
 
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
@@ -23,7 +24,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
-import com.hazelcast.sql.SqlTestInstanceFactory;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -62,7 +62,7 @@ public class SqlNoSerializationTest extends SqlTestSupport {
     @Parameterized.Parameter
     public boolean useIndex;
 
-    private final SqlTestInstanceFactory factory = SqlTestInstanceFactory.create();
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
     private HazelcastInstance member;
 
     private static volatile boolean failOnSerialization;
@@ -152,7 +152,7 @@ public class SqlNoSerializationTest extends SqlTestSupport {
         }
 
         @Override
-        public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+        public void readExternal(ObjectInput in) throws IOException {
             key = in.readInt();
         }
 
@@ -199,7 +199,7 @@ public class SqlNoSerializationTest extends SqlTestSupport {
         }
 
         @Override
-        public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+        public void readExternal(ObjectInput in) throws IOException {
             val = in.readInt();
         }
     }

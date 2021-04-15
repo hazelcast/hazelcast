@@ -35,7 +35,7 @@
     <hz:hazelcast id="instance" lazy-init="true" scope="singleton">
         <hz:config>
             <hz:cluster-name>${cluster.name}</hz:cluster-name>
-            <hz:network port="5701">
+            <hz:network port="5950">
                 <hz:join>
                     <hz:multicast enabled="${boolean.false}"/>
                     <hz:aws enabled="false"/>
@@ -53,7 +53,6 @@
             </hz:native-memory>
             <hz:queue name="testQueue" priority-comparator-class-name="com.hazelcast.collection.impl.queue.model.PriorityElementComparator">
             </hz:queue>
-
         </hz:config>
     </hz:hazelcast>
 
@@ -63,9 +62,16 @@
                     redo-operation="true"
                     smart-routing="true">
 
-            <hz:member>127.0.0.1:5701</hz:member>
-            <hz:member>127.0.0.1:5702</hz:member>
-            <hz:member>127.0.0.1:5703</hz:member>
+            <hz:member>127.0.0.1:5950</hz:member>
+            <hz:member>127.0.0.1:5951</hz:member>
+            <hz:member>127.0.0.1:5952</hz:member>
+            <hz:member>127.0.0.1:5953</hz:member>
+            <hz:member>127.0.0.1:5954</hz:member>
+            <hz:member>127.0.0.1:5955</hz:member>
+            <hz:member>127.0.0.1:5956</hz:member>
+            <hz:member>127.0.0.1:5957</hz:member>
+            <hz:member>127.0.0.1:5958</hz:member>
+            <hz:member>127.0.0.1:5959</hz:member>
 
             <hz:socket-options buffer-size="32"
                                keep-alive="false"

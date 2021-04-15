@@ -17,6 +17,7 @@
 package com.hazelcast.spring.cache;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.JoinConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
@@ -61,16 +62,14 @@ public class HazelcastCacheReadTimeoutTestWithJavaConfig extends AbstractHazelca
 
         @Bean
         Config config() {
-            Config config = new Config();
-            config.setProperty("hazelcast.wait.seconds.before.join", "0");
+            Config config = smallInstanceConfig();
             config.setProperty("hazelcast.graceful.shutdown.max.wait", "120");
             config.setProperty("hazelcast.partition.backup.sync.interval", "1");
 
-            config.getNetworkConfig().setPort(5701).setPortAutoIncrement(false);
-            config.getNetworkConfig().getJoin()
-                    .getTcpIpConfig()
-                    .setEnabled(true)
-                    .getMembers().add("127.0.0.1:5701");
+            JoinConfig join = config.getNetworkConfig().getJoin();
+            join.getMulticastConfig().setEnabled(false);
+            join.getAutoDetectionConfig().setEnabled(false);
+
             config.getNetworkConfig().getInterfaces()
                     .setEnabled(true)
                     .setInterfaces(Arrays.asList("127.0.0.1"));
@@ -91,7 +90,6 @@ public class HazelcastCacheReadTimeoutTestWithJavaConfig extends AbstractHazelca
         }
 
     }
-
 
     @BeforeClass
     @AfterClass

@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.schema;
 
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.sql.impl.QueryUtils;
-import com.hazelcast.sql.impl.plan.cache.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableStatistics;
@@ -28,7 +27,7 @@ import java.util.List;
 
 import static java.util.Arrays.asList;
 
-public class JetTable extends Table {
+public abstract class JetTable extends Table {
 
     private final SqlConnector sqlConnector;
 
@@ -43,22 +42,16 @@ public class JetTable extends Table {
         this.sqlConnector = sqlConnector;
     }
 
-    public List<String> getQualifiedName() {
+    public final List<String> getQualifiedName() {
         return asList(QueryUtils.CATALOG, getSchemaName(), getSqlName());
     }
 
-    public SqlConnector getSqlConnector() {
+    public final SqlConnector getSqlConnector() {
         return sqlConnector;
     }
 
     public final boolean isStream() {
         return sqlConnector.isStream();
-    }
-
-    @Override
-    public final PlanObjectKey getObjectKey() {
-        // we don't support plan caching as of now
-        return null;
     }
 
     @Override

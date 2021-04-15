@@ -74,13 +74,13 @@ public class PhysicalSortTest extends OptimizerTestSupport {
     @Test
     public void testSortAndOffset() {
         assertPlan(
-            optimizePhysical("SELECT f0, f1, f2, f3, f4 FROM p ORDER BY f3 OFFSET 10 ROWS", 2),
-            plan(
-                planRow(0, RootPhysicalRel.class, "", 100d),
-                planRow(1, SortMergeExchangePhysicalRel.class, "collation=[[3]], fetch=[null], offset=[10:TINYINT(4)]", 100d),
-                planRow(2, SortPhysicalRel.class, "sort0=[$3], dir0=[ASC], requiresSort=[true]", 100d),
-                planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2, 3, 4]]]]", 100d)
-            )
+                optimizePhysical("SELECT f0, f1, f2, f3, f4 FROM p ORDER BY f3 OFFSET 10 ROWS", 2),
+                plan(
+                        planRow(0, RootPhysicalRel.class, "", 100d),
+                        planRow(1, SortMergeExchangePhysicalRel.class, "collation=[[3]], fetch=[null], offset=[10:TINYINT(4)]", 100d),
+                        planRow(2, SortPhysicalRel.class, "sort0=[$3], dir0=[ASC], requiresSort=[true]", 100d),
+                        planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2, 3, 4]]]]", 100d)
+                )
         );
     }
 
@@ -88,50 +88,50 @@ public class PhysicalSortTest extends OptimizerTestSupport {
     @Test
     public void testSortAndFetch() {
         assertPlan(
-            optimizePhysical("SELECT f0, f1, f2, f3, f4 FROM p ORDER BY f3 FETCH FIRST 10 ROWS ONLY", 2),
-            plan(
-                planRow(0, RootPhysicalRel.class, "", 100d),
-                planRow(1, SortMergeExchangePhysicalRel.class, "collation=[[3]], fetch=[10:TINYINT(4)], offset=[null]", 100d),
-                planRow(2, SortPhysicalRel.class, "sort0=[$3], dir0=[ASC], requiresSort=[true]", 100d),
-                planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2, 3, 4]]]]", 100d)
-            )
+                optimizePhysical("SELECT f0, f1, f2, f3, f4 FROM p ORDER BY f3 FETCH FIRST 10 ROWS ONLY", 2),
+                plan(
+                        planRow(0, RootPhysicalRel.class, "", 100d),
+                        planRow(1, SortMergeExchangePhysicalRel.class, "collation=[[3]], fetch=[10:TINYINT(4)], offset=[null]", 100d),
+                        planRow(2, SortPhysicalRel.class, "sort0=[$3], dir0=[ASC], requiresSort=[true]", 100d),
+                        planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2, 3, 4]]]]", 100d)
+                )
         );
     }
 
     @Test
     public void testSortAndFetchAndOffset() {
         assertPlan(
-            optimizePhysical("SELECT f0, f1, f2, f3, f4 FROM p ORDER BY f3 OFFSET 10 ROWS FETCH FIRST 10 ROWS ONLY", 2),
-            plan(
-                planRow(0, RootPhysicalRel.class, "", 100d),
-                planRow(1, SortMergeExchangePhysicalRel.class, "collation=[[3]], fetch=[10:TINYINT(4)], offset=[10:TINYINT(4)]", 100d),
-                planRow(2, SortPhysicalRel.class, "sort0=[$3], dir0=[ASC], requiresSort=[true]", 100d),
-                planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2, 3, 4]]]]", 100d)
-            )
+                optimizePhysical("SELECT f0, f1, f2, f3, f4 FROM p ORDER BY f3 OFFSET 10 ROWS FETCH FIRST 10 ROWS ONLY", 2),
+                plan(
+                        planRow(0, RootPhysicalRel.class, "", 100d),
+                        planRow(1, SortMergeExchangePhysicalRel.class, "collation=[[3]], fetch=[10:TINYINT(4)], offset=[10:TINYINT(4)]", 100d),
+                        planRow(2, SortPhysicalRel.class, "sort0=[$3], dir0=[ASC], requiresSort=[true]", 100d),
+                        planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2, 3, 4]]]]", 100d)
+                )
         );
     }
 
     @Test
     public void testFetchAndOffsetOnly() {
         assertPlan(
-            optimizePhysical("SELECT f0, f1, f2, f3, f4 FROM p OFFSET 10 ROWS FETCH FIRST 10 ROWS ONLY", 2),
-            plan(
-                planRow(0, RootPhysicalRel.class, "", 100d),
-                planRow(1, SortMergeExchangePhysicalRel.class, "collation=[[]], fetch=[10:TINYINT(4)], offset=[10:TINYINT(4)]", 100d),
-                planRow(2, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2, 3, 4]]]]", 100d)
-            )
+                optimizePhysical("SELECT f0, f1, f2, f3, f4 FROM p OFFSET 10 ROWS FETCH FIRST 10 ROWS ONLY", 2),
+                plan(
+                        planRow(0, RootPhysicalRel.class, "", 100d),
+                        planRow(1, SortMergeExchangePhysicalRel.class, "collation=[[]], fetch=[10:TINYINT(4)], offset=[10:TINYINT(4)]", 100d),
+                        planRow(2, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2, 3, 4]]]]", 100d)
+                )
         );
     }
 
     @Test
     public void testFetchAndOffsetOnlyOneMember() {
         assertPlan(
-            optimizePhysical("SELECT f0, f1, f2, f3, f4 FROM p OFFSET 10 ROWS FETCH FIRST 10 ROWS ONLY", 1),
-            plan(
-                planRow(0, RootPhysicalRel.class, "", 10d),
-                planRow(1, SortPhysicalRel.class, "offset=[10:TINYINT(4)], fetch=[10:TINYINT(4)], requiresSort=[false]", 10d),
-                planRow(2, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2, 3, 4]]]]", 100d)
-            )
+                optimizePhysical("SELECT f0, f1, f2, f3, f4 FROM p OFFSET 10 ROWS FETCH FIRST 10 ROWS ONLY", 1),
+                plan(
+                        planRow(0, RootPhysicalRel.class, "", 10d),
+                        planRow(1, SortPhysicalRel.class, "offset=[10:TINYINT(4)], fetch=[10:TINYINT(4)], requiresSort=[false]", 10d),
+                        planRow(2, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2, 3, 4]]]]", 100d)
+                )
         );
     }
 }

@@ -30,6 +30,7 @@ import org.apache.calcite.rex.RexNode;
 import java.util.List;
 
 import static com.hazelcast.jet.impl.util.Util.toList;
+import static java.util.Collections.emptyList;
 
 public class ProjectPhysicalRel extends Project implements PhysicalRel {
 
@@ -40,7 +41,7 @@ public class ProjectPhysicalRel extends Project implements PhysicalRel {
             List<? extends RexNode> projects,
             RelDataType rowType
     ) {
-        super(cluster, traits, input, projects, rowType);
+        super(cluster, traits, emptyList(), input, projects, rowType);
     }
 
     public List<Expression<?>> projection() {

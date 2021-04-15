@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.ParseException;
+import com.hazelcast.internal.management.dto.MCEventDTO;
 import com.hazelcast.internal.management.events.Event;
 import com.hazelcast.internal.management.events.EventMetadata;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -35,6 +36,7 @@ import org.junit.runner.RunWith;
 
 import java.util.List;
 
+import static com.hazelcast.internal.management.MCEventStoreTest.MC_1_UUID;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertEquals;
@@ -45,7 +47,8 @@ import static org.junit.Assert.assertSame;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ManagementCenterServiceIntegrationTest extends HazelcastTestSupport {
+public class ManagementCenterServiceIntegrationTest
+        extends HazelcastTestSupport {
 
     private static final String CLUSTER_NAME = "mc-service-tests";
 
@@ -62,6 +65,7 @@ public class ManagementCenterServiceIntegrationTest extends HazelcastTestSupport
             ManagementCenterService mcs = getNode(instance).getManagementCenterService();
             assertNotNull(mcs);
             this.mcs = mcs;
+            mcs.clear();
         });
     }
 
@@ -105,16 +109,14 @@ public class ManagementCenterServiceIntegrationTest extends HazelcastTestSupport
 
     @Test
     public void testMCEvents_storesEvents_recentPoll() {
-        mcs.pollMCEvents();
-
         TestEvent expectedEvent = new TestEvent();
         mcs.log(expectedEvent);
         mcs.log(new TestEvent());
         mcs.log(new TestEvent());
 
-        List<Event> actualEvents = mcs.pollMCEvents();
+        List<MCEventDTO> actualEvents = mcs.pollMCEvents(MC_1_UUID);
         assertEquals(3, actualEvents.size());
-        assertEquals(expectedEvent, actualEvents.get(0));
+        assertEquals(MCEventDTO.fromEvent(expectedEvent), actualEvents.get(0));
     }
 
     @Test
@@ -122,23 +124,33 @@ public class ManagementCenterServiceIntegrationTest extends HazelcastTestSupport
         mcs.log(new TestEvent());
         mcs.log(new TestEvent());
 
-        assertEquals(2, mcs.pollMCEvents().size());
+        assertEquals(2, mcs.pollMCEvents(MC_1_UUID).size());
     }
 
     @Test
     public void testMCEvents_clearsEventQueue_noRecentPoll() {
-        mcs.pollMCEvents();
         mcs.log(new TestEvent());
         mcs.log(new TestEvent());
 
         mcs.onMCEventWindowExceeded();
-        assertEquals(0, mcs.pollMCEvents().size());
+        assertEquals(0, mcs.pollMCEvents(MC_1_UUID).size());
 
-        mcs.log(new TestEvent());
-        assertEquals(1, mcs.pollMCEvents().size());
+        mcs.log(new TestEvent(System.currentTimeMillis()));
+        assertEquals(1, mcs.pollMCEvents(MC_1_UUID).size());
     }
 
-    private static class TestEvent implements Event {
+    static class TestEvent
+            implements Event {
+
+        private final long timestamp;
+
+        TestEvent() {
+            this(42);
+        }
+
+        TestEvent(long timestamp) {
+            this.timestamp = timestamp;
+        }
 
         @Override
         public EventMetadata.EventType getType() {
@@ -147,12 +159,12 @@ public class ManagementCenterServiceIntegrationTest extends HazelcastTestSupport
 
         @Override
         public long getTimestamp() {
-            return 42;
+            return timestamp;
         }
 
         @Override
         public JsonObject toJson() {
-            return null;
+            return new JsonObject();
         }
 
     }

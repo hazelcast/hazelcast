@@ -39,10 +39,10 @@ import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryPath;
+import com.hazelcast.sql.impl.optimizer.PlanKey;
+import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.plan.PlanFragmentMapping;
-import com.hazelcast.sql.impl.plan.cache.PlanCacheKey;
-import com.hazelcast.sql.impl.plan.cache.PlanObjectKey;
 import com.hazelcast.sql.impl.plan.node.EmptyPlanNode;
 import com.hazelcast.sql.impl.plan.node.FetchOffsetPlanNodeFieldTypeProvider;
 import com.hazelcast.sql.impl.plan.node.FetchPlanNode;
@@ -96,7 +96,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     private final Map<UUID, PartitionIdSet> partMap;
     private final Set<UUID> memberIds;
     private final Map<PhysicalRel, List<Integer>> relIdMap;
-    private final PlanCacheKey planKey;
+    private final PlanKey planKey;
     private final List<String> rootColumnNames;
     private final QueryParameterMetadata parameterMetadata;
     private final List<PlanNode> fragments = new ArrayList<>();
@@ -107,16 +107,16 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     private int nextEdgeGenerator;
     private RootPhysicalRel rootPhysicalRel;
     private SqlRowMetadata rowMetadata;
-    private final Set<PlanObjectKey> objectIds = new HashSet<>();
+    private final Set<PlanObjectKey> objectKeys = new HashSet<>();
     private final Set<String> mapNames = new HashSet<>();
 
     public PlanCreateVisitor(
-        UUID localMemberId,
-        Map<UUID, PartitionIdSet> partMap,
-        Map<PhysicalRel, List<Integer>> relIdMap,
-        PlanCacheKey planKey,
-        List<String> rootColumnNames,
-        QueryParameterMetadata parameterMetadata
+            UUID localMemberId,
+            Map<UUID, PartitionIdSet> partMap,
+            Map<PhysicalRel, List<Integer>> relIdMap,
+            PlanKey planKey,
+            List<String> rootColumnNames,
+            QueryParameterMetadata parameterMetadata
     ) {
         this.localMemberId = localMemberId;
         this.partMap = partMap;
@@ -163,17 +163,17 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         }
 
         return new Plan(
-            partMap,
-            fragments,
-            fragmentMappings,
-            outboundEdgeMap,
-            inboundEdgeMap,
-            inboundEdgeMemberCountMap,
-            rowMetadata,
-            parameterMetadata,
-            planKey,
-            objectIds,
-            permissions
+                partMap,
+                fragments,
+                fragmentMappings,
+                outboundEdgeMap,
+                inboundEdgeMap,
+                inboundEdgeMemberCountMap,
+                rowMetadata,
+                parameterMetadata,
+                planKey,
+                objectKeys,
+                permissions
         );
     }
 
@@ -189,8 +189,8 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         PlanNode upstreamNode = pollSingleUpstream();
 
         RootPlanNode rootNode = new RootPlanNode(
-            pollId(rel),
-            upstreamNode
+                pollId(rel),
+                upstreamNode
         );
 
         rowMetadata = createRowMetadata(rootColumnNames, rootNode.getSchema().getTypes(), columnsNullable);
@@ -228,19 +228,19 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         PlanNodeSchema schemaBefore = getScanSchemaBeforeProject(table);
 
         MapScanPlanNode scanNode = new MapScanPlanNode(
-            pollId(rel),
-            table.getMapName(),
-            table.getKeyDescriptor(),
-            table.getValueDescriptor(),
-            getScanFieldPaths(table),
-            schemaBefore.getTypes(),
-            hazelcastTable.getProjects(),
-            convertFilter(schemaBefore, hazelcastTable.getFilter())
+                pollId(rel),
+                table.getMapName(),
+                table.getKeyDescriptor(),
+                table.getValueDescriptor(),
+                getScanFieldPaths(table),
+                schemaBefore.getTypes(),
+                hazelcastTable.getProjects(),
+                convertFilter(schemaBefore, hazelcastTable.getFilter())
         );
 
         pushUpstream(scanNode);
 
-        objectIds.add(table.getObjectKey());
+        objectKeys.add(table.getObjectKey());
         mapNames.add(table.getMapName());
     }
 
@@ -252,24 +252,24 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         PlanNodeSchema schemaBefore = getScanSchemaBeforeProject(table);
 
         MapIndexScanPlanNode scanNode = new MapIndexScanPlanNode(
-            pollId(rel),
-            table.getMapName(),
-            table.getKeyDescriptor(),
-            table.getValueDescriptor(),
-            getScanFieldPaths(table),
-            schemaBefore.getTypes(),
-            hazelcastTable.getProjects(),
-            rel.getIndex().getName(),
-            rel.getIndex().getComponentsCount(),
-            rel.getIndexFilter(),
-            rel.getConverterTypes(),
-            convertFilter(schemaBefore, rel.getRemainderExp()),
-            rel.getAscs()
+                pollId(rel),
+                table.getMapName(),
+                table.getKeyDescriptor(),
+                table.getValueDescriptor(),
+                getScanFieldPaths(table),
+                schemaBefore.getTypes(),
+                hazelcastTable.getProjects(),
+                rel.getIndex().getName(),
+                rel.getIndex().getComponentsCount(),
+                rel.getIndexFilter(),
+                rel.getConverterTypes(),
+                convertFilter(schemaBefore, rel.getRemainderExp()),
+                rel.getAscs()
         );
 
         pushUpstream(scanNode);
 
-        objectIds.add(table.getObjectKey());
+        objectKeys.add(table.getObjectKey());
         mapNames.add(table.getMapName());
     }
 
@@ -289,10 +289,10 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             Expression offset = convertExpression(FetchOffsetPlanNodeFieldTypeProvider.INSTANCE, rel.offset);
 
             FetchPlanNode node = new FetchPlanNode(
-                pollId(rel),
-                input,
-                fetch,
-                offset
+                    pollId(rel),
+                    input,
+                    fetch,
+                    offset
             );
 
             pushUpstream(node);
@@ -312,19 +312,19 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         int id = pollId(rel);
 
         SendPlanNode sendNode = new SendPlanNode(
-            id,
-            upstreamNode,
-            edge
+                id,
+                upstreamNode,
+                edge
         );
 
         addFragment(sendNode, dataMemberMapping());
 
         // Create receiver.
         ReceivePlanNode receiveNode = new ReceivePlanNode(
-            id,
-            edge,
-            ordered,
-            sendNode.getSchema().getTypes()
+                id,
+                edge,
+                ordered,
+                sendNode.getSchema().getTypes()
         );
 
         pushUpstream(receiveNode);
@@ -344,9 +344,9 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         }
 
         ProjectPlanNode projectNode = new ProjectPlanNode(
-            pollId(rel),
-            upstreamNode,
-            convertedProjects
+                pollId(rel),
+                upstreamNode,
+                convertedProjects
         );
 
         pushUpstream(projectNode);
@@ -359,9 +359,9 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         Expression<Boolean> filter = convertFilter(upstreamNode.getSchema(), rel.getCondition());
 
         FilterPlanNode filterNode = new FilterPlanNode(
-            pollId(rel),
-            upstreamNode,
-            filter
+                pollId(rel),
+                upstreamNode,
+                filter
         );
 
         pushUpstream(filterNode);
@@ -377,9 +377,9 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         int id = pollId(rel);
 
         SendPlanNode sendNode = new SendPlanNode(
-            id,
-            upstreamNode,
-            edge
+                id,
+                upstreamNode,
+                edge
         );
 
         addFragment(sendNode, dataMemberMapping());
@@ -402,13 +402,13 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
         // Create a receiver and push it to stack.
         ReceiveSortMergePlanNode receiveNode = new ReceiveSortMergePlanNode(
-            id,
-            edge,
-            sendNode.getSchema().getTypes(),
-            columnIndexes,
-            ascs,
-            fetch,
-            offset
+                id,
+                edge,
+                sendNode.getSchema().getTypes(),
+                columnIndexes,
+                ascs,
+                fetch,
+                offset
         );
 
         pushUpstream(receiveNode);
@@ -423,8 +423,8 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         QueryDataType[] fieldTypes = mapRowTypeToHazelcastTypes(rel.getRowType());
 
         EmptyPlanNode planNode = new EmptyPlanNode(
-            pollId(rel),
-            Arrays.asList(fieldTypes)
+                pollId(rel),
+                Arrays.asList(fieldTypes)
         );
 
         pushUpstream(planNode);

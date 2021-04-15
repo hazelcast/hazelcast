@@ -264,7 +264,6 @@
             <hz:member-attributes>
                 <hz:attribute name="cluster.name">spring-cluster</hz:attribute>
             </hz:member-attributes>
-
         </hz:config>
     </hz:hazelcast>
 

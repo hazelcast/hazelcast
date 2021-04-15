@@ -50,7 +50,7 @@ statistics, column uniqueness, data distribution, etc.
 In this document, we consider only partition distribution because this is the only metadata we use in our optimizer, 
 that is not part of the catalog, and that could change across query runs.
 
-Every plan is built for the specific partition distribution. That is, the distribution and participating members are saved 
+Every plan is built for a specific partition distribution. That is, the distribution and participating members are saved 
 in the plan.
 
 The plan cache must be able to find and remove plans with obsolete partition distribution. 
@@ -87,10 +87,10 @@ The maximum size of the cache is required to prevent out-of-memory if too many d
 When a plan is added to the map, the map size is checked. If the map size is greater than the maximum size, some plans are 
 evicted. 
 
-Eviction is synchronous because the asynchronous variant is prone to out-of-memory. We assume that for the most workloads 
+Eviction is synchronous because the asynchronous variant is prone to out-of-memory. We assume that for most workloads 
 evictions should be rare. 
 
-We use the LRU (least recently used) approach to find the plans to evict. Whenever a plan is accessed, it's `lastUsed` field is 
+We use the LRU (least recently used) approach to find the plans to evict. Whenever a plan is accessed, its `lastUsed` field is 
 updated with the current time. During the eviction, plans are sorted by their `lastUsed` values, and the least recently used
 plans are removed.   
 

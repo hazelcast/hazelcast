@@ -87,7 +87,7 @@ public class IMapSqlConnector implements SqlConnector {
     }
 
     @Nonnull @Override
-    public final Table createTable(
+    public Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
             @Nonnull String mappingName,

@@ -37,11 +37,12 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.map.IMap;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.experimental.categories.Category;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -62,8 +63,8 @@ import static com.hazelcast.jet.core.JobStatus.COMPLETED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.TestUtil.throttle;
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamMapP;
-import static com.hazelcast.jet.pipeline.GeneralStage.DEFAULT_MAX_CONCURRENT_OPS;
 import static com.hazelcast.jet.impl.util.Util.toList;
+import static com.hazelcast.jet.pipeline.GeneralStage.DEFAULT_MAX_CONCURRENT_OPS;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
 import static com.hazelcast.jet.pipeline.ServiceFactories.sharedService;
 import static java.util.stream.Collectors.joining;
@@ -72,7 +73,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class AsyncTransformUsingServiceBatchP_IntegrationTest extends SimpleTestInClusterSupport {
 
     private static final int NUM_ITEMS = 100;
@@ -84,7 +85,7 @@ public class AsyncTransformUsingServiceBatchP_IntegrationTest extends SimpleTest
 
     @BeforeClass
     public static void beforeClass() {
-        Config config = new Config();
+        Config config = smallInstanceConfig();
         config.getMapConfig("journaledMap*")
               .getEventJournalConfig()
               .setEnabled(true)

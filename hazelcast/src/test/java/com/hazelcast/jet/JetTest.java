@@ -19,17 +19,24 @@ package com.hazelcast.jet;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.impl.JobRepository.INTERNAL_JET_OBJECTS_PREFIX;
 import static org.junit.Assert.assertEquals;
 
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class JetTest extends JetTestSupport {
 
     @Test
     public void when_defaultMapConfig_then_notUsed() {
         // When
-        Config config = new Config();
+        Config config = smallInstanceConfig();
         config.getMapConfig("default")
                 .setTimeToLiveSeconds(MapConfig.DEFAULT_TTL_SECONDS + 1);
         JetInstance instance = createJetMember(config);

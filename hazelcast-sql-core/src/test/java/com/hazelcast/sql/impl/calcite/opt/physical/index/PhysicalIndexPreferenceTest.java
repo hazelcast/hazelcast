@@ -52,8 +52,8 @@ public class PhysicalIndexPreferenceTest extends IndexOptimizerTestSupport {
     @Parameterized.Parameters(name = "hd:{0}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
-            {true},
-            {false},
+                {true},
+                {false},
         });
     }
 
@@ -62,21 +62,21 @@ public class PhysicalIndexPreferenceTest extends IndexOptimizerTestSupport {
         Map<String, Table> tableMap = new HashMap<>();
 
         HazelcastTable pTable = OptimizerTestSupport.partitionedTable(
-            "p",
-            OptimizerTestSupport.fields("ret", INT, "f1", INT, "f2", INT, "f3", INT),
-            Arrays.asList(
-                new MapTableIndex("sorted_f1", IndexType.SORTED, 1, singletonList(1), singletonList(INT)),
-                new MapTableIndex("bitmap_f1", IndexType.BITMAP, 1, singletonList(1), singletonList(INT)),
+                "p",
+                OptimizerTestSupport.fields("ret", INT, "f1", INT, "f2", INT, "f3", INT),
+                Arrays.asList(
+                        new MapTableIndex("sorted_f1", IndexType.SORTED, 1, singletonList(1), singletonList(INT)),
+                        new MapTableIndex("bitmap_f1", IndexType.BITMAP, 1, singletonList(1), singletonList(INT)),
 
-                new MapTableIndex("hash_f2", IndexType.HASH, 1, singletonList(2), singletonList(INT)),
-                new MapTableIndex("bitmap_f2", IndexType.BITMAP, 1, singletonList(2), singletonList(INT)),
+                        new MapTableIndex("hash_f2", IndexType.HASH, 1, singletonList(2), singletonList(INT)),
+                        new MapTableIndex("bitmap_f2", IndexType.BITMAP, 1, singletonList(2), singletonList(INT)),
 
-                new MapTableIndex("sorted_f3", IndexType.SORTED, 1, singletonList(3), singletonList(INT)),
-                new MapTableIndex("hash_f3", IndexType.HASH, 1, singletonList(3), singletonList(INT)),
-                new MapTableIndex("bitmap_f3", IndexType.BITMAP, 1, singletonList(3), singletonList(INT))
-            ),
-            100,
-            hd
+                        new MapTableIndex("sorted_f3", IndexType.SORTED, 1, singletonList(3), singletonList(INT)),
+                        new MapTableIndex("hash_f3", IndexType.HASH, 1, singletonList(3), singletonList(INT)),
+                        new MapTableIndex("bitmap_f3", IndexType.BITMAP, 1, singletonList(3), singletonList(INT))
+                ),
+                100,
+                hd
         );
 
         tableMap.put("p", pTable);
@@ -100,9 +100,9 @@ public class PhysicalIndexPreferenceTest extends IndexOptimizerTestSupport {
     }
 
     private void checkIndexForCondition(
-        String condition,
-        String expectedIndex,
-        String expectedIndexFilter
+            String condition,
+            String expectedIndex,
+            String expectedIndexFilter
     ) {
         String sql = "SELECT ret FROM p WHERE " + condition;
 

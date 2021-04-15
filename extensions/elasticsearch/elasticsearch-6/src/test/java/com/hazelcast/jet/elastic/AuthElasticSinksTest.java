@@ -24,6 +24,7 @@ import com.hazelcast.jet.elastic.CommonElasticSinksTest.TestItem;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.test.TestSources;
+import com.hazelcast.test.annotation.SlowTest;
 import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.index.IndexRequest;
@@ -31,6 +32,7 @@ import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
 import org.elasticsearch.client.RestClientBuilder;
 import org.junit.After;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
 
 import java.io.IOException;
@@ -39,6 +41,7 @@ import static com.hazelcast.jet.elastic.ElasticClients.client;
 import static com.hazelcast.jet.elastic.ElasticSupport.PORT;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@Category(SlowTest.class)
 public class AuthElasticSinksTest extends BaseElasticTest {
 
     private final JetTestInstanceFactory factory = new JetTestInstanceFactory();

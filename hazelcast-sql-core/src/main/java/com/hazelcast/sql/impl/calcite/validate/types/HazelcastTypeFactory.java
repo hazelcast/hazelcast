@@ -48,12 +48,12 @@ public final class HazelcastTypeFactory extends SqlTypeFactoryImpl {
     private static final RelDataType TYPE_TIMESTAMP_NULLABLE = new HazelcastType(SqlTypeName.TIMESTAMP, true);
 
     private static final RelDataType TYPE_TIMESTAMP_WITH_TIME_ZONE = new HazelcastType(
-        SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE, false
+            SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE, false
     );
 
     private static final RelDataType TYPE_TIMESTAMP_WITH_TIME_ZONE_NULLABLE = new HazelcastType(
-        SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE,
-        true
+            SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE,
+            true
     );
 
     // Dirty workaround for Calcite bug with infinite recursion during non-nullable NULL type construction. (facepalm)

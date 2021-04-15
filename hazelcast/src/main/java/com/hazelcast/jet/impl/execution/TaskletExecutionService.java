@@ -43,6 +43,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
@@ -370,8 +371,14 @@ public class TaskletExecutionService {
                 }
                 progressTracker.mergeWith(result);
             } catch (Throwable e) {
-                logger.warning("Exception in " + t.tasklet, e);
-                t.executionTracker.exception(new JetException("Exception in " + t.tasklet + ": " + e, e));
+                if (e instanceof CancellationException) {
+                    logger.info("Job was cancelled by the user.");
+                    CancellationException ex = (CancellationException) e;
+                    t.executionTracker.exception(ex);
+                } else {
+                    logger.warning("Exception in " + t.tasklet, e);
+                    t.executionTracker.exception(new JetException("Exception in " + t.tasklet + ": " + e, e));
+                }
             } finally {
                 userMetricsContextContainer.setContext(null);
             }

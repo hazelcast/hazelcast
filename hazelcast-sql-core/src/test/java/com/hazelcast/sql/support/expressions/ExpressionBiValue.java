@@ -46,13 +46,13 @@ public abstract class ExpressionBiValue extends ExpressionValue {
             return (Class<? extends ExpressionBiValue>) Class.forName(className);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException("Cannot create " + ExpressionBiValue.class.getSimpleName() + " for types \""
-                + type1 + "\" and \"" + type2 + "\"", e);
+                    + type1 + "\" and \"" + type2 + "\"", e);
         }
     }
 
     public static <T extends ExpressionBiValue> T createBiValue(
-        Object field1,
-        Object field2
+            Object field1,
+            Object field2
     ) {
         ExpressionType<?> type1 = ExpressionTypes.resolve(field1);
         ExpressionType<?> type2 = ExpressionTypes.resolve(field2);
@@ -72,18 +72,18 @@ public abstract class ExpressionBiValue extends ExpressionValue {
     }
 
     public static <T extends ExpressionBiValue> T createBiValue(
-        Class<? extends ExpressionBiValue> clazz,
-        Object field1,
-        Object field2
+            Class<? extends ExpressionBiValue> clazz,
+            Object field1,
+            Object field2
     ) {
         return createBiValue(clazz, 0, field1, field2);
     }
 
     public static <T extends ExpressionBiValue> T createBiValue(
-        Class<? extends ExpressionBiValue> clazz,
-        int key,
-        Object field1,
-        Object field2
+            Class<? extends ExpressionBiValue> clazz,
+            int key,
+            Object field1,
+            Object field2
     ) {
         T res = create(clazz);
 

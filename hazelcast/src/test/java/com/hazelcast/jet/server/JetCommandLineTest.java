@@ -31,12 +31,15 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
@@ -62,6 +65,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class JetCommandLineTest extends JetTestSupport {
 
     private static final String SOURCE_NAME = "source";
@@ -104,7 +108,7 @@ public class JetCommandLineTest extends JetTestSupport {
 
     @Before
     public void before() {
-        Config cfg = new Config();
+        Config cfg = smallInstanceConfig();
         cfg.getMapConfig(SOURCE_NAME).getEventJournalConfig().setEnabled(true);
         String clusterName = randomName();
         cfg.setClusterName(clusterName);

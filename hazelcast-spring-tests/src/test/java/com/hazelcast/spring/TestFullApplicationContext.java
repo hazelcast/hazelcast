@@ -773,7 +773,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         NetworkConfig networkConfig = config.getNetworkConfig();
         assertNotNull(networkConfig);
         assertEquals(5700, networkConfig.getPort());
-        assertFalse(networkConfig.isPortAutoIncrement());
+        assertTrue(networkConfig.isPortAutoIncrement());
 
         Collection<String> allowedPorts = networkConfig.getOutboundPortDefinitions();
         assertEquals(2, allowedPorts.size());
@@ -793,7 +793,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals("10.10.1.*", networkConfig.getInterfaces().getInterfaces().iterator().next());
         TcpIpConfig tcp = networkConfig.getJoin().getTcpIpConfig();
         assertNotNull(tcp);
-        assertTrue(tcp.isEnabled());
+        assertFalse(tcp.isEnabled());
         SymmetricEncryptionConfig symmetricEncryptionConfig = networkConfig.getSymmetricEncryptionConfig();
         assertFalse(symmetricEncryptionConfig.isEnabled());
         assertEquals("PBEWithMD5AndDES", symmetricEncryptionConfig.getAlgorithm());
@@ -1062,7 +1062,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     @Test
     public void testPartitionGroupConfig() {
         PartitionGroupConfig pgc = config.getPartitionGroupConfig();
-        assertTrue(pgc.isEnabled());
+        assertFalse(pgc.isEnabled());
         assertEquals(PartitionGroupConfig.MemberGroupType.CUSTOM, pgc.getGroupType());
         assertEquals(2, pgc.getMemberGroupConfigs().size());
         for (MemberGroupConfig mgc : pgc.getMemberGroupConfigs()) {
@@ -1493,7 +1493,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     @Test
     public void testSqlConfig() {
         SqlConfig sqlConfig = config.getSqlConfig();
-        assertEquals(10, sqlConfig.getExecutorPoolSize());
+        assertEquals(5, sqlConfig.getExecutorPoolSize());
         assertEquals(30L, sqlConfig.getStatementTimeoutMillis());
     }
 

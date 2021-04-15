@@ -33,7 +33,7 @@ import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-@Ignore("see https://hazelcast.atlassian.net/browse/PLAT-177")
+@Ignore("https://github.com/hazelcast/hazelcast/issues/18484")
 public class MemberJmxMetricsTest {
     private static final String DOMAIN_PREFIX = "com.hazelcast";
 

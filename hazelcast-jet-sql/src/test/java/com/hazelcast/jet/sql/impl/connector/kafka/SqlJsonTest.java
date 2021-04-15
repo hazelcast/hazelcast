@@ -224,8 +224,8 @@ public class SqlJsonTest extends SqlTestSupport {
     public void when_createMappingNoColumns_then_fail() {
         assertThatThrownBy(() ->
                 sqlService.execute("CREATE MAPPING " + randomName() + ' '
-                                   + "TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
-                                   + "OPTIONS ('valueFormat'='json')"))
+                        + "TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
+                        + "OPTIONS ('valueFormat'='json')"))
                 .hasMessage("Column list is required for JSON format");
     }
 

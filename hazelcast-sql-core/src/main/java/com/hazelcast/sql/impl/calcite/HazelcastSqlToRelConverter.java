@@ -91,12 +91,12 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
     private final Set<SqlNode> callSet = Collections.newSetFromMap(new IdentityHashMap<>());
 
     public HazelcastSqlToRelConverter(
-        RelOptTable.ViewExpander viewExpander,
-        SqlValidator validator,
-        Prepare.CatalogReader catalogReader,
-        RelOptCluster cluster,
-        SqlRexConvertletTable convertletTable,
-        Config config
+            RelOptTable.ViewExpander viewExpander,
+            SqlValidator validator,
+            Prepare.CatalogReader catalogReader,
+            RelOptCluster cluster,
+            SqlRexConvertletTable convertletTable,
+            Config config
     ) {
         super(viewExpander, validator, catalogReader, cluster, convertletTable, config);
     }
@@ -376,11 +376,11 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
     }
 
     private static QueryException literalConversionException(
-        SqlValidator validator,
-        SqlCall call,
-        Literal literal,
-        QueryDataType toType,
-        Exception e
+            SqlValidator validator,
+            SqlCall call,
+            Literal literal,
+            QueryDataType toType,
+            Exception e
     ) {
         String literalValue = literal.getStringValue();
 
@@ -389,9 +389,9 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
         }
 
         Resources.ExInst<SqlValidatorException> contextError = HazelcastResources.RESOURCES.cannotCastLiteralValue(
-            literalValue,
-            toType.getTypeFamily().getPublicType().name(),
-            e.getMessage()
+                literalValue,
+                toType.getTypeFamily().getPublicType().name(),
+                e.getMessage()
         );
 
         CalciteContextException calciteContextError = validator.newValidationError(call, contextError);

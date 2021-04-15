@@ -81,10 +81,10 @@ public abstract class AbstractOperandChecker implements OperandChecker {
     protected abstract ParameterConverter parameterConverter(SqlDynamicParam operand);
 
     protected abstract boolean coerce(
-        HazelcastSqlValidator validator,
-        HazelcastCallBinding callBinding,
-        SqlNode operand,
-        RelDataType operandType,
-        int operandIndex
+            HazelcastSqlValidator validator,
+            HazelcastCallBinding callBinding,
+            SqlNode operand,
+            RelDataType operandType,
+            int operandIndex
     );
 }

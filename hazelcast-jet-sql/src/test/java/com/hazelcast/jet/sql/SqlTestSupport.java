@@ -17,12 +17,20 @@
 package com.hazelcast.jet.sql;
 
 import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.sql.impl.plan.cache.PlanCache;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
+import org.junit.experimental.categories.Category;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -44,9 +52,22 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
+import static com.hazelcast.sql.impl.SqlTestSupport.nodeEngine;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Category({QuickTest.class, ParallelJVMTest.class})
 public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
+
+    private static final ILogger SUPPORT_LOGGER = Logger.getLogger(SqlTestSupport.class);
+
+    @After
+    public void tearDown() {
+        for (JetInstance instance : instances()) {
+            PlanCache planCache = planCache(instance);
+            SUPPORT_LOGGER.info("Removing " + planCache.size() + " cached plans in SqlTestSupport.@After");
+            planCache.clear();
+        }
+    }
 
     /**
      * Execute a query and assert that it eventually contains the expected entries.
@@ -140,12 +161,12 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
      */
     public static String javaSerializableMapDdl(String name, Class<?> keyClass, Class<?> valueClass) {
         return "CREATE MAPPING " + name + " TYPE " + IMapSqlConnector.TYPE_NAME + "\n"
-               + "OPTIONS (\n"
-               + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + "',\n"
-               + '\'' + OPTION_KEY_CLASS + "'='" + keyClass.getName() + "',\n"
-               + '\'' + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + "',\n"
-               + '\'' + OPTION_VALUE_CLASS + "'='" + valueClass.getName() + "'\n"
-               + ")";
+                + "OPTIONS (\n"
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + "',\n"
+                + '\'' + OPTION_KEY_CLASS + "'='" + keyClass.getName() + "',\n"
+                + '\'' + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + "',\n"
+                + '\'' + OPTION_VALUE_CLASS + "'='" + valueClass.getName() + "'\n"
+                + ")";
     }
 
     public static String randomName() {
@@ -178,6 +199,10 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         return System.getProperty("os.name").toLowerCase().contains("windows")
                 ? "c:\\non\\existing\\path"
                 : "/non/existing/path";
+    }
+
+    public static PlanCache planCache(JetInstance instance) {
+        return nodeEngine(instance.getHazelcastInstance()).getSqlService().getPlanCache();
     }
 
     /**

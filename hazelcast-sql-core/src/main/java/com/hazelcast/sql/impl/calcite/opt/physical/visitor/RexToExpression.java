@@ -154,7 +154,7 @@ public final class RexToExpression {
      *                        converted.
      */
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:MethodLength", "checkstyle:ReturnCount",
-        "checkstyle:NPathComplexity"})
+            "checkstyle:NPathComplexity"})
     public static Expression<?> convertCall(RexCall call, Expression<?>[] operands) {
         SqlOperator operator = call.getOperator();
         QueryDataType resultType = HazelcastTypeUtils.toHazelcastType(call.getType().getSqlTypeName());
@@ -272,10 +272,10 @@ public final class RexToExpression {
                 SqlTrimFunction.Flag trimFlag = ((SymbolExpression) operands[0]).getSymbol();
 
                 return TrimFunction.create(
-                    operands[2],
-                    operands[1],
-                    trimFlag.getLeft() == 1,
-                    trimFlag.getRight() == 1
+                        operands[2],
+                        operands[1],
+                        trimFlag.getLeft() == 1,
+                        trimFlag.getRight() == 1
                 );
 
             case OTHER:
@@ -291,8 +291,16 @@ public final class RexToExpression {
                 SqlFunction function = (SqlFunction) operator;
 
                 // Math.
-
-                if (function == HazelcastSqlOperatorTable.COS) {
+                if (function == HazelcastSqlOperatorTable.POWER) {
+                    assert operands.length == 2;
+                    return DoubleBiFunction.create(operands[0], operands[1], DoubleBiFunction.POWER);
+                } else if (function == HazelcastSqlOperatorTable.SQUARE) {
+                    return DoubleFunction.create(operands[0], DoubleFunction.SQUARE);
+                } else if (function == HazelcastSqlOperatorTable.SQRT) {
+                    return DoubleFunction.create(operands[0], DoubleFunction.SQRT);
+                } else if (function == HazelcastSqlOperatorTable.CBRT) {
+                    return DoubleFunction.create(operands[0], DoubleFunction.CBRT);
+                } else if (function == HazelcastSqlOperatorTable.COS) {
                     return DoubleFunction.create(operands[0], DoubleFunction.COS);
                 } else if (function == HazelcastSqlOperatorTable.SIN) {
                     return DoubleFunction.create(operands[0], DoubleFunction.SIN);
@@ -329,17 +337,17 @@ public final class RexToExpression {
                     return DoubleFunction.create(operands[0], DoubleFunction.RADIANS);
                 } else if (function == HazelcastSqlOperatorTable.ROUND) {
                     return RoundTruncateFunction.create(
-                        operands[0],
-                        operands.length == 1 ? null : operands[1],
-                        resultType,
-                        false
+                            operands[0],
+                            operands.length == 1 ? null : operands[1],
+                            resultType,
+                            false
                     );
                 } else if (function == HazelcastSqlOperatorTable.TRUNCATE) {
                     return RoundTruncateFunction.create(
-                        operands[0],
-                        operands.length == 1 ? null : operands[1],
-                        resultType,
-                        true
+                            operands[0],
+                            operands.length == 1 ? null : operands[1],
+                            resultType,
+                            true
                     );
                 }
 
@@ -362,7 +370,7 @@ public final class RexToExpression {
 
                     return SubstringFunction.create(input, start, length);
                 } else if (function == HazelcastSqlOperatorTable.LTRIM) {
-                   return TrimFunction.create(operands[0], null, true, false);
+                    return TrimFunction.create(operands[0], null, true, false);
                 } else if (function == HazelcastSqlOperatorTable.RTRIM) {
                     return TrimFunction.create(operands[0], null, false, true);
                 } else if (function == HazelcastSqlOperatorTable.BTRIM) {

@@ -23,6 +23,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 @SuppressWarnings({"unused", "unchecked, checkstyle:MultipleVariableDeclarations"})
@@ -47,7 +48,7 @@ public abstract class ExpressionValue implements Serializable {
             return (Class<? extends ExpressionValue>) Class.forName(className);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException("Cannot create " + ExpressionValue.class.getSimpleName() + " for type \""
-                + type + "\"", e);
+                    + type + "\"", e);
         }
     }
 
@@ -134,7 +135,7 @@ public abstract class ExpressionValue implements Serializable {
 
             ObjectVal objectVal = (ObjectVal) o;
 
-            return field1 != null ? field1.equals(objectVal.field1) : objectVal.field1 == null;
+            return Objects.equals(field1, objectVal.field1);
         }
 
         @Override

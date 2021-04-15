@@ -154,6 +154,28 @@ class JetPlanExecutor {
         return SqlResultImpl.createUpdateCountResult(0);
     }
 
+    SqlResult execute(ShowStatementPlan plan) {
+        SqlRowMetadata metadata = new SqlRowMetadata(
+                singletonList(new SqlColumnMetadata("name", SqlColumnType.VARCHAR, false)));
+        Stream<String> rows;
+        if (plan.getShowTarget() == ShowStatementTarget.MAPPINGS) {
+            rows = catalog.getMappingNames().stream();
+        } else {
+            assert plan.getShowTarget() == ShowStatementTarget.JOBS;
+            JetService jetService = ((HazelcastInstanceImpl) jetInstance.getHazelcastInstance()).node.nodeEngine
+                    .getService(JetService.SERVICE_NAME);
+            rows = jetService.getJobRepository().getJobRecords().stream()
+                    .map(record -> record.getConfig().getName())
+                    .filter(Objects::nonNull);
+        }
+
+        return new JetSqlResultImpl(
+                QueryId.create(jetInstance.getHazelcastInstance().getLocalEndpoint().getUuid()),
+                new JetStaticQueryResultProducer(rows.sorted().map(name -> new HeapRow(new Object[]{name})).iterator()),
+                metadata,
+                false);
+    }
+
     SqlResult execute(SelectOrSinkPlan plan, QueryId queryId) {
         if (plan.isInsert()) {
             if (plan.isStreaming()) {
@@ -187,27 +209,5 @@ class JetPlanExecutor {
 
             return new JetSqlResultImpl(queryId, queryResultProducer, plan.getRowMetadata(), plan.isStreaming());
         }
-    }
-
-    public SqlResult execute(ShowStatementPlan plan) {
-        SqlRowMetadata metadata = new SqlRowMetadata(
-                singletonList(new SqlColumnMetadata("name", SqlColumnType.VARCHAR, false)));
-        Stream<String> rows;
-        if (plan.getShowTarget() == ShowStatementTarget.MAPPINGS) {
-            rows = catalog.getMappingNames().stream();
-        } else {
-            assert plan.getShowTarget() == ShowStatementTarget.JOBS;
-            JetService jetService = ((HazelcastInstanceImpl) jetInstance.getHazelcastInstance()).node.nodeEngine
-                    .getService(JetService.SERVICE_NAME);
-            rows = jetService.getJobRepository().getJobRecords().stream()
-                             .map(record -> record.getConfig().getName())
-                             .filter(Objects::nonNull);
-        }
-
-        return new JetSqlResultImpl(
-                QueryId.create(jetInstance.getHazelcastInstance().getLocalEndpoint().getUuid()),
-                new JetStaticQueryResultProducer(rows.sorted().map(name -> new HeapRow(new Object[]{name})).iterator()),
-                metadata,
-                false);
     }
 }

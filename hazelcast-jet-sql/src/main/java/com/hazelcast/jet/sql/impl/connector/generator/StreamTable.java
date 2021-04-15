@@ -28,6 +28,8 @@ import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
+import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.TableField;
 
@@ -38,37 +40,54 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 class StreamTable extends JetTable {
 
-    private final Integer rate;
+    private final List<Expression<?>> argumentExpressions;
 
     StreamTable(
             SqlConnector sqlConnector,
             List<TableField> fields,
             String schemaName,
             String name,
-            Integer rate
+            List<Expression<?>> argumentExpressions
     ) {
         super(sqlConnector, fields, schemaName, name, new ConstantTableStatistics(Integer.MAX_VALUE));
 
-        this.rate = rate;
+        this.argumentExpressions = argumentExpressions;
     }
 
     StreamSource<Object[]> items(Expression<Boolean> predicate, List<Expression<?>> projections) {
-        if (rate == null) {
-            throw QueryException.error("rate cannot be null");
-        }
-        if (rate < 0) {
-            throw QueryException.error("rate cannot be less than zero");
-        }
-
-        int rate = this.rate;
+        List<Expression<?>> argumentExpressions = this.argumentExpressions;
         return SourceBuilder
                 .stream("stream", ctx -> {
                     InternalSerializationService serializationService = ((ProcSupplierCtx) ctx).serializationService();
                     SimpleExpressionEvalContext context = new SimpleExpressionEvalContext(serializationService);
+
+                    Integer rate = evaluate(argumentExpressions.get(0), context);
+                    if (rate == null) {
+                        throw QueryException.error("Invalid argument of a call to function GENERATE_STREAM" +
+                                " - rate cannot be null");
+                    }
+                    if (rate < 0) {
+                        throw QueryException.error("Invalid argument of a call to function GENERATE_STREAM" +
+                                " - rate cannot be less than zero");
+                    }
+
                     return new DataGenerator(rate, predicate, projections, context);
                 })
                 .fillBufferFn(DataGenerator::fillBuffer)
                 .build();
+    }
+
+    private static Integer evaluate(Expression<?> argumentExpression, ExpressionEvalContext context) {
+        if (argumentExpression == null) {
+            return null;
+        }
+        return (Integer) argumentExpression.eval(EmptyRow.INSTANCE, context);
+    }
+
+    @Override
+    public PlanObjectKey getObjectKey() {
+        // table is always available and its field list does not change
+        return null;
     }
 
     private static final class DataGenerator {

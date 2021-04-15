@@ -30,6 +30,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
@@ -189,7 +190,7 @@ public class TestBatchSqlConnector implements SqlConnector {
             rows.add(row);
         }
 
-        return new TestValuesTable(this, schemaName, mappingName, fields, rows);
+        return new TestBatchTable(this, schemaName, mappingName, fields, rows);
     }
 
     @Override
@@ -204,7 +205,7 @@ public class TestBatchSqlConnector implements SqlConnector {
             @Nullable Expression<Boolean> predicate,
             @Nonnull List<Expression<?>> projection
     ) {
-        List<Object[]> items = ((TestValuesTable) table).rows
+        List<Object[]> items = ((TestBatchTable) table).rows
                 .stream()
                 .map(row -> ExpressionUtil.evaluate(predicate, projection, row, NOT_IMPLEMENTED_ARGUMENTS_CONTEXT))
                 .filter(Objects::nonNull)
@@ -214,11 +215,11 @@ public class TestBatchSqlConnector implements SqlConnector {
         return dag.newUniqueVertex(table.toString(), pms);
     }
 
-    public static class TestValuesTable extends JetTable {
+    private static final class TestBatchTable extends JetTable {
 
         private final List<Object[]> rows;
 
-        public TestValuesTable(
+        private TestBatchTable(
                 @Nonnull SqlConnector sqlConnector,
                 @Nonnull String schemaName,
                 @Nonnull String name,
@@ -230,8 +231,40 @@ public class TestBatchSqlConnector implements SqlConnector {
         }
 
         @Override
-        public String toString() {
-            return "TestBatch" + "[" + getSchemaName() + "." + getSqlName() + "]";
+        public PlanObjectKey getObjectKey() {
+            return new TestBatchPlanObjectKey(getSchemaName(), getSqlName(), rows);
+        }
+    }
+
+    private static final class TestBatchPlanObjectKey implements PlanObjectKey {
+
+        private final String schemaName;
+        private final String name;
+        private final List<Object[]> rows;
+
+        private TestBatchPlanObjectKey(String schemaName, String name, List<Object[]> rows) {
+            this.schemaName = schemaName;
+            this.name = name;
+            this.rows = rows;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            TestBatchPlanObjectKey that = (TestBatchPlanObjectKey) o;
+            return Objects.equals(schemaName, that.schemaName)
+                    && Objects.equals(name, that.name)
+                    && Objects.equals(rows, that.rows);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(schemaName, name, rows);
         }
     }
 }

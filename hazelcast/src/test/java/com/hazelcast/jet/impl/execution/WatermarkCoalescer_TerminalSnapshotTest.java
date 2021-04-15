@@ -33,8 +33,13 @@ import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.WindowDefinition;
 import com.hazelcast.map.IMap;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,6 +55,8 @@ import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class WatermarkCoalescer_TerminalSnapshotTest extends JetTestSupport {
 
     private static final int PARTITION_COUNT = 2;
@@ -60,7 +67,7 @@ public class WatermarkCoalescer_TerminalSnapshotTest extends JetTestSupport {
 
     @Before
     public void setUp() {
-        Config config = new Config();
+        Config config = smallInstanceConfig();
         EventJournalConfig journalConfig = new EventJournalConfig()
                 .setCapacity(1_000_000)
                 .setEnabled(true);

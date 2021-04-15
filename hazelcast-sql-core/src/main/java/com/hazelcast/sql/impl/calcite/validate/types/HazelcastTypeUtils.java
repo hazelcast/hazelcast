@@ -103,20 +103,17 @@ public final class HazelcastTypeUtils {
     }
 
     public static QueryDataType toHazelcastType(SqlTypeName sqlTypeName) {
-        switch (sqlTypeName.getFamily()) {
-            case INTERVAL_YEAR_MONTH:
-                return QueryDataType.INTERVAL_YEAR_MONTH;
-
-            case INTERVAL_DAY_TIME:
-                return QueryDataType.INTERVAL_DAY_SECOND;
-
-            default:
-                QueryDataType queryDataType = CALCITE_TO_HZ.get(sqlTypeName);
-                if (queryDataType == null) {
-                    throw new IllegalArgumentException("unexpected SQL type: " + sqlTypeName);
-                }
-                return queryDataType;
+        SqlTypeFamily sqlTypeNameFamily = sqlTypeName.getFamily();
+        if (sqlTypeNameFamily == SqlTypeFamily.INTERVAL_YEAR_MONTH) {
+            return QueryDataType.INTERVAL_YEAR_MONTH;
+        } else if (sqlTypeNameFamily == SqlTypeFamily.INTERVAL_DAY_TIME) {
+            return QueryDataType.INTERVAL_DAY_SECOND;
         }
+        QueryDataType queryDataType = CALCITE_TO_HZ.get(sqlTypeName);
+        if (queryDataType == null) {
+            throw new IllegalArgumentException("unexpected SQL type: " + sqlTypeName);
+        }
+        return queryDataType;
     }
 
     public static RelDataType createType(RelDataTypeFactory typeFactory, SqlTypeName typeName, boolean nullable) {
@@ -143,7 +140,7 @@ public final class HazelcastTypeUtils {
 
     public static boolean isTimestampWithTimeZoneIdentifier(SqlIdentifier identifier) {
         return identifier.isSimple()
-            && SqlColumnType.TIMESTAMP_WITH_TIME_ZONE.name().equalsIgnoreCase(identifier.getSimple());
+                && SqlColumnType.TIMESTAMP_WITH_TIME_ZONE.name().equalsIgnoreCase(identifier.getSimple());
     }
 
     /**

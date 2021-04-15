@@ -18,24 +18,28 @@ package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
-import static com.hazelcast.jet.sql.SqlTestSupport.javaSerializableMapDdl;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-public class SqlJobManagementTest extends SimpleTestInClusterSupport {
+@Category({QuickTest.class, ParallelJVMTest.class})
+public class SqlJobManagementTest extends SqlTestSupport {
 
     private static final String COMPLETED_JOB_NAME = "completedJob";
 
@@ -304,6 +308,17 @@ public class SqlJobManagementTest extends SimpleTestInClusterSupport {
             sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v, v FROM src");
             sqlService.execute("DROP JOB testJob");
         }
+    }
+
+    @Test
+    public void test_planCache() {
+        sqlService.execute(javaSerializableMapDdl("target", Long.class, Long.class));
+        sqlService.execute("CREATE MAPPING source TYPE TestStream");
+        sqlService.execute("CREATE JOB job AS SINK INTO target SELECT v, v FROM source");
+        assertThat(planCache(instance()).size()).isEqualTo(1);
+
+        sqlService.execute("DROP MAPPING target");
+        assertTrueEventually(() -> assertThat(planCache(instance()).size()).isZero());
     }
 
     private void createCompletedJob() {

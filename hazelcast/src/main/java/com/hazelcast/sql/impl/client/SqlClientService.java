@@ -195,8 +195,8 @@ public class SqlClientService implements SqlService {
     /**
      * For testing only.
      */
-    public Connection getRandomConnection() {
-        Connection connection = client.getConnectionManager().getRandomConnection(false);
+    public ClientConnection getRandomConnection() {
+        ClientConnection connection = client.getConnectionManager().getRandomConnection(true);
 
         if (connection == null) {
             throw rethrow(QueryException.error(

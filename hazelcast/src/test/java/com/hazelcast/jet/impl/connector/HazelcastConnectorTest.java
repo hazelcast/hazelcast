@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.impl.connector;
 
-import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.EventJournalCacheEvent;
+import com.hazelcast.cache.ICache;
 import com.hazelcast.collection.IList;
 import com.hazelcast.config.Config;
 import com.hazelcast.jet.JetCacheManager;
@@ -26,14 +26,17 @@ import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.SourceProcessors;
-import com.hazelcast.map.IMap;
 import com.hazelcast.map.EventJournalMapEvent;
+import com.hazelcast.map.IMap;
 import com.hazelcast.projection.Projections;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.predicates.TruePredicate;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.util.Map;
 import java.util.Map.Entry;
@@ -61,6 +64,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class HazelcastConnectorTest extends SimpleTestInClusterSupport {
 
     private static final int ENTRY_COUNT = 100;
@@ -73,7 +77,7 @@ public class HazelcastConnectorTest extends SimpleTestInClusterSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        Config config = new Config();
+        Config config = smallInstanceConfig();
         config.getCacheConfig("*").getEventJournalConfig().setEnabled(true);
         config.getMapConfig("stream*").getEventJournalConfig().setEnabled(true);
 

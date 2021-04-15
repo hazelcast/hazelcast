@@ -113,18 +113,18 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
      * @return Result.
      */
     protected static Result optimize(
-        String sql,
-        HazelcastSchema schema,
-        int nodeCount,
-        boolean physical,
-        QueryParameterMetadata parameterMetadata
+            String sql,
+            HazelcastSchema schema,
+            int nodeCount,
+            boolean physical,
+            QueryParameterMetadata parameterMetadata
     ) {
         OptimizerContext context = OptimizerContext.create(
-            HazelcastSchemaUtils.createCatalog(schema),
-            QueryUtils.prepareSearchPaths(null, null),
-            nodeCount,
-            new HazelcastSqlBackend(null),
-            null
+                HazelcastSchemaUtils.createCatalog(schema),
+                QueryUtils.prepareSearchPaths(null, null),
+                nodeCount,
+                new HazelcastSqlBackend(null),
+                null
         );
 
         return optimize(sql, context, physical, parameterMetadata);
@@ -133,15 +133,15 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
     /**
      * Optimize with the given context.
      *
-     * @param sql SQL.
+     * @param sql     SQL.
      * @param context Context.
      * @return Result.
      */
     private static Result optimize(
-        String sql,
-        OptimizerContext context,
-        boolean physical,
-        QueryParameterMetadata parameterMetadata
+            String sql,
+            OptimizerContext context,
+            boolean physical,
+            QueryParameterMetadata parameterMetadata
     ) {
         QueryParseResult parseResult = context.parse(sql);
 
@@ -160,13 +160,13 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
     }
 
     private static PhysicalRel optimizePhysicalInternal(
-        OptimizerContext context,
-        RelNode node,
-        QueryParameterMetadata parameterMetadata
+            OptimizerContext context,
+            RelNode node,
+            QueryParameterMetadata parameterMetadata
     ) {
         RelTraitSet physicalTraitSet = OptUtils.toPhysicalConvention(
-            node.getTraitSet(),
-            OptUtils.getDistributionDef(node).getTraitRoot()
+                node.getTraitSet(),
+                OptUtils.getDistributionDef(node).getTraitRoot()
         );
 
         context.setParameterMetadata(parameterMetadata);
@@ -191,17 +191,17 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
             boolean nativeMemoryEnabled
     ) {
         PartitionedMapTable table = new PartitionedMapTable(
-            SCHEMA_NAME_PARTITIONED,
-            name,
-            name,
-            fields,
-            new ConstantTableStatistics(rowCount),
-            null,
-            null,
-            null,
-            null,
-            indexes,
-            nativeMemoryEnabled
+                SCHEMA_NAME_PARTITIONED,
+                name,
+                name,
+                fields,
+                new ConstantTableStatistics(rowCount),
+                null,
+                null,
+                null,
+                null,
+                indexes,
+                nativeMemoryEnabled
         );
 
         return new HazelcastTable(table, new HazelcastTableStatistic(rowCount));

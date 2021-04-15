@@ -21,6 +21,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
+import java.util.Objects;
 
 public final class AvroUpsertTargetDescriptor implements UpsertTargetDescriptor {
 
@@ -47,5 +48,22 @@ public final class AvroUpsertTargetDescriptor implements UpsertTargetDescriptor 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         schema = in.readObject();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        AvroUpsertTargetDescriptor that = (AvroUpsertTargetDescriptor) o;
+        return Objects.equals(schema, that.schema);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(schema);
     }
 }

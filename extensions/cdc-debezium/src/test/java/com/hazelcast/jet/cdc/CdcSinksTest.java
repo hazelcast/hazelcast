@@ -17,7 +17,6 @@
 package com.hazelcast.jet.cdc;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.JetInstance;
@@ -28,7 +27,9 @@ import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.PipelineTestSupport;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.SourceBuilder;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import javax.annotation.Nonnull;
 import java.util.Arrays;
@@ -41,6 +42,7 @@ import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
+@Category(QuickTest.class)
 public class CdcSinksTest extends PipelineTestSupport {
 
     private static final String MAP = "map";
@@ -74,7 +76,8 @@ public class CdcSinksTest extends PipelineTestSupport {
 
     @Test
     public void insertIntoRemoteMap() {
-        HazelcastInstance remoteHz = createRemoteCluster(new Config().setClusterName(randomName()), 1).get(0);
+        HazelcastInstance remoteHz =
+                createRemoteCluster(smallInstanceConfig().setClusterName(randomName()), 1).get(0);
         ClientConfig clientConfig = getClientConfigForRemoteCluster(remoteHz);
 
         p.readFrom(items(() -> Arrays.asList(SYNC1, INSERT2).iterator()))
@@ -100,7 +103,7 @@ public class CdcSinksTest extends PipelineTestSupport {
 
     @Test
     public void updateRemoteMap() {
-        HazelcastInstance remoteHz = createRemoteCluster(new Config().setClusterName(randomName()), 1).get(0);
+        HazelcastInstance remoteHz = createRemoteCluster(smallInstanceConfig().setClusterName(randomName()), 1).get(0);
         ClientConfig clientConfig = getClientConfigForRemoteCluster(remoteHz);
 
         p.readFrom(items(() -> Arrays.asList(SYNC1, INSERT2, UPDATE1).iterator()))
@@ -126,7 +129,8 @@ public class CdcSinksTest extends PipelineTestSupport {
 
     @Test
     public void deleteFromRemoteMap() {
-        HazelcastInstance remoteHz = createRemoteCluster(new Config().setClusterName(randomName()), 1).get(0);
+        HazelcastInstance remoteHz =
+                createRemoteCluster(smallInstanceConfig().setClusterName(randomName()), 1).get(0);
         ClientConfig clientConfig = getClientConfigForRemoteCluster(remoteHz);
 
         p.readFrom(items(() -> Arrays.asList(SYNC1, INSERT2, DELETE2).iterator()))
@@ -160,7 +164,8 @@ public class CdcSinksTest extends PipelineTestSupport {
 
     @Test
     public void deleteFromRemoteMap_ViaValueProjection() {
-        HazelcastInstance remoteHz = createRemoteCluster(new Config().setClusterName(randomName()), 2).get(0);
+        HazelcastInstance remoteHz =
+                createRemoteCluster(smallInstanceConfig().setClusterName(randomName()), 2).get(0);
         ClientConfig clientConfig = getClientConfigForRemoteCluster(remoteHz);
 
         p.readFrom(items(() -> Arrays.asList(SYNC1, INSERT2).iterator()))

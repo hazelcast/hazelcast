@@ -71,10 +71,6 @@ public class SqlCreateJob extends SqlCreate {
         jobConfig.setName(name.toString());
     }
 
-    public String name() {
-        return name.toString();
-    }
-
     public JobConfig jobConfig() {
         return jobConfig;
     }

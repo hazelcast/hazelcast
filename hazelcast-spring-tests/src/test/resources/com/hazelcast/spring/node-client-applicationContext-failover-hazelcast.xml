@@ -42,16 +42,9 @@
             </hz:properties>
             <hz:network port="${cluster.port}" port-auto-increment="true">
                 <hz:join>
-                    <hz:multicast enabled="false"
-                                  multicast-group="224.2.2.3"
-                                  multicast-port="54327"/>
-                    <hz:tcp-ip enabled="true">
-                        <hz:members>${cluster.members}</hz:members>
-                    </hz:tcp-ip>
+                    <hz:multicast enabled="false"/>
+                    <hz:auto-detection enabled="false"/>
                 </hz:join>
-                <hz:interfaces enabled="false">
-                    <hz:interface>10.10.1.*</hz:interface>
-                </hz:interfaces>
             </hz:network>
         </hz:config>
     </hz:hazelcast>
@@ -60,10 +53,23 @@
         <hz:client>
             <hz:cluster-name>${cluster.name}</hz:cluster-name>
             <hz:network>
+                <hz:member>127.0.0.1:5700</hz:member>
                 <hz:member>127.0.0.1:5701</hz:member>
+                <hz:member>127.0.0.1:5702</hz:member>
+                <hz:member>127.0.0.1:5703</hz:member>
+                <hz:member>127.0.0.1:5704</hz:member>
+                <hz:member>127.0.0.1:5705</hz:member>
+                <hz:member>127.0.0.1:5706</hz:member>
+                <hz:member>127.0.0.1:5707</hz:member>
+                <hz:member>127.0.0.1:5708</hz:member>
+                <hz:member>127.0.0.1:5709</hz:member>
             </hz:network>
 
-            <hz:connection-strategy async-start="true"></hz:connection-strategy>
+            <hz:connection-strategy async-start="true">
+                <hz:connection-retry>
+                    <hz:cluster-connect-timeout-millis>30000</hz:cluster-connect-timeout-millis>
+                </hz:connection-retry>
+            </hz:connection-strategy>
         </hz:client>
 
         <hz:client>
@@ -72,7 +78,11 @@
                 <hz:member>127.0.0.1:5702</hz:member>
             </hz:network>
 
-            <hz:connection-strategy async-start="true"></hz:connection-strategy>
+            <hz:connection-strategy async-start="true">
+                <hz:connection-retry>
+                    <hz:cluster-connect-timeout-millis>30000</hz:cluster-connect-timeout-millis>
+                </hz:connection-retry>
+            </hz:connection-strategy>
         </hz:client>
     </hz:client-failover>
 

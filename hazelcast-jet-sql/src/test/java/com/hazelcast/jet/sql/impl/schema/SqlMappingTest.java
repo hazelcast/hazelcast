@@ -146,7 +146,7 @@ public class SqlMappingTest extends SqlTestSupport {
         test_alias(String.class.getName(), "varchar", "char varying", "character varying");
     }
 
-    private void test_alias(String javaClassName, String ... aliases) {
+    private void test_alias(String javaClassName, String... aliases) {
         for (String alias : aliases) {
             sqlService.execute("CREATE MAPPING \"m_" + alias + "\"(__key " + alias + ") TYPE IMap " +
                     "OPTIONS('keyFormat'='java', 'keyJavaClass'='" + javaClassName + "', 'valueFormat'='json')");

@@ -42,7 +42,7 @@
             <hz:network port="${cluster.port}">
                 <hz:join>
                     <hz:multicast enabled="false"/>
-                    <hz:tcp-ip enabled="true"/>
+                    <hz:auto-detection enabled="false"/>
                 </hz:join>
             </hz:network>
         </hz:config>

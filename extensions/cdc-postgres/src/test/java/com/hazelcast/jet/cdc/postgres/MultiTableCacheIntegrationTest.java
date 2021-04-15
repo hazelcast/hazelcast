@@ -28,7 +28,9 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.pipeline.StreamStage;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import javax.annotation.Nonnull;
 import java.io.Serializable;
@@ -46,6 +48,7 @@ import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
+@Category(NightlyTest.class)
 public class MultiTableCacheIntegrationTest extends AbstractPostgresCdcIntegrationTest {
 
     private static final int MAX_CONCURRENT_OPERATIONS = 1;

@@ -21,6 +21,7 @@ import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
+import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableStatistics;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
@@ -28,6 +29,7 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 
 class KafkaTable extends JetTable {
@@ -101,5 +103,54 @@ class KafkaTable extends JetTable {
 
     QueryDataType[] types() {
         return getFields().stream().map(TableField::getType).toArray(QueryDataType[]::new);
+    }
+
+    @Override
+    public PlanObjectKey getObjectKey() {
+        return new KafkaPlanObjectKey(getSchemaName(), getSqlName(), topicName(), getFields(), options);
+    }
+
+    static final class KafkaPlanObjectKey implements PlanObjectKey {
+
+        private final String schemaName;
+        private final String tableName;
+        private final String topicName;
+        private final List<TableField> fields;
+        private final Map<String, String> options;
+
+        KafkaPlanObjectKey(
+                String schemaName,
+                String tableName,
+                String topicName,
+                List<TableField> fields,
+                Map<String, String> options
+        ) {
+            this.schemaName = schemaName;
+            this.tableName = tableName;
+            this.topicName = topicName;
+            this.fields = fields;
+            this.options = options;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            KafkaPlanObjectKey that = (KafkaPlanObjectKey) o;
+            return Objects.equals(schemaName, that.schemaName)
+                    && Objects.equals(tableName, that.tableName)
+                    && Objects.equals(topicName, that.topicName)
+                    && Objects.equals(fields, that.fields)
+                    && Objects.equals(options, that.options);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(schemaName, tableName, topicName, fields, options);
+        }
     }
 }

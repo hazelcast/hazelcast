@@ -26,9 +26,13 @@ import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.pipeline.StreamSource;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class JobSnapshotMetricsTest extends SimpleTestInClusterSupport {
 
     private static final String SOURCE_VERTEX_NAME = "sourceForSnapshot";
@@ -36,7 +40,7 @@ public class JobSnapshotMetricsTest extends SimpleTestInClusterSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        Config config = new Config();
+        Config config = smallInstanceConfig();
         config.getMetricsConfig().setCollectionFrequencySeconds(1);
         initialize(1, config);
     }
