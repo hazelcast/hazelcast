@@ -66,6 +66,7 @@ import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.apache.calcite.avatica.util.TimeUnit.DAY;
 import static org.apache.calcite.avatica.util.TimeUnit.MONTH;
@@ -233,7 +234,7 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
         final RexBuilder rexBuilder = getRexBuilder();
         final HazelcastBetweenOperator betweenOp = (HazelcastBetweenOperator) currentOperator;
         final List<RexNode> list = convertExpressionList(
-            rexBuilder, blackboard, call.getOperandList(), betweenOp.getOperandTypeChecker().getConsistency()
+                rexBuilder, blackboard, call.getOperandList(), betweenOp.getOperandTypeChecker().getConsistency()
         );
         final RexNode valueOperand = list.get(SqlBetweenOperator.VALUE_OPERAND);
         final RexNode lowerOperand = list.get(SqlBetweenOperator.LOWER_OPERAND);
@@ -313,7 +314,12 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
                                                        List<SqlNode> nodes,
                                                        SqlOperandTypeChecker.Consistency consistency
     ) {
+        if (nodes.size() == 1) {
+            return Collections.singletonList(bb.convertExpression(nodes.get(0)));
+        }
+
         final List<RexNode> exprs = new ArrayList<>();
+
         for (SqlNode node : nodes) {
             exprs.add(bb.convertExpression(node));
         }
@@ -336,29 +342,12 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
     ) {
         switch (consistency) {
             case COMPARE:
-                final List<RelDataType> nonCharacterTypes = new ArrayList<>();
-                for (RelDataType type : types) {
-                    if (type.getFamily() != SqlTypeFamily.CHARACTER) {
-                        nonCharacterTypes.add(type);
-                    }
-                }
+                final List<RelDataType> nonCharacterTypes = types.stream()
+                        .filter(type -> type.getFamily() != SqlTypeFamily.CHARACTER)
+                        .collect(Collectors.toList());
+
                 if (!nonCharacterTypes.isEmpty()) {
-                    final int typeCount = types.size();
-                    types = nonCharacterTypes;
-                    if (nonCharacterTypes.size() < typeCount) {
-                        final RelDataTypeFamily family = nonCharacterTypes.get(0).getFamily();
-                        if (family instanceof SqlTypeFamily) {
-                            // The character arguments might be larger than the numeric argument
-                            switch ((SqlTypeFamily) family) {
-                                case INTEGER:
-                                case NUMERIC:
-                                    nonCharacterTypes.add(bb.getTypeFactory().createSqlType(SqlTypeName.BIGINT));
-                                    break;
-                                default:
-                                    break;
-                            }
-                        }
-                    }
+                    types = enlargeNumericTypes(bb, types.size(), nonCharacterTypes);
                 }
                 // fall through
             case LEAST_RESTRICTIVE:
@@ -366,6 +355,24 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
             default:
                 return null;
         }
+    }
+
+    private static List<RelDataType> enlargeNumericTypes(Blackboard bb, final int typeCount, List<RelDataType> nonCharacterTypes) {
+        if (nonCharacterTypes.size() < typeCount) {
+            final RelDataTypeFamily family = nonCharacterTypes.get(0).getFamily();
+            if (family instanceof SqlTypeFamily) {
+                // The character arguments might be larger than the numeric argument
+                switch ((SqlTypeFamily) family) {
+                    case INTEGER:
+                    case NUMERIC:
+                        nonCharacterTypes.add(bb.getTypeFactory().createSqlType(SqlTypeName.BIGINT));
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+        return nonCharacterTypes;
     }
 
     private static QueryException literalConversionException(

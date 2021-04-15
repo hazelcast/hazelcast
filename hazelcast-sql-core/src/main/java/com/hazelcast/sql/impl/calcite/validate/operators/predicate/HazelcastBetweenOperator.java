@@ -20,7 +20,6 @@ import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
 import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastInfixOperator;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeComparability;
-import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.fun.SqlBetweenOperator.Flag;
@@ -81,18 +80,17 @@ public final class HazelcastBetweenOperator extends HazelcastInfixOperator {
     @Override
     protected boolean checkOperandTypes(HazelcastCallBinding callBinding, boolean throwOnFailure) {
         assert callBinding.getOperandCount() == OPERANDS;
-        boolean flag = true;
         for (int i = 0; i < OPERANDS; ++i) {
             RelDataType type = callBinding.getOperandType(i);
-            if (!checkType(callBinding, throwOnFailure, type)) {
-                flag = false;
-                break;
+            if (type.getComparability().ordinal() < RelDataTypeComparability.ALL.ordinal()) {
+                if (throwOnFailure) {
+                    throw callBinding.newValidationSignatureError();
+                } else {
+                    return false;
+                }
             }
         }
-        if (!flag && throwOnFailure) {
-            throw callBinding.newValidationSignatureError();
-        }
-        return flag;
+        return true;
     }
 
     public Flag getFlag() {
@@ -103,15 +101,4 @@ public final class HazelcastBetweenOperator extends HazelcastInfixOperator {
         return negated;
     }
 
-    private boolean checkType(SqlCallBinding callBinding, boolean throwOnFailure, RelDataType type) {
-        if (type.getComparability().ordinal() < RelDataTypeComparability.ALL.ordinal()) {
-            if (throwOnFailure) {
-                throw callBinding.newValidationSignatureError();
-            } else {
-                return false;
-            }
-        } else {
-            return true;
-        }
-    }
 }
