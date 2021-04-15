@@ -355,7 +355,7 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
                                     nonCharacterTypes.add(bb.getTypeFactory().createSqlType(SqlTypeName.BIGINT));
                                     break;
                                 default:
-                                    throw new IllegalStateException("Unexpected value: " + family);
+                                    break;
                             }
                         }
                     }

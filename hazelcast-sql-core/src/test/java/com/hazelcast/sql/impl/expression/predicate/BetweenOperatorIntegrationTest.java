@@ -36,6 +36,7 @@ import java.util.List;
 
 import static com.hazelcast.sql.SqlColumnType.DATE;
 import static com.hazelcast.sql.SqlColumnType.INTEGER;
+import static com.hazelcast.sql.SqlColumnType.NULL;
 import static com.hazelcast.sql.SqlColumnType.TIME;
 import static com.hazelcast.sql.SqlColumnType.TIMESTAMP;
 import static com.hazelcast.sql.SqlColumnType.VARCHAR;
@@ -63,10 +64,22 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
 
     @Test
     public void betweenPredicateNullcheckTest() {
+        putAll(true);
+        checkValues("SELECT this FROM map WHERE NULL BETWEEN NULL AND NULL", NULL, new Object[]{});
+        checkValues("SELECT this FROM map WHERE NULL BETWEEN 2 AND NULL", INTEGER, new Integer[]{});
+        checkValues("SELECT this FROM map WHERE NULL BETWEEN NULL AND 2", INTEGER, new Integer[]{});
+        checkValues("SELECT this FROM map WHERE NULL BETWEEN 'abc' AND NULL", VARCHAR, new String[]{});
+        checkValues("SELECT this FROM map WHERE NULL BETWEEN NULL AND 'bcd'", VARCHAR, new String[]{});
+
         putAll(0, 1, 25, 30);
         checkValues(sqlQuery("BETWEEN NULL AND 2"), INTEGER, new Integer[]{});
         checkValues(sqlQuery("BETWEEN 2 AND NULL"), INTEGER, new Integer[]{});
-        checkValues(sqlQuery("BETWEEN NULL AND NULL"), INTEGER, new Integer[]{});
+        checkValues(sqlQuery("BETWEEN NULL AND 2"), INTEGER, new Integer[]{});
+        checkValues(sqlQuery("BETWEEN 'abc' AND NULL"), VARCHAR, new String[]{});
+        checkValues(sqlQuery("BETWEEN NULL AND 'bcd'"), VARCHAR, new String[]{});
+        checkValues(sqlQuery("BETWEEN SYMMETRIC CAST('2020-01-01' AS DATE) AND NULL"), DATE, new LocalDate[]{});
+        checkValues(sqlQuery("BETWEEN SYMMETRIC CAST('20:00:00' AS TIME) AND NULL"), TIME, new LocalTime[]{});
+        checkValues(sqlQuery("BETWEEN SYMMETRIC CAST('2000-01-01T08:00:00' AS TIMESTAMP) AND NULL"), TIME, new LocalDateTime[]{});
     }
 
     @Test
@@ -169,8 +182,8 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
         );
         checkFailure0(
             sqlQuery("BETWEEN SYMMETRIC CAST('2000-01-01' AS DATE) AND 'Ukraine'"),
-            SqlErrorCode.GENERIC,
-            "Unexpected value: DATE"
+            SqlErrorCode.DATA_EXCEPTION,
+            "Cannot parse VARCHAR value to DATE"
         );
         checkFailure0(
             sqlQuery("BETWEEN SYMMETRIC 2 AND CAST('2000-01-01' AS DATE)"),
@@ -179,8 +192,8 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
         );
         checkFailure0(
             sqlQuery("BETWEEN SYMMETRIC CAST('08:00:00' AS TIME) AND 'Bulgaria'"),
-            SqlErrorCode.GENERIC,
-            "Unexpected value: TIME"
+            SqlErrorCode.DATA_EXCEPTION,
+            "Cannot parse VARCHAR value to TIME"
         );
         checkFailure0(
             sqlQuery("BETWEEN SYMMETRIC 2 AND CAST('08:00:00' AS TIME)"),
