@@ -83,6 +83,7 @@ public final class HazelcastCaseOperator extends SqlOperator {
     }
 
     @Override
+    @SuppressWarnings("checkstyle:MethodLength")
     public boolean checkOperandTypes(SqlCallBinding callBinding, boolean throwOnFailure) {
         HazelcastSqlValidator validator = (HazelcastSqlValidator) callBinding.getValidator();
         HazelcastSqlCase sqlCall = (HazelcastSqlCase) callBinding.getCall();
