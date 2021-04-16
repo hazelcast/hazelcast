@@ -340,10 +340,12 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
             if (select.getSelectList().size() == sourceCount) {
                 return select.getSelectList().get(ordinal);
             } else {
-                return query; // give up
+                // give up
+                return query;
             }
         } else {
-            return query; // give up
+            // give up
+            return query;
         }
     }
 
