@@ -19,6 +19,7 @@ package com.hazelcast.jet.kafka.impl;
 import com.hazelcast.collection.IList;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.ToLongFunctionEx;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
@@ -251,23 +252,15 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         assertTrue(processor.currentAssignment.isEmpty());
         assertEquals(IDLE_MESSAGE, consumeEventually(processor, outbox));
 
+        // add a partition and produce an event to it
         kafkaTestSupport.setPartitionCount(topic1Name, INITIAL_PARTITION_COUNT + 1);
+        Entry<Integer, String> value = produceEventToNewPartition(INITIAL_PARTITION_COUNT);
 
-        // produce events until the event happens to go to the added partition
-        Entry<Integer, String> event;
-        for (int i = 0; ; i++) {
-            event = entry(i, Integer.toString(i));
-            kafkaTestSupport.resetProducer(); // this allows production to the added partition
-            Future<RecordMetadata> future = kafkaTestSupport.produce(topic1Name, event.getKey(), event.getValue());
-            RecordMetadata recordMetadata = future.get();
-            if (recordMetadata.partition() == 4) {
-                break;
-            }
-            sleepMillis(250);
-        }
-
-        assertEquals(new Watermark(event.getKey() - LAG), consumeEventually(processor, outbox));
-        assertEquals(event, consumeEventually(processor, outbox));
+        Object actualEvent;
+        do {
+            actualEvent = consumeEventually(processor, outbox);
+        } while (actualEvent instanceof Watermark);
+        assertEquals(value, actualEvent);
     }
 
     @Test
@@ -330,10 +323,9 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
     ) {
         assert numTopics == 1 || numTopics == 2;
         ToLongFunctionEx<T> timestampFn = e ->
-                e instanceof Entry ?
-                        (int) ((Entry) e).getKey()
-                        :
-                        System.currentTimeMillis();
+                e instanceof Entry
+                        ? (int) ((Entry) e).getKey()
+                        : System.currentTimeMillis();
         EventTimePolicy<T> eventTimePolicy = eventTimePolicy(
                 timestampFn, limitingLag(LAG), 1, 0, idleTimeoutMillis);
         List<String> topics = numTopics == 1 ?
@@ -397,17 +389,12 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
 
         // When
         kafkaTestSupport.setPartitionCount(topic1Name, INITIAL_PARTITION_COUNT + 2);
-        kafkaTestSupport.resetProducer(); // this allows production to the added partition
-
-        // We synchronously produce to a partition that didn't exist during the previous job execution.
-        // The job must start to read the new partition from the beginning, otherwise it would miss this item.
-        kafkaTestSupport.produce(topic1Name, INITIAL_PARTITION_COUNT, null, 1, "1")
-                        .get();
+        // We produce to a partition that didn't exist during the previous job execution.
+        // The job must start reading the new partition from the beginning, otherwise it would miss this item.
+        Entry<Integer, String> event = produceEventToNewPartition(INITIAL_PARTITION_COUNT);
 
         job.resume();
-        assertTrueEventually(() -> {
-            assertEquals(entry(1, "1"), sinkList.get(sinkList.size() - 1));
-        });
+        assertTrueEventually(() -> assertEquals(event, sinkList.get(sinkList.size() - 1)));
     }
 
     @Test
@@ -543,5 +530,21 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
 
     private static Map.Entry<Integer, String> createEntry(int i) {
         return new SimpleImmutableEntry<>(i, Integer.toString(i));
+    }
+
+    private Entry<Integer, String> produceEventToNewPartition(int partitionId) throws Exception {
+        String value;
+        while (true) {
+            // reset the producer for each attempt as it might not see the new partition yet
+            kafkaTestSupport.resetProducer();
+            value = UuidUtil.newUnsecureUuidString();
+            Future<RecordMetadata> future = kafkaTestSupport.produce(topic1Name, partitionId, null, 0, value);
+            RecordMetadata recordMetadata = future.get();
+            if (recordMetadata.partition() == partitionId) {
+                break;
+            }
+            sleepMillis(250);
+        }
+        return entry(0, value);
     }
 }
