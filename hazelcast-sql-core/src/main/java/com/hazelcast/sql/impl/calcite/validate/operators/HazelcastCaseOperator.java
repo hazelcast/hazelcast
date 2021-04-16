@@ -127,7 +127,6 @@ public final class HazelcastCaseOperator extends SqlOperator {
         }
 
         HazelcastTypeCoercion typeCoercion = validator.getTypeCoercion();
-
         Supplier<QueryException> exceptionSupplier =
                 () -> QueryException.error(SqlErrorCode.GENERIC, "Cannot infer return type for CASE among " + argTypes);
 
