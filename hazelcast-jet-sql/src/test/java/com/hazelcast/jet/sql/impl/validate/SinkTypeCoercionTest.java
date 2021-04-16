@@ -583,7 +583,7 @@ public class SinkTypeCoercionTest extends SqlTestSupport {
         // the TestBatchSource doesn't support OBJECT type
         assumeFalse(testParams.srcType == OBJECT || testParams.srcType == NULL);
 
-        String targetClassName =ExpressionValue.classForType(testParams.targetType);
+        String targetClassName = ExpressionValue.classForType(testParams.targetType);
         TestBatchSqlConnector.create(sqlService, "src", singletonList("v"),
                 singletonList(testParams.srcType),
                 singletonList(new String[]{testParams.valueTestSource}));
