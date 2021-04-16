@@ -20,7 +20,7 @@ import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.SqlErrorCode;
-import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import org.assertj.core.api.Assertions;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -121,7 +121,7 @@ public class SqlLimitTest extends SqlTestSupport {
                 sqlService,
                 name,
                 asList("name", "distance"),
-                asList(QueryDataType.VARCHAR, QueryDataType.INT),
+                asList(QueryDataTypeFamily.VARCHAR, QueryDataTypeFamily.INTEGER),
                 asList(values)
         );
         return name;

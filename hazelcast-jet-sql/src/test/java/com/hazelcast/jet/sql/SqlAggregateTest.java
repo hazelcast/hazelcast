@@ -21,6 +21,7 @@ import com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -985,7 +986,7 @@ public class SqlAggregateTest extends SqlTestSupport {
                 sqlService,
                 name,
                 asList("name", "distance"),
-                asList(QueryDataType.VARCHAR, QueryDataType.INT),
+                asList(QueryDataTypeFamily.VARCHAR, QueryDataTypeFamily.INTEGER),
                 asList(values)
         );
         return name;
