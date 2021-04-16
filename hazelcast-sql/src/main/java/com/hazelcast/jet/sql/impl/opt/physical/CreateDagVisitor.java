@@ -221,6 +221,11 @@ public class CreateDagVisitor {
         return vertexWithConfig.vertex();
     }
 
+    public Vertex onDelete(DeletePhysicalRel deletePhysicalRel) {
+
+        return null;
+    }
+
     public Vertex onRoot(JetRootRel rootRel) {
         Vertex vertex;
         RelNode input = rootRel.getInput();

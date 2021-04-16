@@ -46,11 +46,14 @@ import com.hazelcast.sql.impl.SqlResultImpl;
 import com.hazelcast.sql.impl.row.HeapRow;
 
 import java.util.List;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CancellationException;
 import java.util.stream.Stream;
 
+import static com.hazelcast.jet.sql.impl.JetPlan.*;
 import static com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
 import static java.util.Collections.singletonList;
 
@@ -217,6 +220,11 @@ class JetPlanExecutor {
 
             return new JetSqlResultImpl(queryId, queryResultProducer, plan.getRowMetadata(), plan.isStreaming());
         }
+    }
+
+    public SqlResult execute(QueryId queryId, String mapName, Object key) {
+        Object value = jetInstance.getMap(mapName).remove(((BigDecimal)key).intValue());
+        return SqlResultImpl.createUpdateCountResult(value == null ? 0 : 1);
     }
 
     private List<Object> prepareArguments(QueryParameterMetadata parameterMetadata, List<Object> arguments) {

@@ -23,6 +23,7 @@ import com.hazelcast.jet.sql.impl.JetPlan.AlterJobPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.CreateJobPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.CreateMappingPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.CreateSnapshotPlan;
+import com.hazelcast.jet.sql.impl.JetPlan.DeletePlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropJobPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropMappingPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropSnapshotPlan;
@@ -77,6 +78,7 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelShuttleImpl;
 import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.core.TableScan;
+import org.apache.calcite.sql.SqlDelete;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.parser.SqlParserImplFactory;
 import org.apache.calcite.sql.util.SqlVisitor;
@@ -156,7 +158,9 @@ class JetSqlBackend implements SqlBackend {
         SqlNode node = parseResult.getNode();
 
         PlanKey planKey = new PlanKey(task.getSearchPaths(), task.getSql());
-        if (node instanceof SqlCreateMapping) {
+        if (node instanceof SqlDelete) {
+            return toDeletePlan(planKey, (SqlDelete) node);
+        } else if (node instanceof SqlCreateMapping) {
             return toCreateMappingPlan(planKey, (SqlCreateMapping) node);
         } else if (node instanceof SqlDropMapping) {
             return toDropMappingPlan(planKey, (SqlDropMapping) node);
@@ -183,6 +187,10 @@ class JetSqlBackend implements SqlBackend {
                     parseResult.isInfiniteRows()
             );
         }
+    }
+
+    private SqlPlan toDeletePlan(PlanKey planKey, SqlDelete node) {
+        return new DeletePlan(planKey, node.getTargetTable(), node.getCondition(), planExecutor);
     }
 
     private SqlPlan toCreateMappingPlan(PlanKey planKey, SqlCreateMapping sqlCreateMapping) {
@@ -279,6 +287,8 @@ class JetSqlBackend implements SqlBackend {
         logger.fine("After physical opt:\n" + RelOptUtil.toString(physicalRel));
 
         boolean isInsert = physicalRel instanceof TableModify;
+        assert !(physicalRel instanceof TableModify) || ((TableModify) physicalRel).isInsert()
+                : "Physical Rel should be either not TableModify or TableModify#isInsert == true";
 
         Address localAddress = nodeEngine.getThisAddress();
         List<Permission> permissions = extractPermissions(physicalRel);

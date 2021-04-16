@@ -31,6 +31,15 @@ import com.hazelcast.sql.impl.optimizer.PlanKey;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.security.SqlSecurityContext;
+import org.apache.calcite.sql.SqlCall;
+import org.apache.calcite.sql.SqlDataTypeSpec;
+import org.apache.calcite.sql.SqlDynamicParam;
+import org.apache.calcite.sql.SqlIdentifier;
+import org.apache.calcite.sql.SqlIntervalQualifier;
+import org.apache.calcite.sql.SqlLiteral;
+import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.SqlNodeList;
+import org.apache.calcite.sql.util.SqlVisitor;
 
 import java.security.Permission;
 import java.util.List;
@@ -562,6 +571,134 @@ abstract class JetPlan extends SqlPlan {
     private static void ensureNoArguments(String name, List<Object> arguments) {
         if (!arguments.isEmpty()) {
             throw QueryException.error(name + " does not support dynamic parameters");
+        }
+    }
+
+    static class DeletePlan extends JetPlan {
+
+        private final SqlNode targetTable;
+        private final SqlNode condition;
+        private final JetPlanExecutor planExecutor;
+
+        public DeletePlan(PlanKey planKey, SqlNode targetTable, SqlNode condition, JetPlanExecutor planExecutor) {
+            super(planKey);
+            this.targetTable = targetTable;
+            this.condition = condition;
+            this.planExecutor = planExecutor;
+        }
+
+        @Override
+        SqlResult execute(QueryId queryId) {
+            String mapName = targetTable.accept(new MapNameVisitor());
+            Object key = condition.accept(new KeyValueVisitor());
+            return planExecutor.execute(queryId, mapName, key);
+        }
+
+        @Override
+        public boolean isCacheable() {
+            return false;
+        }
+
+        @Override
+        public boolean isPlanValid(PlanCheckContext context) {
+            return true;
+        }
+
+        @Override
+        public void checkPermissions(SqlSecurityContext context) {
+
+        }
+
+        @Override
+        public boolean producesRows() {
+            return false;
+        }
+
+        private static class KeyValueVisitor implements SqlVisitor<Object> {
+            private boolean foundKey;
+            private Object keyValue;
+
+            @Override
+            public Object visit(SqlLiteral literal) {
+                return literal.getValue();
+            }
+
+            @Override
+            public Object visit(SqlCall call) {
+                for (SqlNode node : call.getOperandList()) {
+                    if (foundKey) {
+                        keyValue = node.accept(this);
+                    } else {
+                        node.accept(this);
+                    }
+                }
+                return keyValue;
+            }
+
+            @Override
+            public Object visit(SqlNodeList nodeList) {
+                return null;
+            }
+
+            @Override
+            public Object visit(SqlIdentifier id) {
+                if (!foundKey) {
+                    foundKey = id.getSimple().equals("__key");
+                }
+                return null;
+            }
+
+            @Override
+            public Object visit(SqlDataTypeSpec type) {
+                return null;
+            }
+
+            @Override
+            public Object visit(SqlDynamicParam param) {
+                return null;
+            }
+
+            @Override
+            public Object visit(SqlIntervalQualifier intervalQualifier) {
+                return null;
+            }
+        }
+
+        private static class MapNameVisitor implements SqlVisitor<String> {
+            @Override
+            public String visit(SqlLiteral literal) {
+                return null;
+            }
+
+            @Override
+            public String visit(SqlCall call) {
+                return null;
+            }
+
+            @Override
+            public String visit(SqlNodeList nodeList) {
+                return null;
+            }
+
+            @Override
+            public String visit(SqlIdentifier id) {
+                return id.names.get(2);
+            }
+
+            @Override
+            public String visit(SqlDataTypeSpec type) {
+                return null;
+            }
+
+            @Override
+            public String visit(SqlDynamicParam param) {
+                return null;
+            }
+
+            @Override
+            public String visit(SqlIntervalQualifier intervalQualifier) {
+                return null;
+            }
         }
     }
 }
