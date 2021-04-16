@@ -44,6 +44,7 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -89,6 +90,7 @@ public class HazelcastConnector_RestartTest extends JetTestSupport {
     }
 
     @Test
+    @Ignore // https://github.com/hazelcast/hazelcast/issues/18469
     public void when_iListWrittenAndMemberShutdown_then_jobRestarts() throws Exception {
         DAG dag = new DAG();
         Vertex source = dag.newVertex("source",
