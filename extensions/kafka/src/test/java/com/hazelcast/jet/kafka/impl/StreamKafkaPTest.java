@@ -252,18 +252,18 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         assertEquals(IDLE_MESSAGE, consumeEventually(processor, outbox));
 
         kafkaTestSupport.setPartitionCount(topic1Name, INITIAL_PARTITION_COUNT + 1);
-        Thread.sleep(1000);
-        kafkaTestSupport.resetProducer(); // this allows production to the added partition
 
         // produce events until the event happens to go to the added partition
         Entry<Integer, String> event;
         for (int i = 0; ; i++) {
             event = entry(i, Integer.toString(i));
+            kafkaTestSupport.resetProducer(); // this allows production to the added partition
             Future<RecordMetadata> future = kafkaTestSupport.produce(topic1Name, event.getKey(), event.getValue());
             RecordMetadata recordMetadata = future.get();
             if (recordMetadata.partition() == 4) {
                 break;
             }
+            sleepMillis(250);
         }
 
         assertEquals(new Watermark(event.getKey() - LAG), consumeEventually(processor, outbox));
