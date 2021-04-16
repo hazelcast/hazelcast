@@ -28,6 +28,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runners.Parameterized;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -38,7 +39,7 @@ import static com.hazelcast.sql.SqlColumnType.BIGINT;
 import static com.hazelcast.sql.SqlColumnType.DATE;
 import static com.hazelcast.sql.SqlColumnType.DOUBLE;
 import static com.hazelcast.sql.SqlColumnType.INTEGER;
-import static com.hazelcast.sql.SqlColumnType.NULL;
+import static com.hazelcast.sql.SqlColumnType.OBJECT;
 import static com.hazelcast.sql.SqlColumnType.TIME;
 import static com.hazelcast.sql.SqlColumnType.TIMESTAMP;
 import static com.hazelcast.sql.SqlColumnType.VARCHAR;
@@ -47,6 +48,14 @@ import static org.junit.Assert.assertEquals;
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
+    static class Person implements Serializable {
+        public final String name;
+
+        Person(String name) {
+            this.name = name;
+        }
+    }
+
     @Test
     public void basicNumericBetweenPredicateTest() {
         putAll(0, 1, 25, 30);
@@ -66,12 +75,12 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
 
     @Test
     public void betweenPredicateNullcheckTest() {
-        putAll(true);
-        checkValues("SELECT this FROM map WHERE NULL BETWEEN NULL AND NULL", NULL, new Object[]{});
-        checkValues("SELECT this FROM map WHERE NULL BETWEEN 2 AND NULL", INTEGER, new Integer[]{});
-        checkValues("SELECT this FROM map WHERE NULL BETWEEN NULL AND 2", INTEGER, new Integer[]{});
-        checkValues("SELECT this FROM map WHERE NULL BETWEEN 'abc' AND NULL", VARCHAR, new String[]{});
-        checkValues("SELECT this FROM map WHERE NULL BETWEEN NULL AND 'bcd'", VARCHAR, new String[]{});
+        putAll(new Person(null));
+        checkValues("SELECT name FROM map WHERE name BETWEEN NULL AND NULL", OBJECT, new Object[]{});
+        checkValues("SELECT name FROM map WHERE name BETWEEN 2 AND NULL", INTEGER, new Integer[]{});
+        checkValues("SELECT name FROM map WHERE name BETWEEN NULL AND 2", INTEGER, new Integer[]{});
+        checkValues("SELECT name FROM map WHERE name BETWEEN 'abc' AND NULL", VARCHAR, new String[]{});
+        checkValues("SELECT name FROM map WHERE name BETWEEN NULL AND 'bcd'", VARCHAR, new String[]{});
 
         putAll(0, 1, 25, 30);
         checkValues(sqlQuery("BETWEEN NULL AND 2"), INTEGER, new Integer[]{});
@@ -173,7 +182,7 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
     }
 
     @Test
-    public void betweenPredicateExplicitCastsAllowedTest() {
+    public void betweenPredicateImplicitCastsAllowedTest() {
         putAll("1", "2", "3");
 
         checkValues(sqlQuery("BETWEEN 1 AND 3"), VARCHAR, new String[]{"1", "2", "3"});
@@ -197,7 +206,7 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
     }
 
     @Test
-    public void betweenPredicateExplicitCastsBannedTest() {
+    public void betweenPredicateImplicitCastsBannedTest() {
         LocalDate date = LocalDate.of(2000, 1, 1);
         LocalTime time = LocalTime.of(8, 0, 0);
         putAll(time, 1, "Argentina", "Bulgaria", "Ukraine", 2, date);

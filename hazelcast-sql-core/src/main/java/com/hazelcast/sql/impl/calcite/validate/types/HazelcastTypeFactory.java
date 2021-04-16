@@ -56,13 +56,6 @@ public final class HazelcastTypeFactory extends SqlTypeFactoryImpl {
             true
     );
 
-    // Dirty workaround for Calcite bug with infinite recursion during non-nullable NULL type construction. (facepalm)
-    // Where the problem happens : RexBuilder calls makeLiteral(null, BasicSqlType, true).
-    // Inside this method it tries to create NULL literal of non-nullable type!!!
-    // During each recursive call it tries to construct non-nullable literal, then check isNullable property and
-    // launch recursive call again. Of course, StackOverflow happens. /shrug
-    private static final RelDataType TYPE_NON_NULLABLE_NULL = new HazelcastType(SqlTypeName.NULL, false);
-
     private static final RelDataType TYPE_OBJECT = new HazelcastType(SqlTypeName.ANY, false);
     private static final RelDataType TYPE_OBJECT_NULLABLE = new HazelcastType(SqlTypeName.ANY, true);
 
@@ -155,9 +148,6 @@ public final class HazelcastTypeFactory extends SqlTypeFactoryImpl {
     @SuppressWarnings("checkstyle:CyclomaticComplexity")
     @Override
     public RelDataType createTypeWithNullability(RelDataType type, boolean nullable) {
-        if (type.getSqlTypeName().equals(SqlTypeName.NULL) && !nullable) {
-            return TYPE_NON_NULLABLE_NULL;
-        }
         if (HazelcastTypeUtils.isNumericIntegerType(type.getSqlTypeName())) {
             return HazelcastIntegerType.create((HazelcastIntegerType) type, nullable);
         } else if (type.getSqlTypeName() == SqlTypeName.ANY) {
