@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql;
 
 import com.hazelcast.map.IMap;
-import com.hazelcast.sql.SqlResult;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -31,10 +30,18 @@ public class SqlDeleteBySingleKey extends SqlTestSupport {
 
     @Test
     public void delete() throws Exception {
-        IMap<Integer, Integer> map = instance().getMap("test_map");
-        map.put(1, 1);
+        put(1);
+        checkUpdateCount("delete from test_map where __key = 1", 1);
+        put(1);
+        checkUpdateCount("delete from test_map where 1 = __key", 1);
+    }
 
-        SqlResult execute = instance().getSql().execute("delete from test_map where __key = 1");
-        assertThat(execute.updateCount()).isEqualTo(1);
+    private void checkUpdateCount(String sql, int expected) {
+        assertThat(instance().getSql().execute(sql).updateCount()).isEqualTo(expected);
+    }
+
+    private void put(Object key) {
+        IMap<Object, Object> map = instance().getMap("test_map");
+        map.put(key, key);
     }
 }

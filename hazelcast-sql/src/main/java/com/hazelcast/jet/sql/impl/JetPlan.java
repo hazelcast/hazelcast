@@ -27,19 +27,17 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.optimizer.PlanCheckContext;
+import com.hazelcast.sql.impl.SqlErrorCode;
+import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.optimizer.PlanKey;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.security.SqlSecurityContext;
-import org.apache.calcite.sql.SqlCall;
-import org.apache.calcite.sql.SqlDataTypeSpec;
-import org.apache.calcite.sql.SqlDynamicParam;
+import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlIdentifier;
-import org.apache.calcite.sql.SqlIntervalQualifier;
+import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
-import org.apache.calcite.sql.SqlNodeList;
-import org.apache.calcite.sql.util.SqlVisitor;
 
 import java.security.Permission;
 import java.util.List;
@@ -589,8 +587,26 @@ abstract class JetPlan extends SqlPlan {
 
         @Override
         SqlResult execute(QueryId queryId) {
-            String mapName = targetTable.accept(new MapNameVisitor());
-            Object key = condition.accept(new KeyValueVisitor());
+            assert targetTable instanceof SqlIdentifier;
+            assert condition instanceof SqlBasicCall;
+            assert condition.getKind() == SqlKind.EQUALS;
+
+            String mapName = ((SqlIdentifier) targetTable).names.get(2);
+
+            boolean foundKey = false;
+            Object key = null;
+            for (SqlNode node : ((SqlBasicCall) condition).getOperandList()) {
+                if (node instanceof SqlIdentifier) {
+                    foundKey = ((SqlIdentifier) node).getSimple().equals("__key");
+                } else if (node instanceof SqlLiteral) {
+                    // TODO: type inference/coercion and check
+                    key = ((SqlLiteral)node).getValue();
+                }
+            }
+
+            if (!foundKey || key == null) {
+                throw QueryException.error(SqlErrorCode.GENERIC, "Delete query has to contain __key = <value> predicate");
+            }
             return planExecutor.execute(queryId, mapName, key);
         }
 
@@ -612,93 +628,6 @@ abstract class JetPlan extends SqlPlan {
         @Override
         public boolean producesRows() {
             return false;
-        }
-
-        private static class KeyValueVisitor implements SqlVisitor<Object> {
-            private boolean foundKey;
-            private Object keyValue;
-
-            @Override
-            public Object visit(SqlLiteral literal) {
-                return literal.getValue();
-            }
-
-            @Override
-            public Object visit(SqlCall call) {
-                for (SqlNode node : call.getOperandList()) {
-                    if (foundKey) {
-                        keyValue = node.accept(this);
-                    } else {
-                        node.accept(this);
-                    }
-                }
-                return keyValue;
-            }
-
-            @Override
-            public Object visit(SqlNodeList nodeList) {
-                return null;
-            }
-
-            @Override
-            public Object visit(SqlIdentifier id) {
-                if (!foundKey) {
-                    foundKey = id.getSimple().equals("__key");
-                }
-                return null;
-            }
-
-            @Override
-            public Object visit(SqlDataTypeSpec type) {
-                return null;
-            }
-
-            @Override
-            public Object visit(SqlDynamicParam param) {
-                return null;
-            }
-
-            @Override
-            public Object visit(SqlIntervalQualifier intervalQualifier) {
-                return null;
-            }
-        }
-
-        private static class MapNameVisitor implements SqlVisitor<String> {
-            @Override
-            public String visit(SqlLiteral literal) {
-                return null;
-            }
-
-            @Override
-            public String visit(SqlCall call) {
-                return null;
-            }
-
-            @Override
-            public String visit(SqlNodeList nodeList) {
-                return null;
-            }
-
-            @Override
-            public String visit(SqlIdentifier id) {
-                return id.names.get(2);
-            }
-
-            @Override
-            public String visit(SqlDataTypeSpec type) {
-                return null;
-            }
-
-            @Override
-            public String visit(SqlDynamicParam param) {
-                return null;
-            }
-
-            @Override
-            public String visit(SqlIntervalQualifier intervalQualifier) {
-                return null;
-            }
         }
     }
 }
