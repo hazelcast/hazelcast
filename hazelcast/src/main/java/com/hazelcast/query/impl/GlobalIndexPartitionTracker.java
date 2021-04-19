@@ -205,7 +205,8 @@ public class GlobalIndexPartitionTracker {
         public String toString() {
             return "State{"
                     + "stamp=" + stamp
-                    + ", indexedPartitions=" + indexedPartitions
+                    + ", indexedPartitions={size="+indexedPartitions.size()
+                    + ", partitions="+ indexedPartitions +"}"
                     + ", pending=" + pending
                     + '}';
         }
