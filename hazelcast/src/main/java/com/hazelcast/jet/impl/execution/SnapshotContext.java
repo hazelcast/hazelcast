@@ -329,8 +329,16 @@ public class SnapshotContext {
         }
     }
 
-    synchronized void processorTaskletDone() {
+    /**
+     * This method is called when a processor tasklet completes.
+     *
+     * @param lastCompletedPhase2SnapshotId the last snapshotId for
+     *     which the processor did the phase2
+     */
+    synchronized void processorTaskletDone(long lastCompletedPhase2SnapshotId) {
         assert numPTasklets > 0 : "numPTasklets=" + numPTasklets;
+        assert lastCompletedPhase2SnapshotId == activeSnapshotIdPhase2
+                : "phase2 was initiated, processor completed without doing it";
         numPTasklets--;
     }
 
@@ -351,9 +359,8 @@ public class SnapshotContext {
     }
 
     /**
-     * Called when current snapshot is done in {@link StoreSnapshotTasklet}
-     * (it received barriers from all its processors and all async flush
-     * operations are done).
+     * Called when current snapshot phase 2 is done in {@link
+     * ProcessorTasklet}. All processors do it concurrently.
      */
     void phase2DoneForTasklet() {
         int newRemainingTasklets = numRemainingTasklets.decrementAndGet();
