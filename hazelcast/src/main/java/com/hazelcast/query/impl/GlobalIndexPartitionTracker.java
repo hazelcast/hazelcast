@@ -32,13 +32,19 @@ public class GlobalIndexPartitionTracker {
     public static final long STAMP_INVALID = -1;
     private static final long STAMP_INITIAL = 0;
 
-    /** Lock to serialize updates to the state. */
+    /**
+     * Lock to serialize updates to the state.
+     */
     private final ReentrantLock lock = new ReentrantLock();
 
-    /** Number of partitions in the cluster. */
+    /**
+     * Number of partitions in the cluster.
+     */
     private final int partitionCount;
 
-    /** Current state. */
+    /**
+     * Current state.
+     */
     private final AtomicReference<State> state;
 
     public GlobalIndexPartitionTracker(int partitionCount) {
@@ -54,7 +60,7 @@ public class GlobalIndexPartitionTracker {
      *
      * @param expectedPartitionIds expected partition IDs
      * @return stamp or {@code -1} if indexed partitions do not match expected partitions, or there is
-     *     an active partition update from {@link #beginPartitionUpdate()}
+     * an active partition update from {@link #beginPartitionUpdate()}
      */
     public long getPartitionStamp(PartitionIdSet expectedPartitionIds) {
         State state0 = state.get();
@@ -98,9 +104,9 @@ public class GlobalIndexPartitionTracker {
             State oldState = state.get();
 
             State newState = new State(
-                oldState.stamp + 1,
-                oldState.indexedPartitions,
-                oldState.pending + 1
+                    oldState.stamp + 1,
+                    oldState.indexedPartitions,
+                    oldState.pending + 1
             );
 
             state.set(newState);
@@ -134,9 +140,9 @@ public class GlobalIndexPartitionTracker {
             }
 
             State newState = new State(
-                oldState.stamp + 1,
-                newIndexedPartitions,
-                oldState.pending - 1
+                    oldState.stamp + 1,
+                    newIndexedPartitions,
+                    oldState.pending - 1
             );
 
             state.set(newState);
@@ -152,9 +158,9 @@ public class GlobalIndexPartitionTracker {
             State oldState = state.get();
 
             State newState = new State(
-                oldState.stamp + 1,
-                new PartitionIdSet(partitionCount),
-                0
+                    oldState.stamp + 1,
+                    new PartitionIdSet(partitionCount),
+                    0
             );
 
             state.set(newState);
@@ -163,23 +169,45 @@ public class GlobalIndexPartitionTracker {
         }
     }
 
+    @Override
+    public String toString() {
+        return "GlobalIndexPartitionTracker{"
+                + "partitionCount=" + partitionCount
+                + ", state=" + state + '}';
+    }
+
     /**
      * State of the indexed partitions.
      */
     private static final class State {
-        /** Monotonically increasing stamp, that is incremented on every partition info update. */
+        /**
+         * Monotonically increasing stamp, that is incremented on every partition info update.
+         */
         private final long stamp;
 
-        /** Partitions that are currently indexed. */
+        /**
+         * Partitions that are currently indexed.
+         */
         private final PartitionIdSet indexedPartitions;
 
-        /** The number of partitions that are being updated at the moment (indexing or deindexing).  */
+        /**
+         * The number of partitions that are being updated at the moment (indexing or deindexing).
+         */
         private final int pending;
 
         private State(long stamp, PartitionIdSet indexedPartitions, int pending) {
             this.stamp = stamp;
             this.indexedPartitions = indexedPartitions;
             this.pending = pending;
+        }
+
+        @Override
+        public String toString() {
+            return "State{" +
+                    "stamp=" + stamp
+                    + ", indexedPartitions=" + indexedPartitions
+                    + ", pending=" + pending
+                    + '}';
         }
     }
 }

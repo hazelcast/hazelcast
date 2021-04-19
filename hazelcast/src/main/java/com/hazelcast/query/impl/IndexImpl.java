@@ -99,4 +99,11 @@ public class IndexImpl extends AbstractIndex {
     public boolean validatePartitionStamp(long stamp) {
         return partitionTracker.validatePartitionStamp(stamp);
     }
+
+    @Override
+    public String toString() {
+        return "IndexImpl{"
+                + "partitionTracker=" + partitionTracker
+                + "} " + super.toString();
+    }
 }
