@@ -51,6 +51,7 @@ import java.util.UUID;
 import static com.hazelcast.test.Accessors.getAllIndexes;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -439,11 +440,11 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
                 // Double check: if we still see same partition distribution
                 assertEquals(memberToPartitions, toMemberToPartitionsMap(instances[0]));
 
-                assertEquals("MemberPartitions={size=" + expectedPartitions.size() + ", partitions=" + expectedPartitions
+                assertNotEquals("MemberPartitions={size=" + expectedPartitions.size() + ", partitions=" + expectedPartitions
                                 + "}, " + index.toString(), GlobalIndexPartitionTracker.STAMP_INVALID,
                         index.getPartitionStamp(expectedPartitions));
             }
-        }, 1);
+        });
     }
 
     private Map<UUID, PartitionIdSet> toMemberToPartitionsMap(HazelcastInstance instance1) {
