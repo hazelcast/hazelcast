@@ -142,14 +142,15 @@ public class CaseOperationIntegrationTest extends ExpressionTestSupport {
                 SqlColumnType.BIGINT,
                 (long) Byte.MAX_VALUE);
 
+        LocalDateTime dateTime = LocalDateTime.of(2021, 1, 1, 10, 0, 0);
         checkValue0(
                 "select case this \n"
                         + "when 1 then CAST('2021-01-01T10:00' AS TIMESTAMP) \n"
                         + "when 2 then CAST('2021-01-01' AS DATE) \n"
-                        + "else CAST('2021-01-01T10:00+02:00' as TIMESTAMP WITH LOCAL TIME ZONE) \n"
+                        + "else CAST('2021-01-01T10:00+00:00' as TIMESTAMP WITH LOCAL TIME ZONE) \n"
                         + "end from map",
                 SqlColumnType.TIMESTAMP_WITH_TIME_ZONE,
-                OffsetDateTime.of(LocalDateTime.of(2021, 1, 1, 10, 0, 0), ZoneOffset.ofHours(2)));
+                OffsetDateTime.of(dateTime, ZoneId.systemDefault().getRules().getOffset(dateTime)));
     }
 
     @Test
@@ -333,7 +334,8 @@ public class CaseOperationIntegrationTest extends ExpressionTestSupport {
                 OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC),
                 ExpressionTypes.LOCAL_DATE_TIME, ExpressionTypes.OFFSET_DATE_TIME
         );
-        checkValue0(sql, SqlColumnType.TIMESTAMP_WITH_TIME_ZONE, OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.ofHours(2)));
+        LocalDateTime dateTime = LocalDateTime.of(2020, 12, 30, 14, 2, 0);
+        checkValue0(sql, SqlColumnType.TIMESTAMP_WITH_TIME_ZONE, OffsetDateTime.of(dateTime, ZoneId.systemDefault().getRules().getOffset(dateTime)));
 
         putBiValue(
                 OffsetDateTime.of(LocalDateTime.of(2020, 12, 30, 14, 2, 0), ZoneOffset.UTC),
