@@ -129,7 +129,7 @@ public class MappingStorage {
         return nodeEngine.getHazelcastInstance().getReplicatedMap(CATALOG_MAP_NAME);
     }
 
-    static abstract class EntryListenerAdapter implements EntryListener<String, Mapping> {
+    abstract static class EntryListenerAdapter implements EntryListener<String, Mapping> {
 
         @Override
         public final void entryAdded(EntryEvent<String, Mapping> event) {
