@@ -120,6 +120,7 @@
         <scala.version>2.12</scala.version>
         <slf4j.api.version>1.7.30</slf4j.api.version>
         <spring.version>4.3.0.RELEASE</spring.version>
+        <snakeyaml.version>1.26</snakeyaml.version>
         <snakeyaml.engine.version>2.1</snakeyaml.engine.version>
 
         <!-- test dependencies -->
@@ -1230,6 +1231,11 @@
                 <scope>import</scope>
             </dependency>
 
+            <dependency>
+                <groupId>org.yaml</groupId>
+                <artifactId>snakeyaml</artifactId>
+                <version>${snakeyaml.version}</version>
+            </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
