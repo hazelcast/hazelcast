@@ -50,7 +50,7 @@ public class SqlPlanCacheTest extends SqlTestSupport {
 
         createMapping("map2", "m", "id", PersonId.class, "varchar");
         sqlService.execute("DROP MAPPING map1");
-        assertTrueEventually(() -> assertThat(planCache(instance()).size()).isZero());
+        assertThat(planCache(instance()).size()).isZero();
     }
 
     @Test
@@ -60,7 +60,7 @@ public class SqlPlanCacheTest extends SqlTestSupport {
         assertThat(planCache(instance()).size()).isEqualTo(1);
 
         createMapping("map", "m2", "id", PersonId.class, "varchar");
-        assertTrueEventually(() -> assertThat(planCache(instance()).size()).isZero());
+        assertThat(planCache(instance()).size()).isZero();
     }
 
     @Test
@@ -70,7 +70,7 @@ public class SqlPlanCacheTest extends SqlTestSupport {
         assertThat(planCache(instance()).size()).isEqualTo(1);
 
         createMapping("map", "m", "id2", PersonId.class, "varchar");
-        assertTrueEventually(() -> assertThat(planCache(instance()).size()).isZero());
+        assertThat(planCache(instance()).size()).isZero();
     }
 
     @Test
@@ -80,7 +80,7 @@ public class SqlPlanCacheTest extends SqlTestSupport {
         assertThat(planCache(instance()).size()).isEqualTo(1);
 
         createMapping("map", "m", "id", 1, 2, "varchar");
-        assertTrueEventually(() -> assertThat(planCache(instance()).size()).isZero());
+        assertThat(planCache(instance()).size()).isZero();
     }
 
     @Test
@@ -90,7 +90,18 @@ public class SqlPlanCacheTest extends SqlTestSupport {
         assertThat(planCache(instance()).size()).isEqualTo(1);
 
         createMapping("map", "m", "id", PersonId.class, JSON_FORMAT);
-        assertTrueEventually(() -> assertThat(planCache(instance()).size()).isZero());
+        assertThat(planCache(instance()).size()).isZero();
+    }
+
+    @Test
+    public void test_conflictingSchemas() {
+        createMapping("map", "m", "id", PersonId.class, "varchar");
+        sqlService.execute("SELECT * FROM map");
+        assertThat(planCache(instance()).size()).isEqualTo(1);
+
+        instance().getMap("map").put(1, "1");
+        sqlService.execute("DROP MAPPING map");
+        assertThat(planCache(instance()).size()).isZero();
     }
 
     @SuppressWarnings("SameParameterValue")

@@ -47,7 +47,7 @@ public class SqlPlanCacheTest extends SqlTestSupport {
 
         createMapping("file2", "id", "file.csv");
         sqlService.execute("DROP MAPPING file1");
-        assertTrueEventually(() -> assertThat(planCache(instance()).size()).isZero());
+        assertThat(planCache(instance()).size()).isZero();
     }
 
     @Test
@@ -57,7 +57,7 @@ public class SqlPlanCacheTest extends SqlTestSupport {
         assertThat(planCache(instance()).size()).isEqualTo(1);
 
         createMapping("file", "name", "file.csv");
-        assertTrueEventually(() -> assertThat(planCache(instance()).size()).isZero());
+        assertThat(planCache(instance()).size()).isZero();
     }
 
     @Test
@@ -67,13 +67,13 @@ public class SqlPlanCacheTest extends SqlTestSupport {
         assertThat(planCache(instance()).size()).isEqualTo(1);
 
         createMapping("file", "id", "*");
-        assertTrueEventually(() -> assertThat(planCache(instance()).size()).isZero());
+        assertThat(planCache(instance()).size()).isZero();
     }
 
     @Test
     public void test_tableFunction() {
         sqlService.execute("SELECT * FROM TABLE(CSV_FILE('" + RESOURCES_PATH + "', 'file.csv'))");
-        assertThat(planCache(instance()).size()).isEqualTo(0);
+        assertThat(planCache(instance()).size()).isZero();
     }
 
     @Test
@@ -82,7 +82,7 @@ public class SqlPlanCacheTest extends SqlTestSupport {
 
         sqlService.execute("CREATE JOB job AS "
                 + "SINK INTO map SELECT \"int\", string FROM TABLE(JSON_FILE('" + RESOURCES_PATH + "', 'file.json'))");
-        assertThat(planCache(instance()).size()).isEqualTo(0);
+        assertThat(planCache(instance()).size()).isZero();
     }
 
     private static void createMapping(String name, String fieldName, String glob) {

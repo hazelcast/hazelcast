@@ -106,6 +106,9 @@ public class SqlCatalogTest {
             return tables;
         }
 
+        @Override
+        public void registerListener(TableListener listener) {
+        }
     }
 
     private static class MockTable extends Table {

@@ -275,4 +275,8 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
             this.hdError = hdError;
         }
     }
+
+    @Override
+    public void registerListener(TableListener listener) {
+    }
 }
