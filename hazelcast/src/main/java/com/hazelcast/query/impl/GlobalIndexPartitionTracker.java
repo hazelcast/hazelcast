@@ -203,8 +203,8 @@ public class GlobalIndexPartitionTracker {
 
         @Override
         public String toString() {
-            return "State{" +
-                    "stamp=" + stamp
+            return "State{"
+                    + "stamp=" + stamp
                     + ", indexedPartitions=" + indexedPartitions
                     + ", pending=" + pending
                     + '}';
