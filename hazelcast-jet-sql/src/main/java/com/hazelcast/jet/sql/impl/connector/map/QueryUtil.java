@@ -94,9 +94,9 @@ final class QueryUtil {
 
     static Projection<Entry<Object, Object>, Object[]> toProjection(
             KvRowProjector.Supplier rightRowProjectorSupplier,
-            List<Object> arguments
+            ExpressionEvalContext evalContext
     ) {
-        return new JoinProjection(rightRowProjectorSupplier, arguments);
+        return new JoinProjection(rightRowProjectorSupplier, evalContext);
     }
 
     @SuppressFBWarnings(
@@ -116,9 +116,10 @@ final class QueryUtil {
         private JoinProjection() {
         }
 
-        private JoinProjection(KvRowProjector.Supplier rightRowProjectorSupplier, List<Object> arguments) {
+        private JoinProjection(KvRowProjector.Supplier rightRowProjectorSupplier, ExpressionEvalContext evalContext) {
             this.rightRowProjectorSupplier = rightRowProjectorSupplier;
-            this.arguments = arguments;
+            this.evalContext = evalContext;
+            this.arguments = evalContext.getArguments();
         }
 
         @Override

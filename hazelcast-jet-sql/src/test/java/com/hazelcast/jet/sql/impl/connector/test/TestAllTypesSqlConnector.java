@@ -32,7 +32,6 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.Table;
@@ -150,11 +149,12 @@ public class TestAllTypesSqlConnector implements SqlConnector {
             @Nonnull List<Expression<?>> projection
     ) {
         BatchSource<Object[]> source = SourceBuilder
-                .batch("batch", ctx -> {
-                    ExpressionEvalContext evalContext = SimpleExpressionEvalContext.from(ctx);
-                    return new TestAllTypesDataGenerator(VALUES, predicate, projection, evalContext);
+                .batch("batch", SimpleExpressionEvalContext::from)
+                .<Object[]>fillBufferFn((ctx, buf) -> {
+                    Object[] row = ExpressionUtil.evaluate(predicate, projection, VALUES, ctx);
+                    buf.add(row);
+                    buf.close();
                 })
-                .fillBufferFn(TestAllTypesDataGenerator::fillBuffer)
                 .build();
         ProcessorMetaSupplier pms = ((BatchSourceTransform<Object[]>) source).metaSupplier;
         return dag.newUniqueVertex(table.toString(), pms);
@@ -201,25 +201,6 @@ public class TestAllTypesSqlConnector implements SqlConnector {
         @Override
         public int hashCode() {
             return Objects.hash(schemaName, name);
-        }
-    }
-
-    private static final class TestAllTypesDataGenerator {
-
-        private final Object[] row;
-
-        private TestAllTypesDataGenerator(
-                Object[] row,
-                Expression<Boolean> predicate,
-                List<Expression<?>> projections,
-                ExpressionEvalContext evalContext
-        ) {
-            this.row = ExpressionUtil.evaluate(predicate, projections, row, evalContext);
-        }
-
-        private void fillBuffer(SourceBuilder.SourceBuffer<Object[]> buffer) {
-            buffer.add(row);
-            buffer.close();
         }
     }
 }

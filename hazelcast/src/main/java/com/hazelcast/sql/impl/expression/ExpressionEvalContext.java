@@ -18,6 +18,8 @@ package com.hazelcast.sql.impl.expression;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 
+import java.util.List;
+
 /**
  * Defines expression evaluation context contract for SQL {@link Expression
  * expressions}.
@@ -32,7 +34,13 @@ public interface ExpressionEvalContext {
     Object getArgument(int index);
 
     /**
+     * Return all the arguments.
+     */
+    List<Object> getArguments();
+
+    /**
      * @return serialization service
      */
     InternalSerializationService getSerializationService();
+
 }

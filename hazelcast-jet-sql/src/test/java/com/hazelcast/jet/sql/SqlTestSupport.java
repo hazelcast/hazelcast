@@ -111,7 +111,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
      * Suitable for streaming queries that don't terminate.
      *
      * @param sql          The query
-     * @param arguments   The query arguments
+     * @param arguments    The query arguments
      * @param expectedRows Expected rows
      */
     public static void assertRowsEventuallyInAnyOrder(String sql, List<Object> arguments, Collection<Row> expectedRows) {
