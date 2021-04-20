@@ -34,6 +34,8 @@ public class SqlDeleteBySingleKey extends SqlTestSupport {
         checkUpdateCount("delete from test_map where __key = 1", 1);
         put(1);
         checkUpdateCount("delete from test_map where 1 = __key", 1);
+        put(1);
+        checkUpdateCount("delete from test_map where 2 = __key", 0);
     }
 
     private void checkUpdateCount(String sql, int expected) {

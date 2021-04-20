@@ -28,16 +28,24 @@ import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.optimizer.PlanCheckContext;
 import com.hazelcast.sql.impl.SqlErrorCode;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.optimizer.PlanKey;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.security.SqlSecurityContext;
+import com.hazelcast.sql.impl.type.QueryDataType;
+import org.apache.calcite.rel.RelRoot;
+import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlBasicCall;
+import org.apache.calcite.sql.SqlDelete;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.validate.SqlValidator;
+import org.apache.calcite.sql2rel.SqlToRelConverter;
+import org.apache.calcite.sql2rel.StandardConvertletTable;
 
 import java.security.Permission;
 import java.util.List;
@@ -574,19 +582,21 @@ abstract class JetPlan extends SqlPlan {
 
     static class DeletePlan extends JetPlan {
 
-        private final SqlNode targetTable;
-        private final SqlNode condition;
+        private final SqlDelete delete;
+        private final SqlValidator validator;
         private final JetPlanExecutor planExecutor;
 
-        public DeletePlan(PlanKey planKey, SqlNode targetTable, SqlNode condition, JetPlanExecutor planExecutor) {
+        public DeletePlan(PlanKey planKey, SqlDelete delete, SqlValidator validator, JetPlanExecutor planExecutor) {
             super(planKey);
-            this.targetTable = targetTable;
-            this.condition = condition;
+            this.delete = delete;
+            this.validator = validator;
             this.planExecutor = planExecutor;
         }
 
         @Override
         SqlResult execute(QueryId queryId) {
+            SqlNode targetTable = delete.getTargetTable();
+            SqlNode condition = delete.getCondition();
             assert targetTable instanceof SqlIdentifier;
             assert condition instanceof SqlBasicCall;
             assert condition.getKind() == SqlKind.EQUALS;
@@ -595,12 +605,23 @@ abstract class JetPlan extends SqlPlan {
 
             boolean foundKey = false;
             Object key = null;
-            for (SqlNode node : ((SqlBasicCall) condition).getOperandList()) {
+
+            for (SqlNode node : ((SqlBasicCall) delete.getSourceSelect().getWhere()).getOperandList()) {
                 if (node instanceof SqlIdentifier) {
-                    foundKey = ((SqlIdentifier) node).getSimple().equals("__key");
+                    foundKey = ((SqlIdentifier) node).names.contains("__key");
                 } else if (node instanceof SqlLiteral) {
-                    // TODO: type inference/coercion and check
-                    key = ((SqlLiteral)node).getValue();
+                    RelDataType type = validator.getValidatedNodeType(node);
+                    QueryDataType queryDataType = HazelcastTypeUtils.toHazelcastType(type.getSqlTypeName());
+                    key = queryDataType.convert(((SqlLiteral) node).getValue());
+                } else if (node instanceof SqlBasicCall) {
+                    assert node.getKind() == SqlKind.CAST;
+                    for (SqlNode sqlNode : ((SqlBasicCall) node).getOperandList()) {
+                        if (sqlNode instanceof SqlLiteral) {
+                            RelDataType type = validator.getValidatedNodeType(node);
+                            QueryDataType queryDataType = HazelcastTypeUtils.toHazelcastType(type.getSqlTypeName());
+                            key = queryDataType.convert(((SqlLiteral) sqlNode).getValue());
+                        }
+                    }
                 }
             }
 

@@ -78,15 +78,9 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelShuttleImpl;
 import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.core.TableScan;
-import org.apache.calcite.sql.SqlCall;
-import org.apache.calcite.sql.SqlDataTypeSpec;
+import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlDelete;
-import org.apache.calcite.sql.SqlDynamicParam;
-import org.apache.calcite.sql.SqlIdentifier;
-import org.apache.calcite.sql.SqlIntervalQualifier;
-import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
-import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.parser.SqlParserImplFactory;
 import org.apache.calcite.sql.util.SqlVisitor;
 import org.apache.calcite.sql.validate.SqlConformance;
@@ -166,7 +160,8 @@ class JetSqlBackend implements SqlBackend {
 
         PlanKey planKey = new PlanKey(task.getSearchPaths(), task.getSql());
         if (node instanceof SqlDelete) {
-            return toDeletePlan(planKey, (SqlDelete) node);
+            SqlDelete sqlDelete = (SqlDelete) node;
+            return new DeletePlan(planKey, sqlDelete, parseResult.getValidator(), planExecutor);
         } else if (node instanceof SqlCreateMapping) {
             return toCreateMappingPlan(planKey, (SqlCreateMapping) node);
         } else if (node instanceof SqlDropMapping) {
@@ -194,10 +189,6 @@ class JetSqlBackend implements SqlBackend {
                     parseResult.isInfiniteRows()
             );
         }
-    }
-
-    private SqlPlan toDeletePlan(PlanKey planKey, SqlDelete node) {
-        return new DeletePlan(planKey, node.getTargetTable(), node.getCondition(), planExecutor);
     }
 
     private SqlPlan toCreateMappingPlan(PlanKey planKey, SqlCreateMapping sqlCreateMapping) {

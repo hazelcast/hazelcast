@@ -223,7 +223,7 @@ class JetPlanExecutor {
     }
 
     public SqlResult execute(QueryId queryId, String mapName, Object key) {
-        Object value = jetInstance.getMap(mapName).remove(((BigDecimal)key).intValue());
+        Object value = jetInstance.getMap(mapName).remove(key);
         return SqlResultImpl.createUpdateCountResult(value == null ? 0 : 1);
     }
 
