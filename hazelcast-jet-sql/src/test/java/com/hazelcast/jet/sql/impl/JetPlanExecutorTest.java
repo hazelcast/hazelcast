@@ -138,7 +138,7 @@ public class JetPlanExecutorTest {
                 emptyList()
         );
 
-        given(jetInstance.newJob(eq(dag), isA(JobConfig.class), eq(emptyList()))).willReturn(job);
+        given(jetInstance.newJob(eq(dag), isA(JobConfig.class))).willReturn(job);
 
         // when
         SqlResult result = planExecutor.execute(plan, queryId, emptyList());

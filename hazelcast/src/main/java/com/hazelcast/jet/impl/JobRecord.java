@@ -26,7 +26,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Set;
 
 import static com.hazelcast.jet.Util.idToString;
@@ -46,26 +45,17 @@ public class JobRecord implements IdentifiedDataSerializable {
     private String dagJson;
     private JobConfig config;
     private Set<String> ownedObservables;
-    private List<Object> sqlArguments;
 
     public JobRecord() {
     }
 
-    public JobRecord(
-            long jobId,
-            Data dag,
-            String dagJson,
-            JobConfig config,
-            Set<String> ownedObservables,
-            List<Object> sqlArguments
-    ) {
+    public JobRecord(long jobId, Data dag, String dagJson, JobConfig config, Set<String> ownedObservables) {
         this.jobId = jobId;
         this.creationTime = Clock.currentTimeMillis();
         this.dag = dag;
         this.dagJson = dagJson;
         this.config = config;
         this.ownedObservables = ownedObservables;
-        this.sqlArguments = sqlArguments;
     }
 
     public long getJobId() {
@@ -97,10 +87,6 @@ public class JobRecord implements IdentifiedDataSerializable {
         return ownedObservables;
     }
 
-    public List<Object> getSqlArguments() {
-        return sqlArguments;
-    }
-
     @Override
     public int getFactoryId() {
         return JetInitDataSerializerHook.FACTORY_ID;
@@ -116,10 +102,9 @@ public class JobRecord implements IdentifiedDataSerializable {
         out.writeLong(jobId);
         out.writeLong(creationTime);
         IOUtil.writeData(out, dag);
-        out.writeString(dagJson);
+        out.writeUTF(dagJson);
         out.writeObject(config);
         out.writeObject(ownedObservables);
-        out.writeObject(sqlArguments);
     }
 
     @Override
@@ -127,10 +112,9 @@ public class JobRecord implements IdentifiedDataSerializable {
         jobId = in.readLong();
         creationTime = in.readLong();
         dag = IOUtil.readData(in);
-        dagJson = in.readString();
+        dagJson = in.readUTF();
         config = in.readObject();
         ownedObservables = in.readObject();
-        sqlArguments = in.readObject();
     }
 
     @Override
@@ -142,7 +126,6 @@ public class JobRecord implements IdentifiedDataSerializable {
                 ", dagJson=" + dagJson +
                 ", config=" + config +
                 ", ownedObservables=" + ownedObservables +
-                ", sqlArguments=" + sqlArguments +
                 '}';
     }
 }

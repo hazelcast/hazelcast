@@ -31,7 +31,7 @@ public class JetSubmitJobMessageTask extends AbstractJetMessageTask<JetSubmitJob
 
     @Override
     protected Operation prepareOperation() {
-        return new SubmitJobOperation(parameters.jobId, parameters.dag, parameters.jobConfig, parameters.sqlArguments);
+        return new SubmitJobOperation(parameters.jobId, parameters.dag, parameters.jobConfig);
     }
 
     @Override

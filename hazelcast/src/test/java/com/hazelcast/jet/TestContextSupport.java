@@ -36,7 +36,6 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
-import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -100,7 +99,7 @@ public final class TestContextSupport {
                 context = new ProcCtx(c.jetInstance(), c.jobId(), c.executionId(), c.jobConfig(),
                         c.logger(), c.vertexName(), 1, 1, c.processingGuarantee(),
                         c.localParallelism(), 1, c.memberCount(), new ConcurrentHashMap<>(),
-                        (InternalSerializationService) nodeEngine.getSerializationService(), emptyList());
+                        (InternalSerializationService) nodeEngine.getSerializationService());
             }
             delegate.init(context);
         }
@@ -121,8 +120,7 @@ public final class TestContextSupport {
                 context = new ProcCtx(c.jetInstance(), c.jobId(), c.executionId(), c.jobConfig(),
                         c.logger(), c.vertexName(), c.localProcessorIndex(), c.globalProcessorIndex(),
                         c.processingGuarantee(), c.localParallelism(), c.memberIndex(), c.memberCount(),
-                        new ConcurrentHashMap<>(), (InternalSerializationService) nodeEngine.getSerializationService(),
-                        emptyList());
+                        new ConcurrentHashMap<>(), (InternalSerializationService) nodeEngine.getSerializationService());
             }
             return context;
         }

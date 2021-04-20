@@ -76,7 +76,6 @@ import static com.hazelcast.jet.core.processor.Processors.noopP;
 import static com.hazelcast.jet.impl.JobExecutionRecord.NO_SNAPSHOT;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
-import static java.util.Collections.emptyList;
 import static java.util.Collections.nCopies;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -431,7 +430,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         JetService jetService = getJetService(instance());
         final Map<MemberInfo, ExecutionPlan> executionPlans =
                 ExecutionPlanBuilder.createExecutionPlans(nodeEngineImpl, membersView, dag, 1, 1,
-                        new JobConfig(), emptyList(), NO_SNAPSHOT);
+                        new JobConfig(), NO_SNAPSHOT);
         ExecutionPlan executionPlan = executionPlans.get(membersView.getMember(localAddress));
         long jobId = 0;
         long executionId = 1;

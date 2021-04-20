@@ -73,59 +73,40 @@ public abstract class AbstractJetInstance implements JetInstance {
 
     @Nonnull @Override
     public Job newJob(@Nonnull DAG dag, @Nonnull JobConfig config) {
-        return newJob(dag, config, emptyList());
-    }
-
-    @Nonnull
-    public Job newJob(@Nonnull DAG dag, @Nonnull JobConfig config, @Nonnull List<Object> sqlArguments) {
         long jobId = newJobId();
-        return newJob(jobId, dag, config, sqlArguments);
+        return newJob(jobId, dag, config);
     }
 
     @Nonnull
-    public Job newJob(long jobId, @Nonnull DAG dag, @Nonnull JobConfig config, @Nonnull List<Object> sqlArguments) {
+    public Job newJob(long jobId, @Nonnull DAG dag, @Nonnull JobConfig config) {
         uploadResources(jobId, config);
-        return newJobProxy(jobId, dag, config, sqlArguments);
+        return newJobProxy(jobId, dag, config);
     }
 
     @Nonnull @Override
     public Job newJob(@Nonnull Pipeline pipeline, @Nonnull JobConfig config) {
-        return newJob(pipeline, config, emptyList());
-    }
-
-    @Nonnull
-    public Job newJob(@Nonnull Pipeline pipeline, @Nonnull JobConfig config, @Nonnull List<Object> sqlArguments) {
         long jobId = newJobId();
-        return newJob(jobId, pipeline, config, sqlArguments);
+        return newJob(jobId, pipeline, config);
     }
 
     @Nonnull
-    public Job newJob(
-            long jobId,
-            @Nonnull Pipeline pipeline,
-            @Nonnull JobConfig config,
-            @Nonnull List<Object> sqlArguments
-    ) {
+    public Job newJob(long jobId, @Nonnull Pipeline pipeline, @Nonnull JobConfig config) {
         config = config.attachAll(((PipelineImpl) pipeline).attachedFiles());
         uploadResources(jobId, config);
-        return newJobProxy(jobId, pipeline, config, sqlArguments);
+        return newJobProxy(jobId, pipeline, config);
     }
 
-    private Job newJobInt(@Nonnull Object jobDefinition, @Nonnull JobConfig config, @Nonnull List<Object> sqlArguments) {
+    private Job newJobInt(@Nonnull Object jobDefinition, @Nonnull JobConfig config) {
         if (jobDefinition instanceof PipelineImpl) {
-            return newJob((PipelineImpl) jobDefinition, config, sqlArguments);
+            return newJob((PipelineImpl) jobDefinition, config);
         } else {
-            return newJob((DAG) jobDefinition, config, sqlArguments);
+            return newJob((DAG) jobDefinition, config);
         }
     }
 
-    private Job newJobIfAbsent(
-            @Nonnull Object jobDefinition,
-            @Nonnull JobConfig config,
-            @Nonnull List<Object> sqlArguments
-    ) {
+    private Job newJobIfAbsent(@Nonnull Object jobDefinition, @Nonnull JobConfig config) {
         if (config.getName() == null) {
-            return newJobInt(jobDefinition, config, sqlArguments);
+            return newJobInt(jobDefinition, config);
         } else {
             while (true) {
                 Job job = getJob(config.getName());
@@ -136,7 +117,7 @@ public abstract class AbstractJetInstance implements JetInstance {
                     }
                 }
                 try {
-                    return newJobInt(jobDefinition, config, sqlArguments);
+                    return newJobInt(jobDefinition, config);
                 } catch (JobAlreadyExistsException e) {
                     logFine(getLogger(), "Could not submit job with duplicate name: %s, ignoring", config.getName());
                 }
@@ -146,17 +127,12 @@ public abstract class AbstractJetInstance implements JetInstance {
 
     @Nonnull @Override
     public Job newJobIfAbsent(@Nonnull DAG dag, @Nonnull JobConfig config) {
-        return newJobIfAbsent(dag, config, emptyList());
-    }
-
-    @Nonnull
-    public Job newJobIfAbsent(@Nonnull DAG dag, @Nonnull JobConfig config, @Nonnull List<Object> sqlArguments) {
-        return newJobIfAbsent((Object) dag, config, sqlArguments);
+        return newJobIfAbsent((Object) dag, config);
     }
 
     @Nonnull @Override
     public Job newJobIfAbsent(@Nonnull Pipeline pipeline, @Nonnull JobConfig config) {
-        return newJobIfAbsent(pipeline, config, emptyList());
+        return newJobIfAbsent((Object) pipeline, config);
     }
 
     @Override
@@ -261,7 +237,7 @@ public abstract class AbstractJetInstance implements JetInstance {
 
     public abstract Job newJobProxy(long jobId);
 
-    public abstract Job newJobProxy(long jobId, Object jobDefinition, JobConfig config, List<Object> sqlArguments);
+    public abstract Job newJobProxy(long jobId, Object jobDefinition, JobConfig config);
 
     public abstract List<Long> getJobIdsByName(String name);
 }

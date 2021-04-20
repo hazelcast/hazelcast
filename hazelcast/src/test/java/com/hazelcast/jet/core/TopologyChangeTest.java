@@ -511,7 +511,7 @@ public class TopologyChangeTest extends JetTestSupport {
             memberInfos.add(new MemberInfo(getNode(instances[i]).getLocalMember()));
         }
 
-        JobRecord jobRecord = new JobRecord(jobId, null, "", new JobConfig(), Collections.emptySet(), Collections.emptyList());
+        JobRecord jobRecord = new JobRecord(jobId, null, "", new JobConfig(), Collections.emptySet());
         instances[0].getMap(JOB_RECORDS_MAP_NAME).put(jobId, jobRecord);
 
         InitExecutionOperation op = new InitExecutionOperation(jobId, executionId, memberListVersion, memberInfos, null);

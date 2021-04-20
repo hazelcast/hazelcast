@@ -69,6 +69,7 @@ public class JobConfig implements IdentifiedDataSerializable {
 
     private Map<String, ResourceConfig> resourceConfigs = new LinkedHashMap<>();
     private Map<String, String> serializerConfigs = new HashMap<>();
+    private Map<String, Object> arguments = new HashMap<>();
     private JobClassLoaderFactory classLoaderFactory;
     private String initialSnapshotName;
 
@@ -1007,6 +1008,34 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
+     * Associates the specified value with the specified key. The mapping
+     * will be available to the job while it's executing in the Jet cluster.
+     *
+     * @param key – key with which the specified value is to be associated
+     * @param value – value to be associated with the specified key
+     * @return {@code this} instance for fluent API
+     * @since 5.0
+     */
+    @Nonnull
+    public JobConfig setArgument(String key, Object value) {
+        arguments.put(key, value);
+        return this;
+    }
+
+    /**
+     * Returns the value to which the specified key is mapped, or null if there is
+     * no mapping for the key.
+     *
+     * @param key - the key whose associated value is to be returned
+     * @since 5.0
+     */
+    @Nullable
+    @SuppressWarnings("unchecked")
+    public <T> T getArgument(String key) {
+        return (T) arguments.get(key);
+    }
+
+    /**
      * Sets a custom {@link JobClassLoaderFactory} that will be used to load job
      * classes and resources on Jet members.
      *
@@ -1127,7 +1156,7 @@ public class JobConfig implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeObject(processingGuarantee);
         out.writeLong(snapshotIntervalMillis);
         out.writeBoolean(autoScaling);
@@ -1135,8 +1164,9 @@ public class JobConfig implements IdentifiedDataSerializable {
         out.writeBoolean(splitBrainProtectionEnabled);
         SerializationUtil.writeMap(resourceConfigs, out);
         out.writeObject(serializerConfigs);
+        out.writeObject(arguments);
         out.writeObject(classLoaderFactory);
-        out.writeUTF(initialSnapshotName);
+        out.writeString(initialSnapshotName);
         out.writeBoolean(enableMetrics);
         out.writeBoolean(storeMetricsAfterJobCompletion);
     }
@@ -1151,6 +1181,7 @@ public class JobConfig implements IdentifiedDataSerializable {
         splitBrainProtectionEnabled = in.readBoolean();
         resourceConfigs = SerializationUtil.readMap(in);
         serializerConfigs = in.readObject();
+        arguments = in.readObject();
         classLoaderFactory = in.readObject();
         initialSnapshotName = in.readUTF();
         enableMetrics = in.readBoolean();
@@ -1174,6 +1205,7 @@ public class JobConfig implements IdentifiedDataSerializable {
                 && Objects.equals(name, jobConfig.name) && processingGuarantee == jobConfig.processingGuarantee
                 && Objects.equals(resourceConfigs, jobConfig.resourceConfigs)
                 && Objects.equals(serializerConfigs, jobConfig.serializerConfigs)
+                && Objects.equals(arguments, jobConfig.arguments)
                 && Objects.equals(classLoaderFactory, jobConfig.classLoaderFactory)
                 && Objects.equals(initialSnapshotName, jobConfig.initialSnapshotName);
     }
@@ -1182,7 +1214,7 @@ public class JobConfig implements IdentifiedDataSerializable {
     public int hashCode() {
         return Objects.hash(name, processingGuarantee, snapshotIntervalMillis, autoScaling, suspendOnFailure,
                 splitBrainProtectionEnabled, enableMetrics, storeMetricsAfterJobCompletion, resourceConfigs,
-                serializerConfigs, classLoaderFactory, initialSnapshotName);
+                serializerConfigs, arguments, classLoaderFactory, initialSnapshotName);
     }
 
     @Override
@@ -1192,7 +1224,8 @@ public class JobConfig implements IdentifiedDataSerializable {
                 ", splitBrainProtectionEnabled=" + splitBrainProtectionEnabled + ", enableMetrics=" + enableMetrics +
                 ", storeMetricsAfterJobCompletion=" + storeMetricsAfterJobCompletion +
                 ", resourceConfigs=" + resourceConfigs + ", serializerConfigs=" + serializerConfigs +
-                ", classLoaderFactory=" + classLoaderFactory + ", initialSnapshotName=" + initialSnapshotName + "}";
+                ", arguments=" + arguments + ", classLoaderFactory=" + classLoaderFactory +
+                ", initialSnapshotName=" + initialSnapshotName + "}";
     }
 
 }

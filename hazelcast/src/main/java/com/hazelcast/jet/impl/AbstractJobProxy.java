@@ -31,7 +31,6 @@ import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 
 import javax.annotation.Nonnull;
-import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
@@ -72,11 +71,11 @@ public abstract class AbstractJobProxy<T> implements Job {
         this.logger = loggingService().getLogger(Job.class);
     }
 
-    AbstractJobProxy(T container, long jobId, Object jobDefinition, JobConfig config, List<Object> sqlArguments) {
+    AbstractJobProxy(T container, long jobId, Object jobDefinition, JobConfig config) {
         this(container, jobId);
 
         try {
-            doSubmitJob(jobDefinition, config, sqlArguments);
+            doSubmitJob(jobDefinition, config);
             joinedJob.set(true);
             doInvokeJoinJob();
         } catch (Throwable t) {
@@ -189,11 +188,7 @@ public abstract class AbstractJobProxy<T> implements Job {
     /**
      * Submit and join job with a given DAG and config
      */
-    protected abstract CompletableFuture<Void> invokeSubmitJob(
-            Data jobDefinition,
-            JobConfig config,
-            List<Object> sqlArguments
-    );
+    protected abstract CompletableFuture<Void> invokeSubmitJob(Data jobDefinition, JobConfig config);
 
     /**
      * Join already existing job
@@ -224,10 +219,10 @@ public abstract class AbstractJobProxy<T> implements Job {
         return container;
     }
 
-    private void doSubmitJob(Object jobDefinition, JobConfig config, List<Object> sqlArguments) {
+    private void doSubmitJob(Object jobDefinition, JobConfig config) {
         NonCompletableFuture submitFuture = new NonCompletableFuture();
-        SubmitJobCallback callback = new SubmitJobCallback(submitFuture, jobDefinition, config, sqlArguments);
-        invokeSubmitJob(serializationService().toData(jobDefinition), config, sqlArguments).whenCompleteAsync(callback);
+        SubmitJobCallback callback = new SubmitJobCallback(submitFuture, jobDefinition, config);
+        invokeSubmitJob(serializationService().toData(jobDefinition), config).whenCompleteAsync(callback);
         submitFuture.join();
     }
 
@@ -294,24 +289,17 @@ public abstract class AbstractJobProxy<T> implements Job {
     private class SubmitJobCallback extends CallbackBase {
         private final Object jobDefinition;
         private final JobConfig config;
-        private final List<Object> sqlArguments;
 
-        SubmitJobCallback(
-                NonCompletableFuture future,
-                Object jobDefinition,
-                JobConfig config,
-                List<Object> sqlArguments
-        ) {
+        SubmitJobCallback(NonCompletableFuture future, Object jobDefinition, JobConfig config) {
             super(future);
             this.jobDefinition = jobDefinition;
             this.config = config;
-            this.sqlArguments = sqlArguments;
         }
 
         @Override
         protected void retryActionInt(Throwable t) {
             logger.fine("Resubmitting job " + idAndName() + " after " + t.getClass().getSimpleName());
-            invokeSubmitJob(serializationService().toData(jobDefinition), config, sqlArguments).whenCompleteAsync(this);
+            invokeSubmitJob(serializationService().toData(jobDefinition), config).whenCompleteAsync(this);
         }
 
         @Override

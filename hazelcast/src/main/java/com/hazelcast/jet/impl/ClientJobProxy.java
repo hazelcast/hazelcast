@@ -41,7 +41,6 @@ import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 
 import javax.annotation.Nonnull;
-import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
@@ -65,14 +64,8 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
         super(client, jobId);
     }
 
-    ClientJobProxy(
-            JetClientInstanceImpl client,
-            long jobId,
-            Object jobDefinition,
-            JobConfig config,
-            List<Object> sqlArguments
-    ) {
-        super(client, jobId, jobDefinition, config, sqlArguments);
+    ClientJobProxy(JetClientInstanceImpl client, long jobId, Object jobDefinition, JobConfig config) {
+        super(client, jobId, jobDefinition, config);
     }
 
     @Nonnull
@@ -109,10 +102,9 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
     }
 
     @Override
-    protected CompletableFuture<Void> invokeSubmitJob(Data dag, JobConfig config, List<Object> sqlArguments) {
+    protected CompletableFuture<Void> invokeSubmitJob(Data dag, JobConfig config) {
         Data configData = serializationService().toData(config);
-        Data sqlArgumentsData = serializationService().toData(sqlArguments);
-        ClientMessage request = JetSubmitJobCodec.encodeRequest(getId(), dag, configData, sqlArgumentsData);
+        ClientMessage request = JetSubmitJobCodec.encodeRequest(getId(), dag, configData);
         return invocation(request, masterUuid()).invoke().thenApply(c -> null);
     }
 

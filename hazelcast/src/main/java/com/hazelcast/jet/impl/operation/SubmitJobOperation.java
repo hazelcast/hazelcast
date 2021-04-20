@@ -17,10 +17,10 @@
 package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.internal.nio.IOUtil;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.internal.serialization.Data;
 
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
@@ -30,21 +30,19 @@ public class SubmitJobOperation extends AsyncJobOperation {
     // force serialization of fields to avoid sharing of the mutable instances if submitted to the master member
     private Data dag;
     private Data config;
-    private Data sqlArguments;
 
     public SubmitJobOperation() {
     }
 
-    public SubmitJobOperation(long jobId, Data dag, Data config, Data sqlArguments) {
+    public SubmitJobOperation(long jobId, Data dag, Data config) {
         super(jobId);
         this.dag = dag;
         this.config = config;
-        this.sqlArguments = sqlArguments;
     }
 
     @Override
     public CompletableFuture<Void> doRun() {
-        return getJobCoordinationService().submitJob(jobId(), dag, config, sqlArguments);
+        return getJobCoordinationService().submitJob(jobId(), dag, config);
     }
 
     @Override
@@ -57,7 +55,6 @@ public class SubmitJobOperation extends AsyncJobOperation {
         super.writeInternal(out);
         IOUtil.writeData(out, dag);
         IOUtil.writeData(out, config);
-        IOUtil.writeData(out, sqlArguments);
     }
 
     @Override
@@ -65,6 +62,5 @@ public class SubmitJobOperation extends AsyncJobOperation {
         super.readInternal(in);
         dag = IOUtil.readData(in);
         config = IOUtil.readData(in);
-        sqlArguments = IOUtil.readData(in);
     }
 }

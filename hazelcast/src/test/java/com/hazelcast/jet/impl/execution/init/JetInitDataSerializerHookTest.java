@@ -72,7 +72,7 @@ public class JetInitDataSerializerHookTest {
                 new Object[]{
                         "JobRecord",
                         new JobRecord(1, new HeapData(new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9}),
-                                "dagJson", new JobConfig(), Collections.emptySet(), Collections.emptyList()),
+                                "dagJson", new JobConfig(), Collections.emptySet()),
                         singleton("config")},
 
                 new Object[]{

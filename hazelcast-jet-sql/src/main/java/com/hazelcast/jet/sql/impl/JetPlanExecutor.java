@@ -51,6 +51,7 @@ import java.util.Objects;
 import java.util.concurrent.CancellationException;
 import java.util.stream.Stream;
 
+import static com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
 import static java.util.Collections.singletonList;
 
 class JetPlanExecutor {
@@ -81,10 +82,11 @@ class JetPlanExecutor {
 
     SqlResult execute(CreateJobPlan plan, List<Object> arguments) {
         List<Object> args = prepareArguments(plan.getParameterMetadata(), arguments);
+        JobConfig jobConfig = plan.getJobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, args);
         if (plan.isIfNotExists()) {
-            jetInstance.newJobIfAbsent(plan.getExecutionPlan().getDag(), plan.getJobConfig(), args);
+            jetInstance.newJobIfAbsent(plan.getExecutionPlan().getDag(), jobConfig);
         } else {
-            jetInstance.newJob(plan.getExecutionPlan().getDag(), plan.getJobConfig(), args);
+            jetInstance.newJob(plan.getExecutionPlan().getDag(), jobConfig);
         }
         return SqlResultImpl.createUpdateCountResult(0);
     }
@@ -182,13 +184,14 @@ class JetPlanExecutor {
 
     SqlResult execute(SelectOrSinkPlan plan, QueryId queryId, List<Object> arguments) {
         List<Object> args = prepareArguments(plan.getParameterMetadata(), arguments);
+        JobConfig jobConfig = new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, args);
 
         if (plan.isInsert()) {
             if (plan.isStreaming()) {
                 throw QueryException.error("Cannot execute a streaming DML statement without a CREATE JOB command");
             }
 
-            Job job = jetInstance.newJob(plan.getDag(), new JobConfig(), args);
+            Job job = jetInstance.newJob(plan.getDag(), jobConfig);
             job.join();
 
             return SqlResultImpl.createUpdateCountResult(0);
@@ -198,7 +201,7 @@ class JetPlanExecutor {
             Object oldValue = resultConsumerRegistry.put(jobId, queryResultProducer);
             assert oldValue == null : oldValue;
             try {
-                Job job = jetInstance.newJob(jobId, plan.getDag(), new JobConfig(), args);
+                Job job = jetInstance.newJob(jobId, plan.getDag(), jobConfig);
                 job.getFuture().whenComplete((r, t) -> {
                     if (t != null) {
                         int errorCode = t instanceof QueryException

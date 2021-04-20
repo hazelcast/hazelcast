@@ -221,7 +221,7 @@ public class MasterJobContext {
                 logger.fine("Building execution plan for " + mc.jobIdString());
                 Util.doWithClassLoader(classLoader, () ->
                         mc.setExecutionPlanMap(createExecutionPlans(mc.nodeEngine(), membersView, dag, mc.jobId(),
-                                mc.executionId(), mc.jobConfig(), mc.sqlArguments(), jobExecRec.ongoingSnapshotId())));
+                                mc.executionId(), mc.jobConfig(), jobExecRec.ongoingSnapshotId())));
 
                 logger.fine("Built execution plans for " + mc.jobIdString());
                 Set<MemberInfo> participants = mc.executionPlanMap().keySet();

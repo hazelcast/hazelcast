@@ -220,7 +220,7 @@ public class JobRepositoryTest extends JetTestSupport {
     }
 
     private JobRecord createJobRecord(long jobId, Data dag) {
-        return new JobRecord(jobId, dag, "", jobConfig, Collections.emptySet(), Collections.emptyList());
+        return new JobRecord(jobId, dag, "", jobConfig, Collections.emptySet());
     }
 
     private void sleepUntilJobExpires() {

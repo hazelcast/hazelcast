@@ -59,14 +59,8 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl> {
         super(nodeEngine, jobId);
     }
 
-    public JobProxy(
-            NodeEngineImpl engine,
-            long jobId,
-            Object jobDefinition,
-            JobConfig config,
-            List<Object> sqlArguments
-    ) {
-        super(engine, jobId, jobDefinition, config, sqlArguments);
+    public JobProxy(NodeEngineImpl engine, long jobId, Object jobDefinition, JobConfig config) {
+        super(engine, jobId, jobDefinition, config);
     }
 
     @Nonnull @Override
@@ -99,10 +93,8 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl> {
     }
 
     @Override
-    protected CompletableFuture<Void> invokeSubmitJob(Data dag, JobConfig config, List<Object> sqlArguments) {
-        Data configData = serializationService().toData(config);
-        Data sqlArgumentsData = serializationService().toData(sqlArguments);
-        return invokeOp(new SubmitJobOperation(getId(), dag, configData, sqlArgumentsData));
+    protected CompletableFuture<Void> invokeSubmitJob(Data dag, JobConfig config) {
+        return invokeOp(new SubmitJobOperation(getId(), dag, serializationService().toData(config)));
     }
 
     @Override
