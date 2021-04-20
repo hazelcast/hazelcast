@@ -176,7 +176,7 @@ public class HazelcastTable extends AbstractTable {
         } else {
             Double selectivity = RelMdUtil.guessSelectivity(filter);
 
-            double rowCount = CostUtils.adjustFilteredRowCount(statistic.getRowCount(), selectivity);
+            Double rowCount = CostUtils.adjustFilteredRowCount(statistic.getRowCount(), selectivity);
 
             return new AdjustedStatistic(rowCount);
         }
@@ -238,9 +238,9 @@ public class HazelcastTable extends AbstractTable {
      */
     private final class AdjustedStatistic implements Statistic {
 
-        private final double rowCount;
+        private final Double rowCount;
 
-        private AdjustedStatistic(double rowCount) {
+        private AdjustedStatistic(Double rowCount) {
             this.rowCount = rowCount;
         }
 

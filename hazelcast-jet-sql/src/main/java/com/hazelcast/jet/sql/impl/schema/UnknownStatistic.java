@@ -36,7 +36,7 @@ public final class UnknownStatistic implements Statistic {
 
     @Override
     public Double getRowCount() {
-        return 0D;
+        return null;
     }
 
     @Override
