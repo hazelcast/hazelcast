@@ -48,9 +48,8 @@ public class MappingStorageTest extends SimpleTestInClusterSupport {
     public void when_put_then_isPresentInValues() {
         String name = randomName();
 
-        Mapping previous = storage.put(name, mapping(name, "type"));
+        storage.put(name, mapping(name, "type"));
 
-        assertThat(previous).isNull();
         assertThat(storage.values().stream().filter(m -> m.name().equals(name))).isNotEmpty();
     }
 
@@ -61,9 +60,8 @@ public class MappingStorageTest extends SimpleTestInClusterSupport {
         Mapping updatedMapping = mapping(name, "type2");
 
         storage.put(name, originalMapping);
-        Mapping previous = storage.put(name, updatedMapping);
+        storage.put(name, updatedMapping);
 
-        assertThat(previous).isEqualTo(originalMapping);
         assertThat(storage.values().stream().filter(m -> m.equals(originalMapping))).isEmpty();
         assertThat(storage.values().stream().filter(m -> m.equals(updatedMapping))).isNotEmpty();
     }

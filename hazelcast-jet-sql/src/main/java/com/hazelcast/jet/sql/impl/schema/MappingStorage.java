@@ -54,10 +54,9 @@ public class MappingStorage {
         this.logger = nodeEngine.getLogger(getClass());
     }
 
-    Mapping put(String name, Mapping mapping) {
-        Mapping previous = storage().put(name, mapping);
+    void put(String name, Mapping mapping) {
+        storage().put(name, mapping);
         awaitMappingOnAllMembers(name, mapping);
-        return previous;
     }
 
     boolean putIfAbsent(String name, Mapping mapping) {

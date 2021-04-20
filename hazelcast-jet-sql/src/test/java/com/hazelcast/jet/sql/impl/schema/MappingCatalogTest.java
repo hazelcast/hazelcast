@@ -100,7 +100,7 @@ public class MappingCatalogTest {
         given(connectorCache.forType(mapping.type())).willReturn(connector);
         given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields()))
                 .willReturn(singletonList(new MappingField("field_name", QueryDataType.INT)));
-        given(storage.putIfAbsent(mapping.name(), mapping)).willReturn(false);
+        given(storage.putIfAbsent(eq(mapping.name()), isA(Mapping.class))).willReturn(false);
 
         // when
         // then
@@ -118,7 +118,7 @@ public class MappingCatalogTest {
         given(connectorCache.forType(mapping.type())).willReturn(connector);
         given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields()))
                 .willReturn(singletonList(new MappingField("field_name", QueryDataType.INT)));
-        given(storage.putIfAbsent(mapping.name(), mapping)).willReturn(false);
+        given(storage.putIfAbsent(eq(mapping.name()), isA(Mapping.class))).willReturn(false);
 
         // when
         catalog.createMapping(mapping, false, true);
@@ -135,12 +135,12 @@ public class MappingCatalogTest {
         given(connectorCache.forType(mapping.type())).willReturn(connector);
         given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields()))
                 .willReturn(singletonList(new MappingField("field_name", QueryDataType.INT)));
-        given(storage.put(eq(mapping.name()), isA(Mapping.class))).willReturn(mapping());
 
         // when
         catalog.createMapping(mapping, true, false);
 
         // then
+        verify(storage).put(eq(mapping.name()), isA(Mapping.class));
         verify(listener).onTableChanged();
     }
 

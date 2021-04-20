@@ -66,6 +66,25 @@ public class MappingCatalog implements TableResolver {
         this.storage = storage;
         this.connectorCache = connectorCache;
         this.listeners = new CopyOnWriteArrayList<>();
+
+        // because listeners are invoked asynchronously from the calling thread,
+        // local changes are handled in createMapping() & removeMapping(), thus
+        // we skip events originating from local member to avoid double processing
+        this.storage.registerListener(new MappingStorage.EntryListenerAdapter() {
+            @Override
+            public void entryUpdated(EntryEvent<String, Mapping> event) {
+                if (!event.getMember().localMember()) {
+                    listeners.forEach(TableListener::onTableChanged);
+                }
+            }
+
+            @Override
+            public void entryRemoved(EntryEvent<String, Mapping> event) {
+                if (!event.getMember().localMember()) {
+                    listeners.forEach(TableListener::onTableChanged);
+                }
+            }
+        });
     }
 
     public void createMapping(Mapping mapping, boolean replace, boolean ifNotExists) {
@@ -75,9 +94,8 @@ public class MappingCatalog implements TableResolver {
         if (ifNotExists) {
             storage.putIfAbsent(name, resolved);
         } else if (replace) {
-            if (storage.put(name, resolved) != null) {
-                listeners.forEach(TableListener::onTableChanged);
-            }
+            storage.put(name, resolved);
+            listeners.forEach(TableListener::onTableChanged);
         } else if (!storage.putIfAbsent(name, resolved)) {
             throw QueryException.error("Mapping already exists: " + name);
         }
@@ -145,20 +163,5 @@ public class MappingCatalog implements TableResolver {
     @Override
     public void registerListener(TableListener listener) {
         listeners.add(listener);
-        storage.registerListener(new MappingStorage.EntryListenerAdapter() {
-            @Override
-            public void entryUpdated(EntryEvent<String, Mapping> event) {
-                if (!event.getMember().localMember()) {
-                    listeners.forEach(TableListener::onTableChanged);
-                }
-            }
-
-            @Override
-            public void entryRemoved(EntryEvent<String, Mapping> event) {
-                if (!event.getMember().localMember()) {
-                    listeners.forEach(TableListener::onTableChanged);
-                }
-            }
-        });
     }
 }
