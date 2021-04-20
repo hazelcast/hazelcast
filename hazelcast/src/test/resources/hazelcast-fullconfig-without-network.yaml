@@ -495,7 +495,7 @@ hazelcast:
       expiry-policy-factory:
 #        class-name: com.example.cache.MyExpirePolicyFactory
         timed-expiry-policy-factory:
-          expiry-policy-type: ETERNAL
+          expiry-policy-type: TOUCHED
           duration-amount: 123
           time-unit: MICROSECONDS
 
