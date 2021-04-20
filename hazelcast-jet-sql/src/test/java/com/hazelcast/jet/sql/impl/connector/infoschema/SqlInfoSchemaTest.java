@@ -99,9 +99,7 @@ public class SqlInfoSchemaTest extends SqlTestSupport {
                         + "FROM information_schema.columns "
                         + "WHERE column_name = ?",
                 asList("-p", "__value"),
-                singletonList(
-                        new Row(mappingName, "HAZELCAST-P", "__value", "VARCHAR")
-                )
+                singletonList(new Row(mappingName, "HAZELCAST-P", "__value", "VARCHAR"))
         );
     }
 

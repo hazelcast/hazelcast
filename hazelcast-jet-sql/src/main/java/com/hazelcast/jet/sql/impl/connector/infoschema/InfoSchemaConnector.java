@@ -116,8 +116,8 @@ final class InfoSchemaConnector implements SqlConnector {
         }
 
         @Override
-        protected void init(@Nonnull Context ctx) {
-            ExpressionEvalContext evalContext = SimpleExpressionEvalContext.from(ctx);
+        protected void init(@Nonnull Context context) {
+            ExpressionEvalContext evalContext = SimpleExpressionEvalContext.from(context);
             List<Object[]> processedRows = ExpressionUtil.evaluate(predicate, projection, rows, evalContext);
             traverser = Traversers.traverseIterable(processedRows);
         }

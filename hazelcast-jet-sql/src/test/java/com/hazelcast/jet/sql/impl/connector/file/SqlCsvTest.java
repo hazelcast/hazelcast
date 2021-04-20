@@ -326,11 +326,11 @@ public class SqlCsvTest extends SqlTestSupport {
         String path = hadoopNonExistingPath();
         assertThatThrownBy(() -> sqlService.execute(
                 "SELECT *"
-                        + " FROM TABLE ("
-                        + "csv_file (path => '" + path + "')"
-                        + ")"
+                + " FROM TABLE ("
+                + "csv_file (path => '" + path + "')"
+                + ")"
         )).isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("The directory '" + path + "' does not exist");
+          .hasMessageContaining("The directory '" + path + "' does not exist");
     }
 
     @Test

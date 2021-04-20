@@ -83,6 +83,7 @@ class JetPlanExecutor {
     SqlResult execute(CreateJobPlan plan, List<Object> arguments) {
         List<Object> args = prepareArguments(plan.getParameterMetadata(), arguments);
         JobConfig jobConfig = plan.getJobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, args);
+
         if (plan.isIfNotExists()) {
             jetInstance.newJobIfAbsent(plan.getExecutionPlan().getDag(), jobConfig);
         } else {

@@ -85,22 +85,22 @@ public class SqlJobManagementTest extends SqlTestSupport {
     @Test
     public void when_createJobUnknownOption_then_fail() {
         assertThatThrownBy(() -> sqlService.execute("CREATE JOB foo OPTIONS ('badOption'='value') AS "
-                + "INSERT INTO t1 VALUES(1)"))
+                        + "INSERT INTO t1 VALUES(1)"))
                 .hasMessage("From line 1, column 25 to line 1, column 35: Unknown job option: badOption");
     }
 
     @Test
     public void when_snapshotIntervalNotNumber_then_fail() {
         assertThatThrownBy(() -> sqlService.execute("CREATE JOB foo OPTIONS ('snapshotIntervalMillis'='foo') AS "
-                + "INSERT INTO t1 VALUES(1)"))
-                .hasMessage("From line 1, column 50 to line 1, column 54: Invalid number for snapshotIntervalMillis: foo");
+                        + "INSERT INTO t1 VALUES(1)"))
+               .hasMessage("From line 1, column 50 to line 1, column 54: Invalid number for snapshotIntervalMillis: foo");
     }
 
     @Test
     public void when_badProcessingGuarantee_then_fail() {
         assertThatThrownBy(() -> sqlService.execute("CREATE JOB foo OPTIONS ('processingGuarantee'='foo') AS "
-                + "INSERT INTO t1 VALUES(1)"))
-                .hasMessage("From line 1, column 47 to line 1, column 51: Unsupported value for processingGuarantee: foo");
+                        + "INSERT INTO t1 VALUES(1)"))
+               .hasMessage("From line 1, column 47 to line 1, column 51: Unsupported value for processingGuarantee: foo");
     }
 
     @Test

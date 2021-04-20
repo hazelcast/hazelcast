@@ -51,7 +51,6 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.impl.util.Util.toList;
-import static java.util.Collections.emptyList;
 
 public abstract class AbstractJetInstance implements JetInstance {
 

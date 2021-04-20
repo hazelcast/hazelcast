@@ -146,22 +146,22 @@ public class SqlLimitTest extends SqlTestSupport {
                 "SELECT * FROM TABLE(GENERATE_STREAM(5)) LIMIT 2",
                 2,
                 asList(new Row(0L),
-                        new Row(1L))
+                new Row(1L))
         );
 
         assertContainsSubsetOfRows(
                 "SELECT * FROM TABLE(GENERATE_STREAM(5)) LIMIT 10",
                 10,
                 asList(new Row(0L),
-                        new Row(1L),
-                        new Row(2L),
-                        new Row(3L),
-                        new Row(4L),
-                        new Row(5L),
-                        new Row(6L),
-                        new Row(7L),
-                        new Row(8L),
-                        new Row(9L))
+                new Row(1L),
+                new Row(2L),
+                new Row(3L),
+                new Row(4L),
+                new Row(5L),
+                new Row(6L),
+                new Row(7L),
+                new Row(8L),
+                new Row(9L))
         );
     }
 
