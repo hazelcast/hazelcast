@@ -16,15 +16,16 @@
 
 package com.hazelcast.internal.networking;
 
+import com.hazelcast.internal.networking.Channel;
+import com.hazelcast.internal.networking.ChannelCloseListener;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.internal.nio.IOUtil;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
-import java.net.SocketException;
 import java.nio.channels.SocketChannel;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -126,17 +127,10 @@ public abstract class AbstractChannel implements Channel {
             // since the connect method is blocking, we need to configure blocking.
             socketChannel.configureBlocking(true);
 
-            try {
-                if (timeoutMillis > 0) {
-                    socketChannel.socket().connect(address, timeoutMillis);
-                } else {
-                    socketChannel.connect(address);
-                }
-            } catch (SocketException ex) {
-                //we want to include the address in the exception.
-                SocketException newEx = new SocketException(ex.getMessage() + " to address " + address);
-                newEx.setStackTrace(ex.getStackTrace());
-                throw newEx;
+            if (timeoutMillis > 0) {
+                socketChannel.socket().connect(address, timeoutMillis);
+            } else {
+                socketChannel.connect(address);
             }
 
             if (logger.isFinestEnabled()) {
@@ -147,7 +141,10 @@ public abstract class AbstractChannel implements Channel {
             throw e;
         } catch (IOException e) {
             IOUtil.closeResource(this);
-            throw e;
+            //we want to include the address in the exception.
+            IOException newEx = new IOException(e.getMessage() + " to address " + address);
+            newEx.setStackTrace(e.getStackTrace());
+            throw newEx;
         }
     }
 
@@ -167,7 +164,7 @@ public abstract class AbstractChannel implements Channel {
 
     /**
      * Template method that is called when the Channel is closed.
-     *
+     * <p>
      * It will be called only once.
      */
     protected void close0() throws IOException {
