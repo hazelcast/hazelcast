@@ -215,7 +215,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
     /**
      * Visitor that rewrites Calcite operators with operators from this table.
      */
-    static final class RewriteVisitor extends SqlBasicVisitor<Void> {
+    static final class RewriteVisitor extends SqlBasicVisitor<SqlNode> {
         private final HazelcastSqlValidator validator;
 
         RewriteVisitor(HazelcastSqlValidator validator) {
@@ -223,24 +223,38 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         }
 
         @Override
-        public Void visit(SqlNodeList nodeList) {
-            rewriteNodeList(nodeList);
-
-            return super.visit(nodeList);
+        public SqlNode visit(SqlNodeList nodeList) {
+            for (int i = 0; i < nodeList.size(); i++) {
+                SqlNode node = nodeList.get(i);
+                SqlNode rewritten = node.accept(this);
+                if (rewritten != null && rewritten != node) {
+                    nodeList.set(i, rewritten);
+                }
+            }
+            return nodeList;
         }
 
         @Override
-        public Void visit(SqlCall call) {
-            rewriteCall(call);
-
-            return super.visit(call);
+        public SqlNode visit(SqlCall call) {
+            call = rewriteCall(call);
+            for (int i = 0; i < call.getOperandList().size(); i++) {
+                SqlNode operand = call.getOperandList().get(i);
+                if (operand == null) {
+                    continue;
+                }
+                SqlNode rewritten = operand.accept(this);
+                if (rewritten != null && rewritten != operand) {
+                    call.setOperand(i, rewritten);
+                }
+            }
+            return call;
         }
 
-        private void rewriteCall(SqlCall call) {
+        private SqlCall rewriteCall(SqlCall call) {
             if (call instanceof SqlBasicCall) {
                 // An alias is declared as a SqlBasicCall with "SqlKind.AS". We do not need to rewrite aliases, so skip it.
                 if (call.getKind() == SqlKind.AS) {
-                    return;
+                    return call;
                 }
 
                 SqlBasicCall basicCall = (SqlBasicCall) call;
@@ -275,6 +289,12 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
                 basicCall.setOperator(resolvedOperators.get(0));
             }
+            else if (call instanceof SqlCase) {
+                SqlCase sqlCase = (SqlCase) call;
+                return new HazelcastSqlCase(sqlCase.getParserPosition(), sqlCase.getValueOperand(), sqlCase.getWhenOperands(),
+                        sqlCase.getThenOperands(), sqlCase.getElseOperand());
+            }
+            return call;
         }
 
         private static SqlNodeList removeNullWithinInStatement(SqlNodeList valueList) {
@@ -290,26 +310,6 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
         private CalciteException functionDoesNotExist(SqlCall call) {
             throw RESOURCES.functionDoesNotExist(call.getOperator().getName()).ex();
-        }
-
-        private void rewriteNodeList(SqlNodeList nodeList) {
-            for (int i = 0; i < nodeList.size(); ++i) {
-                SqlNode node = nodeList.get(i);
-
-                SqlNode rewrittenCase = tryRewriteCase(node);
-                if (rewrittenCase != null) {
-                    nodeList.set(i, rewrittenCase);
-                }
-            }
-        }
-
-        private static SqlNode tryRewriteCase(SqlNode node) {
-            if (node instanceof SqlCase && !(node instanceof HazelcastSqlCase)) {
-                SqlCase sqlCase = (SqlCase) node;
-                return new HazelcastSqlCase(sqlCase.getParserPosition(), sqlCase.getValueOperand(), sqlCase.getWhenOperands(),
-                        sqlCase.getThenOperands(), sqlCase.getElseOperand());
-            }
-            return null;
         }
     }
 }

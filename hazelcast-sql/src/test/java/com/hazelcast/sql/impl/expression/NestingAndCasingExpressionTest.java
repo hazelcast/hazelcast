@@ -445,7 +445,7 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
 
     @Test
     public void test_CASE() {
-        check(sql("CASE ? WHEN this THEN '100' END"), 1);
+        check(sql("CASE WHEN ? THEN ? END || CASE WHEN ? THEN ? END"), true, "foo", true, "bar");
     }
 
     private void check(String sql, Object... params) {
