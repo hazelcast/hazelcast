@@ -50,7 +50,7 @@ public interface TableResolver {
     List<Table> getTables();
 
     /**
-     * Adds a listener to be called when {@see Table} is changed.
+     * Adds a listener to be called when a {@see Table} is added, removed or changed.
      */
     void registerListener(TableListener listener);
 
