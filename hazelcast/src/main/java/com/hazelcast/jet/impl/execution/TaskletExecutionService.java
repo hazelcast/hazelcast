@@ -52,6 +52,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
@@ -85,6 +86,7 @@ public class TaskletExecutionService {
     private final String hzInstanceName;
     private final ILogger logger;
     private int cooperativeThreadIndex;
+    private AtomicBoolean startCooperativeThreads = new AtomicBoolean(false);
     @Probe(name = "blockingWorkerCount")
     private final Counter blockingWorkerCount = MwCounter.newMwCounter();
     private volatile boolean isShutdown;
@@ -111,7 +113,6 @@ public class TaskletExecutionService {
         Arrays.setAll(cooperativeWorkers, i -> new CooperativeWorker());
         Arrays.setAll(cooperativeThreadPool, i -> new Thread(cooperativeWorkers[i],
                 String.format("hz.%s.jet.cooperative.thread-%d", hzInstanceName, i)));
-        Arrays.stream(cooperativeThreadPool).forEach(Thread::start);
 
         // register metrics
         MetricsRegistry registry = nodeEngine.getMetricsRegistry();
@@ -145,6 +146,9 @@ public class TaskletExecutionService {
     ) {
         final ExecutionTracker executionTracker = new ExecutionTracker(tasklets.size(), cancellationFuture);
         try {
+            if (startCooperativeThreads.compareAndSet(false, true)) {
+                Arrays.stream(cooperativeThreadPool).forEach(Thread::start);
+            }
             final Map<Boolean, List<Tasklet>> byCooperation =
                     tasklets.stream().collect(partitioningBy(Tasklet::isCooperative));
             submitCooperativeTasklets(executionTracker, jobClassLoader, byCooperation.get(true));
