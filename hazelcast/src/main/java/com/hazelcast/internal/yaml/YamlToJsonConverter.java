@@ -44,10 +44,34 @@ public final class YamlToJsonConverter {
             }
             return resultArray;
         } else if (yamlNode instanceof YamlScalar) {
-            YamlScalar yamlScalar = (YamlScalar) yamlNode;
-            return yamlScalar.nodeValue();
+            return convertScalar((YamlScalar) yamlNode);
         }
         throw new IllegalArgumentException("Unknown type " + yamlNode.getClass().getName());
+    }
+
+    /**
+     * This method makes the json schema validation lenient in a sense that it converts string values to booleans and integers,
+     * if they are parseable as such. This is necessary to support configreplacers in the YAML config: when a placeholder is
+     * replaced with an actual value, then the replacement is always a string, even if it holds an integer or boolean value, so we
+     * convert it here on a best-effort basis, otherwise the schema validation would fail errors like "expected type: integer,
+     * actual: string" even in cases when eg. ${backup-count} is substituted with "1".
+     */
+    private static Object convertScalar(YamlScalar yamlNode) {
+        Object rawNodeValue = yamlNode.nodeValue();
+        if (rawNodeValue instanceof String) {
+            String stringValue = (String) rawNodeValue;
+            if (stringValue.equals("true")) {
+                return Boolean.TRUE;
+            } else if (stringValue.equals("false")) {
+                return Boolean.FALSE;
+            }
+            try {
+                return new Integer(stringValue);    
+            } catch (NumberFormatException e) {
+                // returning rawNodeValue
+            }
+        }
+        return rawNodeValue;
     }
 
 }

@@ -135,6 +135,7 @@
                                     !com.fasterxml.jackson.*,
                                     !org.snakeyaml.*,
                                     !io.github.classgraph.*,
+                                    !org.everit.json.*,
                                     sun.misc;resolution:=optional,
                                     javax.cache;resolution:=optional,
                                     javax.cache.*;resolution:=optional,
@@ -426,6 +427,7 @@
             <groupId>com.github.erosb</groupId>
             <artifactId>everit-json-schema</artifactId>
             <version>1.12.2</version>
+            <scope>compile</scope>
         </dependency>
 
         <!-- JetCommandLine dependencies - optional, packaged in server distribution -->
