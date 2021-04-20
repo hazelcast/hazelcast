@@ -25,7 +25,7 @@ import org.apache.calcite.rel.core.Sort;
 
 import static com.hazelcast.jet.sql.impl.opt.JetConventions.LOGICAL;
 
-public final class SortLogicalRule extends ConverterRule {
+final class SortLogicalRule extends ConverterRule {
 
     static final RelOptRule INSTANCE = new SortLogicalRule();
 

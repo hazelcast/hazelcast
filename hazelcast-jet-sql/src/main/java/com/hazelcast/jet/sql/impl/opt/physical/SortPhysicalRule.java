@@ -26,6 +26,7 @@ import static com.hazelcast.jet.sql.impl.opt.JetConventions.LOGICAL;
 import static com.hazelcast.jet.sql.impl.opt.JetConventions.PHYSICAL;
 
 final class SortPhysicalRule extends ConverterRule {
+
     static final RelOptRule INSTANCE = new SortPhysicalRule();
 
     private SortPhysicalRule() {

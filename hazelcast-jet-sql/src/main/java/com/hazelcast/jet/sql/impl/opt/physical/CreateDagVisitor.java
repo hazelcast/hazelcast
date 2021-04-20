@@ -35,10 +35,11 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
-import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.schema.Table;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.RelNode;
 
 import javax.annotation.Nullable;
@@ -228,18 +229,21 @@ public class CreateDagVisitor {
             assert sortRel.offset == null : "Offset is not supported";
             assert sortRel.collation.getFieldCollations().isEmpty() : "Collation is not supported";
 
-            Expression<?> fetch = sortRel.fetch();
-            Object val = fetch.eval(EmptyRow.INSTANCE, ExpressionUtil.NOT_IMPLEMENTED_ARGUMENTS_CONTEXT);
-            assert val instanceof Number;
+            Expression<?> fetch = sortRel.fetch(parameterMetadata);
 
-            long limit = ((Number) val).longValue();
-            assert limit >= 0;
-            vertex = dag.newUniqueVertex("ClientSink",
-                    rootResultConsumerSink(rootRel.getInitiatorAddress(), limit));
+            vertex = dag.newUniqueVertex(
+                    "ClientSink",
+                    rootResultConsumerSink(rootRel.getInitiatorAddress(), fetch)
+            );
             input = sortRel.getInput();
         } else {
-            vertex = dag.newUniqueVertex("ClientSink",
-                    rootResultConsumerSink(rootRel.getInitiatorAddress(), Long.MAX_VALUE));
+            vertex = dag.newUniqueVertex(
+                    "ClientSink",
+                    rootResultConsumerSink(
+                            rootRel.getInitiatorAddress(),
+                            ConstantExpression.create(Long.MAX_VALUE, QueryDataType.BIGINT)
+                    )
+            );
         }
 
         // We use distribute-to-one edge to send all the items to the initiator member.

@@ -25,6 +25,8 @@ import java.util.List;
 
 public final class SimpleExpressionEvalContext implements ExpressionEvalContext {
 
+    public static final String SQL_ARGUMENTS_KEY_NAME = "__sql.arguments";
+
     private final List<Object> arguments;
     private final InternalSerializationService serializationService;
 
@@ -34,8 +36,10 @@ public final class SimpleExpressionEvalContext implements ExpressionEvalContext 
     }
 
     public static SimpleExpressionEvalContext from(ProcessorSupplier.Context ctx) {
-        Contexts.ProcSupplierCtx context = (Contexts.ProcSupplierCtx) ctx;
-        return new SimpleExpressionEvalContext(context.getSqlArguments(), context.serializationService());
+        return new SimpleExpressionEvalContext(
+                ctx.jobConfig().getArgument(SQL_ARGUMENTS_KEY_NAME),
+                ((Contexts.ProcSupplierCtx) ctx).serializationService()
+        );
     }
 
     public static SimpleExpressionEvalContext from(

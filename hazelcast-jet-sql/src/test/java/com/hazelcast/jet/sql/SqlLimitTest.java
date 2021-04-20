@@ -19,19 +19,21 @@ package com.hazelcast.jet.sql;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
-import org.assertj.core.api.Assertions;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class SqlLimitTest extends SqlTestSupport {
 
@@ -69,14 +71,20 @@ public class SqlLimitTest extends SqlTestSupport {
     }
 
     @Test
-    public void negativeLimitValue() {
-        String tableName = createTable(
-                new String[]{"Alice", "1"},
-                new String[]{"Bob", "2"},
-                new String[]{"Joey", "3"}
-        );
+    public void nullLimitValue() {
+        String tableName = createTable(new String[]{"Alice", "1"});
 
-        Assertions.assertThatThrownBy(() -> sqlService.execute("SELECT name FROM " + tableName + " LIMIT -10"))
+        assertThatThrownBy(() -> sqlService.execute("SELECT name FROM " + tableName + " LIMIT null"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Encountered \"null\"")
+                .extracting(e -> ((HazelcastSqlException) e).getCode()).isEqualTo(SqlErrorCode.PARSING);
+    }
+
+    @Test
+    public void negativeLimitValue() {
+        String tableName = createTable(new String[]{"Alice", "1"});
+
+        assertThatThrownBy(() -> sqlService.execute("SELECT name FROM " + tableName + " LIMIT -10"))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageContaining("Encountered \"-\"")
                 .extracting(e -> ((HazelcastSqlException) e).getCode()).isEqualTo(SqlErrorCode.PARSING);
@@ -131,30 +139,63 @@ public class SqlLimitTest extends SqlTestSupport {
     public void limitOverStream() {
         assertContainsOnlyOneOfRows(
                 "SELECT * FROM TABLE(GENERATE_STREAM(5)) LIMIT 1",
-                Collections.singletonList(new Row(0L))
+                singletonList(new Row(0L))
         );
 
         assertContainsSubsetOfRows(
                 "SELECT * FROM TABLE(GENERATE_STREAM(5)) LIMIT 2",
                 2,
                 asList(new Row(0L),
-                new Row(1L))
+                        new Row(1L))
         );
 
         assertContainsSubsetOfRows(
                 "SELECT * FROM TABLE(GENERATE_STREAM(5)) LIMIT 10",
                 10,
                 asList(new Row(0L),
-                new Row(1L),
-                new Row(2L),
-                new Row(3L),
-                new Row(4L),
-                new Row(5L),
-                new Row(6L),
-                new Row(7L),
-                new Row(8L),
-                new Row(9L))
+                        new Row(1L),
+                        new Row(2L),
+                        new Row(3L),
+                        new Row(4L),
+                        new Row(5L),
+                        new Row(6L),
+                        new Row(7L),
+                        new Row(8L),
+                        new Row(9L))
         );
+    }
+
+    @Test
+    public void limitWithDynamicParameter() {
+        assertContainsSubsetOfRows(
+                "SELECT * FROM TABLE(GENERATE_STREAM(5)) LIMIT ?",
+                singletonList(2),
+                2,
+                asList(
+                        new Row(0L),
+                        new Row(1L)
+                )
+        );
+    }
+
+    @Test
+    public void limitWithNullDynamicParameter() {
+        SqlStatement statement = new SqlStatement("SELECT * FROM TABLE(GENERATE_STREAM(5)) LIMIT ?");
+        statement.setParameters(singletonList(null));
+
+        assertThatThrownBy(() -> sqlService.execute(statement).iterator().next())
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("LIMIT value cannot be null");
+    }
+
+    @Test
+    public void limitWithNegativeDynamicParameter() {
+        SqlStatement statement = new SqlStatement("SELECT * FROM TABLE(GENERATE_STREAM(5)) LIMIT ?");
+        statement.setParameters(singletonList(-1));
+
+        assertThatThrownBy(() -> sqlService.execute(statement).iterator().next())
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("LIMIT value cannot be negative");
     }
 
     private static void assertContainsOnlyOneOfRows(String sql, Collection<Row> expectedRows) {
@@ -166,8 +207,23 @@ public class SqlLimitTest extends SqlTestSupport {
      * only a subset of them with size of {@code subsetSize}.
      */
     private static void assertContainsSubsetOfRows(String sql, int subsetSize, Collection<Row> expectedRows) {
+        assertContainsSubsetOfRows(sql, emptyList(), subsetSize, expectedRows);
+    }
+
+    /**
+     * Asserts that the result of {@code sql} contains a subset of {@code expectedRows}, but
+     * only a subset of them with size of {@code subsetSize}.
+     */
+    private static void assertContainsSubsetOfRows(
+            String sql,
+            List<Object> arguments,
+            int subsetSize,
+            Collection<Row> expectedRows
+    ) {
         List<Row> actualRows = new ArrayList<>();
-        sqlService.execute(sql).iterator().forEachRemaining(sqlRow -> {
+        SqlStatement statement = new SqlStatement(sql);
+        statement.setParameters(arguments);
+        sqlService.execute(statement).iterator().forEachRemaining(sqlRow -> {
             int columnCount = sqlRow.getMetadata().getColumnCount();
             Object[] values = new Object[columnCount];
             for (int i = 0; i < columnCount; i++) {

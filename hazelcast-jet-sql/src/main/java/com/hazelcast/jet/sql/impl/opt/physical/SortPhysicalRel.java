@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import org.apache.calcite.plan.RelOptCluster;
@@ -30,9 +31,10 @@ import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexVisitor;
 
 public class SortPhysicalRel extends Sort implements PhysicalRel {
+
     private final RelDataType rowType;
 
-    public SortPhysicalRel(
+    SortPhysicalRel(
             RelOptCluster cluster,
             RelTraitSet traits,
             RelNode input,
@@ -42,32 +44,29 @@ public class SortPhysicalRel extends Sort implements PhysicalRel {
             RelDataType rowType
     ) {
         super(cluster, traits, input, collation, offset, fetch);
+
         this.rowType = rowType;
     }
 
-    public Expression<?> fetch() {
-        RexVisitor<Expression<?>> visitor = OptUtils.createRexToExpressionVisitor(schema());
+    public Expression<?> fetch(QueryParameterMetadata parameterMetadata) {
+        PlanNodeSchema schema = schema(parameterMetadata);
+        RexVisitor<Expression<?>> visitor = OptUtils.createRexToExpressionVisitor(schema, parameterMetadata);
         return fetch.accept(visitor);
     }
 
-    Expression<?> offset() {
-        RexVisitor<Expression<?>> visitor = OptUtils.createRexToExpressionVisitor(schema());
-        return offset.accept(visitor);
-    }
-
     @Override
-    public Sort copy(RelTraitSet traitSet, RelNode input, RelCollation collation, RexNode offset, RexNode fetch) {
-        return new SortPhysicalRel(getCluster(), traitSet, input, collation, offset, fetch, rowType);
-    }
-
-    @Override
-    public PlanNodeSchema schema() {
+    public PlanNodeSchema schema(QueryParameterMetadata parameterMetadata) {
         return OptUtils.schema(rowType);
     }
 
     @Override
     public Vertex accept(CreateDagVisitor visitor) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Sort copy(RelTraitSet traitSet, RelNode input, RelCollation collation, RexNode offset, RexNode fetch) {
+        return new SortPhysicalRel(getCluster(), traitSet, input, collation, offset, fetch, rowType);
     }
 
     @Override

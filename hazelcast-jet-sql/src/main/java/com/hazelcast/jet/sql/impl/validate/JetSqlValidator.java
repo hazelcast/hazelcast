@@ -77,6 +77,17 @@ public class JetSqlValidator extends HazelcastSqlValidator {
     }
 
     @Override
+    protected void validateSelect(SqlSelect select, SqlValidatorScope scope) {
+        // Derive the types for offset-fetch expressions, Calcite doesn't do
+        // that automatically.
+
+        SqlNode fetch = select.getFetch();
+        if (fetch != null) {
+            deriveType(scope, fetch);
+        }
+    }
+
+    @Override
     protected void validateFrom(SqlNode node, RelDataType targetRowType, SqlValidatorScope scope) {
         super.validateFrom(node, targetRowType, scope);
         isInfiniteRows = containsStreamingSource(node);
