@@ -121,7 +121,7 @@
                         <shadedClassifierName>jar-with-dependencies</shadedClassifierName>
                         <transformers>
                             <transformer
-                                    implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer" />
+                                    implementation="com.hazelcast.buildutils.HazelcastLicenseResourceTransformer" />
                             <transformer
                                     implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer" />
                             <transformer
@@ -138,6 +138,13 @@
                             </filter>
                         </filters>
                     </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>com.hazelcast</groupId>
+                            <artifactId>hazelcast-build-utils</artifactId>
+                            <version>${project.version}</version>
+                        </dependency>
+                    </dependencies>
                 </plugin>
             </plugins>
         </pluginManagement>

@@ -79,6 +79,20 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>add-third-party</id>
+                        <configuration>
+                            <includedLicenses combine.children="append">
+                                <includedLicense>The GNU General Public License, v2 with FOSS exception</includedLicense>
+                            </includedLicenses>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 

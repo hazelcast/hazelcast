@@ -107,6 +107,8 @@
                                         implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer"/>
+                                <transformer
+                                        implementation="com.hazelcast.buildutils.HazelcastLicenseResourceTransformer" />
                             </transformers>
                             <filters>
                                 <filter>

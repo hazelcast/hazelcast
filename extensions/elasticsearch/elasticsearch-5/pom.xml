@@ -73,6 +73,20 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>add-third-party</id>
+                        <configuration>
+                            <includedLicenses combine.children="append">
+                                <includedLicense>Lesser General Public License (LGPL)</includedLicense>
+                            </includedLicenses>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
