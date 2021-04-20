@@ -31,7 +31,6 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.Table;
@@ -59,6 +58,8 @@ import static java.util.stream.Collectors.toList;
  * It emits a slice of the rows on each member.
  */
 public class TestBatchSqlConnector implements SqlConnector {
+
+    private static final int MAX_BATCH_SIZE = 1024;
 
     private static final String TYPE_NAME = "TestBatch";
 
@@ -209,11 +210,21 @@ public class TestBatchSqlConnector implements SqlConnector {
         List<Object[]> rows = ((TestBatchTable) table).rows;
 
         BatchSource<Object[]> source = SourceBuilder
-                .batch("batch", ctx -> {
-                    ExpressionEvalContext evalContext = SimpleExpressionEvalContext.from(ctx);
-                    return new TestBatchDataGenerator(rows, predicate, projection, evalContext);
+                .batch("batch", SimpleExpressionEvalContext::from)
+                .<Object[]>fillBufferFn((ctx, buf) -> {
+                    Iterator<Object[]> iterator = rows.stream()
+                            .map(row -> ExpressionUtil.evaluate(predicate, projection, row, ctx))
+                            .filter(Objects::nonNull)
+                            .iterator();
+
+                    for (int i = 0; i < MAX_BATCH_SIZE; i++) {
+                        if (iterator.hasNext()) {
+                            buf.add(iterator.next());
+                        } else {
+                            buf.close();
+                        }
+                    }
                 })
-                .fillBufferFn(TestBatchDataGenerator::fillBuffer)
                 .build();
         ProcessorMetaSupplier pms = ((BatchSourceTransform<Object[]>) source).metaSupplier;
         return dag.newUniqueVertex(table.toString(), pms);
@@ -269,35 +280,6 @@ public class TestBatchSqlConnector implements SqlConnector {
         @Override
         public int hashCode() {
             return Objects.hash(schemaName, name, rows);
-        }
-    }
-
-    private static final class TestBatchDataGenerator {
-
-        private static final int MAX_BATCH_SIZE = 1024;
-
-        private final Iterator<Object[]> iterator;
-
-        private TestBatchDataGenerator(
-                List<Object[]> rows,
-                Expression<Boolean> predicate,
-                List<Expression<?>> projections,
-                ExpressionEvalContext evalContext
-        ) {
-            this.iterator = rows.stream()
-                    .map(row -> ExpressionUtil.evaluate(predicate, projections, row, evalContext))
-                    .filter(Objects::nonNull)
-                    .iterator();
-        }
-
-        private void fillBuffer(SourceBuilder.SourceBuffer<Object[]> buffer) {
-            for (int i = 0; i < MAX_BATCH_SIZE; i++) {
-                if (iterator.hasNext()) {
-                    buffer.add(iterator.next());
-                } else {
-                    buffer.close();
-                }
-            }
         }
     }
 }

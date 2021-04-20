@@ -46,7 +46,8 @@ public class ProjectPhysicalRel extends Project implements PhysicalRel {
     }
 
     public List<Expression<?>> projection(QueryParameterMetadata parameterMetadata) {
-        return project(((PhysicalRel) getInput()).schema(parameterMetadata), getProjects(), parameterMetadata);
+        PlanNodeSchema inputSchema = ((PhysicalRel) getInput()).schema(parameterMetadata);
+        return project(inputSchema, getProjects(), parameterMetadata);
     }
 
     @Override

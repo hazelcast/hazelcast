@@ -20,12 +20,12 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.impl.execution.init.Contexts;
 import com.hazelcast.jet.impl.processor.TransformBatchedP;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
+import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector.Supplier;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -57,7 +57,6 @@ final class JoinScanProcessorSupplier implements ProcessorSupplier, DataSerializ
 
     private transient IMap<Object, Object> map;
     private transient ExpressionEvalContext evalContext;
-    private transient List<Object> arguments;
 
     @SuppressWarnings("unused")
     private JoinScanProcessorSupplier() {
@@ -77,7 +76,6 @@ final class JoinScanProcessorSupplier implements ProcessorSupplier, DataSerializ
     public void init(@Nonnull Context context) {
         map = context.jetInstance().getMap(mapName);
         evalContext = SimpleExpressionEvalContext.from(context);
-        arguments = ((Contexts.ProcSupplierCtx) context).getSqlArguments();
     }
 
     @Nonnull
@@ -87,7 +85,7 @@ final class JoinScanProcessorSupplier implements ProcessorSupplier, DataSerializ
         for (int i = 0; i < count; i++) {
             Processor processor =
                     new TransformBatchedP<Object[], Object[]>(
-                            joinFn(joinInfo, map, rightRowProjectorSupplier, evalContext, arguments)
+                            joinFn(joinInfo, map, rightRowProjectorSupplier, evalContext)
                     ) {
                         @Override
                         public boolean isCooperative() {
@@ -102,12 +100,11 @@ final class JoinScanProcessorSupplier implements ProcessorSupplier, DataSerializ
     private static FunctionEx<Iterable<Object[]>, Traverser<Object[]>> joinFn(
             @Nonnull JetJoinInfo joinInfo,
             @Nonnull IMap<Object, Object> map,
-            @Nonnull KvRowProjector.Supplier rightRowProjectorSupplier,
-            @Nonnull ExpressionEvalContext evalContext,
-            @Nonnull List<Object> arguments
+            @Nonnull Supplier rightRowProjectorSupplier,
+            @Nonnull ExpressionEvalContext evalContext
     ) {
         Projection<Entry<Object, Object>, Object[]> projection =
-                QueryUtil.toProjection(rightRowProjectorSupplier, arguments);
+                QueryUtil.toProjection(rightRowProjectorSupplier, evalContext);
 
         return lefts -> {
             List<Object[]> rights = new ArrayList<>();

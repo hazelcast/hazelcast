@@ -47,8 +47,12 @@ public final class SimpleExpressionEvalContext implements ExpressionEvalContext 
 
     @Override
     public Object getArgument(int index) {
-        assert index >= 0 && index < arguments.size();
         return arguments.get(index);
+    }
+
+    @Override
+    public List<Object> getArguments() {
+        return arguments;
     }
 
     @Override
