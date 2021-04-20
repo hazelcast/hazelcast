@@ -45,10 +45,7 @@ public class CaseOperationIntegrationTest extends ExpressionTestSupport {
     public void caseWithConstants() {
         put(1);
 
-        checkFailure0(
-                "select case when true then null else null end from map",
-                SqlErrorCode.PARSING,
-                "ELSE clause or at least one THEN clause must be non-NULL");
+        checkValue0("select case when true then null else null end from map", SqlColumnType.NULL, null);
         checkFailure0("select case when 1 then 1 else 2 end from map", SqlErrorCode.PARSING, "Expected a boolean type");
         checkValue0("select case when 1 = 1 then 1 else null end from map", SqlColumnType.TINYINT, (byte) 1);
         checkValue0("select case when 1 = 1 then null else 1 end from map", SqlColumnType.TINYINT, null);
@@ -353,28 +350,28 @@ public class CaseOperationIntegrationTest extends ExpressionTestSupport {
         SerializableDummy field2 = new SerializableDummy();
 
         putBiValue((byte) 1, field2, ExpressionTypes.BYTE, ExpressionTypes.OBJECT);
-        checkFailure0(sql, SqlErrorCode.PARSING, "Cannot infer return type for CASE among [TINYINT, OBJECT]");
+        checkValue0(sql, SqlColumnType.OBJECT, (byte) 1);
 
         putBiValue((short) 1, field2, ExpressionTypes.SHORT, ExpressionTypes.OBJECT);
-        checkFailure0(sql, SqlErrorCode.PARSING, "Cannot infer return type for CASE among [SMALLINT, OBJECT]");
+        checkValue0(sql, SqlColumnType.OBJECT, (short) 1);
 
         putBiValue(1, field2, ExpressionTypes.INTEGER, ExpressionTypes.OBJECT);
-        checkFailure0(sql, SqlErrorCode.PARSING, "Cannot infer return type for CASE among [INTEGER, OBJECT]");
+        checkValue0(sql, SqlColumnType.OBJECT, 1);
 
         putBiValue(1L, field2, ExpressionTypes.LONG, ExpressionTypes.OBJECT);
-        checkFailure0(sql, SqlErrorCode.PARSING, "Cannot infer return type for CASE among [BIGINT, OBJECT]");
+        checkValue0(sql, SqlColumnType.OBJECT, 1L);
 
         putBiValue(BigDecimal.ONE, field2, ExpressionTypes.BIG_DECIMAL, ExpressionTypes.OBJECT);
-        checkFailure0(sql, SqlErrorCode.PARSING, "Cannot infer return type for CASE among [DECIMAL(38, 38), OBJECT]");
+        checkValue0(sql, SqlColumnType.OBJECT, BigDecimal.ONE);
 
         putBiValue(BigInteger.ONE, field2, ExpressionTypes.BIG_INTEGER, ExpressionTypes.OBJECT);
-        checkFailure0(sql, SqlErrorCode.PARSING, "Cannot infer return type for CASE among [DECIMAL(38, 38), OBJECT]");
+        checkValue0(sql, SqlColumnType.OBJECT, BigDecimal.ONE);
 
         putBiValue(1.0, field2, ExpressionTypes.DOUBLE, ExpressionTypes.OBJECT);
-        checkFailure0(sql, SqlErrorCode.PARSING, "Cannot infer return type for CASE among [DOUBLE, OBJECT]");
+        checkValue0(sql, SqlColumnType.OBJECT, 1.0);
 
         putBiValue(1.0f, field2, ExpressionTypes.FLOAT, ExpressionTypes.OBJECT);
-        checkFailure0(sql, SqlErrorCode.PARSING, "Cannot infer return type for CASE among [REAL, OBJECT]");
+        checkValue0(sql, SqlColumnType.OBJECT, 1.0f);
     }
 
     private static class SerializableDummy implements Serializable {

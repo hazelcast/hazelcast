@@ -20,7 +20,6 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlCase;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeCoercion;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlCall;
@@ -33,7 +32,6 @@ import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlOperatorBinding;
 import org.apache.calcite.sql.SqlSyntax;
-import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.SqlWriter;
 import org.apache.calcite.sql.fun.SqlCaseOperator;
 import org.apache.calcite.sql.parser.SqlParserPos;
@@ -55,7 +53,7 @@ import static org.apache.calcite.util.Static.RESOURCE;
 public final class HazelcastCaseOperator extends SqlOperator {
     public static final HazelcastCaseOperator INSTANCE = new HazelcastCaseOperator();
 
-    private static final int ELSE_BRANCHES_OPERAND_INDEX = 3;
+    private static final int ELSE_BRANCH_OPERAND_INDEX = 3;
 
     private HazelcastCaseOperator() {
         super("CASE", SqlKind.CASE, SqlOperator.MDX_PRECEDENCE, true, wrap(new CaseReturnTypeInference()), null, null);
@@ -87,8 +85,10 @@ public final class HazelcastCaseOperator extends SqlOperator {
     public boolean checkOperandTypes(SqlCallBinding callBinding, boolean throwOnFailure) {
         HazelcastSqlValidator validator = (HazelcastSqlValidator) callBinding.getValidator();
         HazelcastSqlCase sqlCall = (HazelcastSqlCase) callBinding.getCall();
-        SqlNodeList thenList = sqlCall.getThenOperands();
+        // at this point `CASE x WHEN y ...` is already converted to `CASE WHEN x=y ...`
         SqlNodeList whenList = sqlCall.getWhenOperands();
+        SqlNodeList thenList = sqlCall.getThenOperands();
+        SqlNode elseOperand = sqlCall.getElseOperand();
 
         assert whenList.size() == thenList.size();
 
@@ -102,43 +102,23 @@ public final class HazelcastCaseOperator extends SqlOperator {
         }
 
         List<RelDataType> argTypes = new ArrayList<>(thenList.size() + 1);
-        List<SqlNode> allReturnNodes = new ArrayList<>(thenList.size() + 1);
-
-        boolean foundNotNull = false;
         for (SqlNode node : thenList) {
-            allReturnNodes.add(node);
             argTypes.add(validator.deriveType(scope, node));
-            foundNotNull |= !SqlUtil.isNullLiteral(node, false);
         }
-        SqlNode elseOperand = sqlCall.getElseOperand();
-        allReturnNodes.add(elseOperand);
         argTypes.add(validator.deriveType(scope, elseOperand));
-        foundNotNull |= !SqlUtil.isNullLiteral(elseOperand, false);
+        RelDataType caseReturnType = argTypes.stream().reduce(HazelcastTypeUtils::withHigherPrecedence).get();
 
-        if (!foundNotNull) {
-            if (throwOnFailure) {
-                throw callBinding.newError(RESOURCE.mustNotNullInElse());
-            }
-            return false;
-        }
-
-        RelDataType caseReturnType = argTypes.get(0);
-        for (int i = 1; i < argTypes.size(); i++) {
-            caseReturnType = HazelcastTypeUtils.withHigherPrecedence(caseReturnType, argTypes.get(i));
-        }
-
-        HazelcastTypeCoercion typeCoercion = validator.getTypeCoercion();
         Supplier<QueryException> exceptionSupplier =
                 () -> QueryException.error(SqlErrorCode.GENERIC, "Cannot infer return type for CASE among " + argTypes);
 
-        for (int i = 0, argTypesSize = thenList.size(); i < argTypesSize; i++) {
-            int index = i;
+        for (int i = 0; i < thenList.size(); i++) {
+            int finalI = i;
             if (!coerceItem(
-                    typeCoercion,
+                    validator,
                     scope,
                     thenList.get(i),
                     caseReturnType,
-                    sqlNode -> thenList.getList().set(index, sqlNode),
+                    sqlNode -> thenList.getList().set(finalI, sqlNode),
                     throwOnFailure,
                     exceptionSupplier)
             ) {
@@ -147,24 +127,24 @@ public final class HazelcastCaseOperator extends SqlOperator {
         }
 
         return coerceItem(
-                typeCoercion,
+                validator,
                 scope,
                 elseOperand,
                 caseReturnType,
-                sqlNode -> sqlCall.setOperand(ELSE_BRANCHES_OPERAND_INDEX, sqlNode),
+                sqlNode -> sqlCall.setOperand(ELSE_BRANCH_OPERAND_INDEX, sqlNode),
                 throwOnFailure,
                 exceptionSupplier);
     }
 
     private boolean coerceItem(
-            HazelcastTypeCoercion typeCoercion,
+            HazelcastSqlValidator validator,
             SqlValidatorScope scope,
             SqlNode item,
             RelDataType type,
             Consumer<SqlNode> replaceFn,
             boolean throwOnFailure,
             Supplier<QueryException> exceptionSupplier) {
-        boolean elementTypeCoerced = typeCoercion.rowTypeElementCoercion(
+        boolean elementTypeCoerced = validator.getTypeCoercion().rowTypeElementCoercion(
                 scope,
                 item,
                 type,
@@ -227,7 +207,7 @@ public final class HazelcastCaseOperator extends SqlOperator {
 
         @Override
         public RelDataType inferReturnType(SqlOperatorBinding binding) {
-            return binding.getOperandType(binding.getOperandCount() - 1);
+            return binding.getOperandType(ELSE_BRANCH_OPERAND_INDEX);
         }
     }
 }
