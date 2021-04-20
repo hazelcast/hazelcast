@@ -39,8 +39,17 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import static com.hazelcast.sql.SqlColumnType.*;
+import static com.hazelcast.sql.SqlColumnType.BIGINT;
+import static com.hazelcast.sql.SqlColumnType.DATE;
+import static com.hazelcast.sql.SqlColumnType.DOUBLE;
+import static com.hazelcast.sql.SqlColumnType.INTEGER;
+import static com.hazelcast.sql.SqlColumnType.OBJECT;
+import static com.hazelcast.sql.SqlColumnType.TIME;
+import static com.hazelcast.sql.SqlColumnType.TIMESTAMP;
+import static com.hazelcast.sql.SqlColumnType.TIMESTAMP_WITH_TIME_ZONE;
+import static com.hazelcast.sql.SqlColumnType.VARCHAR;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 
@@ -192,10 +201,12 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
 
     @Test
     public void betweenSymmetricPredicateTypeCheckTest() {
+        int cycleCounter = 0;
         for (ClassWithSqlColumnType<?> classDescriptor : CLASS_DESCRIPTORS) {
             putAll(classDescriptor.expressionType.nonNullValues().toArray());
             for (ClassWithSqlColumnType<?> lowerBoundDesc : CLASS_DESCRIPTORS) {
                 for (ClassWithSqlColumnType<?> upperBoundDesc : CLASS_DESCRIPTORS) {
+                    ++cycleCounter;
                     ExpressionBiValue biValue = ExpressionBiValue.createBiValue(
                             lowerBoundDesc.expressionType.valueFrom(),
                             upperBoundDesc.expressionType.valueTo()
@@ -215,6 +226,7 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
 
             }
         }
+        assertEquals(13 * 13 * 13, cycleCounter);
     }
 
     @Test
@@ -272,10 +284,11 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
                 assertEquals(expectedType, actualType);
             }
         } catch (HazelcastSqlException e) {
-            // TODO: error happens because integer types which can be wided, aren't wided. WIP.
-            // assertNotNull(expectedResults.getValue());
-            // TODO: they can have different numeric types, but from same family (e.g., TINYINT and BIGINT).
-            // assertEquals(expectedResults.getValue().getMessage(), e.getMessage());
+             assertNotNull(expectedResults.getValue());
+             // Expected : ... Parameter at position 0 must be of BIGINT type, but VARCHAR was found
+             // Actual   : ... Parameter at position 0 must be of TINYINT type, but VARCHAR was found
+             // We are not hard-casting everything to BIGINT, so, we wouldn't use check below.
+             // assertEquals(expectedResults.getValue().getMessage(), e.getMessage());
         }
 
     }

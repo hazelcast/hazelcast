@@ -16,11 +16,17 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators.predicate;
 
+import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastInfixOperator;
+import com.hazelcast.sql.impl.calcite.validate.param.BetweenOpNumericPrecedenceParameterConverter;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeComparability;
+import org.apache.calcite.sql.SqlDynamicParam;
 import org.apache.calcite.sql.SqlKind;
+import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.fun.SqlBetweenOperator.Flag;
 import org.apache.calcite.sql.type.ComparableOperandTypeChecker;
@@ -28,6 +34,9 @@ import org.apache.calcite.sql.type.InferTypes;
 import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import org.apache.calcite.sql.type.SqlOperandTypeChecker.Consistency;
+
+import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils.toHazelcastType;
+import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils.withHigherPrecedence;
 
 /*
  *  Grammar
@@ -82,6 +91,7 @@ public final class HazelcastBetweenOperator extends HazelcastInfixOperator {
         assert callBinding.getOperandCount() == OPERANDS;
         for (int i = 0; i < OPERANDS; ++i) {
             RelDataType type = callBinding.getOperandType(i);
+            // fast fail-forward path.
             if (type.getComparability().ordinal() < RelDataTypeComparability.ALL.ordinal()) {
                 if (throwOnFailure) {
                     throw callBinding.newValidationSignatureError();
@@ -90,6 +100,22 @@ public final class HazelcastBetweenOperator extends HazelcastInfixOperator {
                 }
             }
         }
+
+        HazelcastSqlValidator validator = callBinding.getValidator();
+        RelDataType winningType = withHigherPrecedence(
+                callBinding.getOperandType(0),  withHigherPrecedence(
+                        callBinding.getOperandType(1),
+                        callBinding.getOperandType(2)
+                ));
+
+        QueryDataType winnerQueryDataType = toHazelcastType(winningType.getSqlTypeName());
+
+        // Set flexible parameter converter that allows TINYINT/SMALLINT/INTEGER -> BIGINT conversions
+        if (winnerQueryDataType.getTypeFamily().isNumeric()) {
+            setNumericParameterConverter(validator, callBinding.getCall().getOperandList().get(1), winnerQueryDataType);
+            setNumericParameterConverter(validator, callBinding.getCall().getOperandList().get(2), winnerQueryDataType);
+        }
+
         return true;
     }
 
@@ -99,6 +125,20 @@ public final class HazelcastBetweenOperator extends HazelcastInfixOperator {
 
     public boolean isNegated() {
         return negated;
+    }
+
+    private void setNumericParameterConverter(HazelcastSqlValidator validator, SqlNode node, QueryDataType type) {
+        if (node.getKind() == SqlKind.DYNAMIC_PARAM) {
+            SqlDynamicParam node0 = (SqlDynamicParam) node;
+
+            ParameterConverter converter = new BetweenOpNumericPrecedenceParameterConverter(
+                    node0.getIndex(),
+                    node.getParserPosition(),
+                    type
+            );
+
+            validator.setParameterConverter(node0.getIndex(), converter);
+        }
     }
 
 }
