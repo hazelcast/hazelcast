@@ -41,7 +41,7 @@ public class MappingStorageTest extends SimpleTestInClusterSupport {
 
     @Before
     public void before() {
-        storage = new MappingStorage(nodeEngine(instances()[0].getHazelcastInstance()));
+        storage = new MappingStorage(nodeEngine(instance().getHazelcastInstance()));
     }
 
     @Test
