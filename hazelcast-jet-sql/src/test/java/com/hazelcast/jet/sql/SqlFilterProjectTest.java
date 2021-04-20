@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql;
 
 import com.hazelcast.jet.sql.impl.connector.test.TestAllTypesSqlConnector;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
+import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
@@ -27,6 +28,7 @@ import org.junit.Test;
 import static com.hazelcast.jet.core.TestUtil.createMap;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class SqlFilterProjectTest extends SqlTestSupport {
 
@@ -666,5 +668,14 @@ public class SqlFilterProjectTest extends SqlTestSupport {
         SqlResult result = sqlService.execute("SELECT CAST(? AS VARCHAR) FROM t", 1);
         assertThat(result.getRowMetadata().getColumnCount()).isEqualTo(1);
         assertThat(result.getRowMetadata().getColumn(0).getType()).isEqualTo(SqlColumnType.VARCHAR);
+    }
+
+    @Test
+    public void test_dynamicParameterCountMismatch() {
+        TestBatchSqlConnector.create(sqlService, "t", 1);
+
+        assertThatThrownBy(() -> sqlService.execute("SELECT CAST(? AS VARCHAR) FROM t", 1, 2))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Unexpected parameter count: expected 1, got 2");
     }
 }
