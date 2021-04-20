@@ -92,7 +92,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
      */
     public static <K, V> void assertMapEventually(String mapName, String sql, List<Object> arguments, Map<K, V> expected) {
         SqlStatement statement = new SqlStatement(sql);
-        arguments.forEach(statement::addParameter);
+        statement.setParameters(arguments);
 
         instance().getSql().execute(statement);
 
