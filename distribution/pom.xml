@@ -242,6 +242,12 @@
             <artifactId>hazelcast-jet-hadoop-all</artifactId>
             <version>${project.version}</version>
             <classifier>jar-with-dependencies</classifier>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.re2j</groupId>
+                    <artifactId>re2j</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
