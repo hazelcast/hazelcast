@@ -86,7 +86,7 @@ public class TaskletExecutionService {
     private final String hzInstanceName;
     private final ILogger logger;
     private int cooperativeThreadIndex;
-    private AtomicBoolean startCooperativeThreads = new AtomicBoolean(false);
+    private final AtomicBoolean startCooperativeThreads = new AtomicBoolean(false);
     @Probe(name = "blockingWorkerCount")
     private final Counter blockingWorkerCount = MwCounter.newMwCounter();
     private volatile boolean isShutdown;
