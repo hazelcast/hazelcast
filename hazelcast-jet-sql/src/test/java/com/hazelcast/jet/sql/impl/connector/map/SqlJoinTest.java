@@ -25,8 +25,8 @@ import com.hazelcast.sql.impl.QueryException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import static com.hazelcast.sql.impl.type.QueryDataType.INT;
-import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTEGER;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.VARCHAR;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -70,7 +70,7 @@ public class SqlJoinTest extends SqlTestSupport {
                 sqlService,
                 leftName,
                 singletonList("__key"),
-                singletonList(INT),
+                singletonList(INTEGER),
                 asList(new String[]{"0"}, new String[]{"1"}, new String[]{"2"})
         );
 
@@ -184,7 +184,7 @@ public class SqlJoinTest extends SqlTestSupport {
                 sqlService,
                 leftName,
                 singletonList("v"),
-                singletonList(INT),
+                singletonList(INTEGER),
                 asList(new String[]{"0"}, new String[]{null}, new String[]{"2"})
         );
 
@@ -332,7 +332,7 @@ public class SqlJoinTest extends SqlTestSupport {
                 sqlService,
                 leftName,
                 asList("v1", "v2"),
-                asList(INT, INT),
+                asList(INTEGER, INTEGER),
                 asList(new String[]{"0", "0"}, new String[]{"1", "0"}, new String[]{"2", "2"})
         );
 
@@ -385,7 +385,7 @@ public class SqlJoinTest extends SqlTestSupport {
                 sqlService,
                 leftName,
                 singletonList("v"),
-                singletonList(INT),
+                singletonList(INTEGER),
                 asList(new String[]{"0"}, new String[]{null}, new String[]{"2"})
         );
 
@@ -409,7 +409,7 @@ public class SqlJoinTest extends SqlTestSupport {
                 sqlService,
                 leftName,
                 asList("v1", "v2"),
-                asList(INT, VARCHAR),
+                asList(INTEGER, VARCHAR),
                 asList(new String[]{"0", "value-0"}, new String[]{"1", null}, new String[]{"2", "value-2"})
         );
 
@@ -433,7 +433,7 @@ public class SqlJoinTest extends SqlTestSupport {
                 sqlService,
                 leftName,
                 asList("v1", "v2"),
-                asList(INT, VARCHAR),
+                asList(INTEGER, VARCHAR),
                 asList(new String[]{"0", "value-0"}, new String[]{"1", null}, new String[]{"2", "value-2"})
         );
 
@@ -596,7 +596,7 @@ public class SqlJoinTest extends SqlTestSupport {
                 sqlService,
                 leftName,
                 singletonList("v"),
-                singletonList(INT),
+                singletonList(INTEGER),
                 asList(new String[]{"0"}, new String[]{null}, new String[]{"2"})
         );
 
@@ -624,7 +624,7 @@ public class SqlJoinTest extends SqlTestSupport {
                 sqlService,
                 leftName,
                 singletonList("v"),
-                singletonList(INT),
+                singletonList(INTEGER),
                 asList(new String[]{"0"}, new String[]{null}, new String[]{"2"})
         );
 
@@ -652,7 +652,7 @@ public class SqlJoinTest extends SqlTestSupport {
                 sqlService,
                 leftName,
                 singletonList("v"),
-                singletonList(INT),
+                singletonList(INTEGER),
                 asList(new String[]{"0"}, new String[]{null}, new String[]{"2"})
         );
 
@@ -680,7 +680,7 @@ public class SqlJoinTest extends SqlTestSupport {
                 sqlService,
                 leftName,
                 singletonList("v"),
-                singletonList(INT),
+                singletonList(INTEGER),
                 asList(new String[]{"0"}, new String[]{null}, new String[]{"2"})
         );
 
@@ -708,7 +708,7 @@ public class SqlJoinTest extends SqlTestSupport {
                 sqlService,
                 leftName,
                 singletonList("v"),
-                singletonList(INT),
+                singletonList(INTEGER),
                 asList(new String[]{"0"}, new String[]{null}, new String[]{"2"})
         );
 
@@ -737,7 +737,7 @@ public class SqlJoinTest extends SqlTestSupport {
                 sqlService,
                 leftName,
                 singletonList("v"),
-                singletonList(INT),
+                singletonList(INTEGER),
                 asList(new String[]{"0"}, new String[]{null}, new String[]{"2"})
         );
 
@@ -765,7 +765,7 @@ public class SqlJoinTest extends SqlTestSupport {
                 sqlService,
                 leftName,
                 singletonList("v"),
-                singletonList(INT),
+                singletonList(INTEGER),
                 asList(new String[]{"0"}, new String[]{null})
         );
 
@@ -796,7 +796,7 @@ public class SqlJoinTest extends SqlTestSupport {
                 sqlService,
                 leftName,
                 singletonList("v"),
-                singletonList(INT),
+                singletonList(INTEGER),
                 asList(new String[]{"0"}, new String[]{null}, new String[]{"2"}, new String[]{"3"})
         );
 
@@ -827,7 +827,7 @@ public class SqlJoinTest extends SqlTestSupport {
                 sqlService,
                 leftName,
                 singletonList("v"),
-                singletonList(INT),
+                singletonList(INTEGER),
                 asList(new String[]{"0"}, new String[]{null}, new String[]{"2"}, new String[]{"3"})
         );
 

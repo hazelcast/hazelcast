@@ -33,7 +33,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.utility.DockerImageName;
 
 import javax.annotation.Nonnull;
 import java.sql.Connection;
@@ -52,11 +51,9 @@ import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
 @RunWith(HazelcastSerialClassRunner.class)
 public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
 
-    private static final DockerImageName MYSQL_IMAGE =
-            DockerImageName.parse("debezium/example-mysql:1.3").asCompatibleSubstituteFor("mysql");
+    private static final String MYSQL_IMAGE = "debezium/example-mysql:1.3";
 
-    private static final DockerImageName POSTGRES_IMAGE =
-            DockerImageName.parse("debezium/example-postgres:1.3").asCompatibleSubstituteFor("postgres");
+    private static final String POSTGRES_IMAGE = "debezium/example-postgres:1.3";
 
     @Test
     public void mysql() throws Exception {

@@ -16,6 +16,9 @@
 
 package com.hazelcast.sql.support.expressions;
 
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
+import com.hazelcast.sql.impl.type.converter.Converters;
+
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -50,6 +53,17 @@ public abstract class ExpressionValue implements Serializable {
             throw new RuntimeException("Cannot create " + ExpressionValue.class.getSimpleName() + " for type \""
                     + type + "\"", e);
         }
+    }
+
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
+    public static String classForType(QueryDataTypeFamily type) {
+        Class<?> valueClass = Converters.getConverters().stream()
+                .filter(c -> c.getTypeFamily() == type)
+                .findAny()
+                .get()
+                .getNormalizedValueClass();
+
+        return ExpressionValue.class.getName() + "$" + valueClass.getSimpleName() + "Val";
     }
 
     public static <T extends ExpressionValue> T create(Class<? extends ExpressionValue> clazz) {
