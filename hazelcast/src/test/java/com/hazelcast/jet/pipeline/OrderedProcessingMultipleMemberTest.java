@@ -26,24 +26,24 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.core.JetTestSupport;
-
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.pipeline.test.AssertionCompletedException;
 import com.hazelcast.jet.pipeline.test.AssertionSinks;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.io.Serializable;
-
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
@@ -66,6 +66,7 @@ import static com.hazelcast.jet.core.test.JetAssert.fail;
  */
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
+@Category(QuickTest.class)
 public class OrderedProcessingMultipleMemberTest extends JetTestSupport implements Serializable {
 
     // Used to set the LP of the stage with the higher value than upstream parallelism
@@ -73,6 +74,7 @@ public class OrderedProcessingMultipleMemberTest extends JetTestSupport implemen
     // Used to set the LP of the stage with the smaller value than upstream parallelism
     private static final int LOW_LOCAL_PARALLELISM = 2;
     private static final int INSTANCE_COUNT = 2;
+    private static final String JOURNALED_MAP_PREFIX = "test-map-";
 
     private static Pipeline p;
     private static JetInstance[] instances;
@@ -88,15 +90,12 @@ public class OrderedProcessingMultipleMemberTest extends JetTestSupport implemen
 
     @BeforeClass
     public static void setupClass() {
-        int testCount = 16;
-        Config config = new Config();
-        for (int idx = 0; idx < testCount; idx++) {
-            EventJournalConfig eventJournalConfig = config
-                    .getMapConfig("test-map-" + idx)
-                    .getEventJournalConfig();
-            eventJournalConfig.setEnabled(true);
-            eventJournalConfig.setCapacity(30000); // 30000/271 ~= 111 item per partition
-        }
+        Config config = smallInstanceConfig();
+        EventJournalConfig eventJournalConfig = config
+                .getMapConfig(JOURNALED_MAP_PREFIX + '*')
+                .getEventJournalConfig();
+        eventJournalConfig.setEnabled(true);
+        eventJournalConfig.setCapacity(30000); // 30000/271 ~= 111 item per partition
         instances = new JetInstance[INSTANCE_COUNT];
         for (int i = 0; i < INSTANCE_COUNT; i++) {
             instances[i] = Hazelcast.newHazelcastInstance(config).getJetInstance();

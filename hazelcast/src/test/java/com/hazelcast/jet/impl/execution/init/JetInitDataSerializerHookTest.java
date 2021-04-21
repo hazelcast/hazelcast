@@ -25,6 +25,7 @@ import com.hazelcast.jet.impl.JobExecutionRecord;
 import com.hazelcast.jet.impl.JobRecord;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -52,7 +53,7 @@ import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
-@Category(ParallelJVMTest.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 public class JetInitDataSerializerHookTest {
 

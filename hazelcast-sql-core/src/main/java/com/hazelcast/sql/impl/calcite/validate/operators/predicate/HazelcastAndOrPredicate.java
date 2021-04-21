@@ -35,25 +35,25 @@ import java.util.Arrays;
 public final class HazelcastAndOrPredicate extends HazelcastBinaryOperator {
 
     public static final HazelcastAndOrPredicate AND = new HazelcastAndOrPredicate(
-        "AND",
-        SqlKind.AND,
-        SqlStdOperatorTable.AND.getLeftPrec()
+            "AND",
+            SqlKind.AND,
+            SqlStdOperatorTable.AND.getLeftPrec()
     );
 
     public static final SqlBinaryOperator OR = new HazelcastAndOrPredicate(
-        "OR",
-        SqlKind.OR,
-        SqlStdOperatorTable.OR.getLeftPrec()
+            "OR",
+            SqlKind.OR,
+            SqlStdOperatorTable.OR.getLeftPrec()
     );
 
     private HazelcastAndOrPredicate(String name, SqlKind kind, int prec) {
         super(
-            name,
-            kind,
-            prec,
-            true,
-            ReturnTypes.BOOLEAN_NULLABLE,
-            InferTypes.BOOLEAN
+                name,
+                kind,
+                prec,
+                true,
+                ReturnTypes.BOOLEAN_NULLABLE,
+                InferTypes.BOOLEAN
         );
     }
 

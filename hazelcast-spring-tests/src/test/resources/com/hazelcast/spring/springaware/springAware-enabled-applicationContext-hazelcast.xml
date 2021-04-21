@@ -27,9 +27,10 @@
         <hz:config>
             <hz:spring-aware/>
             <hz:cluster-name>${cluster.name}</hz:cluster-name>
-            <hz:network port="5701">
+            <hz:network port="5750">
                 <hz:join>
                     <hz:multicast enabled="false"/>
+                    <hz:auto-detection enabled="false"/>
                 </hz:join>
                 <hz:interfaces enabled="true">
                     <hz:interface>127.0.0.1</hz:interface>
@@ -45,7 +46,16 @@
                     redo-operation="true"
                     smart-routing="true">
 
-            <hz:member>127.0.0.1</hz:member>
+            <hz:member>127.0.0.1:5750</hz:member>
+            <hz:member>127.0.0.1:5751</hz:member>
+            <hz:member>127.0.0.1:5752</hz:member>
+            <hz:member>127.0.0.1:5753</hz:member>
+            <hz:member>127.0.0.1:5754</hz:member>
+            <hz:member>127.0.0.1:5755</hz:member>
+            <hz:member>127.0.0.1:5756</hz:member>
+            <hz:member>127.0.0.1:5757</hz:member>
+            <hz:member>127.0.0.1:5758</hz:member>
+            <hz:member>127.0.0.1:5759</hz:member>
 
             <hz:socket-options buffer-size="32"
                                keep-alive="false"

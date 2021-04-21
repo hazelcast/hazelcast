@@ -31,7 +31,6 @@
         <hz:config>
             <hz:cluster-name>dev</hz:cluster-name>
             <hz:properties>
-                <hz:property name="hazelcast.wait.seconds.before.join">0</hz:property>
                 <hz:property name="hazelcast.graceful.shutdown.max.wait">120</hz:property>
                 <hz:property name="hazelcast.partition.backup.sync.interval">1</hz:property>
             </hz:properties>

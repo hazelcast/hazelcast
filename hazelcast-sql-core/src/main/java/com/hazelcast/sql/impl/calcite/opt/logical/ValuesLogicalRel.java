@@ -25,10 +25,10 @@ import org.apache.calcite.rex.RexLiteral;
 
 public class ValuesLogicalRel extends Values implements LogicalRel {
     public ValuesLogicalRel(
-        RelOptCluster cluster,
-        RelDataType rowType,
-        ImmutableList<ImmutableList<RexLiteral>> tuples,
-        RelTraitSet traits
+            RelOptCluster cluster,
+            RelDataType rowType,
+            ImmutableList<ImmutableList<RexLiteral>> tuples,
+            RelTraitSet traits
     ) {
         super(cluster, rowType, tuples, traits);
     }

@@ -24,9 +24,12 @@ import com.hazelcast.jet.core.TestProcessors.MockPMS;
 import com.hazelcast.jet.core.TestProcessors.MockPS;
 import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
@@ -37,6 +40,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ClusterStateChangeTest extends JetTestSupport {
 
     private static final int NODE_COUNT = 3;
@@ -54,7 +58,7 @@ public class ClusterStateChangeTest extends JetTestSupport {
     @Before
     public void before() {
         TestProcessors.reset(TOTAL_PARALLELISM);
-        Config config = new Config();
+        Config config = smallInstanceConfig();
         config.getJetConfig().getInstanceConfig().setCooperativeThreadCount(LOCAL_PARALLELISM);
         members = createJetMembers(config, NODE_COUNT);
 

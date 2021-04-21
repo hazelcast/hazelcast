@@ -72,7 +72,24 @@
                         </configuration>
                     </execution>
                 </executions>
-
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>${maven.enforcer.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>enforce-versions</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <rules>
+                        <dependencyConvergence/>
+                    </rules>
+                </configuration>
             </plugin>
         </plugins>
     </build>
@@ -91,7 +108,7 @@
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-sql</artifactId>
             <version>${project.version}</version>
-            <classifier>jar-with-dependencies</classifier>
+            <classifier>${fat.dependency.classifier}</classifier>
         </dependency>
         <!-- JetCommandLine dependencies-->
         <dependency>
@@ -131,32 +148,44 @@
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-aws</artifactId>
-            <version>3.3</version>
+            <version>${hazelcast.aws.version}</version>
         </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-kubernetes</artifactId>
-            <version>2.2.1</version>
+            <version>${hazelcast.kubernetes.version}</version>
         </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-gcp</artifactId>
-            <version>2.1</version>
+            <version>${hazelcast.gcp.version}</version>
         </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-azure</artifactId>
-            <version>2.1</version>
+            <version>${hazelcast.azure.version}</version>
         </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-hibernate53</artifactId>
             <version>2.1.1</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.hazelcast</groupId>
+                    <artifactId>hazelcast</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-wm</artifactId>
             <version>4.0</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.hazelcast</groupId>
+                    <artifactId>hazelcast</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- Jet extensions -->
@@ -164,43 +193,43 @@
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-avro</artifactId>
             <version>${project.version}</version>
-            <classifier>jar-with-dependencies</classifier>
+            <classifier>${fat.dependency.classifier}</classifier>
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-cdc-debezium</artifactId>
             <version>${project.version}</version>
-            <classifier>jar-with-dependencies</classifier>
+            <classifier>${fat.dependency.classifier}</classifier>
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-cdc-mysql</artifactId>
             <version>${project.version}</version>
-            <classifier>jar-with-dependencies</classifier>
+            <classifier>${fat.dependency.classifier}</classifier>
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-cdc-postgres</artifactId>
             <version>${project.version}</version>
-            <classifier>jar-with-dependencies</classifier>
+            <classifier>${fat.dependency.classifier}</classifier>
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-csv</artifactId>
             <version>${project.version}</version>
-            <classifier>jar-with-dependencies</classifier>
+            <classifier>${fat.dependency.classifier}</classifier>
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-elasticsearch-7</artifactId>
             <version>${project.version}</version>
-            <classifier>jar-with-dependencies</classifier>
+            <classifier>${fat.dependency.classifier}</classifier>
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-elasticsearch-6</artifactId>
             <version>${project.version}</version>
-            <classifier>jar-with-dependencies</classifier>
+            <classifier>${fat.dependency.classifier}</classifier>
             <exclusions>
                 <!--
                 Exclude the elastic client for version 6 reported by enforcer plugin
@@ -217,67 +246,67 @@
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-grpc</artifactId>
             <version>${project.version}</version>
-            <classifier>jar-with-dependencies</classifier>
+            <classifier>${fat.dependency.classifier}</classifier>
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-files-azure</artifactId>
             <version>${project.version}</version>
-            <classifier>jar-with-dependencies</classifier>
+            <classifier>${fat.dependency.classifier}</classifier>
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-files-gcs</artifactId>
             <version>${project.version}</version>
-            <classifier>jar-with-dependencies</classifier>
+            <classifier>${fat.dependency.classifier}</classifier>
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-files-s3</artifactId>
             <version>${project.version}</version>
-            <classifier>jar-with-dependencies</classifier>
+            <classifier>${fat.dependency.classifier}</classifier>
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-hadoop-all</artifactId>
             <version>${project.version}</version>
-            <classifier>jar-with-dependencies</classifier>
             <exclusions>
                 <exclusion>
                     <groupId>com.google.re2j</groupId>
                     <artifactId>re2j</artifactId>
                 </exclusion>
             </exclusions>
+            <classifier>${fat.dependency.classifier}</classifier>
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-kafka</artifactId>
             <version>${project.version}</version>
-            <classifier>jar-with-dependencies</classifier>
+            <classifier>${fat.dependency.classifier}</classifier>
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-kinesis</artifactId>
             <version>${project.version}</version>
-            <classifier>jar-with-dependencies</classifier>
+            <classifier>${fat.dependency.classifier}</classifier>
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-protobuf</artifactId>
             <version>${project.version}</version>
-            <classifier>jar-with-dependencies</classifier>
+            <classifier>${fat.dependency.classifier}</classifier>
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-python</artifactId>
             <version>${project.version}</version>
-            <classifier>jar-with-dependencies</classifier>
+            <classifier>${fat.dependency.classifier}</classifier>
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-s3</artifactId>
             <version>${project.version}</version>
-            <classifier>jar-with-dependencies</classifier>
+            <classifier>${fat.dependency.classifier}</classifier>
         </dependency>
     </dependencies>
 </project>

@@ -36,7 +36,7 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.annotation.NightlyTest;
-import org.junit.Ignore;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -60,11 +60,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.fail;
 
-@Ignore("https://github.com/hazelcast/hazelcast/issues/18453")
 public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTest {
 
     @Test
-    //category intentionally left out, we want this one test to run in standard test suits
+    @Category(QuickTest.class)
     public void customers() throws Exception {
         // given
         List<String> expectedRecords = Arrays.asList(
@@ -225,7 +224,7 @@ public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTe
     }
 
     @Test
-    //category intentionally left out, we want this one test to run in standard test suites
+    @Category(QuickTest.class)
     public void restart_noProcessingGuarantee() throws Exception {
         Pipeline pipeline = customersPipeline(250L);
 

@@ -35,6 +35,7 @@ import com.hazelcast.jet.impl.util.AsyncSnapshotWriterImpl.SnapshotDataValueTerm
 import com.hazelcast.map.IMap;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.hamcrest.core.StringContains;
 import org.junit.After;
@@ -64,8 +65,8 @@ import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class AsyncSnapshotWriterImplTest extends JetTestSupport {
 
     private static final String ALWAYS_FAILING_MAP = "alwaysFailingMap";
@@ -268,7 +269,7 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
 
         // Then
         assertTrueEventually(() ->
-                assertThat(String.valueOf(writer.getError()), StringContains.containsString("Always failing store")), 10);
+                assertThat(String.valueOf(writer.getError()), StringContains.containsString("Always failing store")));
     }
 
     @Test

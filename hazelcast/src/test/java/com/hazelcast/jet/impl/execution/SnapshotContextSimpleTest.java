@@ -20,20 +20,25 @@ import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.impl.operation.SnapshotPhase1Operation.SnapshotPhase1Result;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastSerialClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class SnapshotContextSimpleTest {
 
     @Rule
@@ -146,7 +151,17 @@ public class SnapshotContextSimpleTest {
         ssContext.initTaskletCount(1, 1, 0);
         CompletableFuture<SnapshotPhase1Result> future = ssContext.startNewSnapshotPhase1(10, null, 0);
         ssContext.storeSnapshotTaskletDone(9, false);
-        ssContext.processorTaskletDone();
+        ssContext.processorTaskletDone(9);
         assertTrue(future.isDone());
+    }
+
+    @Test
+    public void test_taskletDoneWhileInPhase2() {
+        ssContext.initTaskletCount(1, 1, 0);
+        ssContext.startNewSnapshotPhase1(10, "map", 0);
+        ssContext.phase1DoneForTasklet(1, 2, 3);
+        ssContext.startNewSnapshotPhase2(10, true);
+        assertThatThrownBy(() -> ssContext.processorTaskletDone(9))
+                .isInstanceOf(AssertionError.class);
     }
 }

@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.schema;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastFunction;
+import com.hazelcast.sql.impl.expression.Expression;
 import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.SqlOperandTypeInference;
@@ -55,5 +56,5 @@ public abstract class JetSpecificTableFunction extends HazelcastFunction impleme
         return connector.isStream();
     }
 
-    public abstract HazelcastTable toTable(List<Object> arguments);
+    public abstract HazelcastTable toTable(List<Expression<?>> argumentExpressions);
 }

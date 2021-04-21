@@ -30,7 +30,6 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.retry.RetryStrategies;
 import com.hazelcast.jet.retry.RetryStrategy;
-import com.hazelcast.jet.test.SerialTest;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.After;
@@ -68,7 +67,7 @@ import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
-@Category({SerialTest.class, NightlyTest.class})
+@Category({NightlyTest.class})
 public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
 
     private static final long RECONNECT_INTERVAL_MS = SECONDS.toMillis(1);
@@ -338,7 +337,7 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
 
     private PostgreSQLContainer<?> initPostgres(Network network, Integer fixedExposedPort) {
         PostgreSQLContainer<?> postgres = namedTestContainer(
-                new PostgreSQLContainer<>("debezium/example-postgres:1.3")
+                new PostgreSQLContainer<>(AbstractPostgresCdcIntegrationTest.DOCKER_IMAGE)
                         .withDatabaseName("postgres")
                         .withUsername("postgres")
                         .withPassword("postgres")

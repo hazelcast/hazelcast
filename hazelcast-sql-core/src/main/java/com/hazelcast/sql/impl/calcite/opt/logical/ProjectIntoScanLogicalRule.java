@@ -74,10 +74,10 @@ public final class ProjectIntoScanLogicalRule extends RelOptRule {
 
     private ProjectIntoScanLogicalRule() {
         super(
-            operand(LogicalProject.class,
-                operandJ(LogicalTableScan.class, null, OptUtils::isHazelcastTable, none())),
-            RelFactories.LOGICAL_BUILDER,
-            ProjectIntoScanLogicalRule.class.getSimpleName()
+                operand(LogicalProject.class,
+                        operandJ(LogicalTableScan.class, null, OptUtils::isHazelcastTable, none())),
+                RelFactories.LOGICAL_BUILDER,
+                ProjectIntoScanLogicalRule.class.getSimpleName()
         );
     }
 
@@ -99,7 +99,7 @@ public final class ProjectIntoScanLogicalRule extends RelOptRule {
      * Process simple case when all project expressions are direct field access. The {@code Project} is eliminated completely.
      *
      * @param mapping Projects mapping.
-     * @param scan Scan.
+     * @param scan    Scan.
      */
     private static void processSimple(RelOptRuleCall call, Mappings.TargetMapping mapping, TableScan scan) {
         // Get columns defined in the original TableScan.
@@ -115,8 +115,8 @@ public final class ProjectIntoScanLogicalRule extends RelOptRule {
 
         // Construct the new TableScan with adjusted columns.
         LogicalTableScan newScan = OptUtils.createLogicalScanWithNewTable(
-            scan,
-            originalTable.withProject(newProjects)
+                scan,
+                originalTable.withProject(newProjects)
         );
 
         call.transformTo(newScan);
@@ -127,7 +127,7 @@ public final class ProjectIntoScanLogicalRule extends RelOptRule {
      * columns returned from the {@code TableScan} is adjusted.
      *
      * @param project Project.
-     * @param scan Scan.
+     * @param scan    Scan.
      */
     private void processComplex(RelOptRuleCall call, Project project, TableScan scan) {
         HazelcastTable originalTable = OptUtils.getHazelcastTable(scan);
@@ -151,8 +151,8 @@ public final class ProjectIntoScanLogicalRule extends RelOptRule {
 
         // Create the new TableScan that do not return unused columns.
         LogicalTableScan newScan = OptUtils.createLogicalScanWithNewTable(
-            scan,
-            originalTable.withProject(newScanProjects)
+                scan,
+                originalTable.withProject(newScanProjects)
         );
 
         // Create new Project with adjusted column references that point to new TableScan fields.
@@ -167,10 +167,10 @@ public final class ProjectIntoScanLogicalRule extends RelOptRule {
         }
 
         LogicalProject newProject = LogicalProject.create(
-            newScan,
-            project.getHints(),
-            newProjects,
-            project.getRowType()
+                newScan,
+                project.getHints(),
+                newProjects,
+                project.getRowType()
         );
 
         call.transformTo(newProject);

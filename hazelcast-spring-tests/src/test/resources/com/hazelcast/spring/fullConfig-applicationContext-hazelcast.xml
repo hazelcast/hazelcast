@@ -125,7 +125,7 @@
             <hz:wan-replication name="testWan3">
                 <hz:consumer persist-wan-replicated-data="false"/>
             </hz:wan-replication>
-            <hz:network port="${cluster.port}" port-auto-increment="false" port-count="42">
+            <hz:network port="${cluster.port}" port-auto-increment="true" port-count="42">
                 <hz:outbound-ports>
                     <hz:ports>35000-35100</hz:ports>
                     <hz:ports>36000,36100</hz:ports>
@@ -137,7 +137,7 @@
                             <hz:interface>10.10.10.*</hz:interface>
                         </hz:trusted-interfaces>
                     </hz:multicast>
-                    <hz:tcp-ip enabled="${boolean.true}">
+                    <hz:tcp-ip enabled="${boolean.false}">
                         <hz:required-member>127.0.0.1:5700</hz:required-member>
                         <!--                         <hz:members>${cluster.members}</hz:members> -->
                         <hz:interface>127.0.0.1:5700</hz:interface>
@@ -215,7 +215,7 @@
                 </hz:rest-api>
                 <hz:memcache-protocol enabled="true"/>
             </hz:network>
-            <hz:partition-group enabled="true" group-type="CUSTOM">
+            <hz:partition-group enabled="false" group-type="CUSTOM">
                 <hz:member-group>
                     <hz:interface>127.0.0.1</hz:interface>
                     <hz:interface>127.0.0.2</hz:interface>
@@ -1004,7 +1004,7 @@
             </hz:instance-tracking>
 
             <hz:sql>
-                <hz:executor-pool-size>10</hz:executor-pool-size>
+                <hz:executor-pool-size>5</hz:executor-pool-size>
                 <hz:statement-timeout-millis>30</hz:statement-timeout-millis>
             </hz:sql>
 

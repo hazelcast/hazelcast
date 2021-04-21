@@ -20,6 +20,8 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.parse.SqlExtendedInsert.Keyword;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
+import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import org.apache.calcite.runtime.Resources.ExInst;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlInsert;
@@ -37,6 +39,7 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.eq;
@@ -62,9 +65,6 @@ public class SqlExtendedInsertTest {
     private HazelcastTable hazelcastTable;
 
     @Mock
-    private JetTable jetTable;
-
-    @Mock
     private SqlConnector connector;
 
     @Mock
@@ -75,8 +75,7 @@ public class SqlExtendedInsertTest {
         given(validator.getCatalogReader()).willReturn(catalogReader);
         given(catalogReader.getTable(singletonList(TABLE_NAME))).willReturn(validatorTable);
         given(validatorTable.unwrap(HazelcastTable.class)).willReturn(hazelcastTable);
-        given(hazelcastTable.getTarget()).willReturn(jetTable);
-        given(jetTable.getSqlConnector()).willReturn(connector);
+        given(hazelcastTable.getTarget()).willReturn(table(connector));
     }
 
     @Test
@@ -120,6 +119,15 @@ public class SqlExtendedInsertTest {
 
     private static SqlIdentifier identifier(String name) {
         return new SqlIdentifier(name, SqlParserPos.ZERO);
+    }
+
+    private static JetTable table(SqlConnector connector) {
+        return new JetTable(connector, emptyList(), "schema", TABLE_NAME, new ConstantTableStatistics(0)) {
+            @Override
+            public PlanObjectKey getObjectKey() {
+                return null;
+            }
+        };
     }
 }
 

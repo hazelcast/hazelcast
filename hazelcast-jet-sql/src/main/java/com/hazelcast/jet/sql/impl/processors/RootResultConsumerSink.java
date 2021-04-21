@@ -27,16 +27,21 @@ import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.sql.impl.JetQueryResultProducer;
 import com.hazelcast.jet.sql.impl.JetSqlCoreBackendImpl;
 import com.hazelcast.sql.impl.JetSqlCoreBackend;
+import com.hazelcast.sql.impl.QueryException;
 
 import javax.annotation.Nonnull;
+import java.util.concurrent.CancellationException;
 
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelismOne;
+import static com.hazelcast.sql.impl.SqlErrorCode.CANCELLED_BY_USER;
 
 public final class RootResultConsumerSink implements Processor {
 
     private JetQueryResultProducer rootResultConsumer;
+    private long limit;
 
-    private RootResultConsumerSink() {
+    private RootResultConsumerSink(long limit) {
+        this.limit = limit;
     }
 
     @Override
@@ -45,17 +50,32 @@ public final class RootResultConsumerSink implements Processor {
         JetSqlCoreBackendImpl jetSqlCoreBackend = hzInst.node.nodeEngine.getService(JetSqlCoreBackend.SERVICE_NAME);
         rootResultConsumer = jetSqlCoreBackend.getResultConsumerRegistry().remove(context.jobId());
         assert rootResultConsumer != null;
+        rootResultConsumer.init(limit);
     }
 
     @Override
     public boolean tryProcess() {
-        rootResultConsumer.ensureNotDone();
+        try {
+            rootResultConsumer.ensureNotDone();
+        } catch (QueryException e) {
+            if (e.getCode() == CANCELLED_BY_USER) {
+                throw new CancellationException();
+            }
+            throw e;
+        }
         return true;
     }
 
     @Override
     public void process(int ordinal, @Nonnull Inbox inbox) {
-        rootResultConsumer.consume(inbox);
+        try {
+            rootResultConsumer.consume(inbox);
+        } catch (QueryException e) {
+            if (e.getCode() == CANCELLED_BY_USER) {
+                throw new CancellationException();
+            }
+            throw e;
+        }
     }
 
     @Override
@@ -69,8 +89,8 @@ public final class RootResultConsumerSink implements Processor {
         return true;
     }
 
-    public static ProcessorMetaSupplier rootResultConsumerSink(Address initiatorAddress) {
-        ProcessorSupplier pSupplier = ProcessorSupplier.of(() -> new RootResultConsumerSink());
+    public static ProcessorMetaSupplier rootResultConsumerSink(Address initiatorAddress, long limit) {
+        ProcessorSupplier pSupplier = ProcessorSupplier.of(() -> new RootResultConsumerSink(limit));
         return forceTotalParallelismOne(pSupplier, initiatorAddress);
     }
 }

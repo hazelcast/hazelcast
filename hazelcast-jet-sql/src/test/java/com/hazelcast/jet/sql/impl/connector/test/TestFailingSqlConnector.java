@@ -25,6 +25,7 @@ import com.hazelcast.jet.sql.impl.schema.MappingField;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
@@ -34,6 +35,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static com.hazelcast.jet.impl.util.Util.toList;
 import static java.util.Collections.singletonList;
@@ -78,10 +80,11 @@ public class TestFailingSqlConnector implements SqlConnector {
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> resolvedFields
     ) {
-        return new JetTable(
+        return new TestFailingTable(
                 this,
-                toList(resolvedFields, ef -> new TableField(ef.name(), ef.type(), false)),
-                schemaName, mappingName, new ConstantTableStatistics(0)
+                schemaName,
+                mappingName,
+                toList(resolvedFields, field -> new TableField(field.name(), field.type(), false))
         );
     }
 
@@ -107,6 +110,51 @@ public class TestFailingSqlConnector implements SqlConnector {
         @Override
         public boolean complete() {
             throw new RuntimeException("mock failure");
+        }
+    }
+
+    private static final class TestFailingTable extends JetTable {
+
+        private TestFailingTable(
+                @Nonnull SqlConnector sqlConnector,
+                @Nonnull String schemaName,
+                @Nonnull String name,
+                @Nonnull List<TableField> fields
+        ) {
+            super(sqlConnector, fields, schemaName, name, new ConstantTableStatistics(0));
+        }
+
+        @Override
+        public PlanObjectKey getObjectKey() {
+            return new TestFailingPlanObjectKey(getSchemaName(), getSqlName());
+        }
+    }
+
+    private static final class TestFailingPlanObjectKey implements PlanObjectKey {
+
+        private final String schemaName;
+        private final String name;
+
+        private TestFailingPlanObjectKey(String schemaName, String name) {
+            this.schemaName = schemaName;
+            this.name = name;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            TestFailingPlanObjectKey that = (TestFailingPlanObjectKey) o;
+            return Objects.equals(schemaName, that.schemaName) && Objects.equals(name, that.name);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(schemaName, name);
         }
     }
 }

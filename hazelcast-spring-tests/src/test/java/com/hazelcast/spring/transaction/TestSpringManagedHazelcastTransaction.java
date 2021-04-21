@@ -26,7 +26,6 @@ import com.hazelcast.transaction.TransactionalTaskContext;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -44,7 +43,6 @@ import static org.junit.Assert.assertNotNull;
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"transaction-applicationContext-hazelcast.xml"})
 @Category(QuickTest.class)
-@Ignore("https://github.com/hazelcast/hazelcast/issues/18448")
 public class TestSpringManagedHazelcastTransaction {
 
     @BeforeClass

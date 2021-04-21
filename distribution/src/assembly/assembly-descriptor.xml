@@ -36,9 +36,11 @@
                 <include>com.hazelcast:hazelcast-hibernate53</include>
                 <include>com.hazelcast:hazelcast-spring</include>
                 <include>com.hazelcast:hazelcast-wm</include>
+                <include>io.prometheus.jmx:jmx_prometheus_javaagent</include>
                 <include>org.apache.logging.log4j:*</include>
                 <include>org.slf4j:*</include>
-                <include>io.prometheus.jmx:jmx_prometheus_javaagent</include>
+                <include>info.picocli:picocli</include>
+                <include>org.jline:*</include>
                 <include>com.hazelcast.jet:hazelcast-jet-avro</include>
                 <include>com.hazelcast.jet:hazelcast-jet-cdc-debezium</include>
                 <include>com.hazelcast.jet:hazelcast-jet-cdc-mysql</include>

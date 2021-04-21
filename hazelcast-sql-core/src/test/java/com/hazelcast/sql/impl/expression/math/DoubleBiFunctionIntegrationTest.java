@@ -44,18 +44,20 @@ import static com.hazelcast.sql.SqlColumnType.TIMESTAMP;
 import static com.hazelcast.sql.SqlColumnType.TIMESTAMP_WITH_TIME_ZONE;
 import static com.hazelcast.sql.SqlColumnType.VARCHAR;
 import static com.hazelcast.sql.impl.expression.math.DoubleBiFunction.ATAN2;
+import static com.hazelcast.sql.impl.expression.math.DoubleBiFunction.POWER;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class DoubleBiFunctionIntegrationTest extends ExpressionTestSupport {
     @Parameterized.Parameter
-    public Mode mode;
+    public FunctionInfo function;
 
-    @Parameterized.Parameters(name = "mode: {0}")
+    @Parameterized.Parameters(name = "function: {0}")
     public static Collection<Object[]> parameters() {
         return Arrays.asList(new Object[][]{
-            { new Mode("ATAN2") }
+                {new FunctionInfo("ATAN2", DoubleBiFunction.ATAN2)},
+                {new FunctionInfo("POWER", DoubleBiFunction.POWER)}
         });
     }
 
@@ -66,28 +68,28 @@ public class DoubleBiFunctionIntegrationTest extends ExpressionTestSupport {
         putAndCheckValue(new ExpressionValue.DoubleVal(), sql("field1,  field1"), DOUBLE, null);
 
         // Numeric
-        putAndCheckValue((byte) 1, sql("this, this"), DOUBLE, mode.process(1d, 1d));
-        putAndCheckValue((short) 1, sql("this, this"), DOUBLE, mode.process(1d, 1d));
-        putAndCheckValue(1, sql("this, this"), DOUBLE, mode.process(1d, 1d));
-        putAndCheckValue(1L, sql("this, this"), DOUBLE, mode.process(1d, 1d));
-        putAndCheckValue(1L, sql("this, this"), DOUBLE, mode.process(1d, 1d));
-        putAndCheckValue(BigInteger.ONE, sql("this, this"), DOUBLE, mode.process(1d, 1d));
-        putAndCheckValue(BigDecimal.ONE, sql("this, this"), DOUBLE, mode.process(1d, 1d));
-        putAndCheckValue(1f, sql("this, this"), DOUBLE, mode.process(1d, 1d));
-        putAndCheckValue(1d, sql("this, this"), DOUBLE, mode.process(1d, 1d));
+        putAndCheckValue((byte) 1, sql("this, this"), DOUBLE, function.process(1d, 1d));
+        putAndCheckValue((short) 1, sql("this, this"), DOUBLE, function.process(1d, 1d));
+        putAndCheckValue(1, sql("this, this"), DOUBLE, function.process(1d, 1d));
+        putAndCheckValue(1L, sql("this, this"), DOUBLE, function.process(1d, 1d));
+        putAndCheckValue(1L, sql("this, this"), DOUBLE, function.process(1d, 1d));
+        putAndCheckValue(BigInteger.ONE, sql("this, this"), DOUBLE, function.process(1d, 1d));
+        putAndCheckValue(BigDecimal.ONE, sql("this, this"), DOUBLE, function.process(1d, 1d));
+        putAndCheckValue(1f, sql("this, this"), DOUBLE, function.process(1d, 1d));
+        putAndCheckValue(1d, sql("this, this"), DOUBLE, function.process(1d, 1d));
 
         // Other
         putAndCheckFailure('1', sql("this, this"), SqlErrorCode.PARSING,
-                signatureErrorFunction(mode.mode, VARCHAR, VARCHAR));
-        putAndCheckFailure("1", sql("this, this"), SqlErrorCode.PARSING, signatureErrorFunction(mode.mode, VARCHAR, VARCHAR));
-        putAndCheckFailure(true, sql("this, this"), SqlErrorCode.PARSING, signatureErrorFunction(mode.mode, BOOLEAN, BOOLEAN));
-        putAndCheckFailure(LOCAL_DATE_VAL, sql("this, this"), SqlErrorCode.PARSING, signatureErrorFunction(mode.mode, DATE, DATE));
-        putAndCheckFailure(LOCAL_TIME_VAL, sql("this, this"), SqlErrorCode.PARSING, signatureErrorFunction(mode.mode, TIME, TIME));
+                signatureErrorFunction(function.name, VARCHAR, VARCHAR));
+        putAndCheckFailure("1", sql("this, this"), SqlErrorCode.PARSING, signatureErrorFunction(function.name, VARCHAR, VARCHAR));
+        putAndCheckFailure(true, sql("this, this"), SqlErrorCode.PARSING, signatureErrorFunction(function.name, BOOLEAN, BOOLEAN));
+        putAndCheckFailure(LOCAL_DATE_VAL, sql("this, this"), SqlErrorCode.PARSING, signatureErrorFunction(function.name, DATE, DATE));
+        putAndCheckFailure(LOCAL_TIME_VAL, sql("this, this"), SqlErrorCode.PARSING, signatureErrorFunction(function.name, TIME, TIME));
         putAndCheckFailure(LOCAL_DATE_TIME_VAL, sql("this, this"), SqlErrorCode.PARSING,
-                signatureErrorFunction(mode.mode, TIMESTAMP, TIMESTAMP));
+                signatureErrorFunction(function.name, TIMESTAMP, TIMESTAMP));
         putAndCheckFailure(OFFSET_DATE_TIME_VAL, sql("this, this"), SqlErrorCode.PARSING,
-                signatureErrorFunction(mode.mode, TIMESTAMP_WITH_TIME_ZONE, TIMESTAMP_WITH_TIME_ZONE));
-        putAndCheckFailure(OBJECT_VAL, sql("this, this"), SqlErrorCode.PARSING, signatureErrorFunction(mode.mode, OBJECT, OBJECT));
+                signatureErrorFunction(function.name, TIMESTAMP_WITH_TIME_ZONE, TIMESTAMP_WITH_TIME_ZONE));
+        putAndCheckFailure(OBJECT_VAL, sql("this, this"), SqlErrorCode.PARSING, signatureErrorFunction(function.name, OBJECT, OBJECT));
     }
 
     @Test
@@ -97,16 +99,16 @@ public class DoubleBiFunctionIntegrationTest extends ExpressionTestSupport {
         checkValue0(sql("1, null"), DOUBLE, null);
         checkValue0(sql("null, 1"), DOUBLE, null);
         checkValue0(sql("null, null"), DOUBLE, null);
-        checkValue0(sql("1, 1"), DOUBLE, mode.process(1d, 1d));
-        checkValue0(sql("100, 100"), DOUBLE, mode.process(100d, 100d));
-        checkValue0(sql("1.0001, 1.0001"), DOUBLE, mode.process(1.0001d, 1.0001d));
-        checkValue0(sql("0.0001, 0.0001"), DOUBLE, mode.process(0.0001d, 0.0001d));
-        checkValue0(sql("1.0, 1E0"), DOUBLE, mode.process(1d, 1d));
-        checkValue0(sql("1.0, 1.0"), DOUBLE, mode.process(1d, 1d));
-        checkValue0(sql("1E0, 1E0"), DOUBLE, mode.process(1d, 1d));
+        checkValue0(sql("1, 1"), DOUBLE, function.process(1d, 1d));
+        checkValue0(sql("100, 100"), DOUBLE, function.process(100d, 100d));
+        checkValue0(sql("1.0001, 1.0001"), DOUBLE, function.process(1.0001d, 1.0001d));
+        checkValue0(sql("0.0001, 0.0001"), DOUBLE, function.process(0.0001d, 0.0001d));
+        checkValue0(sql("1.0, 1E0"), DOUBLE, function.process(1d, 1d));
+        checkValue0(sql("1.0, 1.0"), DOUBLE, function.process(1d, 1d));
+        checkValue0(sql("1E0, 1E0"), DOUBLE, function.process(1d, 1d));
 
-        checkFailure0(sql("false, true"), SqlErrorCode.PARSING, signatureErrorFunction(mode.mode, BOOLEAN, BOOLEAN));
-        checkFailure0(sql("'1', '1'"), SqlErrorCode.PARSING, signatureErrorFunction(mode.mode, VARCHAR, VARCHAR));
+        checkFailure0(sql("false, true"), SqlErrorCode.PARSING, signatureErrorFunction(function.name, BOOLEAN, BOOLEAN));
+        checkFailure0(sql("'1', '1'"), SqlErrorCode.PARSING, signatureErrorFunction(function.name, VARCHAR, VARCHAR));
     }
 
     @Test
@@ -115,15 +117,15 @@ public class DoubleBiFunctionIntegrationTest extends ExpressionTestSupport {
 
         checkValue0(sql("?, ?"), DOUBLE, null, null, null);
 
-        checkValue0(sql("?, ?"), DOUBLE, mode.process(1d, 1d), (byte) 1, (byte) 1);
-        checkValue0(sql("?, ?"), DOUBLE, mode.process(1d, 1d), (short) 1, (short) 1);
-        checkValue0(sql("?, ?"), DOUBLE, mode.process(1d, 1d), 1, 1);
-        checkValue0(sql("?, ?"), DOUBLE, mode.process(1d, 1d), 1L, 1L);
-        checkValue0(sql("?, ?"), DOUBLE, mode.process(1d, 1d), BigInteger.ONE, BigInteger.ONE);
-        checkValue0(sql("?, ?"), DOUBLE, mode.process(1d, 1d), BigDecimal.ONE, BigDecimal.ONE);
-        checkValue0(sql("?, ?"), DOUBLE, mode.process(1d, 1d), 1f, 1f);
-        checkValue0(sql("?, ?"), DOUBLE, mode.process(1d, 1d), 1d, 1d);
-        checkValue0(sql("?, ?"), DOUBLE, mode.process(1.001d, 1.001d), 1.001d, 1.001d);
+        checkValue0(sql("?, ?"), DOUBLE, function.process(1d, 1d), (byte) 1, (byte) 1);
+        checkValue0(sql("?, ?"), DOUBLE, function.process(1d, 1d), (short) 1, (short) 1);
+        checkValue0(sql("?, ?"), DOUBLE, function.process(1d, 1d), 1, 1);
+        checkValue0(sql("?, ?"), DOUBLE, function.process(1d, 1d), 1L, 1L);
+        checkValue0(sql("?, ?"), DOUBLE, function.process(1d, 1d), BigInteger.ONE, BigInteger.ONE);
+        checkValue0(sql("?, ?"), DOUBLE, function.process(1d, 1d), BigDecimal.ONE, BigDecimal.ONE);
+        checkValue0(sql("?, ?"), DOUBLE, function.process(1d, 1d), 1f, 1f);
+        checkValue0(sql("?, ?"), DOUBLE, function.process(1d, 1d), 1d, 1d);
+        checkValue0(sql("?, ?"), DOUBLE, function.process(1.001d, 1.001d), 1.001d, 1.001d);
 
         checkFailure0(sql("?, ?"), SqlErrorCode.DATA_EXCEPTION, parameterError(0, DOUBLE, VARCHAR), '1', '1');
         checkFailure0(sql("?, ?"), SqlErrorCode.DATA_EXCEPTION, parameterError(0, DOUBLE, VARCHAR), "1", "1");
@@ -138,7 +140,7 @@ public class DoubleBiFunctionIntegrationTest extends ExpressionTestSupport {
     }
 
     private String sql(String operand) {
-        return "SELECT " + mode.mode + "(" + operand + ") FROM map";
+        return "SELECT " + function.name + "(" + operand + ") FROM map";
     }
 
     @Test
@@ -146,18 +148,18 @@ public class DoubleBiFunctionIntegrationTest extends ExpressionTestSupport {
         DoubleBiFunction function = DoubleBiFunction.create(
                 ConstantExpression.create(1d, QueryDataType.DOUBLE),
                 ConstantExpression.create(1d, QueryDataType.DOUBLE),
-                ATAN2
+                this.function.code
         );
         DoubleBiFunction sameFunction = DoubleBiFunction.create(
                 ConstantExpression.create(1d, QueryDataType.DOUBLE),
                 ConstantExpression.create(1d, QueryDataType.DOUBLE),
-                ATAN2
+                this.function.code
         );
 
         DoubleBiFunction differentFunction = DoubleBiFunction.create(
                 ConstantExpression.create(0.5d, QueryDataType.DOUBLE),
                 ConstantExpression.create(1d, QueryDataType.DOUBLE),
-                ATAN2
+                this.function.code
         );
 
         checkEquals(function, sameFunction, true);
@@ -169,37 +171,40 @@ public class DoubleBiFunctionIntegrationTest extends ExpressionTestSupport {
         DoubleBiFunction original = DoubleBiFunction.create(
                 ConstantExpression.create(1d, QueryDataType.DOUBLE),
                 ConstantExpression.create(1d, QueryDataType.DOUBLE),
-                ATAN2
+                function.code
         );
         DoubleBiFunction restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_DOUBLE_DOUBLE);
 
         checkEquals(original, restored, true);
     }
 
-    private static final class Mode {
+    private static final class FunctionInfo {
 
-        private final String mode;
+        public final int code;
+        public final String name;
 
-        private Mode(String mode) {
-            this.mode = mode;
+        private FunctionInfo(String name, int code) {
+            this.code = code;
+            this.name = name;
         }
 
         public Double process(Double lhs, Double rhs) {
             if (lhs == null || rhs == null) {
                 return null;
             }
-            //noinspection SwitchStatementWithTooFewBranches
-            switch (mode) {
-                case "ATAN2":
+            switch (code) {
+                case POWER:
+                    return Math.pow(lhs, rhs);
+                case ATAN2:
                     return Math.atan2(lhs, rhs);
                 default:
-                    throw new UnsupportedOperationException("Unsupported mode: " + mode);
+                    throw new UnsupportedOperationException("Unsupported mode: " + code);
             }
         }
 
         @Override
         public String toString() {
-            return mode;
+            return name;
         }
     }
 }

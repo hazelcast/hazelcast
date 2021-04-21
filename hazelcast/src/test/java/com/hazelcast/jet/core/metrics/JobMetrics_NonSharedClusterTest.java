@@ -25,8 +25,13 @@ import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.TestProcessors;
 import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.metrics.JobMetrics_BatchTest.JOB_CONFIG_WITH_METRICS;
@@ -37,6 +42,8 @@ import static org.junit.Assert.assertTrue;
  * Tests for JobMetrics that don't use shared cluster. The cluster in each test
  * has a specific configuration.
  */
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class JobMetrics_NonSharedClusterTest extends JetTestSupport {
 
     @Before
@@ -46,7 +53,7 @@ public class JobMetrics_NonSharedClusterTest extends JetTestSupport {
 
     @Test
     public void when_metricsCollectionOff_then_emptyMetrics() {
-        Config config = new Config();
+        Config config = smallInstanceConfig();
         config.getMetricsConfig().setEnabled(false);
         JetInstance inst = createJetMember(config);
 
@@ -58,7 +65,7 @@ public class JobMetrics_NonSharedClusterTest extends JetTestSupport {
 
     @Test
     public void when_noMetricCollectionYet_then_emptyMetrics() {
-        Config config = new Config();
+        Config config = smallInstanceConfig();
         config.getMetricsConfig().setCollectionFrequencySeconds(10_000);
         JetInstance inst = createJetMember(config);
 

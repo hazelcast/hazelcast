@@ -43,23 +43,23 @@ public class ConcatFunctionIntegrationTest extends ExpressionTestSupport {
                 Class<? extends ExpressionBiValue> clazz = ExpressionBiValue.createBiClass(type1.typeName(), type2.typeName());
 
                 checkColumns(
-                    ExpressionBiValue.createBiValue(clazz, 0, type1.valueFrom(), type2.valueFrom()),
-                    "" + type1.valueFrom() + type2.valueFrom()
+                        ExpressionBiValue.createBiValue(clazz, 0, type1.valueFrom(), type2.valueFrom()),
+                        "" + type1.valueFrom() + type2.valueFrom()
                 );
 
                 checkColumns(
-                    ExpressionBiValue.createBiValue(clazz, 0, null, type2.valueFrom()),
-                    null
+                        ExpressionBiValue.createBiValue(clazz, 0, null, type2.valueFrom()),
+                        null
                 );
 
                 checkColumns(
-                    ExpressionBiValue.createBiValue(clazz, 0, type1.valueFrom(), null),
-                    null
+                        ExpressionBiValue.createBiValue(clazz, 0, type1.valueFrom(), null),
+                        null
                 );
 
                 checkColumns(
-                    ExpressionBiValue.createBiValue(clazz, 0, null, null),
-                    null
+                        ExpressionBiValue.createBiValue(clazz, 0, null, null),
+                        null
                 );
             }
         }

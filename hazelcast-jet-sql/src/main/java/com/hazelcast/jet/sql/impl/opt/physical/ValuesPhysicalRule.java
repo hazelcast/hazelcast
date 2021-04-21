@@ -44,7 +44,7 @@ final class ValuesPhysicalRule extends ConverterRule {
                 logicalValues.getCluster(),
                 OptUtils.toPhysicalConvention(logicalValues.getTraitSet()),
                 logicalValues.getRowType(),
-                logicalValues.tuples()
+                logicalValues.values()
         );
     }
 }

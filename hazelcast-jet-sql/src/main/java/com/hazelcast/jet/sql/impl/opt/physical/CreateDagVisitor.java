@@ -17,12 +17,15 @@
 package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.function.BiFunctionEx;
+import com.hazelcast.function.BiPredicateEx;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
+import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
@@ -32,13 +35,19 @@ import com.hazelcast.jet.pipeline.ServiceFactories;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
+import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
+import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.schema.Table;
 import org.apache.calcite.rel.RelNode;
 
 import javax.annotation.Nullable;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -55,6 +64,7 @@ import static java.util.Collections.singletonList;
 public class CreateDagVisitor {
 
     private final DAG dag = new DAG();
+    private final Set<PlanObjectKey> objectKeys = new HashSet<>();
     private final Address localMemberAddress;
 
     public CreateDagVisitor(Address localMemberAddress) {
@@ -62,12 +72,12 @@ public class CreateDagVisitor {
     }
 
     public Vertex onValues(ValuesPhysicalRel rel) {
-        List<Object[]> values = rel.tuples();
+        List<ExpressionValues> values = rel.values();
 
         return dag.newUniqueVertex("Values", convenientSourceP(
-                pCtx -> null,
-                (ignored, buffer) -> {
-                    values.forEach(buffer::add);
+                CreateDagVisitor::toExpressionEvalContext,
+                (context, buffer) -> {
+                    values.forEach(vs -> vs.toValues(context).forEach(buffer::add));
                     buffer.close();
                 },
                 ctx -> null,
@@ -81,6 +91,7 @@ public class CreateDagVisitor {
 
     public Vertex onInsert(InsertPhysicalRel rel) {
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
+        collectObjectKeys(table);
 
         Vertex vertex = getJetSqlConnector(table).sink(dag, table);
         connectInput(rel.getInput(), vertex, null);
@@ -89,6 +100,7 @@ public class CreateDagVisitor {
 
     public Vertex onFullScan(FullScanPhysicalRel rel) {
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
+        collectObjectKeys(table);
 
         return getJetSqlConnector(table)
                 .fullScanReader(dag, table, rel.filter(), rel.projection());
@@ -99,11 +111,10 @@ public class CreateDagVisitor {
 
         Vertex vertex = dag.newUniqueVertex("Filter", filterUsingServiceP(
                 ServiceFactories.nonSharedService(ctx -> {
-                    InternalSerializationService serializationService = ((ProcSupplierCtx) ctx).serializationService();
-                    SimpleExpressionEvalContext context = new SimpleExpressionEvalContext(serializationService);
+                    ExpressionEvalContext context = toExpressionEvalContext(ctx);
                     return ExpressionUtil.filterFn(filter, context);
                 }),
-                (Predicate<Object[]> filterFn, Object[] row) -> filterFn.test(row)));
+                (BiPredicateEx<Predicate<Object[]>, Object[]>) Predicate::test));
         connectInput(rel.getInput(), vertex, null);
         return vertex;
     }
@@ -113,11 +124,10 @@ public class CreateDagVisitor {
 
         Vertex vertex = dag.newUniqueVertex("Project", mapUsingServiceP(
                 ServiceFactories.nonSharedService(ctx -> {
-                    InternalSerializationService serializationService = ((ProcSupplierCtx) ctx).serializationService();
-                    SimpleExpressionEvalContext context = new SimpleExpressionEvalContext(serializationService);
+                    ExpressionEvalContext context = toExpressionEvalContext(ctx);
                     return ExpressionUtil.projectionFn(projection, context);
                 }),
-                (Function<Object[], Object[]> projectionFn, Object[] row) -> projectionFn.apply(row)
+                (BiFunctionEx<Function<Object[], Object[]>, Object[], Object[]>) Function::apply
         ));
 
         connectInput(rel.getInput(), vertex, null);
@@ -202,6 +212,7 @@ public class CreateDagVisitor {
         assert rel.getRight() instanceof FullScanPhysicalRel : rel.getRight().getClass();
 
         Table rightTable = rel.getRight().getTable().unwrap(HazelcastTable.class).getTarget();
+        collectObjectKeys(rightTable);
 
         VertexWithInputConfig vertexWithConfig = getJetSqlConnector(rightTable).nestedLoopReader(
                 dag,
@@ -215,18 +226,40 @@ public class CreateDagVisitor {
     }
 
     public Vertex onRoot(JetRootRel rootRel) {
-        Vertex vertex = dag.newUniqueVertex("ClientSink",
-                rootResultConsumerSink(rootRel.getInitiatorAddress()));
+        Vertex vertex;
+        RelNode input = rootRel.getInput();
+        if (input instanceof SortPhysicalRel) {
+            SortPhysicalRel sortRel = (SortPhysicalRel) input;
+            assert sortRel.offset == null : "Offset is not supported";
+            assert sortRel.collation.getFieldCollations().isEmpty() : "Collation is not supported";
+
+            Expression<?> fetch = sortRel.fetch();
+            Object val = fetch.eval(EmptyRow.INSTANCE, ExpressionUtil.NOT_IMPLEMENTED_ARGUMENTS_CONTEXT);
+            assert val instanceof Number;
+
+            long limit = ((Number) val).longValue();
+            assert limit >= 0;
+            vertex = dag.newUniqueVertex("ClientSink",
+                    rootResultConsumerSink(rootRel.getInitiatorAddress(), limit));
+            input = sortRel.getInput();
+        } else {
+            vertex = dag.newUniqueVertex("ClientSink",
+                    rootResultConsumerSink(rootRel.getInitiatorAddress(), Long.MAX_VALUE));
+        }
 
         // We use distribute-to-one edge to send all the items to the initiator member.
         // Such edge has to be partitioned, but the sink is LP=1 anyway, so we can use
         // allToOne with any key, it goes to a single processor on a single member anyway.
-        connectInput(rootRel.getInput(), vertex, edge -> edge.distributeTo(localMemberAddress).allToOne(""));
+        connectInput(input, vertex, edge -> edge.distributeTo(localMemberAddress).allToOne(""));
         return vertex;
     }
 
     public DAG getDag() {
         return dag;
+    }
+
+    public Set<PlanObjectKey> getObjectKeys() {
+        return objectKeys;
     }
 
     /**
@@ -246,5 +279,17 @@ public class CreateDagVisitor {
             configureEdgeFn.accept(edge);
         }
         dag.edge(edge);
+    }
+
+    private void collectObjectKeys(Table table) {
+        PlanObjectKey objectKey = table.getObjectKey();
+        if (objectKey != null) {
+            objectKeys.add(objectKey);
+        }
+    }
+
+    private static ExpressionEvalContext toExpressionEvalContext(Processor.Context ctx) {
+        InternalSerializationService serializationService = ((ProcSupplierCtx) ctx).serializationService();
+        return new SimpleExpressionEvalContext(serializationService);
     }
 }

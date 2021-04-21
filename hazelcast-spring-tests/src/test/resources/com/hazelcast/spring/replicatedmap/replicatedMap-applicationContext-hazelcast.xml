@@ -29,6 +29,7 @@
             <hz:network port="5701">
                 <hz:join>
                     <hz:multicast enabled="false"/>
+                    <hz:auto-detection enabled="false"/>
                 </hz:join>
                 <hz:interfaces enabled="true">
                     <hz:interface>127.0.0.1</hz:interface>

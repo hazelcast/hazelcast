@@ -31,8 +31,11 @@ import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.List;
@@ -43,6 +46,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class NonSmartClientTest extends JetTestSupport {
 
     private JetInstance client;
@@ -50,7 +54,7 @@ public class NonSmartClientTest extends JetTestSupport {
 
     @Before
     public void setUp() {
-        Config config = new Config();
+        Config config = smallInstanceConfig();
         config.getMapConfig("journal*").getEventJournalConfig().setEnabled(true);
         instance = createJetMember(config);
         JetInstance jetInstance = createJetMember(config);

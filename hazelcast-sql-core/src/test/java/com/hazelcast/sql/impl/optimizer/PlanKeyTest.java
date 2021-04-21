@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.plan.cache;
+package com.hazelcast.sql.impl.optimizer;
 
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -28,14 +28,14 @@ import static java.util.Collections.singletonList;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class PlanCacheKeyTest extends SqlTestSupport {
+public class PlanKeyTest extends SqlTestSupport {
     @Test
     public void testEquals() {
-        PlanCacheKey key = new PlanCacheKey(singletonList(singletonList("schema1")), "sql1");
+        PlanKey key = new PlanKey(singletonList(singletonList("schema1")), "sql1");
 
-        checkEquals(key, new PlanCacheKey(singletonList(singletonList("schema1")), "sql1"), true);
+        checkEquals(key, new PlanKey(singletonList(singletonList("schema1")), "sql1"), true);
 
-        checkEquals(key, new PlanCacheKey(singletonList(singletonList("schema2")), "sql1"), false);
-        checkEquals(key, new PlanCacheKey(singletonList(singletonList("schema1")), "sql2"), false);
+        checkEquals(key, new PlanKey(singletonList(singletonList("schema2")), "sql1"), false);
+        checkEquals(key, new PlanKey(singletonList(singletonList("schema1")), "sql2"), false);
     }
 }

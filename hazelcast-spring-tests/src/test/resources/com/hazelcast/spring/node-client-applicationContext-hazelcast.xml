@@ -40,18 +40,11 @@
                 <hz:property name="hazelcast.merge.first.run.delay.seconds">5</hz:property>
                 <hz:property name="hazelcast.merge.next.run.delay.seconds">5</hz:property>
             </hz:properties>
-            <hz:network port="${cluster.port}" port-auto-increment="true">
+            <hz:network port="6150" port-auto-increment="true">
                 <hz:join>
-                    <hz:multicast enabled="false"
-                                  multicast-group="224.2.2.3"
-                                  multicast-port="54327"/>
-                    <hz:tcp-ip enabled="true">
-                        <hz:members>${cluster.members}</hz:members>
-                    </hz:tcp-ip>
+                    <hz:multicast enabled="false"/>
+                    <hz:auto-detection enabled="false"/>
                 </hz:join>
-                <hz:interfaces enabled="false">
-                    <hz:interface>10.10.1.*</hz:interface>
-                </hz:interfaces>
             </hz:network>
         </hz:config>
     </hz:hazelcast>
@@ -64,8 +57,16 @@
         <hz:network connection-timeout="1000"
                     redo-operation="true"
                     smart-routing="true">
-            <hz:member>127.0.0.1:5700</hz:member>
-            <hz:member>127.0.0.1:5701</hz:member>
+            <hz:member>127.0.0.1:6150</hz:member>
+            <hz:member>127.0.0.1:6151</hz:member>
+            <hz:member>127.0.0.1:6152</hz:member>
+            <hz:member>127.0.0.1:6153</hz:member>
+            <hz:member>127.0.0.1:6154</hz:member>
+            <hz:member>127.0.0.1:6155</hz:member>
+            <hz:member>127.0.0.1:6156</hz:member>
+            <hz:member>127.0.0.1:6157</hz:member>
+            <hz:member>127.0.0.1:6158</hz:member>
+            <hz:member>127.0.0.1:6159</hz:member>
 
             <hz:socket-options buffer-size="32"
                                keep-alive="false"
@@ -82,8 +83,17 @@
                     redo-operation="false"
                     smart-routing="false">
 
-            <hz:member>127.0.0.1:5700</hz:member>
-            <hz:member>127.0.0.1:5701</hz:member>
+            <hz:member>127.0.0.1:6150</hz:member>
+            <hz:member>127.0.0.1:6151</hz:member>
+            <hz:member>127.0.0.1:6152</hz:member>
+            <hz:member>127.0.0.1:6153</hz:member>
+            <hz:member>127.0.0.1:6154</hz:member>
+            <hz:member>127.0.0.1:6155</hz:member>
+            <hz:member>127.0.0.1:6156</hz:member>
+            <hz:member>127.0.0.1:6157</hz:member>
+            <hz:member>127.0.0.1:6158</hz:member>
+            <hz:member>127.0.0.1:6159</hz:member>
+
             <hz:socket-options buffer-size="32"
                                keep-alive="false"
                                linger-seconds="3"
@@ -98,8 +108,18 @@
         <hz:network connection-timeout="1000"
                     redo-operation="false"
                     smart-routing="false">
-            <hz:member>127.0.0.1:5700</hz:member>
-            <hz:member>127.0.0.1:5701</hz:member>
+
+            <hz:member>127.0.0.1:6150</hz:member>
+            <hz:member>127.0.0.1:6151</hz:member>
+            <hz:member>127.0.0.1:6152</hz:member>
+            <hz:member>127.0.0.1:6153</hz:member>
+            <hz:member>127.0.0.1:6154</hz:member>
+            <hz:member>127.0.0.1:6155</hz:member>
+            <hz:member>127.0.0.1:6156</hz:member>
+            <hz:member>127.0.0.1:6157</hz:member>
+            <hz:member>127.0.0.1:6158</hz:member>
+            <hz:member>127.0.0.1:6159</hz:member>
+
             <hz:socket-options buffer-size="32"
                                keep-alive="false"
                                linger-seconds="3"
@@ -174,8 +194,18 @@
         <hz:network connection-timeout="1000"
                     redo-operation="false"
                     smart-routing="false">
-            <hz:member>127.0.0.1:5700</hz:member>
-            <hz:member>127.0.0.1:5701</hz:member>
+
+            <hz:member>127.0.0.1:6150</hz:member>
+            <hz:member>127.0.0.1:6151</hz:member>
+            <hz:member>127.0.0.1:6152</hz:member>
+            <hz:member>127.0.0.1:6153</hz:member>
+            <hz:member>127.0.0.1:6154</hz:member>
+            <hz:member>127.0.0.1:6155</hz:member>
+            <hz:member>127.0.0.1:6156</hz:member>
+            <hz:member>127.0.0.1:6157</hz:member>
+            <hz:member>127.0.0.1:6158</hz:member>
+            <hz:member>127.0.0.1:6159</hz:member>
+
             <hz:socket-options buffer-size="32"
                                keep-alive="false"
                                linger-seconds="3"
@@ -197,8 +227,16 @@
             </hz:connection-retry>
         </hz:connection-strategy>
         <hz:network>
-            <hz:member>127.0.0.1:5700</hz:member>
-            <hz:member>127.0.0.1:5701</hz:member>
+            <hz:member>127.0.0.1:6150</hz:member>
+            <hz:member>127.0.0.1:6151</hz:member>
+            <hz:member>127.0.0.1:6152</hz:member>
+            <hz:member>127.0.0.1:6153</hz:member>
+            <hz:member>127.0.0.1:6154</hz:member>
+            <hz:member>127.0.0.1:6155</hz:member>
+            <hz:member>127.0.0.1:6156</hz:member>
+            <hz:member>127.0.0.1:6157</hz:member>
+            <hz:member>127.0.0.1:6158</hz:member>
+            <hz:member>127.0.0.1:6159</hz:member>
         </hz:network>
         <hz:security>
             <hz:realms>
@@ -226,8 +264,16 @@
     <hz:client id="client6">
         <hz:cluster-name>${cluster.name}</hz:cluster-name>
         <hz:network>
-            <hz:member>127.0.0.1:5700</hz:member>
-            <hz:member>127.0.0.1:5701</hz:member>
+            <hz:member>127.0.0.1:6150</hz:member>
+            <hz:member>127.0.0.1:6151</hz:member>
+            <hz:member>127.0.0.1:6152</hz:member>
+            <hz:member>127.0.0.1:6153</hz:member>
+            <hz:member>127.0.0.1:6154</hz:member>
+            <hz:member>127.0.0.1:6155</hz:member>
+            <hz:member>127.0.0.1:6156</hz:member>
+            <hz:member>127.0.0.1:6157</hz:member>
+            <hz:member>127.0.0.1:6158</hz:member>
+            <hz:member>127.0.0.1:6159</hz:member>
         </hz:network>
 
         <hz:query-caches>
@@ -268,8 +314,17 @@
                     redo-operation="false"
                     smart-routing="false">
 
-            <hz:member>127.0.0.1:5700</hz:member>
-            <hz:member>127.0.0.1:5701</hz:member>
+            <hz:member>127.0.0.1:6150</hz:member>
+            <hz:member>127.0.0.1:6151</hz:member>
+            <hz:member>127.0.0.1:6152</hz:member>
+            <hz:member>127.0.0.1:6153</hz:member>
+            <hz:member>127.0.0.1:6154</hz:member>
+            <hz:member>127.0.0.1:6155</hz:member>
+            <hz:member>127.0.0.1:6156</hz:member>
+            <hz:member>127.0.0.1:6157</hz:member>
+            <hz:member>127.0.0.1:6158</hz:member>
+            <hz:member>127.0.0.1:6159</hz:member>
+
             <hz:socket-options buffer-size="32"
                                keep-alive="false"
                                linger-seconds="3"
@@ -283,8 +338,16 @@
     <hz:client id="client8">
         <hz:cluster-name>${cluster.name}</hz:cluster-name>
         <hz:network>
-            <hz:member>127.0.0.1:5700</hz:member>
-            <hz:member>127.0.0.1:5701</hz:member>
+            <hz:member>127.0.0.1:6150</hz:member>
+            <hz:member>127.0.0.1:6151</hz:member>
+            <hz:member>127.0.0.1:6152</hz:member>
+            <hz:member>127.0.0.1:6153</hz:member>
+            <hz:member>127.0.0.1:6154</hz:member>
+            <hz:member>127.0.0.1:6155</hz:member>
+            <hz:member>127.0.0.1:6156</hz:member>
+            <hz:member>127.0.0.1:6157</hz:member>
+            <hz:member>127.0.0.1:6158</hz:member>
+            <hz:member>127.0.0.1:6159</hz:member>
         </hz:network>
 
         <hz:connection-strategy async-start="true" reconnect-mode="ASYNC"/>
@@ -293,8 +356,16 @@
     <hz:client id="client9-user-code-deployment-test">
         <hz:cluster-name>${cluster.name}</hz:cluster-name>
         <hz:network>
-            <hz:member>127.0.0.1:5700</hz:member>
-            <hz:member>127.0.0.1:5701</hz:member>
+            <hz:member>127.0.0.1:6150</hz:member>
+            <hz:member>127.0.0.1:6151</hz:member>
+            <hz:member>127.0.0.1:6152</hz:member>
+            <hz:member>127.0.0.1:6153</hz:member>
+            <hz:member>127.0.0.1:6154</hz:member>
+            <hz:member>127.0.0.1:6155</hz:member>
+            <hz:member>127.0.0.1:6156</hz:member>
+            <hz:member>127.0.0.1:6157</hz:member>
+            <hz:member>127.0.0.1:6158</hz:member>
+            <hz:member>127.0.0.1:6159</hz:member>
         </hz:network>
 
         <hz:user-code-deployment enabled="false">
@@ -311,8 +382,16 @@
     <hz:client id="client10-flakeIdGenerator">
         <hz:cluster-name>${cluster.name}</hz:cluster-name>
         <hz:network>
-            <hz:member>127.0.0.1:5700</hz:member>
-            <hz:member>127.0.0.1:5701</hz:member>
+            <hz:member>127.0.0.1:6150</hz:member>
+            <hz:member>127.0.0.1:6151</hz:member>
+            <hz:member>127.0.0.1:6152</hz:member>
+            <hz:member>127.0.0.1:6153</hz:member>
+            <hz:member>127.0.0.1:6154</hz:member>
+            <hz:member>127.0.0.1:6155</hz:member>
+            <hz:member>127.0.0.1:6156</hz:member>
+            <hz:member>127.0.0.1:6157</hz:member>
+            <hz:member>127.0.0.1:6158</hz:member>
+            <hz:member>127.0.0.1:6159</hz:member>
         </hz:network>
 
         <hz:flake-id-generator name="gen1" prefetchCount="3" prefetchValidityMillis="3000"/>
@@ -321,8 +400,17 @@
     <hz:client id="client11-icmp-ping">
         <hz:cluster-name>${cluster.name}</hz:cluster-name>
         <hz:network>
-            <hz:member>127.0.0.1:5700</hz:member>
-            <hz:member>127.0.0.1:5701</hz:member>
+            <hz:member>127.0.0.1:6150</hz:member>
+            <hz:member>127.0.0.1:6151</hz:member>
+            <hz:member>127.0.0.1:6152</hz:member>
+            <hz:member>127.0.0.1:6153</hz:member>
+            <hz:member>127.0.0.1:6154</hz:member>
+            <hz:member>127.0.0.1:6155</hz:member>
+            <hz:member>127.0.0.1:6156</hz:member>
+            <hz:member>127.0.0.1:6157</hz:member>
+            <hz:member>127.0.0.1:6158</hz:member>
+            <hz:member>127.0.0.1:6159</hz:member>
+
             <hz:icmp-ping enabled="false">
                 <hz:timeout-milliseconds>2000</hz:timeout-milliseconds>
                 <hz:interval-milliseconds>3000</hz:interval-milliseconds>
@@ -337,8 +425,17 @@
     <hz:client id="client12-hazelcast-cloud">
         <hz:cluster-name>${cluster.name}</hz:cluster-name>
         <hz:network>
-            <hz:member>127.0.0.1:5700</hz:member>
-            <hz:member>127.0.0.1:5701</hz:member>
+            <hz:member>127.0.0.1:6150</hz:member>
+            <hz:member>127.0.0.1:6151</hz:member>
+            <hz:member>127.0.0.1:6152</hz:member>
+            <hz:member>127.0.0.1:6153</hz:member>
+            <hz:member>127.0.0.1:6154</hz:member>
+            <hz:member>127.0.0.1:6155</hz:member>
+            <hz:member>127.0.0.1:6156</hz:member>
+            <hz:member>127.0.0.1:6157</hz:member>
+            <hz:member>127.0.0.1:6158</hz:member>
+            <hz:member>127.0.0.1:6159</hz:member>
+
             <hz:hazelcast-cloud enabled="false">
                 <hz:discovery-token>EXAMPLE_TOKEN</hz:discovery-token>
             </hz:hazelcast-cloud>
@@ -349,8 +446,16 @@
     <hz:client id="client13-exponential-connection-retry">
         <hz:cluster-name>${cluster.name}</hz:cluster-name>
         <hz:network>
-            <hz:member>127.0.0.1:5700</hz:member>
-            <hz:member>127.0.0.1:5701</hz:member>
+            <hz:member>127.0.0.1:6150</hz:member>
+            <hz:member>127.0.0.1:6151</hz:member>
+            <hz:member>127.0.0.1:6152</hz:member>
+            <hz:member>127.0.0.1:6153</hz:member>
+            <hz:member>127.0.0.1:6154</hz:member>
+            <hz:member>127.0.0.1:6155</hz:member>
+            <hz:member>127.0.0.1:6156</hz:member>
+            <hz:member>127.0.0.1:6157</hz:member>
+            <hz:member>127.0.0.1:6158</hz:member>
+            <hz:member>127.0.0.1:6159</hz:member>
         </hz:network>
 
         <hz:connection-strategy async-start="true" reconnect-mode="ASYNC">
@@ -367,8 +472,16 @@
     <hz:client id="client14-reliable-topic">
         <hz:cluster-name>${cluster.name}</hz:cluster-name>
         <hz:network>
-            <hz:member>127.0.0.1:5700</hz:member>
-            <hz:member>127.0.0.1:5701</hz:member>
+            <hz:member>127.0.0.1:6150</hz:member>
+            <hz:member>127.0.0.1:6151</hz:member>
+            <hz:member>127.0.0.1:6152</hz:member>
+            <hz:member>127.0.0.1:6153</hz:member>
+            <hz:member>127.0.0.1:6154</hz:member>
+            <hz:member>127.0.0.1:6155</hz:member>
+            <hz:member>127.0.0.1:6156</hz:member>
+            <hz:member>127.0.0.1:6157</hz:member>
+            <hz:member>127.0.0.1:6158</hz:member>
+            <hz:member>127.0.0.1:6159</hz:member>
         </hz:network>
 
         <!--<hz:reliable-topic name="rel-topic" topic-overload-policy="DISCARD_NEWEST" read-batch-size="100"/>-->
@@ -381,8 +494,16 @@
     <hz:client id="client16-name-and-labels">
         <hz:cluster-name>${cluster.name}</hz:cluster-name>
         <hz:network>
-            <hz:member>127.0.0.1:5700</hz:member>
-            <hz:member>127.0.0.1:5701</hz:member>
+            <hz:member>127.0.0.1:6150</hz:member>
+            <hz:member>127.0.0.1:6151</hz:member>
+            <hz:member>127.0.0.1:6152</hz:member>
+            <hz:member>127.0.0.1:6153</hz:member>
+            <hz:member>127.0.0.1:6154</hz:member>
+            <hz:member>127.0.0.1:6155</hz:member>
+            <hz:member>127.0.0.1:6156</hz:member>
+            <hz:member>127.0.0.1:6157</hz:member>
+            <hz:member>127.0.0.1:6158</hz:member>
+            <hz:member>127.0.0.1:6159</hz:member>
         </hz:network>
         <hz:instance-name>clusterName</hz:instance-name>
         <hz:labels>
@@ -393,8 +514,16 @@
     <hz:client id="client17-backupAckToClient">
         <hz:cluster-name>${cluster.name}</hz:cluster-name>
         <hz:network>
-            <hz:member>127.0.0.1:5700</hz:member>
-            <hz:member>127.0.0.1:5701</hz:member>
+            <hz:member>127.0.0.1:6150</hz:member>
+            <hz:member>127.0.0.1:6151</hz:member>
+            <hz:member>127.0.0.1:6152</hz:member>
+            <hz:member>127.0.0.1:6153</hz:member>
+            <hz:member>127.0.0.1:6154</hz:member>
+            <hz:member>127.0.0.1:6155</hz:member>
+            <hz:member>127.0.0.1:6156</hz:member>
+            <hz:member>127.0.0.1:6157</hz:member>
+            <hz:member>127.0.0.1:6158</hz:member>
+            <hz:member>127.0.0.1:6159</hz:member>
         </hz:network>
         <hz:backup-ack-to-client-enabled>false</hz:backup-ack-to-client-enabled>
     </hz:client>
@@ -402,8 +531,16 @@
     <hz:client id="client18-metrics">
         <hz:cluster-name>${cluster.name}</hz:cluster-name>
         <hz:network>
-            <hz:member>127.0.0.1:5700</hz:member>
-            <hz:member>127.0.0.1:5701</hz:member>
+            <hz:member>127.0.0.1:6150</hz:member>
+            <hz:member>127.0.0.1:6151</hz:member>
+            <hz:member>127.0.0.1:6152</hz:member>
+            <hz:member>127.0.0.1:6153</hz:member>
+            <hz:member>127.0.0.1:6154</hz:member>
+            <hz:member>127.0.0.1:6155</hz:member>
+            <hz:member>127.0.0.1:6156</hz:member>
+            <hz:member>127.0.0.1:6157</hz:member>
+            <hz:member>127.0.0.1:6158</hz:member>
+            <hz:member>127.0.0.1:6159</hz:member>
         </hz:network>
         <hz:metrics enabled="false">
             <hz:jmx enabled="false"/>
@@ -414,8 +551,16 @@
     <hz:client id="client19-instance-tracking">
         <hz:cluster-name>${cluster.name}</hz:cluster-name>
         <hz:network>
-            <hz:member>127.0.0.1:5700</hz:member>
-            <hz:member>127.0.0.1:5701</hz:member>
+            <hz:member>127.0.0.1:6150</hz:member>
+            <hz:member>127.0.0.1:6151</hz:member>
+            <hz:member>127.0.0.1:6152</hz:member>
+            <hz:member>127.0.0.1:6153</hz:member>
+            <hz:member>127.0.0.1:6154</hz:member>
+            <hz:member>127.0.0.1:6155</hz:member>
+            <hz:member>127.0.0.1:6156</hz:member>
+            <hz:member>127.0.0.1:6157</hz:member>
+            <hz:member>127.0.0.1:6158</hz:member>
+            <hz:member>127.0.0.1:6159</hz:member>
         </hz:network>
         <hz:instance-tracking enabled="true">
             <hz:file-name>/dummy/file</hz:file-name>
@@ -426,8 +571,16 @@
     <hz:client id="client20-native-memory">
         <hz:cluster-name>${cluster.name}</hz:cluster-name>
         <hz:network>
-            <hz:member>127.0.0.1:5700</hz:member>
-            <hz:member>127.0.0.1:5701</hz:member>
+            <hz:member>127.0.0.1:6150</hz:member>
+            <hz:member>127.0.0.1:6151</hz:member>
+            <hz:member>127.0.0.1:6152</hz:member>
+            <hz:member>127.0.0.1:6153</hz:member>
+            <hz:member>127.0.0.1:6154</hz:member>
+            <hz:member>127.0.0.1:6155</hz:member>
+            <hz:member>127.0.0.1:6156</hz:member>
+            <hz:member>127.0.0.1:6157</hz:member>
+            <hz:member>127.0.0.1:6158</hz:member>
+            <hz:member>127.0.0.1:6159</hz:member>
         </hz:network>
         <hz:native-memory enabled="false" allocator-type="STANDARD" metadata-space-percentage="10.2"
                           min-block-size="10"
@@ -445,8 +598,16 @@
     <hz:client id="client21-persistent-memory-system-memory">
         <hz:cluster-name>${cluster.name}</hz:cluster-name>
         <hz:network>
-            <hz:member>127.0.0.1:5700</hz:member>
-            <hz:member>127.0.0.1:5701</hz:member>
+            <hz:member>127.0.0.1:6150</hz:member>
+            <hz:member>127.0.0.1:6151</hz:member>
+            <hz:member>127.0.0.1:6152</hz:member>
+            <hz:member>127.0.0.1:6153</hz:member>
+            <hz:member>127.0.0.1:6154</hz:member>
+            <hz:member>127.0.0.1:6155</hz:member>
+            <hz:member>127.0.0.1:6156</hz:member>
+            <hz:member>127.0.0.1:6157</hz:member>
+            <hz:member>127.0.0.1:6158</hz:member>
+            <hz:member>127.0.0.1:6159</hz:member>
         </hz:network>
         <hz:native-memory enabled="false" allocator-type="STANDARD" metadata-space-percentage="10.2"
                           min-block-size="10"
@@ -459,8 +620,16 @@
     <hz:client id="client22-with-overridden-default-serializers">
         <hz:cluster-name>${cluster.name}</hz:cluster-name>
         <hz:network>
-            <hz:member>127.0.0.1:5700</hz:member>
-            <hz:member>127.0.0.1:5701</hz:member>
+            <hz:member>127.0.0.1:6150</hz:member>
+            <hz:member>127.0.0.1:6151</hz:member>
+            <hz:member>127.0.0.1:6152</hz:member>
+            <hz:member>127.0.0.1:6153</hz:member>
+            <hz:member>127.0.0.1:6154</hz:member>
+            <hz:member>127.0.0.1:6155</hz:member>
+            <hz:member>127.0.0.1:6156</hz:member>
+            <hz:member>127.0.0.1:6157</hz:member>
+            <hz:member>127.0.0.1:6158</hz:member>
+            <hz:member>127.0.0.1:6159</hz:member>
         </hz:network>
 
         <hz:serialization allow-override-default-serializers="true"/>

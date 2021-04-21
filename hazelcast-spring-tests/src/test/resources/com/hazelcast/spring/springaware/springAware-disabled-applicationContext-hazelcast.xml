@@ -26,9 +26,10 @@
     <hz:hazelcast id="instance" lazy-init="true" scope="singleton">
         <hz:config>
             <hz:cluster-name>${cluster.name}</hz:cluster-name>
-            <hz:network port="5701">
+            <hz:network port="5801">
                 <hz:join>
                     <hz:multicast enabled="false"/>
+                    <hz:auto-detection enabled="false"/>
                 </hz:join>
                 <hz:interfaces enabled="true">
                     <hz:interface>127.0.0.1</hz:interface>
@@ -43,7 +44,16 @@
                     redo-operation="true"
                     smart-routing="true">
 
-            <hz:member>127.0.0.1</hz:member>
+            <hz:member>127.0.0.1:5801</hz:member>
+            <hz:member>127.0.0.1:5802</hz:member>
+            <hz:member>127.0.0.1:5803</hz:member>
+            <hz:member>127.0.0.1:5804</hz:member>
+            <hz:member>127.0.0.1:5805</hz:member>
+            <hz:member>127.0.0.1:5806</hz:member>
+            <hz:member>127.0.0.1:5807</hz:member>
+            <hz:member>127.0.0.1:5808</hz:member>
+            <hz:member>127.0.0.1:5809</hz:member>
+            <hz:member>127.0.0.1:5810</hz:member>
 
             <hz:socket-options buffer-size="32"
                                keep-alive="false"

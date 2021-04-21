@@ -30,10 +30,15 @@ import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory;
 import org.apache.activemq.artemis.junit.EmbeddedActiveMQResource;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import javax.jms.ConnectionFactory;
 import javax.jms.TextMessage;
@@ -52,6 +57,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
+@RunWith(HazelcastSerialClassRunner.class)
+@Category({SlowTest.class, ParallelJVMTest.class})
 public class JmsSourceIntegration_NonSharedClusterTest extends JetTestSupport {
 
     @ClassRule
@@ -112,7 +119,7 @@ public class JmsSourceIntegration_NonSharedClusterTest extends JetTestSupport {
     private void when_snapshotFails(ProcessingGuarantee guarantee, boolean expectFailure) {
         storeFailed = false;
         // force snapshots to fail by adding a failing map store configuration for snapshot data maps
-        Config config = new Config();
+        Config config = smallInstanceConfig();
         MapConfig mapConfig = new MapConfig(JobRepository.SNAPSHOT_DATA_MAP_PREFIX + '*');
         MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
         mapStoreConfig.setEnabled(true);

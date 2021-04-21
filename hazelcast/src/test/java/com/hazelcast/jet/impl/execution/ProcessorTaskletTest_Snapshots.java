@@ -29,8 +29,11 @@ import com.hazelcast.jet.impl.operation.SnapshotPhase1Operation.SnapshotPhase1Re
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
@@ -63,6 +66,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastSerialClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ProcessorTaskletTest_Snapshots {
 
     private static final int MOCK_INPUT_SIZE = 10;
@@ -451,7 +455,7 @@ public class ProcessorTaskletTest_Snapshots {
         boolean isStreaming;
         private Outbox outbox;
 
-        private Queue<Map.Entry> snapshotQueue = new ArrayDeque<>();
+        private final Queue<Map.Entry> snapshotQueue = new ArrayDeque<>();
 
         @Override
         public void init(@Nonnull Outbox outbox, @Nonnull Context context) {

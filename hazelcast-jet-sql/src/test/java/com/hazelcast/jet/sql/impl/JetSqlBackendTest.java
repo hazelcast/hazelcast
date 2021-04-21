@@ -27,6 +27,7 @@ import com.hazelcast.jet.sql.impl.parse.SqlOption;
 import com.hazelcast.jet.sql.impl.schema.MappingField;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.calcite.parse.QueryParseResult;
+import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
@@ -44,6 +45,7 @@ import org.mockito.MockitoAnnotations;
 
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -84,7 +86,7 @@ public class JetSqlBackendTest {
         QueryParseResult parseResult = new QueryParseResult(node, null, null, null, false);
 
         // when
-        CreateMappingPlan plan = (CreateMappingPlan) sqlBackend.createPlan(null, parseResult, null);
+        CreateMappingPlan plan = (CreateMappingPlan) sqlBackend.createPlan(task(), parseResult, null);
 
         // then
         assertThat(plan.mapping().name()).isEqualTo("mapping_name");
@@ -112,7 +114,7 @@ public class JetSqlBackendTest {
         QueryParseResult parseResult = new QueryParseResult(node, null, null, null, false);
 
         // when
-        DropMappingPlan plan = (DropMappingPlan) sqlBackend.createPlan(null, parseResult, null);
+        DropMappingPlan plan = (DropMappingPlan) sqlBackend.createPlan(task(), parseResult, null);
 
         // then
         assertThat(plan.name()).isEqualTo("mapping_name");
@@ -130,6 +132,10 @@ public class JetSqlBackendTest {
                 identifier(externalName),
                 SqlParserPos.ZERO
         );
+    }
+
+    private static OptimizationTask task() {
+        return new OptimizationTask("", emptyList(), null);
     }
 
     private static SqlOption option(String key, String value) {

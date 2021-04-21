@@ -87,10 +87,10 @@ public class DistributionTraitDef extends RelTraitDef<DistributionTrait> {
 
     @Override
     public RelNode convert(
-        RelOptPlanner planner,
-        RelNode rel,
-        DistributionTrait targetTrait,
-        boolean allowInfiniteCostConverters
+            RelOptPlanner planner,
+            RelNode rel,
+            DistributionTrait targetTrait,
+            boolean allowInfiniteCostConverters
     ) {
         DistributionTrait currentTrait = OptUtils.getDistribution(rel);
 
@@ -127,8 +127,8 @@ public class DistributionTraitDef extends RelTraitDef<DistributionTrait> {
      * Convert to singleton node by adding {@link RootExchangePhysicalRel}.
      * Collation is lost as a result of this transform.
      *
-     * @param planner Planner.
-     * @param rel Node.
+     * @param planner      Planner.
+     * @param rel          Node.
      * @param currentTrait Current distribution trait.
      * @return Converted node.
      */
@@ -140,17 +140,17 @@ public class DistributionTraitDef extends RelTraitDef<DistributionTrait> {
         RelTraitSet traitSet = OptUtils.traitPlus(planner.emptyTraitSet(), getTraitRoot(), collation);
 
         return new RootExchangePhysicalRel(
-            rel.getCluster(),
-            OptUtils.toPhysicalConvention(traitSet),
-            rel
+                rel.getCluster(),
+                OptUtils.toPhysicalConvention(traitSet),
+                rel
         );
     }
 
     @Override
     public boolean canConvert(
-        RelOptPlanner planner,
-        DistributionTrait fromTrait,
-        DistributionTrait toTrait
+            RelOptPlanner planner,
+            DistributionTrait fromTrait,
+            DistributionTrait toTrait
     ) {
         return true;
     }

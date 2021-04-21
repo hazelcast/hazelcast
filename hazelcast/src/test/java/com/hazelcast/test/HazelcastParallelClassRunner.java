@@ -67,7 +67,7 @@ public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
             // when running tests in multiple JVMs in parallel then we want to put a cap
             // on parallelism inside each JVM. otherwise it's easy to use too much resource
             // and the test duration is actually longer and not shorter.
-            cpuWorkers = min(1, cpuWorkers);
+            cpuWorkers = min(4, cpuWorkers);
         }
         return cpuWorkers;
     }

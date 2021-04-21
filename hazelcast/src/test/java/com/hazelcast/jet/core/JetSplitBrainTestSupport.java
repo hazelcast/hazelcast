@@ -81,11 +81,10 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
      * first method executed by {@code @Before SplitBrainTestSupport.setupInternals}.
      */
     protected void onBeforeSetup() {
-
     }
 
-    private Config createConfig() {
-        Config config = new Config();
+    protected Config createConfig() {
+        Config config = smallInstanceConfig();
         config.getJetConfig().getInstanceConfig().setCooperativeThreadCount(PARALLELISM);
         config.setProperty(ClusterProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5");
         config.setProperty(ClusterProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "5");
@@ -97,7 +96,6 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
      * Override this for custom Jet configuration
      */
     protected void onConfigCreated(Config config) {
-
     }
 
     final void testSplitBrain(int firstSubClusterSize, int secondSubClusterSize,

@@ -67,19 +67,23 @@ public final class LogicalRules {
                 JoinProjectTransposeRule.RIGHT_PROJECT_INCLUDE_OUTER,
                 ReduceExpressionsRule.JOIN_INSTANCE,
 
+                // Union rules
+                UnionLogicalRule.INSTANCE,
+
                 // Value rules
-                ValuesLogicalRule.INSTANCE,
-                ValuesReduceRules.FILTER_INSTANCE,
-                ValuesReduceRules.PROJECT_INSTANCE,
-                ValuesReduceRules.PROJECT_FILTER_INSTANCE,
-                ValuesReduceRules.UNION_INSTANCE,
+                ValuesLogicalRules.CONVERT_INSTANCE,
+                ValuesLogicalRules.FILTER_INSTANCE,
+                ValuesLogicalRules.PROJECT_INSTANCE,
+                ValuesLogicalRules.PROJECT_FILTER_INSTANCE,
+                ValuesLogicalRules.UNION_INSTANCE,
 
                 // Insert rules
                 InsertLogicalRule.INSTANCE,
 
                 // Miscellaneous
                 PruneEmptyRules.PROJECT_INSTANCE,
-                PruneEmptyRules.FILTER_INSTANCE
+                PruneEmptyRules.FILTER_INSTANCE,
+                SortLogicalRule.INSTANCE
         );
     }
 }

@@ -156,7 +156,7 @@ public class PhoneHomeTest extends HazelcastTestSupport {
 
     @Test
     public void testMapCount() {
-        testCounts(node.hazelcastInstance::getMap, 6,
+        testCounts(node.hazelcastInstance::getMap, 0,
                 PhoneHomeMetrics.COUNT_OF_MAPS,
                 PhoneHomeMetrics.COUNT_OF_MAPS_ALL_TIME);
     }
@@ -426,7 +426,7 @@ public class PhoneHomeTest extends HazelcastTestSupport {
 
     @Test
     public void testFlakeIDGeneratorCount() {
-        testCounts(node.hazelcastInstance::getFlakeIdGenerator, 1,
+        testCounts(node.hazelcastInstance::getFlakeIdGenerator, 0,
                 PhoneHomeMetrics.COUNT_OF_FLAKE_ID_GENERATORS,
                 PhoneHomeMetrics.COUNT_OF_FLAKE_ID_GENERATORS_ALL_TIME);
     }

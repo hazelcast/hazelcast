@@ -25,40 +25,42 @@ import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
+import com.hazelcast.sql.impl.optimizer.PlanKey;
+import com.hazelcast.sql.impl.optimizer.PlanCheckContext;
+import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.security.SqlSecurityContext;
 
 import java.security.Permission;
 import java.util.List;
+import java.util.Set;
 
-interface JetPlan extends SqlPlan {
+abstract class JetPlan extends SqlPlan {
 
-    SqlResult execute(QueryId queryId);
+    protected JetPlan(PlanKey planKey) {
+        super(planKey);
+    }
 
-    class CreateMappingPlan implements JetPlan {
+    abstract SqlResult execute(QueryId queryId);
+
+    static class CreateMappingPlan extends JetPlan {
         private final Mapping mapping;
         private final boolean replace;
         private final boolean ifNotExists;
         private final JetPlanExecutor planExecutor;
 
         CreateMappingPlan(
+                PlanKey planKey,
                 Mapping mapping,
                 boolean replace,
                 boolean ifNotExists,
                 JetPlanExecutor planExecutor
         ) {
+            super(planKey);
+
             this.mapping = mapping;
             this.replace = replace;
             this.ifNotExists = ifNotExists;
             this.planExecutor = planExecutor;
-        }
-
-        @Override
-        public SqlResult execute(QueryId queryId) {
-            return planExecutor.execute(this);
-        }
-
-        @Override
-        public void checkPermissions(SqlSecurityContext context) {
         }
 
         Mapping mapping() {
@@ -74,33 +76,46 @@ interface JetPlan extends SqlPlan {
         }
 
         @Override
-        public boolean producesRows() {
+        public boolean isCacheable() {
             return false;
         }
-    }
 
-    class DropMappingPlan implements JetPlan {
-        private final String name;
-        private final boolean ifExists;
-        private final JetPlanExecutor planExecutor;
+        @Override
+        public boolean isPlanValid(PlanCheckContext context) {
+            return true;
+        }
 
-        DropMappingPlan(
-                String name,
-                boolean ifExists,
-                JetPlanExecutor planExecutor
-        ) {
-            this.name = name;
-            this.ifExists = ifExists;
-            this.planExecutor = planExecutor;
+        @Override
+        public void checkPermissions(SqlSecurityContext context) {
+        }
+
+        @Override
+        public boolean producesRows() {
+            return false;
         }
 
         @Override
         public SqlResult execute(QueryId queryId) {
             return planExecutor.execute(this);
         }
+    }
 
-        @Override
-        public void checkPermissions(SqlSecurityContext context) {
+    static class DropMappingPlan extends JetPlan {
+        private final String name;
+        private final boolean ifExists;
+        private final JetPlanExecutor planExecutor;
+
+        DropMappingPlan(
+                PlanKey planKey,
+                String name,
+                boolean ifExists,
+                JetPlanExecutor planExecutor
+        ) {
+            super(planKey);
+
+            this.name = name;
+            this.ifExists = ifExists;
+            this.planExecutor = planExecutor;
         }
 
         String name() {
@@ -112,30 +127,71 @@ interface JetPlan extends SqlPlan {
         }
 
         @Override
+        public boolean isCacheable() {
+            return false;
+        }
+
+        @Override
+        public boolean isPlanValid(PlanCheckContext context) {
+            return true;
+        }
+
+        @Override
+        public void checkPermissions(SqlSecurityContext context) {
+        }
+
+        @Override
         public boolean producesRows() {
             return false;
         }
+
+        @Override
+        public SqlResult execute(QueryId queryId) {
+            return planExecutor.execute(this);
+        }
     }
 
-    class CreateJobPlan implements JetPlan {
-        private final String jobName;
+    static class CreateJobPlan extends JetPlan {
         private final JobConfig jobConfig;
         private final boolean ifNotExists;
         private final SelectOrSinkPlan dmlPlan;
         private final JetPlanExecutor planExecutor;
 
         CreateJobPlan(
-                String jobName,
+                PlanKey planKey,
                 JobConfig jobConfig,
                 boolean ifNotExists,
                 SelectOrSinkPlan dmlPlan,
                 JetPlanExecutor planExecutor
         ) {
-            this.jobName = jobName;
+            super(planKey);
+
             this.jobConfig = jobConfig;
             this.ifNotExists = ifNotExists;
             this.dmlPlan = dmlPlan;
             this.planExecutor = planExecutor;
+        }
+
+        JobConfig getJobConfig() {
+            return jobConfig;
+        }
+
+        boolean isIfNotExists() {
+            return ifNotExists;
+        }
+
+        SelectOrSinkPlan getExecutionPlan() {
+            return dmlPlan;
+        }
+
+        @Override
+        public boolean isCacheable() {
+            return dmlPlan.isCacheable();
+        }
+
+        @Override
+        public boolean isPlanValid(PlanCheckContext context) {
+            return dmlPlan.isPlanValid(context);
         }
 
         @Override
@@ -144,175 +200,269 @@ interface JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId) {
-            return planExecutor.execute(this);
-        }
-
-        public String getJobName() {
-            return jobName;
-        }
-
-        public JobConfig getJobConfig() {
-            return jobConfig;
-        }
-
-        public boolean isIfNotExists() {
-            return ifNotExists;
-        }
-
-        public SelectOrSinkPlan getExecutionPlan() {
-            return dmlPlan;
-        }
-
-        @Override
         public boolean producesRows() {
             return false;
         }
+
+        @Override
+        public SqlResult execute(QueryId queryId) {
+            return planExecutor.execute(this);
+        }
     }
 
-    class AlterJobPlan implements JetPlan {
+    static class AlterJobPlan extends JetPlan {
         private final String jobName;
         private final AlterJobOperation operation;
         private final JetPlanExecutor planExecutor;
 
-        AlterJobPlan(String jobName, AlterJobOperation operation, JetPlanExecutor planExecutor) {
+        AlterJobPlan(
+                PlanKey planKey,
+                String jobName,
+                AlterJobOperation operation,
+                JetPlanExecutor planExecutor
+        ) {
+            super(planKey);
+
             this.jobName = jobName;
             this.operation = operation;
             this.planExecutor = planExecutor;
         }
 
+        String getJobName() {
+            return jobName;
+        }
+
+        AlterJobOperation getOperation() {
+            return operation;
+        }
+
         @Override
-        public SqlResult execute(QueryId queryId) {
-            return planExecutor.execute(this);
+        public boolean isCacheable() {
+            return false;
+        }
+
+        @Override
+        public boolean isPlanValid(PlanCheckContext context) {
+            return true;
         }
 
         @Override
         public void checkPermissions(SqlSecurityContext context) {
         }
 
-        public String getJobName() {
-            return jobName;
-        }
-
-        public AlterJobOperation getOperation() {
-            return operation;
-        }
-
         @Override
         public boolean producesRows() {
             return false;
         }
+
+        @Override
+        public SqlResult execute(QueryId queryId) {
+            return planExecutor.execute(this);
+        }
     }
 
-    class DropJobPlan implements JetPlan {
+    static class DropJobPlan extends JetPlan {
         private final String jobName;
         private final boolean ifExists;
         private final String withSnapshotName;
         private final JetPlanExecutor planExecutor;
 
-        DropJobPlan(String jobName, boolean ifExists, String withSnapshotName, JetPlanExecutor planExecutor) {
+        DropJobPlan(
+                PlanKey planKey,
+                String jobName,
+                boolean ifExists,
+                String withSnapshotName,
+                JetPlanExecutor planExecutor
+        ) {
+            super(planKey);
+
             this.jobName = jobName;
             this.ifExists = ifExists;
             this.withSnapshotName = withSnapshotName;
             this.planExecutor = planExecutor;
         }
 
+        String getJobName() {
+            return jobName;
+        }
+
+        boolean isIfExists() {
+            return ifExists;
+        }
+
+        String getWithSnapshotName() {
+            return withSnapshotName;
+        }
+
         @Override
-        public SqlResult execute(QueryId queryId) {
-            return planExecutor.execute(this);
+        public boolean isCacheable() {
+            return false;
+        }
+
+        @Override
+        public boolean isPlanValid(PlanCheckContext context) {
+            return true;
         }
 
         @Override
         public void checkPermissions(SqlSecurityContext context) {
         }
 
-        public String getJobName() {
-            return jobName;
-        }
-
-        public boolean isIfExists() {
-            return ifExists;
-        }
-
-        public String getWithSnapshotName() {
-            return withSnapshotName;
-        }
-
         @Override
         public boolean producesRows() {
             return false;
         }
+
+        @Override
+        public SqlResult execute(QueryId queryId) {
+            return planExecutor.execute(this);
+        }
     }
 
-    class CreateSnapshotPlan implements JetPlan {
+    static class CreateSnapshotPlan extends JetPlan {
         private final String snapshotName;
         private final String jobName;
         private final JetPlanExecutor planExecutor;
 
-        CreateSnapshotPlan(String snapshotName, String jobName, JetPlanExecutor planExecutor) {
+        CreateSnapshotPlan(
+                PlanKey planKey,
+                String snapshotName,
+                String jobName,
+                JetPlanExecutor planExecutor
+        ) {
+            super(planKey);
+
             this.snapshotName = snapshotName;
             this.jobName = jobName;
             this.planExecutor = planExecutor;
         }
 
-        @Override
-        public void checkPermissions(SqlSecurityContext context) {
-        }
-
-        @Override
-        public SqlResult execute(QueryId queryId) {
-            return planExecutor.execute(this);
-        }
-
-        public String getSnapshotName() {
+        String getSnapshotName() {
             return snapshotName;
         }
 
-        public String getJobName() {
+        String getJobName() {
             return jobName;
+        }
+
+        @Override
+        public boolean isCacheable() {
+            return false;
+        }
+
+        @Override
+        public boolean isPlanValid(PlanCheckContext context) {
+            return true;
+        }
+
+        @Override
+        public void checkPermissions(SqlSecurityContext context) {
         }
 
         @Override
         public boolean producesRows() {
             return false;
         }
+
+        @Override
+        public SqlResult execute(QueryId queryId) {
+            return planExecutor.execute(this);
+        }
     }
 
-    class DropSnapshotPlan implements JetPlan {
+    static class DropSnapshotPlan extends JetPlan {
         private final String snapshotName;
         private final boolean ifExists;
         private final JetPlanExecutor planExecutor;
 
-        DropSnapshotPlan(String snapshotName, boolean ifExists, JetPlanExecutor planExecutor) {
+        DropSnapshotPlan(
+                PlanKey planKey,
+                String snapshotName,
+                boolean ifExists,
+                JetPlanExecutor planExecutor
+        ) {
+            super(planKey);
+
             this.snapshotName = snapshotName;
             this.ifExists = ifExists;
             this.planExecutor = planExecutor;
         }
 
+        String getSnapshotName() {
+            return snapshotName;
+        }
+
+        boolean isIfExists() {
+            return ifExists;
+        }
+
         @Override
-        public SqlResult execute(QueryId queryId) {
-            return planExecutor.execute(this);
+        public boolean isCacheable() {
+            return false;
+        }
+
+        @Override
+        public boolean isPlanValid(PlanCheckContext context) {
+            return true;
         }
 
         @Override
         public void checkPermissions(SqlSecurityContext context) {
         }
 
-        public String getSnapshotName() {
-            return snapshotName;
-        }
-
-        public boolean isIfExists() {
-            return ifExists;
-        }
-
         @Override
         public boolean producesRows() {
             return false;
         }
+
+        @Override
+        public SqlResult execute(QueryId queryId) {
+            return planExecutor.execute(this);
+        }
     }
 
-    class SelectOrSinkPlan implements JetPlan {
+    static class ShowStatementPlan extends JetPlan {
+        private final ShowStatementTarget showTarget;
+        private final JetPlanExecutor planExecutor;
+
+        ShowStatementPlan(PlanKey planKey, ShowStatementTarget showTarget, JetPlanExecutor planExecutor) {
+            super(planKey);
+
+            this.showTarget = showTarget;
+            this.planExecutor = planExecutor;
+        }
+
+        ShowStatementTarget getShowTarget() {
+            return showTarget;
+        }
+
+        @Override
+        public boolean isCacheable() {
+            return false;
+        }
+
+        @Override
+        public boolean isPlanValid(PlanCheckContext context) {
+            return true;
+        }
+
+        @Override
+        public void checkPermissions(SqlSecurityContext context) {
+        }
+
+        @Override
+        public boolean producesRows() {
+            return true;
+        }
+
+        @Override
+        public SqlResult execute(QueryId queryId) {
+            return planExecutor.execute(this);
+        }
+    }
+
+    static class SelectOrSinkPlan extends JetPlan {
+        private final Set<PlanObjectKey> objectKeys;
         private final DAG dag;
         private final boolean isStreaming;
         private final boolean isInsert;
@@ -321,6 +471,8 @@ interface JetPlan extends SqlPlan {
         private final List<Permission> permissions;
 
         SelectOrSinkPlan(
+                PlanKey planKey,
+                Set<PlanObjectKey> objectKeys,
                 DAG dag,
                 boolean isStreaming,
                 boolean isInsert,
@@ -328,24 +480,15 @@ interface JetPlan extends SqlPlan {
                 JetPlanExecutor planExecutor,
                 List<Permission> permissions
         ) {
+            super(planKey);
+
             this.dag = dag;
             this.isStreaming = isStreaming;
             this.isInsert = isInsert;
             this.rowMetadata = rowMetadata;
             this.planExecutor = planExecutor;
             this.permissions = permissions;
-        }
-
-        @Override
-        public SqlResult execute(QueryId queryId) {
-            return planExecutor.execute(this, queryId);
-        }
-
-        @Override
-        public void checkPermissions(SqlSecurityContext context) {
-            for (Permission permission : permissions) {
-                context.checkPermission(permission);
-            }
+            this.objectKeys = objectKeys;
         }
 
         DAG getDag() {
@@ -365,37 +508,30 @@ interface JetPlan extends SqlPlan {
         }
 
         @Override
-        public boolean producesRows() {
-            return !isInsert;
-        }
-    }
-
-    class ShowStatementPlan implements JetPlan {
-
-        private final ShowStatementTarget showTarget;
-        private final JetPlanExecutor planExecutor;
-
-        ShowStatementPlan(ShowStatementTarget showTarget, JetPlanExecutor planExecutor) {
-            this.showTarget = showTarget;
-            this.planExecutor = planExecutor;
-        }
-
-        public ShowStatementTarget getShowTarget() {
-            return showTarget;
+        public boolean isCacheable() {
+            return !objectKeys.contains(PlanObjectKey.NON_CACHEABLE_OBJECT_KEY);
         }
 
         @Override
-        public SqlResult execute(QueryId queryId) {
-            return planExecutor.execute(this);
+        public boolean isPlanValid(PlanCheckContext context) {
+            return context.isValid(objectKeys);
         }
 
         @Override
         public void checkPermissions(SqlSecurityContext context) {
+            for (Permission permission : permissions) {
+                context.checkPermission(permission);
+            }
         }
 
         @Override
         public boolean producesRows() {
-            return true;
+            return !isInsert;
+        }
+
+        @Override
+        public SqlResult execute(QueryId queryId) {
+            return planExecutor.execute(this, queryId);
         }
     }
 }

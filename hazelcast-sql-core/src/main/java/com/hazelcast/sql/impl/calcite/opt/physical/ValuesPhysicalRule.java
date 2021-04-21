@@ -31,8 +31,8 @@ public final class ValuesPhysicalRule extends RelOptRule {
 
     private ValuesPhysicalRule() {
         super(
-            OptUtils.single(ValuesLogicalRel.class, HazelcastConventions.LOGICAL),
-            ValuesPhysicalRule.class.getSimpleName()
+                OptUtils.single(ValuesLogicalRel.class, HazelcastConventions.LOGICAL),
+                ValuesPhysicalRule.class.getSimpleName()
         );
     }
 
@@ -43,10 +43,10 @@ public final class ValuesPhysicalRule extends RelOptRule {
         DistributionTrait distribution = logicalValues.getHazelcastCluster().getDistributionTraitDef().getTraitReplicated();
 
         ValuesPhysicalRel transformedValues = new ValuesPhysicalRel(
-            logicalValues.getCluster(),
-            logicalValues.getRowType(),
-            logicalValues.getTuples(),
-            OptUtils.toPhysicalConvention(logicalValues.getTraitSet(), distribution)
+                logicalValues.getCluster(),
+                logicalValues.getRowType(),
+                logicalValues.getTuples(),
+                OptUtils.toPhysicalConvention(logicalValues.getTraitSet(), distribution)
         );
 
         call.transformTo(transformedValues);

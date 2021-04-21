@@ -20,10 +20,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hazelcast.jet.cdc.AbstractCdcIntegrationTest;
 import com.hazelcast.jet.retry.RetryStrategies;
 import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import org.junit.Rule;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.utility.DockerImageName;
 
 import java.io.Serializable;
 import java.sql.Connection;
@@ -35,14 +37,15 @@ import java.util.concurrent.TimeUnit;
 
 import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
 
-@Category({IgnoreInJenkinsOnWindows.class})
+@Category({ParallelJVMTest.class, IgnoreInJenkinsOnWindows.class})
+@RunWith(HazelcastSerialClassRunner.class)
 public abstract class AbstractPostgresCdcIntegrationTest extends AbstractCdcIntegrationTest {
+
+    public static final String DOCKER_IMAGE = "debezium/example-postgres:1.3";
 
     protected static final String DATABASE_NAME = "postgres";
     protected static final String REPLICATION_SLOT_NAME = "debezium";
 
-    private static final DockerImageName DOCKER_IMAGE = DockerImageName.parse("debezium/example-postgres:1.3")
-            .asCompatibleSubstituteFor("postgres");
     private static final String SCHEMA = "inventory";
 
     @Rule

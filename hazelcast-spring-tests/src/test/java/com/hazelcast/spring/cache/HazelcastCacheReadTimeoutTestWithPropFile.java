@@ -21,7 +21,6 @@ import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
@@ -34,7 +33,6 @@ import org.springframework.test.context.ContextConfiguration;
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"readtimeout-config-prop-file.xml"})
 @Category(QuickTest.class)
-@Ignore("https://github.com/hazelcast/hazelcast/issues/18454")
 public class HazelcastCacheReadTimeoutTestWithPropFile extends AbstractHazelcastCacheReadTimeoutTest {
 
     @BeforeClass

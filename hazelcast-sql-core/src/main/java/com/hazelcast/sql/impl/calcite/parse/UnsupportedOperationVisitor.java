@@ -114,6 +114,10 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
         SUPPORTED_OPERATORS = new HashSet<>();
 
         // Math
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.POWER);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.SQUARE);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.SQRT);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.CBRT);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.COS);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.SIN);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.TAN);
@@ -148,6 +152,7 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.RTRIM);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.BTRIM);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.REPLACE);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.POSITION);
 
         // Sorting
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.DESC);
@@ -266,9 +271,9 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
             case REAL:
             case DOUBLE:
             case VARCHAR:
-            // CHAR is present here to support string literals: Calcite expects
-            // string literals to be of CHAR type, not VARCHAR. Validated type
-            // of string literals is still VARCHAR in HazelcastSqlValidator.
+                // CHAR is present here to support string literals: Calcite expects
+                // string literals to be of CHAR type, not VARCHAR. Validated type
+                // of string literals is still VARCHAR in HazelcastSqlValidator.
             case CHAR:
             case ANY:
             case NULL:
@@ -306,6 +311,7 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
 
                 return;
             case DESCENDING:
+            case POSITION:
             case OTHER:
             case OTHER_FUNCTION:
                 processOther(call);

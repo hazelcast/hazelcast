@@ -25,8 +25,8 @@ import com.hazelcast.sql.impl.QueryException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import static com.hazelcast.sql.impl.type.QueryDataType.INT;
-import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTEGER;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.VARCHAR;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -54,8 +54,8 @@ public class SqlJoinTest extends SqlTestSupport {
 
         assertRowsAnyOrder(
                 "SELECT l.v, m.this " +
-                "FROM " + leftName + " l " +
-                "INNER JOIN " + mapName + " m ON l.v = m.__key",
+                        "FROM " + leftName + " l " +
+                        "INNER JOIN " + mapName + " m ON l.v = m.__key",
                 asList(
                         new Row(1, "value-1"),
                         new Row(2, "value-2")
@@ -70,7 +70,7 @@ public class SqlJoinTest extends SqlTestSupport {
                 sqlService,
                 leftName,
                 singletonList("__key"),
-                singletonList(INT),
+                singletonList(INTEGER),
                 asList(new String[]{"0"}, new String[]{"1"}, new String[]{"2"})
         );
 
@@ -81,8 +81,8 @@ public class SqlJoinTest extends SqlTestSupport {
 
         assertRowsAnyOrder(
                 "SELECT l.__key, m.this " +
-                "FROM " + leftName + " l " +
-                "JOIN " + mapName + " m USING (__key)",
+                        "FROM " + leftName + " l " +
+                        "JOIN " + mapName + " m USING (__key)",
                 asList(
                         new Row(1, "value-1"),
                         new Row(2, "value-2")
@@ -102,8 +102,8 @@ public class SqlJoinTest extends SqlTestSupport {
 
         assertRowsAnyOrder(
                 "SELECT l.v, m.this " +
-                "FROM " + leftName + " l, " + mapName + " m " +
-                "WHERE l.v = m.__key",
+                        "FROM " + leftName + " l, " + mapName + " m " +
+                        "WHERE l.v = m.__key",
                 asList(
                         new Row(1, "value-1"),
                         new Row(2, "value-2")
@@ -124,9 +124,9 @@ public class SqlJoinTest extends SqlTestSupport {
         // TODO assert that it uses the join-primitive plan
         assertRowsAnyOrder(
                 "SELECT l.v, m.this " +
-                "FROM " + leftName + " l " +
-                "INNER JOIN " + mapName + " m ON 1 = 1 " +
-                "WHERE l.v = m.__key",
+                        "FROM " + leftName + " l " +
+                        "INNER JOIN " + mapName + " m ON 1 = 1 " +
+                        "WHERE l.v = m.__key",
                 asList(
                         new Row(1, "value-1"),
                         new Row(2, "value-2")
@@ -145,7 +145,7 @@ public class SqlJoinTest extends SqlTestSupport {
 
         assertRowsAnyOrder(
                 "SELECT l.v, m.this " +
-                "FROM " + leftName + " l, " + mapName + " m ",
+                        "FROM " + leftName + " l, " + mapName + " m ",
                 asList(
                         new Row(0, "value-1"),
                         new Row(0, "value-2"),
@@ -166,8 +166,8 @@ public class SqlJoinTest extends SqlTestSupport {
 
         assertRowsAnyOrder(
                 "SELECT l.v, m.this " +
-                "FROM " + leftName + " l " +
-                "CROSS JOIN " + mapName + " m ",
+                        "FROM " + leftName + " l " +
+                        "CROSS JOIN " + mapName + " m ",
                 asList(
                         new Row(0, "value-1"),
                         new Row(0, "value-2"),
@@ -184,7 +184,7 @@ public class SqlJoinTest extends SqlTestSupport {
                 sqlService,
                 leftName,
                 singletonList("v"),
-                singletonList(INT),
+                singletonList(INTEGER),
                 asList(new String[]{"0"}, new String[]{null}, new String[]{"2"})
         );
 
@@ -195,8 +195,8 @@ public class SqlJoinTest extends SqlTestSupport {
 
         assertRowsAnyOrder(
                 "SELECT l.v, m.this " +
-                "FROM " + leftName + " l " +
-                "JOIN " + mapName + " m ON l.v = m.__key",
+                        "FROM " + leftName + " l " +
+                        "JOIN " + mapName + " m ON l.v = m.__key",
                 singletonList(new Row(2, "value-2"))
         );
     }
@@ -213,9 +213,9 @@ public class SqlJoinTest extends SqlTestSupport {
 
         assertRowsAnyOrder(
                 "SELECT l.v, m.this " +
-                "FROM " + leftName + " l " +
-                "JOIN " + mapName + " m ON l.v = m.__key " +
-                "WHERE m.__key < 2",
+                        "FROM " + leftName + " l " +
+                        "JOIN " + mapName + " m ON l.v = m.__key " +
+                        "WHERE m.__key < 2",
                 singletonList(new Row(1, "value-1"))
         );
     }
@@ -232,8 +232,8 @@ public class SqlJoinTest extends SqlTestSupport {
 
         assertRowsAnyOrder(
                 "SELECT l.v, m.this || '-s' " +
-                "FROM " + leftName + " l " +
-                "JOIN " + mapName + " m ON l.v = m.__key ",
+                        "FROM " + leftName + " l " +
+                        "JOIN " + mapName + " m ON l.v = m.__key ",
                 asList(
                         new Row(1, "value-1-s"),
                         new Row(2, "value-2-s")
@@ -253,8 +253,8 @@ public class SqlJoinTest extends SqlTestSupport {
 
         assertRowsAnyOrder(
                 "SELECT l.v, m.__key, m.this " +
-                "FROM " + leftName + " l " +
-                "JOIN " + mapName + " m ON l.v = 2 * m.__key",
+                        "FROM " + leftName + " l " +
+                        "JOIN " + mapName + " m ON l.v = 2 * m.__key",
                 singletonList(new Row(2, 1, "value-1"))
         );
     }
@@ -271,8 +271,8 @@ public class SqlJoinTest extends SqlTestSupport {
 
         assertRowsAnyOrder(
                 "SELECT l.v, m.__key " +
-                "FROM " + leftName + " l " +
-                "JOIN " + mapName + " m ON l.v = m.this",
+                        "FROM " + leftName + " l " +
+                        "JOIN " + mapName + " m ON l.v = m.this",
                 asList(
                         new Row(1, "value-1"),
                         new Row(2, "value-2")
@@ -292,8 +292,8 @@ public class SqlJoinTest extends SqlTestSupport {
 
         assertRowsAnyOrder(
                 "SELECT l.v, m.__key, m.this " +
-                "FROM " + leftName + " l " +
-                "JOIN " + mapName + " m ON l.v > m.__key",
+                        "FROM " + leftName + " l " +
+                        "JOIN " + mapName + " m ON l.v > m.__key",
                 asList(
                         new Row(2, 1, "value-1"),
                         new Row(3, 1, "value-1"),
@@ -315,8 +315,8 @@ public class SqlJoinTest extends SqlTestSupport {
         // this currently uses the full-scan join
         assertRowsAnyOrder(
                 "SELECT l.v, m.__key, m.this " +
-                "FROM " + leftName + " l " +
-                "JOIN " + mapName + " m ON l.v = m.__key OR l.v = m.__key",
+                        "FROM " + leftName + " l " +
+                        "JOIN " + mapName + " m ON l.v = m.__key OR l.v = m.__key",
                 asList(
                         new Row(1, 1, "value-1"),
                         new Row(2, 2, "value-2"),
@@ -332,7 +332,7 @@ public class SqlJoinTest extends SqlTestSupport {
                 sqlService,
                 leftName,
                 asList("v1", "v2"),
-                asList(INT, INT),
+                asList(INTEGER, INTEGER),
                 asList(new String[]{"0", "0"}, new String[]{"1", "0"}, new String[]{"2", "2"})
         );
 
@@ -343,8 +343,8 @@ public class SqlJoinTest extends SqlTestSupport {
 
         assertRowsAnyOrder(
                 "SELECT l.v1, l.v2, m.__key, m.this " +
-                "FROM " + leftName + " l " +
-                "JOIN " + mapName + " m ON l.v1 = m.__key AND l.v2 != m.__key",
+                        "FROM " + leftName + " l " +
+                        "JOIN " + mapName + " m ON l.v1 = m.__key AND l.v2 != m.__key",
                 singletonList(new Row(1, 0, 1, "value-1"))
         );
     }
@@ -366,9 +366,9 @@ public class SqlJoinTest extends SqlTestSupport {
 
         assertRowsAnyOrder(
                 "SELECT l.v, m1.this, m2.this " +
-                "FROM " + leftName + " l " +
-                "JOIN " + mapName1 + " m1 ON l.v = m1.__key " +
-                "JOIN " + mapName2 + " m2 ON l.v + m1.__key > m2.__key",
+                        "FROM " + leftName + " l " +
+                        "JOIN " + mapName1 + " m1 ON l.v = m1.__key " +
+                        "JOIN " + mapName2 + " m2 ON l.v + m1.__key > m2.__key",
                 asList(
                         new Row(1, "value-1.1", "value-2.1"),
                         new Row(2, "value-1.2", "value-2.1"),
@@ -385,7 +385,7 @@ public class SqlJoinTest extends SqlTestSupport {
                 sqlService,
                 leftName,
                 singletonList("v"),
-                singletonList(INT),
+                singletonList(INTEGER),
                 asList(new String[]{"0"}, new String[]{null}, new String[]{"2"})
         );
 
@@ -396,8 +396,8 @@ public class SqlJoinTest extends SqlTestSupport {
 
         assertRowsEventuallyInAnyOrder(
                 "SELECT l.v, m.name, m.id " +
-                "FROM " + leftName + " l " +
-                "JOIN " + mapName + " m ON l.v = m.id",
+                        "FROM " + leftName + " l " +
+                        "JOIN " + mapName + " m ON l.v = m.id",
                 singletonList(new Row(2, "value-2", 2))
         );
     }
@@ -409,7 +409,7 @@ public class SqlJoinTest extends SqlTestSupport {
                 sqlService,
                 leftName,
                 asList("v1", "v2"),
-                asList(INT, VARCHAR),
+                asList(INTEGER, VARCHAR),
                 asList(new String[]{"0", "value-0"}, new String[]{"1", null}, new String[]{"2", "value-2"})
         );
 
@@ -420,8 +420,8 @@ public class SqlJoinTest extends SqlTestSupport {
 
         assertRowsEventuallyInAnyOrder(
                 "SELECT l.v1, l.v2, m.id, m.name " +
-                "FROM " + leftName + " l " +
-                "JOIN " + mapName + " m ON l.v1 = m.id AND l.v2 = m.name",
+                        "FROM " + leftName + " l " +
+                        "JOIN " + mapName + " m ON l.v1 = m.id AND l.v2 = m.name",
                 singletonList(new Row(2, "value-2", 2, "value-2"))
         );
     }
@@ -433,7 +433,7 @@ public class SqlJoinTest extends SqlTestSupport {
                 sqlService,
                 leftName,
                 asList("v1", "v2"),
-                asList(INT, VARCHAR),
+                asList(INTEGER, VARCHAR),
                 asList(new String[]{"0", "value-0"}, new String[]{"1", null}, new String[]{"2", "value-2"})
         );
 
@@ -444,8 +444,8 @@ public class SqlJoinTest extends SqlTestSupport {
 
         assertRowsEventuallyInAnyOrder(
                 "SELECT l.v1, l.v2, m.id, m.name " +
-                "FROM " + leftName + " l " +
-                "JOIN " + mapName + " m ON l.v1 = m.id OR l.v2 = m.name",
+                        "FROM " + leftName + " l " +
+                        "JOIN " + mapName + " m ON l.v1 = m.id OR l.v2 = m.name",
                 asList(
                         new Row(1, null, 1, "value-1"),
                         new Row(2, "value-2", 2, "value-2")
@@ -471,8 +471,8 @@ public class SqlJoinTest extends SqlTestSupport {
 
         assertRowsEventuallyInAnyOrder(
                 "SELECT l.v, m.id " +
-                "FROM " + leftName + " l " +
-                "JOIN " + mapName + " m ON l.v = m.name",
+                        "FROM " + leftName + " l " +
+                        "JOIN " + mapName + " m ON l.v = m.name",
                 asList(
                         new Row("value-1", 1),
                         new Row("value-2", 2)
@@ -492,8 +492,8 @@ public class SqlJoinTest extends SqlTestSupport {
 
         assertRowsEventuallyInAnyOrder(
                 "SELECT l.v, m.id, m.name " +
-                "FROM " + leftName + " l " +
-                "JOIN " + mapName + " m ON l.v = m.__key AND l.v = m.id",
+                        "FROM " + leftName + " l " +
+                        "JOIN " + mapName + " m ON l.v = m.__key AND l.v = m.id",
                 singletonList(new Row(2, 2, "value-2"))
         );
     }
@@ -510,8 +510,8 @@ public class SqlJoinTest extends SqlTestSupport {
 
         assertRowsAnyOrder(
                 "SELECT l.v, m.__key, m.this " +
-                "FROM " + leftName + " l " +
-                "JOIN " + mapName + " m ON 1 = 2",
+                        "FROM " + leftName + " l " +
+                        "JOIN " + mapName + " m ON 1 = 2",
                 emptyList()
         );
     }
@@ -528,8 +528,8 @@ public class SqlJoinTest extends SqlTestSupport {
 
         assertRowsAnyOrder(
                 "SELECT l.v, m.this " +
-                "FROM " + leftName + " l " +
-                "INNER JOIN " + mapName + " m ON l.v = m.__key",
+                        "FROM " + leftName + " l " +
+                        "INNER JOIN " + mapName + " m ON l.v = m.__key",
                 asList(
                         new Row(1, "value-1"),
                         new Row(2, "value-2")
@@ -549,8 +549,8 @@ public class SqlJoinTest extends SqlTestSupport {
 
         assertRowsAnyOrder(
                 "SELECT l.v, m.this " +
-                "FROM " + leftName + " l " +
-                "INNER JOIN " + mapName + " m ON l.v = m.__key",
+                        "FROM " + leftName + " l " +
+                        "INNER JOIN " + mapName + " m ON l.v = m.__key",
                 asList(
                         new Row(1, "value-1"),
                         new Row(2, "value-2")
@@ -569,8 +569,8 @@ public class SqlJoinTest extends SqlTestSupport {
         assertThatThrownBy(() ->
                 sqlService.execute(
                         "SELECT 1 " +
-                        "FROM " + leftName + " AS l " +
-                        "JOIN (SELECT * FROM " + mapName + ") AS m ON l.v = m.__key"
+                                "FROM " + leftName + " AS l " +
+                                "JOIN (SELECT * FROM " + mapName + ") AS m ON l.v = m.__key"
                 ))
                 .hasCauseInstanceOf(QueryException.class)
                 .hasMessageContaining("Sub-query not supported on the right side of a join");
@@ -596,7 +596,7 @@ public class SqlJoinTest extends SqlTestSupport {
                 sqlService,
                 leftName,
                 singletonList("v"),
-                singletonList(INT),
+                singletonList(INTEGER),
                 asList(new String[]{"0"}, new String[]{null}, new String[]{"2"})
         );
 
@@ -607,8 +607,8 @@ public class SqlJoinTest extends SqlTestSupport {
 
         assertRowsAnyOrder(
                 "SELECT l.v, m.__key, m.this || '-s' " +
-                "FROM " + leftName + " l " +
-                "LEFT OUTER JOIN " + mapName + " m ON l.v = m.__key ",
+                        "FROM " + leftName + " l " +
+                        "LEFT OUTER JOIN " + mapName + " m ON l.v = m.__key ",
                 asList(
                         new Row(0, null, null),
                         new Row(null, null, null),
@@ -624,7 +624,7 @@ public class SqlJoinTest extends SqlTestSupport {
                 sqlService,
                 leftName,
                 singletonList("v"),
-                singletonList(INT),
+                singletonList(INTEGER),
                 asList(new String[]{"0"}, new String[]{null}, new String[]{"2"})
         );
 
@@ -635,8 +635,8 @@ public class SqlJoinTest extends SqlTestSupport {
 
         assertRowsAnyOrder(
                 "SELECT l.v, m.__key, m.this " +
-                "FROM " + leftName + " l " +
-                "LEFT JOIN " + mapName + " m ON l.v = m.__key",
+                        "FROM " + leftName + " l " +
+                        "LEFT JOIN " + mapName + " m ON l.v = m.__key",
                 asList(
                         new Row(0, null, null),
                         new Row(null, null, null),
@@ -652,7 +652,7 @@ public class SqlJoinTest extends SqlTestSupport {
                 sqlService,
                 leftName,
                 singletonList("v"),
-                singletonList(INT),
+                singletonList(INTEGER),
                 asList(new String[]{"0"}, new String[]{null}, new String[]{"2"})
         );
 
@@ -663,8 +663,8 @@ public class SqlJoinTest extends SqlTestSupport {
 
         assertRowsAnyOrder(
                 "SELECT l.v, m.__key, m.this " +
-                "FROM " + leftName + " l " +
-                "LEFT JOIN " + mapName + " m ON l.v = m.this",
+                        "FROM " + leftName + " l " +
+                        "LEFT JOIN " + mapName + " m ON l.v = m.this",
                 asList(
                         new Row(0, null, null),
                         new Row(null, null, null),
@@ -680,7 +680,7 @@ public class SqlJoinTest extends SqlTestSupport {
                 sqlService,
                 leftName,
                 singletonList("v"),
-                singletonList(INT),
+                singletonList(INTEGER),
                 asList(new String[]{"0"}, new String[]{null}, new String[]{"2"})
         );
 
@@ -691,8 +691,8 @@ public class SqlJoinTest extends SqlTestSupport {
 
         assertRowsAnyOrder(
                 "SELECT l.v, m.__key, m.this " +
-                "FROM " + leftName + " l " +
-                "LEFT JOIN " + mapName + " m ON l.v = m.this and m.__key is null",
+                        "FROM " + leftName + " l " +
+                        "LEFT JOIN " + mapName + " m ON l.v = m.this and m.__key is null",
                 asList(
                         new Row(0, null, null),
                         new Row(null, null, null),
@@ -708,7 +708,7 @@ public class SqlJoinTest extends SqlTestSupport {
                 sqlService,
                 leftName,
                 singletonList("v"),
-                singletonList(INT),
+                singletonList(INTEGER),
                 asList(new String[]{"0"}, new String[]{null}, new String[]{"2"})
         );
 
@@ -719,8 +719,8 @@ public class SqlJoinTest extends SqlTestSupport {
 
         assertRowsAnyOrder(
                 "SELECT l.v, m.__key, m.this " +
-                "FROM " + leftName + " l " +
-                "LEFT JOIN " + mapName + " m ON l.v = m.this",
+                        "FROM " + leftName + " l " +
+                        "LEFT JOIN " + mapName + " m ON l.v = m.this",
                 asList(
                         new Row(0, null, null),
                         new Row(null, null, null),
@@ -737,7 +737,7 @@ public class SqlJoinTest extends SqlTestSupport {
                 sqlService,
                 leftName,
                 singletonList("v"),
-                singletonList(INT),
+                singletonList(INTEGER),
                 asList(new String[]{"0"}, new String[]{null}, new String[]{"2"})
         );
 
@@ -748,8 +748,8 @@ public class SqlJoinTest extends SqlTestSupport {
 
         assertRowsAnyOrder(
                 "SELECT l.v, m.__key, m.this " +
-                "FROM " + leftName + " l " +
-                "LEFT JOIN " + mapName + " m ON l.v = m.this and m.__key='value-3'",
+                        "FROM " + leftName + " l " +
+                        "LEFT JOIN " + mapName + " m ON l.v = m.this and m.__key='value-3'",
                 asList(
                         new Row(0, null, null),
                         new Row(null, null, null),
@@ -765,7 +765,7 @@ public class SqlJoinTest extends SqlTestSupport {
                 sqlService,
                 leftName,
                 singletonList("v"),
-                singletonList(INT),
+                singletonList(INTEGER),
                 asList(new String[]{"0"}, new String[]{null})
         );
 
@@ -776,8 +776,8 @@ public class SqlJoinTest extends SqlTestSupport {
 
         assertRowsAnyOrder(
                 "SELECT l.v, m.__key, m.this " +
-                "FROM " + leftName + " l " +
-                "LEFT JOIN " + mapName + " m ON 1 = 1",
+                        "FROM " + leftName + " l " +
+                        "LEFT JOIN " + mapName + " m ON 1 = 1",
                 asList(
                         new Row(0, "value-1", 1),
                         new Row(0, "value-2", 2),
@@ -796,7 +796,7 @@ public class SqlJoinTest extends SqlTestSupport {
                 sqlService,
                 leftName,
                 singletonList("v"),
-                singletonList(INT),
+                singletonList(INTEGER),
                 asList(new String[]{"0"}, new String[]{null}, new String[]{"2"}, new String[]{"3"})
         );
 
@@ -807,8 +807,8 @@ public class SqlJoinTest extends SqlTestSupport {
 
         assertRowsAnyOrder(
                 "SELECT l.v, m.__key, m.this " +
-                "FROM " + leftName + " l " +
-                "LEFT JOIN " + mapName + " m ON m.__key>l.v",
+                        "FROM " + leftName + " l " +
+                        "LEFT JOIN " + mapName + " m ON m.__key>l.v",
                 asList(
                         new Row(0, 1, "value-1"),
                         new Row(0, 2, "value-2"),
@@ -827,7 +827,7 @@ public class SqlJoinTest extends SqlTestSupport {
                 sqlService,
                 leftName,
                 singletonList("v"),
-                singletonList(INT),
+                singletonList(INTEGER),
                 asList(new String[]{"0"}, new String[]{null}, new String[]{"2"}, new String[]{"3"})
         );
 
@@ -838,8 +838,8 @@ public class SqlJoinTest extends SqlTestSupport {
 
         assertRowsAnyOrder(
                 "SELECT l.v, m.__key, m.this " +
-                "FROM " + leftName + " l " +
-                "LEFT JOIN " + mapName + " m ON m.__key>l.v AND m.this IS NOT NULL",
+                        "FROM " + leftName + " l " +
+                        "LEFT JOIN " + mapName + " m ON m.__key>l.v AND m.this IS NOT NULL",
                 asList(
                         new Row(0, 1, "value-1"),
                         new Row(0, 2, "value-2"),

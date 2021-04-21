@@ -25,10 +25,12 @@ import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamSource;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.Assume;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 
@@ -45,8 +47,13 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.testcontainers.containers.MySQLContainer.MYSQL_PORT;
 import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
 
-@Category(NightlyTest.class)
+@Category({NightlyTest.class})
+@RunWith(HazelcastSerialClassRunner.class)
 public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
+
+    private static final String MYSQL_IMAGE = "debezium/example-mysql:1.3";
+
+    private static final String POSTGRES_IMAGE = "debezium/example-postgres:1.3";
 
     @Test
     public void mysql() throws Exception {
@@ -216,7 +223,7 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
 
     private MySQLContainer<?> mySqlContainer() {
         return namedTestContainer(
-                new MySQLContainer<>("debezium/example-mysql:1.3")
+                new MySQLContainer<>(MYSQL_IMAGE)
                         .withUsername("mysqluser")
                         .withPassword("mysqlpw")
         );
@@ -372,7 +379,7 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
 
     private PostgreSQLContainer<?> postgresContainer() {
         return namedTestContainer(
-                new PostgreSQLContainer<>("debezium/example-postgres:1.3")
+                new PostgreSQLContainer<>(POSTGRES_IMAGE)
                         .withDatabaseName("postgres")
                         .withUsername("postgres")
                         .withPassword("postgres")

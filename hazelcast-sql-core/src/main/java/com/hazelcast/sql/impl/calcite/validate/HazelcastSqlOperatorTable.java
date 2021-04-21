@@ -33,6 +33,7 @@ import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastIsTr
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastNotPredicate;
 import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastConcatOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastLikeOperator;
+import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastPositionFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastReplaceFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastStringFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastSubstringFunction;
@@ -64,7 +65,6 @@ import static com.hazelcast.sql.impl.calcite.validate.HazelcastResources.RESOURC
  * All supported operators and functions must be defined in this table, even if they are already defined in the
  * {@link SqlStdOperatorTable}. This is needed to ensure that we have the full control over inference and coercion
  * strategies.
- *
  */
 @SuppressWarnings({"unused", "checkstyle:ClassDataAbstractionCoupling"})
 public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable {
@@ -123,6 +123,11 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
     public static final SqlFunction SIGN = HazelcastSignFunction.INSTANCE;
     public static final SqlFunction RAND = HazelcastRandFunction.INSTANCE;
 
+    public static final SqlFunction POWER = new HazelcastDoubleBiFunction("POWER");
+    public static final SqlFunction SQUARE = new HazelcastDoubleFunction("SQUARE");
+    public static final SqlFunction SQRT = new HazelcastDoubleFunction("SQRT");
+    public static final SqlFunction CBRT = new HazelcastDoubleFunction("CBRT");
+
     public static final SqlFunction COS = new HazelcastDoubleFunction("COS");
     public static final SqlFunction SIN = new HazelcastDoubleFunction("SIN");
     public static final SqlFunction TAN = new HazelcastDoubleFunction("TAN");
@@ -171,6 +176,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
     public static final SqlFunction UPPER = HazelcastStringFunction.UPPER;
 
     public static final SqlFunction REPLACE = HazelcastReplaceFunction.INSTANCE;
+    public static final SqlFunction POSITION = HazelcastPositionFunction.INSTANCE;
 
     public static final SqlPostfixOperator DESC = HazelcastDescOperator.DESC;
 
@@ -222,11 +228,11 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
                 List<SqlOperator> resolvedOperators = new ArrayList<>(1);
 
                 validator.getOperatorTable().lookupOperatorOverloads(
-                    operator.getNameAsId(),
-                    null,
-                    operator.getSyntax(),
-                    resolvedOperators,
-                    SqlNameMatchers.withCaseSensitive(false)
+                        operator.getNameAsId(),
+                        null,
+                        operator.getSyntax(),
+                        resolvedOperators,
+                        SqlNameMatchers.withCaseSensitive(false)
                 );
 
                 if (resolvedOperators.isEmpty()) {

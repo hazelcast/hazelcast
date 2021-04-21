@@ -180,26 +180,24 @@ public class MapLockTest extends HazelcastTestSupport {
             map.lock(i);
         }
 
-        final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
-        final HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(config);
+        nodeFactory.newHazelcastInstance(config);
+        nodeFactory.newHazelcastInstance(config);
         Thread.sleep(3000);
         final CountDownLatch latch = new CountDownLatch(1000);
-        Thread t = new Thread(new Runnable() {
-            public void run() {
-                for (int i = 0; i < 1000; i++) {
-                    if (map.isLocked(i)) {
-                        latch.countDown();
-                    }
+        Thread t = new Thread(() -> {
+            for (int i = 0; i < 1000; i++) {
+                if (map.isLocked(i)) {
+                    latch.countDown();
                 }
             }
         });
         t.start();
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        assertTrue(latch.await(15, TimeUnit.SECONDS));
     }
 
     @Category(NightlyTest.class)
     @Test
-    public void testLockEvictionWithMigration() throws Exception {
+    public void testLockEvictionWithMigration() {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         final Config config = getConfig();
         final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);

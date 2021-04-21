@@ -29,7 +29,10 @@ import com.hazelcast.jet.pipeline.ServiceFactories;
 import com.hazelcast.jet.pipeline.ServiceFactory;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import javax.annotation.Nonnull;
 import java.io.File;
@@ -54,9 +57,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+@Category({QuickTest.class, ParallelJVMTest.class})
 public abstract class AbstractDeploymentTest extends SimpleTestInClusterSupport {
 
-    public static final String CLASS_LOADER_PREFIX = "/cp1/";
+    public static final String CLASS_DIRECTORY = "src/test/class";
 
     protected abstract JetInstance getJetInstance();
 
@@ -78,7 +82,7 @@ public abstract class AbstractDeploymentTest extends SimpleTestInClusterSupport 
         dag.newVertex("create and print person", () -> new LoadClassesIsolated(true));
 
         JobConfig jobConfig = new JobConfig();
-        URL classUrl = this.getClass().getResource(CLASS_LOADER_PREFIX);
+        URL classUrl = new File(CLASS_DIRECTORY).toURI().toURL();
         URLClassLoader urlClassLoader = new URLClassLoader(new URL[]{classUrl}, null);
         Class<?> appearance = urlClassLoader.loadClass("com.sample.pojo.person.Person$Appereance");
         jobConfig.addClass(appearance);
@@ -93,7 +97,7 @@ public abstract class AbstractDeploymentTest extends SimpleTestInClusterSupport 
         dag.newVertex("v", () -> new LoadClassesIsolated(false));
 
         JobConfig jobConfig = new JobConfig();
-        URL classUrl = this.getClass().getResource(CLASS_LOADER_PREFIX);
+        URL classUrl = new File(CLASS_DIRECTORY).toURI().toURL();
         URLClassLoader urlClassLoader = new URLClassLoader(new URL[]{classUrl}, null);
         Class<?> appearanceClz = urlClassLoader.loadClass("com.sample.pojo.person.Person$Appereance");
         jobConfig.addClass(appearanceClz);
@@ -112,7 +116,7 @@ public abstract class AbstractDeploymentTest extends SimpleTestInClusterSupport 
         dag.newVertex("executes lambda from a nested class", NestedClassIsLoaded::new);
 
         JobConfig jobConfig = new JobConfig();
-        URL classUrl = this.getClass().getResource("/cp1/");
+        URL classUrl = new File(CLASS_DIRECTORY).toURI().toURL();
         URLClassLoader urlClassLoader = new URLClassLoader(new URL[]{classUrl}, null);
         Class<?> worker = urlClassLoader.loadClass("com.sample.lambda.Worker");
         jobConfig.addClass(worker);

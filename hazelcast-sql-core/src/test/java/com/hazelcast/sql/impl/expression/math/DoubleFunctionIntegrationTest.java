@@ -51,23 +51,26 @@ import static com.hazelcast.sql.impl.expression.math.DoubleFunction.SIN;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class DoubleFunctionIntegrationTest extends ExpressionTestSupport {
     @Parameterized.Parameter
-    public Mode mode;
+    public FunctionInfo function;
 
-    @Parameterized.Parameters(name = "mode: {0}")
+    @Parameterized.Parameters(name = "function: {0}")
     public static Collection<Object[]> parameters() {
         return Arrays.asList(new Object[][]{
-            { new Mode("COS") },
-            { new Mode("SIN") },
-            { new Mode("TAN") },
-            { new Mode("COT") },
-            { new Mode("ACOS") },
-            { new Mode("ASIN") },
-            { new Mode("ATAN") },
-            { new Mode("EXP") },
-            { new Mode("LN") },
-            { new Mode("LOG10") },
-            { new Mode("DEGREES") },
-            { new Mode("RADIANS") },
+                {new FunctionInfo("COS")},
+                {new FunctionInfo("SIN")},
+                {new FunctionInfo("TAN")},
+                {new FunctionInfo("COT")},
+                {new FunctionInfo("ACOS")},
+                {new FunctionInfo("ASIN")},
+                {new FunctionInfo("ATAN")},
+                {new FunctionInfo("EXP")},
+                {new FunctionInfo("LN")},
+                {new FunctionInfo("LOG10")},
+                {new FunctionInfo("DEGREES")},
+                {new FunctionInfo("RADIANS")},
+                {new FunctionInfo("SQUARE")},
+                {new FunctionInfo("SQRT")},
+                {new FunctionInfo("CBRT")},
         });
     }
 
@@ -77,25 +80,25 @@ public class DoubleFunctionIntegrationTest extends ExpressionTestSupport {
         putAndCheckValue(new ExpressionValue.DoubleVal(), sql("field1"), DOUBLE, null);
 
         // Numeric
-        putAndCheckValue((byte) 1, sql("this"), DOUBLE, mode.process(1d));
-        putAndCheckValue((short) 1, sql("this"), DOUBLE, mode.process(1d));
-        putAndCheckValue(1, sql("this"), DOUBLE, mode.process(1d));
-        putAndCheckValue(1L, sql("this"), DOUBLE, mode.process(1d));
-        putAndCheckValue(1L, sql("this"), DOUBLE, mode.process(1d));
-        putAndCheckValue(BigInteger.ONE, sql("this"), DOUBLE, mode.process(1d));
-        putAndCheckValue(BigDecimal.ONE, sql("this"), DOUBLE, mode.process(1d));
-        putAndCheckValue(1f, sql("this"), DOUBLE, mode.process(1d));
-        putAndCheckValue(1d, sql("this"), DOUBLE, mode.process(1d));
+        putAndCheckValue((byte) 1, sql("this"), DOUBLE, function.process(1d));
+        putAndCheckValue((short) 1, sql("this"), DOUBLE, function.process(1d));
+        putAndCheckValue(1, sql("this"), DOUBLE, function.process(1d));
+        putAndCheckValue(1L, sql("this"), DOUBLE, function.process(1d));
+        putAndCheckValue(1L, sql("this"), DOUBLE, function.process(1d));
+        putAndCheckValue(BigInteger.ONE, sql("this"), DOUBLE, function.process(1d));
+        putAndCheckValue(BigDecimal.ONE, sql("this"), DOUBLE, function.process(1d));
+        putAndCheckValue(1f, sql("this"), DOUBLE, function.process(1d));
+        putAndCheckValue(1d, sql("this"), DOUBLE, function.process(1d));
 
         // Other
-        putAndCheckFailure('1', sql("this"), SqlErrorCode.PARSING, signatureErrorFunction(mode.mode, VARCHAR));
-        putAndCheckFailure("1", sql("this"), SqlErrorCode.PARSING, signatureErrorFunction(mode.mode, VARCHAR));
-        putAndCheckFailure(true, sql("this"), SqlErrorCode.PARSING, signatureErrorFunction(mode.mode, BOOLEAN));
-        putAndCheckFailure(LOCAL_DATE_VAL, sql("this"), SqlErrorCode.PARSING, signatureErrorFunction(mode.mode, DATE));
-        putAndCheckFailure(LOCAL_TIME_VAL, sql("this"), SqlErrorCode.PARSING, signatureErrorFunction(mode.mode, TIME));
-        putAndCheckFailure(LOCAL_DATE_TIME_VAL, sql("this"), SqlErrorCode.PARSING, signatureErrorFunction(mode.mode, TIMESTAMP));
-        putAndCheckFailure(OFFSET_DATE_TIME_VAL, sql("this"), SqlErrorCode.PARSING, signatureErrorFunction(mode.mode, TIMESTAMP_WITH_TIME_ZONE));
-        putAndCheckFailure(OBJECT_VAL, sql("this"), SqlErrorCode.PARSING, signatureErrorFunction(mode.mode, OBJECT));
+        putAndCheckFailure('1', sql("this"), SqlErrorCode.PARSING, signatureErrorFunction(function.name, VARCHAR));
+        putAndCheckFailure("1", sql("this"), SqlErrorCode.PARSING, signatureErrorFunction(function.name, VARCHAR));
+        putAndCheckFailure(true, sql("this"), SqlErrorCode.PARSING, signatureErrorFunction(function.name, BOOLEAN));
+        putAndCheckFailure(LOCAL_DATE_VAL, sql("this"), SqlErrorCode.PARSING, signatureErrorFunction(function.name, DATE));
+        putAndCheckFailure(LOCAL_TIME_VAL, sql("this"), SqlErrorCode.PARSING, signatureErrorFunction(function.name, TIME));
+        putAndCheckFailure(LOCAL_DATE_TIME_VAL, sql("this"), SqlErrorCode.PARSING, signatureErrorFunction(function.name, TIMESTAMP));
+        putAndCheckFailure(OFFSET_DATE_TIME_VAL, sql("this"), SqlErrorCode.PARSING, signatureErrorFunction(function.name, TIMESTAMP_WITH_TIME_ZONE));
+        putAndCheckFailure(OBJECT_VAL, sql("this"), SqlErrorCode.PARSING, signatureErrorFunction(function.name, OBJECT));
     }
 
     @Test
@@ -103,31 +106,31 @@ public class DoubleFunctionIntegrationTest extends ExpressionTestSupport {
         put(0);
 
         checkValue0(sql("null"), DOUBLE, null);
-        checkValue0(sql("1"), DOUBLE, mode.process(1d));
-        checkValue0(sql("1.0"), DOUBLE, mode.process(1d));
-        checkValue0(sql("1.5"), DOUBLE, mode.process(1.5d));
-        checkValue0(sql("0.001"), DOUBLE, mode.process(0.001d));
-        checkValue0(sql("1E0"), DOUBLE, mode.process(1d));
+        checkValue0(sql("1"), DOUBLE, function.process(1d));
+        checkValue0(sql("1.0"), DOUBLE, function.process(1d));
+        checkValue0(sql("1.5"), DOUBLE, function.process(1.5d));
+        checkValue0(sql("0.001"), DOUBLE, function.process(0.001d));
+        checkValue0(sql("1E0"), DOUBLE, function.process(1d));
 
-        checkFailure0(sql("true"), SqlErrorCode.PARSING, signatureErrorFunction(mode.mode, BOOLEAN));
-        checkFailure0(sql("'1'"), SqlErrorCode.PARSING, signatureErrorFunction(mode.mode, VARCHAR));
+        checkFailure0(sql("true"), SqlErrorCode.PARSING, signatureErrorFunction(function.name, BOOLEAN));
+        checkFailure0(sql("'1'"), SqlErrorCode.PARSING, signatureErrorFunction(function.name, VARCHAR));
     }
 
     @Test
     public void testParameter() {
         put(0);
 
-        checkValue0(sql("?"), DOUBLE, null, new Object[] { null });
+        checkValue0(sql("?"), DOUBLE, null, new Object[]{null});
 
-        checkValue0(sql("?"), DOUBLE, mode.process(1d), (byte) 1);
-        checkValue0(sql("?"), DOUBLE, mode.process(1d), (short) 1);
-        checkValue0(sql("?"), DOUBLE, mode.process(1d), 1);
-        checkValue0(sql("?"), DOUBLE, mode.process(1d), 1L);
-        checkValue0(sql("?"), DOUBLE, mode.process(1d), BigInteger.ONE);
-        checkValue0(sql("?"), DOUBLE, mode.process(1d), BigDecimal.ONE);
-        checkValue0(sql("?"), DOUBLE, mode.process(1d), 1f);
-        checkValue0(sql("?"), DOUBLE, mode.process(1d), 1d);
-        checkValue0(sql("?"), DOUBLE, mode.process(0.001d), 0.001d);
+        checkValue0(sql("?"), DOUBLE, function.process(1d), (byte) 1);
+        checkValue0(sql("?"), DOUBLE, function.process(1d), (short) 1);
+        checkValue0(sql("?"), DOUBLE, function.process(1d), 1);
+        checkValue0(sql("?"), DOUBLE, function.process(1d), 1L);
+        checkValue0(sql("?"), DOUBLE, function.process(1d), BigInteger.ONE);
+        checkValue0(sql("?"), DOUBLE, function.process(1d), BigDecimal.ONE);
+        checkValue0(sql("?"), DOUBLE, function.process(1d), 1f);
+        checkValue0(sql("?"), DOUBLE, function.process(1d), 1d);
+        checkValue0(sql("?"), DOUBLE, function.process(0.001d), 0.001d);
 
         checkFailure0(sql("?"), SqlErrorCode.DATA_EXCEPTION, parameterError(0, DOUBLE, VARCHAR), '1');
         checkFailure0(sql("?"), SqlErrorCode.DATA_EXCEPTION, parameterError(0, DOUBLE, VARCHAR), "1");
@@ -140,7 +143,7 @@ public class DoubleFunctionIntegrationTest extends ExpressionTestSupport {
     }
 
     private String sql(String operand) {
-        return "SELECT " + mode.mode + "(" + operand + ") FROM map";
+        return "SELECT " + function.name + "(" + operand + ") FROM map";
     }
 
     @Test
@@ -160,12 +163,12 @@ public class DoubleFunctionIntegrationTest extends ExpressionTestSupport {
         checkEquals(original, restored, true);
     }
 
-    private static final class Mode {
+    private static final class FunctionInfo {
 
-        private final String mode;
+        private final String name;
 
-        private Mode(String mode) {
-            this.mode = mode;
+        private FunctionInfo(String name) {
+            this.name = name;
         }
 
         public Double process(Double arg) {
@@ -173,7 +176,7 @@ public class DoubleFunctionIntegrationTest extends ExpressionTestSupport {
                 return null;
             }
 
-            switch (mode) {
+            switch (name) {
                 case "COS":
                     return Math.cos(arg);
 
@@ -210,14 +213,23 @@ public class DoubleFunctionIntegrationTest extends ExpressionTestSupport {
                 case "RADIANS":
                     return Math.toRadians(arg);
 
+                case "SQUARE":
+                    return arg * arg;
+
+                case "SQRT":
+                    return Math.sqrt(arg);
+
+                case "CBRT":
+                    return Math.cbrt(arg);
+
                 default:
-                    throw new UnsupportedOperationException("Unsupported mode: " + mode);
+                    throw new UnsupportedOperationException("Unsupported function: " + name);
             }
         }
 
         @Override
         public String toString() {
-            return mode;
+            return name;
         }
     }
 }

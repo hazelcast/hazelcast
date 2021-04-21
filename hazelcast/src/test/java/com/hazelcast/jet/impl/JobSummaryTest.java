@@ -29,8 +29,11 @@ import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
@@ -42,6 +45,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class JobSummaryTest extends JetTestSupport {
 
     private static final String SOURCE_NAME = "source";
@@ -50,7 +54,7 @@ public class JobSummaryTest extends JetTestSupport {
 
     @Before
     public void setup() {
-        Config config = new Config();
+        Config config = smallInstanceConfig();
         MapConfig mapConfig = new MapConfig(SOURCE_NAME);
         mapConfig.getEventJournalConfig().setEnabled(true);
         config.addMapConfig(mapConfig);
@@ -131,7 +135,6 @@ public class JobSummaryTest extends JetTestSupport {
             assertEquals(numJobs, list.size());
 
             Collections.reverse(list);
-
             // jobs are sorted by submission time in descending order
             for (int i = 0; i < numJobs; i++) {
                 JobSummary summary = list.get(i);

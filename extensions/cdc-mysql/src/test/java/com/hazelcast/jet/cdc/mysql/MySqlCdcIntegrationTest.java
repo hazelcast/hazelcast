@@ -33,7 +33,7 @@ import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.test.annotation.NightlyTest;
-import org.junit.Ignore;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -49,11 +49,10 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.jet.Util.entry;
 
-@Ignore("https://github.com/hazelcast/hazelcast/issues/18451")
 public class MySqlCdcIntegrationTest extends AbstractMySqlCdcIntegrationTest {
 
     @Test
-    //category intentionally left out, we want this one test to run in standard test suits
+    @Category(QuickTest.class)
     public void customers() throws Exception {
         // given
         List<String> expectedRecords = Arrays.asList(

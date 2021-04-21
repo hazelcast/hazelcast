@@ -144,8 +144,8 @@ public abstract class HazelcastTestSupport {
         LOGGER.fine("ASSERT_COMPLETES_STALL_TOLERANCE = " + ASSERT_COMPLETES_STALL_TOLERANCE);
         String pmemDirectories = System.getProperty("hazelcast.persistent.memory");
         PERSISTENT_MEMORY_DIRECTORIES = pmemDirectories != null ? pmemDirectories : "/tmp/pmem0,/tmp/pmem1";
-        System.setProperty(ClusterProperty.METRICS_COLLECTION_FREQUENCY.getName(), "1");
-        System.setProperty(ClusterProperty.METRICS_DEBUG.getName(), "true");
+        ClusterProperty.METRICS_COLLECTION_FREQUENCY.setSystemProperty("1");
+        ClusterProperty.METRICS_DEBUG.setSystemProperty("true");
     }
 
     protected static <T> boolean containsIn(T item1, Collection<T> collection, Comparator<T> comparator) {

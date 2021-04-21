@@ -53,15 +53,16 @@ public class CheckDependenciesIT extends HazelcastTestSupport {
 
             // with the "javax" package we have to be more specific - do not use just "javax."
             // as it contains e.g. javax.servlet which is not part of the SE platform!
+            "javax.annotation",
             "javax.crypto",
             "javax.management",
+            "javax.naming",
             "javax.net.ssl",
             "javax.script",
             "javax.security.auth",
             "javax.sql",
             "javax.transaction.xa",
             "javax.xml",
-            "javax.naming",
 
             // these 2 XML-related packages are part of the platform since Java SE 6
             "org.xml.sax",

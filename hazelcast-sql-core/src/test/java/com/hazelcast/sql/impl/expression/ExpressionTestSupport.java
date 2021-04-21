@@ -16,12 +16,12 @@
 
 package com.hazelcast.sql.impl.expression;
 
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlRow;
-import com.hazelcast.sql.SqlTestInstanceFactory;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue;
 import com.hazelcast.sql.support.expressions.ExpressionValue;
@@ -69,7 +69,7 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
     protected static final Object SKIP_VALUE_CHECK = new Object();
     protected HazelcastInstance member;
 
-    private final SqlTestInstanceFactory factory = SqlTestInstanceFactory.create();
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
     protected IMap map;
 
     @Before
@@ -125,11 +125,11 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
     }
 
     protected void putAndCheckValue(
-        Object value,
-        String sql,
-        SqlColumnType expectedType,
-        Object expectedResult,
-        Object... params
+            Object value,
+            String sql,
+            SqlColumnType expectedType,
+            Object expectedResult,
+            Object... params
     ) {
         put(value);
 
@@ -137,10 +137,10 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
     }
 
     protected Object checkValue0(
-        String sql,
-        SqlColumnType expectedType,
-        Object expectedResult,
-        Object... params
+            String sql,
+            SqlColumnType expectedType,
+            Object expectedResult,
+            Object... params
     ) {
         List<SqlRow> rows = execute(member, sql, params);
         assertEquals(1, rows.size());
@@ -159,11 +159,11 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
     }
 
     protected void putAndCheckFailure(
-        Object value,
-        String sql,
-        int expectedErrorCode,
-        String expectedErrorMessage,
-        Object... params
+            Object value,
+            String sql,
+            int expectedErrorCode,
+            String expectedErrorMessage,
+            Object... params
     ) {
         put(value);
 
@@ -171,10 +171,10 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
     }
 
     protected void checkFailure0(
-        String sql,
-        int expectedErrorCode,
-        String expectedErrorMessage,
-        Object... params
+            String sql,
+            int expectedErrorCode,
+            String expectedErrorMessage,
+            Object... params
     ) {
         try {
             execute(member, sql, params);
@@ -184,8 +184,8 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
             assertTrue(expectedErrorMessage.length() != 0);
             assertNotNull(e.getMessage());
             assertTrue(
-                "\nExpected: " + expectedErrorMessage + "\nActual: " + e.getMessage(),
-                e.getMessage().contains(expectedErrorMessage)
+                    "\nExpected: " + expectedErrorMessage + "\nActual: " + e.getMessage(),
+                    e.getMessage().contains(expectedErrorMessage)
             );
 
             assertEquals(e.getCode() + ": " + e.getMessage(), expectedErrorCode, e.getCode());
@@ -198,7 +198,7 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
         StringJoiner joiner = new StringJoiner(", ");
         Arrays.stream(columnTypes).forEach((columnType) -> joiner.add(columnType.name()));
 
-        return "Cannot apply '" + functionName + "' function to [" + joiner.toString() + "] (consider adding an explicit CAST)";
+        return "Cannot apply '" + functionName + "' function to [" + joiner + "] (consider adding an explicit CAST)";
     }
 
     protected static String signatureErrorOperator(String operatorName, Object... columnTypes) {
@@ -207,15 +207,15 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
         StringJoiner joiner = new StringJoiner(", ");
         Arrays.stream(columnTypes).forEach((columnType) -> joiner.add(columnType == SqlColumnType.NULL ? "UNKNOWN" : columnType.toString()));
 
-        return "Cannot apply '" + operatorName + "' operator to [" + joiner.toString() + "] (consider adding an explicit CAST)";
+        return "Cannot apply '" + operatorName + "' operator to [" + joiner + "] (consider adding an explicit CAST)";
     }
 
     protected static String parameterError(int position, SqlColumnType expectedType, SqlColumnType actualType) {
         return String.format(
-            "Parameter at position %d must be of %s type, but %s was found (consider adding an explicit CAST)",
-            position,
-            expectedType,
-            actualType
+                "Parameter at position %d must be of %s type, but %s was found (consider adding an explicit CAST)",
+                position,
+                expectedType,
+                actualType
         );
     }
 

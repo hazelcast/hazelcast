@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import org.apache.calcite.plan.RelOptCluster;
@@ -26,29 +27,27 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.type.RelDataType;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class ValuesPhysicalRel extends AbstractRelNode implements PhysicalRel {
 
-    private final RelDataType rowType;
-    private final List<Object[]> tuples;
+    private final List<ExpressionValues> values;
 
     ValuesPhysicalRel(
             RelOptCluster cluster,
             RelTraitSet traits,
             RelDataType rowType,
-            List<Object[]> tuples
+            List<ExpressionValues> values
     ) {
         super(cluster, traits);
 
         this.rowType = rowType;
-        this.tuples = tuples;
+        this.values = values;
     }
 
-    public List<Object[]> tuples() {
-        return tuples;
+    public List<ExpressionValues> values() {
+        return values;
     }
 
     @Override
@@ -62,24 +61,13 @@ public class ValuesPhysicalRel extends AbstractRelNode implements PhysicalRel {
     }
 
     @Override
-    protected RelDataType deriveRowType() {
-        return rowType;
-    }
-
-    @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new ValuesPhysicalRel(getCluster(), traitSet, rowType, tuples);
+        return new ValuesPhysicalRel(getCluster(), traitSet, getRowType(), values);
     }
 
     @Override
     public RelWriter explainTerms(RelWriter pw) {
         return super.explainTerms(pw)
-                .item("tuples",
-                        tuples.stream()
-                                .map(row -> Arrays.stream(row)
-                                        .map(String::valueOf)
-                                        .collect(Collectors.joining(", ", "{ ", " }")))
-                                .collect(Collectors.joining(", ", "[", "]"))
-                );
+                .item("values", values.stream().map(ExpressionValues::toString).collect(Collectors.joining(", ")));
     }
 }

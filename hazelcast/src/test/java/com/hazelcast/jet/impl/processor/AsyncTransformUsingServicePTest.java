@@ -31,9 +31,12 @@ import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.pipeline.ServiceFactories;
 import com.hazelcast.jet.pipeline.ServiceFactory;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -44,8 +47,8 @@ import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.jet.Traversers.traverseItems;
-import static com.hazelcast.jet.pipeline.GeneralStage.DEFAULT_MAX_CONCURRENT_OPS;
 import static com.hazelcast.jet.impl.util.Util.exceptionallyCompletedFuture;
+import static com.hazelcast.jet.pipeline.GeneralStage.DEFAULT_MAX_CONCURRENT_OPS;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -54,6 +57,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class AsyncTransformUsingServicePTest extends SimpleTestInClusterSupport {
 
     @Rule

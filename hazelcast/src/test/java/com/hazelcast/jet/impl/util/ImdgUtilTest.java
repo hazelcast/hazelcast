@@ -22,8 +22,11 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.map.IMap;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -32,6 +35,7 @@ import java.util.stream.IntStream;
 import static java.util.stream.Collectors.toMap;
 import static org.junit.Assert.assertEquals;
 
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ImdgUtilTest extends SimpleTestInClusterSupport {
 
     private static final String NEAR_CACHED_SERIALIZED_MAP = "nearCachedSerialized";

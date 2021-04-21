@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.LifecycleService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.jet.JetException;
@@ -32,13 +33,13 @@ import com.hazelcast.jet.core.metrics.JobMetrics;
 import com.hazelcast.jet.impl.deployment.IMapOutputStream;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.jet.impl.metrics.RawJobMetrics;
+import com.hazelcast.jet.impl.util.ConcurrentMemoizingSupplier;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.jet.impl.util.ImdgUtil;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
-import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -59,6 +60,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -82,6 +84,8 @@ import static com.hazelcast.jet.impl.util.IOUtil.fileNameFromUrl;
 import static com.hazelcast.jet.impl.util.IOUtil.packDirectoryIntoZip;
 import static com.hazelcast.jet.impl.util.IOUtil.packStreamIntoZip;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
+import static com.hazelcast.jet.impl.util.Util.memoizeConcurrent;
+import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static java.util.Comparator.comparing;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.HOURS;
@@ -167,28 +171,29 @@ public class JobRepository {
     private static final int JOB_ID_STRING_LENGTH = idToString(0L).length();
 
 
-    private final HazelcastInstance instance;
+    private final JetInstance jetInstance;
     private final ILogger logger;
 
-    private final IMap<Long, JobRecord> jobRecords;
-    private final IMap<Long, JobExecutionRecord> jobExecutionRecords;
-    private final IMap<Long, JobResult> jobResults;
-    private final IMap<Long, List<RawJobMetrics>> jobMetrics;
-    private final IMap<String, SnapshotValidationRecord> exportedSnapshotDetailsCache;
-    private final FlakeIdGenerator idGenerator;
+    private final ConcurrentMemoizingSupplier<IMap<Long, JobRecord>> jobRecords;
+    private final ConcurrentMemoizingSupplier<IMap<Long, JobResult>> jobResults;
+    private final Supplier<IMap<Long, JobExecutionRecord>> jobExecutionRecords;
+    private final Supplier<IMap<Long, List<RawJobMetrics>>> jobMetrics;
+    private final Supplier<IMap<String, SnapshotValidationRecord>> exportedSnapshotDetailsCache;
+    private final Supplier<FlakeIdGenerator> idGenerator;
 
     private long resourcesExpirationMillis = DEFAULT_RESOURCES_EXPIRATION_MILLIS;
 
     public JobRepository(JetInstance jetInstance) {
-        this.instance = jetInstance.getHazelcastInstance();
+        this.jetInstance = jetInstance;
+        HazelcastInstance instance = jetInstance.getHazelcastInstance();
         this.logger = instance.getLoggingService().getLogger(getClass());
 
-        this.idGenerator = instance.getFlakeIdGenerator(RANDOM_ID_GENERATOR_NAME);
-        this.jobRecords = instance.getMap(JOB_RECORDS_MAP_NAME);
-        this.jobExecutionRecords = instance.getMap(JOB_EXECUTION_RECORDS_MAP_NAME);
-        this.jobResults = instance.getMap(JOB_RESULTS_MAP_NAME);
-        this.jobMetrics = instance.getMap(JOB_METRICS_MAP_NAME);
-        this.exportedSnapshotDetailsCache = instance.getMap(EXPORTED_SNAPSHOTS_DETAIL_CACHE);
+        jobRecords = new ConcurrentMemoizingSupplier<>(() -> instance.getMap(JOB_RECORDS_MAP_NAME));
+        jobResults = new ConcurrentMemoizingSupplier<>(() -> instance.getMap(JOB_RESULTS_MAP_NAME));
+        jobExecutionRecords = memoizeConcurrent(() -> instance.getMap(JOB_EXECUTION_RECORDS_MAP_NAME));
+        jobMetrics = memoizeConcurrent(() -> instance.getMap(JOB_METRICS_MAP_NAME));
+        exportedSnapshotDetailsCache = memoizeConcurrent(() -> instance.getMap(EXPORTED_SNAPSHOTS_DETAIL_CACHE));
+        idGenerator = memoizeConcurrent(() -> instance.getFlakeIdGenerator(RANDOM_ID_GENERATOR_NAME));
     }
 
     // for tests
@@ -262,7 +267,7 @@ public class JobRepository {
     }
 
     public long newJobId() {
-        return idGenerator.newId();
+        return idGenerator.get().newId();
     }
 
     private void loadJar(Map<String, byte[]> tmpMap, ResourceConfig rc) throws IOException {
@@ -326,7 +331,7 @@ public class JobRepository {
      */
     void putNewJobRecord(JobRecord jobRecord) {
         long jobId = jobRecord.getJobId();
-        JobRecord prev = jobRecords.putIfAbsent(jobId, jobRecord);
+        JobRecord prev = jobRecords.get().putIfAbsent(jobId, jobRecord);
         if (prev != null && !prev.getDag().equals(jobRecord.getDag())) {
             throw new IllegalStateException("Cannot put job record for job " + idToString(jobId)
                     + " because it already exists with a different DAG");
@@ -338,7 +343,7 @@ public class JobRepository {
      * newQuorumSize}.
      */
     void updateJobQuorumSizeIfSmaller(long jobId, int newQuorumSize) {
-        jobExecutionRecords.executeOnKey(jobId, ImdgUtil.entryProcessor((key, value) -> {
+        jobExecutionRecords.get().executeOnKey(jobId, ImdgUtil.entryProcessor((key, value) -> {
             if (value == null) {
                 return null;
             }
@@ -351,7 +356,7 @@ public class JobRepository {
      * Generates a new execution id for the given job id, guaranteed to be unique across the cluster
      */
     long newExecutionId() {
-        return idGenerator.newId();
+        return idGenerator.get().newId();
     }
 
     /**
@@ -374,7 +379,7 @@ public class JobRepository {
 
         if (terminalMetrics != null) {
             try {
-                List<RawJobMetrics> prevMetrics = jobMetrics.put(jobId, terminalMetrics);
+                List<RawJobMetrics> prevMetrics = jobMetrics.get().put(jobId, terminalMetrics);
                 if (prevMetrics != null) {
                     logger.warning("Overwriting job metrics for job " + jobResult);
                 }
@@ -385,11 +390,12 @@ public class JobRepository {
         for (;;) {
             // keep trying to store the JobResult until it succeeds
             try {
-                jobResults.set(jobId, jobResult);
+                jobResults.get().set(jobId, jobResult);
                 break;
             } catch (Exception e) {
                 // if the local instance was shut down, re-throw the error
-                if (e instanceof HazelcastInstanceNotActiveException && (!instance.getLifecycleService().isRunning())) {
+                LifecycleService lifecycleService = jetInstance.getHazelcastInstance().getLifecycleService();
+                if (e instanceof HazelcastInstanceNotActiveException && (!lifecycleService.isRunning())) {
                     throw e;
                 }
                 // retry otherwise, after a delay
@@ -415,8 +421,8 @@ public class JobRepository {
                             + idToString(jobId) + ", ignoring", t);
             }
         };
-        jobExecutionRecords.removeAsync(jobId).whenComplete(callback);
-        jobRecords.removeAsync(jobId).whenComplete(callback);
+        jobExecutionRecords.get().removeAsync(jobId).whenComplete(callback);
+        jobRecords.get().removeAsync(jobId).whenComplete(callback);
     }
 
     /**
@@ -434,11 +440,11 @@ public class JobRepository {
 
     private void cleanupMaps(NodeEngine nodeEngine) {
         Collection<DistributedObject> maps =
-                nodeEngine.getProxyService().getDistributedObjects(MapService.SERVICE_NAME);
+                nodeEngine.getProxyService().getDistributedObjects(SERVICE_NAME);
 
         // we need to take the list of active job records after getting the list of maps --
         // otherwise the job records could be missing newly submitted jobs
-        Set<Long> activeJobs = jobRecords.keySet();
+        Set<Long> activeJobs = jobRecordsMap().keySet();
 
         for (DistributedObject map : maps) {
             if (map.getName().startsWith(SNAPSHOT_DATA_MAP_PREFIX)) {
@@ -459,7 +465,7 @@ public class JobRepository {
             // job is still active, do nothing
             return;
         }
-        if (jobResults.containsKey(id)) {
+        if (jobResults.get().containsKey(id)) {
             // if job is finished, we can safely delete the map
             logFine(logger, "Deleting job resource map '%s' because job is already finished", map.getName());
             map.destroy();
@@ -481,14 +487,15 @@ public class JobRepository {
     private void cleanupJobResults(NodeEngine nodeEngine) {
         int maxNoResults = Math.max(1, nodeEngine.getProperties().getInteger(JetProperties.JOB_RESULTS_MAX_SIZE));
         // delete oldest job results
-        if (jobResults.size() > Util.addClamped(maxNoResults, maxNoResults / MAX_NO_RESULTS_OVERHEAD)) {
-            jobResults.values().stream().sorted(comparing(JobResult::getCompletionTime).reversed())
+        Map<Long, JobResult> jobResultsMap = jobResultsMap();
+        if (jobResultsMap.size() > Util.addClamped(maxNoResults, maxNoResults / MAX_NO_RESULTS_OVERHEAD)) {
+            jobResultsMap.values().stream().sorted(comparing(JobResult::getCompletionTime).reversed())
                     .skip(maxNoResults)
                     .map(JobResult::getJobId)
                     .collect(Collectors.toList())
                     .forEach(id -> {
-                        jobMetrics.delete(id);
-                        jobResults.delete(id);
+                        jobMetrics.get().delete(id);
+                        jobResults.get().delete(id);
                     });
         }
     }
@@ -519,46 +526,62 @@ public class JobRepository {
 
     Set<Long> getAllJobIds() {
         Set<Long> ids = new HashSet<>();
-        ids.addAll(jobRecords.keySet());
-        ids.addAll(jobResults.keySet());
+        ids.addAll(jobRecordsMap().keySet());
+        ids.addAll(jobResultsMap().keySet());
         return ids;
     }
 
     public Collection<JobRecord> getJobRecords() {
-        return jobRecords.values();
+        return jobRecordsMap().values();
+    }
+
+    private Map<Long, JobRecord> jobRecordsMap() {
+        if (jobRecords.remembered() != null ||
+                ((AbstractJetInstance) jetInstance).existsDistributedObject(SERVICE_NAME, JOB_RECORDS_MAP_NAME)) {
+            return jobRecords.get();
+        }
+        return Collections.emptyMap();
+    }
+
+    private Map<Long, JobResult> jobResultsMap() {
+        if (jobResults.remembered() != null ||
+                ((AbstractJetInstance) jetInstance).existsDistributedObject(SERVICE_NAME, JOB_RESULTS_MAP_NAME)) {
+            return jobResults.get();
+        }
+        return Collections.emptyMap();
     }
 
     public JobRecord getJobRecord(long jobId) {
-        return jobRecords.get(jobId);
+        return jobRecords.get().get(jobId);
     }
 
     public JobExecutionRecord getJobExecutionRecord(long jobId) {
-        return jobExecutionRecords.get(jobId);
+        return jobExecutionRecords.get().get(jobId);
     }
 
     /**
      * Gets the job resources map
      */
     public IMap<String, byte[]> getJobResources(long jobId) {
-        return instance.getMap(jobResourcesMapName(jobId));
+        return jetInstance.getMap(jobResourcesMapName(jobId));
     }
 
     @Nullable
     public JobResult getJobResult(long jobId) {
-        return jobResults.get(jobId);
+        return jobResults.get().get(jobId);
     }
 
     @Nullable
     List<RawJobMetrics> getJobMetrics(long jobId) {
-        return jobMetrics.get(jobId);
+        return jobMetrics.get().get(jobId);
     }
 
     Collection<JobResult> getJobResults() {
-        return jobResults.values();
+        return jobResults.get().values();
     }
 
     List<JobResult> getJobResults(String name) {
-        return jobResults.values(new FilterJobResultByNamePredicate(name)).stream()
+        return jobResults.get().values(new FilterJobResultByNamePredicate(name)).stream()
                          .sorted(comparing(JobResult::getCreationTime).reversed()).collect(toList());
     }
 
@@ -572,7 +595,7 @@ public class JobRepository {
      */
     void writeJobExecutionRecord(long jobId, JobExecutionRecord record, boolean canCreate) {
         record.updateTimestamp();
-        String message = (String) jobExecutionRecords.executeOnKey(jobId,
+        String message = (String) jobExecutionRecords.get().executeOnKey(jobId,
                 new UpdateJobExecutionRecordEntryProcessor(jobId, record, canCreate));
         if (message != null) {
             logger.fine(message);
@@ -617,7 +640,7 @@ public class JobRepository {
     void clearSnapshotData(long jobId, int dataMapIndex) {
         String mapName = snapshotDataMapName(jobId, dataMapIndex);
         try {
-            instance.getMap(mapName).clear();
+            jetInstance.getMap(mapName).clear();
             logFine(logger, "Cleared snapshot data map %s", mapName);
         } catch (Exception logged) {
             logger.warning("Cannot delete old snapshot data  " + idToString(jobId), logged);
@@ -626,7 +649,7 @@ public class JobRepository {
 
     void cacheValidationRecord(@Nonnull String snapshotName, @Nonnull SnapshotValidationRecord validationRecord) {
         try {
-            exportedSnapshotDetailsCache.set(snapshotName, validationRecord);
+            exportedSnapshotDetailsCache.get().set(snapshotName, validationRecord);
         } catch (Exception e) {
             logger.warning("Snapshot name: '" + snapshotName + "', failed to store validation record to cache: " + e, e);
         }
@@ -731,4 +754,6 @@ public class JobRepository {
             name = in.readUTF();
         }
     }
+
+
 }

@@ -17,24 +17,22 @@
 package com.hazelcast.jet.sql.impl.connector.file;
 
 import com.hazelcast.function.SupplierEx;
-import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.sql.impl.extract.QueryTarget;
 import com.hazelcast.sql.impl.schema.TableField;
 
 import java.util.List;
-import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 
 class Metadata {
 
     private final List<TableField> fields;
-    private final Supplier<ProcessorMetaSupplier> processorMetaSupplierProvider;
+    private final ProcessorMetaSupplierProvider processorMetaSupplierProvider;
     private final SupplierEx<QueryTarget> queryTargetSupplier;
 
     Metadata(
             List<TableField> fields,
-            Supplier<ProcessorMetaSupplier> processorMetaSupplierProvider,
+            ProcessorMetaSupplierProvider processorMetaSupplierProvider,
             SupplierEx<QueryTarget> queryTargetSupplier
     ) {
         this.fields = requireNonNull(fields);
@@ -46,7 +44,7 @@ class Metadata {
         return fields;
     }
 
-    Supplier<ProcessorMetaSupplier> processorMetaSupplier() {
+    ProcessorMetaSupplierProvider processorMetaSupplier() {
         return processorMetaSupplierProvider;
     }
 

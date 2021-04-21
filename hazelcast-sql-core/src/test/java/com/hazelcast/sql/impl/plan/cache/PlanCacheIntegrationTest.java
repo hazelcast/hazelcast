@@ -16,12 +16,12 @@
 
 package com.hazelcast.sql.impl.plan.cache;
 
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
-import com.hazelcast.sql.SqlTestInstanceFactory;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlResultImpl;
 import com.hazelcast.sql.impl.exec.FaultyExec;
@@ -45,7 +45,7 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class PlanCacheIntegrationTest extends PlanCacheTestSupport {
 
-    private final SqlTestInstanceFactory factory = SqlTestInstanceFactory.create();
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @After
     public void after() {
@@ -181,7 +181,7 @@ public class PlanCacheIntegrationTest extends PlanCacheTestSupport {
         // Error with invalidation
         setExecHook(member, exec -> {
             if (exec instanceof MapScanExec) {
-               exec = new FaultyExec(exec, QueryException.error("Failed").markInvalidate());
+                exec = new FaultyExec(exec, QueryException.error("Failed").markInvalidate());
             }
 
             return exec;

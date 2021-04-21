@@ -18,7 +18,12 @@ package com.hazelcast.jet.sql.impl.extract;
 
 import com.hazelcast.sql.impl.extract.QueryExtractor;
 import com.hazelcast.sql.impl.extract.QueryTarget;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -44,6 +49,8 @@ import static java.time.ZoneOffset.UTC;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class CsvQueryTargetTest {
 
     @Test

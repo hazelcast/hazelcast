@@ -17,6 +17,7 @@
 package com.hazelcast.sql;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
@@ -46,7 +47,7 @@ public class SqlErrorAbstractTest extends SqlTestSupport {
     protected static final String MAP_NAME = "map";
     private static final int DATA_SET_SIZE = 100;
 
-    protected final SqlTestInstanceFactory factory = SqlTestInstanceFactory.create();
+    protected final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     protected HazelcastInstance instance1;
     protected HazelcastInstance instance2;
@@ -218,9 +219,9 @@ public class SqlErrorAbstractTest extends SqlTestSupport {
 
         assertErrorCode(SqlErrorCode.DATA_EXCEPTION, error);
         assertEquals(
-            "Failed to extract map entry value because of type mismatch "
-                + "[expectedClass=java.lang.Long, actualClass=java.lang.String]",
-            error.getMessage()
+                "Failed to extract map entry value because of type mismatch "
+                        + "[expectedClass=java.lang.Long, actualClass=java.lang.String]",
+                error.getMessage()
         );
     }
 

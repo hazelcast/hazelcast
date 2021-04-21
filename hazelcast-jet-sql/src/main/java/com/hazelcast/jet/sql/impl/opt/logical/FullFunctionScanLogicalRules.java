@@ -16,14 +16,12 @@
 
 package com.hazelcast.jet.sql.impl.opt.logical;
 
-import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.schema.JetDynamicTableFunction;
 import com.hazelcast.jet.sql.impl.schema.JetSpecificTableFunction;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider;
-import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.RelOptRule;
@@ -58,17 +56,12 @@ final class FullFunctionScanLogicalRules {
             JetSpecificTableFunction specificFunction = extractSpecificFunction(scan);
             List<RexNode> operands = ((RexCall) scan.getCall()).getOperands();
             RexVisitor<Expression<?>> visitor = OptUtils.createRexToExpressionVisitor(FailingFieldTypeProvider.INSTANCE);
-            List<Object> arguments = IntStream.range(0, specificFunction.getOperandCountRange().getMax())
-                    .mapToObj(index -> {
-                        if (index < operands.size()) {
-                            Expression<?> expression = operands.get(index).accept(visitor);
-                            return expression.eval(EmptyRow.INSTANCE, ExpressionUtil.NOT_IMPLEMENTED_ARGUMENTS_CONTEXT);
-                        } else {
-                            return null;
-                        }
-                    }).collect(toList());
-
-            return specificFunction.toTable(arguments);
+            List<Expression<?>> argumentExpressions = IntStream.range(0, specificFunction.getOperandCountRange().getMax())
+                    .mapToObj(index -> index < operands.size()
+                            ? (Expression<?>) operands.get(index).accept(visitor)
+                            : null
+                    ).collect(toList());
+            return specificFunction.toTable(argumentExpressions);
         }
     };
 

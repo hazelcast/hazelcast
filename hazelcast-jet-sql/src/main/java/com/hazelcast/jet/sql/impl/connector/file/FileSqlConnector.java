@@ -18,8 +18,8 @@ package com.hazelcast.jet.sql.impl.connector.file;
 
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.sql.impl.connector.SqlProcessors;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
+import com.hazelcast.jet.sql.impl.connector.SqlProcessors;
 import com.hazelcast.jet.sql.impl.schema.MappingField;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -89,10 +89,20 @@ public class FileSqlConnector implements SqlConnector {
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> resolvedFields
     ) {
-        return createTable(schemaName, mappingName, options, resolvedFields);
+        Metadata metadata = METADATA_RESOLVERS.resolveMetadata(resolvedFields, options);
+
+        return new FileTable.SpecificFileTable(
+                INSTANCE,
+                schemaName,
+                mappingName,
+                metadata.fields(),
+                metadata.processorMetaSupplier(),
+                metadata.queryTargetSupplier()
+        );
     }
 
     @Nonnull
+    @SuppressWarnings("SameParameterValue")
     static Table createTable(
             @Nonnull String schemaName,
             @Nonnull String name,
@@ -101,7 +111,7 @@ public class FileSqlConnector implements SqlConnector {
     ) {
         Metadata metadata = METADATA_RESOLVERS.resolveMetadata(resolvedFields, options);
 
-        return new FileTable(
+        return new FileTable.DynamicFileTable(
                 INSTANCE,
                 schemaName,
                 name,
@@ -129,7 +139,7 @@ public class FileSqlConnector implements SqlConnector {
         Vertex vStart = dag.newUniqueVertex(table.toString(), table.processorMetaSupplier());
 
         Vertex vEnd = dag.newUniqueVertex(
-                "Project(" + table.toString() + ")",
+                "Project(" + table + ")",
                 SqlProcessors.rowProjector(
                         table.paths(),
                         table.types(),

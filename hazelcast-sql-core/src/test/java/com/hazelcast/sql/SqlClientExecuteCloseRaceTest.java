@@ -19,6 +19,7 @@ package com.hazelcast.sql;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SqlCloseCodec;
 import com.hazelcast.client.impl.protocol.codec.SqlExecuteCodec;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.sql.impl.QueryId;
@@ -54,7 +55,7 @@ public class SqlClientExecuteCloseRaceTest {
     private static final String MAP_NAME = "map";
     private static final String SQL = "SELECT * FROM " + MAP_NAME;
 
-    private final SqlTestInstanceFactory factory = SqlTestInstanceFactory.create();
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     private SqlServiceImpl memberService;
     private SqlClientService clientService;
@@ -153,13 +154,13 @@ public class SqlClientExecuteCloseRaceTest {
 
     private ClientMessage sendExecuteRequest(Connection connection, QueryId queryId) {
         ClientMessage executeRequest = SqlExecuteCodec.encodeRequest(
-            SQL,
-            Collections.emptyList(),
-            0L,
-            1,
-            null,
-            SqlClientUtils.expectedResultTypeToByte(SqlExpectedResultType.ANY),
-            queryId
+                SQL,
+                Collections.emptyList(),
+                0L,
+                1,
+                null,
+                SqlClientUtils.expectedResultTypeToByte(SqlExpectedResultType.ANY),
+                queryId
         );
 
         return clientService.invokeOnConnection(connection, executeRequest);

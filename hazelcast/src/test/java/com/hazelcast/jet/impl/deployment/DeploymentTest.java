@@ -19,15 +19,10 @@ package com.hazelcast.jet.impl.deployment;
 import com.hazelcast.config.Config;
 import com.hazelcast.internal.util.FilteringClassLoader;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.runner.RunWith;
 
 import static java.util.Collections.singletonList;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Ignore
 public class DeploymentTest extends AbstractDeploymentTest {
 
     @BeforeClass

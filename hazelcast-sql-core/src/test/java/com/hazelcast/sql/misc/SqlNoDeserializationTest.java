@@ -17,14 +17,15 @@
 package com.hazelcast.sql.misc;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SqlExecuteCodec;
 import com.hazelcast.client.impl.protocol.codec.SqlFetchCodec;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableReader;
@@ -33,7 +34,6 @@ import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlExpectedResultType;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
-import com.hazelcast.sql.SqlTestInstanceFactory;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.SqlRowImpl;
@@ -53,14 +53,12 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-@SuppressWarnings("StatementWithEmptyBody")
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlNoDeserializationTest extends SqlTestSupport {
@@ -77,16 +75,14 @@ public class SqlNoDeserializationTest extends SqlTestSupport {
     private static final String ERROR_KEY = "KEY FAILURE";
     private static final String ERROR_VALUE = "VALUE FAILURE";
 
-    private final SqlTestInstanceFactory factory = SqlTestInstanceFactory.create();
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     private HazelcastInstance member;
     private HazelcastInstance client;
 
     @Before
     public void before() {
-        member = factory.newHazelcastInstance(config());
-        factory.newHazelcastInstance(config());
-
+        member = factory.newInstances(config(), 2)[0];
         client = factory.newHazelcastClient(clientConfig());
 
         prepare();
@@ -150,24 +146,24 @@ public class SqlNoDeserializationTest extends SqlTestSupport {
 
         SqlClientService clientService = (SqlClientService) client.getSql();
 
-        Connection connection = clientService.getRandomConnection();
+        ClientConnection connection = clientService.getRandomConnection();
 
         // Get the first page through the "execute" request
-        QueryId queryId = QueryId.create(UUID.randomUUID());
+        QueryId queryId = QueryId.create(connection.getRemoteUuid());
 
         ClientMessage executeRequest = SqlExecuteCodec.encodeRequest(
-            SQL,
-            Collections.emptyList(),
-            Long.MAX_VALUE,
-            pageSize,
-            null,
-            SqlClientUtils.expectedResultTypeToByte(SqlExpectedResultType.ROWS),
-            queryId
+                SQL,
+                Collections.emptyList(),
+                Long.MAX_VALUE,
+                pageSize,
+                null,
+                SqlClientUtils.expectedResultTypeToByte(SqlExpectedResultType.ROWS),
+                queryId
 
         );
 
         SqlExecuteCodec.ResponseParameters executeResponse = SqlExecuteCodec.decodeResponse(
-            clientService.invokeOnConnection(connection, executeRequest)
+                clientService.invokeOnConnection(connection, executeRequest)
         );
 
         if (executeResponse.error != null) {
@@ -179,12 +175,12 @@ public class SqlNoDeserializationTest extends SqlTestSupport {
 
         // Get the second page through the "execute" request
         ClientMessage fetchRequest = SqlFetchCodec.encodeRequest(
-            queryId,
-            pageSize
+                queryId,
+                pageSize
         );
 
         SqlFetchCodec.ResponseParameters fetchResponse = SqlFetchCodec.decodeResponse(
-            clientService.invokeOnConnection(connection, fetchRequest)
+                clientService.invokeOnConnection(connection, fetchRequest)
         );
 
         if (fetchResponse.error != null) {
@@ -290,7 +286,7 @@ public class SqlNoDeserializationTest extends SqlTestSupport {
         }
 
         @Override
-        public void writePortable(PortableWriter writer) throws IOException {
+        public void writePortable(PortableWriter writer) {
             // No-op
         }
 

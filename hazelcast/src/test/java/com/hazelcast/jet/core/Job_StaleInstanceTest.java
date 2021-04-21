@@ -22,9 +22,12 @@ import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Iterator;
@@ -38,6 +41,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
  * because it restarted. All tests check that it fails as it should.
  */
 @RunWith(HazelcastSerialClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class Job_StaleInstanceTest extends JetTestSupport {
 
     private static JetTestInstanceFactory instanceFactory;
@@ -48,7 +52,7 @@ public class Job_StaleInstanceTest extends JetTestSupport {
     public static void beforeClass() {
         TestProcessors.reset(1);
         instanceFactory = new JetTestInstanceFactory();
-        JetInstance instance = instanceFactory.newMember();
+        JetInstance instance = instanceFactory.newMember(smallInstanceConfig());
         DAG dag = new DAG();
         dag.newVertex("v", () -> new NoOutputSourceP());
         client = instanceFactory.newClient();
@@ -56,7 +60,7 @@ public class Job_StaleInstanceTest extends JetTestSupport {
         assertJobStatusEventually(job, RUNNING);
 
         instance.getHazelcastInstance().getLifecycleService().terminate();
-        instance = instanceFactory.newMember();
+        instance = instanceFactory.newMember(smallInstanceConfig());
         assertEqualsEventually(() -> firstItem(client.getHazelcastInstance().getCluster().getMembers())
                         .map(Member::getAddress).orElse(null),
                 instance.getHazelcastInstance().getCluster().getLocalMember().getAddress());

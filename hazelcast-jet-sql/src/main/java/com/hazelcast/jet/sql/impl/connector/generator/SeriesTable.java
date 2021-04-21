@@ -27,6 +27,9 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
+import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.TableField;
 
@@ -37,62 +40,61 @@ import java.util.stream.IntStream;
 
 class SeriesTable extends JetTable {
 
-    private final Integer start;
-    private final Integer stop;
-    private final Integer step;
+    private final List<Expression<?>> argumentExpressions;
 
     SeriesTable(
             SqlConnector sqlConnector,
             List<TableField> fields,
             String schemaName,
             String name,
-            Integer start,
-            Integer stop,
-            Integer step
+            List<Expression<?>> argumentExpressions
     ) {
-        super(sqlConnector, fields, schemaName, name, new ConstantTableStatistics(numberOfItems(start, stop, step)));
+        super(sqlConnector, fields, schemaName, name, new ConstantTableStatistics(0));
 
-        this.start = start;
-        this.stop = stop;
-        this.step = step;
+        this.argumentExpressions = argumentExpressions;
     }
 
     BatchSource<Object[]> items(Expression<Boolean> predicate, List<Expression<?>> projections) {
-        if (start == null || stop == null || step == null) {
-            throw QueryException.error("null arguments to GENERATE_SERIES functions");
-        }
-        if (step == 0) {
-            throw QueryException.error("step cannot equal zero");
-        }
-
-        int start = this.start;
-        int stop = this.stop;
-        int step = this.step;
+        List<Expression<?>> argumentExpressions = this.argumentExpressions;
         return SourceBuilder
                 .batch("series", ctx -> {
                     InternalSerializationService serializationService = ((ProcSupplierCtx) ctx).serializationService();
                     SimpleExpressionEvalContext context = new SimpleExpressionEvalContext(serializationService);
+
+                    Integer start = evaluate(argumentExpressions.get(0), null, context);
+                    Integer stop = evaluate(argumentExpressions.get(1), null, context);
+                    Integer step = evaluate(argumentExpressions.get(2), 1, context);
+                    if (start == null || stop == null || step == null) {
+                        throw QueryException.error("Invalid argument of a call to function GENERATE_SERIES" +
+                                " - null argument(s)");
+                    }
+                    if (step == 0) {
+                        throw QueryException.error("Invalid argument of a call to function GENERATE_SERIES" +
+                                " - step cannot be equal to zero");
+                    }
+
                     return new DataGenerator(start, stop, step, predicate, projections, context);
                 })
                 .fillBufferFn(DataGenerator::fillBuffer)
                 .build();
     }
 
-    long numberOfItems() {
-        return numberOfItems(start, stop, step);
+    private static Integer evaluate(
+            Expression<?> argumentExpression,
+            Integer defaultValue,
+            ExpressionEvalContext context
+    ) {
+        if (argumentExpression == null) {
+            return defaultValue;
+        }
+        Integer value = (Integer) argumentExpression.eval(EmptyRow.INSTANCE, context);
+        return value == null ? defaultValue : value;
     }
 
-    private static long numberOfItems(Integer start, Integer stop, Integer step) {
-        // ignore bad arguments, it will be reported in items()
-        if (start == null || stop == null || step == null || step == 0) {
-            return 0;
-        }
-
-        if (start <= stop) {
-            return step < 0 ? 0 : ((long) stop - start) / step + 1;
-        } else {
-            return step > 0 ? 0 : ((long) start - stop) / (-step) + 1;
-        }
+    @Override
+    public PlanObjectKey getObjectKey() {
+        // table is always available and its field list does not change
+        return null;
     }
 
     private static final class DataGenerator {
@@ -110,11 +112,10 @@ class SeriesTable extends JetTable {
                 SimpleExpressionEvalContext context
         ) {
             this.iterator = IntStream.iterate(start, i -> i + step)
-                                     .limit(numberOfItems(start, stop, step))
-                                     .mapToObj(i -> ExpressionUtil.evaluate(predicate, projections, new Object[]{i},
-                                             context))
-                                     .filter(Objects::nonNull)
-                                     .iterator();
+                    .limit(numberOfItems(start, stop, step))
+                    .mapToObj(i -> ExpressionUtil.evaluate(predicate, projections, new Object[]{i}, context))
+                    .filter(Objects::nonNull)
+                    .iterator();
         }
 
         private void fillBuffer(SourceBuffer<Object[]> buffer) {
@@ -125,6 +126,14 @@ class SeriesTable extends JetTable {
                     buffer.close();
                     return;
                 }
+            }
+        }
+
+        private static long numberOfItems(int start, int stop, int step) {
+            if (start <= stop) {
+                return step < 0 ? 0 : ((long) stop - start) / step + 1;
+            } else {
+                return step > 0 ? 0 : ((long) start - stop) / (-step) + 1;
             }
         }
     }

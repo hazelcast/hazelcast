@@ -16,11 +16,16 @@
 
 package com.hazelcast.spring;
 
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.spring.config.ConfigFactoryAccessor;
+import com.hazelcast.test.FailOnTimeoutStatement;
 import com.hazelcast.test.JmxLeakHelper;
 import com.hazelcast.test.TestLoggingUtils;
+import org.junit.Test;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
@@ -29,14 +34,31 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.Set;
 
+import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
+import static java.lang.Integer.getInteger;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 public class CustomSpringJUnit4ClassRunner extends SpringJUnit4ClassRunner {
+
+    private static final int DEFAULT_TEST_TIMEOUT_IN_SECONDS = getInteger("hazelcast.test.defaultTestTimeoutInSeconds", 300);
+    private static final int MAX_CLIENT_CONNECT_TIMEOUT_MS = 30_000;
 
     static {
         TestLoggingUtils.initializeLogging();
-        System.setProperty("java.net.preferIPv4Stack", "true");
-        ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.setSystemProperty("1");
-        ClusterProperty.PHONE_HOME_ENABLED.setSystemProperty("false");
-        System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
+        ConfigFactoryAccessor.setConfigSupplier(() -> {
+            Config config = smallInstanceConfig();
+            config.setProperty("java.net.preferIPv4Stack", "true");
+            config.setProperty("hazelcast.local.localAddress", "127.0.0.1");
+            config.setProperty(ClusterProperty.PHONE_HOME_ENABLED.getName(), "false");
+            config.setProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "1");
+            return config;
+        });
+        ConfigFactoryAccessor.setClientConfigSupplier(() -> {
+            ClientConfig clientConfig = new ClientConfig();
+            clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig()
+                    .setClusterConnectTimeoutMillis(MAX_CLIENT_CONNECT_TIMEOUT_MS);
+            return clientConfig;
+        });
     }
 
     /**
@@ -60,6 +82,20 @@ public class CustomSpringJUnit4ClassRunner extends SpringJUnit4ClassRunner {
         } finally {
             TestLoggingUtils.removeThreadLocalTestMethodName();
         }
+    }
+
+    @Override
+    @SuppressWarnings("deprecation")
+    protected Statement withPotentialTimeout(FrameworkMethod method, Object test, Statement next) {
+        long timeout = getTimeout(method.getAnnotation(Test.class));
+        return new FailOnTimeoutStatement(method.getName(), next, timeout);
+    }
+
+    private long getTimeout(Test annotation) {
+        if (annotation == null || annotation.timeout() == 0) {
+            return SECONDS.toMillis(DEFAULT_TEST_TIMEOUT_IN_SECONDS);
+        }
+        return annotation.timeout();
     }
 
     @Override

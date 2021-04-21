@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.opt.logical;
 
+import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.AbstractRelNode;
@@ -23,50 +24,37 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.type.RelDataType;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class ValuesLogicalRel extends AbstractRelNode implements LogicalRel {
 
-    private final RelDataType rowType;
-    private final List<Object[]> tuples;
+    private final List<ExpressionValues> values;
 
     ValuesLogicalRel(
             RelOptCluster cluster,
             RelTraitSet traits,
             RelDataType rowType,
-            List<Object[]> tuples
+            List<ExpressionValues> values
     ) {
         super(cluster, traits);
 
         this.rowType = rowType;
-        this.tuples = tuples;
+        this.values = values;
     }
 
-    public List<Object[]> tuples() {
-        return tuples;
-    }
-
-    @Override
-    protected RelDataType deriveRowType() {
-        return rowType;
+    public List<ExpressionValues> values() {
+        return values;
     }
 
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new ValuesLogicalRel(getCluster(), traitSet, rowType, tuples);
+        return new ValuesLogicalRel(getCluster(), traitSet, getRowType(), values);
     }
 
     @Override
     public RelWriter explainTerms(RelWriter pw) {
         return super.explainTerms(pw)
-                .item("tuples",
-                        tuples.stream()
-                                .map(row -> Arrays.stream(row)
-                                        .map(String::valueOf)
-                                        .collect(Collectors.joining(", ", "{ ", " }")))
-                                .collect(Collectors.joining(", ", "[", "]"))
-                );
+                .item("values", values.stream().map(ExpressionValues::toString).collect(Collectors.joining(", ")));
     }
 }

@@ -63,8 +63,8 @@ public class AndOrPredicateIntegrationTest extends ExpressionTestSupport {
     @Parameterized.Parameters(name = "mode: {0}")
     public static Collection<Object[]> parameters() {
         return Arrays.asList(new Object[][]{
-            { Mode.AND },
-            { Mode.OR }
+                {Mode.AND},
+                {Mode.OR}
         });
     }
 
@@ -253,12 +253,12 @@ public class AndOrPredicateIntegrationTest extends ExpressionTestSupport {
     }
 
     private void putCheckFailureSignatureCommute(
-        Object value,
-        String operand1,
-        String operand2,
-        SqlColumnType type1,
-        SqlColumnType type2,
-        Object... params
+            Object value,
+            String operand1,
+            String operand2,
+            SqlColumnType type1,
+            SqlColumnType type2,
+            Object... params
     ) {
         put(value);
 
@@ -266,22 +266,22 @@ public class AndOrPredicateIntegrationTest extends ExpressionTestSupport {
     }
 
     private void checkFailureSignatureCommute(
-        String operand1,
-        String operand2,
-        SqlColumnType type1,
-        SqlColumnType type2,
-        Object... params
+            String operand1,
+            String operand2,
+            SqlColumnType type1,
+            SqlColumnType type2,
+            Object... params
     ) {
         checkFailureSignature(operand1, operand2, type1, type2, params);
         checkFailureSignature(operand2, operand1, type2, type1, params);
     }
 
     private void checkFailureSignature(
-        String operand1,
-        String operand2,
-        SqlColumnType type1,
-        SqlColumnType type2,
-        Object... params
+            String operand1,
+            String operand2,
+            SqlColumnType type1,
+            SqlColumnType type2,
+            Object... params
     ) {
         String sql = sql(operand1, operand2);
 
@@ -289,12 +289,12 @@ public class AndOrPredicateIntegrationTest extends ExpressionTestSupport {
     }
 
     private void putCheckFailureParameterCommute(
-        Object value,
-        String operand1,
-        String operand2,
-        int parameterPosition,
-        SqlColumnType parameterType,
-        Object... params
+            Object value,
+            String operand1,
+            String operand2,
+            int parameterPosition,
+            SqlColumnType parameterType,
+            Object... params
     ) {
         put(value);
 
@@ -302,30 +302,30 @@ public class AndOrPredicateIntegrationTest extends ExpressionTestSupport {
     }
 
     private void checkFailureParameterCommute(
-        String operand1,
-        String operand2,
-        int parameterPosition,
-        SqlColumnType parameterType,
-        Object... params
+            String operand1,
+            String operand2,
+            int parameterPosition,
+            SqlColumnType parameterType,
+            Object... params
     ) {
         checkFailureParameter(operand1, operand2, parameterPosition, parameterType, params);
         checkFailureParameter(operand2, operand1, parameterPosition, parameterType, params);
     }
 
     private void checkFailureParameter(
-        String operand1,
-        String operand2,
-        int parameterPosition,
-        SqlColumnType parameterType,
-        Object... params
+            String operand1,
+            String operand2,
+            int parameterPosition,
+            SqlColumnType parameterType,
+            Object... params
     ) {
         String sql = sql(operand1, operand2);
 
         checkFailure0(
-            sql,
-            SqlErrorCode.DATA_EXCEPTION,
-            parameterError(parameterPosition, SqlColumnType.BOOLEAN, parameterType),
-            params
+                sql,
+                SqlErrorCode.DATA_EXCEPTION,
+                parameterError(parameterPosition, SqlColumnType.BOOLEAN, parameterType),
+                params
         );
     }
 
@@ -343,7 +343,7 @@ public class AndOrPredicateIntegrationTest extends ExpressionTestSupport {
             condition.append(operands[i]);
         }
 
-        return "SELECT " + condition.toString() + " FROM map";
+        return "SELECT " + condition + " FROM map";
     }
 
     private Boolean result(Boolean... values) {

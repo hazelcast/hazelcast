@@ -16,11 +16,13 @@
 
 package com.hazelcast.sql;
 
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.impl.SqlResultImpl;
 import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.plan.cache.PlanCacheTestSupport;
+import org.junit.After;
 import org.junit.Test;
 
 import java.util.List;
@@ -31,7 +33,12 @@ import static org.junit.Assert.assertFalse;
 
 public class SqlNullableColumnTest extends PlanCacheTestSupport {
 
-    private final SqlTestInstanceFactory factory = SqlTestInstanceFactory.create();
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
+
+    @After
+    public void after() {
+        factory.shutdownAll();
+    }
 
     @Test
     public void testSelectWithNonNullSupport() {

@@ -19,6 +19,8 @@ package com.hazelcast.jet.elastic;
 import com.hazelcast.jet.pipeline.PipelineTestSupport;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.test.TestSources;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.apache.http.HttpHost;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.index.IndexRequest;
@@ -26,6 +28,7 @@ import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -38,6 +41,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ElasticSinkBuilderTest extends PipelineTestSupport {
 
     @Test

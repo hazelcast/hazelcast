@@ -21,30 +21,32 @@ import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.convert.ConverterRule;
-import org.apache.calcite.rel.logical.LogicalValues;
+import org.apache.calcite.rel.core.Sort;
 
 import static com.hazelcast.jet.sql.impl.opt.JetConventions.LOGICAL;
 
-final class ValuesLogicalRule extends ConverterRule {
+public final class SortLogicalRule extends ConverterRule {
 
-    static final RelOptRule INSTANCE = new ValuesLogicalRule();
+    static final RelOptRule INSTANCE = new SortLogicalRule();
 
-    private ValuesLogicalRule() {
+    private SortLogicalRule() {
         super(
-                LogicalValues.class, Convention.NONE, LOGICAL,
-                ValuesLogicalRule.class.getSimpleName()
+                Sort.class, Convention.NONE, LOGICAL,
+                SortLogicalRule.class.getSimpleName()
         );
     }
 
     @Override
     public RelNode convert(RelNode rel) {
-        LogicalValues values = (LogicalValues) rel;
+        Sort sort = (Sort) rel;
 
-        return new ValuesLogicalRel(
-                values.getCluster(),
-                OptUtils.toLogicalConvention(values.getTraitSet()),
-                values.getRowType(),
-                OptUtils.convert(values.getTuples())
+        return new SortLogicalRel(
+                sort.getCluster(),
+                OptUtils.toLogicalConvention(sort.getTraitSet()),
+                OptUtils.toLogicalInput(sort.getInput()),
+                sort.getCollation(),
+                sort.offset,
+                sort.fetch
         );
     }
 }

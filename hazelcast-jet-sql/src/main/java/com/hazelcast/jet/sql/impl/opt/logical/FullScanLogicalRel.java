@@ -24,6 +24,8 @@ import org.apache.calcite.rel.core.TableScan;
 
 import java.util.List;
 
+import static java.util.Collections.emptyList;
+
 public class FullScanLogicalRel extends TableScan implements LogicalRel {
 
     FullScanLogicalRel(
@@ -31,7 +33,7 @@ public class FullScanLogicalRel extends TableScan implements LogicalRel {
             RelTraitSet traitSet,
             RelOptTable table
     ) {
-        super(cluster, traitSet, table);
+        super(cluster, traitSet, emptyList(), table);
     }
 
     @Override

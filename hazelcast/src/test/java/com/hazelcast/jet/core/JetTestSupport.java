@@ -92,7 +92,7 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
     }
 
     protected JetInstance createJetMember() {
-        return this.createJetMember(new Config());
+        return this.createJetMember(smallInstanceConfig());
     }
 
     protected JetInstance createJetMember(Config config) {
@@ -103,7 +103,7 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
     }
 
     protected JetInstance[] createJetMembers(int nodeCount) {
-        return createJetMembers(new Config(), nodeCount);
+        return createJetMembers(smallInstanceConfig(), nodeCount);
     }
 
     protected JetInstance[] createJetMembers(Config config, int nodeCount) {

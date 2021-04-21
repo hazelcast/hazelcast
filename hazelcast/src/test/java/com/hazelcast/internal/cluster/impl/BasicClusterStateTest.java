@@ -398,7 +398,7 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
         changeClusterStateEventually(master, ClusterState.PASSIVE);
         master.getMap(randomMapName());
 
-        assertTrueEventually(() -> assertEquals(7, getNodeEngineImpl(other).getProxyService().getProxyCount()));
+        assertTrueEventually(() -> assertEquals(1, getNodeEngineImpl(other).getProxyService().getProxyCount()));
     }
 
     @Test

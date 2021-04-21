@@ -30,10 +30,10 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
-import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import javax.annotation.Nonnull;
@@ -76,22 +76,22 @@ public class TestBatchSqlConnector implements SqlConnector {
         List<String[]> values = IntStream.range(0, itemCount)
                                          .mapToObj(i -> new String[]{String.valueOf(i)})
                                          .collect(toList());
-        create(sqlService, tableName, singletonList("v"), singletonList(QueryDataType.INT), values);
+        create(sqlService, tableName, singletonList("v"), singletonList(QueryDataTypeFamily.INTEGER), values);
     }
 
     public static void create(
             SqlService sqlService,
             String tableName,
             List<String> names,
-            List<QueryDataType> types,
+            List<QueryDataTypeFamily> types,
             List<String[]> values
     ) {
         if (names.stream().anyMatch(n -> n.contains(DELIMITER) || n.contains("'"))) {
             throw new IllegalArgumentException("'" + DELIMITER + "' and apostrophe not supported in names");
         }
 
-        if (types.contains(QueryDataType.OBJECT)) {
-            throw new IllegalArgumentException("OBJECT type not supported");
+        if (types.contains(QueryDataTypeFamily.OBJECT) || types.contains(QueryDataTypeFamily.NULL)) {
+            throw new IllegalArgumentException("NULL and OBJECT type not supported: " + types);
         }
 
         if (values.stream().flatMap(Arrays::stream).filter(Objects::nonNull)
@@ -101,15 +101,15 @@ public class TestBatchSqlConnector implements SqlConnector {
                     "supported in values");
         }
 
-        String namesStringified = join(DELIMITER, names);
-        String typesStringified = types.stream().map(type -> type.getTypeFamily().name()).collect(joining(DELIMITER));
-        String valuesStringified = values.stream().map(row -> join(DELIMITER, row)).collect(joining(VALUES_DELIMITER));
+        String namesSerialized = join(DELIMITER, names);
+        String typesSerialized = types.stream().map(QueryDataTypeFamily::name).collect(joining(DELIMITER));
+        String valuesSerialized = values.stream().map(row -> join(DELIMITER, row)).collect(joining(VALUES_DELIMITER));
 
         String sql = "CREATE MAPPING " + tableName + " TYPE " + TYPE_NAME
                 + " OPTIONS ("
-                + '\'' + OPTION_NAMES + "'='" + namesStringified + "'"
-                + ", '" + OPTION_TYPES + "'='" + typesStringified + "'"
-                + ", '" + OPTION_VALUES + "'='" + valuesStringified + "'"
+                + '\'' + OPTION_NAMES + "'='" + namesSerialized + "'"
+                + ", '" + OPTION_TYPES + "'='" + typesSerialized + "'"
+                + ", '" + OPTION_VALUES + "'='" + valuesSerialized + "'"
                 + ")";
         System.out.println(sql);
         sqlService.execute(sql).updateCount();
@@ -167,13 +167,13 @@ public class TestBatchSqlConnector implements SqlConnector {
         }
 
         List<Object[]> rows = new ArrayList<>();
-        String[] rowsStringified = options.get(OPTION_VALUES).split(VALUES_DELIMITER);
-        for (String rowStringified : rowsStringified) {
-            if (rowStringified.isEmpty()) {
+        String[] rowsSerialized = options.get(OPTION_VALUES).split(VALUES_DELIMITER);
+        for (String rowSerialized : rowsSerialized) {
+            if (rowSerialized.isEmpty()) {
                 continue;
             }
 
-            String[] values = rowStringified.split(DELIMITER);
+            String[] values = rowSerialized.split(DELIMITER);
 
             assert values.length == fields.size();
 
@@ -189,7 +189,7 @@ public class TestBatchSqlConnector implements SqlConnector {
             rows.add(row);
         }
 
-        return new TestValuesTable(this, schemaName, mappingName, fields, rows);
+        return new TestBatchTable(this, schemaName, mappingName, fields, rows);
     }
 
     @Override
@@ -204,7 +204,7 @@ public class TestBatchSqlConnector implements SqlConnector {
             @Nullable Expression<Boolean> predicate,
             @Nonnull List<Expression<?>> projection
     ) {
-        List<Object[]> items = ((TestValuesTable) table).rows
+        List<Object[]> items = ((TestBatchTable) table).rows
                 .stream()
                 .map(row -> ExpressionUtil.evaluate(predicate, projection, row, NOT_IMPLEMENTED_ARGUMENTS_CONTEXT))
                 .filter(Objects::nonNull)
@@ -214,11 +214,11 @@ public class TestBatchSqlConnector implements SqlConnector {
         return dag.newUniqueVertex(table.toString(), pms);
     }
 
-    public static class TestValuesTable extends JetTable {
+    private static final class TestBatchTable extends JetTable {
 
         private final List<Object[]> rows;
 
-        public TestValuesTable(
+        private TestBatchTable(
                 @Nonnull SqlConnector sqlConnector,
                 @Nonnull String schemaName,
                 @Nonnull String name,
@@ -230,8 +230,40 @@ public class TestBatchSqlConnector implements SqlConnector {
         }
 
         @Override
-        public String toString() {
-            return "TestBatch" + "[" + getSchemaName() + "." + getSqlName() + "]";
+        public PlanObjectKey getObjectKey() {
+            return new TestBatchPlanObjectKey(getSchemaName(), getSqlName(), rows);
+        }
+    }
+
+    private static final class TestBatchPlanObjectKey implements PlanObjectKey {
+
+        private final String schemaName;
+        private final String name;
+        private final List<Object[]> rows;
+
+        private TestBatchPlanObjectKey(String schemaName, String name, List<Object[]> rows) {
+            this.schemaName = schemaName;
+            this.name = name;
+            this.rows = rows;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            TestBatchPlanObjectKey that = (TestBatchPlanObjectKey) o;
+            return Objects.equals(schemaName, that.schemaName)
+                    && Objects.equals(name, that.name)
+                    && Objects.equals(rows, that.rows);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(schemaName, name, rows);
         }
     }
 }

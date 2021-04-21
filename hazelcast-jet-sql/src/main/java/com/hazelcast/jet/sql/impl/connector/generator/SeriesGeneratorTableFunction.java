@@ -27,6 +27,7 @@ import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
 import com.hazelcast.sql.impl.calcite.validate.operand.OperandCheckerProgram;
 import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.operators.ReplaceUnknownOperandTypeInference;
+import com.hazelcast.sql.impl.expression.Expression;
 import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import org.apache.calcite.sql.type.SqlTypeName;
@@ -34,6 +35,7 @@ import org.apache.calcite.sql.type.SqlTypeName;
 import java.util.List;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static org.apache.calcite.sql.type.SqlTypeName.INTEGER;
 
 public final class SeriesGeneratorTableFunction extends JetSpecificTableFunction {
@@ -45,7 +47,7 @@ public final class SeriesGeneratorTableFunction extends JetSpecificTableFunction
     public SeriesGeneratorTableFunction() {
         super(
                 FUNCTION_NAME,
-                binding -> toTable(0, 0, 1).getRowType(binding.getTypeFactory()),
+                binding -> toTable0(emptyList()).getRowType(binding.getTypeFactory()),
                 new HazelcastOperandTypeInference(
                         new SqlTypeName[]{INTEGER, INTEGER, INTEGER},
                         new ReplaceUnknownOperandTypeInference(INTEGER)
@@ -89,23 +91,13 @@ public final class SeriesGeneratorTableFunction extends JetSpecificTableFunction
     }
 
     @Override
-    public HazelcastTable toTable(List<Object> arguments) {
-        Integer start = (Integer) arguments.get(0);
-        Integer stop = (Integer) arguments.get(1);
-        Integer step = arguments.get(2) != null ? (Integer) arguments.get(2) : 1;
-
-        return toTable(start, stop, step);
+    public HazelcastTable toTable(List<Expression<?>> argumentExpressions) {
+        return toTable0(argumentExpressions);
     }
 
-    private static HazelcastTable toTable(Integer start, Integer stop, Integer step) {
-        SeriesTable table = SeriesSqlConnector.createTable(
-                SCHEMA_NAME_SERIES,
-                randomName(),
-                start,
-                stop,
-                step
-        );
-        return new HazelcastTable(table, new HazelcastTableStatistic(table.numberOfItems()));
+    private static HazelcastTable toTable0(List<Expression<?>> argumentExpressions) {
+        SeriesTable table = SeriesSqlConnector.createTable(SCHEMA_NAME_SERIES, randomName(), argumentExpressions);
+        return new HazelcastTable(table, new HazelcastTableStatistic(0));
     }
 
     private static String randomName() {

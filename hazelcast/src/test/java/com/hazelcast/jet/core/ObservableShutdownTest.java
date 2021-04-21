@@ -26,8 +26,11 @@ import com.hazelcast.jet.pipeline.StreamStage;
 import com.hazelcast.jet.pipeline.test.SimpleEvent;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
@@ -39,6 +42,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ObservableShutdownTest extends JetTestSupport {
 
     private static final int MEMBER_COUNT = 3;

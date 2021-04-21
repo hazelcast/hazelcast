@@ -34,10 +34,11 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.StreamSerializer;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.experimental.categories.Category;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableSet;
 
@@ -55,7 +56,7 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class JobSerializerTest extends SimpleTestInClusterSupport {
 
     private static final String SOURCE_MAP_NAME = "source-map";
@@ -68,7 +69,7 @@ public class JobSerializerTest extends SimpleTestInClusterSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        Config config = new Config();
+        Config config = smallInstanceConfig();
         config.addCacheConfig(new CacheSimpleConfig().setName(SOURCE_CACHE_NAME))
               .addCacheConfig(new CacheSimpleConfig().setName(SINK_CACHE_NAME));
 

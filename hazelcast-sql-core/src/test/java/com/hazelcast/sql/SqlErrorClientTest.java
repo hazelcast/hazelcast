@@ -75,8 +75,8 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
     public static Collection<Object[]> parameters() {
         List<Object[]> res = new ArrayList<>();
 
-        res.add(new Object[] { false });
-        res.add(new Object[] { true });
+        res.add(new Object[]{false});
+        res.add(new Object[]{true});
 
         return res;
     }
@@ -322,10 +322,10 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
 
         try {
             ClientMessage message = SqlExecute_reservedCodec.encodeRequest(
-                "SELECT * FROM table",
-                Collections.emptyList(),
-                100L,
-                100
+                    "SELECT * FROM table",
+                    Collections.emptyList(),
+                    100L,
+                    100
             );
 
             SqlClientService clientService = ((SqlClientService) client.getSql());
@@ -336,7 +336,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
             fail("Must fail");
         } catch (Exception e) {
             assertTrue(e.getMessage().contains("Cannot process SQL client operation due to version mismatch "
-                + "(please ensure that the client and the member have the same version)"));
+                    + "(please ensure that the client and the member have the same version)"));
         }
     }
 

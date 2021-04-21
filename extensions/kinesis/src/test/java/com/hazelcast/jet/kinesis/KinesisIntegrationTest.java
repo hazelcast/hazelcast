@@ -33,7 +33,6 @@ import com.hazelcast.jet.pipeline.WindowDefinition;
 import com.hazelcast.jet.pipeline.test.AssertionCompletedException;
 import com.hazelcast.jet.test.SerialTest;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -41,7 +40,6 @@ import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.containers.localstack.LocalStackContainer.Service;
 
@@ -65,14 +63,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.testcontainers.utility.DockerImageName.parse;
 
-@RunWith(HazelcastSerialClassRunner.class)
 public class KinesisIntegrationTest extends AbstractKinesisTest {
 
     @ClassRule
-    public static final LocalStackContainer LOCALSTACK = new LocalStackContainer(parse("localstack/localstack")
-            .withTag("0.12.3"))
+    public static final LocalStackContainer LOCALSTACK = new LocalStackContainer("0.12.3")
             .withServices(Service.KINESIS);
 
     private static AwsConfig AWS_CONFIG;

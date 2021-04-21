@@ -16,6 +16,9 @@
 
 package com.hazelcast.sql.support.expressions;
 
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
+import com.hazelcast.sql.impl.type.converter.Converters;
+
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -23,6 +26,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 @SuppressWarnings({"unused", "unchecked, checkstyle:MultipleVariableDeclarations"})
@@ -47,8 +51,19 @@ public abstract class ExpressionValue implements Serializable {
             return (Class<? extends ExpressionValue>) Class.forName(className);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException("Cannot create " + ExpressionValue.class.getSimpleName() + " for type \""
-                + type + "\"", e);
+                    + type + "\"", e);
         }
+    }
+
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
+    public static String classForType(QueryDataTypeFamily type) {
+        Class<?> valueClass = Converters.getConverters().stream()
+                .filter(c -> c.getTypeFamily() == type)
+                .findAny()
+                .get()
+                .getNormalizedValueClass();
+
+        return ExpressionValue.class.getName() + "$" + valueClass.getSimpleName() + "Val";
     }
 
     public static <T extends ExpressionValue> T create(Class<? extends ExpressionValue> clazz) {
@@ -134,7 +149,7 @@ public abstract class ExpressionValue implements Serializable {
 
             ObjectVal objectVal = (ObjectVal) o;
 
-            return field1 != null ? field1.equals(objectVal.field1) : objectVal.field1 == null;
+            return Objects.equals(field1, objectVal.field1);
         }
 
         @Override

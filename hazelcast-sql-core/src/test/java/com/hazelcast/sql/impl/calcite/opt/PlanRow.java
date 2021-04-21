@@ -97,7 +97,8 @@ public class PlanRow {
         int rowCountPos = input.indexOf("rowcount = ");
 
         Double rowCount = rowCountPos != -1
-            ? Double.parseDouble(input.substring(rowCountPos + 11, input.indexOf(',', rowCountPos + 11))) : null;
+                ? Double.parseDouble(input.substring(rowCountPos + 11, input.indexOf(',', rowCountPos + 11)))
+                : null;
 
         // Get cost
         int costPos = input.indexOf("Cost");

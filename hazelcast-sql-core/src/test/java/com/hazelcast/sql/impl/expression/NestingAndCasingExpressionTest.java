@@ -87,7 +87,7 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
 
             missingMethodNames.forEach(joiner::add);
 
-            fail("Tests not implemented: \n" + joiner.toString());
+            fail("Tests not implemented: \n" + joiner);
         }
     }
 
@@ -224,6 +224,26 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
     @Test
     public void test_COS() {
         check(sql("COS(?) || COS(?)"), 1, 1);
+    }
+
+    @Test
+    public void test_POWER() {
+        check(sql("POWER(?, ?) || POWER(?, ?)"), 1, 1, 1, 1);
+    }
+
+    @Test
+    public void test_SQUARE() {
+        check(sql("SQUARE(?) || SQUARE(?)"), 1, 1);
+    }
+
+    @Test
+    public void test_SQRT() {
+        check(sql("SQRT(?) || SQRT(?)"), 4, 4);
+    }
+
+    @Test
+    public void test_CBRT() {
+        check(sql("CBRT(?) || CBRT(?)"), 8, 8);
     }
 
     @Test
@@ -385,6 +405,11 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
     public void test_REPLACE() {
         check(sql("REPLACE(?, ?, ?) || REPLACE(?, ?, ?) "),
                 "xyz", "x", "X", "xyz", "y", "Y");
+    }
+
+    public void test_POSITION() {
+        check(sql("POSITION(? IN ?) || POSITION(? IN ?)"),
+                "y", "xyz", "z", "xyz");
     }
 
     private void check(String sql, Object... params) {

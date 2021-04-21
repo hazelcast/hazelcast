@@ -14,16 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.plan.cache;
-
-import com.hazelcast.sql.impl.optimizer.SqlPlan;
-
 /**
- * Plan that could be cached.
+ * Contains config factory classes.
  */
-public interface CacheablePlan extends SqlPlan {
-    PlanCacheKey getPlanKey();
-    long getPlanLastUsed();
-    void onPlanUsed();
-    boolean isPlanValid(PlanCheckContext context);
-}
+package com.hazelcast.spring.config;

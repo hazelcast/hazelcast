@@ -30,12 +30,12 @@
 
     <hz:hazelcast id="instance">
         <hz:config>
-            <hz:cluster-name>dev</hz:cluster-name>
-            <hz:network port="5101" port-auto-increment="true">
+            <hz:cluster-name>test-cache-manager</hz:cluster-name>
+            <hz:network port="5101">
                 <hz:join>
                     <hz:multicast enabled="false"/>
                     <hz:tcp-ip enabled="true">
-                        <hz:members>127.0.0.1</hz:members>
+                        <hz:member>127.0.0.1</hz:member>
                     </hz:tcp-ip>
                 </hz:join>
             </hz:network>

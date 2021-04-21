@@ -26,9 +26,12 @@ import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.impl.JobResult;
 import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
@@ -45,6 +48,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
+@Category({SlowTest.class, ParallelJVMTest.class})
 public class SuspendResumeTest extends JetTestSupport {
 
     private static final int NODE_COUNT = 3;
@@ -61,7 +65,7 @@ public class SuspendResumeTest extends JetTestSupport {
     public void before() {
         TestProcessors.reset(NODE_COUNT * PARALLELISM);
         instances = new JetInstance[NODE_COUNT];
-        config = new Config();
+        config = smallInstanceConfig();
         config.getJetConfig().getInstanceConfig().setCooperativeThreadCount(PARALLELISM);
         for (int i = 0; i < NODE_COUNT; i++) {
             instances[i] = createJetMember(config);

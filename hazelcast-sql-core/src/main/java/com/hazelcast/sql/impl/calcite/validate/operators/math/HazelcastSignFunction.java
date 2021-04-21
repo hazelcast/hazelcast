@@ -34,11 +34,11 @@ public final class HazelcastSignFunction extends HazelcastFunction {
 
     private HazelcastSignFunction() {
         super(
-            "SIGN",
-            SqlKind.OTHER_FUNCTION,
-            ReturnTypes.ARG0,
-            new ReplaceUnknownOperandTypeInference(BIGINT),
-            SqlFunctionCategory.NUMERIC
+                "SIGN",
+                SqlKind.OTHER_FUNCTION,
+                ReturnTypes.ARG0,
+                new ReplaceUnknownOperandTypeInference(BIGINT),
+                SqlFunctionCategory.NUMERIC
         );
     }
 
