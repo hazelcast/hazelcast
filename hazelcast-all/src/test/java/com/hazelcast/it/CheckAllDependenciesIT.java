@@ -17,9 +17,7 @@
 package com.hazelcast.it;
 
 import com.hazelcast.osgi.CheckDependenciesIT;
-import org.junit.Ignore;
 
-@Ignore("see https://hazelcast.atlassian.net/browse/PLAT-175")
 public class CheckAllDependenciesIT extends CheckDependenciesIT {
 
     @Override
