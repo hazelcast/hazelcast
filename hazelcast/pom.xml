@@ -136,6 +136,7 @@
                                     !org.snakeyaml.*,
                                     !io.github.classgraph.*,
                                     !org.everit.json.*,
+                                    !org.json.*,
                                     sun.misc;resolution:=optional,
                                     javax.cache;resolution:=optional,
                                     javax.cache.*;resolution:=optional,
@@ -315,6 +316,12 @@
                                 </filter>
                                 <filter>
                                     <artifact>io.github.classgraph:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>com.github.erosb:*</artifact>
                                     <excludes>
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                     </excludes>
