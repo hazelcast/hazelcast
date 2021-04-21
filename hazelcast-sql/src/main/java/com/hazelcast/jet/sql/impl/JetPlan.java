@@ -35,7 +35,6 @@ import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.security.SqlSecurityContext;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import org.apache.calcite.rel.RelRoot;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlDelete;
@@ -44,10 +43,9 @@ import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.validate.SqlValidator;
-import org.apache.calcite.sql2rel.SqlToRelConverter;
-import org.apache.calcite.sql2rel.StandardConvertletTable;
 
 import java.security.Permission;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -599,14 +597,32 @@ abstract class JetPlan extends SqlPlan {
             SqlNode condition = delete.getCondition();
             assert targetTable instanceof SqlIdentifier;
             assert condition instanceof SqlBasicCall;
-            assert condition.getKind() == SqlKind.EQUALS;
 
             String mapName = ((SqlIdentifier) targetTable).names.get(2);
 
+            List<Object> keys = new ArrayList<>();
+            collectsKeysValue(delete.getSourceSelect().getWhere(), keys);
+
+            return planExecutor.execute(queryId, mapName, keys);
+        }
+
+        private void collectsKeysValue(SqlNode node, List<Object> keys) {
+            if (node.getKind() == SqlKind.OR) {
+                for (SqlNode sqlNode : ((SqlBasicCall) node).getOperandList()) {
+                    collectsKeysValue(sqlNode, keys);
+                }
+            } else if (node .getKind() == SqlKind.EQUALS) {
+                keys.add(findKeyValueInPredicate((SqlBasicCall) node));
+            } else {
+                throw QueryException.error(SqlErrorCode.GENERIC, node.getKind() + " predicate is not supported for DELETE queries");
+            }
+        }
+
+        private Object findKeyValueInPredicate(SqlBasicCall call) {
             boolean foundKey = false;
             Object key = null;
 
-            for (SqlNode node : ((SqlBasicCall) delete.getSourceSelect().getWhere()).getOperandList()) {
+            for (SqlNode node : call.getOperandList()) {
                 if (node instanceof SqlIdentifier) {
                     foundKey = ((SqlIdentifier) node).names.contains("__key");
                 } else if (node instanceof SqlLiteral) {
@@ -626,9 +642,9 @@ abstract class JetPlan extends SqlPlan {
             }
 
             if (!foundKey || key == null) {
-                throw QueryException.error(SqlErrorCode.GENERIC, "Delete query has to contain __key = <value> predicate");
+                throw QueryException.error(SqlErrorCode.GENERIC, "DELETE query has to contain __key = <value> predicate");
             }
-            return planExecutor.execute(queryId, mapName, key);
+            return key;
         }
 
         @Override

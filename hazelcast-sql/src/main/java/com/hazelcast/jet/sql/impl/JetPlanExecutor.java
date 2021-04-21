@@ -222,9 +222,15 @@ class JetPlanExecutor {
         }
     }
 
-    public SqlResult execute(QueryId queryId, String mapName, Object key) {
-        Object value = jetInstance.getMap(mapName).remove(key);
-        return SqlResultImpl.createUpdateCountResult(value == null ? 0 : 1);
+    public SqlResult execute(QueryId queryId, String mapName, List<Object> keys) {
+        int deletedKeys = 0;
+        for (Object key : keys) {
+            Object value = jetInstance.getMap(mapName).remove(key);
+            if (value != null) {
+                deletedKeys++;
+            }
+        }
+        return SqlResultImpl.createUpdateCountResult(deletedKeys);
     }
 
     private List<Object> prepareArguments(QueryParameterMetadata parameterMetadata, List<Object> arguments) {
