@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.expression.predicate;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlRow;
@@ -25,7 +26,6 @@ import com.hazelcast.sql.support.expressions.ExpressionType;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import javafx.util.Pair;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -84,6 +84,16 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
 
         Person(String name) {
             this.name = name;
+        }
+    }
+
+    static class Pair<T, E extends HazelcastException> {
+        T result;
+        E exception;
+
+        Pair(T result, E exception) {
+            this.result = result;
+            this.exception = exception;
         }
     }
 
@@ -271,9 +281,9 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
     ) {
         try {
             List<SqlRow> rows = execute(member, sql, params);
-            assertNull(expectedResults.getValue());
-            assertEquals(expectedResults.getKey().size(), rows.size());
-            List<SqlRow> expectedResultsList = expectedResults.getKey();
+            assertNull(expectedResults.exception);
+            assertEquals(expectedResults.result.size(), rows.size());
+            List<SqlRow> expectedResultsList = expectedResults.result;
             for (int i = 0; i < rows.size(); i++) {
                 Object actualObject = rows.get(i).getObject(0);
                 Object expectedObject = expectedResultsList.get(i).getObject(0);
@@ -284,7 +294,7 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
                 assertEquals(expectedType, actualType);
             }
         } catch (HazelcastSqlException e) {
-             assertNotNull(expectedResults.getValue());
+             assertNotNull(expectedResults.exception);
              // Expected : ... Parameter at position 0 must be of BIGINT type, but VARCHAR was found
              // Actual   : ... Parameter at position 0 must be of TINYINT type, but VARCHAR was found
              // We are not hard-casting everything to BIGINT, so, we wouldn't use check below.

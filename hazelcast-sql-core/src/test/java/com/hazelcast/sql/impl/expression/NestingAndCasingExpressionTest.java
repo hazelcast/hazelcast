@@ -408,28 +408,29 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
     }
 
     @Test
+    public void test_POSITION() {
+        check(sql("POSITION(? IN ?) || POSITION(? IN ?)"),
+                "y", "xyz", "z", "xyz");
+    }
+
+    @Test
     public void test_BETWEEN_ASYMMETRIC() {
         check(sqlWithWhere("BETWEEN ? AND ? "), SqlColumnType.INTEGER, 1, 1);
     }
-    
+
     @Test
     public void test_NOT_BETWEEN_ASYMMETRIC() {
-        check(sqlWithWhere("NOT BETWEEN ? AND ? "), SqlColumnType.INTEGER, 1, 1);
+        check(sqlWithWhere("NOT BETWEEN ? AND ? "), SqlColumnType.INTEGER, 2, 2);
     }
 
     @Test
     public void test_BETWEEN_SYMMETRIC() {
         check(sqlWithWhere("BETWEEN SYMMETRIC ? AND ? "), SqlColumnType.INTEGER, 1, 1);
     }
-    
+
     @Test
     public void test_NOT_BETWEEN_SYMMETRIC() {
-        check(sqlWithWhere("NOT BETWEEN SYMMETRIC ? AND ? "), SqlColumnType.INTEGER, 1, 1);
-    
-    @Test
-    public void test_POSITION() {
-        check(sql("POSITION(? IN ?) || POSITION(? IN ?)"),
-                "y", "xyz", "z", "xyz");
+        check(sqlWithWhere("NOT BETWEEN SYMMETRIC ? AND ? "), SqlColumnType.INTEGER, 2, 2);
     }
 
     private void check(String sql, Object... params) {
