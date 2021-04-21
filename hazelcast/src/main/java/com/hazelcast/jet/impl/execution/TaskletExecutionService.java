@@ -87,6 +87,7 @@ public class TaskletExecutionService {
     private final Thread[] cooperativeThreadPool;
     private final String hzInstanceName;
     private final ILogger logger;
+    private int cooperativeThreadIndex;
     private final AtomicBoolean startCooperativeThreads = new AtomicBoolean(false);
     @Probe(name = "blockingWorkerCount")
     private final Counter blockingWorkerCount = MwCounter.newMwCounter();
@@ -204,7 +205,6 @@ public class TaskletExecutionService {
         // them could happen to not use all threads. When the other one ends,
         // some worker might have no tasklet.
         synchronized (lock) {
-            int cooperativeThreadIndex = 0;
             for (Tasklet t : tasklets) {
                 trackersByThread[cooperativeThreadIndex].add(new TaskletTracker(t, executionTracker, jobClassLoader));
                 cooperativeThreadIndex = (cooperativeThreadIndex + 1) % trackersByThread.length;
