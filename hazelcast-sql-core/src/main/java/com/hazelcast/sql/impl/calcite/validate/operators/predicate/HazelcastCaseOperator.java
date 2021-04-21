@@ -112,8 +112,8 @@ public final class HazelcastCaseOperator extends SqlOperator {
         //noinspection OptionalGetWithoutIsPresent
         RelDataType caseReturnType = argTypes.stream().reduce(HazelcastTypeUtils::withHigherPrecedence).get();
 
-        Supplier<CalciteContextException> exceptionSupplier =
-                () -> validator.newValidationError(sqlCall, HazelcastResources.RESOURCES.cannotInferCaseResult(argTypes.toString()));
+        Supplier<CalciteContextException> exceptionSupplier = () ->
+                validator.newValidationError(sqlCall, HazelcastResources.RESOURCES.cannotInferCaseResult(argTypes.toString()));
 
         for (int i = 0; i < thenList.size(); i++) {
             int finalI = i;

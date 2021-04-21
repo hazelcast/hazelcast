@@ -76,7 +76,8 @@ public final class BinaryOperatorOperandTypeInference implements SqlOperandTypeI
             throw new HazelcastCallBinding(binding).newValidationSignatureError();
         }
 
-        operandTypes[0] = operandTypes[1] = knownType;
+        operandTypes[0] = knownType;
+        operandTypes[1] = knownType;
 
         // If there is an operand with an unresolved type, set it to the known type.
         if (unknownTypeOperandIndex != -1) {

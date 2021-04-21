@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.calcite.validate;
 
-import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastCaseOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastAbsFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastDoubleBiFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastDoubleFunction;
@@ -30,6 +29,7 @@ import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastDescOpera
 import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastUnaryOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastAndOrPredicate;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastBetweenOperator;
+import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastCaseOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastComparisonPredicate;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastInOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastIsTrueFalseNullPredicate;
@@ -288,8 +288,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
                 assert resolvedOperators.size() == 1;
 
                 basicCall.setOperator(resolvedOperators.get(0));
-            }
-            else if (call instanceof SqlCase) {
+            } else if (call instanceof SqlCase) {
                 SqlCase sqlCase = (SqlCase) call;
                 return new HazelcastSqlCase(sqlCase.getParserPosition(), sqlCase.getValueOperand(), sqlCase.getWhenOperands(),
                         sqlCase.getThenOperands(), sqlCase.getElseOperand());
