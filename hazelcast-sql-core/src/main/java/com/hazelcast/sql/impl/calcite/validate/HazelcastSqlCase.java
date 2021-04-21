@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.validate;
 
-import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCaseOperator;
+import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastCaseOperator;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlOperator;

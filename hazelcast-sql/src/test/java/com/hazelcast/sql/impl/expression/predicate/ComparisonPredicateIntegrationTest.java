@@ -129,7 +129,7 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
         checkCommute("'a'", "'a'", RES_EQ);
         checkCommute("'a'", "'b'", RES_LT);
         checkCommute("'a'", "null", RES_NULL);
-        checkFailure("null", "null", SqlErrorCode.PARSING, signatureErrorOperator(mode.token(), SqlColumnType.NULL, SqlColumnType.NULL));
+        checkCommute("null", "null", RES_NULL);
         checkUnsupportedLiteralLiteral("'a'", SqlColumnType.VARCHAR, LITERAL_BOOLEAN, LITERAL_TINYINT, LITERAL_DECIMAL, LITERAL_DOUBLE);
 
         // Literal/parameter
@@ -181,7 +181,7 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
         checkCommute("true", "null", RES_NULL);
         checkCommute("false", "false", RES_EQ);
         checkCommute("false", "null", RES_NULL);
-        checkFailure("null", "null", SqlErrorCode.PARSING, signatureErrorOperator(mode.token(), SqlColumnType.NULL, SqlColumnType.NULL));
+        checkCommute("null", "null", RES_NULL);
         checkUnsupportedLiteralLiteral("true", SqlColumnType.BOOLEAN, LITERAL_VARCHAR, LITERAL_TINYINT, LITERAL_DECIMAL, LITERAL_DOUBLE);
 
         // Literal/parameter
@@ -625,7 +625,11 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
                     parameterType.getFieldConverterType().getTypeFamily().getPublicType()
             );
 
-            checkFailure0(sql, SqlErrorCode.DATA_EXCEPTION, errorMessage, parameterType.valueFrom());
+            try {
+                checkFailure0(sql, SqlErrorCode.DATA_EXCEPTION, errorMessage, parameterType.valueFrom());
+            } catch (AssertionError e) {
+                throw new AssertionError("When comparing " + columnType + " & " + parameterType + ": " + e, e);
+            }
         }
     }
 

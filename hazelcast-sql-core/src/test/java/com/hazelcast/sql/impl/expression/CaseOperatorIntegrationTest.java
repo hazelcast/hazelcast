@@ -40,18 +40,19 @@ import java.time.ZonedDateTime;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 
-public class CaseOperationIntegrationTest extends ExpressionTestSupport {
+public class CaseOperatorIntegrationTest extends ExpressionTestSupport {
+
     @Test
-    public void caseWithConstants() {
+    public void test_literals() {
         put(1);
 
         checkValue0("select case when true then null else null end from map", SqlColumnType.NULL, null);
+        checkValue0("select case null when null then null else null end from map", SqlColumnType.NULL, null);
         checkFailure0("select case when 1 then 1 else 2 end from map", SqlErrorCode.PARSING, "Expected a boolean type");
         checkValue0("select case when 1 = 1 then 1 else null end from map", SqlColumnType.TINYINT, (byte) 1);
         checkValue0("select case when 1 = 1 then null else 1 end from map", SqlColumnType.TINYINT, null);
         checkValue0("select case 1 when 1 then 100 else 2 end from map", SqlColumnType.TINYINT, (byte) 100);
         checkFailure0("select case 'a' when 1 then 100 else 2 end from map", SqlErrorCode.PARSING, "Cannot apply '=' operator to [VARCHAR, TINYINT]");
-
         checkValue0("select case when 1 <> 1 then null else 10 end from map", SqlColumnType.TINYINT, (byte) 10);
     }
 
@@ -117,7 +118,18 @@ public class CaseOperationIntegrationTest extends ExpressionTestSupport {
     }
 
     @Test
-    public void doesntMatchWhen_andNoElseBranch() {
+    public void when_multipleWhenClausesMatch_then_leftmostMatchUsed() {
+        put(1);
+        // the first WHEN clause matches
+        checkValue0("select case when this > 0 then 1 when this < 5 then 2 else null end from map",
+                SqlColumnType.TINYINT, (byte) 1);
+        // the second WHEN clause matches
+        checkValue0("select case when this < 0 then 1 when this < 2 then 2 when this < 5 then 5 end from map",
+                SqlColumnType.TINYINT, (byte) 2);
+    }
+
+    @Test
+    public void when_noMatchAndMissingElseClause_then_null() {
         put(1);
 
         String sql = "select case when this > 1 then 10 end from map";
@@ -126,7 +138,7 @@ public class CaseOperationIntegrationTest extends ExpressionTestSupport {
     }
 
     @Test
-    public void differentCoercibleReturnTypes() {
+    public void test_mixedReturnTypes_workingCases() {
         put(1);
 
         checkValue0(
@@ -151,7 +163,7 @@ public class CaseOperationIntegrationTest extends ExpressionTestSupport {
     }
 
     @Test
-    public void differentNonCoercibleReturnTypes() {
+    public void test_mixedReturnTypes_failingCases() {
         put(1);
 
         checkFailure0(
@@ -162,11 +174,6 @@ public class CaseOperationIntegrationTest extends ExpressionTestSupport {
                 "select case 1 when 1 then 1 when 2 then 1000000000 else CAST('2021-01-01' as DATE) end from map",
                 SqlErrorCode.PARSING,
                 "Cannot infer return type for CASE among [TINYINT, INTEGER, DATE]");
-        checkFailure0(
-                "select case this when 1 then '1' when 2 then '1000000000' else CAST('2021-01-01' as DATE) end from map",
-                SqlErrorCode.GENERIC,
-                "while converting CASE WHEN `map`.`this` = CAST(1 AS INTEGER) THEN CAST('1' AS DATE) "
-                        + "WHEN `map`.`this` = CAST(2 AS INTEGER) THEN CAST('1000000000' AS DATE) ELSE CAST('2021-01-01' AS DATE) END");
         checkFailure0(
                 "select case 1 when 1 then true when 2 then false else CAST('2021-01-01' as DATE) end from map",
                 SqlErrorCode.PARSING,
@@ -182,17 +189,28 @@ public class CaseOperationIntegrationTest extends ExpressionTestSupport {
     }
 
     @Test
-    public void withParameterAsValue() {
+    public void test_badConversion() {
+        put(1);
+        checkFailure0("select case this when 1 then CAST('foo' as DATE) end from map", SqlErrorCode.PARSING,
+                "CAST function cannot convert literal '1' to type DATE: Cannot parse VARCHAR value to DATE");
+    }
+
+    @Test
+    public void test_dynamicParams() {
         put(1);
 
         checkValue0("select ? = this from map", SqlColumnType.BOOLEAN, true, 1L);
 
-        checkFailure0("select case when ? = ? then 1 end from map", SqlErrorCode.PARSING, "Cannot apply '=' operator to [UNKNOWN, UNKNOWN]");
-        checkFailure0("select case ? when ? then 100 end from map", SqlErrorCode.PARSING, "Cannot apply '=' operator to [UNKNOWN, UNKNOWN]");
+        checkFailure0("select case when ? = ? then 1 end from map", SqlErrorCode.PARSING,
+                "Cannot apply '=' operator to [UNKNOWN, UNKNOWN]");
+        checkFailure0("select case ? when ? then 100 end from map", SqlErrorCode.PARSING,
+                "Cannot apply '=' operator to [UNKNOWN, UNKNOWN]");
         checkValue0("select case when ? then 1 end from map", SqlColumnType.TINYINT, (byte) 1, true);
         checkValue0("select case when ? IS NOT NULL then 100 end from map", SqlColumnType.TINYINT, (byte) 100, 1);
         checkValue0("select case ? when this then 100 end from map", SqlColumnType.TINYINT, (byte) 100, 1);
         checkValue0("select case when ? = this then 100 end from map", SqlColumnType.TINYINT, (byte) 100, 1);
+        checkFailure0("select case this when 1 then ? else ? end from map", SqlErrorCode.PARSING,
+                "Cannot infer return type for CASE among [UNKNOWN, UNKNOWN]");
     }
 
     @Test

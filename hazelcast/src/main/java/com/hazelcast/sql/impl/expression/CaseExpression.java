@@ -46,7 +46,7 @@ public class CaseExpression<T> implements Expression<T>, IdentifiedDataSerializa
 
     @SuppressWarnings("unchecked")
     public static <T> CaseExpression<T> create(Expression<?>[] operands) {
-        assert operands.length % 2 == 1 : "CASE expression should have odd number of operands";
+        assert operands.length % 2 == 1 : "CASE expression must have odd number of operands";
 
         int branchesSize = operands.length / 2;
         Expression<Boolean>[] whenExpressions = new Expression[branchesSize];

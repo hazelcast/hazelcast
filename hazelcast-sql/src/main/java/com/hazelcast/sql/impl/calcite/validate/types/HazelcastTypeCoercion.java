@@ -35,6 +35,7 @@ import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.SqlUpdate;
+import org.apache.calcite.sql.SqlUserDefinedTypeNameSpec;
 import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.type.SqlTypeFamily;
@@ -46,6 +47,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import static com.hazelcast.sql.impl.type.QueryDataType.OBJECT;
+import static org.apache.calcite.sql.type.SqlTypeName.ANY;
 import static org.apache.calcite.sql.type.SqlTypeName.NULL;
 import static org.apache.calcite.util.Static.RESOURCE;
 
@@ -85,7 +87,14 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
                     SqlParserPos.ZERO
             );
         } else {
-            targetTypeSpec = SqlTypeUtil.convertTypeToSpec(targetType);
+            if (targetType.getSqlTypeName() == ANY) {
+                // without this the subsequent call to UnsupportedOperationVerifier will fail with "we do not support ANY"
+                targetTypeSpec =
+                        new SqlDataTypeSpec(new SqlUserDefinedTypeNameSpec("OBJECT", SqlParserPos.ZERO), SqlParserPos.ZERO)
+                                .withNullable(targetType.isNullable());
+            } else {
+                targetTypeSpec = SqlTypeUtil.convertTypeToSpec(targetType);
+            }
         }
 
         SqlNode cast = cast(node, targetTypeSpec);
@@ -177,12 +186,15 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
             RelDataType targetType,
             Consumer<SqlNode> replaceFn
     ) {
+        if (targetType.equals(scope.getValidator().getUnknownType())) {
+            return false;
+        }
         RelDataType sourceType = validator.deriveType(scope, rowElement);
 
         QueryDataType sourceHzType = HazelcastTypeUtils.toHazelcastType(sourceType.getSqlTypeName());
         QueryDataType targetHzType = HazelcastTypeUtils.toHazelcastType(targetType.getSqlTypeName());
 
-        if (sourceHzType.getTypeFamily() == targetHzType.getTypeFamily() || targetHzType == OBJECT) {
+        if (sourceHzType.getTypeFamily() == targetHzType.getTypeFamily()) {
             // Do nothing.
             return true;
         }
@@ -190,7 +202,8 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
         boolean valid = sourceAndTargetAreNumeric(targetHzType, sourceHzType)
                 || sourceAndTargetAreTemporalAndSourceCanBeConvertedToTarget(targetHzType, sourceHzType)
                 || targetIsTemporalAndSourceIsVarcharLiteral(targetHzType, sourceHzType, rowElement)
-                || sourceHzType.getTypeFamily() == QueryDataTypeFamily.NULL;
+                || sourceHzType.getTypeFamily() == QueryDataTypeFamily.NULL
+                || targetHzType == OBJECT;
 
         if (!valid) {
             // Types cannot be converted to each other, fail to coerce

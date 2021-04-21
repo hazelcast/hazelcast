@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.validate.operators;
+package com.hazelcast.sql.impl.calcite.validate.operators.predicate;
 
 import com.hazelcast.sql.impl.calcite.validate.HazelcastResources;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlCase;
@@ -87,6 +87,7 @@ public final class HazelcastCaseOperator extends SqlOperator {
         HazelcastSqlValidator validator = (HazelcastSqlValidator) callBinding.getValidator();
         HazelcastSqlCase sqlCall = (HazelcastSqlCase) callBinding.getCall();
         // at this point `CASE x WHEN y ...` is already converted to `CASE WHEN x=y ...`
+        assert sqlCall.getValueOperand() == null;
         SqlNodeList whenList = sqlCall.getWhenOperands();
         SqlNodeList thenList = sqlCall.getThenOperands();
         SqlNode elseOperand = sqlCall.getElseOperand();
@@ -110,9 +111,6 @@ public final class HazelcastCaseOperator extends SqlOperator {
         argTypes.add(validator.deriveType(scope, elseOperand));
         //noinspection OptionalGetWithoutIsPresent
         RelDataType caseReturnType = argTypes.stream().reduce(HazelcastTypeUtils::withHigherPrecedence).get();
-        if (caseReturnType.getSqlTypeName() == SqlTypeName.NULL) {
-            caseReturnType = validator.getTypeFactory().createSqlType(SqlTypeName.ANY);
-        }
 
         Supplier<CalciteContextException> exceptionSupplier =
                 () -> validator.newValidationError(sqlCall, HazelcastResources.RESOURCES.cannotInferCaseResult(argTypes.toString()));
