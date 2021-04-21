@@ -40,6 +40,7 @@ import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
+import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.schema.Table;
 import org.apache.calcite.rel.RelNode;
 
@@ -225,13 +226,31 @@ public class CreateDagVisitor {
     }
 
     public Vertex onRoot(JetRootRel rootRel) {
-        Vertex vertex = dag.newUniqueVertex("ClientSink",
-                rootResultConsumerSink(rootRel.getInitiatorAddress()));
+        Vertex vertex;
+        RelNode input = rootRel.getInput();
+        if (input instanceof SortPhysicalRel) {
+            SortPhysicalRel sortRel = (SortPhysicalRel) input;
+            assert sortRel.offset == null : "Offset is not supported";
+            assert sortRel.collation.getFieldCollations().isEmpty() : "Collation is not supported";
+
+            Expression<?> fetch = sortRel.fetch();
+            Object val = fetch.eval(EmptyRow.INSTANCE, ExpressionUtil.NOT_IMPLEMENTED_ARGUMENTS_CONTEXT);
+            assert val instanceof Number;
+
+            long limit = ((Number) val).longValue();
+            assert limit >= 0;
+            vertex = dag.newUniqueVertex("ClientSink",
+                    rootResultConsumerSink(rootRel.getInitiatorAddress(), limit));
+            input = sortRel.getInput();
+        } else {
+            vertex = dag.newUniqueVertex("ClientSink",
+                    rootResultConsumerSink(rootRel.getInitiatorAddress(), Long.MAX_VALUE));
+        }
 
         // We use distribute-to-one edge to send all the items to the initiator member.
         // Such edge has to be partitioned, but the sink is LP=1 anyway, so we can use
         // allToOne with any key, it goes to a single processor on a single member anyway.
-        connectInput(rootRel.getInput(), vertex, edge -> edge.distributeTo(localMemberAddress).allToOne(""));
+        connectInput(input, vertex, edge -> edge.distributeTo(localMemberAddress).allToOne(""));
         return vertex;
     }
 

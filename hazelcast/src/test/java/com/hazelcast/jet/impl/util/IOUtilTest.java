@@ -21,6 +21,7 @@ import com.hazelcast.jet.core.test.JetAssert;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -56,6 +57,7 @@ public class IOUtilTest extends JetTestSupport {
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @Test
+    @Ignore // https://github.com/hazelcast/hazelcast/issues/18541
     public void test_zipAndUnzipNestedFolder_then_contentsShouldBeSame() throws Exception {
         Path originalPath = Paths.get(this.getClass().getResource("/nested").toURI());
         test(originalPath);

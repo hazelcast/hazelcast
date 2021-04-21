@@ -120,6 +120,7 @@
         <scala.version>2.12</scala.version>
         <slf4j.api.version>1.7.30</slf4j.api.version>
         <spring.version>4.3.0.RELEASE</spring.version>
+        <snakeyaml.version>1.26</snakeyaml.version>
         <snakeyaml.engine.version>2.1</snakeyaml.engine.version>
 
         <!-- test dependencies -->
@@ -139,6 +140,7 @@
         <mockito.version>3.6.0</mockito.version>
         <powermock.version>2.0.9</powermock.version>
         <reflections.version>0.9.10</reflections.version>
+        <testcontainers.version>1.14.3</testcontainers.version>
         <zookeeper.version>3.5.8</zookeeper.version>
 
         <sonar.jacoco.jar>${basedir}/lib/jacocoagent.jar</sonar.jacoco.jar>
@@ -1229,6 +1231,11 @@
                 <scope>import</scope>
             </dependency>
 
+            <dependency>
+                <groupId>org.yaml</groupId>
+                <artifactId>snakeyaml</artifactId>
+                <version>${snakeyaml.version}</version>
+            </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>

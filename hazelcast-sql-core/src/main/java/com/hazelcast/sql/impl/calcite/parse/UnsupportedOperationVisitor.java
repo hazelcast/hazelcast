@@ -153,6 +153,7 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.RTRIM);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.BTRIM);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.REPLACE);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.POSITION);
 
         // Sorting
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.DESC);
@@ -311,6 +312,7 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
 
                 return;
             case DESCENDING:
+            case POSITION:
             case OTHER:
             case OTHER_FUNCTION:
                 processOther(call);

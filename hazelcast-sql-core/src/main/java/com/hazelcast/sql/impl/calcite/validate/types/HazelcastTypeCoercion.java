@@ -45,7 +45,9 @@ import org.apache.calcite.sql.validate.implicit.TypeCoercionImpl;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static com.hazelcast.sql.impl.type.QueryDataType.OBJECT;
 import static org.apache.calcite.sql.type.SqlTypeName.NULL;
+import static org.apache.calcite.util.Static.RESOURCE;
 
 /**
  * Provides custom coercion strategies supporting {@link HazelcastIntegerType}
@@ -188,8 +190,8 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
         QueryDataType sourceHzType = HazelcastTypeUtils.toHazelcastType(sourceType.getSqlTypeName());
         QueryDataType targetHzType = HazelcastTypeUtils.toHazelcastType(targetType.getSqlTypeName());
 
-        if (sourceHzType.getTypeFamily() == targetHzType.getTypeFamily()) {
-            // Types are in the same family, do nothing.
+        if (sourceHzType.getTypeFamily() == targetHzType.getTypeFamily() || targetHzType == OBJECT) {
+            // Do nothing.
             return true;
         }
 
@@ -270,20 +272,6 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
         return coerced;
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * We change the contract of the superclass' return type. According to the
-     * superclass contract we're supposed to return true iff any coercion
-     * happened. This method returns true if the {@code sourceRowType} was
-     * changed so that it can now be assigned to the {@code targetRowType},
-     * either because a CAST was added, or because it already was assignable
-     * (e.g. the type was same), and this must hold for all record fields. The
-     * Calcite code that calls this method assumes this.
-     *
-     * @return True, if the {@code sourceRowType} can now be assigned to {@code
-     *      targetRowType}
-     */
     @Override
     public boolean querySourceCoercion(
             SqlValidatorScope scope,
@@ -294,22 +282,71 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
         // the code below copied from superclass implementation, but uses our `canCast` method
         final List<RelDataTypeField> sourceFields = sourceRowType.getFieldList();
         final List<RelDataTypeField> targetFields = targetRowType.getFieldList();
-        final int sourceCount = sourceFields.size();
-        for (int i = 0; i < sourceCount; i++) {
+        assert sourceFields.size() == targetFields.size();
+        final int fieldCount = sourceFields.size();
+        for (int i = 0; i < fieldCount; i++) {
             RelDataType sourceType = sourceFields.get(i).getType();
             RelDataType targetType = targetFields.get(i).getType();
             if (!SqlTypeUtil.equalSansNullability(validator.getTypeFactory(), sourceType, targetType)
-                    && !HazelcastTypeUtils.canCast(sourceType, targetType)) {
-                // Return early if types are not equal and can not do type coercion.
-                return false;
+                    && !HazelcastTypeUtils.canCast(sourceType, targetType)
+                    || !coerceSourceRowType(scope, query, i, targetType)) {
+                SqlNode node = getNthExpr(query, i, fieldCount);
+                throw scope.getValidator().newValidationError(node,
+                        RESOURCE.typeNotAssignable(
+                                targetFields.get(i).getName(), targetType.toString(),
+                                sourceFields.get(i).getName(), sourceType.toString()));
             }
         }
-        boolean canAssign = true;
-        for (int i = 0; i < sourceFields.size() && canAssign; i++) {
-            RelDataType targetType = targetFields.get(i).getType();
-            canAssign = coerceSourceRowType(scope, query, i, targetType);
+
+        // We always return true to defuse the fallback mechanism in the caller.
+        // Instead, we throw the validation error ourselves above if we can't assign.
+        return true;
+    }
+
+
+    /**
+     * Copied from {@code org.apache.calcite.sql.validate.SqlValidatorImpl#getNthExpr()}.
+     * <p>
+     * Locates the n-th expression in an INSERT or UPDATE query.
+     *
+     * @param query       Query
+     * @param ordinal     Ordinal of expression
+     * @param sourceCount Number of expressions
+     * @return Ordinal'th expression, never null
+     */
+    private SqlNode getNthExpr(SqlNode query, int ordinal, int sourceCount) {
+        if (query instanceof SqlInsert) {
+            SqlInsert insert = (SqlInsert) query;
+            if (insert.getTargetColumnList() != null) {
+                return insert.getTargetColumnList().get(ordinal);
+            } else {
+                return getNthExpr(
+                        insert.getSource(),
+                        ordinal,
+                        sourceCount);
+            }
+        } else if (query instanceof SqlUpdate) {
+            SqlUpdate update = (SqlUpdate) query;
+            if (update.getSourceExpressionList() != null) {
+                return update.getSourceExpressionList().get(ordinal);
+            } else {
+                return getNthExpr(
+                        update.getSourceSelect(),
+                        ordinal,
+                        sourceCount);
+            }
+        } else if (query instanceof SqlSelect) {
+            SqlSelect select = (SqlSelect) query;
+            if (select.getSelectList().size() == sourceCount) {
+                return select.getSelectList().get(ordinal);
+            } else {
+                // give up
+                return query;
+            }
+        } else {
+            // give up
+            return query;
         }
-        return canAssign;
     }
 
     // copied from TypeCoercionImpl
