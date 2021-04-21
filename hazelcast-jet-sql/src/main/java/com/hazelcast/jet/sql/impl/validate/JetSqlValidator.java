@@ -84,6 +84,7 @@ public class JetSqlValidator extends HazelcastSqlValidator {
         SqlNode fetch = select.getFetch();
         if (fetch != null) {
             deriveType(scope, fetch);
+            fetch.validate(this, getEmptyScope());
         }
     }
 
