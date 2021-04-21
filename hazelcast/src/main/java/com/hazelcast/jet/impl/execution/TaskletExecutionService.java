@@ -61,6 +61,8 @@ import java.util.function.Consumer;
 import static com.hazelcast.internal.util.executor.ExecutorType.CACHED;
 import static com.hazelcast.jet.core.JetProperties.JET_IDLE_COOPERATIVE_MAX_MICROSECONDS;
 import static com.hazelcast.jet.core.JetProperties.JET_IDLE_COOPERATIVE_MIN_MICROSECONDS;
+import static com.hazelcast.jet.core.JetProperties.JET_IDLE_COOPERATIVE_NO_TASKLET_MAX_MILLISECONDS;
+import static com.hazelcast.jet.core.JetProperties.JET_IDLE_COOPERATIVE_NO_TASKLET_MIN_MILLISECONDS;
 import static com.hazelcast.jet.core.JetProperties.JET_IDLE_NONCOOPERATIVE_MAX_MICROSECONDS;
 import static com.hazelcast.jet.core.JetProperties.JET_IDLE_NONCOOPERATIVE_MIN_MICROSECONDS;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
@@ -85,13 +87,13 @@ public class TaskletExecutionService {
     private final Thread[] cooperativeThreadPool;
     private final String hzInstanceName;
     private final ILogger logger;
-    private int cooperativeThreadIndex;
     private final AtomicBoolean startCooperativeThreads = new AtomicBoolean(false);
     @Probe(name = "blockingWorkerCount")
     private final Counter blockingWorkerCount = MwCounter.newMwCounter();
     private volatile boolean isShutdown;
     private final Object lock = new Object();
     private final IdleStrategy idlerCooperative;
+    private final IdleStrategy idlerCooperativeNoTasklet;
     private final IdleStrategy idlerNonCooperative;
 
     public TaskletExecutionService(NodeEngineImpl nodeEngine, int threadCount, HazelcastProperties properties) {
@@ -105,6 +107,9 @@ public class TaskletExecutionService {
 
         idlerCooperative = createIdler(
             properties, JET_IDLE_COOPERATIVE_MIN_MICROSECONDS, JET_IDLE_COOPERATIVE_MAX_MICROSECONDS
+        );
+        idlerCooperativeNoTasklet = createIdler(properties,
+                JET_IDLE_COOPERATIVE_NO_TASKLET_MIN_MILLISECONDS, JET_IDLE_COOPERATIVE_NO_TASKLET_MAX_MILLISECONDS
         );
         idlerNonCooperative = createIdler(
             properties, JET_IDLE_NONCOOPERATIVE_MIN_MICROSECONDS, JET_IDLE_NONCOOPERATIVE_MAX_MICROSECONDS
@@ -199,6 +204,7 @@ public class TaskletExecutionService {
         // them could happen to not use all threads. When the other one ends,
         // some worker might have no tasklet.
         synchronized (lock) {
+            int cooperativeThreadIndex = 0;
             for (Tasklet t : tasklets) {
                 trackersByThread[cooperativeThreadIndex].add(new TaskletTracker(t, executionTracker, jobClassLoader));
                 cooperativeThreadIndex = (cooperativeThreadIndex + 1) % trackersByThread.length;
@@ -354,7 +360,12 @@ public class TaskletExecutionService {
                 if (progressTracker.isMadeProgress()) {
                     idleCount = 0;
                 } else {
-                    idlerLocal.idle(++idleCount);
+                    idleCount++;
+                    if (trackers.isEmpty()) {
+                        idlerCooperativeNoTasklet.idle(idleCount);
+                    } else {
+                        idlerLocal.idle(idleCount);
+                    }
                 }
             }
             trackers.forEach(t -> t.executionTracker.taskletDone());
