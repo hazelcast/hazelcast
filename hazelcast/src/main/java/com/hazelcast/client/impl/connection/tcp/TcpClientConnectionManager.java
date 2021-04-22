@@ -874,7 +874,6 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
                                                 ClientAuthenticationCodec.ResponseParameters response,
                                                 boolean switchingToNextCluster) {
         synchronized (clientStateMutex) {
-            checkClientState(connection, switchingToNextCluster);
             checkAuthenticationResponse(connection, response);
             connection.setConnectedServerVersion(response.serverHazelcastVersion);
             connection.setRemoteAddress(response.address);
@@ -901,6 +900,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
                 logger.warning("Switching from current cluster: " + this.clusterId + " to new cluster: " + newClusterId);
                 client.onClusterRestart();
             }
+            checkClientState(connection, switchingToNextCluster);
 
             boolean connectionsEmpty = activeConnections.isEmpty();
             activeConnections.put(response.memberUuid, connection);
@@ -992,9 +992,9 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
         if (!partitionService.checkAndSetPartitionCount(response.partitionCount)) {
             ClientNotAllowedInClusterException exception =
                     new ClientNotAllowedInClusterException("Client can not work with this cluster"
-                    + " because it has a different partition count. "
-                    + "Expected partition count: " + partitionService.getPartitionCount()
-                    + ", Member partition count: " + response.partitionCount);
+                            + " because it has a different partition count. "
+                            + "Expected partition count: " + partitionService.getPartitionCount()
+                            + ", Member partition count: " + response.partitionCount);
             connection.close("Failed to authenticate connection", exception);
             throw exception;
         }
@@ -1004,12 +1004,12 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
         if (activeConnections.isEmpty()) {
             // We only have single connection established
             if (failoverConfigProvided) {
+                clientState = ClientState.SWITCHING_CLUSTER;
                 // If failover is provided, and this single connection is established after failover logic kicks in
                 // (checked via `switchingToNextCluster`), then it is OK to continue.
                 // Otherwise, we force the failover logic to be used by throwing `ClientNotAllowedInClusterException`
                 if (!switchingToNextCluster) {
                     String reason = "Force to hard cluster switch";
-                    clientState = ClientState.SWITCHING_CLUSTER;
                     connection.close(reason, null);
                     throw new ClientNotAllowedInClusterException(reason);
                 }
