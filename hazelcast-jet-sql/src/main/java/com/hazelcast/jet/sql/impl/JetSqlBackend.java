@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.sql.impl.JetPlan.AlterJobPlan;
@@ -53,7 +54,7 @@ import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlRowMetadata;
-import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.calcite.OptimizerContext;
 import com.hazelcast.sql.impl.calcite.SqlBackend;
@@ -62,9 +63,9 @@ import com.hazelcast.sql.impl.calcite.parse.QueryParseResult;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import com.hazelcast.sql.impl.optimizer.OptimizationTask;
-import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.optimizer.PlanKey;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
+import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.RelOptCluster;
@@ -153,10 +154,6 @@ class JetSqlBackend implements SqlBackend {
     ) {
         SqlNode node = parseResult.getNode();
 
-        if (parseResult.getParameterMetadata() != null && parseResult.getParameterMetadata().getParameterCount() != 0) {
-            throw QueryException.error("Query parameters not yet supported");
-        }
-
         PlanKey planKey = new PlanKey(task.getSearchPaths(), task.getSql());
         if (node instanceof SqlCreateMapping) {
             return toCreateMappingPlan(planKey, (SqlCreateMapping) node);
@@ -178,6 +175,7 @@ class JetSqlBackend implements SqlBackend {
             QueryConvertResult convertResult = context.convert(parseResult);
             return toPlan(
                     planKey,
+                    parseResult.getParameterMetadata(),
                     convertResult.getRel(),
                     convertResult.getFieldNames(),
                     context,
@@ -220,6 +218,7 @@ class JetSqlBackend implements SqlBackend {
         QueryConvertResult dmlConvertedResult = context.convert(dmlParseResult);
         SelectOrSinkPlan dmlPlan = toPlan(
                 null,
+                parseResult.getParameterMetadata(),
                 dmlConvertedResult.getRel(),
                 dmlConvertedResult.getFieldNames(),
                 context,
@@ -264,11 +263,14 @@ class JetSqlBackend implements SqlBackend {
 
     private SelectOrSinkPlan toPlan(
             PlanKey planKey,
+            QueryParameterMetadata parameterMetadata,
             RelNode rel,
             List<String> fieldNames,
             OptimizerContext context,
             boolean isInfiniteRows
     ) {
+        context.setParameterMetadata(parameterMetadata);
+
         logger.fine("Before logical opt:\n" + RelOptUtil.toString(rel));
         LogicalRel logicalRel = optimizeLogical(context, rel);
         logger.fine("After logical opt:\n" + RelOptUtil.toString(logicalRel));
@@ -277,17 +279,19 @@ class JetSqlBackend implements SqlBackend {
 
         boolean isInsert = physicalRel instanceof TableModify;
 
+        Address localAddress = nodeEngine.getThisAddress();
         List<Permission> permissions = extractPermissions(physicalRel);
 
         if (isInsert) {
-            Tuple2<DAG, Set<PlanObjectKey>> result = createDag(physicalRel);
-            return new SelectOrSinkPlan(planKey, result.f1(), result.f0(), isInfiniteRows, true, null,
-                    planExecutor, permissions);
+            Tuple2<DAG, Set<PlanObjectKey>> result = createDag(physicalRel, localAddress, parameterMetadata);
+            return new SelectOrSinkPlan(planKey, parameterMetadata, result.f1(), result.f0(), isInfiniteRows, true,
+                    null, planExecutor, permissions);
         } else {
-            Tuple2<DAG, Set<PlanObjectKey>> result = createDag(new JetRootRel(physicalRel, nodeEngine.getThisAddress()));
-            SqlRowMetadata rowMetadata = createRowMetadata(fieldNames, physicalRel.schema().getTypes());
-            return new SelectOrSinkPlan(planKey, result.f1(), result.f0(), isInfiniteRows, false, rowMetadata,
-                    planExecutor, permissions);
+            Tuple2<DAG, Set<PlanObjectKey>> result =
+                    createDag(new JetRootRel(physicalRel, localAddress), localAddress, parameterMetadata);
+            SqlRowMetadata rowMetadata = createRowMetadata(fieldNames, physicalRel.schema(parameterMetadata).getTypes());
+            return new SelectOrSinkPlan(planKey, parameterMetadata, result.f1(), result.f0(), isInfiniteRows, false,
+                    rowMetadata, planExecutor, permissions);
         }
     }
 
@@ -362,8 +366,12 @@ class JetSqlBackend implements SqlBackend {
         return new SqlRowMetadata(columns);
     }
 
-    private Tuple2<DAG, Set<PlanObjectKey>> createDag(PhysicalRel physicalRel) {
-        CreateDagVisitor visitor = new CreateDagVisitor(nodeEngine.getThisAddress());
+    private Tuple2<DAG, Set<PlanObjectKey>> createDag(
+            PhysicalRel physicalRel,
+            Address localAddress,
+            QueryParameterMetadata parameterMetadata
+    ) {
+        CreateDagVisitor visitor = new CreateDagVisitor(localAddress, parameterMetadata);
         physicalRel.accept(visitor);
         return Tuple2.tuple2(visitor.getDag(), visitor.getObjectKeys());
     }

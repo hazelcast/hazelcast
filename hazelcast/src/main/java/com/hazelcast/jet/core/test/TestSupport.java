@@ -27,6 +27,7 @@ import com.hazelcast.internal.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.internal.util.concurrent.IdleStrategy;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.EdgeConfig;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
@@ -220,6 +221,7 @@ public final class TestSupport {
     private int totalParallelism = 1;
 
     private JetInstance jetInstance;
+    private JobConfig jobConfig;
     private long cooperativeTimeout = COOPERATIVE_TIME_LIMIT_MS_FAIL;
     private long runUntilOutputMatchesTimeoutMillis = -1;
     private long runUntilOutputMatchesExtraTimeMillis;
@@ -356,6 +358,9 @@ public final class TestSupport {
             if (jetInstance != null) {
                 metaSupplierContext.setJetInstance(jetInstance);
             }
+            if (jobConfig != null) {
+                metaSupplierContext.setJobConfig(jobConfig);
+            }
             metaSupplier.init(metaSupplierContext);
             Address address = jetInstance != null
                     ? jetInstance.getHazelcastInstance().getCluster().getLocalMember().getAddress() : LOCAL_ADDRESS;
@@ -363,6 +368,9 @@ public final class TestSupport {
             TestProcessorSupplierContext supplierContext = new TestProcessorSupplierContext();
             if (jetInstance != null) {
                 supplierContext.setJetInstance(jetInstance);
+            }
+            if (jobConfig != null) {
+                supplierContext.setJobConfig(jobConfig);
             }
             supplier.init(supplierContext);
             runTest(new TestMode(false, 0, 1));
@@ -532,6 +540,16 @@ public final class TestSupport {
      */
     public TestSupport jetInstance(@Nonnull JetInstance jetInstance) {
         this.jetInstance = jetInstance;
+        return this;
+    }
+
+    /**
+     * Use the given instance for {@link Context#jobConfig()}
+     *
+     * @return {@code this} instance for fluent API
+     */
+    public TestSupport jobConfig(JobConfig jobConfig) {
+        this.jobConfig = jobConfig;
         return this;
     }
 
@@ -857,6 +875,9 @@ public final class TestSupport {
 
         if (jetInstance != null) {
             context.setJetInstance(jetInstance);
+        }
+        if (jobConfig != null) {
+            context.setJobConfig(jobConfig);
         }
         if (processor instanceof SerializationServiceAware) {
             ((SerializationServiceAware) processor).setSerializationService(serializationService);

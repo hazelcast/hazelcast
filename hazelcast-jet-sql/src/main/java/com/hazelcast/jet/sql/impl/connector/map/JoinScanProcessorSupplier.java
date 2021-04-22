@@ -20,12 +20,12 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.impl.execution.init.Contexts.ProcSupplierCtx;
 import com.hazelcast.jet.impl.processor.TransformBatchedP;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
+import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector.Supplier;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -56,7 +56,7 @@ final class JoinScanProcessorSupplier implements ProcessorSupplier, DataSerializ
     private KvRowProjector.Supplier rightRowProjectorSupplier;
 
     private transient IMap<Object, Object> map;
-    private transient SimpleExpressionEvalContext context;
+    private transient ExpressionEvalContext evalContext;
 
     @SuppressWarnings("unused")
     private JoinScanProcessorSupplier() {
@@ -75,7 +75,7 @@ final class JoinScanProcessorSupplier implements ProcessorSupplier, DataSerializ
     @Override
     public void init(@Nonnull Context context) {
         map = context.jetInstance().getMap(mapName);
-        this.context = new SimpleExpressionEvalContext(((ProcSupplierCtx) context).serializationService());
+        evalContext = SimpleExpressionEvalContext.from(context);
     }
 
     @Nonnull
@@ -84,7 +84,9 @@ final class JoinScanProcessorSupplier implements ProcessorSupplier, DataSerializ
         List<Processor> processors = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
             Processor processor =
-                    new TransformBatchedP<Object[], Object[]>(joinFn(joinInfo, map, rightRowProjectorSupplier, context)) {
+                    new TransformBatchedP<Object[], Object[]>(
+                            joinFn(joinInfo, map, rightRowProjectorSupplier, evalContext)
+                    ) {
                         @Override
                         public boolean isCooperative() {
                             return false;
@@ -98,10 +100,11 @@ final class JoinScanProcessorSupplier implements ProcessorSupplier, DataSerializ
     private static FunctionEx<Iterable<Object[]>, Traverser<Object[]>> joinFn(
             @Nonnull JetJoinInfo joinInfo,
             @Nonnull IMap<Object, Object> map,
-            @Nonnull KvRowProjector.Supplier rightRowProjectorSupplier,
-            @Nonnull ExpressionEvalContext context
+            @Nonnull Supplier rightRowProjectorSupplier,
+            @Nonnull ExpressionEvalContext evalContext
     ) {
-        Projection<Entry<Object, Object>, Object[]> projection = QueryUtil.toProjection(rightRowProjectorSupplier);
+        Projection<Entry<Object, Object>, Object[]> projection =
+                QueryUtil.toProjection(rightRowProjectorSupplier, evalContext);
 
         return lefts -> {
             List<Object[]> rights = new ArrayList<>();
@@ -120,7 +123,7 @@ final class JoinScanProcessorSupplier implements ProcessorSupplier, DataSerializ
 
             List<Object[]> rows = new ArrayList<>();
             for (Object[] left : lefts) {
-                boolean joined = join(rows, left, rights, joinInfo.condition(), context);
+                boolean joined = join(rows, left, rights, joinInfo.condition(), evalContext);
                 if (!joined && joinInfo.isLeftOuter()) {
                     rows.add(extendArray(left, rightRowProjectorSupplier.columnCount()));
                 }
@@ -134,11 +137,11 @@ final class JoinScanProcessorSupplier implements ProcessorSupplier, DataSerializ
             @Nonnull Object[] left,
             @Nonnull List<Object[]> rights,
             @Nonnull Expression<Boolean> condition,
-            @Nonnull ExpressionEvalContext context
+            @Nonnull ExpressionEvalContext evalContext
     ) {
         boolean matched = false;
         for (Object[] right : rights) {
-            Object[] joined = ExpressionUtil.join(left, right, condition, context);
+            Object[] joined = ExpressionUtil.join(left, right, condition, evalContext);
             if (joined != null) {
                 rows.add(joined);
                 matched = true;

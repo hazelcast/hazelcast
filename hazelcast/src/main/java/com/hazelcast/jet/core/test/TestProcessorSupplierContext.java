@@ -18,6 +18,7 @@ package com.hazelcast.jet.core.test;
 
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.logging.ILogger;
@@ -49,6 +50,11 @@ public class TestProcessorSupplierContext
     @Nonnull @Override
     public TestProcessorSupplierContext setJetInstance(@Nonnull JetInstance jetInstance) {
         return (TestProcessorSupplierContext) super.setJetInstance(jetInstance);
+    }
+
+    @Nonnull @Override
+    public TestProcessorSupplierContext setJobConfig(@Nonnull JobConfig jobConfig) {
+        return (TestProcessorSupplierContext) super.setJobConfig(jobConfig);
     }
 
     @Nonnull @Override

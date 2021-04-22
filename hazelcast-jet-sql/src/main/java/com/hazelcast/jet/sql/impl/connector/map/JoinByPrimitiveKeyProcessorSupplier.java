@@ -16,10 +16,8 @@
 
 package com.hazelcast.jet.sql.impl.connector.map;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.impl.execution.init.Contexts.ProcSupplierCtx;
 import com.hazelcast.jet.impl.processor.AsyncTransformUsingServiceOrderedP;
 import com.hazelcast.jet.pipeline.ServiceFactories;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
@@ -61,9 +59,8 @@ final class JoinByPrimitiveKeyProcessorSupplier implements ProcessorSupplier, Da
     private KvRowProjector.Supplier rightRowProjectorSupplier;
 
     private transient IMap<Object, Object> map;
-    private transient InternalSerializationService serializationService;
+    private transient ExpressionEvalContext evalContext;
     private transient Extractors extractors;
-    private transient SimpleExpressionEvalContext evalContext;
 
     @SuppressWarnings("unused")
     private JoinByPrimitiveKeyProcessorSupplier() {
@@ -86,9 +83,8 @@ final class JoinByPrimitiveKeyProcessorSupplier implements ProcessorSupplier, Da
     @Override
     public void init(@Nonnull Context context) {
         map = context.jetInstance().getMap(mapName);
-        serializationService = ((ProcSupplierCtx) context).serializationService();
-        extractors = Extractors.newBuilder(serializationService).build();
-        this.evalContext = new SimpleExpressionEvalContext(((ProcSupplierCtx) context).serializationService());
+        evalContext = SimpleExpressionEvalContext.from(context);
+        extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
     }
 
     @Nonnull
@@ -96,7 +92,7 @@ final class JoinByPrimitiveKeyProcessorSupplier implements ProcessorSupplier, Da
     public Collection<? extends Processor> get(int count) {
         List<Processor> processors = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
-            KvRowProjector projector = rightRowProjectorSupplier.get(serializationService, extractors);
+            KvRowProjector projector = rightRowProjectorSupplier.get(evalContext, extractors);
             TransientReference<IMap<Object, Object>> context = new TransientReference<>(map);
             Processor processor = new AsyncTransformUsingServiceOrderedP<>(
                     ServiceFactories.nonSharedService(ctx -> context),
@@ -127,7 +123,7 @@ final class JoinByPrimitiveKeyProcessorSupplier implements ProcessorSupplier, Da
             Object value,
             KvRowProjector rightRowProjector,
             Expression<Boolean> condition,
-            ExpressionEvalContext context
+            ExpressionEvalContext evalContext
     ) {
         if (value == null) {
             return null;
@@ -138,7 +134,7 @@ final class JoinByPrimitiveKeyProcessorSupplier implements ProcessorSupplier, Da
             return null;
         }
 
-        return ExpressionUtil.join(left, right, condition, context);
+        return ExpressionUtil.join(left, right, condition, evalContext);
     }
 
     @Override

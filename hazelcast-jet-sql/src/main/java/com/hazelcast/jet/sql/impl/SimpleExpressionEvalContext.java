@@ -17,18 +17,45 @@
 package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.impl.execution.init.Contexts;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 
-public class SimpleExpressionEvalContext implements ExpressionEvalContext {
+import javax.annotation.Nonnull;
+import java.util.List;
+
+import static java.util.Objects.requireNonNull;
+
+public final class SimpleExpressionEvalContext implements ExpressionEvalContext {
+
+    public static final String SQL_ARGUMENTS_KEY_NAME = "__sql.arguments";
+
+    private final List<Object> arguments;
     private final InternalSerializationService serializationService;
 
-    public SimpleExpressionEvalContext(InternalSerializationService serializationService) {
-        this.serializationService = serializationService;
+    public SimpleExpressionEvalContext(
+            @Nonnull List<Object> arguments,
+            @Nonnull InternalSerializationService serializationService
+    ) {
+        this.arguments = requireNonNull(arguments);
+        this.serializationService = requireNonNull(serializationService);
+    }
+
+    public static SimpleExpressionEvalContext from(ProcessorSupplier.Context ctx) {
+        return new SimpleExpressionEvalContext(
+                requireNonNull(ctx.jobConfig().getArgument(SQL_ARGUMENTS_KEY_NAME)),
+                ((Contexts.ProcSupplierCtx) ctx).serializationService()
+        );
     }
 
     @Override
     public Object getArgument(int index) {
-        throw new IndexOutOfBoundsException("" + index);
+        return arguments.get(index);
+    }
+
+    @Override
+    public List<Object> getArguments() {
+        return arguments;
     }
 
     @Override

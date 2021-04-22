@@ -23,11 +23,13 @@ import com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget;
 import com.hazelcast.jet.sql.impl.schema.Mapping;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRowMetadata;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.sql.impl.optimizer.SqlPlan;
-import com.hazelcast.sql.impl.optimizer.PlanKey;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.optimizer.PlanCheckContext;
+import com.hazelcast.sql.impl.optimizer.PlanKey;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
+import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.security.SqlSecurityContext;
 
 import java.security.Permission;
@@ -40,7 +42,7 @@ abstract class JetPlan extends SqlPlan {
         super(planKey);
     }
 
-    abstract SqlResult execute(QueryId queryId);
+    abstract SqlResult execute(QueryId queryId, List<Object> arguments);
 
     static class CreateMappingPlan extends JetPlan {
         private final Mapping mapping;
@@ -95,7 +97,8 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments) {
+            JetPlan.ensureNoArguments("CREATE MAPPING", arguments);
             return planExecutor.execute(this);
         }
     }
@@ -146,7 +149,8 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments) {
+            JetPlan.ensureNoArguments("DROP MAPPING", arguments);
             return planExecutor.execute(this);
         }
     }
@@ -184,6 +188,10 @@ abstract class JetPlan extends SqlPlan {
             return dmlPlan;
         }
 
+        QueryParameterMetadata getParameterMetadata() {
+            return dmlPlan.getParameterMetadata();
+        }
+
         @Override
         public boolean isCacheable() {
             return dmlPlan.isCacheable();
@@ -205,8 +213,8 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId) {
-            return planExecutor.execute(this);
+        public SqlResult execute(QueryId queryId, List<Object> arguments) {
+            return planExecutor.execute(this, arguments);
         }
     }
 
@@ -256,7 +264,8 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments) {
+            JetPlan.ensureNoArguments("ALTER JOB", arguments);
             return planExecutor.execute(this);
         }
     }
@@ -314,7 +323,8 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments) {
+            JetPlan.ensureNoArguments("DROP JOB", arguments);
             return planExecutor.execute(this);
         }
     }
@@ -365,7 +375,8 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments) {
+            JetPlan.ensureNoArguments("CREATE SNAPSHOT", arguments);
             return planExecutor.execute(this);
         }
     }
@@ -416,7 +427,8 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments) {
+            JetPlan.ensureNoArguments("DROP SNAPSHOT", arguments);
             return planExecutor.execute(this);
         }
     }
@@ -425,7 +437,11 @@ abstract class JetPlan extends SqlPlan {
         private final ShowStatementTarget showTarget;
         private final JetPlanExecutor planExecutor;
 
-        ShowStatementPlan(PlanKey planKey, ShowStatementTarget showTarget, JetPlanExecutor planExecutor) {
+        ShowStatementPlan(
+                PlanKey planKey,
+                ShowStatementTarget showTarget,
+                JetPlanExecutor planExecutor
+        ) {
             super(planKey);
 
             this.showTarget = showTarget;
@@ -456,13 +472,15 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments) {
+            JetPlan.ensureNoArguments("SHOW " + showTarget, arguments);
             return planExecutor.execute(this);
         }
     }
 
     static class SelectOrSinkPlan extends JetPlan {
         private final Set<PlanObjectKey> objectKeys;
+        private final QueryParameterMetadata parameterMetadata;
         private final DAG dag;
         private final boolean isStreaming;
         private final boolean isInsert;
@@ -472,6 +490,7 @@ abstract class JetPlan extends SqlPlan {
 
         SelectOrSinkPlan(
                 PlanKey planKey,
+                QueryParameterMetadata parameterMetadata,
                 Set<PlanObjectKey> objectKeys,
                 DAG dag,
                 boolean isStreaming,
@@ -482,13 +501,18 @@ abstract class JetPlan extends SqlPlan {
         ) {
             super(planKey);
 
+            this.objectKeys = objectKeys;
+            this.parameterMetadata = parameterMetadata;
             this.dag = dag;
             this.isStreaming = isStreaming;
             this.isInsert = isInsert;
             this.rowMetadata = rowMetadata;
             this.planExecutor = planExecutor;
             this.permissions = permissions;
-            this.objectKeys = objectKeys;
+        }
+
+        QueryParameterMetadata getParameterMetadata() {
+            return parameterMetadata;
         }
 
         DAG getDag() {
@@ -530,8 +554,14 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId) {
-            return planExecutor.execute(this, queryId);
+        public SqlResult execute(QueryId queryId, List<Object> arguments) {
+            return planExecutor.execute(this, queryId, arguments);
+        }
+    }
+
+    private static void ensureNoArguments(String name, List<Object> arguments) {
+        if (!arguments.isEmpty()) {
+            throw QueryException.error(name + " does not support dynamic parameters");
         }
     }
 }

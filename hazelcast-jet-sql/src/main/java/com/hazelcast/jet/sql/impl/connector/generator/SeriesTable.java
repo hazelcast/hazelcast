@@ -16,8 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.connector.generator;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.jet.impl.execution.init.Contexts.ProcSupplierCtx;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.pipeline.SourceBuilder.SourceBuffer;
@@ -58,12 +56,11 @@ class SeriesTable extends JetTable {
         List<Expression<?>> argumentExpressions = this.argumentExpressions;
         return SourceBuilder
                 .batch("series", ctx -> {
-                    InternalSerializationService serializationService = ((ProcSupplierCtx) ctx).serializationService();
-                    SimpleExpressionEvalContext context = new SimpleExpressionEvalContext(serializationService);
+                    ExpressionEvalContext evalContext = SimpleExpressionEvalContext.from(ctx);
 
-                    Integer start = evaluate(argumentExpressions.get(0), null, context);
-                    Integer stop = evaluate(argumentExpressions.get(1), null, context);
-                    Integer step = evaluate(argumentExpressions.get(2), 1, context);
+                    Integer start = evaluate(argumentExpressions.get(0), null, evalContext);
+                    Integer stop = evaluate(argumentExpressions.get(1), null, evalContext);
+                    Integer step = evaluate(argumentExpressions.get(2), 1, evalContext);
                     if (start == null || stop == null || step == null) {
                         throw QueryException.error("Invalid argument of a call to function GENERATE_SERIES" +
                                 " - null argument(s)");
@@ -73,7 +70,7 @@ class SeriesTable extends JetTable {
                                 " - step cannot be equal to zero");
                     }
 
-                    return new DataGenerator(start, stop, step, predicate, projections, context);
+                    return new DataGenerator(start, stop, step, predicate, projections, evalContext);
                 })
                 .fillBufferFn(DataGenerator::fillBuffer)
                 .build();
@@ -82,12 +79,12 @@ class SeriesTable extends JetTable {
     private static Integer evaluate(
             Expression<?> argumentExpression,
             Integer defaultValue,
-            ExpressionEvalContext context
+            ExpressionEvalContext evalContext
     ) {
         if (argumentExpression == null) {
             return defaultValue;
         }
-        Integer value = (Integer) argumentExpression.eval(EmptyRow.INSTANCE, context);
+        Integer value = (Integer) argumentExpression.eval(EmptyRow.INSTANCE, evalContext);
         return value == null ? defaultValue : value;
     }
 
@@ -109,11 +106,11 @@ class SeriesTable extends JetTable {
                 int step,
                 Expression<Boolean> predicate,
                 List<Expression<?>> projections,
-                SimpleExpressionEvalContext context
+                ExpressionEvalContext evalContext
         ) {
             this.iterator = IntStream.iterate(start, i -> i + step)
                     .limit(numberOfItems(start, stop, step))
-                    .mapToObj(i -> ExpressionUtil.evaluate(predicate, projections, new Object[]{i}, context))
+                    .mapToObj(i -> ExpressionUtil.evaluate(predicate, projections, new Object[]{i}, evalContext))
                     .filter(Objects::nonNull)
                     .iterator();
         }
@@ -124,7 +121,6 @@ class SeriesTable extends JetTable {
                     buffer.add(iterator.next());
                 } else {
                     buffer.close();
-                    return;
                 }
             }
         }

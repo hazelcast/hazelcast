@@ -92,7 +92,7 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
     }
 
     /**
-     * Sets the job name.
+     * Sets the config for the job.
      */
     public TestProcessorMetaSupplierContext setJobConfig(@Nonnull JobConfig jobConfig) {
         this.jobConfig = jobConfig;

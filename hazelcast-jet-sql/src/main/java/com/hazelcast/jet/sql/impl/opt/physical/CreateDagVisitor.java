@@ -21,27 +21,25 @@ import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.BiPredicateEx;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
-import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.Processors;
-import com.hazelcast.jet.impl.execution.init.Contexts.ProcSupplierCtx;
 import com.hazelcast.jet.pipeline.ServiceFactories;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
-import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.schema.Table;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.RelNode;
 
 import javax.annotation.Nullable;
@@ -66,16 +64,18 @@ public class CreateDagVisitor {
     private final DAG dag = new DAG();
     private final Set<PlanObjectKey> objectKeys = new HashSet<>();
     private final Address localMemberAddress;
+    private final QueryParameterMetadata parameterMetadata;
 
-    public CreateDagVisitor(Address localMemberAddress) {
+    public CreateDagVisitor(Address localMemberAddress, QueryParameterMetadata parameterMetadata) {
         this.localMemberAddress = localMemberAddress;
+        this.parameterMetadata = parameterMetadata;
     }
 
     public Vertex onValues(ValuesPhysicalRel rel) {
         List<ExpressionValues> values = rel.values();
 
         return dag.newUniqueVertex("Values", convenientSourceP(
-                CreateDagVisitor::toExpressionEvalContext,
+                SimpleExpressionEvalContext::from,
                 (context, buffer) -> {
                     values.forEach(vs -> vs.toValues(context).forEach(buffer::add));
                     buffer.close();
@@ -103,30 +103,26 @@ public class CreateDagVisitor {
         collectObjectKeys(table);
 
         return getJetSqlConnector(table)
-                .fullScanReader(dag, table, rel.filter(), rel.projection());
+                .fullScanReader(dag, table, rel.filter(parameterMetadata), rel.projection(parameterMetadata));
     }
 
     public Vertex onFilter(FilterPhysicalRel rel) {
-        Expression<Boolean> filter = rel.filter();
+        Expression<Boolean> filter = rel.filter(parameterMetadata);
 
         Vertex vertex = dag.newUniqueVertex("Filter", filterUsingServiceP(
-                ServiceFactories.nonSharedService(ctx -> {
-                    ExpressionEvalContext context = toExpressionEvalContext(ctx);
-                    return ExpressionUtil.filterFn(filter, context);
-                }),
+                ServiceFactories.nonSharedService(ctx ->
+                        ExpressionUtil.filterFn(filter, SimpleExpressionEvalContext.from(ctx))),
                 (BiPredicateEx<Predicate<Object[]>, Object[]>) Predicate::test));
         connectInput(rel.getInput(), vertex, null);
         return vertex;
     }
 
     public Vertex onProject(ProjectPhysicalRel rel) {
-        List<Expression<?>> projection = rel.projection();
+        List<Expression<?>> projection = rel.projection(parameterMetadata);
 
         Vertex vertex = dag.newUniqueVertex("Project", mapUsingServiceP(
-                ServiceFactories.nonSharedService(ctx -> {
-                    ExpressionEvalContext context = toExpressionEvalContext(ctx);
-                    return ExpressionUtil.projectionFn(projection, context);
-                }),
+                ServiceFactories.nonSharedService(ctx ->
+                        ExpressionUtil.projectionFn(projection, SimpleExpressionEvalContext.from(ctx))),
                 (BiFunctionEx<Function<Object[], Object[]>, Object[], Object[]>) Function::apply
         ));
 
@@ -217,9 +213,9 @@ public class CreateDagVisitor {
         VertexWithInputConfig vertexWithConfig = getJetSqlConnector(rightTable).nestedLoopReader(
                 dag,
                 rightTable,
-                rel.rightFilter(),
-                rel.rightProjection(),
-                rel.joinInfo()
+                rel.rightFilter(parameterMetadata),
+                rel.rightProjection(parameterMetadata),
+                rel.joinInfo(parameterMetadata)
         );
         connectInput(rel.getLeft(), vertexWithConfig.vertex(), vertexWithConfig.configureEdgeFn());
         return vertexWithConfig.vertex();
@@ -233,18 +229,21 @@ public class CreateDagVisitor {
             assert sortRel.offset == null : "Offset is not supported";
             assert sortRel.collation.getFieldCollations().isEmpty() : "Collation is not supported";
 
-            Expression<?> fetch = sortRel.fetch();
-            Object val = fetch.eval(EmptyRow.INSTANCE, ExpressionUtil.NOT_IMPLEMENTED_ARGUMENTS_CONTEXT);
-            assert val instanceof Number;
+            Expression<?> fetch = sortRel.fetch(parameterMetadata);
 
-            long limit = ((Number) val).longValue();
-            assert limit >= 0;
-            vertex = dag.newUniqueVertex("ClientSink",
-                    rootResultConsumerSink(rootRel.getInitiatorAddress(), limit));
+            vertex = dag.newUniqueVertex(
+                    "ClientSink",
+                    rootResultConsumerSink(rootRel.getInitiatorAddress(), fetch)
+            );
             input = sortRel.getInput();
         } else {
-            vertex = dag.newUniqueVertex("ClientSink",
-                    rootResultConsumerSink(rootRel.getInitiatorAddress(), Long.MAX_VALUE));
+            vertex = dag.newUniqueVertex(
+                    "ClientSink",
+                    rootResultConsumerSink(
+                            rootRel.getInitiatorAddress(),
+                            ConstantExpression.create(Long.MAX_VALUE, QueryDataType.BIGINT)
+                    )
+            );
         }
 
         // We use distribute-to-one edge to send all the items to the initiator member.
@@ -286,10 +285,5 @@ public class CreateDagVisitor {
         if (objectKey != null) {
             objectKeys.add(objectKey);
         }
-    }
-
-    private static ExpressionEvalContext toExpressionEvalContext(Processor.Context ctx) {
-        InternalSerializationService serializationService = ((ProcSupplierCtx) ctx).serializationService();
-        return new SimpleExpressionEvalContext(serializationService);
     }
 }

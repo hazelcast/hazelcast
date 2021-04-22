@@ -23,6 +23,7 @@ import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
 import com.hazelcast.map.IMap;
+import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlRowMetadata;
@@ -37,6 +38,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class ShowStatementTest extends SqlTestSupport {
 
@@ -120,6 +122,20 @@ public class ShowStatementTest extends SqlTestSupport {
     public void when_unnamedJob_then_notListed() {
         createJobInJava(null);
         assertRowsOrdered("show jobs", emptyList());
+    }
+
+    @Test
+    public void when_showMappingsWithParameters_then_fail() {
+        assertThatThrownBy(() -> sqlService.execute("SHOW MAPPINGS", "param"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessage("SHOW MAPPINGS does not support dynamic parameters");
+    }
+
+    @Test
+    public void when_showJobsWithParameters_then_fail() {
+        assertThatThrownBy(() -> sqlService.execute("SHOW JOBS", "param"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessage("SHOW JOBS does not support dynamic parameters");
     }
 
     private void createJobInJava(String jobName) {

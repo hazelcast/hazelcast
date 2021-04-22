@@ -242,6 +242,26 @@ public class SqlJoinTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_innerJoinDynamicParameters() {
+        String leftName = randomName();
+        TestBatchSqlConnector.create(sqlService, leftName, 3);
+
+        String mapName = randomName();
+        instance().getMap(mapName).put(1, "value-1");
+        instance().getMap(mapName).put(2, "value-2");
+        instance().getMap(mapName).put(3, "value-3");
+
+        assertRowsAnyOrder(
+                "SELECT l.v, m.this || ?" +
+                        "FROM " + leftName + " l " +
+                        "JOIN " + mapName + " m ON l.v = m.__key " +
+                        "WHERE m.__key < ?",
+                asList("-s", 2),
+                singletonList(new Row(1, "value-1-s"))
+        );
+    }
+
+    @Test
     public void test_innerJoinConditionProject() {
         String leftName = randomName();
         TestBatchSqlConnector.create(sqlService, leftName, 3);
@@ -808,7 +828,7 @@ public class SqlJoinTest extends SqlTestSupport {
         assertRowsAnyOrder(
                 "SELECT l.v, m.__key, m.this " +
                         "FROM " + leftName + " l " +
-                        "LEFT JOIN " + mapName + " m ON m.__key>l.v",
+                        "LEFT JOIN " + mapName + " m ON m.__key > l.v",
                 asList(
                         new Row(0, 1, "value-1"),
                         new Row(0, 2, "value-2"),
@@ -839,7 +859,7 @@ public class SqlJoinTest extends SqlTestSupport {
         assertRowsAnyOrder(
                 "SELECT l.v, m.__key, m.this " +
                         "FROM " + leftName + " l " +
-                        "LEFT JOIN " + mapName + " m ON m.__key>l.v AND m.this IS NOT NULL",
+                        "LEFT JOIN " + mapName + " m ON m.__key > l.v AND m.this IS NOT NULL",
                 asList(
                         new Row(0, 1, "value-1"),
                         new Row(0, 2, "value-2"),

@@ -91,7 +91,11 @@ public final class CostUtils {
      * @param selectivity Selectivity.
      * @return New row count.
      */
-    public static double adjustFilteredRowCount(double rowCount, Double selectivity) {
+    public static Double adjustFilteredRowCount(Double rowCount, Double selectivity) {
+        if (rowCount == null) {
+            return null;
+        }
+
         if (selectivity == null) {
             selectivity = UNKNOWN_SELECTIVITY;
         }

@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.opt;
 
 import com.google.common.collect.ImmutableList;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.RexToExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -83,10 +84,12 @@ public abstract class ExpressionValues implements Serializable {
                 RexNode filter,
                 List<RexNode> project,
                 RelDataType tuplesType,
-                List<ExpressionValues> values
+                List<ExpressionValues> values,
+                QueryParameterMetadata parameterMetadata
         ) {
             PlanNodeSchema schema = OptUtils.schema(tuplesType);
-            RexVisitor<Expression<?>> converter = OptUtils.createRexToExpressionVisitor(schema);
+            RexVisitor<Expression<?>> converter =
+                    OptUtils.createRexToExpressionVisitor(schema, parameterMetadata);
 
             this.predicate = filter == null ? null : (Expression<Boolean>) filter.accept(converter);
             this.projection = project == null ? null : toList(project, node -> node.accept(converter));

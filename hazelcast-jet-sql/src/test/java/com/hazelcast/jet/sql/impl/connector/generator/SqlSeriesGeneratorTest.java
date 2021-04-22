@@ -122,6 +122,20 @@ public class SqlSeriesGeneratorTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_generateSeriesWithDynamicParameters() {
+        assertRowsAnyOrder(
+                "SELECT v * ? FROM TABLE(GENERATE_SERIES(0, ?)) WHERE v > ? AND v < 5",
+                asList(2, 5, 0),
+                asList(
+                        new Row(2L),
+                        new Row(4L),
+                        new Row(6L),
+                        new Row(8L)
+                )
+        );
+    }
+
+    @Test
     public void when_startIsGreaterThanStopAndStepIsPositive_then_returnsEmpty() {
         assertRowsAnyOrder(
                 "SELECT * FROM TABLE(GENERATE_SERIES(2, 1, 1))",

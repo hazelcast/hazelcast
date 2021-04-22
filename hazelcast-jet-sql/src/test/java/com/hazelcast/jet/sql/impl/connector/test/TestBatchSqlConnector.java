@@ -21,8 +21,9 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.impl.pipeline.transform.BatchSourceTransform;
 import com.hazelcast.jet.pipeline.BatchSource;
-import com.hazelcast.jet.pipeline.test.TestSources;
+import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
+import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.jet.sql.impl.schema.MappingField;
@@ -30,6 +31,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.Table;
@@ -40,12 +42,12 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.IntStream;
 
-import static com.hazelcast.jet.sql.impl.ExpressionUtil.NOT_IMPLEMENTED_ARGUMENTS_CONTEXT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.resolveTypeForTypeFamily;
 import static java.lang.String.join;
 import static java.util.Collections.singletonList;
@@ -74,8 +76,8 @@ public class TestBatchSqlConnector implements SqlConnector {
      */
     public static void create(SqlService sqlService, String tableName, int itemCount) {
         List<String[]> values = IntStream.range(0, itemCount)
-                                         .mapToObj(i -> new String[]{String.valueOf(i)})
-                                         .collect(toList());
+                .mapToObj(i -> new String[]{String.valueOf(i)})
+                .collect(toList());
         create(sqlService, tableName, singletonList("v"), singletonList(QueryDataTypeFamily.INTEGER), values);
     }
 
@@ -95,7 +97,7 @@ public class TestBatchSqlConnector implements SqlConnector {
         }
 
         if (values.stream().flatMap(Arrays::stream).filter(Objects::nonNull)
-                  .anyMatch(n -> n.equals(NULL) || n.contains(VALUES_DELIMITER) || n.contains("'"))
+                .anyMatch(n -> n.equals(NULL) || n.contains(VALUES_DELIMITER) || n.contains("'"))
         ) {
             throw new IllegalArgumentException("The text '" + NULL + "', the newline character and apostrophe not " +
                     "supported in values");
@@ -125,7 +127,8 @@ public class TestBatchSqlConnector implements SqlConnector {
         return false;
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull Map<String, String> options,
@@ -147,7 +150,8 @@ public class TestBatchSqlConnector implements SqlConnector {
         return fields;
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
@@ -197,19 +201,23 @@ public class TestBatchSqlConnector implements SqlConnector {
         return true;
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public Vertex fullScanReader(
             @Nonnull DAG dag,
             @Nonnull Table table,
             @Nullable Expression<Boolean> predicate,
             @Nonnull List<Expression<?>> projection
     ) {
-        List<Object[]> items = ((TestBatchTable) table).rows
-                .stream()
-                .map(row -> ExpressionUtil.evaluate(predicate, projection, row, NOT_IMPLEMENTED_ARGUMENTS_CONTEXT))
-                .filter(Objects::nonNull)
-                .collect(toList());
-        BatchSource<Object[]> source = TestSources.itemsDistributed(items);
+        List<Object[]> rows = ((TestBatchTable) table).rows;
+
+        BatchSource<Object[]> source = SourceBuilder
+                .batch("batch", ctx -> {
+                    ExpressionEvalContext evalContext = SimpleExpressionEvalContext.from(ctx);
+                    return new TestBatchDataGenerator(rows, predicate, projection, evalContext);
+                })
+                .fillBufferFn(TestBatchDataGenerator::fillBuffer)
+                .build();
         ProcessorMetaSupplier pms = ((BatchSourceTransform<Object[]>) source).metaSupplier;
         return dag.newUniqueVertex(table.toString(), pms);
     }
@@ -264,6 +272,35 @@ public class TestBatchSqlConnector implements SqlConnector {
         @Override
         public int hashCode() {
             return Objects.hash(schemaName, name, rows);
+        }
+    }
+
+    private static final class TestBatchDataGenerator {
+
+        private static final int MAX_BATCH_SIZE = 1024;
+
+        private final Iterator<Object[]> iterator;
+
+        private TestBatchDataGenerator(
+                List<Object[]> rows,
+                Expression<Boolean> predicate,
+                List<Expression<?>> projections,
+                ExpressionEvalContext evalContext
+        ) {
+            this.iterator = rows.stream()
+                    .map(row -> ExpressionUtil.evaluate(predicate, projections, row, evalContext))
+                    .filter(Objects::nonNull)
+                    .iterator();
+        }
+
+        private void fillBuffer(SourceBuilder.SourceBuffer<Object[]> buffer) {
+            for (int i = 0; i < MAX_BATCH_SIZE; i++) {
+                if (iterator.hasNext()) {
+                    buffer.add(iterator.next());
+                } else {
+                    buffer.close();
+                }
+            }
         }
     }
 }

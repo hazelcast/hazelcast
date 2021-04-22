@@ -21,9 +21,10 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.impl.pipeline.transform.BatchSourceTransform;
 import com.hazelcast.jet.pipeline.BatchSource;
-import com.hazelcast.jet.pipeline.test.TestSources;
+import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
+import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.jet.sql.impl.schema.MappingField;
@@ -49,10 +50,8 @@ import java.util.Map;
 import java.util.Objects;
 
 import static com.hazelcast.jet.impl.util.Util.toList;
-import static com.hazelcast.jet.sql.impl.ExpressionUtil.NOT_IMPLEMENTED_ARGUMENTS_CONTEXT;
 import static java.time.ZoneOffset.UTC;
 import static java.util.Arrays.asList;
-import static java.util.Collections.singletonList;
 
 /**
  * A SQL source yielding a single row with all supported types.
@@ -149,8 +148,14 @@ public class TestAllTypesSqlConnector implements SqlConnector {
             @Nullable Expression<Boolean> predicate,
             @Nonnull List<Expression<?>> projection
     ) {
-        Object[] row = ExpressionUtil.evaluate(predicate, projection, VALUES, NOT_IMPLEMENTED_ARGUMENTS_CONTEXT);
-        BatchSource<Object[]> source = TestSources.items(singletonList(row));
+        BatchSource<Object[]> source = SourceBuilder
+                .batch("batch", SimpleExpressionEvalContext::from)
+                .<Object[]>fillBufferFn((ctx, buf) -> {
+                    Object[] row = ExpressionUtil.evaluate(predicate, projection, VALUES, ctx);
+                    buf.add(row);
+                    buf.close();
+                })
+                .build();
         ProcessorMetaSupplier pms = ((BatchSourceTransform<Object[]>) source).metaSupplier;
         return dag.newUniqueVertex(table.toString(), pms);
     }

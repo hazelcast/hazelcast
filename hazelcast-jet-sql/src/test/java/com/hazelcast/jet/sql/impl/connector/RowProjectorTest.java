@@ -17,10 +17,10 @@
 package com.hazelcast.jet.sql.impl.connector;
 
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.math.MultiplyFunction;
 import com.hazelcast.sql.impl.extract.QueryExtractor;
 import com.hazelcast.sql.impl.extract.QueryTarget;
@@ -53,7 +53,7 @@ public class RowProjectorTest {
                 singletonList(
                         MultiplyFunction.create(ColumnExpression.create(0, INT), ConstantExpression.create(2, INT), INT)
                 ),
-                mock(InternalSerializationService.class)
+                mock(ExpressionEvalContext.class)
         );
 
         Object[] row = projector.project(1);
@@ -70,7 +70,7 @@ public class RowProjectorTest {
                 new IdentityTarget(),
                 (Expression<Boolean>) ConstantExpression.create(Boolean.FALSE, BOOLEAN),
                 emptyList(),
-                mock(InternalSerializationService.class)
+                mock(ExpressionEvalContext.class)
         );
 
         Object[] row = projector.project(1);
