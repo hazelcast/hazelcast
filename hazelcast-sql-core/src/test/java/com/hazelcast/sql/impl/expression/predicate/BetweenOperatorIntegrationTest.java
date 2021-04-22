@@ -125,7 +125,7 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
     }
 
     @Test
-    public void betweenPredicateNullcheckTest() {
+    public void betweenPredicateNullTest() {
         putAll(new Person(null));
         checkValues("SELECT name FROM map WHERE name BETWEEN NULL AND NULL", OBJECT, new Object[]{});
         checkValues("SELECT name FROM map WHERE name BETWEEN 2 AND NULL", INTEGER, new Integer[]{});
@@ -145,15 +145,14 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
     }
 
     @Test
-    public void betweenPredicateImplicitCastsAllowedTest() {
+    public void betweenPredicateAllowedImplicitCastsTest() {
         putAll("1", "2", "3");
-
         checkValues(sqlQuery("BETWEEN 1 AND 3"), VARCHAR, new String[]{"1", "2", "3"});
         checkValues(sqlQuery("BETWEEN SYMMETRIC 3 AND 1"), VARCHAR, new String[]{"1", "2", "3"});
 
         putAll("1.5", "2.5", "3.25");
-        checkValues(sqlQuery("BETWEEN '1' AND '4'"), VARCHAR, new String[]{"1.5", "2.5", "3.25"});
-        checkValues(sqlQuery("BETWEEN SYMMETRIC '4' AND '1'"), VARCHAR, new String[]{"1.5", "2.5", "3.25"});
+        checkValues(sqlQuery("BETWEEN 1.0 AND 4"), VARCHAR, new String[]{"1.5", "2.5", "3.25"});
+        checkValues(sqlQuery("BETWEEN SYMMETRIC 4 AND 1.0"), VARCHAR, new String[]{"1.5", "2.5", "3.25"});
 
         putAll(1, 2, 3);
         checkValues(sqlQuery("BETWEEN '1' AND '3'"), INTEGER, new Integer[]{1, 2, 3});
@@ -189,7 +188,6 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
                     checkValues("SELECT this FROM map WHERE this BETWEEN ? AND         ?",
                             comparisonEquivalentResult, biValue.field1(), biValue.field2());
                 }
-
             }
         }
     }
@@ -219,7 +217,6 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
                     checkValues("SELECT this FROM map WHERE this BETWEEN ? AND         ?",
                             comparisonEquivalentResult, biValue.field1(), biValue.field2());
                 }
-
             }
         }
         assertEquals(13 * 13 * 13, cycleCounter);
