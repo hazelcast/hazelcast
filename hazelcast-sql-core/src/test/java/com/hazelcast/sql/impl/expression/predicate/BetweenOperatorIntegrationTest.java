@@ -179,6 +179,7 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
                     );
 
                     Tuple2<List<SqlRow>, HazelcastSqlException> comparisonEquivalentResult = checkComparisonEquivalent(
+                            // the query has extra spaces so that the errors are on the same positions
                             "SELECT this FROM map WHERE this >=      ? AND this <= ?",
                             classDescriptor.sqlType,
                             biValue.field1(),
@@ -206,6 +207,7 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
                     );
 
                     Tuple2<List<SqlRow>, HazelcastSqlException> comparisonEquivalentResult = checkComparisonEquivalent(
+                            // the query has extra spaces so that the errors are on the same positions
                             "SELECT this FROM map WHERE (this >=     ? AND this <= ?) OR (this <= ? AND this >= ?)",
                             classDescriptor.sqlType,
                             biValue.field1(),
@@ -227,15 +229,15 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
     public void rowNumericBetweenPredicateTest() {
         putAll(0, 1, 5, 10, 15, 25, 30);
         checkValues("SELECT * FROM map WHERE this BETWEEN ROW(0, 0) AND ROW(3, 10)", INTEGER, new Integer[][]{
-            new Integer[]{0, 0}, new Integer[]{1, 1}, new Integer[]{2, 5}, new Integer[]{3, 10},
+                new Integer[]{0, 0}, new Integer[]{1, 1}, new Integer[]{2, 5}, new Integer[]{3, 10},
         });
     }
 
     protected void checkValues(
-        String sql,
-        SqlColumnType expectedType,
-        Object[] expectedResults,
-        Object ... params
+            String sql,
+            SqlColumnType expectedType,
+            Object[] expectedResults,
+            Object... params
     ) {
         List<SqlRow> rows = execute(member, sql, params);
         assertEquals(expectedResults.length, rows.size());
@@ -257,9 +259,9 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
     }
 
     protected void checkValues(
-        String sql,
-        Tuple2<List<SqlRow>, HazelcastSqlException> expectedResults,
-        Object... params
+            String sql,
+            Tuple2<List<SqlRow>, HazelcastSqlException> expectedResults,
+            Object... params
     ) {
         try {
             List<SqlRow> rows = execute(member, sql, params);
@@ -276,19 +278,18 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
                 assertEquals(expectedType, actualType);
             }
         } catch (HazelcastSqlException e) {
-             assertNotNull(expectedResults.f1());
-             // Expected : ... Parameter at position 0 must be of BIGINT type, but VARCHAR was found
-             // Actual   : ... Parameter at position 0 must be of TINYINT type, but VARCHAR was found
-             // We are not hard-casting everything to BIGINT, so, we wouldn't use check below.
-             // assertEquals(expectedResults.getValue().getMessage(), e.getMessage());
+            assertNotNull(expectedResults.f1());
+            // Expected : ... Parameter at position 0 must be of BIGINT type, but VARCHAR was found
+            // Actual   : ... Parameter at position 0 must be of TINYINT type, but VARCHAR was found
+            // We are not hard-casting everything to BIGINT, so, we wouldn't use check below.
+            // assertEquals(expectedResults.getValue().getMessage(), e.getMessage());
         }
-
     }
 
     protected Tuple2<List<SqlRow>, HazelcastSqlException> checkComparisonEquivalent(
-        String sql,
-        SqlColumnType expectedType,
-        Object... params
+            String sql,
+            SqlColumnType expectedType,
+            Object... params
     ) {
         try {
             List<SqlRow> rows = execute(member, sql, params);
