@@ -434,6 +434,12 @@
             <groupId>com.github.erosb</groupId>
             <artifactId>everit-json-schema</artifactId>
             <version>1.12.2</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.re2j</groupId>
+                    <artifactId>re2j</artifactId>
+                </exclusion>
+            </exclusions>
             <scope>compile</scope>
         </dependency>
 
