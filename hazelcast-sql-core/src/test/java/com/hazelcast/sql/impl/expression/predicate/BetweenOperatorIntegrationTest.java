@@ -23,13 +23,13 @@ import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue;
 import com.hazelcast.sql.support.expressions.ExpressionType;
-import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runners.Parameterized;
+import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 import java.time.LocalDate;
@@ -87,7 +87,7 @@ import static org.junit.Assert.assertNull;
  * @see #betweenAsymmetricPredicateTypeCheckTest()
  * @see #betweenSymmetricPredicateTypeCheckTest()
  */
-@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
 
