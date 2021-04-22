@@ -20,6 +20,7 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.schema.TableResolver.TableListener;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -35,9 +36,12 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
@@ -59,11 +63,15 @@ public class MappingCatalogTest {
     @Mock
     private SqlConnector connector;
 
+    @Mock
+    private TableListener listener;
+
     @Before
     public void before() {
         MockitoAnnotations.openMocks(this);
 
         catalog = new MappingCatalog(nodeEngine, storage, connectorCache);
+        catalog.registerListener(listener);
     }
 
     @Test
@@ -79,7 +87,9 @@ public class MappingCatalogTest {
         // then
         assertThatThrownBy(() -> catalog.createMapping(mapping, true, true))
                 .hasMessageContaining("expected test exception");
-        verifyNoInteractions(storage);
+        verify(storage, never()).putIfAbsent(anyString(), any());
+        verify(storage, never()).put(anyString(), any());
+        verifyNoInteractions(listener);
     }
 
     @Test
@@ -90,13 +100,14 @@ public class MappingCatalogTest {
         given(connectorCache.forType(mapping.type())).willReturn(connector);
         given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields()))
                 .willReturn(singletonList(new MappingField("field_name", QueryDataType.INT)));
-        given(storage.putIfAbsent(mapping.name(), mapping)).willReturn(false);
+        given(storage.putIfAbsent(eq(mapping.name()), isA(Mapping.class))).willReturn(false);
 
         // when
         // then
         assertThatThrownBy(() -> catalog.createMapping(mapping, false, false))
                 .isInstanceOf(QueryException.class)
                 .hasMessageContaining("Mapping already exists: name");
+        verifyNoInteractions(listener);
     }
 
     @Test
@@ -107,13 +118,13 @@ public class MappingCatalogTest {
         given(connectorCache.forType(mapping.type())).willReturn(connector);
         given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields()))
                 .willReturn(singletonList(new MappingField("field_name", QueryDataType.INT)));
-        given(storage.putIfAbsent(mapping.name(), mapping)).willReturn(false);
+        given(storage.putIfAbsent(eq(mapping.name()), isA(Mapping.class))).willReturn(false);
 
         // when
         catalog.createMapping(mapping, false, true);
 
         // then
-        verify(storage).putIfAbsent(eq(mapping.name()), isA(Mapping.class));
+        verifyNoInteractions(listener);
     }
 
     @Test
@@ -130,6 +141,20 @@ public class MappingCatalogTest {
 
         // then
         verify(storage).put(eq(mapping.name()), isA(Mapping.class));
+        verify(listener).onTableChanged();
+    }
+
+    @Test
+    public void when_removesExistingMapping_then_callsListeners() {
+        // given
+        String name = "name";
+
+        given(storage.remove(name)).willReturn(mapping());
+
+        // when
+        // then
+        catalog.removeMapping(name, false);
+        verify(listener).onTableChanged();
     }
 
     @Test
@@ -137,13 +162,14 @@ public class MappingCatalogTest {
         // given
         String name = "name";
 
-        given(storage.remove(name)).willReturn(false);
+        given(storage.remove(name)).willReturn(null);
 
         // when
         // then
         assertThatThrownBy(() -> catalog.removeMapping(name, false))
                 .isInstanceOf(QueryException.class)
                 .hasMessageContaining("Mapping does not exist: name");
+        verifyNoInteractions(listener);
     }
 
     @Test
@@ -151,11 +177,12 @@ public class MappingCatalogTest {
         // given
         String name = "name";
 
-        given(storage.remove(name)).willReturn(false);
+        given(storage.remove(name)).willReturn(null);
 
         // when
         // then
         catalog.removeMapping(name, true);
+        verifyNoInteractions(listener);
     }
 
     private static Mapping mapping() {

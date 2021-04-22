@@ -22,11 +22,8 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
 import com.hazelcast.sql.SqlService;
-import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
@@ -38,7 +35,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-@Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlJobManagementTest extends SqlTestSupport {
 
     private static final String COMPLETED_JOB_NAME = "completedJob";
@@ -318,7 +314,7 @@ public class SqlJobManagementTest extends SqlTestSupport {
         assertThat(planCache(instance()).size()).isEqualTo(1);
 
         sqlService.execute("DROP MAPPING target");
-        assertTrueEventually(() -> assertThat(planCache(instance()).size()).isZero());
+        assertThat(planCache(instance()).size()).isZero();
     }
 
     private void createCompletedJob() {
