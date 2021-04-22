@@ -29,7 +29,7 @@
             <useProjectArtifact>false</useProjectArtifact>
             <includes>
                 <include>com.hazelcast:hazelcast</include>
-                <include>com.hazelcast.jet:hazelcast-jet-sql</include>
+                <include>com.hazelcast:hazelcast-sql</include>
                 <include>org.apache.logging.log4j:*</include>
                 <include>org.slf4j:*</include>
                 <include>info.picocli:picocli</include>
