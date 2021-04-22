@@ -136,6 +136,18 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
         checkValue0(sql, expectedType, expectedResult, params);
     }
 
+    /**
+     * Execute a query, assert that it returns exactly 1 row and 1 column. Assert
+     * the type of the result and optionally the result value.
+     *
+     * @param sql            the input query
+     * @param expectedType   type of the returned value
+     * @param expectedResult expected result value. If it's {@link #SKIP_VALUE_CHECK},
+     *                       don't assert the value
+     * @param params         query parameters
+     *
+     * @return the result value
+     */
     protected Object checkValue0(
             String sql,
             SqlColumnType expectedType,

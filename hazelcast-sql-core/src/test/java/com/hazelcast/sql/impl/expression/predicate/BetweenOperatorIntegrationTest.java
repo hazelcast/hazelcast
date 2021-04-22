@@ -23,6 +23,7 @@ import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue;
 import com.hazelcast.sql.support.expressions.ExpressionType;
+import com.hazelcast.sql.support.expressions.ExpressionTypes;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -46,8 +47,6 @@ import static com.hazelcast.sql.SqlColumnType.DOUBLE;
 import static com.hazelcast.sql.SqlColumnType.INTEGER;
 import static com.hazelcast.sql.SqlColumnType.OBJECT;
 import static com.hazelcast.sql.SqlColumnType.TIME;
-import static com.hazelcast.sql.SqlColumnType.TIMESTAMP;
-import static com.hazelcast.sql.SqlColumnType.TIMESTAMP_WITH_TIME_ZONE;
 import static com.hazelcast.sql.SqlColumnType.VARCHAR;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -91,21 +90,8 @@ import static org.junit.Assert.assertNull;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
 
-    static final ClassWithSqlColumnType<?>[] CLASS_DESCRIPTORS = new ClassWithSqlColumnType<?>[]{
-            new ClassWithSqlColumnType<>(new ExpressionType.StringType(), SqlColumnType.VARCHAR),
-            new ClassWithSqlColumnType<>(new ExpressionType.BooleanType(), SqlColumnType.BOOLEAN),
-            new ClassWithSqlColumnType<>(new ExpressionType.ByteType(), SqlColumnType.TINYINT),
-            new ClassWithSqlColumnType<>(new ExpressionType.ShortType(), SqlColumnType.SMALLINT),
-            new ClassWithSqlColumnType<>(new ExpressionType.IntegerType(), SqlColumnType.INTEGER),
-            new ClassWithSqlColumnType<>(new ExpressionType.LongType(), SqlColumnType.BIGINT),
-            new ClassWithSqlColumnType<>(new ExpressionType.BigDecimalType(), SqlColumnType.DECIMAL),
-            new ClassWithSqlColumnType<>(new ExpressionType.FloatType(), SqlColumnType.REAL),
-            new ClassWithSqlColumnType<>(new ExpressionType.DoubleType(), SqlColumnType.DOUBLE),
-            new ClassWithSqlColumnType<>(new ExpressionType.LocalDateType(), SqlColumnType.DATE),
-            new ClassWithSqlColumnType<>(new ExpressionType.LocalTimeType(), SqlColumnType.TIME),
-            new ClassWithSqlColumnType<>(new ExpressionType.LocalDateTimeType(), TIMESTAMP),
-            new ClassWithSqlColumnType<>(new ExpressionType.OffsetDateTimeType(), TIMESTAMP_WITH_TIME_ZONE),
-    };
+    // TODO [viliam] remove OBJECT?
+    static final ExpressionType<?>[] TESTED_TYPES = ExpressionTypes.allExcept(ExpressionTypes.OBJECT);
 
     @Test
     public void basicBetweenPredicateNumericTest() {
@@ -168,26 +154,36 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
     }
 
     @Test
+    public void test_dynamicParamTypeWidening() {
+        putAll((byte) 0);
+        checkValue0(sqlQuery("BETWEEN ? AND ?"), SqlColumnType.TINYINT, (byte) 0, 1000, 1000);
+    }
+
+    @Test
     public void betweenAsymmetricPredicateTypeCheckTest() {
-        for (ClassWithSqlColumnType<?> classDescriptor : CLASS_DESCRIPTORS) {
-            putAll(classDescriptor.expressionType.nonNullValues().toArray());
-            for (ClassWithSqlColumnType<?> lowerBoundDesc : CLASS_DESCRIPTORS) {
-                for (ClassWithSqlColumnType<?> upperBoundDesc : CLASS_DESCRIPTORS) {
+        for (ExpressionType<?> fieldType : TESTED_TYPES) {
+            putAll(fieldType.nonNullValues().toArray());
+            for (ExpressionType<?> lowerBoundType : TESTED_TYPES) {
+                for (ExpressionType<?> upperBoundType : TESTED_TYPES) {
                     ExpressionBiValue biValue = ExpressionBiValue.createBiValue(
-                            lowerBoundDesc.expressionType.valueFrom(),
-                            upperBoundDesc.expressionType.valueTo()
+                            lowerBoundType.valueFrom(),
+                            upperBoundType.valueTo()
                     );
 
-                    Tuple2<List<SqlRow>, HazelcastSqlException> comparisonEquivalentResult = checkComparisonEquivalent(
-                            // the query has extra spaces so that the errors are on the same positions
+                    Tuple2<List<SqlRow>, HazelcastSqlException> comparisonEquivalentResult = executePossiblyFailingQuery(
+                            // the queries have extra spaces so that the errors are on the same positions
                             "SELECT this FROM map WHERE this >=      ? AND this <= ?",
-                            classDescriptor.sqlType,
+                            fieldType.getFieldConverterType().getTypeFamily().getPublicType(),
                             biValue.field1(),
                             biValue.field2()
                     );
 
-                    checkValues("SELECT this FROM map WHERE this BETWEEN ? AND         ?",
-                            comparisonEquivalentResult, biValue.field1(), biValue.field2());
+                    try {
+                        checkSuccessOrFailure("SELECT this FROM map WHERE this BETWEEN ? AND         ?",
+                                comparisonEquivalentResult, biValue.field1(), biValue.field2());
+                    } catch (Throwable e) {
+                        throw new AssertionError("For [" + fieldType + ", " + lowerBoundType + ", " + upperBoundType + "]: " + e, e);
+                    }
                 }
             }
         }
@@ -196,32 +192,36 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
     @Test
     public void betweenSymmetricPredicateTypeCheckTest() {
         int cycleCounter = 0;
-        for (ClassWithSqlColumnType<?> classDescriptor : CLASS_DESCRIPTORS) {
-            putAll(classDescriptor.expressionType.nonNullValues().toArray());
-            for (ClassWithSqlColumnType<?> lowerBoundDesc : CLASS_DESCRIPTORS) {
-                for (ClassWithSqlColumnType<?> upperBoundDesc : CLASS_DESCRIPTORS) {
+        for (ExpressionType<?> fieldType : TESTED_TYPES) {
+            putAll(fieldType.nonNullValues().toArray());
+            for (ExpressionType<?> lowerBoundType : TESTED_TYPES) {
+                for (ExpressionType<?> upperBoundType : TESTED_TYPES) {
                     ++cycleCounter;
                     ExpressionBiValue biValue = ExpressionBiValue.createBiValue(
-                            lowerBoundDesc.expressionType.valueFrom(),
-                            upperBoundDesc.expressionType.valueTo()
+                            lowerBoundType.valueFrom(),
+                            upperBoundType.valueTo()
                     );
 
-                    Tuple2<List<SqlRow>, HazelcastSqlException> comparisonEquivalentResult = checkComparisonEquivalent(
-                            // the query has extra spaces so that the errors are on the same positions
+                    Tuple2<List<SqlRow>, HazelcastSqlException> comparisonEquivalentResult = executePossiblyFailingQuery(
+                            // the queries have extra spaces so that the errors are on the same positions
                             "SELECT this FROM map WHERE (this >=     ? AND this <= ?) OR (this <= ? AND this >= ?)",
-                            classDescriptor.sqlType,
+                            fieldType.getFieldConverterType().getTypeFamily().getPublicType(),
                             biValue.field1(),
                             biValue.field2(),
                             biValue.field2(),
                             biValue.field1()
                     );
 
-                    checkValues("SELECT this FROM map WHERE this BETWEEN ? AND         ?",
-                            comparisonEquivalentResult, biValue.field1(), biValue.field2());
+                    try {
+                        checkSuccessOrFailure("SELECT this FROM map WHERE this BETWEEN SYMMETRIC ? AND         ?",
+                                comparisonEquivalentResult, biValue.field1(), biValue.field2());
+                    } catch (Throwable e) {
+                        throw new AssertionError("For [" + fieldType + ", " + lowerBoundType + ", " + upperBoundType + "]: " + e, e);
+                    }
                 }
             }
         }
-        assertEquals(13 * 13 * 13, cycleCounter);
+        assertEquals(TESTED_TYPES.length * TESTED_TYPES.length * TESTED_TYPES.length, cycleCounter);
     }
 
     @Test
@@ -258,16 +258,16 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
         }
     }
 
-    protected void checkValues(
+    protected void checkSuccessOrFailure(
             String sql,
-            Tuple2<List<SqlRow>, HazelcastSqlException> expectedResults,
+            Tuple2<List<SqlRow>, HazelcastSqlException> expectedOutcome,
             Object... params
     ) {
         try {
             List<SqlRow> rows = execute(member, sql, params);
-            assertNull(expectedResults.f1());
-            assertEquals(expectedResults.f0().size(), rows.size());
-            List<SqlRow> expectedResultsList = expectedResults.f0();
+            assertNull(expectedOutcome.f1());
+            assertEquals(expectedOutcome.f0().size(), rows.size());
+            List<SqlRow> expectedResultsList = expectedOutcome.f0();
             for (int i = 0; i < rows.size(); i++) {
                 Object actualObject = rows.get(i).getObject(0);
                 Object expectedObject = expectedResultsList.get(i).getObject(0);
@@ -278,35 +278,35 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
                 assertEquals(expectedType, actualType);
             }
         } catch (HazelcastSqlException e) {
-            assertNotNull(expectedResults.f1());
+            assertNotNull(expectedOutcome.f1());
             // Expected : ... Parameter at position 0 must be of BIGINT type, but VARCHAR was found
             // Actual   : ... Parameter at position 0 must be of TINYINT type, but VARCHAR was found
             // We are not hard-casting everything to BIGINT, so, we wouldn't use check below.
-            // assertEquals(expectedResults.getValue().getMessage(), e.getMessage());
+             assertEquals(expectedOutcome.f1().getMessage(), e.getMessage());
         }
     }
 
-    protected Tuple2<List<SqlRow>, HazelcastSqlException> checkComparisonEquivalent(
+    /**
+     * Execute a query and return either the result, or the exception it threw.
+     */
+    protected Tuple2<List<SqlRow>, HazelcastSqlException> executePossiblyFailingQuery(
             String sql,
-            SqlColumnType expectedType,
+            SqlColumnType firstColumnExpectedType,
             Object... params
     ) {
         try {
             List<SqlRow> rows = execute(member, sql, params);
             for (SqlRow row : rows) {
-                // Here we have tested ComparisonPredicate, so we just check the type correctness.
-                assertEquals(expectedType, row.getMetadata().getColumn(0).getType());
+                assertEquals(firstColumnExpectedType, row.getMetadata().getColumn(0).getType());
             }
             return tuple2(rows, null);
         } catch (HazelcastSqlException e) {
             return tuple2(Collections.emptyList(), e);
-        } finally {
-            assertEquals("Impossible situation, not reachable", 0, 0);
         }
     }
 
-    private String sqlQuery(String inClause) {
-        return "SELECT this FROM map WHERE this " + inClause;
+    private String sqlQuery(String betweenClause) {
+        return "SELECT this FROM map WHERE this " + betweenClause;
     }
 
     static class Person implements Serializable {
@@ -314,16 +314,6 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
 
         Person(String name) {
             this.name = name;
-        }
-    }
-
-    static class ClassWithSqlColumnType<T> {
-        public ExpressionType<T> expressionType;
-        public SqlColumnType sqlType;
-
-        ClassWithSqlColumnType(ExpressionType<T> expressionType, SqlColumnType sqlType) {
-            this.expressionType = expressionType;
-            this.sqlType = sqlType;
         }
     }
 }
