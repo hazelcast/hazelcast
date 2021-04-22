@@ -27,15 +27,20 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 public abstract class ExpressionType<T> {
 
     public abstract String typeName();
     public abstract List<T> values();
-    public abstract List<T> nonNullValues();
     public abstract T valueFrom();
     public abstract T valueTo();
     public abstract QueryDataType getFieldConverterType();
+
+    public final List<T> nonNullValues() {
+        return values().stream().filter(Objects::nonNull).collect(Collectors.toList());
+    }
 
     @Override
     public String toString() {
@@ -51,11 +56,6 @@ public abstract class ExpressionType<T> {
         @Override
         public List<Boolean> values() {
             return Arrays.asList(true, false, null);
-        }
-
-        @Override
-        public List<Boolean> nonNullValues() {
-            return Arrays.asList(true, false);
         }
 
         @Override
@@ -86,11 +86,6 @@ public abstract class ExpressionType<T> {
         }
 
         @Override
-        public List<Byte> nonNullValues() {
-            return Arrays.asList((byte) 1, (byte) 2, (byte) 3, (byte) 4, (byte) 5);
-        }
-
-        @Override
         public Byte valueFrom() {
             return (byte) 2;
         }
@@ -115,11 +110,6 @@ public abstract class ExpressionType<T> {
         @Override
         public List<Short> values() {
             return Arrays.asList((short) 1, (short) 2, (short) 3, (short) 4, (short) 5, null);
-        }
-
-        @Override
-        public List<Short> nonNullValues() {
-            return Arrays.asList((short) 1, (short) 2, (short) 3, (short) 4, (short) 5);
         }
 
         @Override
@@ -150,11 +140,6 @@ public abstract class ExpressionType<T> {
         }
 
         @Override
-        public List<Integer> nonNullValues() {
-            return Arrays.asList(1, 2, 3, 4, 5);
-        }
-
-        @Override
         public Integer valueFrom() {
             return 2;
         }
@@ -179,11 +164,6 @@ public abstract class ExpressionType<T> {
         @Override
         public List<Long> values() {
             return Arrays.asList(1L, 2L, 3L, 4L, 5L, null);
-        }
-
-        @Override
-        public List<Long> nonNullValues() {
-            return Arrays.asList(1L, 2L, 3L, 4L, 5L);
         }
 
         @Override
@@ -217,17 +197,6 @@ public abstract class ExpressionType<T> {
                     new BigDecimal("4"),
                     new BigDecimal("5"),
                     null
-            );
-        }
-
-        @Override
-        public List<BigDecimal> nonNullValues() {
-            return Arrays.asList(
-                    new BigDecimal("1"),
-                    new BigDecimal("2"),
-                    new BigDecimal("3"),
-                    new BigDecimal("4"),
-                    new BigDecimal("5")
             );
         }
 
@@ -266,17 +235,6 @@ public abstract class ExpressionType<T> {
         }
 
         @Override
-        public List<BigInteger> nonNullValues() {
-            return Arrays.asList(
-                    new BigInteger("1"),
-                    new BigInteger("2"),
-                    new BigInteger("3"),
-                    new BigInteger("4"),
-                    new BigInteger("5")
-            );
-        }
-
-        @Override
         public BigInteger valueFrom() {
             return new BigInteger("2");
         }
@@ -301,11 +259,6 @@ public abstract class ExpressionType<T> {
         @Override
         public List<Float> values() {
             return Arrays.asList(1f, 2f, 3f, 4f, 5f, null);
-        }
-
-        @Override
-        public List<Float> nonNullValues() {
-            return Arrays.asList(1f, 2f, 3f, 4f, 5f);
         }
 
         @Override
@@ -336,11 +289,6 @@ public abstract class ExpressionType<T> {
         }
 
         @Override
-        public List<Double> nonNullValues() {
-            return Arrays.asList(1d, 2d, 3d, 4d, 5d);
-        }
-
-        @Override
         public Double valueFrom() {
             return 2d;
         }
@@ -368,11 +316,6 @@ public abstract class ExpressionType<T> {
         }
 
         @Override
-        public List<String> nonNullValues() {
-            return Arrays.asList("a", "b", "c", "d", "e");
-        }
-
-        @Override
         public String valueFrom() {
             return "b";
         }
@@ -397,11 +340,6 @@ public abstract class ExpressionType<T> {
         @Override
         public List<Character> values() {
             return Arrays.asList('a', 'b', 'c', 'd', 'e', null);
-        }
-
-        @Override
-        public List<Character> nonNullValues() {
-            return Arrays.asList('a', 'b', 'c', 'd', 'e');
         }
 
         @Override
@@ -438,17 +376,6 @@ public abstract class ExpressionType<T> {
         }
 
         @Override
-        public List<LocalTime> nonNullValues() {
-            return Arrays.asList(
-                    LocalTime.parse("01:00"),
-                    LocalTime.parse("02:00"),
-                    LocalTime.parse("03:00"),
-                    LocalTime.parse("04:00"),
-                    LocalTime.parse("05:00")
-            );
-        }
-
-        @Override
         public LocalTime valueFrom() {
             return LocalTime.parse("02:00");
         }
@@ -479,17 +406,6 @@ public abstract class ExpressionType<T> {
                     LocalDate.parse("2020-01-04"),
                     LocalDate.parse("2020-01-05"),
                     null);
-        }
-
-        @Override
-        public List<LocalDate> nonNullValues() {
-            return Arrays.asList(
-                    LocalDate.parse("2020-01-01"),
-                    LocalDate.parse("2020-01-02"),
-                    LocalDate.parse("2020-01-03"),
-                    LocalDate.parse("2020-01-04"),
-                    LocalDate.parse("2020-01-05")
-            );
         }
 
         @Override
@@ -526,17 +442,6 @@ public abstract class ExpressionType<T> {
         }
 
         @Override
-        public List<LocalDateTime> nonNullValues() {
-            return Arrays.asList(
-                    LocalDateTime.parse("2020-01-01T00:00:00"),
-                    LocalDateTime.parse("2020-01-02T00:00:00"),
-                    LocalDateTime.parse("2020-01-03T00:00:00"),
-                    LocalDateTime.parse("2020-01-04T00:00:00"),
-                    LocalDateTime.parse("2020-01-05T00:00:00")
-            );
-        }
-
-        @Override
         public LocalDateTime valueFrom() {
             return LocalDateTime.parse("2020-01-02T00:00:00");
         }
@@ -570,17 +475,6 @@ public abstract class ExpressionType<T> {
         }
 
         @Override
-        public List<OffsetDateTime> nonNullValues() {
-            return Arrays.asList(
-                    OffsetDateTime.parse("2020-01-01T00:00:00+00:00"),
-                    OffsetDateTime.parse("2020-01-02T00:00:00+00:00"),
-                    OffsetDateTime.parse("2020-01-03T00:00:00+00:00"),
-                    OffsetDateTime.parse("2020-01-04T00:00:00+00:00"),
-                    OffsetDateTime.parse("2020-01-05T00:00:00+00:00")
-            );
-        }
-
-        @Override
         public OffsetDateTime valueFrom() {
             return OffsetDateTime.parse("2020-01-02T00:00:00+00:00");
         }
@@ -604,17 +498,6 @@ public abstract class ExpressionType<T> {
 
         @Override
         public List<Object> values() {
-            return Arrays.asList(
-                    new ObjectHolder(1),
-                    new ObjectHolder(2),
-                    new ObjectHolder(3),
-                    new ObjectHolder(4),
-                    new ObjectHolder(5),
-                    null);
-        }
-
-        @Override
-        public List<Object> nonNullValues() {
             return Arrays.asList(
                     new ObjectHolder(1),
                     new ObjectHolder(2),

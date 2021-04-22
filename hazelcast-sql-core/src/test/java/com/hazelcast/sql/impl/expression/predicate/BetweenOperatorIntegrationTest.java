@@ -52,7 +52,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
-
 /**
  * <p> Test organization for BETWEEN operator.
  * <p> Hazelcast SQL engine has 13 types in their type system (also OBJECT and NULL, but they don't count in case of BETWEEN operator)
@@ -248,7 +247,6 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
         });
     }
 
-
     protected void checkValues(
         String sql,
         SqlColumnType expectedType,
@@ -345,6 +343,4 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
     private String rowSqlQuery(String inClause) {
         return "SELECT * FROM map WHERE this " + inClause;
     }
-
-
 }
