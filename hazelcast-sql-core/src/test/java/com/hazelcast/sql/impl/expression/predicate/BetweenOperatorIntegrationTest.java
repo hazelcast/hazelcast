@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.expression.predicate;
 
-import com.hazelcast.core.HazelcastException;
+import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlRow;
@@ -39,6 +39,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
+import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.sql.SqlColumnType.BIGINT;
 import static com.hazelcast.sql.SqlColumnType.DATE;
 import static com.hazelcast.sql.SqlColumnType.DOUBLE;
@@ -53,24 +54,35 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 /**
- * <p> Test organization for BETWEEN operator.
- * <p> Hazelcast SQL engine has 13 types in their type system (also OBJECT and NULL, but they don't count in case of BETWEEN operator)
- * <p> BETWEEN operator has 3 arguments and test should check 13*13*13 = 2197 possible arguments type combination.
- * <p> Test of BETWEEN operator described below.
+ * Test for BETWEEN operator.
+ * <p>
+ * Hazelcast SQL engine has 13 types in its type system (also OBJECT and
+ * NULL, but they don't count in case of BETWEEN operator). BETWEEN
+ * operator has 3 arguments and the test should check 13*13*13 = 2197
+ * possible arguments type combination.
+ * <p>
+ * The BETWEEN operator has two possible modes:<ul>
+ *     <li>ASYMMETRIC, which is default mode. SQL engine converts "a BETWEEN b
+ *     AND c" to "a <= b AND a >= c"
  *
- * <p> First of all, BETWEEN operator has two possible mods :
- * <p> - ASYMMETRIC, which is default mode. SQL engine converts "a BETWEEN b AND c" to "a <= b AND a >= c"
- * <p> - SYMMETRIC. It it can be used in cases where the user is not sure if c >= b.
- * SQL engine converts "a SYMMETRIC BETWEEN b AND c" to "(a <= b AND a >= c) OR (a >= b AND a <= c)"
- * <p> Types are expressed by {@link com.hazelcast.sql.support.expressions.ExpressionType} and it's subclasses.
- * Also, There are a lists of prepared items to write to IMap for each type in ExpressionType subclasses.
+ *     <li>SYMMETRIC. It it can be used in cases where the user is not sure
+ *     that c >= b. SQL engine converts "a SYMMETRIC BETWEEN b AND c" to "(a <=
+ *     b AND a >= c) OR (a >= b AND a <= c)"
+ * </ul>
  *
- * <p> First, test writes to IMap prepared collection of elements with concrete types.
- * <p> Second, test launches the query with equivalent comparisons : <code>SELECT this FROM map WHERE this >= arg1 AND this <= arg2}</code> .
- * <p> If exception throws, test catches it and returns exception.
- * <p> If everything good, return gained result as List of SqlRows.
- * <p> Finally, test launches the query with BETWEEN action : "SELECT this FROM map WHERE this BETWEEN arg1 AND arg2" .
- * here, if exception happens, test compares with exception from first query. Otherwise, if query was correct, compare the results.
+ * <p>
+ * Types are represented by {@link ExpressionType} and its subclasses.
+ * Also, there are lists of values to write to an IMap for each type in
+ * {@link ExpressionType} subclasses.
+ *
+ * <p>
+ * Testing algorithm:<ul>
+ * <li>The test writes to IMap a collection of elements with the desired types.
+ * <li>It executes a query with an equivalent predicate not using BETWEEN
+ * (see above)
+ * <li>It intercepts the result or the exception
+ * <li>Finally, the test executes a query with BETWEEN operator and asserts
+ * the result or the exception is the same as for the equivalent query.
  *
  * @see #betweenAsymmetricPredicateTypeCheckTest()
  * @see #betweenSymmetricPredicateTypeCheckTest()
@@ -78,21 +90,12 @@ import static org.junit.Assert.assertNull;
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
+
     static class Person implements Serializable {
         public final String name;
 
         Person(String name) {
             this.name = name;
-        }
-    }
-
-    static class Pair<T, E extends HazelcastException> {
-        T result;
-        E exception;
-
-        Pair(T result, E exception) {
-            this.result = result;
-            this.exception = exception;
         }
     }
 
@@ -194,7 +197,7 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
                             upperBoundDesc.expressionType.valueTo()
                     );
 
-                    Pair<List<SqlRow>, HazelcastSqlException> comparisonEquivalentResult = checkComparisonEquivalent(
+                    Tuple2<List<SqlRow>, HazelcastSqlException> comparisonEquivalentResult = checkComparisonEquivalent(
                             sqlComparisonEquivalentQuery(),
                             classDescriptor.sqlType,
                             biValue.field1(),
@@ -221,7 +224,7 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
                             upperBoundDesc.expressionType.valueTo()
                     );
 
-                    Pair<List<SqlRow>, HazelcastSqlException> comparisonEquivalentResult = checkComparisonEquivalent(
+                    Tuple2<List<SqlRow>, HazelcastSqlException> comparisonEquivalentResult = checkComparisonEquivalent(
                             sqlSymmetricComparisonEquivalentQuery(),
                             classDescriptor.sqlType,
                             biValue.field1(),
@@ -274,14 +277,14 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
 
     protected void checkValues(
         String sql,
-        Pair<List<SqlRow>, HazelcastSqlException> expectedResults,
+        Tuple2<List<SqlRow>, HazelcastSqlException> expectedResults,
         Object... params
     ) {
         try {
             List<SqlRow> rows = execute(member, sql, params);
-            assertNull(expectedResults.exception);
-            assertEquals(expectedResults.result.size(), rows.size());
-            List<SqlRow> expectedResultsList = expectedResults.result;
+            assertNull(expectedResults.f1());
+            assertEquals(expectedResults.f0().size(), rows.size());
+            List<SqlRow> expectedResultsList = expectedResults.f0();
             for (int i = 0; i < rows.size(); i++) {
                 Object actualObject = rows.get(i).getObject(0);
                 Object expectedObject = expectedResultsList.get(i).getObject(0);
@@ -292,7 +295,7 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
                 assertEquals(expectedType, actualType);
             }
         } catch (HazelcastSqlException e) {
-             assertNotNull(expectedResults.exception);
+             assertNotNull(expectedResults.f1());
              // Expected : ... Parameter at position 0 must be of BIGINT type, but VARCHAR was found
              // Actual   : ... Parameter at position 0 must be of TINYINT type, but VARCHAR was found
              // We are not hard-casting everything to BIGINT, so, we wouldn't use check below.
@@ -301,7 +304,7 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
 
     }
 
-    protected Pair<List<SqlRow>, HazelcastSqlException> checkComparisonEquivalent(
+    protected Tuple2<List<SqlRow>, HazelcastSqlException> checkComparisonEquivalent(
         String sql,
         SqlColumnType expectedType,
         Object... params
@@ -312,9 +315,9 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
                 // Here we have tested ComparisonPredicate, so we just check the type correctness.
                 assertEquals(expectedType, row.getMetadata().getColumn(0).getType());
             }
-            return new Pair<>(rows, null);
+            return tuple2(rows, null);
         } catch (HazelcastSqlException e) {
-            return new Pair<>(Collections.emptyList(), e);
+            return tuple2(Collections.emptyList(), e);
         } finally {
             assertEquals("Impossible situation, not reachable", 0, 0);
         }
