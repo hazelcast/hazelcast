@@ -41,31 +41,29 @@ public final class BinaryOperatorOperandTypeInference implements SqlOperandTypeI
 
         boolean hasParameters = binding.operands().stream().anyMatch((operand) -> operand.getKind() == SqlKind.DYNAMIC_PARAM);
 
-        int unknownTypeOperandIndex = -1;
+        int knownTypeOperandIndex = -1;
         RelDataType knownType = null;
 
         for (int i = 0; i < binding.getOperandCount(); i++) {
-            RelDataType operandType = binding.getOperandType(i);
+            operandTypes[i] = binding.getOperandType(i);
 
-            if (operandType.equals(binding.getValidator().getUnknownType())) {
-                // Will resolve operand type at this index later.
-                unknownTypeOperandIndex = i;
-            } else {
-                if (hasParameters && toHazelcastType(operandType.getSqlTypeName()).getTypeFamily().isNumericInteger()) {
+            if (!operandTypes[i].equals(binding.getValidator().getUnknownType())) {
+                if (hasParameters && toHazelcastType(operandTypes[i].getSqlTypeName()).getTypeFamily().isNumericInteger()) {
                     // If we are here, the operands are a parameter and a numeric expression.
                     // We widen the type of the numeric expression to BIGINT, so that an expression `1 > ?` is resolved to
                     // `(BIGINT)1 > (BIGINT)?` rather than `(TINYINT)1 > (TINYINT)?`
                     RelDataType newOperandType = createType(
                             binding.getTypeFactory(),
                             SqlTypeName.BIGINT,
-                            operandType.isNullable()
+                            operandTypes[i].isNullable()
                     );
 
-                    operandType = newOperandType;
+                    operandTypes[i] = newOperandType;
                 }
 
                 if (knownType == null || knownType.getSqlTypeName() == SqlTypeName.NULL) {
-                    knownType = operandType;
+                    knownType = operandTypes[i];
+                    knownTypeOperandIndex = i;
                 }
             }
         }
@@ -76,18 +74,13 @@ public final class BinaryOperatorOperandTypeInference implements SqlOperandTypeI
             throw new HazelcastCallBinding(binding).newValidationSignatureError();
         }
 
-        operandTypes[0] = knownType;
-        operandTypes[1] = knownType;
-
-        // If there is an operand with an unresolved type, set it to the known type.
-        if (unknownTypeOperandIndex != -1) {
-            if (SqlTypeName.INTERVAL_TYPES.contains(knownType.getSqlTypeName())) {
-                // If there is an interval on the one side, assume that the other side is a timestamp,
-                // because this is the only viable overload.
-                operandTypes[unknownTypeOperandIndex] = createType(binding.getTypeFactory(), SqlTypeName.TIMESTAMP, true);
-            } else {
-                operandTypes[unknownTypeOperandIndex] = knownType;
-            }
+        if (SqlTypeName.INTERVAL_TYPES.contains(knownType.getSqlTypeName())
+                && operandTypes[1 - knownTypeOperandIndex].getSqlTypeName() == SqlTypeName.NULL) {
+            // If there is an interval on the one side and NULL on the other, assume that the other side is a TIMESTAMP,
+            // because this is the only viable overload.
+            operandTypes[1 - knownTypeOperandIndex] = createType(binding.getTypeFactory(), SqlTypeName.TIMESTAMP, true);
+        } else {
+            operandTypes[1 - knownTypeOperandIndex] = knownType;
         }
     }
 }
