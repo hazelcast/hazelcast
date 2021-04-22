@@ -22,6 +22,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static com.hazelcast.sql.impl.SqlTestSupport.nodeEngine;
+import static java.util.Arrays.stream;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class SqlPlanCacheTest extends SqlTestSupport {
@@ -31,11 +32,12 @@ public class SqlPlanCacheTest extends SqlTestSupport {
         initialize(2, null);
 
         // effectively disable periodic plan cache validation
-        nodeEngine(instances()[1].getHazelcastInstance())
+        stream(instances()).forEach(instance -> nodeEngine(instance.getHazelcastInstance())
                 .getSqlService()
                 .getInternalService()
                 .getStateRegistryUpdater()
-                .setStateCheckFrequency(Long.MAX_VALUE);
+                .setStateCheckFrequency(Long.MAX_VALUE)
+        );
     }
 
     @Test
