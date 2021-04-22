@@ -180,13 +180,14 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
                     );
 
                     Tuple2<List<SqlRow>, HazelcastSqlException> comparisonEquivalentResult = checkComparisonEquivalent(
-                            sqlComparisonEquivalentQuery(),
+                            "SELECT this FROM map WHERE this >=      ? AND this <= ?",
                             classDescriptor.sqlType,
                             biValue.field1(),
                             biValue.field2()
                     );
 
-                    checkValues(sqlBetweenQuery(), comparisonEquivalentResult, biValue.field1(), biValue.field2());
+                    checkValues("SELECT this FROM map WHERE this BETWEEN ? AND         ?",
+                            comparisonEquivalentResult, biValue.field1(), biValue.field2());
                 }
 
             }
@@ -207,7 +208,7 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
                     );
 
                     Tuple2<List<SqlRow>, HazelcastSqlException> comparisonEquivalentResult = checkComparisonEquivalent(
-                            sqlSymmetricComparisonEquivalentQuery(),
+                            "SELECT this FROM map WHERE (this >=     ? AND this <= ?) OR (this <= ? AND this >= ?)",
                             classDescriptor.sqlType,
                             biValue.field1(),
                             biValue.field2(),
@@ -215,7 +216,8 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
                             biValue.field1()
                     );
 
-                    checkValues(sqlSymmetricBetweenQuery(), comparisonEquivalentResult, biValue.field1(), biValue.field2());
+                    checkValues("SELECT this FROM map WHERE this BETWEEN ? AND         ?",
+                            comparisonEquivalentResult, biValue.field1(), biValue.field2());
                 }
 
             }
@@ -227,7 +229,7 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
     @Ignore(value = "Un-ignore after engines merge")
     public void rowNumericBetweenPredicateTest() {
         putAll(0, 1, 5, 10, 15, 25, 30);
-        checkValues(rowSqlQuery("BETWEEN ROW(0, 0) AND ROW(3, 10)"), INTEGER, new Integer[][]{
+        checkValues("SELECT * FROM map WHERE this BETWEEN ROW(0, 0) AND ROW(3, 10)", INTEGER, new Integer[][]{
             new Integer[]{0, 0}, new Integer[]{1, 1}, new Integer[]{2, 5}, new Integer[]{3, 10},
         });
     }
@@ -247,7 +249,7 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
         if (rows.get(0).getObject(0) instanceof Integer) {
             rows.sort(Comparator.comparingInt(a -> a.getObject(0)));
         } else if (rows.get(0).getObject(0) instanceof Comparable) {
-            rows.sort((a, b) -> ((Comparable) a.getObject(0)).compareTo(b.getObject(0)));
+            rows.sort((a, b) -> ((Comparable<?>) a.getObject(0)).compareTo(b.getObject(0)));
         }
 
         for (int i = 0; i < expectedResults.length; i++) {
@@ -307,26 +309,6 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
 
     private String sqlQuery(String inClause) {
         return "SELECT this FROM map WHERE this " + inClause;
-    }
-
-    private String sqlBetweenQuery() {
-        return "SELECT this FROM map WHERE this BETWEEN ? AND         ?";
-    }
-
-    private String sqlComparisonEquivalentQuery() {
-        return "SELECT this FROM map WHERE this >=      ? AND this <= ?";
-    }
-
-    private String sqlSymmetricBetweenQuery() {
-        return "SELECT this FROM map WHERE this BETWEEN ? AND         ?";
-    }
-
-    private String sqlSymmetricComparisonEquivalentQuery() {
-        return "SELECT this FROM map WHERE (this >=     ? AND this <= ?) OR (this <= ? AND this >= ?)";
-    }
-
-    private String rowSqlQuery(String inClause) {
-        return "SELECT * FROM map WHERE this " + inClause;
     }
 
     static class Person implements Serializable {
