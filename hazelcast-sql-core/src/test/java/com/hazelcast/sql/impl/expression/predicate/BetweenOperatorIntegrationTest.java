@@ -91,24 +91,6 @@ import static org.junit.Assert.assertNull;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
 
-    static class Person implements Serializable {
-        public final String name;
-
-        Person(String name) {
-            this.name = name;
-        }
-    }
-
-    static class ClassWithSqlColumnType<T> {
-        public ExpressionType<T> expressionType;
-        public SqlColumnType sqlType;
-
-        ClassWithSqlColumnType(ExpressionType<T> expressionType, SqlColumnType sqlType) {
-            this.expressionType = expressionType;
-            this.sqlType = sqlType;
-        }
-    }
-
     static final ClassWithSqlColumnType<?>[] CLASS_DESCRIPTORS = new ClassWithSqlColumnType<?>[]{
             new ClassWithSqlColumnType<>(new ExpressionType.StringType(), SqlColumnType.VARCHAR),
             new ClassWithSqlColumnType<>(new ExpressionType.BooleanType(), SqlColumnType.BOOLEAN),
@@ -345,5 +327,23 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
 
     private String rowSqlQuery(String inClause) {
         return "SELECT * FROM map WHERE this " + inClause;
+    }
+
+    static class Person implements Serializable {
+        public final String name;
+
+        Person(String name) {
+            this.name = name;
+        }
+    }
+
+    static class ClassWithSqlColumnType<T> {
+        public ExpressionType<T> expressionType;
+        public SqlColumnType sqlType;
+
+        ClassWithSqlColumnType(ExpressionType<T> expressionType, SqlColumnType sqlType) {
+            this.expressionType = expressionType;
+            this.sqlType = sqlType;
+        }
     }
 }
