@@ -72,7 +72,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
     }
 
     /**
-     * Execute a query and assert that it eventually contains the expected entries.
+     * Execute a query and assert that it eventually returns the expected entries.
      *
      * @param mapName  The IMap name
      * @param sql      The query
@@ -83,7 +83,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
     }
 
     /**
-     * Execute a query and assert that it eventually contains the expected entries.
+     * Execute a query and assert that it eventually returns the expected entries.
      *
      * @param mapName   The IMap name
      * @param sql       The query

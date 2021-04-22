@@ -130,7 +130,7 @@ final class QueryUtil {
         @Override
         public void setSerializationService(SerializationService serializationService) {
             this.evalContext =
-                    SimpleExpressionEvalContext.from(arguments, (InternalSerializationService) serializationService);
+                    new SimpleExpressionEvalContext(arguments, (InternalSerializationService) serializationService);
             this.extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
         }
 

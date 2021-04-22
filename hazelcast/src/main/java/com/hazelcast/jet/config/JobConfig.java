@@ -20,9 +20,13 @@ import com.hazelcast.config.MetricsConfig;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.JetException;
+import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.Job;
 import com.hazelcast.jet.annotation.EvolvingApi;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.jet.impl.util.ReflectionUtils.Resources;
+import com.hazelcast.jet.pipeline.ServiceFactory;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -1011,9 +1015,10 @@ public class JobConfig implements IdentifiedDataSerializable {
      * Associates the specified value with the specified key. The mapping
      * will be available to the job while it's executing in the Jet cluster.
      *
-     * @param key – key with which the specified value is to be associated
-     * @param value – value to be associated with the specified key
+     * @param key key with which the specified value is to be associated
+     * @param value value to be associated with the specified key
      * @return {@code this} instance for fluent API
+     *
      * @since 5.0
      */
     @Nonnull
@@ -1026,7 +1031,8 @@ public class JobConfig implements IdentifiedDataSerializable {
      * Returns the value to which the specified key is mapped, or null if there is
      * no mapping for the key.
      *
-     * @param key - the key whose associated value is to be returned
+     * @param key the key whose associated value is to be returned
+     *
      * @since 5.0
      */
     @Nullable
@@ -1173,7 +1179,7 @@ public class JobConfig implements IdentifiedDataSerializable {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         processingGuarantee = in.readObject();
         snapshotIntervalMillis = in.readLong();
         autoScaling = in.readBoolean();
@@ -1183,7 +1189,7 @@ public class JobConfig implements IdentifiedDataSerializable {
         serializerConfigs = in.readObject();
         arguments = in.readObject();
         classLoaderFactory = in.readObject();
-        initialSnapshotName = in.readUTF();
+        initialSnapshotName = in.readString();
         enableMetrics = in.readBoolean();
         storeMetricsAfterJobCompletion = in.readBoolean();
     }

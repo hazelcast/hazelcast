@@ -137,21 +137,19 @@ public class SqlLimitTest extends SqlTestSupport {
 
     @Test
     public void limitOverStream() {
-        assertContainsOnlyOneOfRows(
+        assertRowsOrdered(
                 "SELECT * FROM TABLE(GENERATE_STREAM(5)) LIMIT 1",
                 singletonList(new Row(0L))
         );
 
-        assertContainsSubsetOfRows(
+        assertRowsOrdered(
                 "SELECT * FROM TABLE(GENERATE_STREAM(5)) LIMIT 2",
-                2,
                 asList(new Row(0L),
                 new Row(1L))
         );
 
-        assertContainsSubsetOfRows(
+        assertRowsOrdered(
                 "SELECT * FROM TABLE(GENERATE_STREAM(5)) LIMIT 10",
-                10,
                 asList(new Row(0L),
                 new Row(1L),
                 new Row(2L),
@@ -167,10 +165,9 @@ public class SqlLimitTest extends SqlTestSupport {
 
     @Test
     public void limitWithDynamicParameter() {
-        assertContainsSubsetOfRows(
+        assertRowsAnyOrder(
                 "SELECT * FROM TABLE(GENERATE_STREAM(5)) LIMIT ?",
                 singletonList(2),
-                2,
                 asList(
                         new Row(0L),
                         new Row(1L)
@@ -203,16 +200,16 @@ public class SqlLimitTest extends SqlTestSupport {
     }
 
     /**
-     * Asserts that the result of {@code sql} contains a subset of {@code expectedRows}, but
-     * only a subset of them with size of {@code subsetSize}.
+     * Asserts that the result of {@code sql} contains a subset of {@code
+     * expectedRows}, the subset must be of size {@code subsetSize}.
      */
     private static void assertContainsSubsetOfRows(String sql, int subsetSize, Collection<Row> expectedRows) {
         assertContainsSubsetOfRows(sql, emptyList(), subsetSize, expectedRows);
     }
 
     /**
-     * Asserts that the result of {@code sql} contains a subset of {@code expectedRows}, but
-     * only a subset of them with size of {@code subsetSize}.
+     * Asserts that the result of {@code sql} contains a subset of {@code
+     * expectedRows}, the subset must be of size {@code subsetSize}.
      */
     private static void assertContainsSubsetOfRows(
             String sql,

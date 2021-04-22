@@ -234,7 +234,7 @@ public class HazelcastTable extends AbstractTable {
     }
 
     /**
-     * Statistics that takes in count the row count after the filter is applied.
+     * Statistics that takes into account the row count after the filter is applied.
      */
     private final class AdjustedStatistic implements Statistic {
 

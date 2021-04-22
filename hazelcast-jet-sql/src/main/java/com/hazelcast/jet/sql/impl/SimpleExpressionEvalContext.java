@@ -21,7 +21,10 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.execution.init.Contexts;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 
+import javax.annotation.Nonnull;
 import java.util.List;
+
+import static java.util.Objects.requireNonNull;
 
 public final class SimpleExpressionEvalContext implements ExpressionEvalContext {
 
@@ -30,23 +33,19 @@ public final class SimpleExpressionEvalContext implements ExpressionEvalContext 
     private final List<Object> arguments;
     private final InternalSerializationService serializationService;
 
-    private SimpleExpressionEvalContext(List<Object> arguments, InternalSerializationService serializationService) {
-        this.arguments = arguments;
-        this.serializationService = serializationService;
+    public SimpleExpressionEvalContext(
+            @Nonnull List<Object> arguments,
+            @Nonnull InternalSerializationService serializationService
+    ) {
+        this.arguments = requireNonNull(arguments);
+        this.serializationService = requireNonNull(serializationService);
     }
 
     public static SimpleExpressionEvalContext from(ProcessorSupplier.Context ctx) {
         return new SimpleExpressionEvalContext(
-                ctx.jobConfig().getArgument(SQL_ARGUMENTS_KEY_NAME),
+                requireNonNull(ctx.jobConfig().getArgument(SQL_ARGUMENTS_KEY_NAME)),
                 ((Contexts.ProcSupplierCtx) ctx).serializationService()
         );
-    }
-
-    public static SimpleExpressionEvalContext from(
-            List<Object> arguments,
-            InternalSerializationService serializationService
-    ) {
-        return new SimpleExpressionEvalContext(arguments, serializationService);
     }
 
     @Override
