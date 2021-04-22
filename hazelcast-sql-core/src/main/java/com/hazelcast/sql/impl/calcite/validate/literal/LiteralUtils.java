@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.calcite.validate.literal;
 
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
+import com.hazelcast.sql.impl.expression.datetime.DateTimeUtils;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
@@ -27,6 +28,9 @@ import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.util.NlsString;
+import org.apache.calcite.util.TimestampString;
+
+import java.time.LocalDate;
 
 import static org.apache.calcite.sql.type.SqlTypeName.CHAR_TYPES;
 
@@ -43,7 +47,22 @@ public final class LiteralUtils {
 
         RexLiteral literal = (RexLiteral) node;
 
-        return literal0(node.getType().getSqlTypeName(), literal.getValue());
+        // TODO: Move it inside literal0
+        // Intercept TIMESTAMP types to return (Offset, Local)DateTime instead of Calendar class
+        TimestampString ts;
+        switch (node.getType().getSqlTypeName()) {
+            case TIMESTAMP:
+                ts = literal.getValueAs(TimestampString.class);
+                return literal0(node.getType().getSqlTypeName(), DateTimeUtils.parseAsLocalDateTime(ts.toString()));
+            case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
+                ts = literal.getValueAs(TimestampString.class);
+                return literal0(node.getType().getSqlTypeName(), DateTimeUtils.parseAsOffsetDateTime(ts.toString()));
+            case DATE:
+                Integer epoch = literal.getValueAs(Integer.class);
+                return literal0(node.getType().getSqlTypeName(), LocalDate.ofEpochDay(epoch));
+            default:
+                return literal0(node.getType().getSqlTypeName(), literal.getValue());
+        }
     }
 
     public static Literal literal(SqlNode node) {

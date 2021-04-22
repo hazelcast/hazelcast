@@ -21,24 +21,58 @@ import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.Row;
 
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 
 public final class DateTimeUtils {
+    private static final DateTimeFormatter FORMATTER_TIMESTAMP_WITH_TIMEZONE =
+            new DateTimeFormatterBuilder()
+                .parseStrict()
+                .append(DateTimeFormatter.ISO_LOCAL_DATE)
+                .appendLiteral(' ')
+                .append(DateTimeFormatter.ISO_LOCAL_TIME)
+                .parseLenient()
+                .appendOffsetId()
+                .toFormatter();
+
+    private static final DateTimeFormatter FORMATTER_TIMESTAMP =
+            new DateTimeFormatterBuilder()
+                .parseStrict()
+                .append(DateTimeFormatter.ISO_LOCAL_DATE)
+                .appendLiteral(' ')
+                .append(DateTimeFormatter.ISO_LOCAL_TIME)
+                .toFormatter();
+
+
     private DateTimeUtils() { }
 
-    public static LocalDateTime asTimestamp(Expression<?> expression, Row row, ExpressionEvalContext context) {
+    public static OffsetDateTime asTimestampWithTimezone(Expression<?> expression, Row row, ExpressionEvalContext context) {
         Object res = expression.eval(row, context);
 
         if (res == null) {
             return null;
         }
 
-        return expression.getType().getConverter().asTimestamp(res);
+        return expression.getType().getConverter().asTimestampWithTimezone(res);
     }
 
-    public static double extractField(LocalDateTime time, ExtractField field) {
-        return field.extract(time.atOffset(ZoneOffset.UTC));
+    public static OffsetDateTime parseAsOffsetDateTime(String string) {
+        return OffsetDateTime.parse(string, FORMATTER_TIMESTAMP_WITH_TIMEZONE);
+    }
+
+    public static LocalDateTime parseAsLocalDateTime(String string) {
+        return LocalDateTime.parse(string, FORMATTER_TIMESTAMP);
+    }
+
+    public static LocalDate parseAsLocalDate(String string) {
+        return LocalDate.parse(string);
+    }
+
+    public static double extractField(OffsetDateTime time, ExtractField field) {
+        return field.extract(time);
     }
 
 }

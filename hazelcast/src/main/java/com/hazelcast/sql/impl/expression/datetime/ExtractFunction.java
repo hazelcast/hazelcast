@@ -24,7 +24,7 @@ import com.hazelcast.sql.impl.expression.UniExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 public class ExtractFunction extends UniExpression<Double> implements IdentifiedDataSerializable {
 
@@ -44,7 +44,7 @@ public class ExtractFunction extends UniExpression<Double> implements Identified
     @Override
     public Double eval(Row row, ExpressionEvalContext context) {
 
-        LocalDateTime timestamp = DateTimeUtils.asTimestamp(operand, row, context);
+        OffsetDateTime timestamp = DateTimeUtils.asTimestampWithTimezone(operand, row, context);
 
         return DateTimeUtils.extractField(timestamp, extractField);
     }

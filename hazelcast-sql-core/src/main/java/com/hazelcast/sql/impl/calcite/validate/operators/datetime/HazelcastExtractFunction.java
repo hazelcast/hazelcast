@@ -20,12 +20,14 @@ import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
 import com.hazelcast.sql.impl.calcite.validate.operand.AnyOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.operand.OperandCheckerProgram;
 import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
+import com.hazelcast.sql.impl.calcite.validate.operators.ReplaceUnknownOperandTypeInference;
 import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastFunction;
 import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
+import org.apache.calcite.sql.type.SqlTypeName;
 
 public final class HazelcastExtractFunction extends HazelcastFunction {
     public static final HazelcastExtractFunction INSTANCE = new HazelcastExtractFunction();
@@ -35,19 +37,21 @@ public final class HazelcastExtractFunction extends HazelcastFunction {
                 "EXTRACT",
                 SqlKind.EXTRACT,
                 ReturnTypes.DOUBLE_NULLABLE,
-                null,
+                new ReplaceUnknownOperandTypeInference(
+                        new SqlTypeName[] {
+                                null,
+                                SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE
+                        }),
                 SqlFunctionCategory.SYSTEM
         );
     }
 
     @Override
     protected boolean checkOperandTypes(HazelcastCallBinding callBinding, boolean throwOnFailure) {
-        // Two version
         return new OperandCheckerProgram(
-                AnyOperandChecker.INSTANCE,
-                TypedOperandChecker.TIMESTAMP
-        ).check(callBinding, throwOnFailure);
-
+                    AnyOperandChecker.INSTANCE,
+                    TypedOperandChecker.TIMESTAMP_WITH_TIMEZONE
+            ).check(callBinding, throwOnFailure);
     }
 
     @Override

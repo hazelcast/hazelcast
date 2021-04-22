@@ -19,95 +19,245 @@ package com.hazelcast.sql.impl.expression.datetime;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.expression.ExpressionTestSupport;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
+import java.time.DateTimeException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.OffsetTime;
+import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ExtractFunctionIntegrationTest extends ExpressionTestSupport {
+    @Parameterized.Parameter(0)
+    public String field;
+
+    @Parameterized.Parameter(1)
+    public String type;
+
+    @Parameterized.Parameter(2)
+    public String input;
+
+    @Parameterized.Parameter(3)
+    public double expected;
+
+    @Parameterized.Parameters(name = "{index}: EXTRACT({0} FROM {1} {2}) == {3}")
+    public static Iterable<Object[]> data() {
+        Iterable<TestCase> cases = testCases();
+        List<Object[]> data = new ArrayList<>();
+        for (TestCase c : cases) {
+           for (Map.Entry<String, Double> result: c.results.entrySet()) {
+                data.add(new Object[] {
+                    result.getKey(),   // Field
+                    c.type,            // Type
+                    c.input,           // Input
+                    result.getValue(), // Expected result
+                });
+           }
+        }
+        return data;
+    }
+
+    private static Iterable<TestCase> testCases() {
+        List<TestCase> testCases = new ArrayList<>();
+        testCases.add(create("TIMESTAMP", "0001-04-23",
+                results(
+                        "MILLENNIUM", 1.0,
+                        "CENTURY", 1.0,
+                        "DECADE", 0.0,
+                        "YEAR", 1.0,
+                        "ISOYEAR", 1.0,
+                        "QUARTER", 2.0,
+                        "MONTH", 4.0,
+                        "WEEK", 17.0,
+                        "DOW", 1.0,
+                        "ISODOW", 1.0,
+                        "DAY", 23.0,
+                        "DOY", 113.0,
+                        "HOUR", 0.0,
+                        "SECOND", 0.0,
+                        "MINUTE", 0.0,
+                        "MILLISECOND", 0.0,
+                        "MICROSECOND", 0.0,
+                        "EPOCH", -62_125_920_000.0
+                )
+        ));
+        testCases.add(create("TIMESTAMP", "0001-04-23 13:40:55",
+                results(
+                        "MILLENNIUM", 1.0,
+                        "CENTURY", 1.0,
+                        "DECADE", 0.0,
+                        "YEAR", 1.0,
+                        "ISOYEAR", 1.0,
+                        "QUARTER", 2.0,
+                        "MONTH", 4.0,
+                        "WEEK", 17.0,
+                        "DOW", 1.0,
+                        "ISODOW", 1.0,
+                        "DAY", 23.0,
+                        "DOY", 113.0,
+                        "HOUR", 13.0,
+                        "MINUTE", 40.0,
+                        "SECOND", 55.0,
+                        "MILLISECOND", 55_000.0,
+                        "MICROSECOND", 55_000_000.0,
+                        "EPOCH", -62_125_870_745.0
+                )
+        ));
+        testCases.add(create("TIMESTAMP", "2006-01-01 00:00:00.0",
+                results(
+                        "MILLENNIUM", 3.0,
+                        "CENTURY", 21.0,
+                        "DECADE", 200.0,
+                        "YEAR", 2006.0,
+                        "ISOYEAR", 2005.0,  // ISOYEAR is different than YEAR
+                        "QUARTER", 1.0,
+                        "MONTH", 1.0,
+                        "WEEK", 52.0,       // It belongs to last week of the previous year
+                        "DOW", 0.0,
+                        "ISODOW", 7.0,
+                        "DAY", 1.0,
+                        "HOUR", 0.0,
+                        "MINUTE", 0.0,
+                        "SECOND", 0.0,
+                        "MILLISECOND", 0.0,
+                        "MICROSECOND", 0.0,
+                        "EPOCH", 1_136_073_600.0
+                )
+        ));
+        testCases.add(create("TIMESTAMP", "2001-02-16 20:38:40.123",
+                results(
+                        "HOUR", 20.0,
+                        "MINUTE", 38.0,
+                        "SECOND", 40.0,
+                        "MILLISECOND", 40_123.0,
+                        "MICROSECOND", 40_123_000.0,
+                        "EPOCH", 982_355_920.123
+                )
+        ));
+        testCases.add(create("DATE", "2010-10-04",
+                results(
+                        "MILLENNIUM", 3.0,
+                        "CENTURY", 21.0,
+                        "DECADE", 201.0,
+                        "YEAR", 2010.0,
+                        "ISOYEAR", 2010.0,
+                        "QUARTER", 4.0,
+                        "MONTH", 10.0,
+                        "DOW", 1.0,
+                        "ISODOW", 1.0,
+                        "WEEK", 40.0,
+                        "DAY", 4.0,
+                        "HOUR", 0.0,
+                        "MINUTE", 0.0,
+                        "SECOND", 0.0,
+                        "MILLISECOND", 0.0,
+                        "MICROSECOND", 0.0,
+                        "EPOCH", 1_286_150_400.0
+                )));
+        testCases.add(create("DATE", "2000-12-31",
+                results(
+                        "DOY", 366.0
+                )
+        ));
+        testCases.add(create("DATE", "2001-12-31",
+                results(
+                        "DOY", 365.0
+                )
+        ));
+        testCases.add(create("DATE", "2004-12-31",
+                results(
+                        "DOY", 366.0
+                )
+        ));
+        testCases.add(create("DATE", "2100-12-31",
+                results(
+                        "DOY", 365.0
+                )
+        ));
+        testCases.add(create("DATE", "2100-12-31",
+                results(
+                        "MILLENNIUM", 3.0,
+                        "DOY", 365.0        // *
+                )
+        ));
+        testCases.add(create("DATE", "2021-04-17",
+                results(
+                        "DOW", 6.0,
+                        "ISODOW", 6.0
+                )
+        ));
+        testCases.add(create("DATE", "2021-04-18",
+                results(
+                        "DOW", 0.0,
+                        "ISODOW", 7.0
+                )
+        ));
+        testCases.add(create("DATE", "2021-04-19",
+                results(
+                        "DOW", 1.0,
+                        "ISODOW", 1.0
+                )
+        ));
+        testCases.add(create("DATE", "2005-01-01",
+                results(
+                        "WEEK", 53.0
+                )
+        ));
+        testCases.add(create("DATE", "2006-01-01",
+                results(
+                        "WEEK", 52.0
+                )
+        ));
+        testCases.add(create("DATE", "2012-12-31",
+                results(
+                        "WEEK", 1.0
+                )
+        ));
+
+        return testCases;
+    }
+
+    private static TimeZone defaultTimezone;
+
+    @BeforeClass
+    public static void setUpClass() {
+        defaultTimezone = TimeZone.getDefault();
+    }
+
+    @AfterClass
+    public static void tearDownClass() {
+        TimeZone.setDefault(defaultTimezone);
+    }
 
     @Test
     public void test() {
         put(1);
+        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
 
-        check(sql("MILLENNIUM", "'0001-04-23'"), 1.0);
-        check(sql("MILLENNIUM", "'2010-11-10'"), 3.0);
+        check(sql(field, literal(type, input)), expected);
 
-        check(sql("CENTURY", "'0001-04-23'"), 1.0);
-        check(sql("CENTURY", "'2010-11-10'"), 21.0);
-
-        check(sql("DECADE", "'0001-04-23'"), 0.0);
-        check(sql("DECADE", "'2010-11-10'"), 201.0);
-
-        check(sql("YEAR", "'2006-01-01'"), 2006.0);
-        check(sql("YEAR", "'2006-01-02'"), 2006.0);
-        check(sql("YEAR", "'2012-12-30'"), 2012.0);
-        check(sql("YEAR", "'2012-12-31'"), 2012.0);
-
-        check(sql("ISOYEAR", "'2006-01-01'"), 2005.0);
-        check(sql("ISOYEAR", "'2006-01-02'"), 2006.0);
-        check(sql("ISOYEAR", "'2012-12-30'"), 2012.0);
-        check(sql("ISOYEAR", "'2012-12-31'"), 2013.0);
-
-        check(sql("QUARTER", "'2006-01-01'"), 1.0);
-        check(sql("QUARTER", "'2006-04-01'"), 2.0);
-        check(sql("QUARTER", "'2006-07-01'"), 3.0);
-        check(sql("QUARTER", "'2006-10-01'"), 4.0);
-
-        check(sql("MONTH", "'2006-01-01'"), 1.0);
-        check(sql("MONTH", "'2006-01-01 12:30:33'"), 1.0);
-        check(sql("MONTH", "'2006-12-01'"), 12.0);
-        check(sql("MONTH", "'2006-12-01 12:30:33'"), 12.0);
-
-        check(sql("WEEK", "'2005-01-01'"), 53.0);
-        check(sql("WEEK", "'2006-01-01'"), 52.0);
-        check(sql("WEEK", "'2012-12-31'"), 1.0);
-
-
-        check(sql("DOW", "'2021-04-19'"), 1.0);
-        check(sql("DOW", "'2021-04-18'"), 0.0);
-        check(sql("DOW", "'2021-04-17'"), 6.0);
-
-        check(sql("ISODOW", "'2021-04-19'"), 1.0);
-        check(sql("ISODOW", "'2021-04-18'"), 7.0);
-        check(sql("ISODOW", "'2021-04-17'"), 6.0);
-
-        check(sql("DOY", "'2001-01-01'"), 1.0);
-        check(sql("DOY", "'2001-12-31'"), 365.0);
-        check(sql("DOY", "'2100-12-31'"), 365.0);
-        check(sql("DOY", "'2000-12-31'"), 366.0);
-        check(sql("DOY", "'2004-12-31'"), 366.0);
-        check(sql("DOY", "'2001-02-16'"), 47.0);
-
-        check(sql("DAY", "'0001-04-23'"), 23.0);
-        check(sql("DAY", "'2010-11-10'"), 10.0);
-
-        check(sql("HOUR", "'2001-02-16 00:00:30'"), 0.0);
-        check(sql("HOUR", "'2001-02-16 20:38:40'"), 20.0);
-        check(sql("HOUR", "'2001-02-16'"), 0.0);
-
-        check(sql("MINUTE", "'2001-02-16 00:00:30'"), 0.0);
-        check(sql("MINUTE", "'2001-02-16 20:38:40'"), 38.0);
-        check(sql("MINUTE", "'2001-02-16'"), 0.0);
-
-        check(sql("MILLISECOND", "'0001-01-01'"), 0.0);
-        check(sql("MILLISECOND", "'0001-01-01 10:30:30.54'"), 30_540.0);
-
-        check(sql("MICROSECOND", "'0001-01-01'"), 0.0);
-        check(sql("MICROSECOND", "'0001-01-01 10:30:30.54'"), 30_540_000.0);
-
-        check(sql("EPOCH", "'2001-02-16 20:38:40'"), 982_355_920.0);
-        check(sql("EPOCH", "'2001-02-16 20:38:40.123'"), 982_355_920.123);
+        check(sql(field, "?"), expected, object(type, input));
     }
-
 
     private <T> void check(String sql, T expectedResult, Object ...parameters) {
         List<SqlRow> rows = execute(member, sql, parameters);
@@ -119,7 +269,101 @@ public class ExtractFunctionIntegrationTest extends ExpressionTestSupport {
         assertEquals(expectedResult, row.getObject(0));
     }
 
-    private String sql(Object field, Object timestamp) {
-        return String.format("SELECT EXTRACT(%s FROM TIMESTAMP %s) FROM map", field, timestamp);
+    private String sql(Object field, Object source) {
+        return String.format("SELECT EXTRACT(%s FROM %s) FROM map", field, source);
+    }
+
+    private static String T(String s) {
+        return "TIME '" + s + "'";
+    }
+
+    private static String DT(String s) {
+        return "DATE '" + s + "'";
+    }
+
+    private static String TS(String s) {
+        return "TIMESTAMP '" + s + "'";
+    }
+
+    private static String TSZ(String s) {
+        return "TIMESTAMP WITH TIME ZONE '" + s + "'";
+    }
+
+    private static String literal(String type, String input) {
+        switch (type) {
+            case "DATE":
+                return DT(input);
+            case "TIMESTAMP":
+                return TS(input);
+            case "TIMESTAMP WITH TIME ZONE":
+                return TSZ(input);
+            default:
+                fail(type + " not supported for test");
+                return "";
+        }
+    }
+
+    // TODO: Rewrite this function
+    private static Object object(String type, String input) {
+        switch (type) {
+            case "DATE":
+                return LocalDate.parse(input);
+            case "TIMESTAMP":
+                try {
+                    return LocalDateTime.parse(input.replace(' ', 'T'));
+                } catch (DateTimeException e) {
+                }
+                LocalDate date = LocalDate.parse(input);
+                return date.atTime(0, 0, 0);
+            case "TIMESTAMP WITH TIME ZONE":
+                try {
+                    return OffsetDateTime.parse(input);
+                } catch (DateTimeException e) {
+                }
+                try {
+                    LocalDateTime dateTime = LocalDateTime.parse(input.replace(' ', 'T'));
+                    return dateTime.atOffset(ZoneOffset.UTC);
+                } catch (DateTimeException e) {
+                }
+                return LocalDate.parse(input).atTime(
+                        OffsetTime.of(0, 0, 0, 0, ZoneOffset.UTC)
+                );
+            default:
+                fail(type + " not supported for test");
+                return "";
+        }
+    }
+
+    private static TestCase create(String type, String input, Map<String, Double> results) {
+        return new TestCase(type, input, results);
+    }
+
+    private static Map<String, Double> results(Object ...args) {
+        assertEquals(0, args.length % 2);
+
+        Map<String, Double> expectedResults = new HashMap<>();
+
+        for (int i = 0; i < args.length; i += 2) {
+            Object arg0 = args[i];
+            Object arg1 = args[i + 1];
+
+            assertInstanceOf(String.class, arg0);
+            assertInstanceOf(Double.class, arg1);
+
+            expectedResults.put((String) args[i], (Double) args[i + 1]);
+        }
+        return expectedResults;
+    }
+
+    private static class TestCase {
+        private final String type;
+        private final String input;
+        private final Map<String, Double> results;
+
+        private TestCase(String type, String input, Map<String, Double> results) {
+            this.type = type;
+            this.input = input;
+            this.results = results;
+        }
     }
 }

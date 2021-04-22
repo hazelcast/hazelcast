@@ -75,11 +75,13 @@ import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.util.DateString;
 import org.apache.calcite.util.TimeString;
 import org.apache.calcite.util.TimestampString;
+import org.apache.calcite.util.TimestampWithTimeZoneString;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.OffsetDateTime;
 
 import static com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable.CHARACTER_LENGTH;
 import static com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable.CHAR_LENGTH;
@@ -141,6 +143,9 @@ public final class RexToExpression {
 
             case TIMESTAMP:
                 return convertTimestamp(literal);
+
+            case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
+                return convertTimestampWithTimeZone(literal);
 
             case INTERVAL_YEAR_MONTH:
                 return convertIntervalYearMonth(literal);
@@ -518,6 +523,21 @@ public final class RexToExpression {
         } catch (Exception e) {
             throw QueryException.dataException(
                     "Cannot convert literal to " + SqlColumnType.TIMESTAMP + ": " + timestampString);
+        }
+    }
+
+    public static Expression<?> convertTimestampWithTimeZone(RexLiteral literal) {
+        String timestampString = literal.getValueAs(TimestampWithTimeZoneString.class).toString();
+        timestampString = timestampString.replace(' ', 'T');
+        try {
+            OffsetDateTime dateTime = OffsetDateTime.parse(timestampString);
+
+            return ConstantExpression.create(dateTime, QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME);
+        } catch (Exception e) {
+            throw QueryException.dataException(
+                    "Cannot convert literal to "
+                            + SqlColumnType.TIMESTAMP_WITH_TIME_ZONE
+                            + ": " + timestampString);
         }
     }
 
