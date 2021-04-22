@@ -23,6 +23,7 @@ import com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget;
 import com.hazelcast.jet.sql.impl.schema.Mapping;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRowMetadata;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.optimizer.PlanCheckContext;
@@ -97,7 +98,7 @@ abstract class JetPlan extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments) {
-            assert arguments.isEmpty();
+            JetPlan.ensureNoArguments("CREATE MAPPING", arguments);
             return planExecutor.execute(this);
         }
     }
@@ -149,7 +150,7 @@ abstract class JetPlan extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments) {
-            assert arguments.isEmpty();
+            JetPlan.ensureNoArguments("DROP MAPPING", arguments);
             return planExecutor.execute(this);
         }
     }
@@ -264,7 +265,7 @@ abstract class JetPlan extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments) {
-            assert arguments.isEmpty();
+            JetPlan.ensureNoArguments("ALTER JOB", arguments);
             return planExecutor.execute(this);
         }
     }
@@ -323,7 +324,7 @@ abstract class JetPlan extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments) {
-            assert arguments.isEmpty();
+            JetPlan.ensureNoArguments("DROP JOB", arguments);
             return planExecutor.execute(this);
         }
     }
@@ -375,7 +376,7 @@ abstract class JetPlan extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments) {
-            assert arguments.isEmpty();
+            JetPlan.ensureNoArguments("CREATE SNAPSHOT", arguments);
             return planExecutor.execute(this);
         }
     }
@@ -427,7 +428,7 @@ abstract class JetPlan extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments) {
-            assert arguments.isEmpty();
+            JetPlan.ensureNoArguments("DROP SNAPSHOT", arguments);
             return planExecutor.execute(this);
         }
     }
@@ -472,7 +473,7 @@ abstract class JetPlan extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments) {
-            assert arguments.isEmpty();
+            JetPlan.ensureNoArguments("SHOW " + showTarget, arguments);
             return planExecutor.execute(this);
         }
     }
@@ -555,6 +556,12 @@ abstract class JetPlan extends SqlPlan {
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments) {
             return planExecutor.execute(this, queryId, arguments);
+        }
+    }
+
+    private static void ensureNoArguments(String name, List<Object> arguments) {
+        if (!arguments.isEmpty()) {
+            throw QueryException.error(name + " does not support dynamic parameters");
         }
     }
 }
