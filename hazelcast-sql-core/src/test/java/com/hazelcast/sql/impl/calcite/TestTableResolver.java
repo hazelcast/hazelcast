@@ -61,4 +61,8 @@ public class TestTableResolver implements TableResolver {
     public List<Table> getTables() {
         return tables;
     }
+
+    @Override
+    public void registerListener(TableListener listener) {
+    }
 }

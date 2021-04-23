@@ -35,7 +35,7 @@ public interface TableResolver {
      * <p>
      * Order of search paths is important. If several search paths are defined, then the first path will be searched first, etc.
      * For example if a table with the same name is defined in {@code schema1} and {@code schema2}, and the following search
-     * paths are provided {@code {"hazelcast", "schema1"}, {"hazelcast", "schema1"}}, then {@code SELECT * FROM table} will pick
+     * paths are provided {@code {"hazelcast", "schema1"}, {"hazelcast", "schema2"}}, then {@code SELECT * FROM table} will pick
      * the table from the {@code schema1}.
      *
      * @return The list of search paths for object resolution.
@@ -48,4 +48,20 @@ public interface TableResolver {
      */
     @Nonnull
     List<Table> getTables();
+
+    /**
+     * Adds a listener to be called when a {@see Table} is added, removed or changed.
+     */
+    void registerListener(TableListener listener);
+
+    /**
+     * Listeners interested in acting upon {@see Table} changes should implement this interface.
+     */
+    interface TableListener {
+
+        /**
+         * Invoked on registered listeners after update/removal of a {@see Table}.
+         */
+        void onTableChanged();
+    }
 }

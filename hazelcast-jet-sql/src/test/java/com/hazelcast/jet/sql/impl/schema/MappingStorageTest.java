@@ -41,7 +41,7 @@ public class MappingStorageTest extends SimpleTestInClusterSupport {
 
     @Before
     public void before() {
-        storage = new MappingStorage(nodeEngine(instances()[0].getHazelcastInstance()));
+        storage = new MappingStorage(nodeEngine(instance().getHazelcastInstance()));
     }
 
     @Test
@@ -51,6 +51,19 @@ public class MappingStorageTest extends SimpleTestInClusterSupport {
         storage.put(name, mapping(name, "type"));
 
         assertThat(storage.values().stream().filter(m -> m.name().equals(name))).isNotEmpty();
+    }
+
+    @Test
+    public void when_put_then_overridesPrevious() {
+        String name = randomName();
+        Mapping originalMapping = mapping(name, "type1");
+        Mapping updatedMapping = mapping(name, "type2");
+
+        storage.put(name, originalMapping);
+        storage.put(name, updatedMapping);
+
+        assertThat(storage.values().stream().filter(m -> m.equals(originalMapping))).isEmpty();
+        assertThat(storage.values().stream().filter(m -> m.equals(updatedMapping))).isNotEmpty();
     }
 
     @Test
@@ -69,13 +82,13 @@ public class MappingStorageTest extends SimpleTestInClusterSupport {
 
         storage.put(name, mapping(name, "type"));
 
-        assertThat(storage.remove(name)).isTrue();
+        assertThat(storage.remove(name)).isNotNull();
         assertThat(storage.values().stream().filter(m -> m.name().equals(name))).isEmpty();
     }
 
     @Test
-    public void when_removeAbsentValue_then_returnsFalse() {
-        assertThat(storage.remove("")).isFalse();
+    public void when_removeAbsentValue_then_returnsNull() {
+        assertThat(storage.remove("non-existing")).isNull();
     }
 
     private static Mapping mapping(String name, String type) {

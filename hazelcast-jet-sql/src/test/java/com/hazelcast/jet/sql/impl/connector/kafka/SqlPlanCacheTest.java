@@ -60,7 +60,7 @@ public class SqlPlanCacheTest extends SqlTestSupport {
 
         createMapping("kafka2", topicName, "int", "earliest");
         sqlService.execute("DROP MAPPING kafka1");
-        assertTrueEventually(() -> assertThat(planCache(instance()).size()).isZero());
+        assertThat(planCache(instance()).size()).isZero();
     }
 
     @Test
@@ -70,7 +70,7 @@ public class SqlPlanCacheTest extends SqlTestSupport {
         assertThat(planCache(instance()).size()).isEqualTo(1);
 
         createMapping("kafka", createRandomTopic(), "int", "earliest");
-        assertTrueEventually(() -> assertThat(planCache(instance()).size()).isZero());
+        assertThat(planCache(instance()).size()).isZero();
     }
 
     @Test
@@ -82,7 +82,7 @@ public class SqlPlanCacheTest extends SqlTestSupport {
         assertThat(planCache(instance()).size()).isEqualTo(1);
 
         createMapping("kafka", topicName, "varchar", "earliest");
-        assertTrueEventually(() -> assertThat(planCache(instance()).size()).isZero());
+        assertThat(planCache(instance()).size()).isZero();
     }
 
     @Test
@@ -94,7 +94,7 @@ public class SqlPlanCacheTest extends SqlTestSupport {
         assertThat(planCache(instance()).size()).isEqualTo(1);
 
         createMapping("kafka", topicName, "int", "latest");
-        assertTrueEventually(() -> assertThat(planCache(instance()).size()).isZero());
+        assertThat(planCache(instance()).size()).isZero();
     }
 
     private static String createRandomTopic() {

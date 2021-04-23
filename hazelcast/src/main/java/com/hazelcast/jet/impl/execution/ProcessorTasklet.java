@@ -73,6 +73,7 @@ import static com.hazelcast.jet.impl.execution.ProcessorState.COMPLETE_EDGE;
 import static com.hazelcast.jet.impl.execution.ProcessorState.EMIT_BARRIER;
 import static com.hazelcast.jet.impl.execution.ProcessorState.EMIT_DONE_ITEM;
 import static com.hazelcast.jet.impl.execution.ProcessorState.END;
+import static com.hazelcast.jet.impl.execution.ProcessorState.PRE_EMIT_DONE_ITEM;
 import static com.hazelcast.jet.impl.execution.ProcessorState.NULLARY_PROCESS;
 import static com.hazelcast.jet.impl.execution.ProcessorState.PROCESS_INBOX;
 import static com.hazelcast.jet.impl.execution.ProcessorState.PROCESS_WATERMARK;
@@ -359,7 +360,7 @@ public class ProcessorTasklet implements Tasklet {
                             state = COMPLETE;
                             break;
                         case SNAPSHOT_COMMIT_FINISH__FINAL:
-                            state = EMIT_DONE_ITEM;
+                            state = PRE_EMIT_DONE_ITEM;
                             break;
                         default:
                             throw new RuntimeException("unexpected state: " + state);
@@ -379,9 +380,14 @@ public class ProcessorTasklet implements Tasklet {
                 complete();
                 return;
 
+            case PRE_EMIT_DONE_ITEM:
+                ssContext.processorTaskletDone(pendingSnapshotId2 - 1);
+                state = EMIT_DONE_ITEM;
+                stateMachineStep();
+                return;
+
             case EMIT_DONE_ITEM:
                 if (outbox.offerToEdgesAndSnapshot(DONE_ITEM)) {
-                    ssContext.processorTaskletDone();
                     progTracker.madeProgress();
                     state = CLOSE;
                     stateMachineStep();
@@ -450,7 +456,7 @@ public class ProcessorTasklet implements Tasklet {
     }
 
     private void complete() {
-        // check ssContext to see if snapshot phase should be executed
+        // check ssContext to see if a snapshot phase should be executed
         if (pendingSnapshotId1 == pendingSnapshotId2) {
             long currSnapshotId1 = ssContext.activeSnapshotIdPhase1();
             assert currSnapshotId1 + 1 == pendingSnapshotId1 || currSnapshotId1 == pendingSnapshotId1
@@ -482,7 +488,7 @@ public class ProcessorTasklet implements Tasklet {
             progTracker.madeProgress();
             state = pendingSnapshotId2 < pendingSnapshotId1
                     ? WAITING_FOR_SNAPSHOT_COMPLETED
-                    : EMIT_DONE_ITEM;
+                    : PRE_EMIT_DONE_ITEM;
         }
     }
 

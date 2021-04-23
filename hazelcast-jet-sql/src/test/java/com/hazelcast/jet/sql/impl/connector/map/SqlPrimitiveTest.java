@@ -126,6 +126,37 @@ public class SqlPrimitiveTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_insertWithDynamicParameters() {
+        String name = randomName();
+        sqlService.execute(javaSerializableMapDdl(name, Integer.class, String.class));
+
+        assertMapEventually(
+                name,
+                "SINK INTO " + name + " (this, __key) VALUES (?, CAST(0 + ? AS INT))",
+                asList("2", 1),
+                createMap(1, "2")
+        );
+        assertRowsAnyOrder(
+                "SELECT * FROM " + name,
+                singletonList(new Row(1, "2"))
+        );
+    }
+
+    @Test
+    public void test_selectWithDynamicParameters() {
+        String name = randomName();
+        sqlService.execute(javaSerializableMapDdl(name, Integer.class, String.class));
+
+        sqlService.execute("SINK INTO " + name + " VALUES (1, '1'), (2, '2')");
+
+        assertRowsAnyOrder(
+                "SELECT __key + ?, ABS(__key + ?), this FROM " + name + " WHERE __key + ? >= ?",
+                asList(2, -10, 2, 4),
+                singletonList(new Row(4L, 8L, "2"))
+        );
+    }
+
+    @Test
     public void test_fieldsMapping() {
         String name = randomName();
         sqlService.execute("CREATE MAPPING " + name + " ("

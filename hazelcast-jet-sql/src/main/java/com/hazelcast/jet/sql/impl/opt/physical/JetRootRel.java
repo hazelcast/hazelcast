@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.opt.AbstractRootRel;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import org.apache.calcite.plan.RelTraitSet;
@@ -38,7 +39,7 @@ public class JetRootRel extends AbstractRootRel implements PhysicalRel {
     }
 
     @Override
-    public PlanNodeSchema schema() {
+    public PlanNodeSchema schema(QueryParameterMetadata parameterMetadata) {
         throw new UnsupportedOperationException();
     }
 

@@ -262,7 +262,7 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
         int clusterSize = 3;
         JetInstance[] instances = new JetInstance[clusterSize];
         for (int i = 0; i < clusterSize; i++) {
-            instances[i] = createJetMember();
+            instances[i] = createJetMember(createConfig());
         }
 
         NoOutputSourceP.executionStarted = new CountDownLatch(clusterSize * PARALLELISM);
@@ -271,7 +271,7 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
         Job job = instances[0].newJob(dag, new JobConfig().setSplitBrainProtection(true));
         assertOpenEventually(NoOutputSourceP.executionStarted);
 
-        createJetMember();
+        createJetMember(createConfig());
 
         assertTrueEventually(() -> {
             JetService service = getJetService(instances[0]);
@@ -290,7 +290,7 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
         int clusterSize = 5;
         JetInstance[] instances = new JetInstance[clusterSize];
         for (int i = 0; i < clusterSize; i++) {
-            instances[i] = createJetMember();
+            instances[i] = createJetMember(createConfig());
         }
 
         NoOutputSourceP.executionStarted = new CountDownLatch(clusterSize * PARALLELISM);
@@ -304,7 +304,7 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
         }
         NoOutputSourceP.proceedLatch.countDown();
         assertJobStatusEventually(job, NOT_RUNNING, 10);
-        createJetMember();
+        createJetMember(createConfig());
         assertTrueAllTheTime(() -> assertStatusNotRunningOrStarting(job.getStatus()), 5);
     }
 
@@ -333,7 +333,7 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
             logger.info("Shutting down 1st instance");
             instances[0].shutdown();
             logger.info("1st instance down, starting another instance");
-            createJetMember(config);
+            createJetMember(createConfig());
 
             logger.info("Shutting down 2nd instance");
             instances[1].shutdown();

@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
@@ -48,15 +49,15 @@ public class FullScanPhysicalRel extends TableScan implements PhysicalRel {
         super(cluster, traitSet, emptyList(), table);
     }
 
-    public Expression<Boolean> filter() {
+    public Expression<Boolean> filter(QueryParameterMetadata parameterMetadata) {
         PlanNodeSchema schema = OptUtils.schema(getTable());
 
         RexNode filter = getTable().unwrap(HazelcastTable.class).getFilter();
 
-        return filter(schema, filter);
+        return filter(schema, filter, parameterMetadata);
     }
 
-    public List<Expression<?>> projection() {
+    public List<Expression<?>> projection(QueryParameterMetadata parameterMetadata) {
         PlanNodeSchema schema = OptUtils.schema(getTable());
 
         HazelcastTable table = getTable().unwrap(HazelcastTable.class);
@@ -69,12 +70,12 @@ public class FullScanPhysicalRel extends TableScan implements PhysicalRel {
             projection.add(new RexInputRef(index, relDataType));
         }
 
-        return project(schema, projection);
+        return project(schema, projection, parameterMetadata);
     }
 
     @Override
-    public PlanNodeSchema schema() {
-        List<QueryDataType> fieldTypes = toList(projection(), Expression::getType);
+    public PlanNodeSchema schema(QueryParameterMetadata parameterMetadata) {
+        List<QueryDataType> fieldTypes = toList(projection(parameterMetadata), Expression::getType);
         return new PlanNodeSchema(fieldTypes);
     }
 

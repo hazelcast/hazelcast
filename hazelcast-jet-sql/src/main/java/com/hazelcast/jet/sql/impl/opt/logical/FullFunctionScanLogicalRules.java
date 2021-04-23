@@ -24,6 +24,7 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.Convention;
+import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.convert.ConverterRule;
@@ -55,7 +56,10 @@ final class FullFunctionScanLogicalRules {
         private HazelcastTable extractTable(LogicalTableFunctionScan scan) {
             JetSpecificTableFunction specificFunction = extractSpecificFunction(scan);
             List<RexNode> operands = ((RexCall) scan.getCall()).getOperands();
-            RexVisitor<Expression<?>> visitor = OptUtils.createRexToExpressionVisitor(FailingFieldTypeProvider.INSTANCE);
+            RexVisitor<Expression<?>> visitor = OptUtils.createRexToExpressionVisitor(
+                    FailingFieldTypeProvider.INSTANCE,
+                    ((HazelcastRelOptCluster) scan.getCluster()).getParameterMetadata()
+            );
             List<Expression<?>> argumentExpressions = IntStream.range(0, specificFunction.getOperandCountRange().getMax())
                     .mapToObj(index -> index < operands.size()
                             ? (Expression<?>) operands.get(index).accept(visitor)

@@ -16,20 +16,19 @@
 
 package com.hazelcast.jet.sql.impl.connector.infoschema;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.schema.MappingField;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.schema.Table;
 
 import javax.annotation.Nonnull;
@@ -118,8 +117,7 @@ final class InfoSchemaConnector implements SqlConnector {
 
         @Override
         protected void init(@Nonnull Context context) {
-            InternalSerializationService serializationService = ((ProcCtx) context).serializationService();
-            SimpleExpressionEvalContext evalContext = new SimpleExpressionEvalContext(serializationService);
+            ExpressionEvalContext evalContext = SimpleExpressionEvalContext.from(context);
             List<Object[]> processedRows = ExpressionUtil.evaluate(predicate, projection, rows, evalContext);
             traverser = Traversers.traverseIterable(processedRows);
         }

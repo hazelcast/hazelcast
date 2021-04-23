@@ -91,6 +91,20 @@ public class SqlStreamGeneratorTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_generateStreamWithDynamicParameters() {
+        assertRowsEventuallyInAnyOrder(
+                "SELECT v * ? FROM TABLE(GENERATE_STREAM(?)) WHERE v > 1 - ? AND v < 5",
+                asList(2, 100, 1),
+                asList(
+                        new Row(2L),
+                        new Row(4L),
+                        new Row(6L),
+                        new Row(8L)
+                )
+        );
+    }
+
+    @Test
     public void test_generateEmptyStream() {
         SqlResult result = sqlService.execute("SELECT * FROM TABLE(GENERATE_STREAM(0))");
         Future<Boolean> future = spawn(() -> result.iterator().hasNext());

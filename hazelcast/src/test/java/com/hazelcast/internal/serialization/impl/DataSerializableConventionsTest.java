@@ -120,17 +120,21 @@ public class DataSerializableConventionsTest {
         dataSerializableClasses.removeAll(serializableByConventions);
 
         if (dataSerializableClasses.size() > 0) {
-            SortedSet<String> nonCompliantClassNames = new TreeSet<String>();
+            SortedSet<String> nonCompliantClassNames = new TreeSet<>();
             for (Object o : dataSerializableClasses) {
-                nonCompliantClassNames.add(o.toString());
+                if (!inheritsFromWhiteListedClass((Class) o)) {
+                    nonCompliantClassNames.add(o.toString());
+                }
             }
-            System.out.println("The following classes are DataSerializable while they should be IdentifiedDataSerializable:");
-            // failure - output non-compliant classes to standard output and fail the test
-            for (String s : nonCompliantClassNames) {
-                System.out.println(s);
+            if (!nonCompliantClassNames.isEmpty()) {
+                System.out.println("The following classes are DataSerializable while they should be IdentifiedDataSerializable:");
+                // failure - output non-compliant classes to standard output and fail the test
+                for (String s : nonCompliantClassNames) {
+                    System.out.println(s);
+                }
+                fail("There are " + dataSerializableClasses.size() + " classes which are DataSerializable, not @BinaryInterface-"
+                        + "annotated and are not IdentifiedDataSerializable.");
             }
-            fail("There are " + dataSerializableClasses.size() + " classes which are DataSerializable, not @BinaryInterface-"
-                    + "annotated and are not IdentifiedDataSerializable.");
         }
     }
 

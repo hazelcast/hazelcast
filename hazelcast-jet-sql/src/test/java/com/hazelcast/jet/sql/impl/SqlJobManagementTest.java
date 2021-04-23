@@ -21,16 +21,15 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
+import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlService;
-import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
+import static com.hazelcast.jet.core.TestUtil.createMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
@@ -38,7 +37,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-@Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlJobManagementTest extends SqlTestSupport {
 
     private static final String COMPLETED_JOB_NAME = "completedJob";
@@ -167,6 +165,13 @@ public class SqlJobManagementTest extends SqlTestSupport {
     }
 
     @Test
+    public void when_dropJobWithParameters_then_fail() {
+        assertThatThrownBy(() -> sqlService.execute("DROP JOB j", "param"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessage("DROP JOB does not support dynamic parameters");
+    }
+
+    @Test
     public void test_jobOptions() {
         sqlService.execute("CREATE MAPPING src TYPE TestStream");
         sqlService.execute(javaSerializableMapDdl("dest", Long.class, Long.class));
@@ -191,6 +196,23 @@ public class SqlJobManagementTest extends SqlTestSupport {
         assertTrue("isSplitBrainProtectionEnabled", config.isSplitBrainProtectionEnabled());
         assertFalse("isMetricsEnabled", config.isMetricsEnabled());
         assertEquals("fooSnapshot", config.getInitialSnapshotName());
+    }
+
+    @Test
+    public void test_dynamicParameters() {
+        TestBatchSqlConnector.create(sqlService, "src", 3);
+        sqlService.execute(javaSerializableMapDdl("dest", Integer.class, String.class));
+
+        sqlService.execute(
+                "CREATE JOB testJob AS SINK INTO dest SELECT v * ?, ? || v FROM src WHERE v > ?",
+                2, "value-", 0
+        );
+
+        assertMapEventually(
+                "dest",
+                "SELECT * FROM dest",
+                createMap(2, "value-1", 4, "value-2")
+        );
     }
 
     @Test
@@ -261,6 +283,13 @@ public class SqlJobManagementTest extends SqlTestSupport {
     }
 
     @Test
+    public void when_alterJobWithParameters_then_fail() {
+        assertThatThrownBy(() -> sqlService.execute("ALTER JOB j SUSPEND", "param"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessage("ALTER JOB does not support dynamic parameters");
+    }
+
+    @Test
     public void when_snapshotExportWithoutOrReplace_then_orReplaceRequired() {
         sqlService.execute("CREATE MAPPING src TYPE TestStream");
         sqlService.execute(javaSerializableMapDdl("dest", Long.class, Long.class));
@@ -269,6 +298,13 @@ public class SqlJobManagementTest extends SqlTestSupport {
 
         assertThatThrownBy(() -> sqlService.execute("CREATE SNAPSHOT mySnapshot FOR JOB testJob"))
                 .hasMessageContaining("The OR REPLACE option is required for CREATE SNAPSHOT");
+    }
+
+    @Test
+    public void when_createSnapshotWithParameters_then_fail() {
+        assertThatThrownBy(() -> sqlService.execute("CREATE OR REPLACE SNAPSHOT s FOR JOB j", "param"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessage("CREATE SNAPSHOT does not support dynamic parameters");
     }
 
     @Test
@@ -286,6 +322,13 @@ public class SqlJobManagementTest extends SqlTestSupport {
     public void when_snapshotExport_jobDoesNotExist_then_fail() {
         assertThatThrownBy(() -> sqlService.execute("CREATE OR REPLACE SNAPSHOT mySnapshot FOR JOB nonExistentJob"))
                 .hasMessageContaining("The job 'nonExistentJob' doesn't exist");
+    }
+
+    @Test
+    public void when_dropSnapshotWithParameters_then_fail() {
+        assertThatThrownBy(() -> sqlService.execute("DROP SNAPSHOT s", "param"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessage("DROP SNAPSHOT does not support dynamic parameters");
     }
 
     @Test
@@ -318,7 +361,7 @@ public class SqlJobManagementTest extends SqlTestSupport {
         assertThat(planCache(instance()).size()).isEqualTo(1);
 
         sqlService.execute("DROP MAPPING target");
-        assertTrueEventually(() -> assertThat(planCache(instance()).size()).isZero());
+        assertThat(planCache(instance()).size()).isZero();
     }
 
     private void createCompletedJob() {

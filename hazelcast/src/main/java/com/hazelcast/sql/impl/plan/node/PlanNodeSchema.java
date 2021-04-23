@@ -49,8 +49,6 @@ public class PlanNodeSchema implements PlanNodeFieldTypeProvider {
 
     @Override
     public QueryDataType getType(int index) {
-        assert index <= types.size();
-
         return types.get(index);
     }
 

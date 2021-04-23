@@ -20,6 +20,7 @@ import com.hazelcast.jet.kafka.impl.KafkaTestSupport;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.sql.SqlStatement;
 import org.apache.kafka.common.serialization.IntegerDeserializer;
 import org.apache.kafka.common.serialization.IntegerSerializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -29,6 +30,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.jet.core.TestUtil.createMap;
@@ -39,6 +41,7 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMA
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -218,6 +221,57 @@ public class SqlPrimitiveTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT * FROM " + name,
                 singletonList(new Row(1, "2"))
+        );
+    }
+
+    @Test
+    public void test_insertWithDynamicParameters() {
+        String name = createRandomTopic();
+        sqlService.execute("CREATE MAPPING " + name + ' '
+                + "TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
+                + "OPTIONS ( "
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_KEY_CLASS + "'='" + Integer.class.getName() + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_VALUE_CLASS + "'='" + String.class.getName() + '\''
+                + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
+                + ", 'auto.offset.reset'='earliest'"
+                + ")"
+        );
+
+        assertTopicEventually(
+                name,
+                "INSERT INTO " + name + " (this, __key) VALUES (?, CAST(0 + ? AS INT))",
+                asList("2", 1),
+                createMap(1, "2")
+        );
+        assertRowsEventuallyInAnyOrder(
+                "SELECT * FROM " + name,
+                singletonList(new Row(1, "2"))
+        );
+    }
+
+    @Test
+    public void test_selectWithDynamicParameters() {
+        String name = createRandomTopic();
+        sqlService.execute("CREATE MAPPING " + name + ' '
+                + "TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
+                + "OPTIONS ( "
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_KEY_CLASS + "'='" + Integer.class.getName() + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_VALUE_CLASS + "'='" + String.class.getName() + '\''
+                + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
+                + ", 'auto.offset.reset'='earliest'"
+                + ")"
+        );
+
+        sqlService.execute("INSERT INTO " + name + " VALUES (1, '1'),  (2, '2')");
+
+        assertRowsEventuallyInAnyOrder(
+                "SELECT __key + ?, ABS(__key + ?), this FROM " + name + " WHERE __key + ? >= ?",
+                asList(2, -10, 2, 4),
+                singletonList(new Row(4L, 8L, "2"))
         );
     }
 
@@ -433,7 +487,19 @@ public class SqlPrimitiveTest extends SqlTestSupport {
     }
 
     private static void assertTopicEventually(String name, String sql, Map<Integer, String> expected) {
-        sqlService.execute(sql);
+        assertTopicEventually(name, sql, emptyList(), expected);
+    }
+
+    private static void assertTopicEventually(
+            String name,
+            String sql,
+            List<Object> arguments,
+            Map<Integer, String> expected
+    ) {
+        SqlStatement statement = new SqlStatement(sql);
+        arguments.forEach(statement::addParameter);
+
+        sqlService.execute(statement);
 
         kafkaTestSupport.assertTopicContentsEventually(name, expected, false);
     }
