@@ -155,7 +155,7 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
     @Test
     public void test_dynamicParamTypeWidening() {
         putAll((byte) 0);
-        checkValue0(sqlQuery("BETWEEN ? AND ?"), SqlColumnType.TINYINT, (byte) 0, 1000, 1000);
+        checkValue0(sqlQuery("NOT BETWEEN ? AND ?"), SqlColumnType.TINYINT, (byte) 0, 1000, 1000);
     }
 
     @Test
@@ -278,10 +278,16 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
             }
         } catch (HazelcastSqlException e) {
             assertNotNull(expectedOutcome.f1());
-            // Expected : ... Parameter at position 0 must be of BIGINT type, but VARCHAR was found
-            // Actual   : ... Parameter at position 0 must be of TINYINT type, but VARCHAR was found
-            // We are not hard-casting everything to BIGINT, so, we wouldn't use check below.
-            assertEquals(expectedOutcome.f1().getMessage(), e.getMessage());
+
+            // Expected :At line 1, column [5]5: ...
+            // Actual   :At line 1, column [6]5: ...
+            // To overcome             this ^ we are comparing substrings like
+            // "Parameter at position 1 must be of $1 type, but $2 was found (consider adding an explicit CAST)"
+            int startIndex = e.getMessage().indexOf("Parameter");
+            assertEquals(
+                    expectedOutcome.f1().getMessage().substring(startIndex),
+                    e.getMessage().substring(startIndex)
+            );
         }
     }
 

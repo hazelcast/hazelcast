@@ -19,8 +19,9 @@ package com.hazelcast.sql.impl.calcite.validate.operators.predicate;
 import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
+import com.hazelcast.sql.impl.calcite.validate.operators.BetweenOperatorOperandTypeInference;
 import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastInfixOperator;
-import com.hazelcast.sql.impl.calcite.validate.param.BetweenOpNumericPrecedenceParameterConverter;
+import com.hazelcast.sql.impl.calcite.validate.param.NumericPrecedenceParameterConverter;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeComparability;
@@ -30,7 +31,6 @@ import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.fun.SqlBetweenOperator.Flag;
 import org.apache.calcite.sql.type.ComparableOperandTypeChecker;
-import org.apache.calcite.sql.type.InferTypes;
 import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import org.apache.calcite.sql.type.SqlOperandTypeChecker.Consistency;
@@ -74,7 +74,7 @@ public final class HazelcastBetweenOperator extends HazelcastInfixOperator {
                 SqlKind.BETWEEN,
                 PRECEDENCE,
                 ReturnTypes.BOOLEAN_NULLABLE,
-                InferTypes.FIRST_KNOWN,
+                BetweenOperatorOperandTypeInference.INSTANCE,
                 new ComparableOperandTypeChecker(3, RelDataTypeComparability.ALL, Consistency.COMPARE)
         );
         this.negated = negated;
@@ -110,7 +110,7 @@ public final class HazelcastBetweenOperator extends HazelcastInfixOperator {
 
         QueryDataType winnerQueryDataType = toHazelcastType(winningType.getSqlTypeName());
 
-        // Set flexible parameter converter that allows TINYINT/SMALLINT/INTEGER -> BIGINT conversions
+        // Set more flexible parameter converter that allows TINYINT/SMALLINT/INTEGER -> BIGINT conversions.
         if (winnerQueryDataType.getTypeFamily().isNumeric()) {
             setNumericParameterConverter(validator, callBinding.getCall().getOperandList().get(1), winnerQueryDataType);
             setNumericParameterConverter(validator, callBinding.getCall().getOperandList().get(2), winnerQueryDataType);
@@ -131,7 +131,7 @@ public final class HazelcastBetweenOperator extends HazelcastInfixOperator {
         if (node.getKind() == SqlKind.DYNAMIC_PARAM) {
             SqlDynamicParam node0 = (SqlDynamicParam) node;
 
-            ParameterConverter converter = new BetweenOpNumericPrecedenceParameterConverter(
+            ParameterConverter converter = new NumericPrecedenceParameterConverter(
                     node0.getIndex(),
                     node.getParserPosition(),
                     type
