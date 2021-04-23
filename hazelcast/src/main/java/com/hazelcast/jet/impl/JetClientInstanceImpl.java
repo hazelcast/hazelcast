@@ -64,12 +64,13 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
     @Nonnull @Override
     public LightJob newLightJob(DAG dag) {
         Data dagSerialized = serializationService.toData(dag);
-        ClientMessage message = JetSubmitLightJobCodec.encodeRequest(newJobId(), dagSerialized);
+        long jobId = newJobId();
+        ClientMessage message = JetSubmitLightJobCodec.encodeRequest(jobId, dagSerialized);
         // TODO [viliam] ensure it's not executed on a lite member
         ClientInvocation invocation = new ClientInvocation(client, message, null);
 
         ClientInvocationFuture future = invocation.invoke();
-        return new ClientLightJobProxy(future);
+        return new ClientLightJobProxy(client, jobId, future);
     }
 
     @Nonnull @Override

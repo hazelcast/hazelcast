@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.Job;
@@ -36,7 +37,9 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.concurrent.Future;
+import java.util.concurrent.ThreadLocalRandom;
 
+import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static java.util.stream.Collectors.toList;
 
@@ -61,14 +64,23 @@ public class JetInstanceImpl extends AbstractJetInstance {
     @Nonnull @Override
     public LightJob newLightJob(DAG dag) {
         Timers.i().init.stop();
-        Address thisAddress = nodeEngine.getThisAddress();
-        SubmitLightJobOperation operation = new SubmitLightJobOperation(newJobId(), dag);
+        Address coordinatorAddress;
+        if (nodeEngine.getLocalMember().isLiteMember()) {
+            // on lite member forward the request to a random member
+            Member[] members = nodeEngine.getClusterService().getMembers(DATA_MEMBER_SELECTOR).toArray(new Member[0]);
+            coordinatorAddress = members[ThreadLocalRandom.current().nextInt(members.length)].getAddress();
+        } else {
+            coordinatorAddress = nodeEngine.getThisAddress();
+        }
+
+        long jobId = newJobId();
+        SubmitLightJobOperation operation = new SubmitLightJobOperation(jobId, dag);
         Future<Void> future = nodeEngine
                 .getOperationService()
-                .createInvocationBuilder(JetService.SERVICE_NAME, operation, thisAddress)
+                .createInvocationBuilder(JetService.SERVICE_NAME, operation, coordinatorAddress)
                 .invoke();
 
-        return new LightJobProxy(future);
+        return new LightJobProxy(nodeEngine, jobId, coordinatorAddress, future);
     }
 
     @Nonnull @Override

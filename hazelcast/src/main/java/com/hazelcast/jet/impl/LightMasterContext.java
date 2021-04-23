@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.operation;
+package com.hazelcast.jet.impl;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.OperationTimeoutException;
@@ -25,9 +25,9 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.impl.JetService;
-import com.hazelcast.jet.impl.Timers;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
+import com.hazelcast.jet.impl.operation.InitExecutionOperation;
+import com.hazelcast.jet.impl.operation.TerminateExecutionOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
@@ -81,7 +81,7 @@ public class LightMasterContext {
     private final CompletableFuture<Void> jobCompletionFuture = new CompletableFuture<>();
     private Set<Vertex> vertices;
 
-    LightMasterContext(NodeEngine nodeEngine, DAG dag, long jobId) {
+    public LightMasterContext(NodeEngine nodeEngine, DAG dag, long jobId) {
         this.nodeEngine = nodeEngine;
         this.dag = dag;
         this.jobId = jobId;
@@ -203,7 +203,7 @@ public class LightMasterContext {
             if (retryOnTimeoutException && throwable instanceof OperationTimeoutException) {
                 logger.warning("Retrying " + op.getClass().getSimpleName() + " that failed with "
                         + OperationTimeoutException.class.getSimpleName() + " in " + jobIdString);
-                invokeOnParticipant(address, op, completionCallback, errorCallback, retryOnTimeoutException,
+                invokeOnParticipant(address, op, completionCallback, errorCallback, true,
                         collectedResponses, remainingCount);
                 return;
             }
@@ -229,5 +229,12 @@ public class LightMasterContext {
     private Throwable firstError(Collection<Object> responses) {
         return responses.stream().filter(Throwable.class::isInstance).map(Throwable.class::cast)
                         .findFirst().orElse(null);
+    }
+
+    public CompletableFuture<Void> requestTermination() {
+        if (!jobCompletionFuture.isDone()) {
+            cancelInvocations();
+        }
+        return jobCompletionFuture;
     }
 }

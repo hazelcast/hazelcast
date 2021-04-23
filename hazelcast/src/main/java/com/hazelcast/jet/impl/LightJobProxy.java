@@ -16,7 +16,10 @@
 
 package com.hazelcast.jet.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.jet.LightJob;
+import com.hazelcast.jet.impl.operation.CancelLightJobOperation;
+import com.hazelcast.spi.impl.NodeEngine;
 
 import java.util.concurrent.Future;
 
@@ -24,9 +27,15 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
 public class LightJobProxy implements LightJob {
 
+    private final NodeEngine nodeEngine;
+    private final long jobId;
+    private final Address coordinatorAddress;
     private final Future<Void> future;
 
-    LightJobProxy(Future<Void> future) {
+    LightJobProxy(NodeEngine nodeEngine, long jobId, Address coordinatorAddress, Future<Void> future) {
+        this.nodeEngine = nodeEngine;
+        this.jobId = jobId;
+        this.coordinatorAddress = coordinatorAddress;
         this.future = future;
     }
 
@@ -41,6 +50,10 @@ public class LightJobProxy implements LightJob {
 
     @Override
     public void cancel() {
-        throw new UnsupportedOperationException("todo");
+        CancelLightJobOperation operation = new CancelLightJobOperation(jobId);
+        nodeEngine.getOperationService()
+                .createInvocationBuilder(JetService.SERVICE_NAME, operation, coordinatorAddress)
+                .invoke()
+                .join();
     }
 }

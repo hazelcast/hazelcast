@@ -32,6 +32,7 @@ import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JobAlreadyExistsException;
+import com.hazelcast.jet.Util;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
@@ -131,6 +132,7 @@ public class JobCoordinationService {
     private final ILogger logger;
     private final JobRepository jobRepository;
     private final ConcurrentMap<Long, MasterContext> masterContexts = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Long, LightMasterContext> lightMasterContexts = new ConcurrentHashMap<>();
     private final ConcurrentMap<UUID, CompletableFuture<Void>> membersShuttingDown = new ConcurrentHashMap<>();
     /**
      * Map of {memberUuid; removeTime}.
@@ -266,6 +268,20 @@ public class JobCoordinationService {
         return res;
     }
 
+    public CompletableFuture<Void> submitLightJob(long jobId, DAG dag) {
+        LightMasterContext mc = new LightMasterContext(nodeEngine, dag, jobId);
+        LightMasterContext oldContext = lightMasterContexts.put(jobId, mc);
+        System.out.println("aaa light master context added: " + idToString(jobId));
+        assert oldContext == null : "duplicate jobId";
+        return mc.start()
+                .whenComplete((t, r) -> {
+                    LightMasterContext removed = lightMasterContexts.remove(jobId);
+                    assert removed != null : "LMC not found";
+                    System.out.println("aaa light master context removed: " + idToString(jobId));
+                    Timers.i().submitLightJobOperation_run.stop();
+                });
+    }
+
     private static Set<String> ownedObservables(DAG dag) {
         return StreamSupport.stream(Spliterators.spliteratorUnknownSize(dag.iterator(), 0), false)
                 .map(vertex -> vertex.getMetaSupplier().getTags().get(ObservableImpl.OWNED_OBSERVABLE))
@@ -384,6 +400,15 @@ public class JobCoordinationService {
                             + terminationMode);
                 }
         );
+    }
+
+    public CompletableFuture<Void> terminateLightJob(long jobId) {
+        LightMasterContext mc = lightMasterContexts.get(jobId);
+        if (mc == null) {
+            throw new JobNotFoundException("Job with id " + Util.idToString(jobId)
+                    + " already completed or not known to this member");
+        }
+        return mc.requestTermination();
     }
 
     public CompletableFuture<List<Long>> getAllJobIds() {

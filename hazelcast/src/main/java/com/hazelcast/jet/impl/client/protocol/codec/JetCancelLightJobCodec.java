@@ -35,8 +35,8 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 
 /**
  */
-@Generated("35a836fbc2f43889fd37a05c2b0853e4")
-public final class JetSubmitLightJobCodec {
+@Generated("01d00c6e49827feb8e5d611f7202aece")
+public final class JetCancelLightJobCodec {
     //hex: 0xFE0F00
     public static final int REQUEST_MESSAGE_TYPE = 16649984;
     //hex: 0xFE0F01
@@ -45,41 +45,27 @@ public final class JetSubmitLightJobCodec {
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_JOB_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
-    private JetSubmitLightJobCodec() {
+    private JetCancelLightJobCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         */
-        public long jobId;
-
-        /**
-         */
-        public com.hazelcast.internal.serialization.Data dag;
-    }
-
-    public static ClientMessage encodeRequest(long jobId, com.hazelcast.internal.serialization.Data dag) {
+    public static ClientMessage encodeRequest(long jobId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setOperationName("Jet.SubmitLightJob");
+        clientMessage.setOperationName("Jet.CancelLightJob");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeLong(initialFrame.content, REQUEST_JOB_ID_FIELD_OFFSET, jobId);
         clientMessage.add(initialFrame);
-        DataCodec.encode(clientMessage, dag);
         return clientMessage;
     }
 
-    public static JetSubmitLightJobCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    /**
+     */
+    public static long decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        request.jobId = decodeLong(initialFrame.content, REQUEST_JOB_ID_FIELD_OFFSET);
-        request.dag = DataCodec.decode(iterator);
-        return request;
+        return decodeLong(initialFrame.content, REQUEST_JOB_ID_FIELD_OFFSET);
     }
 
     public static ClientMessage encodeResponse() {
