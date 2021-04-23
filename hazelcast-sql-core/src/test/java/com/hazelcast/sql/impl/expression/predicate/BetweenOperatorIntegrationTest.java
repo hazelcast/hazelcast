@@ -90,8 +90,7 @@ import static org.junit.Assert.assertNull;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
 
-    // TODO [viliam] remove OBJECT?
-    static final ExpressionType<?>[] TESTED_TYPES = ExpressionTypes.allExcept(ExpressionTypes.OBJECT);
+    static final ExpressionType<?>[] TESTED_TYPES = ExpressionTypes.allExcept();
 
     @Test
     public void basicBetweenPredicateNumericTest() {
@@ -282,7 +281,7 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
             // Expected : ... Parameter at position 0 must be of BIGINT type, but VARCHAR was found
             // Actual   : ... Parameter at position 0 must be of TINYINT type, but VARCHAR was found
             // We are not hard-casting everything to BIGINT, so, we wouldn't use check below.
-             assertEquals(expectedOutcome.f1().getMessage(), e.getMessage());
+            assertEquals(expectedOutcome.f1().getMessage(), e.getMessage());
         }
     }
 
