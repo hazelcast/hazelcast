@@ -37,7 +37,6 @@
         <main.basedir>${project.parent.basedir}</main.basedir>
 
         <calcite.version>1.23.0</calcite.version>
-        <slf4j.version>1.7.25</slf4j.version>
         <confluent.version>4.1.4</confluent.version>
         <jaxb.version>2.3.1</jaxb.version>
     </properties>
