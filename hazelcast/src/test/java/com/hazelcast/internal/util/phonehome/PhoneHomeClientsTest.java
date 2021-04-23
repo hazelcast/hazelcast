@@ -25,6 +25,7 @@ import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestAwareInstanceFactory;
+import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Before;
@@ -53,7 +54,6 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
-@Category({SlowTest.class})
 public class PhoneHomeClientsTest extends HazelcastTestSupport {
 
     private static final Map<TestUtil.ClientPrefix, String> PREFIX_TO_CLIENT_TYPE = new HashMap<>(6);
@@ -102,6 +102,7 @@ public class PhoneHomeClientsTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(QuickTest.class) //marked quick to form a small subset that also runs in the PR builder
     public void testSingleClient_withSingleMember_whenTheClientIsActive() throws IOException {
         TestUtil.DummyClient client = clientFactory.newClient(getClientType(), "4.0");
         client.connectTo(node);
@@ -111,6 +112,7 @@ public class PhoneHomeClientsTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(SlowTest.class)
     public void testSingleClient_withMultipleMembers_whenTheClientIsActive() throws IOException {
         HazelcastInstance instance = factory.newHazelcastInstance(smallInstanceConfig());
         Node node1 = getNode(instance);
@@ -125,6 +127,7 @@ public class PhoneHomeClientsTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(QuickTest.class) //marked quick to form a small subset that also runs in the PR builder
     public void testSingleClient_withSingleMember_whenTheClientIsShutdown() throws IOException {
         addClientListener(node);
         TestUtil.DummyClient client = clientFactory.newClient(getClientType(), "4.2-BETA");
@@ -137,6 +140,7 @@ public class PhoneHomeClientsTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(SlowTest.class)
     public void testSingleClient_withMultipleMembers_whenTheClientIsShutdown() throws IOException {
         HazelcastInstance instance = factory.newHazelcastInstance(smallInstanceConfig());
         Node node1 = getNode(instance);
@@ -156,6 +160,7 @@ public class PhoneHomeClientsTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(SlowTest.class)
     public void testMultipleClients_withSingleMember_whenTheClientsAreActive() throws IOException {
         TestUtil.DummyClient client = clientFactory.newClient(getClientType(), "4.1");
         TestUtil.DummyClient client1 = clientFactory.newClient(getClientType(), "4.1");
@@ -167,6 +172,7 @@ public class PhoneHomeClientsTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(SlowTest.class)
     public void testMultipleClients_withSingleMember_whenTheClientsAreShutdown() throws IOException {
         addClientListener(node);
         TestUtil.DummyClient client = clientFactory.newClient(getClientType(), "4.0.1");
@@ -182,6 +188,7 @@ public class PhoneHomeClientsTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(SlowTest.class)
     public void testMultipleClients_withSingleMember_whenSomeClientsAreShutdown() throws IOException {
         addClientListener(node);
         TestUtil.DummyClient client = clientFactory.newClient(getClientType(), "4.0");
@@ -200,6 +207,7 @@ public class PhoneHomeClientsTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(SlowTest.class)
     public void testMultipleClients_withMultipleMembers_whenTheClientsAreActive() throws IOException {
         HazelcastInstance instance = factory.newHazelcastInstance(smallInstanceConfig());
         Node node1 = getNode(instance);
@@ -217,6 +225,7 @@ public class PhoneHomeClientsTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(SlowTest.class)
     public void testMultipleClients_withMultipleMembers_whenTheClientsAreShutdown() throws IOException {
         HazelcastInstance instance = factory.newHazelcastInstance(smallInstanceConfig());
         Node node1 = getNode(instance);
@@ -241,6 +250,7 @@ public class PhoneHomeClientsTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(SlowTest.class)
     public void testMultipleClients_withMultipleMembers_whenSomeClientsAreShutdown() throws IOException {
         HazelcastInstance instance = factory.newHazelcastInstance(smallInstanceConfig());
         Node node1 = getNode(instance);
@@ -268,6 +278,7 @@ public class PhoneHomeClientsTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(SlowTest.class)
     public void testConsecutivePhoneHomes() throws IOException {
         addClientListener(node);
         TestUtil.DummyClient client = clientFactory.newClient(getClientType(), "4.3");
@@ -283,6 +294,7 @@ public class PhoneHomeClientsTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(SlowTest.class)
     public void testUniSocketClients() throws IOException {
         HazelcastInstance instance = factory.newHazelcastInstance(smallInstanceConfig());
         Node node1 = getNode(instance);

@@ -57,6 +57,7 @@ import com.hazelcast.sql.impl.expression.string.ConcatFunction;
 import com.hazelcast.sql.impl.expression.string.InitcapFunction;
 import com.hazelcast.sql.impl.expression.string.LikeFunction;
 import com.hazelcast.sql.impl.expression.string.LowerFunction;
+import com.hazelcast.sql.impl.expression.string.PositionFunction;
 import com.hazelcast.sql.impl.expression.string.ReplaceFunction;
 import com.hazelcast.sql.impl.expression.string.SubstringFunction;
 import com.hazelcast.sql.impl.expression.string.TrimFunction;
@@ -310,6 +311,7 @@ public final class RexToExpression {
 
                 break;
 
+            case POSITION:
             case OTHER_FUNCTION:
                 SqlFunction function = (SqlFunction) operator;
 
@@ -400,6 +402,9 @@ public final class RexToExpression {
                     return TrimFunction.create(operands[0], null, true, true);
                 } else if (function == HazelcastSqlOperatorTable.REPLACE) {
                     return ReplaceFunction.create(operands[0], operands[1], operands[2]);
+                } else if (function == HazelcastSqlOperatorTable.POSITION) {
+                    Expression<?> start = operands.length > 2 ? operands[2] : null;
+                    return PositionFunction.create(operands[0], operands[1], start);
                 }
 
                 break;

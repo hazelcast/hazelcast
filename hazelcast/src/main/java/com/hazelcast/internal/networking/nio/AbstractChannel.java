@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
-import java.net.SocketException;
 import java.nio.channels.SocketChannel;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -128,17 +127,10 @@ public abstract class AbstractChannel implements Channel {
             // since the connect method is blocking, we need to configure blocking.
             socketChannel.configureBlocking(true);
 
-            try {
-                if (timeoutMillis > 0) {
-                    socketChannel.socket().connect(address, timeoutMillis);
-                } else {
-                    socketChannel.connect(address);
-                }
-            } catch (SocketException ex) {
-                //we want to include the address in the exception.
-                SocketException newEx = new SocketException(ex.getMessage() + " to address " + address);
-                newEx.setStackTrace(ex.getStackTrace());
-                throw newEx;
+            if (timeoutMillis > 0) {
+                socketChannel.socket().connect(address, timeoutMillis);
+            } else {
+                socketChannel.connect(address);
             }
 
             if (logger.isFinestEnabled()) {
@@ -149,7 +141,9 @@ public abstract class AbstractChannel implements Channel {
             throw e;
         } catch (IOException e) {
             IOUtil.closeResource(this);
-            throw e;
+            IOException newEx = new IOException(e.getMessage() + " to address " + address);
+            newEx.setStackTrace(e.getStackTrace());
+            throw newEx;
         }
     }
 

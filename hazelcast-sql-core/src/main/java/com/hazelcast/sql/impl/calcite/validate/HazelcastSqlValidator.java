@@ -160,22 +160,24 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         super.validateQuery(node, scope, targetRowType);
 
         if (node instanceof SqlSelect) {
-            // Derive the types for offset-fetch expressions, Calcite doesn't do
-            // that automatically.
+            validateSelect((SqlSelect) node, scope);
+        }
+    }
 
-            SqlSelect select = (SqlSelect) node;
+    protected void validateSelect(SqlSelect select, SqlValidatorScope scope) {
+        // Derive the types for offset-fetch expressions, Calcite doesn't do
+        // that automatically.
 
-            SqlNode offset = select.getOffset();
-            if (offset != null) {
-                deriveType(scope, offset);
-                validateNonNegativeValue(offset);
-            }
+        SqlNode offset = select.getOffset();
+        if (offset != null) {
+            deriveType(scope, offset);
+            validateNonNegativeValue(offset);
+        }
 
-            SqlNode fetch = select.getFetch();
-            if (fetch != null) {
-                deriveType(scope, fetch);
-                validateNonNegativeValue(fetch);
-            }
+        SqlNode fetch = select.getFetch();
+        if (fetch != null) {
+            deriveType(scope, fetch);
+            validateNonNegativeValue(fetch);
         }
     }
 

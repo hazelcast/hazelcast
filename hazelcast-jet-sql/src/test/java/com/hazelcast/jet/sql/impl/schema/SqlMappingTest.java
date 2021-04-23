@@ -235,4 +235,18 @@ public class SqlMappingTest extends SqlTestSupport {
                 .hasMessage("From line 1, column 16 to line 1, column 42: " +
                         "The mapping must be created in the \"public\" schema");
     }
+
+    @Test
+    public void when_createMappingWithParameters_then_fail() {
+        assertThatThrownBy(() -> sqlService.execute("CREATE MAPPING m TYPE TestBatch", "param"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessage("CREATE MAPPING does not support dynamic parameters");
+    }
+
+    @Test
+    public void when_dropMappingWithParameters_then_fail() {
+        assertThatThrownBy(() -> sqlService.execute("DROP MAPPING m", "param"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessage("DROP MAPPING does not support dynamic parameters");
+    }
 }

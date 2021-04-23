@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.schema;
 
+import com.hazelcast.core.EntryEvent;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.jet.sql.impl.connector.infoschema.MappingColumnsTable;
@@ -31,6 +32,7 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
@@ -53,6 +55,7 @@ public class MappingCatalog implements TableResolver {
     private final NodeEngine nodeEngine;
     private final MappingStorage storage;
     private final SqlConnectorCache connectorCache;
+    private final List<TableListener> listeners;
 
     public MappingCatalog(
             NodeEngine nodeEngine,
@@ -62,6 +65,26 @@ public class MappingCatalog implements TableResolver {
         this.nodeEngine = nodeEngine;
         this.storage = storage;
         this.connectorCache = connectorCache;
+        this.listeners = new CopyOnWriteArrayList<>();
+
+        // because listeners are invoked asynchronously from the calling thread,
+        // local changes are handled in createMapping() & removeMapping(), thus
+        // we skip events originating from local member to avoid double processing
+        this.storage.registerListener(new MappingStorage.EntryListenerAdapter() {
+            @Override
+            public void entryUpdated(EntryEvent<String, Mapping> event) {
+                if (!event.getMember().localMember()) {
+                    listeners.forEach(TableListener::onTableChanged);
+                }
+            }
+
+            @Override
+            public void entryRemoved(EntryEvent<String, Mapping> event) {
+                if (!event.getMember().localMember()) {
+                    listeners.forEach(TableListener::onTableChanged);
+                }
+            }
+        });
     }
 
     public void createMapping(Mapping mapping, boolean replace, boolean ifNotExists) {
@@ -72,6 +95,7 @@ public class MappingCatalog implements TableResolver {
             storage.putIfAbsent(name, resolved);
         } else if (replace) {
             storage.put(name, resolved);
+            listeners.forEach(TableListener::onTableChanged);
         } else if (!storage.putIfAbsent(name, resolved)) {
             throw QueryException.error("Mapping already exists: " + name);
         }
@@ -93,7 +117,9 @@ public class MappingCatalog implements TableResolver {
     }
 
     public void removeMapping(String name, boolean ifExists) {
-        if (!storage.remove(name) && !ifExists) {
+        if (storage.remove(name) != null) {
+            listeners.forEach(TableListener::onTableChanged);
+        } else if (!ifExists) {
             throw QueryException.error("Mapping does not exist: " + name);
         }
     }
@@ -113,7 +139,7 @@ public class MappingCatalog implements TableResolver {
     @Override
     public List<Table> getTables() {
         Collection<Mapping> mappings = storage.values();
-        List<Table> tables = new ArrayList<>(mappings.size());
+        List<Table> tables = new ArrayList<>(mappings.size() + 2);
         for (Mapping mapping : mappings) {
             tables.add(toTable(mapping));
         }
@@ -132,5 +158,10 @@ public class MappingCatalog implements TableResolver {
                 mapping.options(),
                 mapping.fields()
         );
+    }
+
+    @Override
+    public void registerListener(TableListener listener) {
+        listeners.add(listener);
     }
 }

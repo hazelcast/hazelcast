@@ -19,8 +19,12 @@ package com.hazelcast.jet.sql.impl.schema;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryListener;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.MapEvent;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.operation.GetOperation;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -29,7 +33,6 @@ import com.hazelcast.spi.impl.operationservice.OperationService;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
@@ -113,11 +116,48 @@ public class MappingStorage {
         return storage().values();
     }
 
-    boolean remove(String name) {
-        return storage().remove(name) != null;
+    Mapping remove(String name) {
+        return storage().remove(name);
     }
 
-    private Map<String, Mapping> storage() {
+    void registerListener(EntryListenerAdapter listener) {
+        storage().addEntryListener(listener);
+    }
+
+    private ReplicatedMap<String, Mapping> storage() {
         return nodeEngine.getHazelcastInstance().getReplicatedMap(CATALOG_MAP_NAME);
+    }
+
+    abstract static class EntryListenerAdapter implements EntryListener<String, Mapping> {
+
+        @Override
+        public final void entryAdded(EntryEvent<String, Mapping> event) {
+        }
+
+        @Override
+        public abstract void entryUpdated(EntryEvent<String, Mapping> event);
+
+        @Override
+        public abstract void entryRemoved(EntryEvent<String, Mapping> event);
+
+        @Override
+        public final void entryEvicted(EntryEvent<String, Mapping> event) {
+            throw new UnsupportedOperationException("SQL catalog entries must never be evicted - " + event);
+        }
+
+        @Override
+        public void entryExpired(EntryEvent<String, Mapping> event) {
+            throw new UnsupportedOperationException("SQL catalog entries must never be expired - " + event);
+        }
+
+        @Override
+        public final void mapCleared(MapEvent event) {
+            throw new UnsupportedOperationException("SQL catalog must never be cleared - " + event);
+        }
+
+        @Override
+        public final void mapEvicted(MapEvent event) {
+            throw new UnsupportedOperationException("SQL catalog must never be evicted - " + event);
+        }
     }
 }

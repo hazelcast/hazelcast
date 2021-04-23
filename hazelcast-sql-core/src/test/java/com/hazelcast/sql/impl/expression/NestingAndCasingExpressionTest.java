@@ -407,6 +407,11 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
                 "xyz", "x", "X", "xyz", "y", "Y");
     }
 
+    public void test_POSITION() {
+        check(sql("POSITION(? IN ?) || POSITION(? IN ?)"),
+                "y", "xyz", "z", "xyz");
+    }
+
     private void check(String sql, Object... params) {
         checkValue0(sql, SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, params);
         checkValue0(sql.toLowerCase(), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, params);

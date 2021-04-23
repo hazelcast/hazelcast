@@ -89,7 +89,7 @@ enum ProcessorState {
      * Making calls to {@link Processor#snapshotCommitFinish(boolean)} until it
      * returns {@code true} and then proceed to {@link #EMIT_DONE_ITEM}. Used
      * when phase-2 was initiated after {@code Processor.complete()} returned
-     * true.
+     * {@code true}.
      */
     SNAPSHOT_COMMIT_FINISH__FINAL,
 
@@ -99,6 +99,11 @@ enum ProcessorState {
      * waiting for a snapshot phase 2.
      */
     WAITING_FOR_SNAPSHOT_COMPLETED,
+
+    /**
+     * A phase before emitting the {@code DONE_ITEM}.
+     */
+    PRE_EMIT_DONE_ITEM,
 
     /**
      * Waiting for the outbox to accept the {@code DONE_ITEM}.

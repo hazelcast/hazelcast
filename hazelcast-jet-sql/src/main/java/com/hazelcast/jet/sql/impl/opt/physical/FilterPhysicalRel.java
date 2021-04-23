@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.opt.AbstractFilterRel;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
@@ -37,13 +38,13 @@ public class FilterPhysicalRel extends AbstractFilterRel implements PhysicalRel 
         super(cluster, traits, input, condition);
     }
 
-    public Expression<Boolean> filter() {
-        return filter(schema(), condition);
+    public Expression<Boolean> filter(QueryParameterMetadata parameterMetadata) {
+        return filter(schema(parameterMetadata), condition, parameterMetadata);
     }
 
     @Override
-    public PlanNodeSchema schema() {
-        return ((PhysicalRel) getInput()).schema();
+    public PlanNodeSchema schema(QueryParameterMetadata parameterMetadata) {
+        return ((PhysicalRel) getInput()).schema(parameterMetadata);
     }
 
     @Override

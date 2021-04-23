@@ -342,10 +342,6 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
             throw unsupported(select.getOrderList(), SqlKind.ORDER_BY);
         }
 
-        if (select.getFetch() != null) {
-            throw unsupported(select.getFetch(), "LIMIT");
-        }
-
         if (select.getOffset() != null) {
             throw unsupported(select.getOffset(), "OFFSET");
         }

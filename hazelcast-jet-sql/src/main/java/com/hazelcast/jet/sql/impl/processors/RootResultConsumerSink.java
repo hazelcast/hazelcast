@@ -26,8 +26,12 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.sql.impl.JetQueryResultProducer;
 import com.hazelcast.jet.sql.impl.JetSqlCoreBackendImpl;
+import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.sql.impl.JetSqlCoreBackend;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.row.EmptyRow;
 
 import javax.annotation.Nonnull;
 import java.util.concurrent.CancellationException;
@@ -37,9 +41,12 @@ import static com.hazelcast.sql.impl.SqlErrorCode.CANCELLED_BY_USER;
 
 public final class RootResultConsumerSink implements Processor {
 
+    private final Expression<?> limitExpression;
+
     private JetQueryResultProducer rootResultConsumer;
 
-    private RootResultConsumerSink() {
+    private RootResultConsumerSink(Expression<?> limitExpression) {
+        this.limitExpression = limitExpression;
     }
 
     @Override
@@ -48,6 +55,22 @@ public final class RootResultConsumerSink implements Processor {
         JetSqlCoreBackendImpl jetSqlCoreBackend = hzInst.node.nodeEngine.getService(JetSqlCoreBackend.SERVICE_NAME);
         rootResultConsumer = jetSqlCoreBackend.getResultConsumerRegistry().remove(context.jobId());
         assert rootResultConsumer != null;
+
+        ExpressionEvalContext evalContext = SimpleExpressionEvalContext.from(context);
+
+        Number limit = evaluate(limitExpression, evalContext);
+        if (limit == null) {
+            throw QueryException.error("LIMIT value cannot be null");
+        }
+        if (limit.longValue() < 0L) {
+            throw QueryException.error("LIMIT value cannot be negative: " + limit);
+        }
+
+        rootResultConsumer.init(limit.longValue());
+    }
+
+    private static Number evaluate(Expression<?> limitExpression, ExpressionEvalContext evalContext) {
+        return (Number) limitExpression.eval(EmptyRow.INSTANCE, evalContext);
     }
 
     @Override
@@ -86,8 +109,8 @@ public final class RootResultConsumerSink implements Processor {
         return true;
     }
 
-    public static ProcessorMetaSupplier rootResultConsumerSink(Address initiatorAddress) {
-        ProcessorSupplier pSupplier = ProcessorSupplier.of(() -> new RootResultConsumerSink());
+    public static ProcessorMetaSupplier rootResultConsumerSink(Address initiatorAddress, Expression<?> limitExpression) {
+        ProcessorSupplier pSupplier = ProcessorSupplier.of(() -> new RootResultConsumerSink(limitExpression));
         return forceTotalParallelismOne(pSupplier, initiatorAddress);
     }
 }

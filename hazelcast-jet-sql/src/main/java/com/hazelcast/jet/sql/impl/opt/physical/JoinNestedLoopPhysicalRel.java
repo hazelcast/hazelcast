@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
@@ -47,33 +48,36 @@ public class JoinNestedLoopPhysicalRel extends Join implements PhysicalRel {
         super(cluster, traitSet, emptyList(), left, right, condition, emptySet(), joinType);
     }
 
-    public Expression<Boolean> rightFilter() {
-        return ((FullScanPhysicalRel) getRight()).filter();
+    public Expression<Boolean> rightFilter(QueryParameterMetadata parameterMetadata) {
+        return ((FullScanPhysicalRel) getRight()).filter(parameterMetadata);
     }
 
-    public List<Expression<?>> rightProjection() {
-        return ((FullScanPhysicalRel) getRight()).projection();
+    public List<Expression<?>> rightProjection(QueryParameterMetadata parameterMetadata) {
+        return ((FullScanPhysicalRel) getRight()).projection(parameterMetadata);
     }
 
-    public JetJoinInfo joinInfo() {
+    public JetJoinInfo joinInfo(QueryParameterMetadata parameterMetadata) {
         int[] leftKeys = analyzeCondition().leftKeys.toIntArray();
 
         HazelcastTable table = getRight().getTable().unwrap(HazelcastTable.class);
         List<Integer> projects = table.getProjects();
         int[] rightKeys = Arrays.stream(analyzeCondition().rightKeys.toIntArray()).map(projects::get).toArray();
 
-        Expression<Boolean> nonEquiCondition =
-                filter(schema(), analyzeCondition().getRemaining(getCluster().getRexBuilder()));
+        Expression<Boolean> nonEquiCondition = filter(
+                schema(parameterMetadata),
+                analyzeCondition().getRemaining(getCluster().getRexBuilder()),
+                parameterMetadata
+        );
 
-        Expression<Boolean> condition = filter(schema(), getCondition());
+        Expression<Boolean> condition = filter(schema(parameterMetadata), getCondition(), parameterMetadata);
 
         return new JetJoinInfo(getJoinType(), leftKeys, rightKeys, nonEquiCondition, condition);
     }
 
     @Override
-    public PlanNodeSchema schema() {
-        PlanNodeSchema leftSchema = ((PhysicalRel) getLeft()).schema();
-        PlanNodeSchema rightSchema = ((PhysicalRel) getRight()).schema();
+    public PlanNodeSchema schema(QueryParameterMetadata parameterMetadata) {
+        PlanNodeSchema leftSchema = ((PhysicalRel) getLeft()).schema(parameterMetadata);
+        PlanNodeSchema rightSchema = ((PhysicalRel) getRight()).schema(parameterMetadata);
         return PlanNodeSchema.combine(leftSchema, rightSchema);
     }
 

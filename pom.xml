@@ -120,6 +120,7 @@
         <scala.version>2.12</scala.version>
         <slf4j.api.version>1.7.30</slf4j.api.version>
         <spring.version>4.3.0.RELEASE</spring.version>
+        <snakeyaml.version>1.26</snakeyaml.version>
         <snakeyaml.engine.version>2.1</snakeyaml.engine.version>
 
         <!-- test dependencies -->
@@ -139,6 +140,7 @@
         <mockito.version>3.6.0</mockito.version>
         <powermock.version>2.0.9</powermock.version>
         <reflections.version>0.9.10</reflections.version>
+        <testcontainers.version>1.14.3</testcontainers.version>
         <zookeeper.version>3.5.8</zookeeper.version>
 
         <sonar.jacoco.jar>${basedir}/lib/jacocoagent.jar</sonar.jacoco.jar>
@@ -163,6 +165,9 @@
         <checkstyle.configLocation>${main.basedir}/checkstyle/checkstyle.xml</checkstyle.configLocation>
         <checkstyle.supressionsLocation>${main.basedir}/checkstyle/suppressions.xml</checkstyle.supressionsLocation>
         <checkstyle.headerLocation>${main.basedir}/checkstyle/ClassHeader.txt</checkstyle.headerLocation>
+
+        <shade.jar-with-dependencies.phase>package</shade.jar-with-dependencies.phase>
+        <fat.dependency.classifier>jar-with-dependencies</fat.dependency.classifier>
     </properties>
     <licenses>
         <license>
@@ -546,6 +551,16 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+
+        <profile>
+            <id>pr-builder</id>
+            <properties>
+                <assembly.skipAssembly>true</assembly.skipAssembly>
+                <!-- Set the classifier to empty in this profile to use regular jar-->
+                <fat.dependency.classifier/>
+                <shade.jar-with-dependencies.phase>none</shade.jar-with-dependencies.phase>
+            </properties>
         </profile>
 
         <profile>
@@ -1217,6 +1232,11 @@
             </dependency>
 
             <dependency>
+                <groupId>org.yaml</groupId>
+                <artifactId>snakeyaml</artifactId>
+                <version>${snakeyaml.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>${guava.version}</version>
@@ -1321,6 +1341,11 @@
                 <groupId>org.apache.logging.log4j</groupId>
                 <artifactId>log4j-api</artifactId>
                 <version>${log4j2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jline</groupId>
+                <artifactId>jline</artifactId>
+                <version>${jline.version}</version>
             </dependency>
             <!--
             The following are test dependencies, they are not in the final distribution.

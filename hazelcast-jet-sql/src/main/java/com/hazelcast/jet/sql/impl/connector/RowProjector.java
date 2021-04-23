@@ -16,10 +16,9 @@
 
 package com.hazelcast.jet.sql.impl.connector;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.extract.QueryExtractor;
 import com.hazelcast.sql.impl.extract.QueryTarget;
 import com.hazelcast.sql.impl.row.Row;
@@ -36,7 +35,7 @@ public class RowProjector implements Row {
 
     private final Expression<Boolean> predicate;
     private final List<Expression<?>> projection;
-    private final SimpleExpressionEvalContext context;
+    private final ExpressionEvalContext evalContext;
 
     @SuppressWarnings("unchecked")
     RowProjector(
@@ -45,7 +44,7 @@ public class RowProjector implements Row {
             QueryTarget target,
             Expression<Boolean> predicate,
             List<Expression<?>> projection,
-            InternalSerializationService serializationService
+            ExpressionEvalContext evalContext
     ) {
         this.target = target;
         this.extractors = createExtractors(target, paths, types);
@@ -53,7 +52,7 @@ public class RowProjector implements Row {
         this.predicate = predicate != null ? predicate
                 : (Expression<Boolean>) ConstantExpression.create(true, QueryDataType.BOOLEAN);
         this.projection = projection;
-        this.context = new SimpleExpressionEvalContext(serializationService);
+        this.evalContext = evalContext;
     }
 
     private static QueryExtractor[] createExtractors(
@@ -74,13 +73,13 @@ public class RowProjector implements Row {
     public Object[] project(Object object) {
         target.setTarget(object, null);
 
-        if (!Boolean.TRUE.equals(evaluate(predicate, this, context))) {
+        if (!Boolean.TRUE.equals(evaluate(predicate, this, evalContext))) {
             return null;
         }
 
         Object[] row = new Object[projection.size()];
         for (int i = 0; i < projection.size(); i++) {
-            row[i] = evaluate(projection.get(i), this, context);
+            row[i] = evaluate(projection.get(i), this, evalContext);
         }
         return row;
     }
