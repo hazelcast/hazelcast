@@ -18,9 +18,9 @@ package com.hazelcast.sql.impl.calcite.opt.physical.visitor;
 
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastLikeOperator;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
-import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.expression.CastExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -153,7 +153,6 @@ public final class RexToExpression {
 
             case INTERVAL_DAY_SECOND:
                 return convertIntervalDaySecond(literal);
-
 
             default:
                 throw QueryException.error("Unsupported literal: " + literal);
@@ -292,6 +291,7 @@ public final class RexToExpression {
                         trimFlag.getLeft() == 1,
                         trimFlag.getRight() == 1
                 );
+
             case EXTRACT:
                 assert operands.length == 2;
                 assert operands[0] instanceof SymbolExpression;
@@ -548,7 +548,6 @@ public final class RexToExpression {
 
     @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:returncount"})
     private static ExtractField convertField(TimeUnitRange field) {
-
         switch (field) {
             case CENTURY:
                 return ExtractField.CENTURY;

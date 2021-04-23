@@ -80,7 +80,6 @@ public final class RexToExpressionVisitor implements RexVisitor<Expression<?>> {
         } else {
             expressionOperands = new Expression[rexOperands.size()];
             for (int i = 0; i < rexOperands.size(); ++i) {
-
                 Expression<?> expressionOperand = rexOperands.get(i).accept(this);
                 expressionOperands[i] = expressionOperand;
             }

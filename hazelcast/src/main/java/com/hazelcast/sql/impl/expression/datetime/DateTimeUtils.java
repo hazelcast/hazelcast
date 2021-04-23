@@ -20,7 +20,6 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.Row;
 
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -30,21 +29,21 @@ import java.time.format.DateTimeFormatterBuilder;
 public final class DateTimeUtils {
     private static final DateTimeFormatter FORMATTER_TIMESTAMP_WITH_TIMEZONE =
             new DateTimeFormatterBuilder()
-                .parseStrict()
-                .append(DateTimeFormatter.ISO_LOCAL_DATE)
-                .appendLiteral(' ')
-                .append(DateTimeFormatter.ISO_LOCAL_TIME)
-                .parseLenient()
-                .appendOffsetId()
-                .toFormatter();
+                    .parseStrict()
+                    .append(DateTimeFormatter.ISO_LOCAL_DATE)
+                    .appendLiteral(' ')
+                    .append(DateTimeFormatter.ISO_LOCAL_TIME)
+                    .parseLenient()
+                    .appendOffsetId()
+                    .toFormatter();
 
     private static final DateTimeFormatter FORMATTER_TIMESTAMP =
             new DateTimeFormatterBuilder()
-                .parseStrict()
-                .append(DateTimeFormatter.ISO_LOCAL_DATE)
-                .appendLiteral(' ')
-                .append(DateTimeFormatter.ISO_LOCAL_TIME)
-                .toFormatter();
+                    .parseStrict()
+                    .append(DateTimeFormatter.ISO_LOCAL_DATE)
+                    .appendLiteral(' ')
+                    .append(DateTimeFormatter.ISO_LOCAL_TIME)
+                    .toFormatter();
 
 
     private DateTimeUtils() { }
@@ -74,5 +73,4 @@ public final class DateTimeUtils {
     public static double extractField(OffsetDateTime time, ExtractField field) {
         return field.extract(time);
     }
-
 }
