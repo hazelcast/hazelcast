@@ -44,6 +44,11 @@ public final class SimpleExpressionEvalContext implements ExpressionEvalContext 
     }
 
     @Override
+    public List<Object> getArguments() {
+        return args;
+    }
+
+    @Override
     public InternalSerializationService getSerializationService() {
         return new DefaultSerializationServiceBuilder().build();
     }

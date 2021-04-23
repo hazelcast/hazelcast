@@ -390,4 +390,5 @@
 
     <suppress checks="Javadoc|Name|MagicNumber|VisibilityModifier" files="[\\/]src[\\/]test[\\/]java[\\/]com[\\/]hazelcast[\\/]jet"/>
 
+    <suppress checks="" files="target[\\/]generated-sources"/>
 </suppressions>
