@@ -165,7 +165,7 @@ public class Planner {
             }
             Transform nextTransform = downstream.get(0);
             if (nextTransform.localParallelism() != transform.localParallelism()
-                    || nextTransform.shouldRebalanceInput(0)
+                    || nextTransform.shouldRebalanceInput(0) || transform.shouldRebalanceInput(0)
             ) {
                 break;
             }
