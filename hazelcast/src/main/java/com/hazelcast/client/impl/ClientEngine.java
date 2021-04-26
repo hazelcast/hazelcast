@@ -132,7 +132,7 @@ public interface ClientEngine extends Consumer<ClientMessage> {
 
     void addBackupListener(UUID clientUUID, Consumer<Long> backupListener);
 
-    boolean deregisterBackupListener(UUID clientUUID);
+    boolean deregisterBackupListener(UUID clientUUID, Consumer<Long> backupListener);
 
     void dispatchBackupEvent(UUID clientUUID, long clientCorrelationId);
 
