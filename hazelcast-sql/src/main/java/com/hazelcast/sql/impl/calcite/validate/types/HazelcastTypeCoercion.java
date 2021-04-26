@@ -89,11 +89,8 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
         }
 
         SqlNode cast = cast(node, targetTypeSpec);
-
         replaceFn.accept(cast);
-
         validator.deriveType(scope, cast);
-
         return true;
     }
 
@@ -111,11 +108,6 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
         } else {
             return HazelcastSqlOperatorTable.CAST.createCall(SqlParserPos.ZERO, node, targetTypeSpec);
         }
-    }
-
-    @Override
-    protected boolean coerceColumnType(SqlValidatorScope scope, SqlNodeList nodeList, int index, RelDataType targetType) {
-        throw new UnsupportedOperationException("Should not be called");
     }
 
     private boolean requiresCast(SqlValidatorScope scope, SqlNode node, RelDataType to) {
@@ -229,11 +221,6 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
 
     @Override
     public boolean caseWhenCoercion(SqlCallBinding callBinding) {
-        throw new UnsupportedOperationException("Should not be called");
-    }
-
-    @Override
-    public boolean inOperationCoercion(SqlCallBinding binding) {
         throw new UnsupportedOperationException("Should not be called");
     }
 

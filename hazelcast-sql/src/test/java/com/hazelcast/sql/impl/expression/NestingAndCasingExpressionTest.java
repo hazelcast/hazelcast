@@ -112,6 +112,16 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
     }
 
     @Test
+    public void test_IN() {
+        check(sql("(1 IN (1)) || (1 IN (1)) "));
+    }
+
+    @Test
+    public void test_NOT_IN() {
+        check(sql("(1 NOT IN (2)) || (1 NOT IN (2))"));
+    }
+
+    @Test
     public void test_EQUALS() {
         check(sql("(1=?) || (1=?)"), 1, 1);
     }
@@ -407,9 +417,30 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
                 "xyz", "x", "X", "xyz", "y", "Y");
     }
 
+    @Test
     public void test_POSITION() {
         check(sql("POSITION(? IN ?) || POSITION(? IN ?)"),
                 "y", "xyz", "z", "xyz");
+    }
+
+    @Test
+    public void test_BETWEEN_ASYMMETRIC() {
+        check(sqlWithWhere("BETWEEN ? AND ? "), SqlColumnType.INTEGER, 1, 1);
+    }
+
+    @Test
+    public void test_NOT_BETWEEN_ASYMMETRIC() {
+        check(sqlWithWhere("NOT BETWEEN ? AND ? "), SqlColumnType.INTEGER, 2, 2);
+    }
+
+    @Test
+    public void test_BETWEEN_SYMMETRIC() {
+        check(sqlWithWhere("BETWEEN SYMMETRIC ? AND ? "), SqlColumnType.INTEGER, 1, 1);
+    }
+
+    @Test
+    public void test_NOT_BETWEEN_SYMMETRIC() {
+        check(sqlWithWhere("NOT BETWEEN SYMMETRIC ? AND ? "), SqlColumnType.INTEGER, 2, 2);
     }
 
     private void check(String sql, Object... params) {
@@ -417,7 +448,17 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
         checkValue0(sql.toLowerCase(), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, params);
     }
 
+    private void check(String sql, SqlColumnType type, Object... params) {
+        checkValue0(sql, type, SKIP_VALUE_CHECK, params);
+        checkValue0(sql.toLowerCase(), type, SKIP_VALUE_CHECK, params);
+    }
+
     private String sql(String expression) {
         return "SELECT " + expression + " FROM map";
     }
+
+    private String sqlWithWhere(String expression) {
+        return "SELECT this FROM map WHERE this " + expression;
+    }
+
 }
