@@ -33,6 +33,7 @@ originating from The JGraphT Project (https://github.com/jgrapht/jgrapht).
 The classes
 
 com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeCoercion
+com.hazelcast.sql.impl.calcite.validate.operators.predicates.HazelcastInPredicate
 com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastLikeOperator
 com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastSubstringFunction
 com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastTrimFunction

@@ -76,6 +76,8 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
         SUPPORTED_KINDS.add(SqlKind.AND);
         SUPPORTED_KINDS.add(SqlKind.OR);
         SUPPORTED_KINDS.add(SqlKind.NOT);
+        SUPPORTED_KINDS.add(SqlKind.IN);
+        SUPPORTED_KINDS.add(SqlKind.NOT_IN);
         SUPPORTED_KINDS.add(SqlKind.BETWEEN);
 
         // Arithmetics

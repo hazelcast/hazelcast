@@ -112,6 +112,16 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
     }
 
     @Test
+    public void test_IN() {
+        check(sql("(1 IN (1)) || (1 IN (1)) "));
+    }
+
+    @Test
+    public void test_NOT_IN() {
+        check(sql("(1 NOT IN (2)) || (1 NOT IN (2))"));
+    }
+
+    @Test
     public void test_EQUALS() {
         check(sql("(1=?) || (1=?)"), 1, 1);
     }

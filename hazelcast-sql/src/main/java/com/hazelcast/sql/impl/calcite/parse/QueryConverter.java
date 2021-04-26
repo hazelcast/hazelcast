@@ -49,11 +49,15 @@ public class QueryConverter {
     /** Whether to trim unused fields. The trimming is needed after subquery elimination. */
     private static final boolean TRIM_UNUSED_FIELDS = true;
 
+    /** Increase the maximum number of elements in the RHS to convert the IN operator to a sequence of OR comparisons. */
+    private static final int HAZELCAST_IN_ELEMENTS_THRESHOLD = 10_000;
+
     private static final SqlToRelConverter.Config CONFIG;
 
     static {
         SqlToRelConverter.ConfigBuilder configBuilder = SqlToRelConverter.configBuilder()
                                                                          .withExpand(EXPAND)
+                                                                         .withInSubQueryThreshold(HAZELCAST_IN_ELEMENTS_THRESHOLD)
                                                                          .withTrimUnusedFields(TRIM_UNUSED_FIELDS);
 
         CONFIG = configBuilder.build();

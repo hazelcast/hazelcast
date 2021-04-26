@@ -30,6 +30,7 @@ import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastUnaryOper
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastAndOrPredicate;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastBetweenOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastComparisonPredicate;
+import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastInOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastIsTrueFalseNullPredicate;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastNotPredicate;
 import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastConcatOperator;
@@ -46,10 +47,13 @@ import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlInfixOperator;
 import org.apache.calcite.sql.SqlKind;
+import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlPostfixOperator;
 import org.apache.calcite.sql.SqlPrefixOperator;
 import org.apache.calcite.sql.SqlSpecialOperator;
+import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.fun.SqlCase;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.util.ReflectiveSqlOperatorTable;
@@ -84,6 +88,8 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
     public static final SqlInfixOperator NOT_BETWEEN_ASYMMETRIC = HazelcastBetweenOperator.NOT_BETWEEN_ASYMMETRIC;
     public static final SqlInfixOperator BETWEEN_SYMMETRIC = HazelcastBetweenOperator.BETWEEN_SYMMETRIC;
     public static final SqlInfixOperator NOT_BETWEEN_SYMMETRIC = HazelcastBetweenOperator.NOT_BETWEEN_SYMMETRIC;
+    public static final SqlBinaryOperator IN = HazelcastInOperator.IN;
+    public static final SqlBinaryOperator NOT_IN = HazelcastInOperator.NOT_IN;
 
     //#endregion
 
@@ -231,6 +237,17 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
                 SqlBasicCall basicCall = (SqlBasicCall) call;
                 SqlOperator operator = basicCall.getOperator();
 
+                // Remove raw NULL from the right-hand operand if it's a list. We ignore raw NULL.
+                if (operator.getKind() == SqlKind.IN || operator.getKind() == SqlKind.NOT_IN) {
+                    List<SqlNode> operandList = call.getOperandList();
+
+                    assert operandList.size() == 2;
+                    SqlNode rhs = operandList.get(1);
+                    if (rhs instanceof SqlNodeList) {
+                        call.setOperand(1, removeNullWithinInStatement((SqlNodeList) rhs));
+                    }
+                }
+
                 List<SqlOperator> resolvedOperators = new ArrayList<>(1);
 
                 validator.getOperatorTable().lookupOperatorOverloads(
@@ -251,6 +268,17 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
             } else if (call instanceof SqlCase) {
                 throw functionDoesNotExist(call);
             }
+        }
+
+        private static SqlNodeList removeNullWithinInStatement(SqlNodeList valueList) {
+            SqlNodeList list = new SqlNodeList(valueList.getParserPosition());
+            for (SqlNode node : valueList.getList()) {
+                if (SqlUtil.isNullLiteral(node, false)) {
+                    continue;
+                }
+                list.add(node);
+            }
+            return list;
         }
 
         private CalciteException functionDoesNotExist(SqlCall call) {

@@ -731,6 +731,7 @@ public class SinkTypeCoercionTest extends SqlTestSupport {
                     '}';
         }
 
+        @SuppressWarnings("BooleanMethodIsAlwaysInverted")
         public boolean exceptionMatches(Exception e) {
             return expectedFailureRegex.matcher(e.getMessage()).find();
         }
