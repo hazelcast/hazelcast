@@ -176,12 +176,18 @@ public class ExtractFunctionIntegrationTest extends ExpressionTestSupport {
                 )));
         testCases.add(create("DATE", "2000-12-31",
                 results(
-                        "DOY", 366.0
+                        "DOY", 366.0,
+                        "MILLENNIUM", 2.0,
+                        "CENTURY", 20.0,
+                        "DECADE", 200.0
                 )
         ));
         testCases.add(create("DATE", "2001-12-31",
                 results(
-                        "DOY", 365.0
+                        "DOY", 365.0,
+                        "MILLENNIUM", 3.0,
+                        "CENTURY", 21.0,
+                        "DECADE", 200.0
                 )
         ));
         testCases.add(create("DATE", "2004-12-31",
@@ -273,30 +279,12 @@ public class ExtractFunctionIntegrationTest extends ExpressionTestSupport {
         return String.format("SELECT EXTRACT(%s FROM %s) FROM map", field, source);
     }
 
-    private static String T(String s) {
-        return "TIME '" + s + "'";
-    }
-
-    private static String DT(String s) {
-        return "DATE '" + s + "'";
-    }
-
-    private static String TS(String s) {
-        return "TIMESTAMP '" + s + "'";
-    }
-
-    private static String TSZ(String s) {
-        return "TIMESTAMP WITH TIME ZONE '" + s + "'";
-    }
-
     private static String literal(String type, String input) {
         switch (type) {
             case "DATE":
-                return DT(input);
             case "TIMESTAMP":
-                return TS(input);
             case "TIMESTAMP WITH TIME ZONE":
-                return TSZ(input);
+                return type + "'" + input + "'";
             default:
                 fail(type + " not supported for test");
                 return "";

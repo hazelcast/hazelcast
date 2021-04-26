@@ -26,14 +26,18 @@ public enum ExtractField {
         @Override
         public double extract(OffsetDateTime time) {
             int year = time.getYear();
-            int century = (year / YEARS_IN_CENTURY) + FIRST_CENTURY;
-            return century;
+            int absYear = Math.abs(year);
+            int sign = year < 0 ? -1 : 1;
+            int quotient = absYear / YEARS_IN_CENTURY;
+            int remainder = absYear % YEARS_IN_CENTURY;
+            int absCentury = quotient + (remainder == 0 ? -1 : 0) + FIRST_CENTURY;
+            return sign * absCentury;
         }
     },
     DAY {
         @Override
         public double extract(OffsetDateTime time) {
-            return time.get(ChronoField.DAY_OF_MONTH);
+            return time.getDayOfMonth();
         }
     },
     DECADE {
@@ -97,8 +101,12 @@ public enum ExtractField {
         @Override
         public double extract(OffsetDateTime time) {
             int year = time.getYear();
-            int millennium = (year / YEARS_IN_MILLENNIUM) + FIRST_MILLENNIUM;
-            return millennium;
+            int absYear = Math.abs(year);
+            int sign = year < 0 ? -1 : 1;
+            int quotient = absYear / YEARS_IN_MILLENNIUM;
+            int remainder = absYear % YEARS_IN_MILLENNIUM;
+            int absMillennium = quotient + (remainder == 0 ? -1 : 0) + FIRST_MILLENNIUM;
+            return sign * absMillennium;
         }
     },
     MILLISECOND {
