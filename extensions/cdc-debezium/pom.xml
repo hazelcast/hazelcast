@@ -33,7 +33,7 @@
     </parent>
 
     <properties>
-        <debezium.version>1.2.5.Final</debezium.version>
+        <debezium.version>1.5.0.Final</debezium.version>
         <log4j2.slf4j.binding.version>2.13.2</log4j2.slf4j.binding.version>
 
         <!-- needed for CheckStyle -->
