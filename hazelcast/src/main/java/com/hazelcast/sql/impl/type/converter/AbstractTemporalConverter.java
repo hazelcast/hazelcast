@@ -23,6 +23,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 
 /**
@@ -44,6 +45,10 @@ public abstract class AbstractTemporalConverter extends Converter {
      */
     protected static LocalDateTime dateToTimestamp(LocalDate date) {
         return date.atStartOfDay();
+    }
+
+    protected static OffsetDateTime dateToTimestampWithTimezone(LocalDate date) {
+        return OffsetDateTime.of(date, LocalTime.of(0, 0, 0), ZoneOffset.UTC);
     }
 
     /**

@@ -28,9 +28,11 @@ import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.util.NlsString;
+import org.apache.calcite.util.TimeString;
 import org.apache.calcite.util.TimestampString;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 
 import static org.apache.calcite.sql.type.SqlTypeName.CHAR_TYPES;
 
@@ -51,6 +53,12 @@ public final class LiteralUtils {
         // Intercept TIMESTAMP types to return (Offset, Local)DateTime instead of Calendar class
         TimestampString ts;
         switch (node.getType().getSqlTypeName()) {
+            case TIME:
+                TimeString timeString = literal.getValueAs(TimeString.class);
+                return literal0(
+                        node.getType().getSqlTypeName(),
+                        LocalTime.ofNanoOfDay(timeString.getMillisOfDay() * 1_000_000L)
+                );
             case TIMESTAMP:
                 ts = literal.getValueAs(TimestampString.class);
                 return literal0(node.getType().getSqlTypeName(), DateTimeUtils.parseAsLocalDateTime(ts.toString()));

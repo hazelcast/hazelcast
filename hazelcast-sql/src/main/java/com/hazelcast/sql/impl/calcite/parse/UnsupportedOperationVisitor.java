@@ -279,7 +279,10 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
                 // of string literals is still VARCHAR in HazelcastSqlValidator.
             case CHAR:
             case TIMESTAMP:
+            case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
+                // TODO: Add TIMESTAMP_WITH_LOCAL_TIME_ZONE support to the parser
             case DATE:
+            case TIME:
             case ANY:
             case NULL:
                 return null;

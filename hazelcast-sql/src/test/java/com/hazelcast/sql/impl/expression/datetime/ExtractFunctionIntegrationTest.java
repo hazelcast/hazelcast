@@ -32,6 +32,7 @@ import org.junit.runners.Parameterized;
 import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.OffsetTime;
 import java.time.ZoneOffset;
@@ -79,6 +80,53 @@ public class ExtractFunctionIntegrationTest extends ExpressionTestSupport {
 
     private static Iterable<TestCase> testCases() {
         List<TestCase> testCases = new ArrayList<>();
+        testCases.add(create("DATE", "1970-01-01",
+                results(
+                        "EPOCH", 0.0
+                )
+        ));
+        testCases.add(create("TIMESTAMP WITH TIME ZONE", "2010-10-21 10:30:20+02:00",
+                results(
+                        "YEAR", 2010.0,
+                        "MONTH", 10.0,
+                        "DAY", 21.0
+                )
+        ));
+        testCases.add(create("TIMESTAMP WITH TIME ZONE", "2019-12-31 23:30:00-02:00",
+                results(
+                        "YEAR", 2020.0,
+                        "MONTH", 1.0,
+                        "DAY", 1.0,
+                        "HOUR", 1.0
+                )
+        ));
+        testCases.add(create("TIME", "10:30:20",
+                results(
+                        "HOUR", 10.0,
+                        "MINUTE", 30.0,
+                        "SECOND", 20.0,
+                        "MILLISECOND", 20_000.0,
+                        "MICROSECOND", 20_000_000.0
+                )
+        ));
+        testCases.add(create("TIME", "10:30:20.456",
+                results(
+                        "HOUR", 10.0,
+                        "MINUTE", 30.0,
+                        "SECOND", 20.0,
+                        "MILLISECOND", 20_456.0,
+                        "MICROSECOND", 20_456_000.0
+                )
+        ));
+        testCases.add(create("TIME", "10:30:20.456456",
+                results(
+                        "HOUR", 10.0,
+                        "MINUTE", 30.0,
+                        "SECOND", 20.0,
+                        "MILLISECOND", 20_456.0,
+                        "MICROSECOND", 20_456_456.0
+                )
+        ));
         testCases.add(create("TIMESTAMP", "0001-04-23",
                 results(
                         "MILLENNIUM", 1.0,
@@ -98,7 +146,7 @@ public class ExtractFunctionIntegrationTest extends ExpressionTestSupport {
                         "MINUTE", 0.0,
                         "MILLISECOND", 0.0,
                         "MICROSECOND", 0.0,
-                        "EPOCH", -62_125_920_000.0
+                        "EPOCH", -62_125_920_000.0 + diffUTCEpoch
                 )
         ));
         testCases.add(create("TIMESTAMP", "0001-04-23 13:40:55",
@@ -120,7 +168,7 @@ public class ExtractFunctionIntegrationTest extends ExpressionTestSupport {
                         "SECOND", 55.0,
                         "MILLISECOND", 55_000.0,
                         "MICROSECOND", 55_000_000.0,
-                        "EPOCH", -62_125_870_745.0
+                        "EPOCH", -62_125_870_745.0 + diffUTCEpoch
                 )
         ));
         testCases.add(create("TIMESTAMP", "2006-01-01 00:00:00.0",
@@ -141,7 +189,7 @@ public class ExtractFunctionIntegrationTest extends ExpressionTestSupport {
                         "SECOND", 0.0,
                         "MILLISECOND", 0.0,
                         "MICROSECOND", 0.0,
-                        "EPOCH", 1_136_073_600.0
+                        "EPOCH", 1_136_073_600.0 + diffUTCEpoch
                 )
         ));
         testCases.add(create("TIMESTAMP", "2001-02-16 20:38:40.123",
@@ -151,7 +199,7 @@ public class ExtractFunctionIntegrationTest extends ExpressionTestSupport {
                         "SECOND", 40.0,
                         "MILLISECOND", 40_123.0,
                         "MICROSECOND", 40_123_000.0,
-                        "EPOCH", 982_355_920.123
+                        "EPOCH", 982_355_920.123 + diffUTCEpoch
                 )
         ));
         testCases.add(create("DATE", "2010-10-04",
@@ -240,9 +288,14 @@ public class ExtractFunctionIntegrationTest extends ExpressionTestSupport {
 
     private static TimeZone defaultTimezone;
 
+    private final static TimeZone testTimezone = TimeZone.getTimeZone("GMT+2");
+
+    private final static long diffUTCEpoch = - testTimezone.getRawOffset() / 1_000;
+
     @BeforeClass
     public static void setUpClass() {
         defaultTimezone = TimeZone.getDefault();
+        TimeZone.setDefault(testTimezone);
     }
 
     @AfterClass
@@ -253,9 +306,11 @@ public class ExtractFunctionIntegrationTest extends ExpressionTestSupport {
     @Test
     public void test() {
         put(1);
-        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
 
-        check(sql(field, literal(type, input)), expected);
+        if (literalSupported(type)) {
+            check(sql(field, literal(type, input)), expected);
+        }
+
 
         check(sql(field, "?"), expected, object(type, input));
     }
@@ -274,12 +329,24 @@ public class ExtractFunctionIntegrationTest extends ExpressionTestSupport {
         return String.format("SELECT EXTRACT(%s FROM %s) FROM map", field, source);
     }
 
+    private static boolean literalSupported(String type) {
+        switch (type) {
+            case "TIME":
+            case "DATE":
+            case "TIMESTAMP":
+                return true;
+            default:
+                return false;
+        }
+    }
+
     private static String literal(String type, String input) {
         switch (type) {
+            case "TIME":
             case "DATE":
             case "TIMESTAMP":
             case "TIMESTAMP WITH TIME ZONE":
-                return type + "'" + input + "'";
+                return type + " '" + input + "'";
             default:
                 fail(type + " not supported for test");
                 return "";
@@ -289,6 +356,8 @@ public class ExtractFunctionIntegrationTest extends ExpressionTestSupport {
     // TODO: Rewrite this function
     private static Object object(String type, String input) {
         switch (type) {
+            case "TIME":
+                return LocalTime.parse(input);
             case "DATE":
                 return LocalDate.parse(input);
             case "TIMESTAMP":
@@ -300,7 +369,7 @@ public class ExtractFunctionIntegrationTest extends ExpressionTestSupport {
                 return date.atTime(0, 0, 0);
             case "TIMESTAMP WITH TIME ZONE":
                 try {
-                    return OffsetDateTime.parse(input);
+                    return OffsetDateTime.parse(input.replace(' ', 'T'));
                 } catch (DateTimeException e) {
                 }
                 try {
