@@ -20,11 +20,9 @@ import com.hazelcast.config.Config;
 import com.hazelcast.internal.util.FilteringClassLoader;
 import com.hazelcast.jet.JetInstance;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 
 import static java.util.Collections.singletonList;
 
-@Ignore
 public class DeploymentTest extends AbstractDeploymentTest {
 
     @BeforeClass

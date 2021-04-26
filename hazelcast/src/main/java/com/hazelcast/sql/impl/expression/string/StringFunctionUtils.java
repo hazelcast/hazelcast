@@ -107,4 +107,8 @@ public final class StringFunctionUtils {
 
         return expression.getType().getConverter().asVarchar(res);
     }
+
+    public static Integer search(String text, String search, int start) {
+        return text.indexOf(search, start);
+    }
 }

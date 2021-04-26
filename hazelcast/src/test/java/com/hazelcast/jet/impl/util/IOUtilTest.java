@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.util;
 
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.test.JetAssert;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Rule;
@@ -45,7 +45,7 @@ import static com.hazelcast.jet.impl.util.IOUtil.unzip;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class IOUtilTest extends JetTestSupport {
 
