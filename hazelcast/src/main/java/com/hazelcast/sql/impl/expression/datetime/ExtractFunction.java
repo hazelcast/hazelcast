@@ -43,7 +43,6 @@ public class ExtractFunction extends UniExpression<Double> implements Identified
 
     @Override
     public Double eval(Row row, ExpressionEvalContext context) {
-
         OffsetDateTime timestamp = DateTimeUtils.asTimestampWithTimezone(operand, row, context);
 
         return DateTimeUtils.extractField(timestamp, extractField);

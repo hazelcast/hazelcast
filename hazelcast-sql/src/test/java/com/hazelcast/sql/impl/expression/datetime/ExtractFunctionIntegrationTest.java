@@ -60,7 +60,7 @@ public class ExtractFunctionIntegrationTest extends ExpressionTestSupport {
     @Parameterized.Parameter(3)
     public double expected;
 
-    @Parameterized.Parameters(name = "{index}: EXTRACT({0} FROM {1} {2}) == {3}")
+    @Parameterized.Parameters(name = "{index}: EXTRACT({0} FROM {1}''{2}'') == {3}")
     public static Iterable<Object[]> data() {
         Iterable<TestCase> cases = testCases();
         List<Object[]> data = new ArrayList<>();
@@ -197,13 +197,8 @@ public class ExtractFunctionIntegrationTest extends ExpressionTestSupport {
         ));
         testCases.add(create("DATE", "2100-12-31",
                 results(
-                        "DOY", 365.0
-                )
-        ));
-        testCases.add(create("DATE", "2100-12-31",
-                results(
                         "MILLENNIUM", 3.0,
-                        "DOY", 365.0        // *
+                        "DOY", 365.0
                 )
         ));
         testCases.add(create("DATE", "2021-04-17",

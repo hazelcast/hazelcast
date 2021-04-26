@@ -586,7 +586,7 @@ public final class RexToExpression {
             case YEAR:
                 return ExtractField.YEAR;
             default:
-                throw new UnsupportedOperationException("Unsupported field " + field + " for extract");
+                throw new UnsupportedOperationException("Unsupported field " + field + " for EXTRACT");
         }
     }
 }
