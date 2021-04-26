@@ -23,16 +23,20 @@ import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.jet.LightJob;
 import com.hazelcast.jet.impl.client.protocol.codec.JetCancelLightJobCodec;
 
+import java.util.UUID;
+
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
 public class ClientLightJobProxy implements LightJob {
 
     private final HazelcastClientInstanceImpl client;
+    private final UUID coordinatorUuid;
     private final long jobId;
     private final ClientInvocationFuture future;
 
-    ClientLightJobProxy(HazelcastClientInstanceImpl client, long jobId, ClientInvocationFuture future) {
+    ClientLightJobProxy(HazelcastClientInstanceImpl client, UUID coordinatorUuid, long jobId, ClientInvocationFuture future) {
         this.client = client;
+        this.coordinatorUuid = coordinatorUuid;
         this.jobId = jobId;
         this.future = future;
     }
@@ -49,7 +53,7 @@ public class ClientLightJobProxy implements LightJob {
     @Override
     public void cancel() {
         ClientMessage message = JetCancelLightJobCodec.encodeRequest(jobId);
-        ClientInvocation invocation = new ClientInvocation(client, message, null);
+        ClientInvocation invocation = new ClientInvocation(client, message, null, coordinatorUuid);
         invocation.invoke().join();
     }
 }

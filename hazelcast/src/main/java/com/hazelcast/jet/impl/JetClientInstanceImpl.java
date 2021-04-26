@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectsCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.Job;
@@ -40,6 +41,7 @@ import com.hazelcast.logging.ILogger;
 import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
@@ -66,11 +68,21 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
         Data dagSerialized = serializationService.toData(dag);
         long jobId = newJobId();
         ClientMessage message = JetSubmitLightJobCodec.encodeRequest(jobId, dagSerialized);
-        // TODO [viliam] ensure it's not executed on a lite member
-        ClientInvocation invocation = new ClientInvocation(client, message, null);
+
+        // find random non-lite member
+        share this code with member code
+        Member[] members = client.getCluster().getMembers().toArray(new Member[0]);
+        int randomMemberIndex = ThreadLocalRandom.current().nextInt(members.length);
+        for (int i = 0; i < members.length && members[randomMemberIndex].isLiteMember(); i++) {
+            randomMemberIndex++;
+            if (randomMemberIndex == members.length) {
+                randomMemberIndex = 0;
+            }
+        }
+        ClientInvocation invocation = new ClientInvocation(client, message, null, coordinatorUuid);
 
         ClientInvocationFuture future = invocation.invoke();
-        return new ClientLightJobProxy(client, jobId, future);
+        return new ClientLightJobProxy(client, coordinatorUuid, jobId, future);
     }
 
     @Nonnull @Override
