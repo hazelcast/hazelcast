@@ -16,12 +16,14 @@
 
 package com.hazelcast.sql.impl.calcite;
 
+import com.google.common.collect.Lists;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastResources;
 import com.hazelcast.sql.impl.calcite.validate.literal.Literal;
 import com.hazelcast.sql.impl.calcite.validate.literal.LiteralUtils;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference;
+import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastBetweenOperator;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.converter.Converter;
@@ -31,8 +33,11 @@ import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.prepare.Prepare;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
+import org.apache.calcite.rel.type.RelDataTypeFamily;
+import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.rex.RexUtil;
 import org.apache.calcite.runtime.CalciteContextException;
 import org.apache.calcite.runtime.Resources;
 import org.apache.calcite.sql.SqlCall;
@@ -40,27 +45,33 @@ import org.apache.calcite.sql.SqlIntervalQualifier;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.SqlOperator;
+import org.apache.calcite.sql.fun.SqlBetweenOperator;
+import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.parser.SqlParserPos;
+import org.apache.calcite.sql.type.SqlOperandTypeChecker;
 import org.apache.calcite.sql.type.SqlTypeFamily;
+import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql.validate.SqlValidatorException;
 import org.apache.calcite.sql2rel.SqlRexConvertletTable;
 import org.apache.calcite.sql2rel.SqlToRelConverter;
 import org.apache.calcite.util.TimeString;
+import org.apache.calcite.util.Util;
 
 import java.math.BigDecimal;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.apache.calcite.avatica.util.TimeUnit.DAY;
 import static org.apache.calcite.avatica.util.TimeUnit.MONTH;
 import static org.apache.calcite.avatica.util.TimeUnit.SECOND;
 import static org.apache.calcite.avatica.util.TimeUnit.YEAR;
-import static org.apache.calcite.sql.type.SqlTypeName.CHAR_TYPES;
-import static org.apache.calcite.sql.type.SqlTypeName.NULL;
-import static org.apache.calcite.sql.type.SqlTypeName.TIME;
 
 /**
  * Custom Hazelcast sql-to-rel converter.
@@ -74,7 +85,9 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
     private static final SqlIntervalQualifier INTERVAL_YEAR_MONTH = new SqlIntervalQualifier(YEAR, MONTH, SqlParserPos.ZERO);
     private static final SqlIntervalQualifier INTERVAL_DAY_SECOND = new SqlIntervalQualifier(DAY, SECOND, SqlParserPos.ZERO);
 
-    /** See {@link #convertCall(SqlNode, Blackboard)} for more information. */
+    /**
+     * See {@link #convertCall(SqlNode, Blackboard)} for more information.
+     */
     private final Set<SqlNode> callSet = Collections.newSetFromMap(new IdentityHashMap<>());
 
     public HazelcastSqlToRelConverter(
@@ -95,6 +108,8 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
             return convertLiteral((SqlLiteral) node, blackboard.getTypeFactory());
         } else if (node.getKind() == SqlKind.CAST) {
             return convertCast((SqlCall) node, blackboard);
+        } else if (node.getKind() == SqlKind.BETWEEN) {
+            return convertBetween((SqlCall) node, blackboard);
         } else if (node instanceof SqlCall) {
             return convertCall(node, blackboard);
         }
@@ -149,7 +164,7 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
 
         Literal literal = LiteralUtils.literal(convertedOperand);
 
-        if (literal != null && ((RexLiteral) convertedOperand).getTypeName() != NULL) {
+        if (literal != null && ((RexLiteral) convertedOperand).getTypeName() != SqlTypeName.NULL) {
             // There is a bug in RexBuilder.makeCast(). If the operand is a literal, it can directly return a literal with the
             // desired target type instead of an actual cast, but when doing that it doesn't check for numeric overflow.
             // For example if this method is converting [128 AS TINYINT] is converted to -1, which is obviously incorrect.
@@ -174,14 +189,14 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
             // Normalize BOOLEAN and DOUBLE literals when converting them to VARCHAR.
             // BOOLEAN literals are converted to "true"/"false" instead of "TRUE"/"FALSE".
             // DOUBLE literals are converted to a string with scientific conventions (e.g., 1.1E1 instead of 11.0);
-            if (CHAR_TYPES.contains(to.getSqlTypeName())) {
+            if (SqlTypeName.CHAR_TYPES.contains(to.getSqlTypeName())) {
                 return getRexBuilder().makeLiteral(literal.getStringValue(), to, true);
             }
 
             // There is a bug in RexSimplify that adds an unnecessary second. For example, the string literal "00:00" is
             // converted to 00:00:01. The problematic code is located in DateTimeUtils.timeStringToUnixDate.
             // To workaround the problem, we perform the conversion manually.
-            if (CHAR_TYPES.contains(from.getSqlTypeName()) && to.getSqlTypeName() == TIME) {
+            if (SqlTypeName.CHAR_TYPES.contains(from.getSqlTypeName()) && to.getSqlTypeName() == SqlTypeName.TIME) {
                 LocalTime time = fromType.getConverter().asTime(literal.getStringValue());
 
                 TimeString timeString = new TimeString(time.getHour(), time.getMinute(), time.getSecond());
@@ -204,6 +219,50 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
 
         // Delegate to Apache Calcite.
         return getRexBuilder().makeCast(to, convertedOperand);
+    }
+
+    /**
+     * Convert "val BETWEEN lower_bound AND upper_bound" expression to
+     * 1. If ASYMMETRIC : "val >= lower_bound AND val =< upper_bound" expression. Default mode.
+     * 2. If SYMMETRIC : "(val >= lower_bound AND val =< upper_bound) OR (val <= lower_bound AND val >= upper_bound)"
+     * expression
+     */
+    public RexNode convertBetween(SqlCall call, Blackboard blackboard) {
+        SqlOperator currentOperator = call.getOperator();
+        assert currentOperator instanceof HazelcastBetweenOperator;
+
+        final RexBuilder rexBuilder = getRexBuilder();
+        final HazelcastBetweenOperator betweenOp = (HazelcastBetweenOperator) currentOperator;
+        final List<RexNode> list = convertExpressionList(
+                rexBuilder, blackboard, call.getOperandList(), betweenOp.getOperandTypeChecker().getConsistency()
+        );
+        final RexNode valueOperand = list.get(SqlBetweenOperator.VALUE_OPERAND);
+        final RexNode lowerOperand = list.get(SqlBetweenOperator.LOWER_OPERAND);
+        final RexNode upperOperand = list.get(SqlBetweenOperator.UPPER_OPERAND);
+
+        RexNode ge1 = rexBuilder.makeCall(SqlStdOperatorTable.GREATER_THAN_OR_EQUAL, valueOperand, lowerOperand);
+        RexNode le1 = rexBuilder.makeCall(SqlStdOperatorTable.LESS_THAN_OR_EQUAL, valueOperand, upperOperand);
+        RexNode and1 = rexBuilder.makeCall(SqlStdOperatorTable.AND, ge1, le1);
+
+        RexNode res;
+        final SqlBetweenOperator.Flag symmetric = betweenOp.getFlag();
+        switch (symmetric) {
+            case ASYMMETRIC:
+                res = and1;
+                break;
+            case SYMMETRIC:
+                RexNode ge2 = rexBuilder.makeCall(SqlStdOperatorTable.GREATER_THAN_OR_EQUAL, valueOperand, upperOperand);
+                RexNode le2 = rexBuilder.makeCall(SqlStdOperatorTable.LESS_THAN_OR_EQUAL, valueOperand, lowerOperand);
+                RexNode and2 = rexBuilder.makeCall(SqlStdOperatorTable.AND, ge2, le2);
+                res = rexBuilder.makeCall(SqlStdOperatorTable.OR, and1, and2);
+                break;
+            default:
+                throw Util.unexpected(symmetric);
+        }
+        if (betweenOp.isNegated()) {
+            res = rexBuilder.makeCall(SqlStdOperatorTable.NOT, res);
+        }
+        return res;
     }
 
     /**
@@ -250,6 +309,74 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
         return null;
     }
 
+    private static List<RexNode> convertExpressionList(RexBuilder rexBuilder,
+                                                       Blackboard bb,
+                                                       List<SqlNode> nodes,
+                                                       SqlOperandTypeChecker.Consistency consistency
+    ) {
+        if (nodes.size() == 1) {
+            return Collections.singletonList(bb.convertExpression(nodes.get(0)));
+        }
+
+        final List<RexNode> exprs = new ArrayList<>();
+
+        for (SqlNode node : nodes) {
+            exprs.add(bb.convertExpression(node));
+        }
+        if (exprs.size() > 1) {
+            final RelDataType type = consistentType(bb, consistency, RexUtil.types(exprs));
+            if (type != null) {
+                final List<RexNode> oldExpressions = Lists.newArrayList(exprs);
+                exprs.clear();
+                for (RexNode expr : oldExpressions) {
+                    exprs.add(rexBuilder.ensureType(type, expr, true));
+                }
+            }
+        }
+        return exprs;
+    }
+
+    private static RelDataType consistentType(Blackboard bb,
+                                              SqlOperandTypeChecker.Consistency consistency,
+                                              List<RelDataType> types
+    ) {
+        switch (consistency) {
+            case COMPARE:
+                final List<RelDataType> nonCharacterTypes = types.stream()
+                        .filter(type -> type.getFamily() != SqlTypeFamily.CHARACTER)
+                        .collect(Collectors.toList());
+
+                if (!nonCharacterTypes.isEmpty()) {
+                    types = enlargeNumericTypes(bb, types.size(), nonCharacterTypes);
+                }
+                // fall through
+            case LEAST_RESTRICTIVE:
+                return bb.getTypeFactory().leastRestrictive(types);
+            default:
+                return null;
+        }
+    }
+
+    private static List<RelDataType> enlargeNumericTypes(Blackboard bb,
+                                                         final int typeCount,
+                                                         List<RelDataType> nonCharacterTypes) {
+        if (nonCharacterTypes.size() < typeCount) {
+            final RelDataTypeFamily family = nonCharacterTypes.get(0).getFamily();
+            if (family instanceof SqlTypeFamily) {
+                // The character arguments might be larger than the numeric argument
+                switch ((SqlTypeFamily) family) {
+                    case INTEGER:
+                    case NUMERIC:
+                        nonCharacterTypes.add(bb.getTypeFactory().createSqlType(SqlTypeName.BIGINT));
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+        return nonCharacterTypes;
+    }
+
     private static QueryException literalConversionException(
             SqlValidator validator,
             SqlCall call,
@@ -259,7 +386,7 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
     ) {
         String literalValue = literal.getStringValue();
 
-        if (CHAR_TYPES.contains(literal.getTypeName())) {
+        if (SqlTypeName.CHAR_TYPES.contains(literal.getTypeName())) {
             literalValue = "'" + literalValue + "'";
         }
 
