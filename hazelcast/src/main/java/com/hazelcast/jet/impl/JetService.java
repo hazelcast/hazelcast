@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl;
 
 import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.client.impl.ClientEngineImpl;
+import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.metrics.impl.MetricsService;
 import com.hazelcast.internal.nio.Packet;
@@ -122,11 +123,14 @@ public class JetService implements ManagedService, MembershipAwareService, LiveO
         networking = new Networking(engine, jobExecutionService, config.getInstanceConfig().getFlowControlPeriodMs());
 
         ClientEngine clientEngine = engine.getService(ClientEngineImpl.SERVICE_NAME);
-        ExceptionUtil.registerJetExceptions(clientEngine.getExceptionFactory());
-
+        ClientExceptionFactory clientExceptionFactory = clientEngine.getExceptionFactory();
+        if (clientExceptionFactory != null) {
+            ExceptionUtil.registerJetExceptions(clientExceptionFactory);
+        } else {
+            logger.warning("Jet exceptions are not registered since the client exception factory is not accessible.");
+        }
         logger.info("Setting number of cooperative threads and default parallelism to "
                 + config.getInstanceConfig().getCooperativeThreadCount());
-
         if (sqlCoreBackend != null) {
             try {
                 Method initJetInstanceMethod = sqlCoreBackend.getClass().getMethod("init", AbstractJetInstance.class);
