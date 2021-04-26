@@ -27,9 +27,8 @@ import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.logging.ILogger;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
@@ -91,7 +90,7 @@ public final class TcpServerControl {
         }
 
         Map<ProtocolType, Collection<Address>> remoteAddressesPerProtocolType = handshake.getLocalAddresses();
-        List<Address> allAliases = new ArrayList<Address>();
+        Set<Address> allAliases = new HashSet<>();
         for (Map.Entry<ProtocolType, Collection<Address>> remoteAddresses : remoteAddressesPerProtocolType.entrySet()) {
             if (supportedProtocolTypes.contains(remoteAddresses.getKey())) {
                 allAliases.addAll(remoteAddresses.getValue());
@@ -118,6 +117,7 @@ public final class TcpServerControl {
             // address of the target member will be set correctly in TcpIpConnection.setEndpoint.
             if (mustRegisterRemoteSocketAddress) {
                 allAliases.add(new Address(connection.getRemoteSocketAddress()));
+                allAliases.add(connection.getRemoteAddress());
             }
         } else {
             // when not a member connection, register the remote socket address

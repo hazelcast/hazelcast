@@ -42,6 +42,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_DISCRIMINATOR_BINDADDRESS;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_DISCRIMINATOR_ENDPOINT;
@@ -109,6 +110,14 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
     @Override
     public ServerConnection get(Address address, int streamId) {
         return getPlane(streamId).connectionMap.get(address);
+    }
+
+    public Set<Address> getKnownAliases(TcpServerConnection connection) {
+        Plane plane = planes[connection.getPlaneIndex()];
+        return plane.connectionMap.entrySet().stream()
+                .filter(e -> e.getValue().equals(connection))
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toSet());
     }
 
     @Override
