@@ -45,7 +45,7 @@ public final class SqlStatement {
     public static final int DEFAULT_CURSOR_BUFFER_SIZE = 4096;
 
     private String sql;
-    private List<Object> parameters = new ArrayList<>();
+    private List<Object> arguments = new ArrayList<>();
     private long timeout = DEFAULT_TIMEOUT;
     private int cursorBufferSize = DEFAULT_CURSOR_BUFFER_SIZE;
     private String schema;
@@ -60,14 +60,14 @@ public final class SqlStatement {
      */
     private SqlStatement(
         String sql,
-        List<Object> parameters,
+        List<Object> arguments,
         long timeout,
         int cursorBufferSize,
         String schema,
         SqlExpectedResultType expectedResultType
     ) {
         this.sql = sql;
-        this.parameters = parameters;
+        this.arguments = arguments;
         this.timeout = timeout;
         this.cursorBufferSize = cursorBufferSize;
         this.schema = schema;
@@ -140,22 +140,20 @@ public final class SqlStatement {
     }
 
     /**
-     * Gets the statement parameters.
-     *
-     * @return statement parameters
+     * Gets the statement parameter values.
      */
     @Nonnull
     public List<Object> getParameters() {
-        return parameters;
+        return arguments;
     }
 
     /**
-     * Sets the statement parameters.
+     * Sets the values for statement parameters.
      * <p>
-     * You may define parameter placeholders in the statement with the {@code "?"} character. For every placeholder, a parameter
+     * You may define parameter placeholders in the statement with the {@code "?"} character. For every placeholder, a
      * value must be provided.
      * <p>
-     * When the method is called, the content of the parameters list is copied. Subsequent changes to the original list don't
+     * When the method is called, the contents of the list are copied. Subsequent changes to the original list don't
      * change the statement parameters.
      *
      * @param parameters statement parameters
@@ -167,32 +165,32 @@ public final class SqlStatement {
     @Nonnull
     public SqlStatement setParameters(List<Object> parameters) {
         if (parameters == null || parameters.isEmpty()) {
-            this.parameters = new ArrayList<>();
+            this.arguments = new ArrayList<>();
         } else {
-            this.parameters = new ArrayList<>(parameters);
+            this.arguments = new ArrayList<>(parameters);
         }
 
         return this;
     }
 
     /**
-     * Adds a single parameter to the end of the parameters list.
+     * Adds a single parameter value to the end of the parameter values list.
      *
-     * @param parameter parameter
+     * @param value parameter value
      * @return this instance for chaining
      *
      * @see #setParameters(List)
      * @see #clearParameters()
      */
     @Nonnull
-    public SqlStatement addParameter(Object parameter) {
-        parameters.add(parameter);
+    public SqlStatement addParameter(Object value) {
+        arguments.add(value);
 
         return this;
     }
 
     /**
-     * Clears statement parameters.
+     * Clears statement parameter values.
      *
      * @return this instance for chaining
      *
@@ -201,7 +199,7 @@ public final class SqlStatement {
      */
     @Nonnull
     public SqlStatement clearParameters() {
-        this.parameters = new ArrayList<>();
+        this.arguments.clear();
 
         return this;
     }
@@ -316,7 +314,7 @@ public final class SqlStatement {
      */
     @Nonnull
     public SqlStatement copy() {
-        return new SqlStatement(sql, new ArrayList<>(parameters), timeout, cursorBufferSize, schema, expectedResultType);
+        return new SqlStatement(sql, new ArrayList<>(arguments), timeout, cursorBufferSize, schema, expectedResultType);
     }
 
     @Override
@@ -332,7 +330,7 @@ public final class SqlStatement {
         SqlStatement sqlStatement = (SqlStatement) o;
 
         return Objects.equals(sql, sqlStatement.sql)
-            && Objects.equals(parameters, sqlStatement.parameters)
+            && Objects.equals(arguments, sqlStatement.arguments)
             && timeout == sqlStatement.timeout
             && cursorBufferSize == sqlStatement.cursorBufferSize
             && Objects.equals(schema, sqlStatement.schema)
@@ -343,7 +341,7 @@ public final class SqlStatement {
     public int hashCode() {
         int result = sql != null ? sql.hashCode() : 0;
 
-        result = 31 * result + parameters.hashCode();
+        result = 31 * result + arguments.hashCode();
         result = 31 * result + (int) (timeout ^ (timeout >>> 32));
         result = 31 * result + cursorBufferSize;
         result = 31 * result + (schema != null ? schema.hashCode() : 0);
@@ -357,7 +355,7 @@ public final class SqlStatement {
         return "SqlStatement{"
             + "schema=" + schema
             + ", sql=" + sql
-            + ", parameters=" + parameters
+            + ", arguments=" + arguments
             + ", timeout=" + timeout
             + ", cursorBufferSize=" + cursorBufferSize
             + ", expectedResultType=" + expectedResultType
