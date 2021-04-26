@@ -25,8 +25,6 @@ import com.hazelcast.jet.impl.client.protocol.codec.JetCancelLightJobCodec;
 
 import java.util.UUID;
 
-import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
-
 public class ClientLightJobProxy implements LightJob {
 
     private final HazelcastClientInstanceImpl client;
@@ -43,11 +41,7 @@ public class ClientLightJobProxy implements LightJob {
 
     @Override
     public void join() {
-        try {
-            future.get();
-        } catch (Exception e) {
-            throw rethrow(e);
-        }
+        future.join();
     }
 
     @Override

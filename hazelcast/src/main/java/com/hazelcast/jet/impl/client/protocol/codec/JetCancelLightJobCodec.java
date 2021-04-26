@@ -35,12 +35,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 
 /**
  */
-@Generated("01d00c6e49827feb8e5d611f7202aece")
+@Generated("adef4b5f3076e84e8f2a6cd5c665561a")
 public final class JetCancelLightJobCodec {
-    //hex: 0xFE0F00
-    public static final int REQUEST_MESSAGE_TYPE = 16649984;
-    //hex: 0xFE0F01
-    public static final int RESPONSE_MESSAGE_TYPE = 16649985;
+    //hex: 0xFE1000
+    public static final int REQUEST_MESSAGE_TYPE = 16650240;
+    //hex: 0xFE1001
+    public static final int RESPONSE_MESSAGE_TYPE = 16650241;
     private static final int REQUEST_JOB_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_JOB_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;

@@ -70,7 +70,6 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
         ClientMessage message = JetSubmitLightJobCodec.encodeRequest(jobId, dagSerialized);
 
         // find random non-lite member
-        share this code with member code
         Member[] members = client.getCluster().getMembers().toArray(new Member[0]);
         int randomMemberIndex = ThreadLocalRandom.current().nextInt(members.length);
         for (int i = 0; i < members.length && members[randomMemberIndex].isLiteMember(); i++) {
@@ -79,6 +78,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
                 randomMemberIndex = 0;
             }
         }
+        UUID coordinatorUuid = members[randomMemberIndex].getUuid();
         ClientInvocation invocation = new ClientInvocation(client, message, null, coordinatorUuid);
 
         ClientInvocationFuture future = invocation.invoke();

@@ -293,7 +293,7 @@ methods:
           since: 2.0
           doc: ''
     response: {}
-  - id: 15
+  - id: 16
     name: cancelLightJob
     # TODO really 2.0?
     since: 2.0
