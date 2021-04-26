@@ -416,7 +416,7 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
         } while (System.nanoTime() < endTime);
 
         waitForNextSnapshot(new JobRepository(instance()), job.getId(), 10, true);
-        ditchJob(job);
+        ditchJob(job, instances());
         // when the job is cancelled, there should be no temporary files
         checkFileContents(0, numItems, exactlyOnce, false, false);
     }

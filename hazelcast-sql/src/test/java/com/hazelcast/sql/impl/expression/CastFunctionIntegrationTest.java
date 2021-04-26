@@ -24,7 +24,7 @@ import com.hazelcast.sql.impl.type.converter.LocalDateTimeConverter;
 import com.hazelcast.sql.impl.type.converter.LocalTimeConverter;
 import com.hazelcast.sql.impl.type.converter.OffsetDateTimeConverter;
 import com.hazelcast.sql.support.expressions.ExpressionValue;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -55,7 +55,7 @@ import static com.hazelcast.sql.impl.SqlErrorCode.DATA_EXCEPTION;
 import static com.hazelcast.sql.impl.SqlErrorCode.PARSING;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class CastFunctionIntegrationTest extends ExpressionTestSupport {
     @Test

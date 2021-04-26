@@ -18,10 +18,11 @@ package com.hazelcast.sql.impl.expression;
 
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.sql.SqlOperator;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -43,10 +44,10 @@ import static junit.framework.TestCase.fail;
  * <p>
  * Also ensures that function names are case-insensitive.
  */
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
-    @Override
+    @Before
     public void before0() {
         put(1);
     }
