@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.config.JobConfig;
@@ -26,13 +27,17 @@ import com.hazelcast.jet.sql.impl.JetPlan.AlterJobPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.CreateJobPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.CreateMappingPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.CreateSnapshotPlan;
+import com.hazelcast.jet.sql.impl.JetPlan.DeletePlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropJobPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropMappingPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropSnapshotPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.SelectOrSinkPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.ShowStatementPlan;
+import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget;
 import com.hazelcast.jet.sql.impl.schema.MappingCatalog;
+import com.hazelcast.map.IMap;
+import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlResult;
@@ -43,7 +48,20 @@ import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.SqlResultImpl;
+import com.hazelcast.sql.impl.expression.ColumnExpression;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
+import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.expression.predicate.AndPredicate;
+import com.hazelcast.sql.impl.expression.predicate.ComparisonMode;
+import com.hazelcast.sql.impl.expression.predicate.ComparisonPredicate;
+import com.hazelcast.sql.impl.extract.QueryPath;
+import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.row.HeapRow;
+import com.hazelcast.sql.impl.schema.TableField;
+import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
+import com.hazelcast.sql.impl.schema.map.MapTableField;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.util.List;
 import java.math.BigDecimal;
@@ -55,6 +73,7 @@ import java.util.stream.Stream;
 
 import static com.hazelcast.jet.sql.impl.JetPlan.*;
 import static com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
 class JetPlanExecutor {
@@ -222,15 +241,68 @@ class JetPlanExecutor {
         }
     }
 
-    public SqlResult execute(QueryId queryId, String mapName, List<Object> keys) {
-        int deletedKeys = 0;
-        for (Object key : keys) {
-            Object value = jetInstance.getMap(mapName).remove(key);
-            if (value != null) {
-                deletedKeys++;
-            }
+    public SqlResult execute(QueryId queryId, DeletePlan deletePlan) {
+        if (deletePlan.getEarlyExit()) {
+            return SqlResultImpl.createUpdateCountResult(0);
         }
-        return SqlResultImpl.createUpdateCountResult(deletedKeys);
+        AbstractMapTable table = deletePlan.getTable().getTarget();
+        InternalSerializationService serializationService = ((HazelcastInstanceImpl) jetInstance.getHazelcastInstance()).getSerializationService();
+        IMap<Object, Object> map = jetInstance.getMap(table.getSqlName());
+        ExpressionEvalContext context = new SimpleExpressionEvalContext(serializationService);
+        List<TableField> fields = table.getFields();
+        QueryPath[] paths = fields.stream().map(field -> ((MapTableField) field).getPath()).toArray(QueryPath[]::new);
+        QueryDataType[] types = fields.stream().map(TableField::getType).toArray(QueryDataType[]::new);
+        QueryTargetDescriptor keyDescriptor = table.getKeyDescriptor();
+        QueryTargetDescriptor valueDescriptor = table.getValueDescriptor();
+
+        KvRowProjector projector =
+                KvRowProjector.supplier(paths, types, keyDescriptor, valueDescriptor, null, emptyList()).get(serializationService, Extractors.newBuilder(serializationService).build());
+
+        Expression<Boolean> filter = deletePlan.filter();
+        Object key;
+        if (filter instanceof ComparisonPredicate) {
+            ComparisonPredicate predicate = (ComparisonPredicate) filter;
+            ComparisonMode mode = predicate.getMode();
+            if (mode != ComparisonMode.EQUALS) {
+                throw QueryException.error(SqlErrorCode.GENERIC, mode + " predicate is not supported for DELETE queries");
+            }
+            Expression<?> operand1 = predicate.getOperand1();
+            Expression<?> operand2 = predicate.getOperand2();
+            if (operand1 instanceof ColumnExpression && operand2 instanceof ConstantExpression) {
+                if (((ColumnExpression<?>) operand1).getIndex() != 0) {
+                    throw QueryException.error(SqlErrorCode.GENERIC, "DELETE query has to contain __key = <const value> predicate");
+                }
+                key = operand2.eval(null, null);
+            } else if (operand1 instanceof ConstantExpression && operand2 instanceof ColumnExpression) {
+                if (((ColumnExpression<?>) operand2).getIndex() != 0) {
+                    throw QueryException.error(SqlErrorCode.GENERIC, "DELETE query has to contain __key = <const value> predicate");
+                }
+                key = operand1.eval(null, null);
+            } else {
+                throw QueryException.error(SqlErrorCode.GENERIC, "DELETE query has to contain __key = <const value> predicate");
+            }
+            Object value = map.remove(key);
+            return SqlResultImpl.createUpdateCountResult(value != null ? 1 : 0);
+        } else if (filter instanceof AndPredicate) {
+            boolean hasKey = false;
+            for (Expression<?> expr : ((AndPredicate) filter).getOperands()) {
+                if (isKeyColumn(expr)) {
+                    if (hasKey) {
+                        return SqlResultImpl.createUpdateCountResult(0);
+                    }
+                    hasKey = true;
+                }
+            }
+            return null;
+        } else {
+
+
+            throw QueryException.error(SqlErrorCode.GENERIC, "lol");
+        }
+    }
+
+    private boolean isKeyColumn(Expression<?> expression) {
+        return expression instanceof ColumnExpression && ((ColumnExpression<?>) expression).getIndex() == 0;
     }
 
     private List<Object> prepareArguments(QueryParameterMetadata parameterMetadata, List<Object> arguments) {

@@ -85,6 +85,11 @@ public class FullScanPhysicalRel extends TableScan implements PhysicalRel {
     }
 
     @Override
+    public void accept(SingleKeyQueryPlanVisitor visitor) {
+        visitor.onScan(this);
+    }
+
+    @Override
     public final RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
         return new FullScanPhysicalRel(getCluster(), traitSet, getTable());
     }

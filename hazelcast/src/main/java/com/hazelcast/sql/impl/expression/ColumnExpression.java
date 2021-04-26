@@ -57,6 +57,10 @@ public final class ColumnExpression<T> implements Expression<T>, IdentifiedDataS
         return new ColumnExpression<>(index, canonicalType);
     }
 
+    public int getIndex() {
+        return index;
+    }
+
     @Override
     public T evalTop(Row row, ExpressionEvalContext context) {
         return row.get(index);

@@ -21,9 +21,11 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
-import static com.hazelcast.config.IndexType.SORTED;
+import java.io.Serializable;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -33,7 +35,7 @@ import static org.junit.Assert.fail;
 public class SqlDeleteQueriesTest extends SqlTestSupport {
     @BeforeClass
     public static void setUpClass() {
-        initialize(2, null);
+        initialize(1, null);
     }
 
     @Test
@@ -47,7 +49,30 @@ public class SqlDeleteQueriesTest extends SqlTestSupport {
     }
 
     @Test
-    public void deleteWithDisjunctionPredicate() {
+    public void fails_whenThereIsNoKeyInPredicate() {
+        put(1);
+        checkError("delete from test_map where this = 1", "DELETE query has to contain __key = <const value> predicate");
+        put(1);
+        checkError("delete from test_map where 1 = this", "DELETE query has to contain __key = <const value> predicate");
+        put(1);
+        checkError("delete from test_map where __key = this", "DELETE query has to contain __key = <const value> predicate");
+    }
+    
+    @Test
+    public void deleteByKey_andAnotherFields() {
+        IMap<Integer, Person> map = instance().getMap("people");
+        map.clear();
+        map.put(1, new Person("name1", 18));
+
+        checkUpdateCount("delete from people where __key = 1 and age = 18", 1);
+
+        map.put(1, new Person("name1", 18));
+        checkUpdateCount("delete from people where __key = 1 and age = 50", 0);
+    }
+
+    @Test
+    @Ignore
+    public void deleteWithDisjunctionPredicate_whenOnlyKeysInPredicate() {
         put(1);
         put(2);
         checkUpdateCount("delete from test_map where __key = 1 or __key = 2", 2);
@@ -67,10 +92,10 @@ public class SqlDeleteQueriesTest extends SqlTestSupport {
     }
 
     @Test
-    public void deleteWithConjunctionPredicate_fails() {
-        put(10);
+    public void dontDelete_whenKeyFieldOccursMoreThanOneWithConjunctionPredicate() {
+        put(1);
 
-        checkError("delete from test_map where __key = 1 and __key = 2", "AND predicate is not supported for DELETE queries");
+        checkUpdateCount("delete from test_map where __key = 1 and __key = 2", 0);
     }
 
     private void checkError(String sql, String expectedErrorMessage) {
@@ -93,15 +118,23 @@ public class SqlDeleteQueriesTest extends SqlTestSupport {
         assertThat(instance().getSql().execute(sql).updateCount()).isEqualTo(expected);
     }
 
-    private void put(Object key) {
-        IMap<Object, Object> map = instance().getMap("test_map");
+    private void put(Object key, Object value) {
+        IMap map = instance().getMap("test_map");
+        map.clear();
+        map.put(key, value);
+    }
 
-        IndexConfig indexConfig = new IndexConfig().setName("Index_" + randomName())
-                .setType(SORTED);
-        for (String fieldName : new String[]{"__key", "this"}) {
-            indexConfig.addAttribute(fieldName);
+    private void put(Object key) {
+        put(key, key);
+    }
+
+    private static class Person implements Serializable {
+        private String name;
+        private int age;
+
+        public Person(String name, int age) {
+            this.name = name;
+            this.age = age;
         }
-        map.addIndex(indexConfig);
-        map.put(key, key);
     }
 }

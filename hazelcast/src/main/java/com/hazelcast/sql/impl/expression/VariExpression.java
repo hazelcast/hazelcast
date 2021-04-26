@@ -37,6 +37,10 @@ public abstract class VariExpression<T> implements Expression<T> {
         this.operands = operands;
     }
 
+    public Expression<?>[] getOperands() {
+        return operands;
+    }
+
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(operands.length);

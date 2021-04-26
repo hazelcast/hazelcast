@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl;
 
+import com.hazelcast.function.PredicateEx;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.sql.impl.parse.SqlAlterJob.AlterJobOperation;
@@ -23,29 +24,18 @@ import com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget;
 import com.hazelcast.jet.sql.impl.schema.Mapping;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRowMetadata;
-import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.optimizer.PlanCheckContext;
-import com.hazelcast.sql.impl.SqlErrorCode;
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
+import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.optimizer.PlanKey;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.security.SqlSecurityContext;
-import com.hazelcast.sql.impl.type.QueryDataType;
-import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.sql.SqlBasicCall;
-import org.apache.calcite.sql.SqlDelete;
-import org.apache.calcite.sql.SqlIdentifier;
-import org.apache.calcite.sql.SqlKind;
-import org.apache.calcite.sql.SqlLiteral;
-import org.apache.calcite.sql.SqlNode;
-import org.apache.calcite.sql.validate.SqlValidator;
 
 import java.security.Permission;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -578,73 +568,35 @@ abstract class JetPlan extends SqlPlan {
         }
     }
 
-    static class DeletePlan extends JetPlan {
-
-        private final SqlDelete delete;
-        private final SqlValidator validator;
+    static class DeletePlan extends SelectOrSinkPlan {
+        private final HazelcastTable table;
+        private final Expression<Boolean> filter;
+        private final boolean earlyExit;
         private final JetPlanExecutor planExecutor;
 
-        public DeletePlan(PlanKey planKey, SqlDelete delete, SqlValidator validator, JetPlanExecutor planExecutor) {
-            super(planKey);
-            this.delete = delete;
-            this.validator = validator;
+        public DeletePlan(PlanKey planKey, HazelcastTable table, Expression<Boolean> filter, boolean earlyExit, JetPlanExecutor planExecutor) {
+            super(planKey, null, null, false, false, null, null, null);
+            this.table = table;
+            this.filter = filter;
+            this.earlyExit = earlyExit;
             this.planExecutor = planExecutor;
         }
 
+        public HazelcastTable getTable() {
+            return table;
+        }
+
+        public Expression<Boolean> filter() {
+            return filter;
+        }
+
+        public boolean getEarlyExit() {
+            return earlyExit;
+        }
+
         @Override
-        SqlResult execute(QueryId queryId) {
-            SqlNode targetTable = delete.getTargetTable();
-            SqlNode condition = delete.getCondition();
-            assert targetTable instanceof SqlIdentifier;
-            assert condition instanceof SqlBasicCall;
-
-            String mapName = ((SqlIdentifier) targetTable).names.get(2);
-
-            List<Object> keys = new ArrayList<>();
-            collectsKeysValue(delete.getSourceSelect().getWhere(), keys);
-
-            return planExecutor.execute(queryId, mapName, keys);
-        }
-
-        private void collectsKeysValue(SqlNode node, List<Object> keys) {
-            if (node.getKind() == SqlKind.OR) {
-                for (SqlNode sqlNode : ((SqlBasicCall) node).getOperandList()) {
-                    collectsKeysValue(sqlNode, keys);
-                }
-            } else if (node .getKind() == SqlKind.EQUALS) {
-                keys.add(findKeyValueInPredicate((SqlBasicCall) node));
-            } else {
-                throw QueryException.error(SqlErrorCode.GENERIC, node.getKind() + " predicate is not supported for DELETE queries");
-            }
-        }
-
-        private Object findKeyValueInPredicate(SqlBasicCall call) {
-            boolean foundKey = false;
-            Object key = null;
-
-            for (SqlNode node : call.getOperandList()) {
-                if (node instanceof SqlIdentifier) {
-                    foundKey = ((SqlIdentifier) node).names.contains("__key");
-                } else if (node instanceof SqlLiteral) {
-                    RelDataType type = validator.getValidatedNodeType(node);
-                    QueryDataType queryDataType = HazelcastTypeUtils.toHazelcastType(type.getSqlTypeName());
-                    key = queryDataType.convert(((SqlLiteral) node).getValue());
-                } else if (node instanceof SqlBasicCall) {
-                    assert node.getKind() == SqlKind.CAST;
-                    for (SqlNode sqlNode : ((SqlBasicCall) node).getOperandList()) {
-                        if (sqlNode instanceof SqlLiteral) {
-                            RelDataType type = validator.getValidatedNodeType(node);
-                            QueryDataType queryDataType = HazelcastTypeUtils.toHazelcastType(type.getSqlTypeName());
-                            key = queryDataType.convert(((SqlLiteral) sqlNode).getValue());
-                        }
-                    }
-                }
-            }
-
-            if (!foundKey || key == null) {
-                throw QueryException.error(SqlErrorCode.GENERIC, "DELETE query has to contain __key = <value> predicate");
-            }
-            return key;
+        public SqlResult execute(QueryId queryId) {
+            return planExecutor.execute(queryId, this);
         }
 
         @Override

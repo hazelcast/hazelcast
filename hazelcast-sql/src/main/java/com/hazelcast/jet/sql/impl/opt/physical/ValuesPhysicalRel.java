@@ -62,6 +62,11 @@ public class ValuesPhysicalRel extends AbstractRelNode implements PhysicalRel {
     }
 
     @Override
+    public void accept(SingleKeyQueryPlanVisitor visitor) {
+        visitor.onValue(this);
+    }
+
+    @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
         return new ValuesPhysicalRel(getCluster(), traitSet, getRowType(), values);
     }

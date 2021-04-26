@@ -55,6 +55,10 @@ public final class ComparisonPredicate extends BiExpression<Boolean> implements 
         return new ComparisonPredicate(left, right, comparisonMode);
     }
 
+    public ComparisonMode getMode() {
+        return mode;
+    }
+
     @Override
     public int getFactoryId() {
         return SqlDataSerializerHook.F_ID;
