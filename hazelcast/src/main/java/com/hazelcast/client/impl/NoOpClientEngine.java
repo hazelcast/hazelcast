@@ -153,7 +153,7 @@ public class NoOpClientEngine implements ClientEngine {
     }
 
     @Override
-    public boolean deregisterBackupListener(UUID clientUUID) {
+    public boolean deregisterBackupListener(UUID clientUUID, Consumer<Long> backupListener) {
         return false;
     }
 
