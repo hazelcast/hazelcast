@@ -33,7 +33,7 @@ such as:
 * a distributed and reentrant lock implementation, called `FencedLock`
 * primitives for distributed computing such as `AtomicLong`,
 `AtomicReference` and `CountDownLatch`.
-  
+
 Hazelcast data structures are in-memory, highly optimized and offer very
 low latencies. For a single `get` or `put` operation on an `IMap`, you
 can typically expect a round-trip-time of under _100 microseconds_.
