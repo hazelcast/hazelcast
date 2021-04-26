@@ -268,7 +268,18 @@ public class JobCoordinationService {
         return res;
     }
 
-    public CompletableFuture<Void> submitLightJob(long jobId, DAG dag) {
+    public CompletableFuture<Void> submitLightJob(long jobId, Object jobDefinition) {
+        DAG dag;
+        if (jobDefinition instanceof DAG) {
+            dag = (DAG) jobDefinition;
+        } else {
+            int coopThreadCount = config.getInstanceConfig().getCooperativeThreadCount();
+            dag = ((PipelineImpl) jobDefinition).toDag(new Context() {
+                @Override public int defaultLocalParallelism() {
+                    return coopThreadCount;
+                }
+            });
+        }
         LightMasterContext mc = new LightMasterContext(nodeEngine, dag, jobId);
         LightMasterContext oldContext = lightMasterContexts.put(jobId, mc);
         assert oldContext == null : "duplicate jobId";

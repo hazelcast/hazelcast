@@ -24,7 +24,6 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.LightJob;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.impl.operation.GetJobIdsByNameOperation;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation;
 import com.hazelcast.jet.impl.operation.SubmitLightJobOperation;
@@ -36,6 +35,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import javax.annotation.Nonnull;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -62,7 +62,7 @@ public class JetInstanceImpl extends AbstractJetInstance {
     }
 
     @Nonnull @Override
-    public LightJob newLightJob(DAG dag) {
+    protected LightJob newLightJobInt(Object jobDefinition) {
         Address coordinatorAddress;
         if (nodeEngine.getLocalMember().isLiteMember()) {
             // on lite member forward the request to a random member
@@ -73,8 +73,8 @@ public class JetInstanceImpl extends AbstractJetInstance {
         }
 
         long jobId = newJobId();
-        SubmitLightJobOperation operation = new SubmitLightJobOperation(jobId, dag);
-        Future<Void> future = nodeEngine
+        SubmitLightJobOperation operation = new SubmitLightJobOperation(jobId, jobDefinition);
+        CompletableFuture<Void> future = nodeEngine
                 .getOperationService()
                 .createInvocationBuilder(JetService.SERVICE_NAME, operation, coordinatorAddress)
                 .invoke();

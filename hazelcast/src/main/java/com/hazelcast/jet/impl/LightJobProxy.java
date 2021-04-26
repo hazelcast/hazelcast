@@ -21,18 +21,16 @@ import com.hazelcast.jet.LightJob;
 import com.hazelcast.jet.impl.operation.CancelLightJobOperation;
 import com.hazelcast.spi.impl.NodeEngine;
 
-import java.util.concurrent.Future;
-
-import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import java.util.concurrent.CompletableFuture;
 
 public class LightJobProxy implements LightJob {
 
     private final NodeEngine nodeEngine;
     private final long jobId;
     private final Address coordinatorAddress;
-    private final Future<Void> future;
+    private final CompletableFuture<Void> future;
 
-    LightJobProxy(NodeEngine nodeEngine, long jobId, Address coordinatorAddress, Future<Void> future) {
+    LightJobProxy(NodeEngine nodeEngine, long jobId, Address coordinatorAddress, CompletableFuture<Void> future) {
         this.nodeEngine = nodeEngine;
         this.jobId = jobId;
         this.coordinatorAddress = coordinatorAddress;
@@ -41,11 +39,7 @@ public class LightJobProxy implements LightJob {
 
     @Override
     public void join() {
-        try {
-            future.get();
-        } catch (Exception e) {
-            throw rethrow(e);
-        }
+        future.join();
     }
 
     @Override

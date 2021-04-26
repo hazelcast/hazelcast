@@ -25,6 +25,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.operation.InitExecutionOperation;
 import com.hazelcast.jet.impl.operation.TerminateExecutionOperation;
@@ -41,6 +42,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -134,6 +136,13 @@ public class LightMasterContext {
         if (failure == null) {
             jobCompletionFuture.complete(null);
         } else {
+            // translate JobTerminateRequestedException(CANCEL_FORCEFUL) to CancellationException
+            if (failure instanceof JobTerminateRequestedException
+                    && ((JobTerminateRequestedException) failure).mode() == CANCEL_FORCEFUL) {
+                CancellationException newFailure = new CancellationException("job cancelled");
+                newFailure.initCause(failure);
+                failure = newFailure;
+            }
             jobCompletionFuture.completeExceptionally(failure);
         }
     }

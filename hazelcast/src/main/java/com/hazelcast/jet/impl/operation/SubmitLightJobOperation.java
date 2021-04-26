@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.impl.operation;
 
-import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
@@ -27,14 +26,14 @@ import java.util.concurrent.CompletableFuture;
 
 public class SubmitLightJobOperation extends AsyncJobOperation {
 
-    private DAG dag;
+    private Object jobDefinition;
 
     // for deserialization
     public SubmitLightJobOperation() { }
 
-    public SubmitLightJobOperation(long jobId, DAG dag) {
+    public SubmitLightJobOperation(long jobId, Object jobDefinition) {
         super(jobId);
-        this.dag = dag;
+        this.jobDefinition = jobDefinition;
     }
 
     protected JetService getJetService() {
@@ -45,7 +44,7 @@ public class SubmitLightJobOperation extends AsyncJobOperation {
     @Override
     protected CompletableFuture<Void> doRun() {
         assert !getNodeEngine().getLocalMember().isLiteMember() : "light job submitted to a lite member";
-        return getJetService().getJobCoordinationService().submitLightJob(jobId(), dag);
+        return getJetService().getJobCoordinationService().submitLightJob(jobId(), jobDefinition);
     }
 
     @Override
@@ -56,12 +55,12 @@ public class SubmitLightJobOperation extends AsyncJobOperation {
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeObject(dag);
+        out.writeObject(jobDefinition);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        dag = in.readObject();
+        jobDefinition = in.readObject();
     }
 }

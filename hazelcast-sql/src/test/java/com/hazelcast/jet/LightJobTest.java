@@ -32,12 +32,14 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.List;
+import java.util.concurrent.CancellationException;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.core.Edge.between;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastSerialClassRunner.class)
 public class LightJobTest extends JetTestSupport {
@@ -98,7 +100,8 @@ public class LightJobTest extends JetTestSupport {
         // TODO fix the race if we cancel before the execution starts
         sleepSeconds(1);
         job.cancel();
-        job.join();
+        assertThatThrownBy(job::join)
+                .isInstanceOf(CancellationException.class);
     }
 
     @Test

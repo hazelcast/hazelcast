@@ -345,8 +345,8 @@ public final class JetBootstrap {
         }
 
         @Nonnull @Override
-        public LightJob newLightJob(DAG dag) {
-            return instance.newLightJob(dag);
+        public LightJob newLightJobInt(Object jobDefinition) {
+            return instance.newLightJobInt(jobDefinition);
         }
 
         private JobConfig updateJobConfig(@Nonnull JobConfig config) {

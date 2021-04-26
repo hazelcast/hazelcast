@@ -23,6 +23,7 @@ import com.hazelcast.client.impl.protocol.task.MessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
+import com.hazelcast.jet.impl.client.protocol.codec.JetCancelLightJobCodec;
 import com.hazelcast.jet.impl.client.protocol.codec.JetExistsDistributedObjectCodec;
 import com.hazelcast.jet.impl.client.protocol.codec.JetExportSnapshotCodec;
 import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobConfigCodec;
@@ -69,6 +70,7 @@ public class JetMessageTaskFactoryProvider implements MessageTaskFactoryProvider
         factories.put(JetExistsDistributedObjectCodec.REQUEST_MESSAGE_TYPE,
                 toFactory(JetExistsDistributedObjectMessageTask::new));
         factories.put(JetSubmitLightJobCodec.REQUEST_MESSAGE_TYPE, toFactory(JetSubmitLightJobMessageTask::new));
+        factories.put(JetCancelLightJobCodec.REQUEST_MESSAGE_TYPE, toFactory(JetCancelLightJobMessageTask::new));
     }
 
     @Override

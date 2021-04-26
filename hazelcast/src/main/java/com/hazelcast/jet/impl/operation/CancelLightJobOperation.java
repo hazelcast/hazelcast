@@ -21,6 +21,8 @@ import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 
 import java.util.concurrent.CompletableFuture;
 
+import static java.util.concurrent.CompletableFuture.completedFuture;
+
 public class CancelLightJobOperation extends AsyncJobOperation {
 
     // for deserialization
@@ -37,7 +39,8 @@ public class CancelLightJobOperation extends AsyncJobOperation {
 
     @Override
     protected CompletableFuture<Void> doRun() {
-        return getJobCoordinationService().terminateLightJob(jobId());
+        getJobCoordinationService().terminateLightJob(jobId());
+        return completedFuture(null);
     }
 
     @Override

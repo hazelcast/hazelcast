@@ -190,27 +190,32 @@ public interface JetInstance {
     @Nonnull
     Job newJobIfAbsent(@Nonnull Pipeline pipeline, @Nonnull JobConfig config);
 
-    @Nonnull
-    default LightJob newLightJob(Pipeline p) {
-        // TODO [viliam] don't convert on the client
-        return newLightJob(p.toDag());
-    }
-
     /**
-     * TODO [viliam] instead of 3 or 2 operations?
-     *
      * Submits a light job for execution. This kind of job is focused on
      * reducing the job startup and teardown time: only a single operation is
-     * used to deploy the job instead of 3 for the normal jobs. This kind of
-     * jobs doesn't provide job metrics, doesn't support any job configuration
-     * (i.e. no processing guarantee, no custom classes or job resources). They
-     * are also not visible in the Management Center. Failures will be only
-     * reported to the caller and logged in the cluster logs, but no trace of
-     * the job will remain in the cluster after it's done. On the other hand,
-     * the job will not be cancelled if the client disconnects.
+     * used to deploy the job instead of 2 for normal jobs.
+     *
+     * Limitation of light jobs:<ul>
+     *     <li>no job metrics
+     *     <li>no job configuration, that means no processing guarantee, no custom
+     *     classes or job resources
+     *     <li>no visibility in Management Center (this might be added later)
+     *     <li>failures will be only reported to the caller and logged in the
+     *     cluster logs, but no trace of the job will remain in the cluster after
+     *     it's done
+     *     <li>the job will not be cancelled if the client disconnects.
+     * </ul>
      * <p>
      * It substantially reduces the overhead for jobs that take milliseconds to
      * complete.
+     */
+    @Nonnull
+    LightJob newLightJob(Pipeline p);
+
+    /**
+     * Submits a job defined in the Core API.
+     * <p>
+     * See {@link #newLightJob(Pipeline)}.
      */
     @Nonnull
     LightJob newLightJob(DAG dag);
