@@ -18,7 +18,6 @@ package com.hazelcast.client.listeners.leak;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.ClientEndpoint;
-import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.clientside.ClientTestUtil;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.spi.impl.listener.ClientConnectionRegistration;
@@ -51,9 +50,7 @@ import org.junit.runners.Parameterized;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Map;
 import java.util.UUID;
-import java.util.function.Consumer;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
@@ -251,19 +248,6 @@ public class ListenerLeakTest extends ClientTestSupport {
         hazelcast.shutdown();
 
         assertTrueEventually(() -> assertEquals(0, getAllEventHandlers(client).size()));
-    }
-
-    @Test
-    public void testBackupListenerRemoved_afterClientShutdown() {
-        ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().setSmartRouting(smartRouting);
-        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
-        HazelcastInstance hazelcast = hazelcastFactory.newHazelcastInstance();
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
-
-        client.shutdown();
-        Map<UUID, Consumer<Long>> backupListeners = ((ClientEngineImpl) getNode(hazelcast).clientEngine).getBackupListeners();
-        assertTrueEventually(() -> assertEquals(0, backupListeners.size()));
     }
 
     @Test
