@@ -10,11 +10,16 @@
 
 ----
 
-Hazelcast is an open-source distributed in-memory data store and
-computation platform that allows the processing of large volumes of
-real-time data events or huge batches of static datasets with
-consistent low latency. It provides a wide variety of distributed data
-structures and concurrency primitives including:
+Hazelcast is a distributed in-memory data store and computation
+platform that's fault tolerant and easy to scale up or down.
+
+As an in-memory data store, Hazelcast gives you faster access to your
+data by storing it in memory. With more accessible data, you can
+leverage Hazelcast to process huge amounts of real-time events or
+static datasets with consistently low latency.
+
+To help you take advantage of all these features, Hazelcast comes with
+the following built-in data structures:
 
 * a distributed, partitioned and queryable in-memory key-value store
   implementation, called `IMap`
