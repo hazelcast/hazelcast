@@ -91,7 +91,6 @@ public class LightMasterContext {
     }
 
     public CompletableFuture<Void> start() {
-        Timers.i().lightMasterContext_start.start();
         MembersView membersView = getMembersView();
         if (logger.isFineEnabled()) {
             String dotRepresentation = dag.toDotString();
@@ -105,9 +104,7 @@ public class LightMasterContext {
         logFine(logger, "Built execution plans for %s", jobIdString);
         Set<MemberInfo> participants = executionPlanMap.keySet();
         Function<ExecutionPlan, Operation> operationCtor = plan -> {
-            Timers.i().lightMasterContext_serializeOnePlan.start();
             Data serializedPlan = nodeEngine.getSerializationService().toData(plan);
-            Timers.i().lightMasterContext_serializeOnePlan.stop();
 
             return new InitExecutionOperation(jobId, jobId, membersView.getVersion(), participants,
                     serializedPlan, true);
@@ -118,12 +115,10 @@ public class LightMasterContext {
                 responses -> finalizeJob(firstError(responses)),
                 error -> cancelInvocations(),
                 false);
-        Timers.i().lightMasterContext_start.stop();
         return jobCompletionFuture;
     }
 
     private void finalizeJob(@Nullable Throwable failure) {
-        Timers.i().initResponseTime.stop();
         // close ProcessorMetaSuppliers
         if (vertices != null) {
             for (Vertex vertex : vertices) {

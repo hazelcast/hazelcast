@@ -271,14 +271,11 @@ public class JobCoordinationService {
     public CompletableFuture<Void> submitLightJob(long jobId, DAG dag) {
         LightMasterContext mc = new LightMasterContext(nodeEngine, dag, jobId);
         LightMasterContext oldContext = lightMasterContexts.put(jobId, mc);
-        System.out.println("aaa light master context added: " + idToString(jobId));
         assert oldContext == null : "duplicate jobId";
         return mc.start()
                 .whenComplete((t, r) -> {
                     LightMasterContext removed = lightMasterContexts.remove(jobId);
                     assert removed != null : "LMC not found";
-                    System.out.println("aaa light master context removed: " + idToString(jobId));
-                    Timers.i().submitLightJobOperation_run.stop();
                 });
     }
 

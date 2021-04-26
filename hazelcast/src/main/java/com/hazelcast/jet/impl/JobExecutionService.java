@@ -220,21 +220,15 @@ public class JobExecutionService implements DynamicMetricsProvider {
             ExecutionPlan plan
     ) {
         assert executionId == jobId : "executionId(" + idToString(executionId) + ") != jobId(" + idToString(jobId) + ")";
-        Timers.i().jobExecService_runLightJob_verifyClusterInfo.start();
         verifyClusterInformation(jobId, executionId, coordinator, coordinatorMemberListVersion, participants);
-        Timers.i().jobExecService_runLightJob_verifyClusterInfo.stop();
         failIfNotRunning();
 
-        Timers.i().jobExecService_runLightJob_synchronization_outer.start();
         ExecutionContext execCtx;
         synchronized (mutex) {
-            Timers.i().jobExecService_runLightJob_synchronization_inner.start();
             addExecutionContextJobId(jobId, executionId, coordinator);
             execCtx = executionContexts.computeIfAbsent(executionId,
                     x -> new ExecutionContext(nodeEngine, jobId, executionId, true));
-            Timers.i().jobExecService_runLightJob_synchronization_inner.stop();
         }
-        Timers.i().jobExecService_runLightJob_synchronization_outer.stop();
 
         Set<Address> addresses = participants.stream().map(MemberInfo::getAddress).collect(toSet());
         ClassLoader jobCl = getClassLoader(plan.getJobConfig(), jobId);
@@ -409,7 +403,6 @@ public class JobExecutionService implements DynamicMetricsProvider {
      * Completes and cleans up execution of the given job
      */
     public void completeExecution(long executionId, Throwable error) {
-        Timers.i().jobExecService_completeExecution.start();
         ExecutionContext executionContext = executionContexts.remove(executionId);
         if (executionContext != null) {
             JetClassLoader removedClassLoader = classLoaders.remove(executionContext.jobId());
@@ -425,7 +418,6 @@ public class JobExecutionService implements DynamicMetricsProvider {
         } else {
             logger.fine("Execution " + idToString(executionId) + " not found for completion");
         }
-        Timers.i().jobExecService_completeExecution.stop();
     }
 
     public void updateMetrics(@Nonnull Long executionId, RawJobMetrics metrics) {

@@ -27,7 +27,6 @@ import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.metrics.MetricTags;
-import com.hazelcast.jet.impl.Timers;
 import com.hazelcast.jet.impl.metrics.MetricsImpl;
 import com.hazelcast.jet.impl.util.NonCompletableFuture;
 import com.hazelcast.jet.impl.util.ProgressState;
@@ -181,7 +180,6 @@ public class TaskletExecutionService {
     private void submitCooperativeTasklets(
             ExecutionTracker executionTracker, ClassLoader jobClassLoader, List<Tasklet> tasklets
     ) {
-        Timers.i().submitCooperativeTasklets.start();
         @SuppressWarnings("unchecked")
         final List<TaskletTracker>[] trackersByThread = new List[cooperativeWorkers.length];
         Arrays.setAll(trackersByThread, i -> new ArrayList<>());
@@ -206,7 +204,6 @@ public class TaskletExecutionService {
             cooperativeWorkers[i].trackers.addAll(trackersByThread[i]);
         }
         Arrays.stream(cooperativeThreadPool).forEach(LockSupport::unpark);
-        Timers.i().submitCooperativeTasklets.stop();
     }
 
     private void awaitAll(List<? extends Future<?>> futures) {

@@ -33,7 +33,6 @@ import com.hazelcast.jet.core.Edge.RoutingPolicy;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.JetService;
-import com.hazelcast.jet.impl.Timers;
 import com.hazelcast.jet.impl.execution.ConcurrentInboundEdgeStream;
 import com.hazelcast.jet.impl.execution.ConveyorCollector;
 import com.hazelcast.jet.impl.execution.ConveyorCollectorWithPartition;
@@ -167,7 +166,6 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                            InternalSerializationService jobSerializationService) {
         this.nodeEngine = (NodeEngineImpl) nodeEngine;
         this.executionId = executionId;
-        Timers.i().executionPlan_initialize.start();
         initProcSuppliers(jobId, tempDirectories, jobSerializationService);
         initDag(jobSerializationService);
 
@@ -249,7 +247,6 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                                                         .collect(toList());
 
         tasklets.addAll(allReceivers);
-        Timers.i().executionPlan_initialize.stop();
     }
 
     public List<ProcessorSupplier> getProcessorSuppliers() {

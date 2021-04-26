@@ -63,7 +63,6 @@ public class JetInstanceImpl extends AbstractJetInstance {
 
     @Nonnull @Override
     public LightJob newLightJob(DAG dag) {
-        Timers.i().init.stop();
         Address coordinatorAddress;
         if (nodeEngine.getLocalMember().isLiteMember()) {
             // on lite member forward the request to a random member

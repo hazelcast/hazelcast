@@ -32,7 +32,6 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.metrics.MetricTags;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.TerminationMode;
-import com.hazelcast.jet.impl.Timers;
 import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
 import com.hazelcast.jet.impl.exception.TerminatedWithSnapshotException;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
@@ -137,7 +136,6 @@ public class ExecutionContext implements DynamicMetricsProvider {
     }
 
     public ExecutionContext initialize(Address coordinator, Set<Address> participants, ExecutionPlan plan) {
-        Timers.i().execCtx_initialize.start();
         this.coordinator = coordinator;
         this.participants = participants;
 
@@ -172,7 +170,6 @@ public class ExecutionContext implements DynamicMetricsProvider {
         senderMap = unmodifiableMap(plan.getSenderMap());
         tasklets = plan.getTasklets();
 
-        Timers.i().execCtx_initialize.stop();
         return this;
     }
 

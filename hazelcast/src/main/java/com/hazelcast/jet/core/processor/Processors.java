@@ -41,7 +41,6 @@ import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.function.KeyedWindowResultFunction;
 import com.hazelcast.jet.datamodel.KeyedWindowResult;
 import com.hazelcast.jet.function.TriFunction;
-import com.hazelcast.jet.impl.Timers;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.jet.impl.processor.AggregateP;
 import com.hazelcast.jet.impl.processor.AsyncTransformUsingServiceOrderedP;
@@ -1036,7 +1035,6 @@ public final class Processors {
 
         @Override
         public void init(@Nonnull Outbox outbox, @Nonnull Context context) throws Exception {
-            Timers.i().noopPInitToClose.start();
             this.outbox = outbox;
         }
 
@@ -1053,11 +1051,6 @@ public final class Processors {
         @Override
         public void restoreFromSnapshot(@Nonnull Inbox inbox) {
             inbox.drain(ConsumerEx.noop());
-        }
-
-        @Override
-        public void close() throws Exception {
-            Timers.i().noopPInitToClose.stop();
         }
 
         @Override
