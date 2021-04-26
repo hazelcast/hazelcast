@@ -105,10 +105,9 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.hazelcast.jet</groupId>
-            <artifactId>hazelcast-jet-sql</artifactId>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-sql</artifactId>
             <version>${project.version}</version>
-            <classifier>${fat.dependency.classifier}</classifier>
         </dependency>
         <!-- JetCommandLine dependencies-->
         <dependency>

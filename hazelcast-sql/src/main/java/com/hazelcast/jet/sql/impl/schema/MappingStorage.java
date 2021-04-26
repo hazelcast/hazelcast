@@ -121,7 +121,11 @@ public class MappingStorage {
     }
 
     void registerListener(EntryListenerAdapter listener) {
-        storage().addEntryListener(listener);
+        // do not try to implicitly create ReplicatedMap
+        // TODO: perform this check in a single place i.e. SqlService ?
+        if (!nodeEngine.getLocalMember().isLiteMember()) {
+            storage().addEntryListener(listener);
+        }
     }
 
     private ReplicatedMap<String, Mapping> storage() {
