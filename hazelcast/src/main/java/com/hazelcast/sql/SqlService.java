@@ -116,12 +116,14 @@ import java.util.List;
 @Beta
 public interface SqlService {
     /**
-     * Convenient method to execute a distributed query with the given parameters.
+     * Convenient method to execute a distributed query with the given
+     * parameter values.
      * <p>
-     * Converts passed SQL string and parameters into an {@link SqlStatement} object and invokes {@link #execute(SqlStatement)}.
+     * Converts passed SQL string and parameter values into an {@link
+     * SqlStatement} object and invokes {@link #execute(SqlStatement)}.
      *
      * @param sql SQL string
-     * @param params query parameters that will be passed to {@link SqlStatement#setParameters(List)}
+     * @param arguments query parameter values that will be passed to {@link SqlStatement#setParameters(List)}
      * @return result
      * @throws NullPointerException if the SQL string is null
      * @throws IllegalArgumentException if the SQL string is empty
@@ -132,12 +134,12 @@ public interface SqlService {
      * @see #execute(SqlStatement)
      */
     @Nonnull
-    default SqlResult execute(@Nonnull String sql, Object... params) {
+    default SqlResult execute(@Nonnull String sql, Object... arguments) {
         SqlStatement statement = new SqlStatement(sql);
 
-        if (params != null) {
-            for (Object param : params) {
-                statement.addParameter(param);
+        if (arguments != null) {
+            for (Object arg : arguments) {
+                statement.addParameter(arg);
             }
         }
 
