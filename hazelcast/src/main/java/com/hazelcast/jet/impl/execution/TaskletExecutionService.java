@@ -209,9 +209,10 @@ public class TaskletExecutionService {
                 trackersByThread[cooperativeThreadIndex].add(new TaskletTracker(t, executionTracker, jobClassLoader));
                 cooperativeThreadIndex = (cooperativeThreadIndex + 1) % trackersByThread.length;
             }
-        }
-        for (int i = 0; i < trackersByThread.length; i++) {
-            cooperativeWorkers[i].trackers.addAll(trackersByThread[i]);
+            for (int i = 0; i < trackersByThread.length; i++) {
+                cooperativeWorkers[i].trackers.addAll(trackersByThread[i]);
+            }
+            lock.notifyAll();
         }
         Arrays.stream(cooperativeThreadPool).forEach(LockSupport::unpark);
     }
@@ -362,6 +363,15 @@ public class TaskletExecutionService {
                 } else {
                     idleCount++;
                     if (trackers.isEmpty()) {
+                        synchronized (lock) {
+                            while (trackers.isEmpty()) {
+                                try {
+                                    lock.wait();
+                                } catch (InterruptedException e) {
+                                    logger.fine(e.getMessage());
+                                }
+                            }
+                        }
                         idlerCooperativeNoTasklet.idle(idleCount);
                     } else {
                         idlerLocal.idle(idleCount);
