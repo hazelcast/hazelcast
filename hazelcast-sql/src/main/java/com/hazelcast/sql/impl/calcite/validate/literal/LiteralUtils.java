@@ -37,6 +37,8 @@ import java.time.LocalTime;
 import static org.apache.calcite.sql.type.SqlTypeName.CHAR_TYPES;
 
 public final class LiteralUtils {
+    private static final long NANOSECOND_IN_MILLISECOND = 1_000_000L;
+
     private LiteralUtils() {
         // No-op
     }
@@ -57,7 +59,7 @@ public final class LiteralUtils {
                 TimeString timeString = literal.getValueAs(TimeString.class);
                 return literal0(
                         node.getType().getSqlTypeName(),
-                        LocalTime.ofNanoOfDay(timeString.getMillisOfDay() * 1_000_000L)
+                        LocalTime.ofNanoOfDay(timeString.getMillisOfDay() * NANOSECOND_IN_MILLISECOND)
                 );
             case TIMESTAMP:
                 ts = literal.getValueAs(TimestampString.class);

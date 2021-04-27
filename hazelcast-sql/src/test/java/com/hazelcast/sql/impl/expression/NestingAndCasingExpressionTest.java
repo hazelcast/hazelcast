@@ -28,6 +28,7 @@ import org.junit.runner.RunWith;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -407,9 +408,16 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
                 "xyz", "x", "X", "xyz", "y", "Y");
     }
 
+    @Test
     public void test_POSITION() {
         check(sql("POSITION(? IN ?) || POSITION(? IN ?)"),
                 "y", "xyz", "z", "xyz");
+    }
+
+    @Test
+    public void test_EXTRACT() {
+        check(sql("EXTRACT(MONTH FROM ?) || EXTRACT(MONTH FROM ?)"),
+                LocalDateTime.now(), LocalDateTime.now());
     }
 
     private void check(String sql, Object... params) {

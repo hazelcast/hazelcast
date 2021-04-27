@@ -22,9 +22,11 @@ import com.hazelcast.sql.impl.calcite.validate.operand.OperandCheckerProgram;
 import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.operators.ReplaceUnknownOperandTypeInference;
 import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastFunction;
+import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperandCountRange;
+import org.apache.calcite.sql.SqlWriter;
 import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import org.apache.calcite.sql.type.SqlTypeName;
@@ -57,5 +59,16 @@ public final class HazelcastExtractFunction extends HazelcastFunction {
     @Override
     public SqlOperandCountRange getOperandCountRange() {
         return SqlOperandCountRanges.of(2);
+    }
+
+    @Override
+    public void unparse(SqlWriter writer, SqlCall call, int leftPrec, int rightPrec) {
+        SqlWriter.Frame frame = writer.startFunCall(getName());
+
+        call.operand(0).unparse(writer, leftPrec, rightPrec);
+        writer.sep("FROM");
+        call.operand(1).unparse(writer, leftPrec, rightPrec);
+
+        writer.endFunCall(frame);
     }
 }

@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql.impl.expression.datetime;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -24,7 +26,9 @@ import com.hazelcast.sql.impl.expression.UniExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
+import java.io.IOException;
 import java.time.OffsetDateTime;
+import java.util.Objects;
 
 public class ExtractFunction extends UniExpression<Double> implements IdentifiedDataSerializable {
 
@@ -45,6 +49,10 @@ public class ExtractFunction extends UniExpression<Double> implements Identified
     public Double eval(Row row, ExpressionEvalContext context) {
         OffsetDateTime timestamp = DateTimeUtils.asTimestampWithTimezone(operand, row, context);
 
+        if (timestamp == null) {
+            return null;
+        }
+
         return DateTimeUtils.extractField(timestamp, extractField);
     }
 
@@ -60,6 +68,40 @@ public class ExtractFunction extends UniExpression<Double> implements Identified
 
     @Override
     public int getClassId() {
-        return SqlDataSerializerHook.EXPRESSION_REPLACE;
+        return SqlDataSerializerHook.EXPRESSION_EXTRACT;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        super.writeData(out);
+
+        out.writeObject(extractField);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        super.readData(in);
+
+        extractField = in.readObject();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+        ExtractFunction that = (ExtractFunction) o;
+        return extractField == that.extractField;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), extractField);
     }
 }
