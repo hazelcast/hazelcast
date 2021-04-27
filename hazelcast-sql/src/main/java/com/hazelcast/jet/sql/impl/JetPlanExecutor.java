@@ -18,6 +18,8 @@ package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationServiceAware;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.config.JobConfig;
@@ -37,6 +39,7 @@ import com.hazelcast.jet.sql.impl.JetPlan.ShowStatementPlan;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget;
 import com.hazelcast.jet.sql.impl.schema.MappingCatalog;
+import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.sql.SqlColumnMetadata;
@@ -280,19 +283,40 @@ class JetPlanExecutor {
             List<Expression<?>> projection = deletePlan.getProjection();
             KvRowProjector.Supplier supplier = KvRowProjector.supplier(
                     paths, types, keyDescriptor, valueDescriptor, null, projection);
-            boolean removed = map.executeOnKey(key, entry -> {
-                ExpressionEvalContext context = new SimpleExpressionEvalContext(emptyList(), serializationService);
-                KvRowProjector projector = supplier.get(context, Extractors.newBuilder(serializationService).build());
-                Boolean eval = filter.eval(new HeapRow(projector.project(entry)), context);
-                boolean result = eval != null && eval;
-                if (result) {
-                    entry.setValue(null);
-                }
-                return result;
-            });
+            boolean removed = map.executeOnKey(key, new DeleteBySingleKey(supplier, filter));
             return SqlResultImpl.createUpdateCountResult(removed ? 1 : 0);
         } else {
             throw QueryException.error(SqlErrorCode.GENERIC, "Complex DELETE queries unsupported");
+        }
+    }
+
+    private static class DeleteBySingleKey implements EntryProcessor<Object, Object, Boolean>, SerializationServiceAware {
+        private final KvRowProjector.Supplier supplier;
+        private final Expression<Boolean> filter;
+        private ExpressionEvalContext evalContext;
+        private Extractors extractors;
+
+        DeleteBySingleKey(KvRowProjector.Supplier supplier, Expression<Boolean> filter) {
+            this.supplier = supplier;
+            this.filter = filter;
+        }
+
+        @Override
+        public Boolean process(Map.Entry<Object, Object> entry) {
+            KvRowProjector projector = supplier.get(evalContext, extractors);
+            Boolean eval = filter.eval(new HeapRow(projector.project(entry)), evalContext);
+            boolean result = eval != null && eval;
+            if (result) {
+                entry.setValue(null);
+            }
+            return result;
+        }
+
+        @Override
+        public void setSerializationService(SerializationService serializationService) {
+            this.evalContext =
+                    new SimpleExpressionEvalContext(emptyList(), (InternalSerializationService) serializationService);
+            this.extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
         }
     }
 
