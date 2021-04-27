@@ -62,7 +62,6 @@ import static com.hazelcast.jet.core.metrics.MetricNames.EXECUTION_COMPLETION_TI
 import static com.hazelcast.jet.core.metrics.MetricNames.EXECUTION_START_TIME;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
-import static java.util.Collections.unmodifiableMap;
 
 /**
  * Data pertaining to single job execution on all cluster members. There's one
@@ -93,8 +92,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
     private final Map<SenderReceiverKey, Queue<byte[]>> receiverQueuesMap;
 
     // dest vertex id --> dest ordinal --> dest addr --> sender tasklet
-    // TODO [viliam] Also use SenderReceiverKey?
-    private Map<Integer, Map<Integer, Map<Address, SenderTasklet>>> senderMap;
+    private Map<SenderReceiverKey, SenderTasklet> senderMap;
 
     private List<ProcessorSupplier> procSuppliers = emptyList();
 
@@ -170,9 +168,16 @@ public class ExecutionContext implements DynamicMetricsProvider {
             }
         }
 
-        senderMap = unmodifiableMap(plan.getSenderMap());
-        tasklets = plan.getTasklets();
+        senderMap = new HashMap<>();
+        for (Entry<Integer, Map<Integer, Map<Address, SenderTasklet>>> e1 : plan.getSenderMap().entrySet()) {
+            for (Entry<Integer, Map<Address, SenderTasklet>> e2 : e1.getValue().entrySet()) {
+                for (Entry<Address, SenderTasklet> e3 : e2.getValue().entrySet()) {
+                    senderMap.put(new SenderReceiverKey(e1.getKey(), e2.getKey(), e3.getKey()), e3.getValue());
+                }
+            }
+        }
 
+        tasklets = plan.getTasklets();
         return this;
     }
 
@@ -337,7 +342,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
         return coordinator;
     }
 
-    public Map<Integer, Map<Integer, Map<Address, SenderTasklet>>> senderMap() {
+    public Map<SenderReceiverKey, SenderTasklet> senderMap() {
         return senderMap;
     }
 
@@ -387,7 +392,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
         public final int ordinal;
         public final Address address;
 
-        private SenderReceiverKey(int vertexId, int ordinal, @Nonnull Address address) {
+        public SenderReceiverKey(int vertexId, int ordinal, @Nonnull Address address) {
             this.vertexId = vertexId;
             this.ordinal = ordinal;
             this.address = address;

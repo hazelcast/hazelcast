@@ -36,6 +36,7 @@ import com.hazelcast.jet.core.metrics.MetricNames;
 import com.hazelcast.jet.core.metrics.MetricTags;
 import com.hazelcast.jet.impl.deployment.JetClassLoader;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
+import com.hazelcast.jet.impl.execution.ExecutionContext.SenderReceiverKey;
 import com.hazelcast.jet.impl.execution.SenderTasklet;
 import com.hazelcast.jet.impl.execution.TaskletExecutionService;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
@@ -152,7 +153,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
                          .collect(toMap(Entry::getKey, Entry::getValue));
     }
 
-    Map<Integer, Map<Integer, Map<Address, SenderTasklet>>> getSenderMap(long executionId) {
+    Map<SenderReceiverKey, SenderTasklet> getSenderMap(long executionId) {
         ExecutionContext ctx = executionContexts.get(executionId);
         return ctx != null ? ctx.senderMap() : null;
     }

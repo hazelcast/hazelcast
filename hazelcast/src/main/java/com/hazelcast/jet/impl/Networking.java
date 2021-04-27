@@ -34,7 +34,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.concurrent.ScheduledFuture;
 
 import static com.hazelcast.internal.nio.Packet.FLAG_JET_FLOW_CONTROL;
@@ -166,8 +165,7 @@ public class Networking {
             final int executionCtxCount = input.readInt();
             for (int j = 0; j < executionCtxCount; j++) {
                 final long executionId = input.readLong();
-                final Map<Integer, Map<Integer, Map<Address, SenderTasklet>>> senderMap
-                        = jobExecutionService.getSenderMap(executionId);
+                final Map<SenderReceiverKey, SenderTasklet> senderMap = jobExecutionService.getSenderMap(executionId);
 
                 if (senderMap == null) {
                     logMissingExeCtx(executionId);
@@ -178,10 +176,7 @@ public class Networking {
                     int destVertexId = input.readInt();
                     int destOrdinal = input.readInt();
                     int sendSeqLimitCompressed = input.readInt();
-                    final SenderTasklet t = Optional.ofNullable(senderMap.get(destVertexId))
-                                                    .map(ordinalMap -> ordinalMap.get(destOrdinal))
-                                                    .map(addrMap -> addrMap.get(fromAddr))
-                                                    .orElse(null);
+                    final SenderTasklet t = senderMap.get(new SenderReceiverKey(destVertexId, destOrdinal, fromAddr));
                     if (t == null) {
                         logMissingSenderTasklet(destVertexId, destOrdinal);
                         return;
