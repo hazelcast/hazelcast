@@ -167,6 +167,9 @@ public class TaskletExecutionService {
 
     public void shutdown() {
         isShutdown = true;
+        synchronized (lock) {
+            lock.notifyAll();
+        }
         blockingTaskletExecutor.shutdownNow();
         hzExecutionService.shutdownExecutor(TASKLET_INIT_CLOSE_EXECUTOR_NAME);
     }
@@ -364,7 +367,7 @@ public class TaskletExecutionService {
                     idleCount++;
                     if (trackers.isEmpty()) {
                         synchronized (lock) {
-                            while (trackers.isEmpty()) {
+                            while (trackers.isEmpty() && !isShutdown) {
                                 try {
                                     lock.wait();
                                 } catch (InterruptedException e) {
