@@ -31,7 +31,8 @@ import com.hazelcast.jet.sql.impl.JetPlan.DeletePlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropJobPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropMappingPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropSnapshotPlan;
-import com.hazelcast.jet.sql.impl.JetPlan.SelectOrSinkPlan;
+import com.hazelcast.jet.sql.impl.JetPlan.SelectPlan;
+import com.hazelcast.jet.sql.impl.JetPlan.SinkPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.ShowStatementPlan;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget;
@@ -202,44 +203,43 @@ class JetPlanExecutor {
                 false);
     }
 
-    SqlResult execute(SelectOrSinkPlan plan, QueryId queryId, List<Object> arguments) {
+    SqlResult execute(SinkPlan plan, QueryId queryId, List<Object> arguments) {
         List<Object> args = prepareArguments(plan.getParameterMetadata(), arguments);
         JobConfig jobConfig = new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, args);
 
-        if (plan.isInsert()) {
-            if (plan.isStreaming()) {
-                throw QueryException.error("Cannot execute a streaming DML statement without a CREATE JOB command");
-            }
+        Job job = jetInstance.newJob(plan.getDag(), jobConfig);
+        job.join();
 
-            Job job = jetInstance.newJob(plan.getDag(), jobConfig);
-            job.join();
+        return SqlResultImpl.createUpdateCountResult(0);
+    }
 
-            return SqlResultImpl.createUpdateCountResult(0);
-        } else {
-            JetQueryResultProducer queryResultProducer = new JetQueryResultProducer();
-            Long jobId = jetInstance.newJobId();
-            Object oldValue = resultConsumerRegistry.put(jobId, queryResultProducer);
-            assert oldValue == null : oldValue;
-            try {
-                Job job = jetInstance.newJob(jobId, plan.getDag(), jobConfig);
-                job.getFuture().whenComplete((r, t) -> {
-                    if (t != null) {
-                        int errorCode = findQueryExceptionCode(t);
-                        queryResultProducer.onError(
-                                QueryException.error(errorCode, "The Jet SQL job failed: " + t.getMessage(), t));
-                    }
-                });
-            } catch (Throwable e) {
-                resultConsumerRegistry.remove(jobId);
-                throw e;
-            }
+    SqlResult execute(SelectPlan plan, QueryId queryId, List<Object> arguments) {
+        List<Object> args = prepareArguments(plan.getParameterMetadata(), arguments);
+        JobConfig jobConfig = new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, args);
 
-            return new JetSqlResultImpl(queryId, queryResultProducer, plan.getRowMetadata(), plan.isStreaming());
+        JetQueryResultProducer queryResultProducer = new JetQueryResultProducer();
+        Long jobId = jetInstance.newJobId();
+        Object oldValue = resultConsumerRegistry.put(jobId, queryResultProducer);
+        assert oldValue == null : oldValue;
+        try {
+            Job job = jetInstance.newJob(jobId, plan.getDag(), jobConfig);
+            job.getFuture().whenComplete((r, t) -> {
+                if (t != null) {
+                    int errorCode = findQueryExceptionCode(t);
+                    queryResultProducer.onError(
+                            QueryException.error(errorCode, "The Jet SQL job failed: " + t.getMessage(), t));
+                }
+            });
+        } catch (Throwable e) {
+            resultConsumerRegistry.remove(jobId);
+            throw e;
         }
+
+        return new JetSqlResultImpl(queryId, queryResultProducer, plan.getRowMetadata(), plan.isStreaming());
     }
 
     @SuppressWarnings("checkstyle:nestedifdepth")
-    public SqlResult execute(QueryId queryId, DeletePlan deletePlan) {
+    public SqlResult execute(DeletePlan deletePlan, QueryId queryId) {
         if (deletePlan.getEarlyExit()) {
             return SqlResultImpl.createUpdateCountResult(0);
         }

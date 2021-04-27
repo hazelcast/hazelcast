@@ -160,14 +160,14 @@ abstract class JetPlan extends SqlPlan {
     static class CreateJobPlan extends JetPlan {
         private final JobConfig jobConfig;
         private final boolean ifNotExists;
-        private final SelectOrSinkPlan dmlPlan;
+        private final SinkPlan dmlPlan;
         private final JetPlanExecutor planExecutor;
 
         CreateJobPlan(
                 PlanKey planKey,
                 JobConfig jobConfig,
                 boolean ifNotExists,
-                SelectOrSinkPlan dmlPlan,
+                SinkPlan dmlPlan,
                 JetPlanExecutor planExecutor
         ) {
             super(planKey);
@@ -186,7 +186,7 @@ abstract class JetPlan extends SqlPlan {
             return ifNotExists;
         }
 
-        SelectOrSinkPlan getExecutionPlan() {
+        SinkPlan getExecutionPlan() {
             return dmlPlan;
         }
 
@@ -480,23 +480,90 @@ abstract class JetPlan extends SqlPlan {
         }
     }
 
-    static class SelectOrSinkPlan extends JetPlan {
+    abstract static class DmlPlan extends JetPlan {
+        DmlPlan(PlanKey planKey) {
+            super(planKey);
+        }
+    }
+
+    static class SinkPlan extends DmlPlan {
         private final Set<PlanObjectKey> objectKeys;
         private final QueryParameterMetadata parameterMetadata;
         private final DAG dag;
-        private final boolean isStreaming;
-        private final boolean isInsert;
         private final SqlRowMetadata rowMetadata;
         private final JetPlanExecutor planExecutor;
         private final List<Permission> permissions;
 
-        SelectOrSinkPlan(
+        SinkPlan(
+                PlanKey planKey,
+                QueryParameterMetadata parameterMetadata,
+                Set<PlanObjectKey> objectKeys,
+                DAG dag,
+                SqlRowMetadata rowMetadata,
+                JetPlanExecutor planExecutor,
+                List<Permission> permissions
+        ) {
+            super(planKey);
+
+            this.objectKeys = objectKeys;
+            this.parameterMetadata = parameterMetadata;
+            this.dag = dag;
+            this.rowMetadata = rowMetadata;
+            this.planExecutor = planExecutor;
+            this.permissions = permissions;
+        }
+
+        QueryParameterMetadata getParameterMetadata() {
+            return parameterMetadata;
+        }
+
+        DAG getDag() {
+            return dag;
+        }
+
+        @Override
+        public boolean isCacheable() {
+            return !objectKeys.contains(PlanObjectKey.NON_CACHEABLE_OBJECT_KEY);
+        }
+
+        @Override
+        public boolean isPlanValid(PlanCheckContext context) {
+            return context.isValid(objectKeys);
+        }
+
+        @Override
+        public void checkPermissions(SqlSecurityContext context) {
+            for (Permission permission : permissions) {
+                context.checkPermission(permission);
+            }
+        }
+
+        @Override
+        public boolean producesRows() {
+            return false;
+        }
+
+        @Override
+        public SqlResult execute(QueryId queryId, List<Object> arguments) {
+            return planExecutor.execute(this, queryId, arguments);
+        }
+    }
+
+    static class SelectPlan extends DmlPlan {
+        private final Set<PlanObjectKey> objectKeys;
+        private final QueryParameterMetadata parameterMetadata;
+        private final DAG dag;
+        private final boolean isStreaming;
+        private final SqlRowMetadata rowMetadata;
+        private final JetPlanExecutor planExecutor;
+        private final List<Permission> permissions;
+
+        SelectPlan(
                 PlanKey planKey,
                 QueryParameterMetadata parameterMetadata,
                 Set<PlanObjectKey> objectKeys,
                 DAG dag,
                 boolean isStreaming,
-                boolean isInsert,
                 SqlRowMetadata rowMetadata,
                 JetPlanExecutor planExecutor,
                 List<Permission> permissions
@@ -507,7 +574,6 @@ abstract class JetPlan extends SqlPlan {
             this.parameterMetadata = parameterMetadata;
             this.dag = dag;
             this.isStreaming = isStreaming;
-            this.isInsert = isInsert;
             this.rowMetadata = rowMetadata;
             this.planExecutor = planExecutor;
             this.permissions = permissions;
@@ -523,10 +589,6 @@ abstract class JetPlan extends SqlPlan {
 
         boolean isStreaming() {
             return isStreaming;
-        }
-
-        boolean isInsert() {
-            return isInsert;
         }
 
         SqlRowMetadata getRowMetadata() {
@@ -552,7 +614,7 @@ abstract class JetPlan extends SqlPlan {
 
         @Override
         public boolean producesRows() {
-            return !isInsert;
+            return true;
         }
 
         @Override
@@ -567,7 +629,7 @@ abstract class JetPlan extends SqlPlan {
         }
     }
 
-    static class DeletePlan extends SelectOrSinkPlan {
+    static class DeletePlan extends DmlPlan {
         private final HazelcastTable table;
         private final Expression<Boolean> filter;
         private final boolean earlyExit;
@@ -576,7 +638,7 @@ abstract class JetPlan extends SqlPlan {
 
         DeletePlan(PlanKey planKey, HazelcastTable table, Expression<Boolean> filter, boolean earlyExit,
                    List<Expression<?>> projection, JetPlanExecutor planExecutor) {
-            super(planKey, null, null, null, false, false, null, null, null);
+            super(planKey);
             this.table = table;
             this.filter = filter;
             this.earlyExit = earlyExit;
@@ -602,7 +664,7 @@ abstract class JetPlan extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments) {
-            return planExecutor.execute(queryId, this);
+            return planExecutor.execute(this, queryId);
         }
 
         @Override
@@ -624,5 +686,6 @@ abstract class JetPlan extends SqlPlan {
         public boolean producesRows() {
             return false;
         }
+
     }
 }

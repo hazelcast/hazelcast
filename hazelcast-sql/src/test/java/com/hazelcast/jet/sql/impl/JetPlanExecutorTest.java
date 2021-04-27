@@ -23,7 +23,7 @@ import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.impl.AbstractJetInstance;
 import com.hazelcast.jet.sql.impl.JetPlan.CreateMappingPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropMappingPlan;
-import com.hazelcast.jet.sql.impl.JetPlan.SelectOrSinkPlan;
+import com.hazelcast.jet.sql.impl.JetPlan.SelectPlan;
 import com.hazelcast.jet.sql.impl.schema.Mapping;
 import com.hazelcast.jet.sql.impl.schema.MappingCatalog;
 import com.hazelcast.sql.SqlColumnMetadata;
@@ -51,12 +51,10 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 
 @RunWith(JUnitParamsRunner.class)
 public class JetPlanExecutorTest {
@@ -126,13 +124,12 @@ public class JetPlanExecutorTest {
         // given
         QueryId queryId = QueryId.create(UuidUtil.newSecureUUID());
         SqlRowMetadata rowMetadata = rowMetadata();
-        SelectOrSinkPlan plan = new SelectOrSinkPlan(
+        SelectPlan plan = new SelectPlan(
                 planKey(),
                 QueryParameterMetadata.EMPTY,
                 emptySet(),
                 dag,
                 false,
-                true,
                 rowMetadata,
                 planExecutor,
                 emptyList()
@@ -146,32 +143,6 @@ public class JetPlanExecutorTest {
         // then
         assertThat(result.updateCount()).isEqualTo(0);
         verify(job).join();
-    }
-
-    @Test
-    public void when_streamingInsertExecution_then_fail() {
-        // given
-        QueryId queryId = QueryId.create(UuidUtil.newSecureUUID());
-        SqlRowMetadata rowMetadata = rowMetadata();
-        SelectOrSinkPlan plan = new SelectOrSinkPlan(
-                planKey(),
-                QueryParameterMetadata.EMPTY,
-                emptySet(),
-                dag,
-                true,
-                true,
-                rowMetadata,
-                planExecutor,
-                emptyList()
-        );
-
-        given(jetInstance.newJob(dag)).willReturn(job);
-
-        // when, then
-        assertThatThrownBy(() -> planExecutor.execute(plan, queryId, emptyList()))
-                .hasMessageContaining("Cannot execute a streaming DML statement without a CREATE JOB command");
-
-        verifyNoInteractions(job);
     }
 
     private static PlanKey planKey() {
