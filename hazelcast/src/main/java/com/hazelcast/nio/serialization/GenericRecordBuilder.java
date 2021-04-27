@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio.serialization;
 
+import com.hazelcast.internal.serialization.impl.compact.DeserializedGenericRecordBuilder;
 import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecordBuilder;
 import com.hazelcast.spi.annotation.Beta;
 
@@ -41,7 +42,7 @@ interface GenericRecordBuilder {
      *                 new ClassDefinitionBuilder(FACTORY_ID, CLASS_ID)
      *                         .addStringField("name").addIntField("id").build();
      *
-     *     GenericRecord genericRecord = GenericRecord.Builder.portable(classDefinition)
+     *     GenericRecord genericRecord = GenericRecordBuilder.portable(classDefinition)
      *           .setString("name", "foo")
      *           .setInt("id", 123).build();
      * </pre>
@@ -52,6 +53,16 @@ interface GenericRecordBuilder {
     @Nonnull
     static GenericRecordBuilder portable(@Nonnull ClassDefinition classDefinition) {
         return new PortableGenericRecordBuilder(classDefinition);
+    }
+
+    /**
+     * @return a new constructed GenericRecord
+     * @since Hazelcast 5.0 as BETA
+     */
+    @Beta
+    @Nonnull
+    static GenericRecordBuilder compact(String className) {
+        return new DeserializedGenericRecordBuilder(className);
     }
 
     /**
