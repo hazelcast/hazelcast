@@ -32,7 +32,6 @@ import org.apache.calcite.rel.logical.LogicalTableFunctionScan;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexVisitor;
-import org.apache.calcite.sql.validate.SqlUserDefinedTableFunction;
 
 import java.util.List;
 import java.util.stream.IntStream;
@@ -108,15 +107,10 @@ final class FullFunctionScanLogicalRules {
         }
         RexCall call = (RexCall) scan.getCall();
 
-        if (!(call.getOperator() instanceof SqlUserDefinedTableFunction)) {
+        if (!(call.getOperator() instanceof JetDynamicTableFunction)) {
             return null;
         }
-        SqlUserDefinedTableFunction operator = (SqlUserDefinedTableFunction) call.getOperator();
-
-        if (!(operator.getFunction() instanceof JetDynamicTableFunction)) {
-            return null;
-        }
-        return (JetDynamicTableFunction) operator.getFunction();
+        return (JetDynamicTableFunction) call.getOperator();
     }
 
     private static final class FailingFieldTypeProvider implements PlanNodeFieldTypeProvider {

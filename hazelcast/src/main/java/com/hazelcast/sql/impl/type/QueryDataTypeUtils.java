@@ -81,6 +81,9 @@ public final class QueryDataTypeUtils {
     /** 12 (hdr) + 12 (fields and padding). */
     public static final int TYPE_LEN_INTERVAL_DAY_SECOND = 12 + 12;
 
+    /** 12 (hdr) + 36 (arbitrary content). */
+    public static final int TYPE_LEN_MAP = 12 + 36;
+
     // With a non-zero value we avoid weird zero-cost columns. Technically, it
     // still costs a single reference now, but reference cost is not taken into
     // account as of now.
@@ -103,6 +106,7 @@ public final class QueryDataTypeUtils {
     public static final int PRECEDENCE_OBJECT = 1400;
     public static final int PRECEDENCE_INTERVAL_YEAR_MONTH = 10;
     public static final int PRECEDENCE_INTERVAL_DAY_SECOND = 20;
+    public static final int PRECEDENCE_MAP = 30;
 
     private QueryDataTypeUtils() {
         // No-op.

@@ -219,9 +219,9 @@ public class SqlCsvTest extends SqlTestSupport {
                         + ", \"timestampTz\""
                         + " FROM TABLE ("
                         + "csv_file ("
-                        + " path => '" + RESOURCES_PATH + "'"
-                        + " , glob => 'file.csv'"
-                        + " , options => MAP['key', 'value']"
+                        + "path => '" + RESOURCES_PATH + "'"
+                        + ", options => MAP['key', 'value']"
+                        + ", glob => 'file.csv'"
                         + ")"
                         + ")",
                 singletonList(new Row(
@@ -243,14 +243,52 @@ public class SqlCsvTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_tableFunctionWithExplicitNullArgument() {
+        assertRowsAnyOrder(
+                "SELECT "
+                        + "string"
+                        + ", \"int\""
+                        + " FROM TABLE ("
+                        + "csv_file ("
+                        + "path => '" + RESOURCES_PATH + "'"
+                        + ", options => null"
+                        + ", glob => 'file.csv'"
+                        + ")"
+                        + ")",
+                singletonList(new Row("string", "2147483647"))
+        );
+    }
+
+    @Test
+    public void test_tableFunctionWithArgumentTypeMismatch() {
+        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM TABLE ("
+                + "csv_file ("
+                + "path => '" + RESOURCES_PATH + "'"
+                + ", glob => MAP['key', 'value']"
+                + ")"
+                + ")"
+        )).hasMessageContaining("Cannot apply 'CSV_FILE' function to [VARCHAR, MAP]");
+    }
+
+    @Test
+    public void test_tableFunctionWithUnknownParameter() {
+        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM TABLE ("
+                + "csv_file ("
+                + "non_existing => 1"
+                + ")"
+                + ")"
+        )).hasMessageContaining("Unknown argument name 'non_existing'");
+    }
+
+    @Test
     public void test_tableFunctionWithDynamicParameters() {
         assertRowsAnyOrder(
                 "SELECT CAST(long AS BIGINT) - ?"
                         + " FROM TABLE ("
                         + "csv_file ("
-                        + " path => '" + RESOURCES_PATH + "'"
-                        + " , glob => 'file.csv'"
-                        + " , options => MAP['key', 'value']"
+                        + "path => '" + RESOURCES_PATH + "'"
+                        + ", glob => 'file.csv'"
+                        + ", options => MAP['key', 'value']"
                         + ")"
                         + ")"
                         + "WHERE byte = ?",
