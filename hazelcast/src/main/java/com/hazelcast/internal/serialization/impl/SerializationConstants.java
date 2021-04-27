@@ -129,8 +129,10 @@ public final class SerializationConstants {
 
     public static final int JAVA_DEFAULT_TYPE_OPTIONAL = -50;
 
+    public static final int TYPE_COMPACT = -51;
+
     // NUMBER OF CONSTANT SERIALIZERS...
-    public static final int CONSTANT_SERIALIZERS_LENGTH = 51;
+    public static final int CONSTANT_SERIALIZERS_LENGTH = 52;
 
     // ------------------------------------------------------------
     // JAVA SERIALIZATION

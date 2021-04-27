@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.util.EnumMap;
 import java.util.Map;
 
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.TYPE_COMPACT;
 import static com.hazelcast.map.impl.record.Record.NOT_CACHED;
 import static com.hazelcast.map.impl.record.RecordReaderWriter.DATA_RECORD_READER_WRITER;
 import static com.hazelcast.map.impl.record.RecordReaderWriter.DATA_RECORD_WITH_STATS_READER_WRITER;
@@ -228,7 +229,11 @@ public final class Records {
         // For HazelcastJsonValue objects, if we pass the instanceof Data check, that
         // means the metadata is created from the Data representation of the object.
         // If we allow using the deserialized values, the metadata might not be safe to use.
-        return value instanceof Data && !((Data) value).isPortable() && !((Data) value).isJson();
+        if (value instanceof Data) {
+            Data data = (Data) value;
+            return !(data.isPortable() || data.isJson() || data.getType() != TYPE_COMPACT);
+        }
+        return false;
     }
 
 

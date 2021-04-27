@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
@@ -26,8 +27,10 @@ import com.hazelcast.internal.serialization.impl.bufferpool.BufferPool;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolFactory;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolFactoryImpl;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolThreadLocal;
+import com.hazelcast.internal.serialization.impl.compact.CompactStreamSerializer;
+import com.hazelcast.internal.serialization.impl.compact.DefaultCompactReader;
+import com.hazelcast.internal.serialization.impl.compact.SchemaService;
 import com.hazelcast.internal.serialization.impl.defaultserializers.ConstantSerializers;
-import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecord;
 import com.hazelcast.internal.usercodedeployment.impl.ClassLocator;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -74,12 +77,14 @@ public abstract class AbstractSerializationService implements InternalSerializat
     protected final SerializerAdapter nullSerializerAdapter;
     protected SerializerAdapter javaSerializerAdapter;
     protected SerializerAdapter javaExternalizableAdapter;
+    protected SerializerAdapter compactSerializerAdapter;
+    protected CompactStreamSerializer compactStreamSerializer;
 
-    private final IdentityHashMap<Class, SerializerAdapter> constantTypesMap = new IdentityHashMap<Class, SerializerAdapter>(
+    private final IdentityHashMap<Class, SerializerAdapter> constantTypesMap = new IdentityHashMap<>(
             CONSTANT_SERIALIZERS_LENGTH);
     private final SerializerAdapter[] constantTypeIds = new SerializerAdapter[CONSTANT_SERIALIZERS_LENGTH];
-    private final ConcurrentMap<Class, SerializerAdapter> typeMap = new ConcurrentHashMap<Class, SerializerAdapter>();
-    private final ConcurrentMap<Integer, SerializerAdapter> idMap = new ConcurrentHashMap<Integer, SerializerAdapter>();
+    private final ConcurrentMap<Class, SerializerAdapter> typeMap = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Integer, SerializerAdapter> idMap = new ConcurrentHashMap<>();
     private final AtomicReference<SerializerAdapter> global = new AtomicReference<SerializerAdapter>();
 
     //Global serializer may override Java Serialization or not
@@ -104,6 +109,11 @@ public abstract class AbstractSerializationService implements InternalSerializat
                 builder.notActiveExceptionSupplier);
         this.nullSerializerAdapter = createSerializerAdapter(new ConstantSerializers.NullSerializer());
         this.allowOverrideDefaultSerializers = builder.allowOverrideDefaultSerializers;
+        CompactSerializationConfig compactSerializationCfg = builder.compactSerializationConfig == null
+                ? new CompactSerializationConfig() : builder.compactSerializationConfig;
+        compactStreamSerializer = new CompactStreamSerializer(compactSerializationCfg, this,
+                managedContext, builder.schemaService);
+        this.compactSerializerAdapter = createSerializerAdapter(compactStreamSerializer);
     }
 
     // used by jet
@@ -194,6 +204,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
 
         BufferPool pool = bufferPoolThreadLocal.get();
         BufferObjectDataInput in = pool.takeInputBuffer(data);
+        Object obj = null;
         try {
             ClassLocator.onStartDeserialization();
             final int typeId = data.getType();
@@ -205,7 +216,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
                 throw notActiveExceptionSupplier.get();
             }
 
-            Object obj = serializer.read(in);
+            obj = serializer.read(in);
             if (managedContext != null) {
                 obj = managedContext.initialize(obj);
             }
@@ -214,7 +225,9 @@ public abstract class AbstractSerializationService implements InternalSerializat
             throw handleException(e);
         } finally {
             ClassLocator.onFinishDeserialization();
-            pool.returnInputBuffer(in);
+            if (!(obj instanceof DefaultCompactReader)) {
+                pool.returnInputBuffer(in);
+            }
         }
     }
 
@@ -269,7 +282,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
         try {
             SerializerAdapter serializer = serializerFor(obj);
             out.writeInt(serializer.getTypeId());
-            serializer.write(out, obj);
+            serializer.write((BufferObjectDataOutput) out, obj);
         } catch (Throwable e) {
             throw handleSerializeException(obj, e);
         }
@@ -430,10 +443,10 @@ public abstract class AbstractSerializationService implements InternalSerializat
     protected final boolean safeRegister(final Class type, final SerializerAdapter serializer) {
         if (constantTypesMap.containsKey(type) && !allowOverrideDefaultSerializers) {
             throw new IllegalArgumentException(
-                "[" + type + "] serializer cannot be overridden."
-                + " See documentation of Hazelcast serialization configuration "
-                + " or setAllowOverrideDefaultSerializers method in SerializationConfig."
-              );
+                    "[" + type + "] serializer cannot be overridden."
+                            + " See documentation of Hazelcast serialization configuration "
+                            + " or setAllowOverrideDefaultSerializers method in SerializationConfig."
+            );
         }
         SerializerAdapter current = typeMap.putIfAbsent(type, serializer);
         if (current != null && current.getImpl().getClass() != serializer.getImpl().getClass()) {
@@ -454,6 +467,10 @@ public abstract class AbstractSerializationService implements InternalSerializat
 
     protected final void registerConstant(Class type, SerializerAdapter serializer) {
         constantTypesMap.put(type, serializer);
+        constantTypeIds[indexForDefaultType(serializer.getTypeId())] = serializer;
+    }
+
+    protected final void registerConstant(SerializerAdapter serializer) {
         constantTypeIds[indexForDefaultType(serializer.getTypeId())] = serializer;
     }
 
@@ -514,12 +531,13 @@ public abstract class AbstractSerializationService implements InternalSerializat
         }
 
         if (serializer == null) {
-            if (active) {
-                throw new HazelcastSerializationException("There is no suitable serializer for " + type);
-            }
-            throw notActiveExceptionSupplier.get();
+            return compactSerializerAdapter;
         }
         return serializer;
+    }
+
+    public boolean serializerIsCompactSerializer(Object object) {
+        return serializerFor(object) == compactSerializerAdapter;
     }
 
     private SerializerAdapter lookupDefaultSerializer(Class type) {
@@ -527,9 +545,6 @@ public abstract class AbstractSerializationService implements InternalSerializat
             return dataSerializerAdapter;
         }
         if (Portable.class.isAssignableFrom(type)) {
-            return portableSerializerAdapter;
-        }
-        if (PortableGenericRecord.class.isAssignableFrom(type)) {
             return portableSerializerAdapter;
         }
         return constantTypesMap.get(type);
@@ -605,6 +620,8 @@ public abstract class AbstractSerializationService implements InternalSerializat
         private BufferPoolFactory bufferPoolFactory;
         private Supplier<RuntimeException> notActiveExceptionSupplier;
         private boolean allowOverrideDefaultSerializers;
+        private CompactSerializationConfig compactSerializationConfig;
+        private SchemaService schemaService;
 
         protected Builder() {
         }
@@ -659,5 +676,16 @@ public abstract class AbstractSerializationService implements InternalSerializat
             this.allowOverrideDefaultSerializers = allowOverrideDefaultSerializers;
             return self();
         }
+
+        public final T withCompactSerializationConfig(CompactSerializationConfig compactSerializationConfig) {
+            this.compactSerializationConfig = compactSerializationConfig;
+            return self();
+        }
+
+        public final T withSchemaService(SchemaService schemaService) {
+            this.schemaService = schemaService;
+            return self();
+        }
     }
+
 }

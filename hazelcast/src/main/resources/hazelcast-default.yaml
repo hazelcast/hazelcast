@@ -281,7 +281,15 @@ hazelcast:
       statistics-enabled: true
 
   serialization:
-    portable-version: 0
+    compact-serializer:
+      classes:
+        domainClass.Employee:
+        domainClass.Person:
+          #change alias to type-name
+          alias: person
+        domainClass.Intern:
+          alias: employee
+          serializer: serializers.InternSerializer
 
   cardinality-estimator:
     default:

@@ -102,7 +102,7 @@ public class BasicMapTest extends HazelcastTestSupport {
 
     @Parameterized.Parameter
     public boolean statisticsEnabled;
-    @Parameterized.Parameter
+    @Parameterized.Parameter(1)
     public boolean perEntryStatsEnabled;
 
     @Parameterized.Parameters(name = "statisticsEnabled:{0}, perEntryStatsEnabled:{1}")

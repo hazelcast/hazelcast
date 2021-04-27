@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.StreamSerializer;
@@ -35,7 +35,7 @@ class StreamSerializerAdapter implements SerializerAdapter {
 
     @SuppressWarnings("unchecked")
     @Override
-    public void write(ObjectDataOutput out, Object object) throws IOException {
+    public void write(BufferObjectDataOutput out, Object object) throws IOException {
         serializer.write(out, object);
     }
 

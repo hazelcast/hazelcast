@@ -142,6 +142,7 @@ public class DefaultClientExtension implements ClientExtension {
                     .setPartitioningStrategy(partitioningStrategy)
                     .setHazelcastInstance(hazelcastInstance)
                     .setNotActiveExceptionSupplier(HazelcastClientNotActiveException::new)
+                    .setSchemaService(client.getSchemaService())
                     .build();
         } catch (Exception e) {
             throw rethrow(e);

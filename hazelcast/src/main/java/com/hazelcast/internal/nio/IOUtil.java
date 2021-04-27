@@ -108,24 +108,6 @@ public final class IOUtil {
         }
     }
 
-    public static void writeByteArray(ObjectDataOutput out, byte[] value) throws IOException {
-        int size = (value == null) ? 0 : value.length;
-        out.writeInt(size);
-        if (size > 0) {
-            out.write(value);
-        }
-    }
-
-    public static byte[] readByteArray(ObjectDataInput in) throws IOException {
-        int size = in.readInt();
-        if (size == 0) {
-            return null;
-        } else {
-            byte[] b = new byte[size];
-            in.readFully(b);
-            return b;
-        }
-    }
 
     public static void writeObject(ObjectDataOutput out, Object object) throws IOException {
         boolean isBinary = object instanceof Data;

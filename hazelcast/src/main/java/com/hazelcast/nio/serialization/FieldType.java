@@ -28,7 +28,6 @@ import static java.lang.Integer.MAX_VALUE;
 
 public enum FieldType {
 
-    // SINGLE-VALUE TYPES
     PORTABLE(0, MAX_VALUE),
     BYTE(1, BYTE_SIZE_IN_BYTES),
     BOOLEAN(2, BOOLEAN_SIZE_IN_BYTES),
@@ -39,8 +38,6 @@ public enum FieldType {
     FLOAT(7, FLOAT_SIZE_IN_BYTES),
     DOUBLE(8, DOUBLE_SIZE_IN_BYTES),
     UTF(9, MAX_VALUE),
-
-    // ARRAY TYPES
     PORTABLE_ARRAY(10, MAX_VALUE),
     BYTE_ARRAY(11, MAX_VALUE),
     BOOLEAN_ARRAY(12, MAX_VALUE),
@@ -61,7 +58,9 @@ public enum FieldType {
     TIMESTAMP(26, TIME.getTypeSize() + DATE.getTypeSize()),
     TIMESTAMP_ARRAY(27, MAX_VALUE),
     TIMESTAMP_WITH_TIMEZONE(28, TIMESTAMP.getTypeSize() + INT_SIZE_IN_BYTES),
-    TIMESTAMP_WITH_TIMEZONE_ARRAY(29, MAX_VALUE);
+    TIMESTAMP_WITH_TIMEZONE_ARRAY(29, MAX_VALUE),
+    COMPOSED(30, MAX_VALUE),
+    COMPOSED_ARRAY(31, MAX_VALUE);
 
     private static final FieldType[] ALL = FieldType.values();
     private static final int TYPES_COUNT = 10;

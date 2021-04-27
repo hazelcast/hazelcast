@@ -91,8 +91,8 @@ import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.JVMUtil;
 import com.hazelcast.internal.util.MapUtil;
-import com.hazelcast.internal.util.phonehome.PhoneHome;
 import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.internal.util.phonehome.PhoneHome;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.logging.ILogger;
@@ -315,6 +315,7 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
                     .setPartitioningStrategy(partitioningStrategy)
                     .setHazelcastInstance(hazelcastInstance)
                     .setVersion(version)
+                    .setSchemaService(node.memberSchemaService)
                     .setNotActiveExceptionSupplier(new Supplier<RuntimeException>() {
                         @Override
                         public RuntimeException get() {
