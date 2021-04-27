@@ -39,7 +39,6 @@ import java.util.concurrent.ScheduledFuture;
 
 import static com.hazelcast.internal.nio.Packet.FLAG_JET_FLOW_CONTROL;
 import static com.hazelcast.internal.nio.Packet.FLAG_URGENT;
-import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.ImdgUtil.createObjectDataInput;
 import static com.hazelcast.jet.impl.util.ImdgUtil.createObjectDataOutput;
@@ -50,6 +49,8 @@ public class Networking {
 
     private static final int PACKET_HEADER_SIZE = 16;
     private static final int FLOW_PACKET_INITIAL_SIZE = 128;
+    private static final int TERMINAL_VERTEX_ID = -1;
+    private static final long TERMINAL_EXECUTION_ID = Long.MIN_VALUE;
 
     private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
@@ -141,29 +142,37 @@ public class Networking {
             }
             for (Entry<SenderReceiverKey, ReceiverTasklet> en : receiverMap.entrySet()) {
                 assert !en.getKey().address.equals(nodeEngine.getThisAddress());
-                MemberData md = res.computeIfAbsent(en.getKey().address, MemberData::new);
+                MemberData md = res.computeIfAbsent(en.getKey().address, address -> new MemberData(address));
                 if (md.startedExecutionId == null) {
                     md.startedExecutionId = execCtx.executionId();
                     md.output.writeLong(md.startedExecutionId);
                 }
+                assert en.getKey().vertexId != TERMINAL_VERTEX_ID;
                 md.output.writeInt(en.getKey().vertexId);
                 md.output.writeInt(en.getKey().ordinal);
                 md.output.writeInt(en.getValue().updateAndGetSendSeqLimitCompressed(md.memberConnection));
             }
             for (MemberData md : res.values()) {
                 if (md.startedExecutionId != null) {
-                    // Execution IDs are generated using Flake ID generator and those are >0 normally, we
-                    // use MIN_VALUE as a terminator.
-                    md.output.writeLong(Long.MIN_VALUE);
+                    // write a mark to terminate values for an execution
+                    md.output.writeInt(TERMINAL_VERTEX_ID);
+                    md.startedExecutionId = null;
                 }
             }
+        }
+        for (MemberData md : res.values()) {
+            assert md.output.position() > 0;
+            // write a mark to terminate all executions
+            // Execution IDs are generated using Flake ID generator and those are >0 normally, we
+            // use MIN_VALUE as a terminator.
+            md.output.writeLong(TERMINAL_EXECUTION_ID);
         }
 
         // finalize the packets
         int maxSize = 0;
         for (Entry<Address, MemberData> entry : res.entrySet()) {
             byte[] data = entry.getValue().output.toByteArray();
-            // we break type safety to avoid creating a new map, we replace the values with a different type in place
+            // we break type safety to avoid creating a new map, we replace the values to a different type in place
             @SuppressWarnings({"unchecked", "rawtypes"})
             Entry<Address, byte[]> entry1 = (Entry) entry;
             entry1.setValue(data);
@@ -179,43 +188,23 @@ public class Networking {
         try (BufferObjectDataInput input = createObjectDataInput(nodeEngine, packet)) {
             for (;;) {
                 final long executionId = input.readLong();
-                if (executionId == Long.MIN_VALUE) {
+                if (executionId == TERMINAL_EXECUTION_ID) {
                     break;
                 }
                 final Map<SenderReceiverKey, SenderTasklet> senderMap = jobExecutionService.getSenderMap(executionId);
-
-                if (senderMap == null) {
-                    logMissingExeCtx(executionId);
-                    continue;
-                }
-                final int flowCtlMsgCount = input.readInt();
-                for (int k = 0; k < flowCtlMsgCount; k++) {
-                    int destVertexId = input.readInt();
-                    int destOrdinal = input.readInt();
-                    int sendSeqLimitCompressed = input.readInt();
-                    final SenderTasklet t = senderMap.get(new SenderReceiverKey(destVertexId, destOrdinal, fromAddr));
-                    if (t == null) {
-                        logMissingSenderTasklet(destVertexId, destOrdinal);
-                        return;
+                for (;;) {
+                    final int vertexId = input.readInt();
+                    if (vertexId == TERMINAL_VERTEX_ID) {
+                        break;
                     }
-                    t.setSendSeqLimitCompressed(sendSeqLimitCompressed);
+                    int ordinal = input.readInt();
+                    int sendSeqLimitCompressed = input.readInt();
+                    final SenderTasklet t;
+                    if (senderMap != null && (t = senderMap.get(new SenderReceiverKey(vertexId, ordinal, fromAddr))) != null) {
+                        t.setSendSeqLimitCompressed(sendSeqLimitCompressed);
+                    }
                 }
             }
-        }
-    }
-
-    private void logMissingExeCtx(long executionId) {
-        if (logger.isFinestEnabled()) {
-            logger.finest("Ignoring flow control message applying to non-existent execution context "
-                    + idToString(executionId));
-        }
-    }
-
-    private void logMissingSenderTasklet(int destVertexId, int destOrdinal) {
-        if (logger.isFinestEnabled()) {
-            logger.finest(String.format(
-                    "Ignoring flow control message applying to non-existent sender tasklet (%d, %d)",
-                    destVertexId, destOrdinal));
         }
     }
 }
