@@ -154,7 +154,7 @@ public class ExtractFunctionIntegrationTest {
                             "MINUTE", 0.0,
                             "MILLISECOND", 0.0,
                             "MICROSECOND", 0.0,
-                            "EPOCH", -62_125_920_000.0 + diffUTCEpoch
+                            "EPOCH", -62_125_920_000.0 - diffUTCEpoch
                     )
             ));
             testCases.add(create("TIMESTAMP", "0001-04-23 13:40:55",
@@ -176,7 +176,7 @@ public class ExtractFunctionIntegrationTest {
                             "SECOND", 55.0,
                             "MILLISECOND", 55_000.0,
                             "MICROSECOND", 55_000_000.0,
-                            "EPOCH", -62_125_870_745.0 + diffUTCEpoch
+                            "EPOCH", -62_125_870_745.0 - diffUTCEpoch
                     )
             ));
             testCases.add(create("TIMESTAMP", "2006-01-01 00:00:00.0",
@@ -197,7 +197,7 @@ public class ExtractFunctionIntegrationTest {
                             "SECOND", 0.0,
                             "MILLISECOND", 0.0,
                             "MICROSECOND", 0.0,
-                            "EPOCH", 1_136_073_600.0 + diffUTCEpoch
+                            "EPOCH", 1_136_073_600.0 - diffUTCEpoch
                     )
             ));
             testCases.add(create("TIMESTAMP", "2001-02-16 20:38:40.123",
@@ -207,7 +207,7 @@ public class ExtractFunctionIntegrationTest {
                             "SECOND", 40.0,
                             "MILLISECOND", 40_123.0,
                             "MICROSECOND", 40_123_000.0,
-                            "EPOCH", 982_355_920.123 + diffUTCEpoch
+                            "EPOCH", 982_355_920.123 - diffUTCEpoch
                     )
             ));
             testCases.add(create("DATE", "2010-10-04",
@@ -358,14 +358,15 @@ public class ExtractFunctionIntegrationTest {
 
     private static TimeZone defaultTimezone;
 
-    private static final TimeZone testTimezone = TimeZone.getTimeZone("GMT+2");
+    private static final TimeZone testTimezone = TimeZone.getTimeZone("UTC+2");
 
-    private static final long diffUTCEpoch = - testTimezone.getRawOffset() / 1_000;
+    private static final long diffUTCEpoch = testTimezone.getRawOffset() / 1_000;
 
     @BeforeClass
     public static void setUpClass() {
         defaultTimezone = TimeZone.getDefault();
         TimeZone.setDefault(testTimezone);
+        assertEquals(testTimezone, TimeZone.getDefault());
     }
 
     @AfterClass
