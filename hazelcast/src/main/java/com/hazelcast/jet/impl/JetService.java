@@ -127,7 +127,8 @@ public class JetService implements ManagedService, MembershipAwareService, LiveO
         if (clientExceptionFactory != null) {
             ExceptionUtil.registerJetExceptions(clientExceptionFactory);
         } else {
-            logger.warning("Jet exceptions are not registered since the client exception factory is not accessible.");
+            logger.fine("Jet exceptions are not registered to the ClientExceptionFactory" +
+                    " since the ClientExceptionFactory is not accessible.");
         }
         logger.info("Setting number of cooperative threads and default parallelism to "
                 + config.getInstanceConfig().getCooperativeThreadCount());
