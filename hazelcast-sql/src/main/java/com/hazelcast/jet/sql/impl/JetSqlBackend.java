@@ -271,7 +271,7 @@ class JetSqlBackend implements SqlBackend {
         List<Permission> permissions = extractPermissions(physicalRel);
 
         CreateDagVisitor visitor = traverseRel(physicalRel, localAddress, parameterMetadata);
-        return new SinkPlan(null, parameterMetadata, visitor.getObjectKeys(), visitor.getDag(), null, planExecutor, permissions);
+        return new SinkPlan(null, parameterMetadata, visitor.getObjectKeys(), visitor.getDag(), planExecutor, permissions);
     }
 
     private DmlPlan toPlan(
@@ -297,7 +297,7 @@ class JetSqlBackend implements SqlBackend {
                     visitor.getProjection(), planExecutor);
         } else if (isInsert) {
             CreateDagVisitor result = traverseRel(physicalRel, localAddress, parameterMetadata);
-            return new SinkPlan(planKey, parameterMetadata, result.getObjectKeys(), result.getDag(), null, planExecutor,
+            return new SinkPlan(planKey, parameterMetadata, result.getObjectKeys(), result.getDag(), planExecutor,
                     permissions);
         } else {
             CreateDagVisitor result =

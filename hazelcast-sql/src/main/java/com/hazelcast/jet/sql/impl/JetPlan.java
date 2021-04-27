@@ -490,7 +490,6 @@ abstract class JetPlan extends SqlPlan {
         private final Set<PlanObjectKey> objectKeys;
         private final QueryParameterMetadata parameterMetadata;
         private final DAG dag;
-        private final SqlRowMetadata rowMetadata;
         private final JetPlanExecutor planExecutor;
         private final List<Permission> permissions;
 
@@ -499,7 +498,6 @@ abstract class JetPlan extends SqlPlan {
                 QueryParameterMetadata parameterMetadata,
                 Set<PlanObjectKey> objectKeys,
                 DAG dag,
-                SqlRowMetadata rowMetadata,
                 JetPlanExecutor planExecutor,
                 List<Permission> permissions
         ) {
@@ -508,7 +506,6 @@ abstract class JetPlan extends SqlPlan {
             this.objectKeys = objectKeys;
             this.parameterMetadata = parameterMetadata;
             this.dag = dag;
-            this.rowMetadata = rowMetadata;
             this.planExecutor = planExecutor;
             this.permissions = permissions;
         }

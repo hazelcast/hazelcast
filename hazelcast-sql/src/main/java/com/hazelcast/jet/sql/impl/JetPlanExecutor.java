@@ -247,16 +247,11 @@ class JetPlanExecutor {
         InternalSerializationService serializationService =
                 ((HazelcastInstanceImpl) jetInstance.getHazelcastInstance()).getSerializationService();
         IMap<Object, Object> map = jetInstance.getMap(table.getSqlName());
-        ExpressionEvalContext context = new SimpleExpressionEvalContext(emptyList(), serializationService);
         List<TableField> fields = table.getFields();
         QueryPath[] paths = fields.stream().map(field -> ((MapTableField) field).getPath()).toArray(QueryPath[]::new);
         QueryDataType[] types = fields.stream().map(TableField::getType).toArray(QueryDataType[]::new);
         QueryTargetDescriptor keyDescriptor = table.getKeyDescriptor();
         QueryTargetDescriptor valueDescriptor = table.getValueDescriptor();
-
-        KvRowProjector projector =
-                KvRowProjector.supplier(paths, types, keyDescriptor, valueDescriptor, null, deletePlan.getProjection())
-                        .get(context, Extractors.newBuilder(serializationService).build());
 
         Expression<Boolean> filter = deletePlan.filter();
         if (filter instanceof ComparisonPredicate) {
@@ -282,7 +277,12 @@ class JetPlanExecutor {
             if (key == null) {
                 throw QueryException.error(SqlErrorCode.GENERIC, "DELETE query has to contain __key = <const value> predicate");
             }
+            List<Expression<?>> projection = deletePlan.getProjection();
+            KvRowProjector.Supplier supplier = KvRowProjector.supplier(
+                    paths, types, keyDescriptor, valueDescriptor, null, projection);
             boolean removed = map.executeOnKey(key, entry -> {
+                ExpressionEvalContext context = new SimpleExpressionEvalContext(emptyList(), serializationService);
+                KvRowProjector projector = supplier.get(context, Extractors.newBuilder(serializationService).build());
                 Boolean eval = filter.eval(new HeapRow(projector.project(entry)), context);
                 boolean result = eval != null && eval;
                 if (result) {
