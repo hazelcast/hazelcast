@@ -49,8 +49,8 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Collection;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
@@ -65,7 +65,6 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.jobIdAndExecutionId;
 import static java.util.Collections.newSetFromMap;
-import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 
 /**
@@ -147,10 +146,8 @@ public class JobExecutionService implements DynamicMetricsProvider {
         return executionContexts.computeIfAbsent(executionId, newLightJobExecutionContextFunction);
     }
 
-    Map<Long, ExecutionContext> getExecutionContextsFor(Address member) {
-        return executionContexts.entrySet().stream()
-                         .filter(entry -> entry.getValue().hasParticipant(member))
-                         .collect(toMap(Entry::getKey, Entry::getValue));
+    Collection<ExecutionContext> getExecutionContexts() {
+        return executionContexts.values();
     }
 
     Map<SenderReceiverKey, SenderTasklet> getSenderMap(long executionId) {

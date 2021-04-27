@@ -86,16 +86,11 @@ public class ExecutionContext implements DynamicMetricsProvider {
 
     private String jobName;
 
-    // dest vertex id --> dest ordinal --> sender addr --> receiver tasklet
-    private Map<SenderReceiverKey, ReceiverTasklet> receiverMap;
-
+    private volatile Map<SenderReceiverKey, ReceiverTasklet> receiverMap;
+    private volatile Map<SenderReceiverKey, SenderTasklet> senderMap;
     private final Map<SenderReceiverKey, Queue<byte[]>> receiverQueuesMap;
 
-    // dest vertex id --> dest ordinal --> dest addr --> sender tasklet
-    private Map<SenderReceiverKey, SenderTasklet> senderMap;
-
     private List<ProcessorSupplier> procSuppliers = emptyList();
-
     private List<Tasklet> tasklets = emptyList();
 
     // future which is completed only after all tasklets are completed and contains execution result
@@ -155,7 +150,8 @@ public class ExecutionContext implements DynamicMetricsProvider {
         int numPrioritySsTasklets = plan.getStoreSnapshotTaskletCount() != 0 ? plan.getHigherPriorityVertexCount() : 0;
         snapshotContext.initTaskletCount(plan.getProcessorTaskletCount(), plan.getStoreSnapshotTaskletCount(),
                 numPrioritySsTasklets);
-        receiverMap = new HashMap<>();
+        this.receiverMap = new HashMap<>();
+        Map<SenderReceiverKey, ReceiverTasklet> receiverMap = this.receiverMap;
         for (Entry<Integer, Map<Integer, Map<Address, ReceiverTasklet>>> vertexIdEntry : plan.getReceiverMap().entrySet()) {
             for (Entry<Integer, Map<Address, ReceiverTasklet>> ordinalEntry : vertexIdEntry.getValue().entrySet()) {
                 for (Entry<Address, ReceiverTasklet> addressEntry : ordinalEntry.getValue().entrySet()) {

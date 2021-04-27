@@ -32,6 +32,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ScheduledFuture;
@@ -43,16 +44,12 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.ImdgUtil.createObjectDataInput;
 import static com.hazelcast.jet.impl.util.ImdgUtil.createObjectDataOutput;
 import static com.hazelcast.jet.impl.util.ImdgUtil.getMemberConnection;
-import static com.hazelcast.jet.impl.util.ImdgUtil.getRemoteMembers;
-import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public class Networking {
 
     private static final int PACKET_HEADER_SIZE = 16;
     private static final int FLOW_PACKET_INITIAL_SIZE = 128;
-
-    private static final byte[] EMPTY_BYTES = new byte[0];
 
     private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
@@ -110,61 +107,81 @@ public class Networking {
 
     private void broadcastFlowControlPacket() {
         try {
-            getRemoteMembers(nodeEngine).forEach(member -> uncheckRun(() -> {
-                Connection conn = getMemberConnection(nodeEngine, member);
-                final byte[] packetBuf = createFlowControlPacket(member, conn);
-                if (packetBuf.length == 0) {
-                    return;
-                }
+            final Map<Address, byte[]> packets = createFlowControlPacket();
+
+            for (Entry<Address, byte[]> en : packets.entrySet()) {
+                Connection conn = getMemberConnection(nodeEngine, en.getKey());
                 if (conn != null) {
-                    conn.write(new Packet(packetBuf)
+                    conn.write(new Packet(en.getValue())
                             .setPacketType(Packet.Type.JET)
                             .raiseFlags(FLAG_URGENT | FLAG_JET_FLOW_CONTROL));
                 }
-            }));
+            }
         } catch (Throwable t) {
             logger.severe("Flow-control packet broadcast failed", t);
         }
     }
 
-    private byte[] createFlowControlPacket(Address member, Connection expectedConnection) throws IOException {
-        // TODO it might be cheaper to create the flow control packet for all members in one go
-        try (BufferObjectDataOutput output = createObjectDataOutput(nodeEngine, lastFlowPacketSize)) {
-            boolean hasData = false;
-            Map<Long, ExecutionContext> executionContexts = jobExecutionService.getExecutionContextsFor(member);
-            output.writeInt(executionContexts.size());
-            for (Entry<Long, ExecutionContext> executionIdAndCtx : executionContexts.entrySet()) {
-                output.writeLong(executionIdAndCtx.getKey());
-                Map<SenderReceiverKey, ReceiverTasklet> receiverMap = executionIdAndCtx.getValue().receiverMap();
-                if (receiverMap != null) {
-                    output.writeInt((int) receiverMap.keySet().stream().filter(k -> k.address.equals(member)).count());
-                    for (Entry<SenderReceiverKey, ReceiverTasklet> e1 : receiverMap.entrySet()) {
-                        if (!e1.getKey().address.equals(member)) {
-                            continue;
-                        }
-                        ReceiverTasklet receiverTasklet = e1.getValue();
-                        output.writeInt(e1.getKey().vertexId);
-                        output.writeInt(e1.getKey().ordinal);
-                        output.writeInt(receiverTasklet.updateAndGetSendSeqLimitCompressed(expectedConnection));
-                        hasData = true;
-                    }
-                }
-            }
-            if (hasData) {
-                byte[] payload = output.toByteArray();
-                lastFlowPacketSize = payload.length;
-                return payload;
-            } else {
-                return EMPTY_BYTES;
+    private Map<Address, byte[]> createFlowControlPacket() throws IOException {
+        class MemberData {
+            final BufferObjectDataOutput output = createObjectDataOutput(nodeEngine, lastFlowPacketSize);
+            final Connection memberConnection;
+            Long startedExecutionId;
+
+            MemberData(Address address) {
+                memberConnection = getMemberConnection(nodeEngine, address);
             }
         }
+
+        Map<Address, MemberData> res = new HashMap<>();
+        for (ExecutionContext execCtx : jobExecutionService.getExecutionContexts()) {
+            Map<SenderReceiverKey, ReceiverTasklet> receiverMap = execCtx.receiverMap();
+            if (receiverMap == null) {
+                continue;
+            }
+            for (Entry<SenderReceiverKey, ReceiverTasklet> en : receiverMap.entrySet()) {
+                assert !en.getKey().address.equals(nodeEngine.getThisAddress());
+                MemberData md = res.computeIfAbsent(en.getKey().address, MemberData::new);
+                if (md.startedExecutionId == null) {
+                    md.startedExecutionId = execCtx.executionId();
+                    md.output.writeLong(md.startedExecutionId);
+                }
+                md.output.writeInt(en.getKey().vertexId);
+                md.output.writeInt(en.getKey().ordinal);
+                md.output.writeInt(en.getValue().updateAndGetSendSeqLimitCompressed(md.memberConnection));
+            }
+            for (MemberData md : res.values()) {
+                if (md.startedExecutionId != null) {
+                    // Execution IDs are generated using Flake ID generator and those are >0 normally, we
+                    // use MIN_VALUE as a terminator.
+                    md.output.writeLong(Long.MIN_VALUE);
+                }
+            }
+        }
+
+        // finalize the packets
+        int maxSize = 0;
+        for (Entry<Address, MemberData> entry : res.entrySet()) {
+            byte[] data = entry.getValue().output.toByteArray();
+            // we break type safety to avoid creating a new map, we replace the values with a different type in place
+            @SuppressWarnings({"unchecked", "rawtypes"})
+            Entry<Address, byte[]> entry1 = (Entry) entry;
+            entry1.setValue(data);
+            if (data.length > maxSize) {
+                maxSize = data.length;
+            }
+        }
+        lastFlowPacketSize = maxSize;
+        return (Map) res;
     }
 
     private void handleFlowControlPacket(Address fromAddr, byte[] packet) throws IOException {
         try (BufferObjectDataInput input = createObjectDataInput(nodeEngine, packet)) {
-            final int executionCtxCount = input.readInt();
-            for (int j = 0; j < executionCtxCount; j++) {
+            for (;;) {
                 final long executionId = input.readLong();
+                if (executionId == Long.MIN_VALUE) {
+                    break;
+                }
                 final Map<SenderReceiverKey, SenderTasklet> senderMap = jobExecutionService.getSenderMap(executionId);
 
                 if (senderMap == null) {
