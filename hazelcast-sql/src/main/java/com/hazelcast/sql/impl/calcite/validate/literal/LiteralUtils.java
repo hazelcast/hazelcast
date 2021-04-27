@@ -33,8 +33,10 @@ import org.apache.calcite.util.TimestampString;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.temporal.Temporal;
 
 import static org.apache.calcite.sql.type.SqlTypeName.CHAR_TYPES;
+import static org.apache.calcite.sql.type.SqlTypeName.DATETIME_TYPES;
 
 public final class LiteralUtils {
     private static final long NANOSECOND_IN_MILLISECOND = 1_000_000L;
@@ -50,29 +52,14 @@ public final class LiteralUtils {
         }
 
         RexLiteral literal = (RexLiteral) node;
+        SqlTypeName typeName = literal.getTypeName();
 
-        // TODO: Move it inside literal0
-        // Intercept TIMESTAMP types to return (Offset, Local)DateTime instead of Calendar class
-        TimestampString ts;
-        switch (node.getType().getSqlTypeName()) {
-            case TIME:
-                TimeString timeString = literal.getValueAs(TimeString.class);
-                return literal0(
-                        node.getType().getSqlTypeName(),
-                        LocalTime.ofNanoOfDay(timeString.getMillisOfDay() * NANOSECOND_IN_MILLISECOND)
-                );
-            case TIMESTAMP:
-                ts = literal.getValueAs(TimestampString.class);
-                return literal0(node.getType().getSqlTypeName(), DateTimeUtils.parseAsLocalDateTime(ts.toString()));
-            case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
-                ts = literal.getValueAs(TimestampString.class);
-                return literal0(node.getType().getSqlTypeName(), DateTimeUtils.parseAsOffsetDateTime(ts.toString()));
-            case DATE:
-                Integer epoch = literal.getValueAs(Integer.class);
-                return literal0(node.getType().getSqlTypeName(), LocalDate.ofEpochDay(epoch));
-            default:
-                return literal0(node.getType().getSqlTypeName(), literal.getValue());
-        }
+        // Intercept DATE, TIME, TIMESTAMP types to return (Offset, Local)(Date, Time) instead of Calendar class
+        Object value = (DATETIME_TYPES.contains(typeName) && typeName != SqlTypeName.TIME_WITH_LOCAL_TIME_ZONE)
+                ? createDateTimeValue(typeName, literal)
+                : literal.getValue();
+
+        return literal0(node.getType().getSqlTypeName(), value);
     }
 
     public static Literal literal(SqlNode node) {
@@ -123,5 +110,26 @@ public final class LiteralUtils {
         Literal literal = literal(node);
 
         return literal != null ? literal.getType(typeFactory) : null;
+    }
+
+    private static Temporal createDateTimeValue(SqlTypeName typeName, RexLiteral literal) {
+        switch (typeName) {
+            case TIME:
+                return LocalTime.ofNanoOfDay(
+                                literal.getValueAs(TimeString.class).getMillisOfDay() * NANOSECOND_IN_MILLISECOND
+                        );
+            case TIMESTAMP:
+                return DateTimeUtils.parseAsLocalDateTime(
+                                literal.getValueAs(TimestampString.class).toString()
+                        );
+            case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
+                return DateTimeUtils.parseAsOffsetDateTime(
+                                literal.getValueAs(TimestampString.class).toString()
+                        );
+            case DATE:
+                return LocalDate.ofEpochDay(literal.getValueAs(Integer.class));
+            default:
+                throw new IllegalArgumentException("Unexpected type: " + typeName);
+        }
     }
 }

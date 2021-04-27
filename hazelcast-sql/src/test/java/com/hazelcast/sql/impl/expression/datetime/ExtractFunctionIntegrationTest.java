@@ -33,13 +33,8 @@ import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import java.time.DateTimeException;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.OffsetDateTime;
-import java.time.OffsetTime;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -358,7 +353,7 @@ public class ExtractFunctionIntegrationTest {
 
     private static TimeZone defaultTimezone;
 
-    private static final TimeZone testTimezone = TimeZone.getTimeZone("UTC+2");
+    private static final TimeZone testTimezone = TimeZone.getTimeZone("UTC+3");
 
     private static final long diffUTCEpoch = testTimezone.getRawOffset() / 1_000;
 
@@ -403,7 +398,6 @@ public class ExtractFunctionIntegrationTest {
         }
     }
 
-    // TODO: Rewrite this function
     private static Object object(String type, String input) {
         switch (type) {
             case "TIME":
@@ -411,25 +405,9 @@ public class ExtractFunctionIntegrationTest {
             case "DATE":
                 return LocalDate.parse(input);
             case "TIMESTAMP":
-                try {
-                    return LocalDateTime.parse(input.replace(' ', 'T'));
-                } catch (DateTimeException e) {
-                }
-                LocalDate date = LocalDate.parse(input);
-                return date.atTime(0, 0, 0);
+                return DateTimeUtils.parseAsLocalDateTime(input);
             case "TIMESTAMP WITH TIME ZONE":
-                try {
-                    return OffsetDateTime.parse(input.replace(' ', 'T'));
-                } catch (DateTimeException e) {
-                }
-                try {
-                    LocalDateTime dateTime = LocalDateTime.parse(input.replace(' ', 'T'));
-                    return dateTime.atOffset(ZoneOffset.UTC);
-                } catch (DateTimeException e) {
-                }
-                return LocalDate.parse(input).atTime(
-                        OffsetTime.of(0, 0, 0, 0, ZoneOffset.UTC)
-                );
+                return DateTimeUtils.parseAsOffsetDateTime(input);
             default:
                 fail(type + " not supported for test");
                 return "";

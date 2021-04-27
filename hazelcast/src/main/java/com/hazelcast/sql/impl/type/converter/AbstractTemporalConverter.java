@@ -47,6 +47,12 @@ public abstract class AbstractTemporalConverter extends Converter {
         return date.atStartOfDay();
     }
 
+    /**
+     * Convert DATE to TIMESTAMP
+     *
+     * @param date Date.
+     * @return Timestamp with time zone at UTC midnight.
+     */
     protected static OffsetDateTime dateToTimestampWithTimezone(LocalDate date) {
         return OffsetDateTime.of(date, LocalTime.of(0, 0, 0), ZoneOffset.UTC);
     }
