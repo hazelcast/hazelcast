@@ -88,8 +88,8 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
         checkDeserializationFailure(clusterService);
 
         preparePostOp(preJoinOp);
-        finalized = clusterService.finalizeJoin(getMembersView(), callerAddresses, callerUuid, targetUuid, clusterId, clusterState,
-                clusterVersion, clusterStartTime, masterTime, preJoinOp);
+        finalized = clusterService.finalizeJoin(getMembersView(), callerAddresses, callerUuid, targetUuid, clusterId,
+                clusterState, clusterVersion, clusterStartTime, masterTime, preJoinOp);
 
         if (!finalized) {
             return;

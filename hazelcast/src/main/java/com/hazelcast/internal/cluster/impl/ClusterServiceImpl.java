@@ -420,8 +420,8 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         lock.lock();
         try {
             if (!isJoined()) {
-                logger.warning("Not updating members received from caller: " + callerAddresses.get(0) + " because node " +
-                        "is not joined! ");
+                logger.warning("Not updating members received from caller: " + callerAddresses.get(0) + " because node "
+                        + "is not joined! ");
                 return false;
             }
 
