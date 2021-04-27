@@ -18,7 +18,6 @@ package com.hazelcast.jet.impl.execution.init;
 
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
-import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.impl.JobExecutionRecord;
 import com.hazelcast.jet.impl.JobExecutionRecord.SnapshotStats;
 import com.hazelcast.jet.impl.JobRecord;
@@ -52,6 +51,7 @@ import com.hazelcast.jet.impl.operation.SubmitJobOperation;
 import com.hazelcast.jet.impl.operation.SubmitLightJobOperation;
 import com.hazelcast.jet.impl.operation.TerminateExecutionOperation;
 import com.hazelcast.jet.impl.operation.TerminateJobOperation;
+import com.hazelcast.jet.impl.processor.NoopP;
 import com.hazelcast.jet.impl.processor.ProcessorSupplierFromSimpleSupplier;
 import com.hazelcast.jet.impl.processor.SessionWindowP;
 import com.hazelcast.jet.impl.processor.SlidingWindowP.SnapshotKey;
@@ -209,7 +209,7 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
                 case PROCESSOR_SUPPLIER_FROM_SIMPLE_SUPPLIER:
                     return new ProcessorSupplierFromSimpleSupplier();
                 case NOOP_PROCESSOR_SUPPLIER:
-                    return new Processors.NoopPSupplier();
+                    return new NoopP.NoopPSupplier();
                 default:
                     throw new IllegalArgumentException("Unknown type id " + typeId);
             }
