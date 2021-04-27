@@ -186,6 +186,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
     void onMemberRemoved(Address address) {
         executionContexts.values().stream()
              // note that coordinator might not be a participant (in case it is a lite member)
+             // TODO [viliam] coordinator might not yet be known
              .filter(exeCtx -> exeCtx.coordinator().equals(address) || exeCtx.hasParticipant(address))
              .forEach(exeCtx -> {
                  String message = String.format("Completing %s locally. Reason: Member %s left the cluster",
@@ -389,6 +390,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
         ExecutionContext executionContext = executionContexts.get(executionId);
         if (executionContext == null) {
             return null;
+            // TODO [viliam] we can receive terminate execution op before we initialized the coordinator
         } else if (!(executionContext.coordinator().equals(callerAddress) && executionContext.jobId() == jobId)) {
             throw new IllegalStateException(String.format(
                     "%s, originally from coordinator %s, cannot do '%s' by coordinator %s and execution %s",

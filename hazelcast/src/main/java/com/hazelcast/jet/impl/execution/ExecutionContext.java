@@ -73,8 +73,8 @@ public class ExecutionContext implements DynamicMetricsProvider {
 
     private final long jobId;
     private final long executionId;
-    private volatile Address coordinator; // TODO [viliam] needs volatile?
-    private volatile Set<Address> participants; // TODO [viliam] needs volatile?
+    private volatile Address coordinator;
+    private volatile Set<Address> participants;
     private final Object executionLock = new Object();
     private final ILogger logger;
     private final Counter startTime = MwCounter.newMwCounter(-1);
@@ -88,11 +88,9 @@ public class ExecutionContext implements DynamicMetricsProvider {
     private String jobName;
 
     // dest vertex id --> dest ordinal --> sender addr --> receiver tasklet
-    // TODO [viliam] Also use SenderReceiverKey?
-    private Map<Integer, Map<Integer, Map<Address, ReceiverTasklet>>> receiverMap;
+    private Map<SenderReceiverKey, ReceiverTasklet> receiverMap;
 
     private final Map<SenderReceiverKey, Queue<byte[]>> receiverQueuesMap;
-    private final boolean isLightJob;
 
     // dest vertex id --> dest ordinal --> dest addr --> sender tasklet
     // TODO [viliam] Also use SenderReceiverKey?
@@ -116,13 +114,12 @@ public class ExecutionContext implements DynamicMetricsProvider {
     private volatile RawJobMetrics jobMetrics = RawJobMetrics.empty();
 
     private InternalSerializationService serializationService;
-    private Function<? super SenderReceiverKey, ? extends Queue<byte[]>> createReceiverQueueFn;
+    private final Function<? super SenderReceiverKey, ? extends Queue<byte[]>> createReceiverQueueFn;
 
     public ExecutionContext(NodeEngine nodeEngine, long jobId, long executionId, boolean isLightJob) {
         this.jobId = jobId;
         this.executionId = executionId;
         this.nodeEngine = nodeEngine;
-        this.isLightJob = isLightJob;
 
         this.jobName = idToString(jobId);
 
@@ -135,7 +132,11 @@ public class ExecutionContext implements DynamicMetricsProvider {
         createReceiverQueueFn = key -> new MPSCQueue<>(null);
     }
 
-    public ExecutionContext initialize(Address coordinator, Set<Address> participants, ExecutionPlan plan) {
+    public ExecutionContext initialize(
+            @Nonnull Address coordinator,
+            @Nonnull Set<Address> participants,
+            @Nonnull ExecutionPlan plan
+    ) {
         this.coordinator = coordinator;
         this.participants = participants;
 
@@ -156,13 +157,15 @@ public class ExecutionContext implements DynamicMetricsProvider {
         int numPrioritySsTasklets = plan.getStoreSnapshotTaskletCount() != 0 ? plan.getHigherPriorityVertexCount() : 0;
         snapshotContext.initTaskletCount(plan.getProcessorTaskletCount(), plan.getStoreSnapshotTaskletCount(),
                 numPrioritySsTasklets);
-        receiverMap = unmodifiableMap(plan.getReceiverMap());
+        receiverMap = new HashMap<>();
         for (Entry<Integer, Map<Integer, Map<Address, ReceiverTasklet>>> vertexIdEntry : plan.getReceiverMap().entrySet()) {
             for (Entry<Integer, Map<Address, ReceiverTasklet>> ordinalEntry : vertexIdEntry.getValue().entrySet()) {
                 for (Entry<Address, ReceiverTasklet> addressEntry : ordinalEntry.getValue().entrySet()) {
                     SenderReceiverKey key = new SenderReceiverKey(vertexIdEntry.getKey(), ordinalEntry.getKey(), addressEntry.getKey());
                     Queue<byte[]> queue = receiverQueuesMap.computeIfAbsent(key, createReceiverQueueFn);
                     addressEntry.getValue().initIncomingQueue(queue);
+                    receiverMap.put(new SenderReceiverKey(vertexIdEntry.getKey(), ordinalEntry.getKey(), addressEntry.getKey()),
+                            addressEntry.getValue());
                 }
             }
         }
@@ -314,6 +317,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
     }
 
     public boolean hasParticipant(Address member) {
+        // once participants is not null, it's always not null
         return participants != null && participants.contains(member);
     }
 
@@ -337,7 +341,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
         return senderMap;
     }
 
-    public Map<Integer, Map<Integer, Map<Address, ReceiverTasklet>>> receiverMap() {
+    public Map<SenderReceiverKey, ReceiverTasklet> receiverMap() {
         return receiverMap;
     }
 
@@ -378,10 +382,10 @@ public class ExecutionContext implements DynamicMetricsProvider {
         return executionFuture;
     }
 
-    private static final class SenderReceiverKey {
-        private final int vertexId;
-        private final int ordinal;
-        private final Address address;
+    public static final class SenderReceiverKey {
+        public final int vertexId;
+        public final int ordinal;
+        public final Address address;
 
         private SenderReceiverKey(int vertexId, int ordinal, @Nonnull Address address) {
             this.vertexId = vertexId;

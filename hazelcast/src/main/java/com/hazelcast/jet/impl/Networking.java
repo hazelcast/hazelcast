@@ -23,6 +23,7 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
+import com.hazelcast.jet.impl.execution.ExecutionContext.SenderReceiverKey;
 import com.hazelcast.jet.impl.execution.ReceiverTasklet;
 import com.hazelcast.jet.impl.execution.SenderTasklet;
 import com.hazelcast.jet.impl.serialization.MemoryReader;
@@ -128,29 +129,25 @@ public class Networking {
     }
 
     private byte[] createFlowControlPacket(Address member, Connection expectedConnection) throws IOException {
+        // TODO it might be cheaper to create the flow control packet for all members in one go
         try (BufferObjectDataOutput output = createObjectDataOutput(nodeEngine, lastFlowPacketSize)) {
             boolean hasData = false;
             Map<Long, ExecutionContext> executionContexts = jobExecutionService.getExecutionContextsFor(member);
             output.writeInt(executionContexts.size());
             for (Entry<Long, ExecutionContext> executionIdAndCtx : executionContexts.entrySet()) {
                 output.writeLong(executionIdAndCtx.getKey());
-                // dest vertex id --> dest ordinal --> sender addr --> receiver tasklet
-                Map<Integer, Map<Integer, Map<Address, ReceiverTasklet>>> receiverMap =
-                        executionIdAndCtx.getValue().receiverMap();
+                Map<SenderReceiverKey, ReceiverTasklet> receiverMap = executionIdAndCtx.getValue().receiverMap();
                 if (receiverMap != null) {
-                    output.writeInt(receiverMap.values().stream().mapToInt(Map::size).sum());
-                    for (Entry<Integer, Map<Integer, Map<Address, ReceiverTasklet>>> e1 : receiverMap.entrySet()) {
-                        int vertexId = e1.getKey();
-                        Map<Integer, Map<Address, ReceiverTasklet>> ordinalToMemberToTasklet = e1.getValue();
-                        for (Entry<Integer, Map<Address, ReceiverTasklet>> e2 : ordinalToMemberToTasklet.entrySet()) {
-                            int ordinal = e2.getKey();
-                            Map<Address, ReceiverTasklet> memberToTasklet = e2.getValue();
-                            output.writeInt(vertexId);
-                            output.writeInt(ordinal);
-                            ReceiverTasklet receiverTasklet = memberToTasklet.get(member);
-                            output.writeInt(receiverTasklet.updateAndGetSendSeqLimitCompressed(expectedConnection));
-                            hasData = true;
+                    output.writeInt((int) receiverMap.keySet().stream().filter(k -> k.address.equals(member)).count());
+                    for (Entry<SenderReceiverKey, ReceiverTasklet> e1 : receiverMap.entrySet()) {
+                        if (!e1.getKey().address.equals(member)) {
+                            continue;
                         }
+                        ReceiverTasklet receiverTasklet = e1.getValue();
+                        output.writeInt(e1.getKey().vertexId);
+                        output.writeInt(e1.getKey().ordinal);
+                        output.writeInt(receiverTasklet.updateAndGetSendSeqLimitCompressed(expectedConnection));
+                        hasData = true;
                     }
                 }
             }
