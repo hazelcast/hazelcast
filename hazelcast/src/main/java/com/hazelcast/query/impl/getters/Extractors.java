@@ -18,20 +18,22 @@ package com.hazelcast.query.impl.getters;
 
 import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.core.HazelcastJsonValue;
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.compact.CompactGenericRecord;
 import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecord;
+import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.extractor.ValueExtractor;
 import com.hazelcast.query.impl.DefaultArgumentParser;
-import com.hazelcast.internal.util.Preconditions;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.TYPE_COMPACT;
 import static com.hazelcast.query.impl.getters.ExtractorHelper.extractArgumentsFromAttributeName;
 import static com.hazelcast.query.impl.getters.ExtractorHelper.extractAttributeNameNameWithoutArguments;
 import static com.hazelcast.query.impl.getters.ExtractorHelper.instantiateExtractors;
@@ -43,9 +45,9 @@ public final class Extractors {
     private static final int MAX_GETTERS_PER_CLASS_IN_CACHE = 100;
     private static final float EVICTION_PERCENTAGE = 0.2f;
 
-    private volatile PortableGetter genericPortableGetter;
+    private volatile PortableGetter portableGetter;
     private volatile JsonDataGetter jsonDataGetter;
-
+    private volatile CompactGetter compactGetter;
     /**
      * Maps the extractorAttributeName WITHOUT the arguments to a
      * ValueExtractor instance. The name does not contain the argument
@@ -106,7 +108,7 @@ public final class Extractors {
         }
         if (target instanceof Data) {
             targetData = (Data) target;
-            if (targetData.isPortable() || targetData.isJson()) {
+            if (targetData.isPortable() || targetData.isJson() || targetData.getType() == TYPE_COMPACT) {
                 return targetData;
             } else {
                 // convert non-portable Data to object
@@ -134,35 +136,53 @@ public final class Extractors {
         if (valueExtractor != null) {
             Object arguments = argumentsParser.parse(extractArgumentsFromAttributeName(attributeName));
             return new ExtractorGetter(ss, valueExtractor, arguments);
-        } else {
-            if (targetObject instanceof Data) {
-                if (((Data) targetObject).isPortable()) {
-                    if (genericPortableGetter == null) {
-                        // will be initialised a couple of times in the worst case
-                        genericPortableGetter = new PortableGetter(ss);
-                    }
-                    return genericPortableGetter;
-                } else if (((Data) targetObject).isJson()) {
-                    if (jsonDataGetter == null) {
-                        // will be initialised a couple of times in the worst case
-                        jsonDataGetter = new JsonDataGetter(ss);
-                    }
-                    return jsonDataGetter;
-                } else {
-                    throw new HazelcastSerializationException("No Data getter found for type " + ((Data) targetObject).getType());
-                }
-            } else if (targetObject instanceof HazelcastJsonValue) {
-                return JsonGetter.INSTANCE;
-            } else if (targetObject instanceof PortableGenericRecord) {
-                if (genericPortableGetter == null) {
-                    // will be initialised a couple of times in the worst case
-                    genericPortableGetter = new PortableGetter(ss);
-                }
-                return genericPortableGetter;
-            } else {
-                return ReflectionHelper.createGetter(targetObject, attributeName, failOnMissingReflectiveAttribute);
+        } else if (targetObject instanceof Data) {
+            return instantiateGetterForData((Data) targetObject);
+        } else if (targetObject instanceof HazelcastJsonValue) {
+            return JsonGetter.INSTANCE;
+        } else if (targetObject instanceof PortableGenericRecord) {
+            if (portableGetter == null) {
+                // will be initialised a couple of times in the worst case
+                portableGetter = new PortableGetter(ss);
             }
+            return portableGetter;
+        } else if (targetObject instanceof CompactGenericRecord) {
+            if (compactGetter == null) {
+                // will be initialised a couple of times in the worst case
+                compactGetter = new CompactGetter(ss);
+            }
+            return compactGetter;
+        } else {
+            return ReflectionHelper.createGetter(targetObject, attributeName, failOnMissingReflectiveAttribute);
         }
+    }
+
+    private Getter instantiateGetterForData(Data data) {
+        if (data.isPortable()) {
+            if (portableGetter == null) {
+                // will be initialised a couple of times in the worst case
+                portableGetter = new PortableGetter(ss);
+            }
+            return portableGetter;
+        }
+
+        if (data.isJson()) {
+            if (jsonDataGetter == null) {
+                // will be initialised a couple of times in the worst case
+                jsonDataGetter = new JsonDataGetter(ss);
+            }
+            return jsonDataGetter;
+        }
+
+        if (data.getType() == TYPE_COMPACT) {
+            if (compactGetter == null) {
+                // will be initialised a couple of times in the worst case
+                compactGetter = new CompactGetter(ss);
+            }
+            return compactGetter;
+        }
+
+        throw new HazelcastSerializationException("No Data getter found for type " + data.getType());
     }
 
     public static Extractors.Builder newBuilder(InternalSerializationService ss) {

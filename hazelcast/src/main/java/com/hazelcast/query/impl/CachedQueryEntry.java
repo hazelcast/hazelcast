@@ -17,6 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
@@ -26,6 +27,8 @@ import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.query.impl.getters.Extractors;
 
 import java.io.IOException;
+
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.TYPE_COMPACT;
 
 /**
  * Entry of the Query.
@@ -49,12 +52,12 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> implements Iden
     }
 
     public CachedQueryEntry(SerializationService ss, Extractors extractors) {
-        this.serializationService = ss;
+        this.serializationService = (InternalSerializationService) ss;
         this.extractors = extractors;
     }
 
     public CachedQueryEntry<K, V> init(SerializationService ss, Data key, Object value, Extractors extractors) {
-        this.serializationService = ss;
+        this.serializationService = (InternalSerializationService) ss;
         this.extractors = extractors;
         return init(key, value);
     }
@@ -166,7 +169,7 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> implements Iden
         Object targetObject;
         if (key) {
             // keyData is never null
-            if (keyData.isPortable() || keyData.isJson()) {
+            if (keyData.isPortable() || keyData.isJson() || keyData.getType() == TYPE_COMPACT) {
                 targetObject = keyData;
             } else {
                 targetObject = getKey();
@@ -179,13 +182,14 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> implements Iden
                     return null;
                 }
 
-                if (valueData.isPortable() || valueData.isJson()) {
+                if (valueData.isPortable() || valueData.isJson() || valueData.getType() == TYPE_COMPACT) {
                     targetObject = valueData;
                 } else {
                     targetObject = getValue();
                 }
             } else {
-                if (valueObject instanceof Portable) {
+                //TODO sancar should I check for Portable/CompactGenericRecord
+                if (valueObject instanceof Portable || serializationService.serializerIsCompactSerializer(valueObject)) {
                     targetObject = getValueData();
                 } else {
                     // Note that targetObject can be PortableGenericRecord

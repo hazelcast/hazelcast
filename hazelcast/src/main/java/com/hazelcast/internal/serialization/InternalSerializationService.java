@@ -89,7 +89,14 @@ public interface InternalSerializationService extends SerializationService, Disp
 
     BufferObjectDataOutput createObjectDataOutput();
 
+    /**
+     * @param data
+     * @return InternalGenericRecord if data type supports it, otherwise returns null
+     * @throws IOException
+     */
     InternalGenericRecord readAsInternalGenericRecord(Data data) throws IOException;
+
+    boolean serializerIsCompactSerializer(Object object);
 
     PortableContext getPortableContext();
 

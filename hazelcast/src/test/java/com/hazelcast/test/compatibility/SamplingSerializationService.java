@@ -169,6 +169,11 @@ public class SamplingSerializationService implements InternalSerializationServic
     }
 
     @Override
+    public boolean serializerIsCompactSerializer(Object object) {
+        return delegate.serializerIsCompactSerializer(object);
+    }
+
+    @Override
     public PortableContext getPortableContext() {
         return delegate.getPortableContext();
     }

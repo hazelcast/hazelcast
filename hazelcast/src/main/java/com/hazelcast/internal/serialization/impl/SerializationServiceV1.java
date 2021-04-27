@@ -189,11 +189,14 @@ public class SerializationServiceV1 extends AbstractSerializationService {
     }
 
     public InternalGenericRecord readAsInternalGenericRecord(Data data) throws IOException {
-        if (!data.isPortable()) {
-            throw new IllegalArgumentException("Given data is not Portable! -> " + data.getType());
+        if (data.isPortable()) {
+            BufferObjectDataInput in = createObjectDataInput(data);
+            return portableSerializer.readAsInternalGenericRecord(in);
         }
-        BufferObjectDataInput in = createObjectDataInput(data);
-        return portableSerializer.readAsInternalGenericRecord(in);
+        if (SerializationConstants.TYPE_COMPACT == data.getType()) {
+            return compactStreamSerializer.readAsInternalGenericRecord(createObjectDataInput(data));
+        }
+        throw new IllegalArgumentException("Given type does not support query over data, type id " + data.getType());
     }
 
     public PortableContext getPortableContext() {
@@ -201,7 +204,8 @@ public class SerializationServiceV1 extends AbstractSerializationService {
     }
 
     private void registerConstantSerializers() {
-        registerConstant(null, nullSerializerAdapter);
+        registerConstant(nullSerializerAdapter);
+        registerConstant(compactSerializerAdapter);
         registerConstant(DataSerializable.class, dataSerializerAdapter);
         registerConstant(Portable.class, portableSerializerAdapter);
         //primitives and String
