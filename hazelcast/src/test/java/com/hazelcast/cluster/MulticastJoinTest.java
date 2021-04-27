@@ -30,7 +30,6 @@ import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.SlowTest;
-
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -81,6 +80,23 @@ public class MulticastJoinTest extends AbstractJoinTest {
         interfaces.addInterface(pickLocalInetAddress().getHostAddress());
 
         testJoin(config);
+    }
+
+    @Test
+    public void test_whenMembersDefinedViaIpAndHostnameMix() {
+        Config config = new Config();
+        JoinConfig join = config.getNetworkConfig().getJoin();
+        join.getMulticastConfig().setEnabled(false);
+        join.getTcpIpConfig().setEnabled(true).clear().addMember("127.0.0.1");
+        HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(config);
+
+        Config config2 = new Config();
+        JoinConfig join2 = config2.getNetworkConfig().getJoin();
+        join2.getMulticastConfig().setEnabled(false);
+        join2.getTcpIpConfig().setEnabled(true).clear().addMember("localhost");
+        HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(config2);
+
+        assertClusterSize(2, hz1, hz2);
     }
 
     @Test

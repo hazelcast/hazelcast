@@ -68,6 +68,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -87,6 +88,8 @@ import static com.hazelcast.internal.util.Preconditions.checkFalse;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static java.lang.String.format;
+import static java.util.Collections.singleton;
+import static java.util.Collections.singletonList;
 
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classdataabstractioncoupling", "checkstyle:classfanoutcomplexity"})
 public class ClusterServiceImpl implements ClusterService, ConnectionListener, ManagedService,
@@ -167,7 +170,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     public void sendLocalMembershipEvent() {
-        membershipManager.sendMembershipEvents(Collections.emptySet(), Collections.singleton(getLocalMember()), false);
+        membershipManager.sendMembershipEvents(Collections.emptySet(), singleton(getLocalMember()), false);
     }
 
     public void handleExplicitSuspicion(MembersViewMetadata expectedMembersViewMetadata, Address suspectedAddress) {
@@ -353,18 +356,18 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     @SuppressWarnings("checkstyle:parameternumber")
-    public boolean finalizeJoin(MembersView membersView, Address callerAddress, UUID callerUuid, UUID targetUuid,
+    public boolean finalizeJoin(MembersView membersView, List<Address> callerAddresses, UUID callerUuid, UUID targetUuid,
                                 UUID clusterId, ClusterState clusterState, Version clusterVersion, long clusterStartTime,
                                 long masterTime, OnJoinOp preJoinOp) {
         lock.lock();
         try {
-            if (!checkValidMaster(callerAddress)) {
+            if (!checkValidMaster(callerAddresses)) {
                 if (logger.isFineEnabled()) {
-                    logger.fine("Not finalizing join because caller: " + callerAddress + " is not known master: "
+                    logger.fine("Not finalizing join because caller: " + callerAddresses.get(0) + " is not known master: "
                             + getMasterAddress());
                 }
-                MembersViewMetadata membersViewMetadata = new MembersViewMetadata(callerAddress, callerUuid,
-                        callerAddress, membersView.getVersion());
+                MembersViewMetadata membersViewMetadata = new MembersViewMetadata(callerAddresses.get(0), callerUuid,
+                        callerAddresses.get(0), membersView.getVersion());
                 sendExplicitSuspicion(membersViewMetadata);
                 return false;
             }
@@ -413,19 +416,20 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         }
     }
 
-    public boolean updateMembers(MembersView membersView, Address callerAddress, UUID callerUuid, UUID targetUuid) {
+    public boolean updateMembers(MembersView membersView, List<Address> callerAddresses, UUID callerUuid, UUID targetUuid) {
         lock.lock();
         try {
             if (!isJoined()) {
-                logger.warning("Not updating members received from caller: " + callerAddress + " because node is not joined! ");
+                logger.warning("Not updating members received from caller: " + callerAddresses.get(0) + " because node " +
+                        "is not joined! ");
                 return false;
             }
 
-            if (!checkValidMaster(callerAddress)) {
-                logger.warning("Not updating members because caller: " + callerAddress + " is not known master: "
+            if (!checkValidMaster(callerAddresses)) {
+                logger.warning("Not updating members because caller: " + callerAddresses.get(0) + " is not known master: "
                         + getMasterAddress());
-                MembersViewMetadata callerMembersViewMetadata = new MembersViewMetadata(callerAddress, callerUuid,
-                        callerAddress, membersView.getVersion());
+                MembersViewMetadata callerMembersViewMetadata = new MembersViewMetadata(callerAddresses.get(0), callerUuid,
+                        callerAddresses.get(0), membersView.getVersion());
                 if (!clusterJoinManager.isMastershipClaimInProgress()) {
                     sendExplicitSuspicion(callerMembersViewMetadata);
                 }
@@ -461,8 +465,9 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         }
     }
 
-    private boolean checkValidMaster(Address callerAddress) {
-        return (callerAddress != null && callerAddress.equals(getMasterAddress()));
+    private boolean checkValidMaster(Collection<Address> callerAliases) {
+        Address masterAddress = getMasterAddress();
+        return callerAliases.stream().anyMatch(masterAddress::equals);
     }
 
     private boolean shouldProcessMemberUpdate(MembersView membersView) {
@@ -999,7 +1004,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         lock.lock();
         try {
             if (!member.getAddress().equals(master.getAddress())) {
-                updateMembers(view, master.getAddress(), master.getUuid(), getThisUuid());
+                updateMembers(view, singletonList(master.getAddress()), master.getUuid(), getThisUuid());
             }
 
             MemberImpl localMemberInMemberList = membershipManager.getMember(member.getAddress());

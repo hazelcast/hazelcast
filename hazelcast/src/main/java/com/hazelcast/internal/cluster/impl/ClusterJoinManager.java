@@ -38,9 +38,9 @@ import com.hazelcast.internal.cluster.impl.operations.WhoisMasterOp;
 import com.hazelcast.internal.hotrestart.InternalHotRestartService;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.Packet;
-import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
+import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.logging.ILogger;
@@ -71,6 +71,7 @@ import static com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBra
 import static com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult.REMOTE_NODE_SHOULD_MERGE;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.lang.String.format;
+import static java.util.Collections.singletonList;
 
 /**
  * ClusterJoinManager manages member join process.
@@ -730,7 +731,7 @@ public class ClusterJoinManager {
                 // member list must be updated on master before preparation of pre-/post-join ops so other operations which have
                 // to be executed on stable cluster can detect the member list version change and retry in case of topology change
                 UUID thisUuid = clusterService.getThisUuid();
-                if (!clusterService.updateMembers(newMembersView, node.getThisAddress(), thisUuid, thisUuid)) {
+                if (!clusterService.updateMembers(newMembersView, singletonList(node.getThisAddress()), thisUuid, thisUuid)) {
                     return;
                 }
 

@@ -16,27 +16,28 @@
 
 package com.hazelcast.internal.cluster.impl.operations;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.internal.services.PreJoinAwareService;
-import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationAccessor;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.TargetAware;
-import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.version.Version;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.List;
 import java.util.UUID;
 
 import static com.hazelcast.spi.impl.operationservice.OperationResponseHandlerFactory.createEmptyResponseHandler;
@@ -80,14 +81,14 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
     @Override
     public void run() throws Exception {
         ClusterServiceImpl clusterService = getService();
-        Address callerAddress = getConnectionEndpointOrThisAddress();
+        List<Address> callerAddresses = getAllAddressesOfCaller(getConnectionEndpointOrThisAddress());
         UUID callerUuid = getCallerUuid();
         UUID targetUuid = getTargetUuid();
 
         checkDeserializationFailure(clusterService);
 
         preparePostOp(preJoinOp);
-        finalized = clusterService.finalizeJoin(getMembersView(), callerAddress, callerUuid, targetUuid, clusterId, clusterState,
+        finalized = clusterService.finalizeJoin(getMembersView(), callerAddresses, callerUuid, targetUuid, clusterId, clusterState,
                 clusterVersion, clusterStartTime, masterTime, preJoinOp);
 
         if (!finalized) {
