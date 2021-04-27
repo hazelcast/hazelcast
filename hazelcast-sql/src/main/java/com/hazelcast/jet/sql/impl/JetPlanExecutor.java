@@ -64,14 +64,11 @@ import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.util.List;
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CancellationException;
 import java.util.stream.Stream;
 
-import static com.hazelcast.jet.sql.impl.JetPlan.*;
 import static com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -241,14 +238,16 @@ class JetPlanExecutor {
         }
     }
 
+    @SuppressWarnings("checkstyle:nestedifdepth")
     public SqlResult execute(QueryId queryId, DeletePlan deletePlan) {
         if (deletePlan.getEarlyExit()) {
             return SqlResultImpl.createUpdateCountResult(0);
         }
         AbstractMapTable table = deletePlan.getTable().getTarget();
-        InternalSerializationService serializationService = ((HazelcastInstanceImpl) jetInstance.getHazelcastInstance()).getSerializationService();
+        InternalSerializationService serializationService =
+                ((HazelcastInstanceImpl) jetInstance.getHazelcastInstance()).getSerializationService();
         IMap<Object, Object> map = jetInstance.getMap(table.getSqlName());
-        ExpressionEvalContext context = new SimpleExpressionEvalContext(serializationService);
+        ExpressionEvalContext context = new SimpleExpressionEvalContext(emptyList(), serializationService);
         List<TableField> fields = table.getFields();
         QueryPath[] paths = fields.stream().map(field -> ((MapTableField) field).getPath()).toArray(QueryPath[]::new);
         QueryDataType[] types = fields.stream().map(TableField::getType).toArray(QueryDataType[]::new);
@@ -256,49 +255,67 @@ class JetPlanExecutor {
         QueryTargetDescriptor valueDescriptor = table.getValueDescriptor();
 
         KvRowProjector projector =
-                KvRowProjector.supplier(paths, types, keyDescriptor, valueDescriptor, null, emptyList()).get(serializationService, Extractors.newBuilder(serializationService).build());
+                KvRowProjector.supplier(paths, types, keyDescriptor, valueDescriptor, null, deletePlan.getProjection())
+                        .get(context, Extractors.newBuilder(serializationService).build());
 
         Expression<Boolean> filter = deletePlan.filter();
-        Object key;
         if (filter instanceof ComparisonPredicate) {
-            ComparisonPredicate predicate = (ComparisonPredicate) filter;
-            ComparisonMode mode = predicate.getMode();
-            if (mode != ComparisonMode.EQUALS) {
-                throw QueryException.error(SqlErrorCode.GENERIC, mode + " predicate is not supported for DELETE queries");
-            }
-            Expression<?> operand1 = predicate.getOperand1();
-            Expression<?> operand2 = predicate.getOperand2();
-            if (operand1 instanceof ColumnExpression && operand2 instanceof ConstantExpression) {
-                if (((ColumnExpression<?>) operand1).getIndex() != 0) {
-                    throw QueryException.error(SqlErrorCode.GENERIC, "DELETE query has to contain __key = <const value> predicate");
-                }
-                key = operand2.eval(null, null);
-            } else if (operand1 instanceof ConstantExpression && operand2 instanceof ColumnExpression) {
-                if (((ColumnExpression<?>) operand2).getIndex() != 0) {
-                    throw QueryException.error(SqlErrorCode.GENERIC, "DELETE query has to contain __key = <const value> predicate");
-                }
-                key = operand1.eval(null, null);
-            } else {
+            Object key = extractKey((ComparisonPredicate) filter);
+            if (key == null) {
                 throw QueryException.error(SqlErrorCode.GENERIC, "DELETE query has to contain __key = <const value> predicate");
             }
             Object value = map.remove(key);
             return SqlResultImpl.createUpdateCountResult(value != null ? 1 : 0);
         } else if (filter instanceof AndPredicate) {
-            boolean hasKey = false;
+            Object key = null;
             for (Expression<?> expr : ((AndPredicate) filter).getOperands()) {
-                if (isKeyColumn(expr)) {
-                    if (hasKey) {
-                        return SqlResultImpl.createUpdateCountResult(0);
+                if (expr instanceof ComparisonPredicate) {
+                    Object key0 = extractKey((ComparisonPredicate) expr);
+                    if (key0 != null) {
+                        if (key != null) {
+                            return SqlResultImpl.createUpdateCountResult(0);
+                        }
+                        key = key0;
                     }
-                    hasKey = true;
                 }
             }
-            return null;
+            if (key == null) {
+                throw QueryException.error(SqlErrorCode.GENERIC, "DELETE query has to contain __key = <const value> predicate");
+            }
+            boolean removed = map.executeOnKey(key, entry -> {
+                Boolean eval = filter.eval(new HeapRow(projector.project(entry)), context);
+                boolean result = eval != null && eval;
+                if (result) {
+                    entry.setValue(null);
+                }
+                return result;
+            });
+            return SqlResultImpl.createUpdateCountResult(removed ? 1 : 0);
         } else {
-
-
-            throw QueryException.error(SqlErrorCode.GENERIC, "lol");
+            throw QueryException.error(SqlErrorCode.GENERIC, "Complex DELETE queries unsupported");
         }
+    }
+
+    private Object extractKey(ComparisonPredicate predicate) {
+        Object key = null;
+        ComparisonMode mode = predicate.getMode();
+        if (mode != ComparisonMode.EQUALS) {
+            throw QueryException.error(SqlErrorCode.GENERIC, mode + " predicate is not supported for DELETE queries");
+        }
+        Expression<?> operand1 = predicate.getOperand1();
+        Expression<?> operand2 = predicate.getOperand2();
+        if (isKeyColumn(operand1)) {
+            if (!(operand2 instanceof ConstantExpression)) {
+                throw QueryException.error(SqlErrorCode.GENERIC, "DELETE query has to contain __key = <const value> predicate");
+            }
+            key = operand2.eval(null, null);
+        } else if (isKeyColumn(operand2)) {
+            if (!(operand1 instanceof ConstantExpression)) {
+                throw QueryException.error(SqlErrorCode.GENERIC, "DELETE query has to contain __key = <const value> predicate");
+            }
+            key = operand1.eval(null, null);
+        }
+        return key;
     }
 
     private boolean isKeyColumn(Expression<?> expression) {

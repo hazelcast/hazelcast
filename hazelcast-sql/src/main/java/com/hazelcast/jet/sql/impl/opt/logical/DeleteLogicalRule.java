@@ -21,13 +21,12 @@ import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.convert.ConverterRule;
-import org.apache.calcite.rel.core.RelFactories;
 import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.logical.LogicalTableModify;
 
 import static com.hazelcast.jet.sql.impl.opt.JetConventions.LOGICAL;
 
-public class DeleteLogicalRule extends ConverterRule {
+public final class DeleteLogicalRule extends ConverterRule {
 
     static final RelOptRule INSTANCE = new DeleteLogicalRule();
 

@@ -16,23 +16,27 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.expression.Expression;
 
 import java.io.Serializable;
+import java.util.List;
 
 public class SingleKeyQueryPlanVisitor implements Serializable {
     private Expression<Boolean> filter;
     private HazelcastTable table;
     private boolean earlyExit;
+    private List<Expression<?>> projection;
 
     public void onDelete(DeletePhysicalRel rel) {
-        ((PhysicalRel)rel.getInput()).accept(this);
+        ((PhysicalRel) rel.getInput()).accept(this);
     }
 
     public void onScan(FullScanPhysicalRel rel) {
         table = rel.getTable().unwrap(HazelcastTable.class);
-        filter = rel.filter();
+        filter = rel.filter(QueryParameterMetadata.EMPTY);
+        projection = rel.projection(QueryParameterMetadata.EMPTY);
     }
 
     public void onValue(ValuesPhysicalRel rel) {
@@ -49,5 +53,9 @@ public class SingleKeyQueryPlanVisitor implements Serializable {
 
     public HazelcastTable getTable() {
         return table;
+    }
+
+    public List<Expression<?>> getProjection() {
+        return projection;
     }
 }

@@ -28,7 +28,6 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelRoot;
 import org.apache.calcite.rel.rules.SubQueryRemoveRule;
 import org.apache.calcite.rex.RexNode;
-import org.apache.calcite.sql.SqlDelete;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql2rel.SqlToRelConverter;
 import org.apache.calcite.sql2rel.StandardConvertletTable;

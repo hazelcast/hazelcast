@@ -34,17 +34,17 @@ public abstract class BiExpression<T> implements Expression<T> {
         // No-op.
     }
 
+    protected BiExpression(Expression<?> operand1, Expression<?> operand2) {
+        this.operand1 = operand1;
+        this.operand2 = operand2;
+    }
+
     public Expression<?> getOperand1() {
         return operand1;
     }
 
     public Expression<?> getOperand2() {
         return operand2;
-    }
-
-    protected BiExpression(Expression<?> operand1, Expression<?> operand2) {
-        this.operand1 = operand1;
-        this.operand2 = operand2;
     }
 
     @Override

@@ -16,12 +16,10 @@
 
 package com.hazelcast.jet.sql;
 
-import com.hazelcast.config.IndexConfig;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.Serializable;
@@ -35,7 +33,7 @@ import static org.junit.Assert.fail;
 public class SqlDeleteQueriesTest extends SqlTestSupport {
     @BeforeClass
     public static void setUpClass() {
-        initialize(1, null);
+        initialize(2, null);
     }
 
     @Test
@@ -52,12 +50,13 @@ public class SqlDeleteQueriesTest extends SqlTestSupport {
     public void fails_whenThereIsNoKeyInPredicate() {
         put(1);
         checkError("delete from test_map where this = 1", "DELETE query has to contain __key = <const value> predicate");
-        put(1);
         checkError("delete from test_map where 1 = this", "DELETE query has to contain __key = <const value> predicate");
-        put(1);
         checkError("delete from test_map where __key = this", "DELETE query has to contain __key = <const value> predicate");
+
+        put(1, new Person("name", 18));
+        checkError("delete from test_map where name = 'name' and age = 18", "DELETE query has to contain __key = <const value> predicate");
     }
-    
+
     @Test
     public void deleteByKey_andAnotherFields() {
         IMap<Integer, Person> map = instance().getMap("people");
@@ -71,17 +70,10 @@ public class SqlDeleteQueriesTest extends SqlTestSupport {
     }
 
     @Test
-    @Ignore
     public void deleteWithDisjunctionPredicate_whenOnlyKeysInPredicate() {
         put(1);
         put(2);
-        checkUpdateCount("delete from test_map where __key = 1 or __key = 2", 2);
-        put(1);
-        put(2);
-        put(3);
-        put(4);
-        put(5);
-        checkUpdateCount("delete from test_map where __key = 1 or __key = 2 or __key = 3 or __key = 5", 4);
+        checkError("delete from test_map where __key = 1 or __key = 2", "Complex DELETE queries unsupported");
     }
 
     @Test
@@ -119,7 +111,7 @@ public class SqlDeleteQueriesTest extends SqlTestSupport {
     }
 
     private void put(Object key, Object value) {
-        IMap map = instance().getMap("test_map");
+        IMap<Object, Object> map = instance().getMap("test_map");
         map.clear();
         map.put(key, value);
     }
@@ -128,9 +120,9 @@ public class SqlDeleteQueriesTest extends SqlTestSupport {
         put(key, key);
     }
 
-    private static class Person implements Serializable {
-        private String name;
-        private int age;
+    public static class Person implements Serializable {
+        public String name;
+        public int age;
 
         public Person(String name, int age) {
             this.name = name;

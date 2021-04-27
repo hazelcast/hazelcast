@@ -17,8 +17,6 @@
 package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.cluster.Address;
-import com.hazelcast.jet.core.DAG;
-import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.sql.impl.JetPlan.AlterJobPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.CreateJobPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.CreateMappingPlan;
@@ -66,7 +64,6 @@ import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.optimizer.PlanKey;
-import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -288,7 +285,8 @@ class JetSqlBackend implements SqlBackend {
         if (isDelete) {
             SingleKeyQueryPlanVisitor visitor = new SingleKeyQueryPlanVisitor();
             physicalRel.accept(visitor);
-            return new DeletePlan(planKey, visitor.getTable(), visitor.getFilter(), visitor.getEarlyExit(), planExecutor);
+            return new DeletePlan(planKey, visitor.getTable(), visitor.getFilter(), visitor.getEarlyExit(),
+                    visitor.getProjection(), planExecutor);
         } else if (isInsert) {
             CreateDagVisitor result = createDag(physicalRel, localAddress, parameterMetadata);
             return new SelectOrSinkPlan(planKey, parameterMetadata, result.getObjectKeys(), result.getDag(), isInfiniteRows, true,
@@ -297,8 +295,8 @@ class JetSqlBackend implements SqlBackend {
             CreateDagVisitor result =
                     createDag(new JetRootRel(physicalRel, localAddress), localAddress, parameterMetadata);
             SqlRowMetadata rowMetadata = createRowMetadata(fieldNames, physicalRel.schema(parameterMetadata).getTypes());
-            return new SelectOrSinkPlan(planKey, parameterMetadata, result.getObjectKeys(), result.getDag(), isInfiniteRows, false,
-                    rowMetadata, planExecutor, permissions);
+            return new SelectOrSinkPlan(planKey, parameterMetadata, result.getObjectKeys(), result.getDag(), isInfiniteRows,
+                    false, rowMetadata, planExecutor, permissions);
         }
     }
 

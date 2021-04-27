@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl;
 
-import com.hazelcast.function.PredicateEx;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.sql.impl.parse.SqlAlterJob.AlterJobOperation;
@@ -24,6 +23,7 @@ import com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget;
 import com.hazelcast.jet.sql.impl.schema.Mapping;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRowMetadata;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.optimizer.PlanCheckContext;
@@ -32,7 +32,6 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.optimizer.PlanKey;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
-import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.security.SqlSecurityContext;
 
 import java.security.Permission;
@@ -572,14 +571,21 @@ abstract class JetPlan extends SqlPlan {
         private final HazelcastTable table;
         private final Expression<Boolean> filter;
         private final boolean earlyExit;
+        private final List<Expression<?>> projection;
         private final JetPlanExecutor planExecutor;
 
-        public DeletePlan(PlanKey planKey, HazelcastTable table, Expression<Boolean> filter, boolean earlyExit, JetPlanExecutor planExecutor) {
-            super(planKey, null, null, false, false, null, null, null);
+        DeletePlan(PlanKey planKey, HazelcastTable table, Expression<Boolean> filter, boolean earlyExit,
+                   List<Expression<?>> projection, JetPlanExecutor planExecutor) {
+            super(planKey, null, null, null, false, false, null, null, null);
             this.table = table;
             this.filter = filter;
             this.earlyExit = earlyExit;
+            this.projection = projection;
             this.planExecutor = planExecutor;
+        }
+
+        public List<Expression<?>> getProjection() {
+            return projection;
         }
 
         public HazelcastTable getTable() {
@@ -595,7 +601,7 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments) {
             return planExecutor.execute(queryId, this);
         }
 
