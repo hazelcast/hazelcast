@@ -40,7 +40,6 @@ import static com.hazelcast.sql.SqlColumnType.TIMESTAMP_WITH_TIME_ZONE;
 import static com.hazelcast.sql.SqlColumnType.TINYINT;
 import static com.hazelcast.sql.SqlColumnType.VARCHAR;
 
-
 public abstract class StringFunctionIntegrationTestSupport extends ExpressionTestSupport {
 
     protected abstract String functionName();
