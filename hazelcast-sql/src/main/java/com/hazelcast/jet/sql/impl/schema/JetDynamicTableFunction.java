@@ -17,58 +17,205 @@
 package com.hazelcast.jet.sql.impl.schema;
 
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
+import com.hazelcast.jet.sql.impl.validate.ValidationUtil;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.sql.impl.schema.Table;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeComparability;
-import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeFamily;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rel.type.RelDataTypePrecedenceList;
 import org.apache.calcite.rel.type.StructKind;
-import org.apache.calcite.schema.TableFunction;
+import org.apache.calcite.sql.SqlCall;
+import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlCollation;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlIntervalQualifier;
+import org.apache.calcite.sql.SqlKind;
+import org.apache.calcite.sql.SqlLiteral;
+import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.SqlOperatorBinding;
+import org.apache.calcite.sql.SqlUtil;
+import org.apache.calcite.sql.type.SqlOperandTypeInference;
 import org.apache.calcite.sql.type.SqlTypeName;
+import org.apache.calcite.util.NlsString;
 
-import java.lang.reflect.Type;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+
+import static org.apache.calcite.sql.SqlKind.MAP_VALUE_CONSTRUCTOR;
+import static org.apache.calcite.sql.type.SqlTypeName.MAP;
+import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
 
 /**
  * A table function return type of which is NOT known upfront and is determined during validation phase.
  */
-public abstract class JetDynamicTableFunction implements JetTableFunction, TableFunction {
+public abstract class JetDynamicTableFunction extends JetTableFunction {
 
-    private final SqlConnector connector;
+    protected JetDynamicTableFunction(
+            String name,
+            List<JetTableFunctionParameter> parameters,
+            Function<List<Object>, Table> tableFn,
+            SqlOperandTypeInference operandTypeInference,
+            SqlConnector connector
+    ) {
+        super(
+                name,
+                parameters,
+                binding -> inferReturnType(name, parameters, tableFn, binding),
+                operandTypeInference,
+                connector
+        );
 
-    protected JetDynamicTableFunction(SqlConnector connector) {
-        this.connector = connector;
-    }
-
-    @Override
-    public boolean isStream() {
-        return connector.isStream();
+        assert parameters.stream()
+                .map(JetTableFunctionParameter::type)
+                .allMatch(type -> type == VARCHAR || type == MAP);
     }
 
     public final HazelcastTable toTable(RelDataType rowType) {
         return ((JetFunctionRelDataType) rowType).table();
     }
 
-    @Override
-    public final Type getElementType(List<Object> arguments) {
-        return Object[].class;
-    }
-
-    @Override
-    public RelDataType getRowType(RelDataTypeFactory typeFactory, List<Object> arguments) {
-        HazelcastTable table = toTable(arguments);
-        RelDataType rowType = table.getRowType(typeFactory);
-
+    private static RelDataType inferReturnType(
+            String name,
+            List<JetTableFunctionParameter> parameters,
+            Function<List<Object>, Table> tableFn,
+            SqlOperatorBinding callBinding
+    ) {
+        List<Object> arguments = toArguments(name, parameters, callBinding);
+        HazelcastTable table = new HazelcastTable(tableFn.apply(arguments), UnknownStatistic.INSTANCE);
+        RelDataType rowType = table.getRowType(callBinding.getTypeFactory());
         return new JetFunctionRelDataType(table, rowType);
     }
 
-    protected abstract HazelcastTable toTable(List<Object> arguments);
+    private static List<Object> toArguments(
+            String functionName,
+            List<JetTableFunctionParameter> parameters,
+            SqlOperatorBinding callBinding
+    ) {
+        SqlCallBinding binding = (SqlCallBinding) callBinding;
+        SqlCall call = binding.getCall();
+        return ValidationUtil.hasAssignment(call)
+                ? fromNamedArguments(functionName, parameters, call)
+                : fromPositionalArguments(functionName, parameters, call);
+    }
+
+    private static List<Object> fromNamedArguments(
+            String functionName,
+            List<JetTableFunctionParameter> parameters,
+            SqlCall call
+    ) {
+        List<Object> arguments = new ArrayList<>(parameters.size());
+        for (JetTableFunctionParameter parameter : parameters) {
+            SqlNode operand = findOperandByName(parameter.name(), call);
+            Object value = operand == null ? null : extractValue(functionName, parameter, operand);
+            arguments.add(value);
+        }
+        return arguments;
+    }
+
+    private static SqlNode findOperandByName(String name, SqlCall call) {
+        for (int i = 0; i < call.operandCount(); i++) {
+            SqlCall assignment = call.operand(i);
+            SqlIdentifier id = assignment.operand(1);
+            if (name.equals(id.getSimple())) {
+                return assignment.operand(0);
+            }
+        }
+        return null;
+    }
+
+    private static List<Object> fromPositionalArguments(
+            String functionName,
+            List<JetTableFunctionParameter> parameters,
+            SqlCall call
+    ) {
+        List<Object> arguments = new ArrayList<>(parameters.size());
+        for (int i = 0; i < call.operandCount(); i++) {
+            Object value = extractValue(functionName, parameters.get(i), call.operand(i));
+            arguments.add(value);
+        }
+        for (int i = call.operandCount(); i < parameters.size(); i++) {
+            arguments.add(null);
+        }
+        return arguments;
+    }
+
+    private static Object extractValue(
+            String functionName,
+            JetTableFunctionParameter parameter,
+            SqlNode operand
+    ) {
+        if (operand.getKind() == SqlKind.DEFAULT) {
+            return null;
+        }
+        if (SqlUtil.isNullLiteral(operand, true)) {
+            return null;
+        }
+
+        SqlTypeName parameterType = parameter.type();
+        if (SqlUtil.isLiteral(operand) && parameterType == VARCHAR) {
+            String value = extractStringValue(((SqlLiteral) operand));
+            if (value != null) {
+                return value;
+            }
+        } else if (operand.getKind() == MAP_VALUE_CONSTRUCTOR && parameterType == MAP) {
+            return extractMapValue(functionName, parameter, (SqlCall) operand);
+        }
+        throw QueryException.error("Invalid argument of a call to function " + functionName + " - #"
+                + parameter.ordinal() + " (" + parameter.name() + "). Expected: " + parameterType
+                + ", actual: "
+                + (SqlUtil.isLiteral(operand) ? ((SqlLiteral) operand).getTypeName() : operand.getKind()));
+    }
+
+    private static String extractStringValue(SqlLiteral literal) {
+        Object value = literal.getValue();
+        return value instanceof NlsString ? ((NlsString) value).getValue() : null;
+    }
+
+    private static Map<String, String> extractMapValue(
+            String functionName,
+            JetTableFunctionParameter parameter,
+            SqlCall call
+    ) {
+        List<SqlNode> operands = call.getOperandList();
+        Map<String, String> entries = new HashMap<>();
+        for (int i = 0; i < operands.size(); i += 2) {
+            String key = extractMapLiteralValue(functionName, parameter, operands.get(i));
+            String value = extractMapLiteralValue(functionName, parameter, operands.get(i + 1));
+            if (entries.putIfAbsent(key, value) != null) {
+                throw QueryException.error(
+                        "Duplicate entry in the MAP constructor in the call to function " + functionName + " - " +
+                                "argument #" + parameter.ordinal() + " (" + parameter.name() + ")");
+            }
+        }
+        return entries;
+    }
+
+    private static String extractMapLiteralValue(
+            String functionName,
+            JetTableFunctionParameter parameter,
+            SqlNode node
+    ) {
+        if (SqlUtil.isLiteral(node)) {
+            SqlLiteral literal = (SqlLiteral) node;
+            Object value = literal.getValue();
+            if (value instanceof NlsString) {
+                return ((NlsString) value).getValue();
+            }
+        }
+        throw QueryException.error(
+                "All values in the MAP constructor of the call to function " + functionName + ", argument #"
+                        + parameter.ordinal() + " (" + parameter.name() + ") must be VARCHAR literals. "
+                        + "Actual argument is: "
+                        + (SqlUtil.isLiteral(node) ? ((SqlLiteral) node).getTypeName() : node.getKind()));
+    }
+
 
     /**
      * The only purpose of this class is to be able to pass the {@code

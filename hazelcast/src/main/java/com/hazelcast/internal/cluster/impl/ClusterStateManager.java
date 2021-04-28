@@ -22,6 +22,7 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.cluster.impl.operations.LockClusterStateOp;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.util.ExceptionUtil;
@@ -265,6 +266,12 @@ public class ClusterStateManager {
 
     // validate transition from current to newClusterVersion is allowed
     private void validateClusterVersionChange(Version newClusterVersion) {
+        // RU_COMPAT_4_2 exceptionally for 4.2 <-> 5.0, the cluster version
+        // change is allowed
+        if (Versions.V5_0.equals(newClusterVersion) && Versions.V4_2.equals(clusterVersion)
+            || Versions.V5_0.equals(clusterVersion) && Versions.V4_2.equals(newClusterVersion)) {
+            return;
+        }
         if (!clusterVersion.isUnknown() && clusterVersion.getMajor() != newClusterVersion.getMajor()) {
             throw new IllegalArgumentException("Transition to requested version " + newClusterVersion
                     + " not allowed for current cluster version " + clusterVersion);

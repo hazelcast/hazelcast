@@ -17,10 +17,11 @@
 package com.hazelcast.sql.impl.calcite.validate.operand;
 
 import com.hazelcast.sql.impl.ParameterConverter;
-import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
+import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlDynamicParam;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
@@ -37,19 +38,16 @@ public abstract class AbstractOperandChecker implements OperandChecker {
 
         SqlNode operand = callBinding.getCall().operand(operandIndex);
 
-        // Handle parameter
         if (operand.getKind() == SqlKind.DYNAMIC_PARAM) {
-            SqlDynamicParam operand0 = (SqlDynamicParam) operand;
-
-            // Set parameter type
-            RelDataType type = getTargetType(validator.getTypeFactory(), true);
-            validator.setValidatedNodeType(operand, type);
-
-            // Set parameter converter
-            ParameterConverter converter = parameterConverter(operand0);
-            validator.setParameterConverter(operand0.getIndex(), converter);
-
+            validateDynamicParam((SqlDynamicParam) operand, validator);
             return true;
+        }
+        if (operand.getKind() == SqlKind.ARGUMENT_ASSIGNMENT) {
+            SqlNode value = ((SqlCall) operand).operand(0);
+            if (value.getKind() == SqlKind.DYNAMIC_PARAM) {
+                validateDynamicParam((SqlDynamicParam) value, validator);
+                return true;
+            }
         }
 
         RelDataType operandType = validator.deriveType(callBinding.getScope(), operand);
@@ -72,6 +70,16 @@ public abstract class AbstractOperandChecker implements OperandChecker {
         } else {
             return false;
         }
+    }
+
+    private void validateDynamicParam(SqlDynamicParam operand, HazelcastSqlValidator validator) {
+        // Set parameter type
+        RelDataType type = getTargetType(validator.getTypeFactory(), true);
+        validator.setValidatedNodeType(operand, type);
+
+        // Set parameter converter
+        ParameterConverter converter = parameterConverter(operand);
+        validator.setParameterConverter(operand.getIndex(), converter);
     }
 
     protected abstract RelDataType getTargetType(RelDataTypeFactory factory, boolean nullable);
