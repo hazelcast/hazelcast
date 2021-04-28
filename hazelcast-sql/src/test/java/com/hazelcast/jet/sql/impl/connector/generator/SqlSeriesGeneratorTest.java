@@ -136,6 +136,31 @@ public class SqlSeriesGeneratorTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_generateSeriesWithNamedArgumentsAndDynamicParameters() {
+        assertRowsAnyOrder(
+                "SELECT v * ? FROM TABLE(GENERATE_SERIES(stop => ?, \"start\" => ?)) WHERE v > ? AND v < 5",
+                asList(2, 5, 0, 1),
+                asList(
+                        new Row(4L),
+                        new Row(6L),
+                        new Row(8L)
+                )
+        );
+    }
+
+    @Test
+    public void test_generateSeriesWithDynamicParametersAndArgumentTypeMismatch() {
+        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM TABLE(GENERATE_SERIES(0, ?))", "1"))
+                .hasMessageContaining("Parameter at position 0 must be of INTEGER type, but VARCHAR was found");
+    }
+
+    @Test
+    public void test_generateSeriesWithNamedArgumentsDynamicParametersAndArgumentTypeMismatch() {
+        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM TABLE(GENERATE_SERIES(stop => 10, \"start\" => ?))", "1"))
+                .hasMessageContaining("Parameter at position 0 must be of INTEGER type, but VARCHAR was found");
+    }
+
+    @Test
     public void when_startIsGreaterThanStopAndStepIsPositive_then_returnsEmpty() {
         assertRowsAnyOrder(
                 "SELECT * FROM TABLE(GENERATE_SERIES(2, 1, 1))",
