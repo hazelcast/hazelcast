@@ -55,14 +55,21 @@ public class Networking {
     private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
     private final JobExecutionService jobExecutionService;
+    private final JobCoordinationService jobCoordinationService;
     private final ScheduledFuture<?> flowControlSender;
     private final MemoryReader memoryReader;
 
     private int lastFlowPacketSize;
 
-    Networking(NodeEngine nodeEngine, JobExecutionService jobExecutionService, int flowControlPeriodMs) {
+    Networking(
+            NodeEngine nodeEngine,
+            JobCoordinationService jobCoordinationService,
+            JobExecutionService jobExecutionService,
+            int flowControlPeriodMs
+    ) {
         this.nodeEngine = (NodeEngineImpl) nodeEngine;
         this.logger = nodeEngine.getLogger(getClass());
+        this.jobCoordinationService = jobCoordinationService;
         this.jobExecutionService = jobExecutionService;
         this.flowControlSender = nodeEngine.getExecutionService().scheduleWithRepetition(
                 this::broadcastFlowControlPacket, 0, flowControlPeriodMs, MILLISECONDS);
@@ -123,7 +130,14 @@ public class Networking {
         }
     }
 
+    /**
+     * Structure of the flow control packet:<ol>
+     * <li>the sendSeqLimits for all receiver tasklets
+     * <li>the list of light jobs coordinated by this member
+     * </ol>
+     */
     private Map<Address, byte[]> createFlowControlPacket() throws IOException {
+        // utility class during the packet creation
         class MemberData {
             final BufferObjectDataOutput output = createObjectDataOutput(nodeEngine, lastFlowPacketSize);
             final Connection memberConnection;
@@ -134,6 +148,7 @@ public class Networking {
             }
         }
 
+        // ### 1. add sendSeqLimits
         Map<Address, MemberData> res = new HashMap<>();
         for (ExecutionContext execCtx : jobExecutionService.getExecutionContexts()) {
             Map<SenderReceiverKey, ReceiverTasklet> receiverMap = execCtx.receiverMap();
@@ -167,6 +182,12 @@ public class Networking {
             // use MIN_VALUE as a terminator.
             md.output.writeLong(TERMINAL_EXECUTION_ID);
         }
+
+        // ### 2. add running light jobs
+        for (Long jobId : jobCoordinationService.getLightJobIds()) {
+            todo
+        }
+
 
         // finalize the packets
         int maxSize = 0;

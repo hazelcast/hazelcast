@@ -1115,4 +1115,8 @@ public class JobCoordinationService {
             }
         }
     }
+
+    public Collection<Long> getLightJobIds() {
+        return lightMasterContexts.keySet();
+    }
 }
