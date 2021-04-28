@@ -192,7 +192,7 @@ public class CaseOperatorIntegrationTest extends ExpressionTestSupport {
     public void test_badConversion() {
         put(1);
         checkFailure0("select case this when 1 then CAST('foo' as DATE) end from map", SqlErrorCode.PARSING,
-                "CAST function cannot convert literal '1' to type DATE: Cannot parse VARCHAR value to DATE");
+                "CAST function cannot convert literal 'foo' to type DATE: Cannot parse VARCHAR value to DATE");
     }
 
     @Test
