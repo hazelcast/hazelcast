@@ -196,7 +196,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
     @Override
     public Void visit(SqlCall call) {
         // remove the branch when MAP/MAP_VALUE_CONSTRUCTOR gets proper support
-        if (!((call.getOperator() instanceof JetDynamicTableFunction))) {
+        if (!(call.getOperator() instanceof JetDynamicTableFunction)) {
             processCall(call);
 
             call.getOperator().acceptCall(this, call);
