@@ -41,6 +41,9 @@ import com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget;
 import com.hazelcast.jet.sql.impl.schema.MappingCatalog;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlColumnType;
@@ -67,6 +70,7 @@ import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -242,13 +246,11 @@ class JetPlanExecutor {
     }
 
     @SuppressWarnings("checkstyle:nestedifdepth")
-    public SqlResult execute(DeletePlan deletePlan, QueryId queryId) {
-        if (deletePlan.getEarlyExit()) {
+    public SqlResult execute(DeletePlan plan, QueryId queryId) {
+        if (plan.getEarlyExit()) {
             return SqlResultImpl.createUpdateCountResult(0);
         }
-        AbstractMapTable table = deletePlan.getTable().getTarget();
-        InternalSerializationService serializationService =
-                ((HazelcastInstanceImpl) jetInstance.getHazelcastInstance()).getSerializationService();
+        AbstractMapTable table = plan.getTable().getTarget();
         IMap<Object, Object> map = jetInstance.getMap(table.getSqlName());
         List<TableField> fields = table.getFields();
         QueryPath[] paths = fields.stream().map(field -> ((MapTableField) field).getPath()).toArray(QueryPath[]::new);
@@ -256,7 +258,7 @@ class JetPlanExecutor {
         QueryTargetDescriptor keyDescriptor = table.getKeyDescriptor();
         QueryTargetDescriptor valueDescriptor = table.getValueDescriptor();
 
-        Expression<Boolean> filter = deletePlan.filter();
+        Expression<Boolean> filter = plan.filter();
         if (filter instanceof ComparisonPredicate) {
             Object key = extractKey((ComparisonPredicate) filter);
             if (key == null) {
@@ -280,7 +282,7 @@ class JetPlanExecutor {
             if (key == null) {
                 throw QueryException.error(SqlErrorCode.GENERIC, "DELETE query has to contain __key = <const value> predicate");
             }
-            List<Expression<?>> projection = deletePlan.getProjection();
+            List<Expression<?>> projection = plan.getProjection();
             KvRowProjector.Supplier supplier = KvRowProjector.supplier(
                     paths, types, keyDescriptor, valueDescriptor, null, projection);
             boolean removed = map.executeOnKey(key, new DeleteBySingleKey(supplier, filter));
@@ -290,9 +292,9 @@ class JetPlanExecutor {
         }
     }
 
-    private static class DeleteBySingleKey implements EntryProcessor<Object, Object, Boolean>, SerializationServiceAware {
-        private final KvRowProjector.Supplier supplier;
-        private final Expression<Boolean> filter;
+    private static class DeleteBySingleKey implements EntryProcessor<Object, Object, Boolean>, DataSerializable, SerializationServiceAware {
+        private KvRowProjector.Supplier supplier;
+        private Expression<Boolean> filter;
         private ExpressionEvalContext evalContext;
         private Extractors extractors;
 
@@ -317,6 +319,18 @@ class JetPlanExecutor {
             this.evalContext =
                     new SimpleExpressionEvalContext(emptyList(), (InternalSerializationService) serializationService);
             this.extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeObject(supplier);
+            out.writeObject(filter);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            supplier = in.readObject();
+            filter = in.readObject();
         }
     }
 
