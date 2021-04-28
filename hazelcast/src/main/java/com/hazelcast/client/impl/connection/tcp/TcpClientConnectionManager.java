@@ -948,7 +948,8 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
         }
         //Following state can not happen. There is only one path with `switchingToNextCluster` as true
         //and that path starts only when the old switch fails. There are no concurrent run of that path.
-        if (clientState != ClientState.SWITCHING_CLUSTER && switchingToNextCluster) {
+        if (!(clientState == ClientState.SWITCHING_CLUSTER || clientState == ClientState.INITIAL)
+                && switchingToNextCluster) {
             String reason = "The cluster switch is already completed. "
                     + "This connection attempt is not allowed to be authenticated.";
             connection.close(reason, null);
