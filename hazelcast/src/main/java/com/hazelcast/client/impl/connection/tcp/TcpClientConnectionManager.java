@@ -413,6 +413,16 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
             return;
         }
 
+        synchronized (clientStateMutex) {
+            if (activeConnections.isEmpty()) {
+                clientState = ClientState.SWITCHING_CLUSTER;
+            } else {
+                //ConnectToAllClusterMembersTask connected back to the same cluster
+                //we don't need to switch cluster anymore.
+                return;
+            }
+        }
+
         // try the next cluster
         if (clusterDiscoveryService.tryNextCluster(this::destroyCurrentClusterConnectionAndTryNextCluster)) {
             return;
@@ -980,7 +990,6 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
             case NOT_ALLOWED_IN_CLUSTER:
                 ClientNotAllowedInClusterException notAllowedException =
                         new ClientNotAllowedInClusterException("Client is not allowed in the cluster");
-                clientState = ClientState.SWITCHING_CLUSTER;
                 connection.close("Failed to authenticate connection", notAllowedException);
                 throw notAllowedException;
             default:
@@ -1005,7 +1014,6 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
         if (activeConnections.isEmpty()) {
             // We only have single connection established
             if (failoverConfigProvided) {
-                clientState = ClientState.SWITCHING_CLUSTER;
                 // If failover is provided, and this single connection is established after failover logic kicks in
                 // (checked via `switchingToNextCluster`), then it is OK to continue.
                 // Otherwise, we force the failover logic to be used by throwing `ClientNotAllowedInClusterException`
