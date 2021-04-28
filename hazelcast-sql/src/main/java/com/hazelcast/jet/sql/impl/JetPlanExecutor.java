@@ -247,16 +247,11 @@ class JetPlanExecutor {
 
     @SuppressWarnings("checkstyle:nestedifdepth")
     public SqlResult execute(DeletePlan plan, QueryId queryId) {
-        if (plan.getEarlyExit()) {
+        if (plan.isEarlyExit()) {
             return SqlResultImpl.createUpdateCountResult(0);
         }
         AbstractMapTable table = plan.getTable().getTarget();
         IMap<Object, Object> map = jetInstance.getMap(table.getSqlName());
-        List<TableField> fields = table.getFields();
-        QueryPath[] paths = fields.stream().map(field -> ((MapTableField) field).getPath()).toArray(QueryPath[]::new);
-        QueryDataType[] types = fields.stream().map(TableField::getType).toArray(QueryDataType[]::new);
-        QueryTargetDescriptor keyDescriptor = table.getKeyDescriptor();
-        QueryTargetDescriptor valueDescriptor = table.getValueDescriptor();
 
         Expression<Boolean> filter = plan.filter();
         if (filter instanceof ComparisonPredicate) {
@@ -283,6 +278,12 @@ class JetPlanExecutor {
                 throw QueryException.error(SqlErrorCode.GENERIC, "DELETE query has to contain __key = <const value> predicate");
             }
             List<Expression<?>> projection = plan.getProjection();
+            List<TableField> fields = table.getFields();
+            QueryPath[] paths = fields.stream().map(field -> ((MapTableField) field).getPath()).toArray(QueryPath[]::new);
+            QueryDataType[] types = fields.stream().map(TableField::getType).toArray(QueryDataType[]::new);
+            QueryTargetDescriptor keyDescriptor = table.getKeyDescriptor();
+            QueryTargetDescriptor valueDescriptor = table.getValueDescriptor();
+
             KvRowProjector.Supplier supplier = KvRowProjector.supplier(
                     paths, types, keyDescriptor, valueDescriptor, null, projection);
             boolean removed = map.executeOnKey(key, new DeleteBySingleKey(supplier, filter));

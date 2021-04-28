@@ -40,10 +40,11 @@ public class SingleKeyQueryPlanVisitor implements Serializable {
     }
 
     public void onValue(ValuesPhysicalRel rel) {
+        // happens when query has `where __key = 1 and __key = 2` predicate
         earlyExit = true;
     }
 
-    public boolean getEarlyExit() {
+    public boolean isEarlyExit() {
         return earlyExit;
     }
 

@@ -655,7 +655,7 @@ abstract class JetPlan extends SqlPlan {
             return filter;
         }
 
-        public boolean getEarlyExit() {
+        public boolean isEarlyExit() {
             return earlyExit;
         }
 
