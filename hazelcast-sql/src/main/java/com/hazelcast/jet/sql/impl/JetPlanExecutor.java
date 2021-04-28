@@ -292,7 +292,8 @@ class JetPlanExecutor {
         }
     }
 
-    private static class DeleteBySingleKey implements EntryProcessor<Object, Object, Boolean>, DataSerializable, SerializationServiceAware {
+    private static class DeleteBySingleKey
+            implements EntryProcessor<Object, Object, Boolean>, DataSerializable, SerializationServiceAware {
         private KvRowProjector.Supplier supplier;
         private Expression<Boolean> filter;
         private ExpressionEvalContext evalContext;
