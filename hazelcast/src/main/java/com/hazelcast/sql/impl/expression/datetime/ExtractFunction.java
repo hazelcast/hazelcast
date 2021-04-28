@@ -75,14 +75,14 @@ public class ExtractFunction extends UniExpression<Double> implements Identified
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
 
-        out.writeObject(extractField);
+        out.writeString(extractField.name());
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
 
-        extractField = in.readObject();
+        extractField = ExtractField.valueOf(in.readString());
     }
 
     @Override

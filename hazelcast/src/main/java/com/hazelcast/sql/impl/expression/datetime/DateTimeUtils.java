@@ -30,14 +30,19 @@ import java.time.temporal.ChronoField;
 public final class DateTimeUtils {
     private static final DateTimeFormatter FORMATTER_TIMESTAMP_WITH_TIMEZONE =
             new DateTimeFormatterBuilder()
-                    .parseStrict()
+                    .parseLenient()
                     .append(DateTimeFormatter.ISO_LOCAL_DATE)
+                    .parseStrict()
                     .optionalStart()
                     .appendLiteral(' ')
                     .append(DateTimeFormatter.ISO_LOCAL_TIME)
-                    .optionalStart()
-                    .appendOffsetId()
                     .optionalEnd()
+                    .optionalStart()
+                    .parseLenient()
+                    .optionalStart()
+                    .appendLiteral(' ')
+                    .optionalEnd()
+                    .appendOffset("+H:mm", "")
                     .optionalEnd()
                     .parseDefaulting(ChronoField.HOUR_OF_DAY, 0)
                     .parseDefaulting(ChronoField.MINUTE_OF_HOUR, 0)
@@ -46,7 +51,7 @@ public final class DateTimeUtils {
 
     private static final DateTimeFormatter FORMATTER_TIMESTAMP =
             new DateTimeFormatterBuilder()
-                    .parseStrict()
+                    .parseLenient()
                     .append(DateTimeFormatter.ISO_LOCAL_DATE)
                     .optionalStart()
                     .appendLiteral(' ')

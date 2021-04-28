@@ -48,7 +48,7 @@ public abstract class AbstractTemporalConverter extends Converter {
     }
 
     /**
-     * Convert DATE to TIMESTAMP
+     * Convert DATE to TIMESTAMP WITH TIME ZONE.
      *
      * @param date Date.
      * @return Timestamp with time zone at UTC midnight.
