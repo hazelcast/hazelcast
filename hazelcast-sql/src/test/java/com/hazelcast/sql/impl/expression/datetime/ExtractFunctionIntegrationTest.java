@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.expression.datetime;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -313,6 +314,30 @@ public class ExtractFunctionIntegrationTest {
     }
 
     public static class NormalTests extends ExpressionTestSupport {
+
+        @Test
+        public void test_null() {
+            put(1);
+
+            checkValue0(sql("MONTH", "NULL"), SqlColumnType.DOUBLE, null);
+            checkFailure0(sql("NULL", "NULL"), SqlErrorCode.PARSING, "Encountered \"NULL\" at line 1, column 16");
+        }
+
+        @Test
+        public void whenUsingWrongType_thenFail() {
+            put(1);
+
+            checkFailure0(sql("MONTH", "?"), SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of TIMESTAMP_WITH_TIME_ZONE type, but BOOLEAN was found", BOOLEAN_VAL);
+            checkFailure0(sql("MONTH", "?"), SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of TIMESTAMP_WITH_TIME_ZONE type, but TINYINT was found", BYTE_VAL);
+            checkFailure0(sql("MONTH", "?"), SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of TIMESTAMP_WITH_TIME_ZONE type, but SMALLINT was found", SHORT_VAL);
+            checkFailure0(sql("MONTH", "?"), SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of TIMESTAMP_WITH_TIME_ZONE type, but INTEGER was found", INTEGER_VAL);
+            checkFailure0(sql("MONTH", "?"), SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of TIMESTAMP_WITH_TIME_ZONE type, but REAL was found", FLOAT_VAL);
+            checkFailure0(sql("MONTH", "?"), SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of TIMESTAMP_WITH_TIME_ZONE type, but DOUBLE was found", DOUBLE_VAL);
+            checkFailure0(sql("MONTH", "?"), SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of TIMESTAMP_WITH_TIME_ZONE type, but VARCHAR was found", STRING_VAL);
+            checkFailure0(sql("MONTH", "?"), SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of TIMESTAMP_WITH_TIME_ZONE type, but VARCHAR was found", CHAR_VAL);
+            checkFailure0(sql("MONTH", "?"), SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of TIMESTAMP_WITH_TIME_ZONE type, but DECIMAL was found", BIG_DECIMAL_VAL);
+            checkFailure0(sql("MONTH", "?"), SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of TIMESTAMP_WITH_TIME_ZONE type, but DECIMAL was found", BIG_INTEGER_VAL);
+        }
 
         @Test
         public void test_equality() {
