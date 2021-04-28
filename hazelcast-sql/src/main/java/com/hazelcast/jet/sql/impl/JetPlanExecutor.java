@@ -299,6 +299,10 @@ class JetPlanExecutor {
         private ExpressionEvalContext evalContext;
         private Extractors extractors;
 
+        @SuppressWarnings("unused")
+        private DeleteBySingleKey() {
+        }
+
         DeleteBySingleKey(KvRowProjector.Supplier supplier, Expression<Boolean> filter) {
             this.supplier = supplier;
             this.filter = filter;
