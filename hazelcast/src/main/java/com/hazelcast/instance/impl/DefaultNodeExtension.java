@@ -44,6 +44,7 @@ import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.ascii.TextCommandServiceImpl;
 import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.internal.cluster.ClusterVersionListener;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.cluster.impl.JoinMessage;
 import com.hazelcast.internal.cluster.impl.VersionMismatchException;
 import com.hazelcast.internal.diagnostics.BuildInfoPlugin;
@@ -161,7 +162,11 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
         checkSecurityAllowed();
         checkPersistenceAllowed();
         createAndSetPhoneHome();
-        if (!jetDisabled(node)) {
+        // Since JetExtension#beforeShutdown is not compatible with
+        // versions lower than 5.0, do not initialize JetExtension
+        // unless the cluster version is set to 5.0 or above
+        if (!jetDisabled(node)
+                && node.getClusterService().getClusterVersion().isGreaterOrEqual(Versions.V5_0)) {
             jetExtension = new JetExtension(node, createService(JetService.class));
         }
     }
@@ -497,6 +502,9 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
     public void onClusterVersionChange(Version newVersion) {
         if (!node.getVersion().asVersion().isEqualTo(newVersion)) {
             systemLogger.info("Cluster version set to " + newVersion);
+        }
+        if (jetExtension == null && newVersion.isGreaterOrEqual(Versions.V5_0)) {
+            jetExtension = new JetExtension(node, createService(JetService.class));
         }
         ServiceManager serviceManager = node.getNodeEngine().getServiceManager();
         List<ClusterVersionListener> listeners = serviceManager.getServices(ClusterVersionListener.class);
