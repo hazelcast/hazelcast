@@ -21,6 +21,7 @@ import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.BiPredicateEx;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
@@ -33,6 +34,7 @@ import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
@@ -63,10 +65,12 @@ public class CreateDagVisitor {
 
     private final DAG dag = new DAG();
     private final Set<PlanObjectKey> objectKeys = new HashSet<>();
+    private final NodeEngine nodeEngine;
     private final Address localMemberAddress;
     private final QueryParameterMetadata parameterMetadata;
 
-    public CreateDagVisitor(Address localMemberAddress, QueryParameterMetadata parameterMetadata) {
+    public CreateDagVisitor(NodeEngine nodeEngine, Address localMemberAddress, QueryParameterMetadata parameterMetadata) {
+        this.nodeEngine = nodeEngine;
         this.localMemberAddress = localMemberAddress;
         this.parameterMetadata = parameterMetadata;
     }
