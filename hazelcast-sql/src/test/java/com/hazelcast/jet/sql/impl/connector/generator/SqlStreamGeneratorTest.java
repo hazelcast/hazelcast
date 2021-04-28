@@ -78,6 +78,12 @@ public class SqlStreamGeneratorTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_generateStreamNamedArgumentsAndExplicitNull() {
+        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM TABLE(GENERATE_STREAM(rate => null))").iterator().next())
+                .hasMessageContaining("GENERATE_STREAM - rate cannot be null");
+    }
+
+    @Test
     public void test_generateStreamFilterAndProject() {
         assertRowsEventuallyInAnyOrder(
                 "SELECT v * 2 FROM TABLE(GENERATE_STREAM(100)) WHERE v > 0 AND v < 5",

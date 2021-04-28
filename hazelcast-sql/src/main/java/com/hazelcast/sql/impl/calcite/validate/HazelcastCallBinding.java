@@ -90,12 +90,13 @@ public class HazelcastCallBinding extends SqlCallBinding {
 
             if (calciteType.getSqlTypeName() == SqlTypeName.NULL) {
                 typeName = validator.getUnknownType().toString();
-            } else if (SqlTypeName.INTERVAL_TYPES.contains(calciteType.getSqlTypeName())) {
-                typeName = calciteType.getSqlTypeName().toString();
             } else {
                 QueryDataType hazelcastType = HazelcastTypeUtils.toHazelcastType(calciteType.getSqlTypeName());
-
-                typeName = hazelcastType.getTypeFamily().getPublicType().name();
+                if (hazelcastType.getTypeFamily().getPublicType() != null) {
+                    typeName = hazelcastType.getTypeFamily().getPublicType().name();
+                } else {
+                    typeName = calciteType.getSqlTypeName().toString();
+                }
             }
 
             res.add(typeName);
