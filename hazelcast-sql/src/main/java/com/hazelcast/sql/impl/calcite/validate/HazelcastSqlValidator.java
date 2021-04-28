@@ -151,7 +151,6 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         // skip it if a call has a fixed type, for instance AND always has
         // BOOLEAN type, so operands may end up having no validated type.
         deriveType(scope, call);
-
         super.validateCall(call, scope);
     }
 

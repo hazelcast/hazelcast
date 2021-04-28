@@ -27,6 +27,8 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 public abstract class ExpressionType<T> {
 
@@ -35,6 +37,10 @@ public abstract class ExpressionType<T> {
     public abstract T valueFrom();
     public abstract T valueTo();
     public abstract QueryDataType getFieldConverterType();
+
+    public final List<T> nonNullValues() {
+        return values().stream().filter(Objects::nonNull).collect(Collectors.toList());
+    }
 
     @Override
     public String toString() {
@@ -352,14 +358,14 @@ public abstract class ExpressionType<T> {
         }
     }
 
-    public static class LocalTimeType extends ExpressionType<Object> {
+    public static class LocalTimeType extends ExpressionType<LocalTime> {
         @Override
         public String typeName() {
             return "LocalTime";
         }
 
         @Override
-        public List<Object> values() {
+        public List<LocalTime> values() {
             return Arrays.asList(
                     LocalTime.parse("01:00"),
                     LocalTime.parse("02:00"),
@@ -370,12 +376,12 @@ public abstract class ExpressionType<T> {
         }
 
         @Override
-        public Object valueFrom() {
+        public LocalTime valueFrom() {
             return LocalTime.parse("02:00");
         }
 
         @Override
-        public Object valueTo() {
+        public LocalTime valueTo() {
             return LocalTime.parse("04:00");
         }
 
@@ -385,14 +391,14 @@ public abstract class ExpressionType<T> {
         }
     }
 
-    public static class LocalDateType extends ExpressionType<Object> {
+    public static class LocalDateType extends ExpressionType<LocalDate> {
         @Override
         public String typeName() {
             return "LocalDate";
         }
 
         @Override
-        public List<Object> values() {
+        public List<LocalDate> values() {
             return Arrays.asList(
                     LocalDate.parse("2020-01-01"),
                     LocalDate.parse("2020-01-02"),
@@ -403,12 +409,12 @@ public abstract class ExpressionType<T> {
         }
 
         @Override
-        public Object valueFrom() {
+        public LocalDate valueFrom() {
             return LocalDate.parse("2020-01-02");
         }
 
         @Override
-        public Object valueTo() {
+        public LocalDate valueTo() {
             return LocalDate.parse("2020-01-04");
         }
 
@@ -418,14 +424,14 @@ public abstract class ExpressionType<T> {
         }
     }
 
-    public static class LocalDateTimeType extends ExpressionType<Object> {
+    public static class LocalDateTimeType extends ExpressionType<LocalDateTime> {
         @Override
         public String typeName() {
             return "LocalDateTime";
         }
 
         @Override
-        public List<Object> values() {
+        public List<LocalDateTime> values() {
             return Arrays.asList(
                     LocalDateTime.parse("2020-01-01T00:00:00"),
                     LocalDateTime.parse("2020-01-02T00:00:00"),
@@ -436,12 +442,12 @@ public abstract class ExpressionType<T> {
         }
 
         @Override
-        public Object valueFrom() {
+        public LocalDateTime valueFrom() {
             return LocalDateTime.parse("2020-01-02T00:00:00");
         }
 
         @Override
-        public Object valueTo() {
+        public LocalDateTime valueTo() {
             return LocalDateTime.parse("2020-01-04T00:00:00");
         }
 
@@ -451,14 +457,14 @@ public abstract class ExpressionType<T> {
         }
     }
 
-    public static class OffsetDateTimeType extends ExpressionType<Object> {
+    public static class OffsetDateTimeType extends ExpressionType<OffsetDateTime> {
         @Override
         public String typeName() {
             return "OffsetDateTime";
         }
 
         @Override
-        public List<Object> values() {
+        public List<OffsetDateTime> values() {
             return Arrays.asList(
                     OffsetDateTime.parse("2020-01-01T00:00:00+00:00"),
                     OffsetDateTime.parse("2020-01-02T00:00:00+00:00"),
@@ -469,12 +475,12 @@ public abstract class ExpressionType<T> {
         }
 
         @Override
-        public Object valueFrom() {
+        public OffsetDateTime valueFrom() {
             return OffsetDateTime.parse("2020-01-02T00:00:00+00:00");
         }
 
         @Override
-        public Object valueTo() {
+        public OffsetDateTime valueTo() {
             return OffsetDateTime.parse("2020-01-04T00:00:00+00:00");
         }
 

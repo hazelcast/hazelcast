@@ -65,6 +65,13 @@ public final class HazelcastRexBuilder extends RexBuilder {
             }
         }
 
+        // There are the Calcite bug with infinite recursion during non-nullable NULL type construction.
+        // Problem description : in a query like SELECT NULL BETWEEN NULL AND NULL.
+        // RexBuilder calls makeLiteral(null, BasicSqlType, true). makeLiteral() tries to construct
+        // non-nullable literal, then check isNullable property (which is true on each recursive iteration)
+        // and launch recursive call again. Of course, StackOverflow happens.
+        // Generally, Calcite tries to create NULL literal of non-nullable type. /shrug
+
         return super.makeLiteral(value, type, allowCast);
     }
 
