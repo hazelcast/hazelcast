@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.validate;
 
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlCase;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastAbsFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastDoubleBiFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastDoubleFunction;

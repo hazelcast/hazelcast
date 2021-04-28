@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.validate;
+package com.hazelcast.sql.impl.calcite.validate.operators;
 
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastCaseOperator;
 import org.apache.calcite.sql.SqlNode;
