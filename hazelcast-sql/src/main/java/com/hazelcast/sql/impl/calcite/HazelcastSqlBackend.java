@@ -72,9 +72,10 @@ public class HazelcastSqlBackend implements SqlBackend {
     public SqlValidator validator(
             CatalogReader catalogReader,
             HazelcastTypeFactory typeFactory,
-            SqlConformance conformance
+            SqlConformance conformance,
+            List<Object> arguments
     ) {
-        return new HazelcastSqlValidator(catalogReader, typeFactory, conformance);
+        return new HazelcastSqlValidator(catalogReader, typeFactory, conformance, arguments);
     }
 
     @Override

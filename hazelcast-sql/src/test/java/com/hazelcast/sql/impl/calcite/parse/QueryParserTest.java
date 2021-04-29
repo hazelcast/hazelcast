@@ -35,6 +35,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
@@ -78,10 +79,10 @@ public class QueryParserTest {
     public void setUp() {
         MockitoAnnotations.openMocks(this);
 
-        parser = new QueryParser(HazelcastTypeFactory.INSTANCE, catalogReader, conformance, sqlBackend, jetSqlBackend);
+        parser = new QueryParser(HazelcastTypeFactory.INSTANCE, catalogReader, conformance, emptyList(), sqlBackend, jetSqlBackend);
 
-        given(sqlBackend.validator(catalogReader, HazelcastTypeFactory.INSTANCE, conformance)).willReturn(sqlValidator);
-        given(jetSqlBackend.validator(catalogReader, HazelcastTypeFactory.INSTANCE, conformance)).willReturn(jetSqlValidator);
+        given(sqlBackend.validator(catalogReader, HazelcastTypeFactory.INSTANCE, conformance, emptyList())).willReturn(sqlValidator);
+        given(jetSqlBackend.validator(catalogReader, HazelcastTypeFactory.INSTANCE, conformance, emptyList())).willReturn(jetSqlValidator);
     }
 
     @Test
@@ -115,7 +116,7 @@ public class QueryParserTest {
     @Test(expected = QueryException.class)
     public void when_imdgCantHandleSqlAndJetIsNotAvailable_then_throwsException() {
         // given
-        parser = new QueryParser(HazelcastTypeFactory.INSTANCE, catalogReader, conformance, sqlBackend, null);
+        parser = new QueryParser(HazelcastTypeFactory.INSTANCE, catalogReader, conformance, emptyList(), sqlBackend, null);
 
         given(sqlValidator.validate(isA(SqlNode.class))).willThrow(new CalciteException("expected test exception", null));
 

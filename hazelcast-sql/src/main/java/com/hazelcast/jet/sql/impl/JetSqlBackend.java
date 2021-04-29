@@ -116,9 +116,10 @@ class JetSqlBackend implements SqlBackend {
     public SqlValidator validator(
             CatalogReader catalogReader,
             HazelcastTypeFactory typeFactory,
-            SqlConformance sqlConformance
+            SqlConformance sqlConformance,
+            List<Object> arguments
     ) {
-        return new JetSqlValidator(catalogReader, typeFactory, sqlConformance);
+        return new JetSqlValidator(catalogReader, typeFactory, sqlConformance, arguments);
     }
 
     @Override

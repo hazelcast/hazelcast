@@ -36,6 +36,7 @@ import org.apache.calcite.sql.validate.SqlConformance;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.List;
 
 /**
  * Performs syntactic and semantic validation of the query.
@@ -45,6 +46,7 @@ public class QueryParser {
     private final HazelcastTypeFactory typeFactory;
     private final CatalogReader catalogReader;
     private final SqlConformance conformance;
+    private final List<Object> arguments;
 
     private final SqlBackend sqlBackend;
     private final SqlBackend jetSqlBackend;
@@ -53,12 +55,14 @@ public class QueryParser {
             HazelcastTypeFactory typeFactory,
             CatalogReader catalogReader,
             SqlConformance conformance,
+            List<Object> arguments,
             @Nonnull SqlBackend sqlBackend,
             @Nullable SqlBackend jetSqlBackend
     ) {
         this.typeFactory = typeFactory;
         this.catalogReader = catalogReader;
         this.conformance = conformance;
+        this.arguments = arguments;
 
         this.sqlBackend = sqlBackend;
         this.jetSqlBackend = jetSqlBackend;
@@ -94,7 +98,8 @@ public class QueryParser {
         SqlParser parser = SqlParser.create(sql, config);
         SqlNode topNode = parser.parseStmt();
 
-        HazelcastSqlValidator validator = (HazelcastSqlValidator) sqlBackend.validator(catalogReader, typeFactory, conformance);
+        HazelcastSqlValidator validator =
+                (HazelcastSqlValidator) sqlBackend.validator(catalogReader, typeFactory, conformance, arguments);
         SqlNode node = validator.validate(topNode);
 
         SqlVisitor<Void> visitor = sqlBackend.unsupportedOperationVisitor(catalogReader);
