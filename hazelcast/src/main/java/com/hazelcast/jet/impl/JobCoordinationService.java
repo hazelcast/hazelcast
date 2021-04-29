@@ -1121,6 +1121,9 @@ public class JobCoordinationService {
      * this coordinator.
      */
     public long[] findUnknownExecutions(long[] executionIds) {
-        return Arrays.stream(executionIds).filter(key -> !lightMasterContexts.containsKey(key)).toArray();
+        return Arrays.stream(executionIds).filter(key -> {
+            LightMasterContext lmc = lightMasterContexts.get(key);
+            return lmc == null || lmc.isCancelled();
+        }).toArray();
     }
 }

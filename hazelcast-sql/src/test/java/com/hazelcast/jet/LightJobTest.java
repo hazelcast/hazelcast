@@ -99,7 +99,7 @@ public class LightJobTest extends SimpleTestInClusterSupport {
 
         // When
         PacketFiltersUtil.dropOperationsFrom(instance().getHazelcastInstance(), JetInitDataSerializerHook.FACTORY_ID,
-                singletonList(JetInitDataSerializerHook.TERMINATE_JOB_OP));
+                singletonList(JetInitDataSerializerHook.TERMINATE_EXECUTION_OP));
         job.cancel();
 
         // Then

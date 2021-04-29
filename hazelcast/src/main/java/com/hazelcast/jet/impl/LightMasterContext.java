@@ -44,6 +44,7 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -76,6 +77,7 @@ public class LightMasterContext {
     private final String jobIdString;
 
     private Map<MemberInfo, ExecutionPlan> executionPlanMap;
+    private final AtomicBoolean invocationsCancelled = new AtomicBoolean();
     private final CompletableFuture<Void> jobCompletionFuture = new CompletableFuture<>();
     private Set<Vertex> vertices;
 
@@ -144,14 +146,16 @@ public class LightMasterContext {
     }
 
     private void cancelInvocations() {
-        for (MemberInfo memberInfo : executionPlanMap.keySet()) {
-            // Termination is fire and forget. If the termination isn't handled (e.g. due to a packet loss or
-            // because the execution wasn't yet initialized at the target), it will be fixed by the
-            // CheckLightJobsOperation.
-            TerminateExecutionOperation op = new TerminateExecutionOperation(jobId, jobId, CANCEL_FORCEFUL);
-            nodeEngine.getOperationService()
-                    .createInvocationBuilder(JetService.SERVICE_NAME, op, memberInfo.getAddress())
-                    .invoke();
+        if (invocationsCancelled.compareAndSet(false, true)) {
+            for (MemberInfo memberInfo : executionPlanMap.keySet()) {
+                // Termination is fire and forget. If the termination isn't handled (e.g. due to a packet loss or
+                // because the execution wasn't yet initialized at the target), it will be fixed by the
+                // CheckLightJobsOperation.
+                TerminateExecutionOperation op = new TerminateExecutionOperation(jobId, jobId, CANCEL_FORCEFUL);
+                nodeEngine.getOperationService()
+                        .createInvocationBuilder(JetService.SERVICE_NAME, op, memberInfo.getAddress())
+                        .invoke();
+            }
         }
     }
 
@@ -231,5 +235,9 @@ public class LightMasterContext {
 
     public void requestTermination() {
         cancelInvocations();
+    }
+
+    public boolean isCancelled() {
+        return invocationsCancelled.get();
     }
 }

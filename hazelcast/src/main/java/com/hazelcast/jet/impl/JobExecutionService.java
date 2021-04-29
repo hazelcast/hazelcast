@@ -506,6 +506,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
                     for (long executionId : r) {
                         ExecutionContext execCtx = executionContexts.get(executionId);
                         if (execCtx != null) {
+                            logger.fine("Terminating light job " + idToString(executionId) + " because the coordinator doesn't know it or has it cancelled");
                             execCtx.terminateExecution(TerminationMode.CANCEL_FORCEFUL);
                         }
                     }
