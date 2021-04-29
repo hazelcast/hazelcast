@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.validate;
 
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlCase;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastAbsFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastDoubleBiFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastDoubleFunction;
@@ -29,6 +30,7 @@ import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastDescOpera
 import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastUnaryOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastAndOrPredicate;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastBetweenOperator;
+import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastCaseOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastComparisonPredicate;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastInOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastIsTrueFalseNullPredicate;
@@ -77,6 +79,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
     //@formatter:off
 
+    public static final SqlOperator CASE = HazelcastCaseOperator.INSTANCE;
     public static final SqlFunction CAST = HazelcastCastFunction.INSTANCE;
 
     //#region Boolean predicates.
@@ -213,7 +216,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
     /**
      * Visitor that rewrites Calcite operators with operators from this table.
      */
-    static final class RewriteVisitor extends SqlBasicVisitor<Void> {
+    static final class RewriteVisitor extends SqlBasicVisitor<SqlNode> {
         private final HazelcastSqlValidator validator;
 
         RewriteVisitor(HazelcastSqlValidator validator) {
@@ -221,17 +224,38 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         }
 
         @Override
-        public Void visit(SqlCall call) {
-            rewriteCall(call);
-
-            return super.visit(call);
+        public SqlNode visit(SqlNodeList nodeList) {
+            for (int i = 0; i < nodeList.size(); i++) {
+                SqlNode node = nodeList.get(i);
+                SqlNode rewritten = node.accept(this);
+                if (rewritten != null && rewritten != node) {
+                    nodeList.set(i, rewritten);
+                }
+            }
+            return nodeList;
         }
 
-        private void rewriteCall(SqlCall call) {
+        @Override
+        public SqlNode visit(SqlCall call) {
+            call = rewriteCall(call);
+            for (int i = 0; i < call.getOperandList().size(); i++) {
+                SqlNode operand = call.getOperandList().get(i);
+                if (operand == null) {
+                    continue;
+                }
+                SqlNode rewritten = operand.accept(this);
+                if (rewritten != null && rewritten != operand) {
+                    call.setOperand(i, rewritten);
+                }
+            }
+            return call;
+        }
+
+        private SqlCall rewriteCall(SqlCall call) {
             if (call instanceof SqlBasicCall) {
                 // An alias is declared as a SqlBasicCall with "SqlKind.AS". We do not need to rewrite aliases, so skip it.
                 if (call.getKind() == SqlKind.AS) {
-                    return;
+                    return call;
                 }
 
                 SqlBasicCall basicCall = (SqlBasicCall) call;
@@ -266,8 +290,11 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
                 basicCall.setOperator(resolvedOperators.get(0));
             } else if (call instanceof SqlCase) {
-                throw functionDoesNotExist(call);
+                SqlCase sqlCase = (SqlCase) call;
+                return new HazelcastSqlCase(sqlCase.getParserPosition(), sqlCase.getValueOperand(), sqlCase.getWhenOperands(),
+                        sqlCase.getThenOperands(), sqlCase.getElseOperand());
             }
+            return call;
         }
 
         private static SqlNodeList removeNullWithinInStatement(SqlNodeList valueList) {

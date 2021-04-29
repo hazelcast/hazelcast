@@ -112,8 +112,8 @@ public final class ExpressionTypes {
 
         List<ExpressionType<?>> res = new ArrayList<>(Arrays.asList(all()));
 
-        for (ExpressionType<?> typexcludeType : excludeTypes) {
-            res.remove(typexcludeType);
+        for (ExpressionType<?> excludedType : excludeTypes) {
+            res.remove(excludedType);
         }
 
         return res.toArray(new ExpressionType[0]);
