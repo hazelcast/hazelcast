@@ -17,19 +17,20 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.jet.core.DAG;
-import com.hazelcast.jet.core.JetTestSupport;
-import com.hazelcast.jet.core.TestProcessors;
+import com.hazelcast.jet.core.TestProcessors.MockP;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.core.processor.SinkProcessors;
+import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.jet.pipeline.test.TestSources;
-import com.hazelcast.sql.SqlRow;
-import com.hazelcast.sql.SqlService;
-import com.hazelcast.test.HazelcastSerialClassRunner;
-import org.junit.Before;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
+import com.hazelcast.test.PacketFiltersUtil;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.List;
 import java.util.concurrent.CancellationException;
@@ -37,39 +38,33 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.core.Edge.between;
-import static java.util.concurrent.TimeUnit.NANOSECONDS;
+import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@RunWith(HazelcastSerialClassRunner.class)
-public class LightJobTest extends JetTestSupport {
+@RunWith(Parameterized.class)
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
+public class LightJobTest extends SimpleTestInClusterSupport {
 
-    private JetInstance inst;
-    private JetInstance client;
+    @Parameter
+    public boolean useClient;
+
+    @Parameters(name = "useClient={0}")
+    public static Object[] parameters() {
+        return new Object[]{true, false};
+    }
 
     @BeforeClass
     public static void beforeClass() {
-        windowsTimerHack();
+        initializeWithClient(2, null, null);
     }
 
-    @Before
-    public void before() {
-        inst = createJetMember();
-        createJetMember();
-        client = createJetClient();
+    private JetInstance submittingInstance() {
+        return useClient ? client() : instance();
     }
 
     @Test
-    public void test_member() {
-        test(inst);
-    }
-
-    @Test
-    public void test_client() {
-        test(client);
-    }
-
-    private void test(JetInstance submittingInstance) {
+    public void test() {
         List<Integer> items = IntStream.range(0, 1_000).boxed().collect(Collectors.toList());
 
         DAG dag = new DAG();
@@ -77,89 +72,50 @@ public class LightJobTest extends JetTestSupport {
         Vertex sink = dag.newVertex("sink", SinkProcessors.writeListP("sink"));
         dag.edge(between(src, sink).distributed());
 
-        submittingInstance.newLightJob(dag).join();
-        List<Integer> result = inst.getList("sink");
+        submittingInstance().newLightJob(dag).join();
+        List<Integer> result = instance().getList("sink");
         assertThat(result).containsExactlyInAnyOrderElementsOf(items);
     }
 
     @Test
-    public void test_cancellation_member() {
-        test_cancellation(inst);
-    }
-
-    @Test
-    public void test_cancellation_client() {
-        test_cancellation(client);
-    }
-
-    private void test_cancellation(JetInstance submittingInstance) {
+    public void test_cancellation() {
         DAG dag = new DAG();
-        dag.newVertex("v", () -> new TestProcessors.MockP().streaming());
+        dag.newVertex("v", () -> new MockP().streaming());
 
-        LightJob job = submittingInstance.newLightJob(dag);
-        // TODO fix the race if we cancel before the execution starts
-        sleepSeconds(1);
+        LightJob job = submittingInstance().newLightJob(dag);
+        // sleep a little to make it quite likely that the job is deployed to both members
+        sleepMillis(100);
         job.cancel();
         assertThatThrownBy(job::join)
                 .isInstanceOf(CancellationException.class);
     }
 
     @Test
-    public void jetBench() throws Exception {
-        int warmUpIterations = 100;
-        int realIterations = 2000;
+    public void when_terminateOpLost_then_jobTerminatesAnyway() {
         DAG dag = new DAG();
-        dag.newVertex("v", Processors.noopP());
-        logger.info("will submit " + warmUpIterations + " jobs");
-        for (int i = 0; i < warmUpIterations; i++) {
-            inst.newLightJob(dag).join();
-        }
-//        for (int i = 20; i >= 0; i--) {
-//            System.out.println("attach profiler " + i);
-//            Thread.sleep(1000);
-//        }
-        logger.info("warmup jobs done, starting benchmark");
-        long start = System.nanoTime();
-        for (int i = 0; i < realIterations; i++) {
-            inst.newLightJob(dag).join();
-        }
-        long elapsedMicros = NANOSECONDS.toMicros(System.nanoTime() - start);
-        System.out.println(realIterations + " jobs run in " + (elapsedMicros / realIterations) + " us/job");
+        dag.newVertex("v", () -> new MockP().streaming());
+        LightJob job = submittingInstance().newLightJob(dag);
+        sleepSeconds(1);
+
+        // When
+        PacketFiltersUtil.dropOperationsFrom(instance().getHazelcastInstance(), JetInitDataSerializerHook.FACTORY_ID,
+                singletonList(JetInitDataSerializerHook.TERMINATE_JOB_OP));
+        job.cancel();
+
+        // Then
+        assertThatThrownBy(job::join)
+                .isInstanceOf(CancellationException.class);
     }
 
     @Test
-    public void sqlBench() {
-        int warmUpIterations = 100;
-        int realIterations = 200;
-        SqlService sqlService = inst.getSql();
-        logger.info("will submit " + warmUpIterations + " jobs");
-        inst.getMap("m").put(1, 1);
-        int numRows = 0;
-        for (int i = 0; i < warmUpIterations; i++) {
-            for (SqlRow r : sqlService.execute("select * from m")) {
-                numRows++;
-            }
-        }
-        logger.info("warmup jobs done, starting benchmark");
-        long start = System.nanoTime();
-        for (int i = 0; i < realIterations; i++) {
-            for (SqlRow r : sqlService.execute("select * from m")) {
-                numRows++;
-            }
-        }
-        long elapsedMicros = NANOSECONDS.toMicros(System.nanoTime() - start);
-        System.out.println(numRows);
-        System.out.println(realIterations + " queries run in " + (elapsedMicros / realIterations) + " us/job");
-    }
-
-    public static void windowsTimerHack() {
-        Thread t = new Thread(() -> {
-            try {
-                Thread.sleep(Long.MAX_VALUE);
-            } catch (InterruptedException e) { // a delicious interrupt, omm, omm
-            }
-        });
-        t.setDaemon(true);
-        t.start();
+    public void test_cancelAfterCompleted() {
+        DAG dag = new DAG();
+        dag.newVertex("v", MockP::new);
+        LightJob job = submittingInstance().newLightJob(dag);
+        job.join();
+        job.cancel();
+        // join after late cancel won't fail with CancellationException because the job completed
+        // before the cancellation
+        job.join();
     }
 }

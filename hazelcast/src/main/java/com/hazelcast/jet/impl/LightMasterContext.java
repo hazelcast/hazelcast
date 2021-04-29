@@ -31,7 +31,6 @@ import com.hazelcast.jet.impl.operation.InitExecutionOperation;
 import com.hazelcast.jet.impl.operation.TerminateExecutionOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 
@@ -40,13 +39,11 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -79,7 +76,6 @@ public class LightMasterContext {
     private final String jobIdString;
 
     private Map<MemberInfo, ExecutionPlan> executionPlanMap;
-    private final AtomicBoolean invocationsCancelled = new AtomicBoolean();
     private final CompletableFuture<Void> jobCompletionFuture = new CompletableFuture<>();
     private Set<Vertex> vertices;
 
@@ -148,16 +144,14 @@ public class LightMasterContext {
     }
 
     private void cancelInvocations() {
-        if (invocationsCancelled.compareAndSet(false, true)) {
-            nodeEngine.getExecutionService().execute(ExecutionService.ASYNC_EXECUTOR, () ->
-                    invokeOnParticipants(plan -> new TerminateExecutionOperation(jobId, jobId, CANCEL_FORCEFUL),
-                            responses -> {
-                                if (responses.stream().anyMatch(Objects::nonNull)) {
-                                    // log errors
-                                    logger.severe(jobIdString + ": some TerminateExecutionOperation invocations " +
-                                            "failed, execution might remain stuck: " + responses);
-                                }
-                            }, null, true));
+        for (MemberInfo memberInfo : executionPlanMap.keySet()) {
+            // Termination is fire and forget. If the termination isn't handled (e.g. due to a packet loss or
+            // because the execution wasn't yet initialized at the target), it will be fixed by the
+            // CheckLightJobsOperation.
+            TerminateExecutionOperation op = new TerminateExecutionOperation(jobId, jobId, CANCEL_FORCEFUL);
+            nodeEngine.getOperationService()
+                    .createInvocationBuilder(JetService.SERVICE_NAME, op, memberInfo.getAddress())
+                    .invoke();
         }
     }
 
@@ -235,10 +229,7 @@ public class LightMasterContext {
                         .findFirst().orElse(null);
     }
 
-    public CompletableFuture<Void> requestTermination() {
-        if (!jobCompletionFuture.isDone()) {
-            cancelInvocations();
-        }
-        return jobCompletionFuture;
+    public void requestTermination() {
+        cancelInvocations();
     }
 }

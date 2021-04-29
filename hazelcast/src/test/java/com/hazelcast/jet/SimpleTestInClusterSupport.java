@@ -23,6 +23,7 @@ import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.PacketFiltersUtil;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.runner.RunWith;
@@ -81,6 +82,9 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
     public void supportAfter() {
         if (instances == null) {
             return;
+        }
+        for (JetInstance inst : instances) {
+            PacketFiltersUtil.resetPacketFiltersFrom(inst.getHazelcastInstance());
         }
         // after each test ditch all jobs and objects
         List<Job> jobs = instances[0].getJobs();

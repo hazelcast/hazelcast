@@ -72,6 +72,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
 
     private final long jobId;
     private final long executionId;
+    private final boolean isLightJob;
     private volatile Address coordinator;
     private volatile Set<Address> participants;
     private final Object executionLock = new Object();
@@ -112,6 +113,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
     public ExecutionContext(NodeEngine nodeEngine, long jobId, long executionId, boolean isLightJob) {
         this.jobId = jobId;
         this.executionId = executionId;
+        this.isLightJob = isLightJob;
         this.nodeEngine = nodeEngine;
 
         this.jobName = idToString(jobId);
@@ -332,6 +334,10 @@ public class ExecutionContext implements DynamicMetricsProvider {
 
     public String jobNameAndExecutionId() {
         return Util.jobNameAndExecutionId(jobName, executionId);
+    }
+
+    public boolean isLightJob() {
+        return isLightJob;
     }
 
     public Address coordinator() {

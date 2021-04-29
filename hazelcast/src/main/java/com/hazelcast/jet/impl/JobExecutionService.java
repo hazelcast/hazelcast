@@ -41,30 +41,38 @@ import com.hazelcast.jet.impl.execution.SenderTasklet;
 import com.hazelcast.jet.impl.execution.TaskletExecutionService;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.metrics.RawJobMetrics;
+import com.hazelcast.jet.impl.operation.CheckLightJobsOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ScheduledFuture;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import static com.hazelcast.internal.util.collection.ArrayUtils.collectToLongArray;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.jobIdAndExecutionId;
 import static java.util.Collections.newSetFromMap;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toSet;
 
 /**
@@ -98,6 +106,8 @@ public class JobExecutionService implements DynamicMetricsProvider {
 
     private final Function<? super Long, ? extends ExecutionContext> newLightJobExecutionContextFunction;
 
+    private final ScheduledFuture<?> lightExecutionsSender;
+
     JobExecutionService(NodeEngineImpl nodeEngine, TaskletExecutionService taskletExecutionService,
                         JobRepository jobRepository) {
         this.nodeEngine = nodeEngine;
@@ -112,6 +122,9 @@ public class JobExecutionService implements DynamicMetricsProvider {
         MetricDescriptor descriptor = registry.newMetricDescriptor()
                 .withTag(MetricTags.MODULE, "jet");
         registry.registerStaticMetrics(descriptor, this);
+
+        this.lightExecutionsSender = nodeEngine.getExecutionService().scheduleWithRepetition(
+                this::checkLightExecutions, 0, 1, SECONDS);
     }
 
     public Long getExecutionIdForJobId(long jobId) {
@@ -156,6 +169,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
     }
 
     public void shutdown() {
+        lightExecutionsSender.cancel(false);
         synchronized (mutex) {
             cancelAllExecutions("Node is shutting down", HazelcastInstanceNotActiveException::new);
         }
@@ -371,7 +385,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
         }
     }
 
-    @Nullable
+    @Nonnull
     public ExecutionContext assertExecutionContext(Address callerAddress, long jobId, long executionId,
                                                    String callerOpName) {
         Address masterAddress = nodeEngine.getMasterAddress();
@@ -387,8 +401,9 @@ public class JobExecutionService implements DynamicMetricsProvider {
 
         ExecutionContext executionContext = executionContexts.get(executionId);
         if (executionContext == null) {
-            return null;
-            // TODO [viliam] we can receive terminate execution op before we initialized the coordinator
+            throw new TopologyChangedException(String.format(
+                    "%s not found for coordinator %s for '%s'",
+                    jobIdAndExecutionId(jobId, executionId), callerAddress, callerOpName));
         } else if (!(executionContext.coordinator().equals(callerAddress) && executionContext.jobId() == jobId)) {
             throw new IllegalStateException(String.format(
                     "%s, originally from coordinator %s, cannot do '%s' by coordinator %s and execution %s",
@@ -463,5 +478,80 @@ public class JobExecutionService implements DynamicMetricsProvider {
             logger.warning("Dynamic metric collection failed", t);
             throw t;
         }
+    }
+
+    /**
+     * See javadoc at {@link CheckLightJobsOperation}.
+     */
+    private void checkLightExecutions() {
+        try {
+            Map<Address, long[]> executionsPerMember = executionContexts.values().stream()
+                    .filter(ExecutionContext::isLightJob)
+                    .collect(groupingBy(ExecutionContext::coordinator, collectToLongArray(ExecutionContext::executionId)));
+
+            for (Entry<Address, long[]> en : executionsPerMember.entrySet()) {
+                Operation op = new CheckLightJobsOperation(en.getValue());
+                InvocationFuture<long[]> future = nodeEngine.getOperationService()
+                        .createInvocationBuilder(JetService.SERVICE_NAME, op, en.getKey())
+                        .invoke();
+                future.whenComplete((r, t) -> {
+                    if (t instanceof TargetNotMemberException) {
+                        // if the target isn't a member, then all executions are unknown
+                        r = en.getValue();
+                    } else if (t != null) {
+                        logger.warning("Failed to check light job state with coordinator " + en.getKey() + ": " + t, t);
+                        return;
+                    }
+                    assert r != null;
+                    for (long executionId : r) {
+                        ExecutionContext execCtx = executionContexts.get(executionId);
+                        if (execCtx != null) {
+                            execCtx.terminateExecution(TerminationMode.CANCEL_FORCEFUL);
+                        }
+                    }
+                });
+            }
+        } catch (Throwable e) {
+            logger.severe("Failed to query live light executions: " + e, e);
+        }
+    }
+
+    public void terminateExecution(long jobId, long executionId, Address callerAddress, TerminationMode mode) {
+        failIfNotRunning();
+
+        ExecutionContext executionContext = executionContexts.get(executionId);
+        if (executionContext == null) {
+            // If this happens after the execution terminated locally, ignore.
+            // If this happens before the execution was initialized locally, that means it's a light
+            // job. We ignore too and rely on the CheckLightJobsOperation.
+            return;
+        }
+        if (!executionContext.isLightJob()) {
+            Address masterAddress = nodeEngine.getMasterAddress();
+            if (!callerAddress.equals(masterAddress)) {
+                failIfNotRunning();
+
+                throw new IllegalStateException(String.format(
+                        "Caller %s cannot do '%s' for terminateExecution: it is not the master, the master is %s",
+                        callerAddress, jobIdAndExecutionId(jobId, executionId), masterAddress));
+            }
+        }
+        Address coordinator = executionContext.coordinator();
+        if (coordinator == null) {
+            // This can happen if:
+            // - InitOp wasn't handled yet
+            // - ExecutionContext was created due to a data packet received
+            // The TerminateOp is always sent after InitOp, but it can happen to be handled
+            // first on the target member - we ignore and rely on the CheckLightJobsOperation to clean it up.
+            // It can't happen for normal jobs
+            assert executionContext.isLightJob() : "null coordinator for non-light job";
+            return;
+        }
+        if (!coordinator.equals(callerAddress)) {
+            throw new IllegalStateException(String.format(
+                    "%s, originally from coordinator %s, cannot do 'terminateExecution' by coordinator %s and execution %s",
+                    executionContext.jobNameAndExecutionId(), coordinator, callerAddress, idToString(executionId)));
+        }
+        executionContext.terminateExecution(mode);
     }
 }

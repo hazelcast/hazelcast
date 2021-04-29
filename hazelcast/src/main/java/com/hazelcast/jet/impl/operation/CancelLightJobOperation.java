@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.impl.operation;
 
-import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 
 import java.util.concurrent.CompletableFuture;
@@ -30,11 +29,6 @@ public class CancelLightJobOperation extends AsyncJobOperation {
 
     public CancelLightJobOperation(long jobId) {
         super(jobId);
-    }
-
-    protected JetService getJetService() {
-        assert getServiceName().equals(JetService.SERVICE_NAME) : "Service is not JetService";
-        return getService();
     }
 
     @Override

@@ -32,7 +32,6 @@ import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JobAlreadyExistsException;
-import com.hazelcast.jet.Util;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
@@ -63,6 +62,7 @@ import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -410,13 +410,13 @@ public class JobCoordinationService {
         );
     }
 
-    public CompletableFuture<Void> terminateLightJob(long jobId) {
+    public void terminateLightJob(long jobId) {
         LightMasterContext mc = lightMasterContexts.get(jobId);
         if (mc == null) {
-            throw new JobNotFoundException("Job with id " + Util.idToString(jobId)
-                    + " already completed or not known to this member");
+            // job must have terminated already
+            return;
         }
-        return mc.requestTermination();
+        mc.requestTermination();
     }
 
     public CompletableFuture<List<Long>> getAllJobIds() {
@@ -1116,7 +1116,11 @@ public class JobCoordinationService {
         }
     }
 
-    public Collection<Long> getLightJobIds() {
-        return lightMasterContexts.keySet();
+    /**
+     * From the given list of execution IDs returns those which are unknown to
+     * this coordinator.
+     */
+    public long[] findUnknownExecutions(long[] executionIds) {
+        return Arrays.stream(executionIds).filter(key -> !lightMasterContexts.containsKey(key)).toArray();
     }
 }

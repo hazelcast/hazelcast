@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.impl.operation;
 
-import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -34,11 +33,6 @@ public class SubmitLightJobOperation extends AsyncJobOperation {
     public SubmitLightJobOperation(long jobId, Object jobDefinition) {
         super(jobId);
         this.jobDefinition = jobDefinition;
-    }
-
-    protected JetService getJetService() {
-        assert getServiceName().equals(JetService.SERVICE_NAME) : "Service is not JetService";
-        return getService();
     }
 
     @Override

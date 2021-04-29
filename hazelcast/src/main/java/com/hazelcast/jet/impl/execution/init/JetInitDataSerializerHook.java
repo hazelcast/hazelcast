@@ -29,6 +29,7 @@ import com.hazelcast.jet.impl.JobSuspensionCauseImpl;
 import com.hazelcast.jet.impl.SnapshotValidationRecord;
 import com.hazelcast.jet.impl.connector.WriteFileP;
 import com.hazelcast.jet.impl.operation.CancelLightJobOperation;
+import com.hazelcast.jet.impl.operation.CheckLightJobsOperation;
 import com.hazelcast.jet.impl.operation.GetJobConfigOperation;
 import com.hazelcast.jet.impl.operation.GetJobIdsByNameOperation;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation;
@@ -108,6 +109,7 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
     public static final int CANCEL_LIGHT_JOB_OP = 46;
     public static final int PROCESSOR_SUPPLIER_FROM_SIMPLE_SUPPLIER = 47;
     public static final int NOOP_PROCESSOR_SUPPLIER = 48;
+    public static final int CHECK_LIGHT_JOBS_OP = 49;
 
     public static final int FACTORY_ID = FactoryIdHelper.getFactoryId(JET_IMPL_DS_FACTORY, JET_IMPL_DS_FACTORY_ID);
 
@@ -210,6 +212,8 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
                     return new ProcessorSupplierFromSimpleSupplier();
                 case NOOP_PROCESSOR_SUPPLIER:
                     return new NoopP.NoopPSupplier();
+                case CHECK_LIGHT_JOBS_OP:
+                    return new CheckLightJobsOperation();
                 default:
                     throw new IllegalArgumentException("Unknown type id " + typeId);
             }
