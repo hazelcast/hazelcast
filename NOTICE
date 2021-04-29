@@ -30,15 +30,9 @@ from The Moby Project (https://github.com/moby/moby).
 The class com.hazelcast.internal.util.graph.BronKerboschCliqueFinder contains code
 originating from The JGraphT Project (https://github.com/jgrapht/jgrapht).
 
-The classes
-
-com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeCoercion
-com.hazelcast.sql.impl.calcite.validate.operators.predicates.HazelcastInPredicate
-com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastLikeOperator
-com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastSubstringFunction
-com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastTrimFunction
-com.hazelcast.sql.impl.calcite.opt.physical.ExpandConversionRule
-com.hazelcast.sql.impl.calcite.validate.operators.HazelcastCaseOperator
+The packages:
+com.hazelcast.sql
+com.hazelcast.jet.sql
 
 contain code originating from the Apache Calcite (https://github.com/apache/calcite)
 
