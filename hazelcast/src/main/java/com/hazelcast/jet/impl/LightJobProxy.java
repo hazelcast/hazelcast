@@ -19,7 +19,9 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.jet.LightJob;
 import com.hazelcast.jet.impl.operation.CancelLightJobOperation;
+import com.hazelcast.jet.impl.util.NonCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -28,18 +30,18 @@ public class LightJobProxy implements LightJob {
     private final NodeEngine nodeEngine;
     private final long jobId;
     private final Address coordinatorAddress;
-    private final CompletableFuture<Void> future;
+    private final NonCompletableFuture future;
 
     LightJobProxy(NodeEngine nodeEngine, long jobId, Address coordinatorAddress, CompletableFuture<Void> future) {
         this.nodeEngine = nodeEngine;
         this.jobId = jobId;
         this.coordinatorAddress = coordinatorAddress;
-        this.future = future;
+        this.future = new NonCompletableFuture(future);
     }
 
-    @Override
-    public void join() {
-        future.join();
+    @NotNull @Override
+    public CompletableFuture<Void> getFuture() {
+        return future;
     }
 
     @Override

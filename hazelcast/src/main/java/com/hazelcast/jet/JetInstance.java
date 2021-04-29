@@ -195,14 +195,19 @@ public interface JetInstance {
      * reducing the job startup and teardown time: only a single operation is
      * used to deploy the job instead of 2 for normal jobs.
      *
-     * Limitation of light jobs:<ul>
-     *     <li>no job metrics
+     * Limitation of light jobs:
+     * <ul>
      *     <li>no job configuration, that means no processing guarantee, no custom
-     *     classes or job resources
+     *         classes or job resources
+     *
+     *     <li>no job metrics
+     *
      *     <li>no visibility in Management Center (this might be added later)
+     *
      *     <li>failures will be only reported to the caller and logged in the
-     *     cluster logs, but no trace of the job will remain in the cluster after
-     *     it's done
+     *         cluster logs, but no trace of the job will remain in the cluster after
+     *         it's done
+     *
      *     <li>the job will not be cancelled if the client disconnects.
      * </ul>
      * <p>

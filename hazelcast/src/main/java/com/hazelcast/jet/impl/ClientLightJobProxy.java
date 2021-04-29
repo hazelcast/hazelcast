@@ -22,26 +22,29 @@ import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.jet.LightJob;
 import com.hazelcast.jet.impl.client.protocol.codec.JetCancelLightJobCodec;
+import com.hazelcast.jet.impl.util.NonCompletableFuture;
 
+import javax.annotation.Nonnull;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 public class ClientLightJobProxy implements LightJob {
 
     private final HazelcastClientInstanceImpl client;
     private final UUID coordinatorUuid;
     private final long jobId;
-    private final ClientInvocationFuture future;
+    private final NonCompletableFuture future;
 
     ClientLightJobProxy(HazelcastClientInstanceImpl client, UUID coordinatorUuid, long jobId, ClientInvocationFuture future) {
         this.client = client;
         this.coordinatorUuid = coordinatorUuid;
         this.jobId = jobId;
-        this.future = future;
+        this.future = new NonCompletableFuture(future);
     }
 
-    @Override
-    public void join() {
-        future.join();
+    @Override @Nonnull
+    public CompletableFuture<Void> getFuture() {
+        return future;
     }
 
     @Override

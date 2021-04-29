@@ -18,7 +18,9 @@ package com.hazelcast.jet;
 
 import com.hazelcast.jet.pipeline.Pipeline;
 
+import javax.annotation.Nonnull;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * A handler to a submitted <i>light job</i>. See {@link
@@ -30,10 +32,24 @@ public interface LightJob {
      * Waits for the job to complete and throws an exception if the job
      * completes with an error. Never returns for streaming (unbounded) jobs,
      * unless they fail or are cancelled.
+     * <p>
+     * Shorthand for <code>job.getFuture().join()</code>.
      *
      * @throws CancellationException if the job was cancelled
      */
-    void join();
+    default void join() {
+        getFuture().join();
+    }
+
+    /**
+     * Gets the future associated with the job. The returned future is
+     * not cancellable. To cancel the job, the {@link #cancel()} method
+     * should be used.
+     *
+     * @throws IllegalStateException if the job has not started yet.
+     */
+    @Nonnull
+    CompletableFuture<Void> getFuture();
 
     /**
      * Makes a request to cancel this job and returns. The job will complete
