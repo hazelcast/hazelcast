@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,31 @@
 
 package com.hazelcast.jet;
 
+import com.hazelcast.jet.pipeline.Pipeline;
+
+import java.util.concurrent.CancellationException;
+
+/**
+ * A handler to a submitted <i>light job</i>. See {@link
+ * JetInstance#newLightJob(Pipeline)}.
+ */
 public interface LightJob {
-    void cancel();
+
+    /**
+     * Waits for the job to complete and throws an exception if the job
+     * completes with an error. Never returns for streaming (unbounded) jobs,
+     * unless they fail or are cancelled.
+     *
+     * @throws CancellationException if the job was cancelled
+     */
     void join();
+
+    /**
+     * Makes a request to cancel this job and returns. The job will complete
+     * after its execution has stopped on all the nodes.
+     * <p>
+     * After cancellation, {@link #join()} will throw a {@link
+     * CancellationException}.
+     */
+    void cancel();
 }

@@ -42,6 +42,7 @@ import java.util.ArrayDeque;
 import java.util.Objects;
 import java.util.Queue;
 
+import static com.hazelcast.jet.impl.Networking.PACKET_HEADER_SIZE;
 import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
@@ -290,7 +291,7 @@ public class ReceiverTasklet implements Tasklet {
             long totalBytes = 0;
             long totalItems = 0;
             for (byte[] payload; (payload = incoming.poll()) != null; ) {
-                BufferObjectDataInput input = serializationService.createObjectDataInput(payload, 16);
+                BufferObjectDataInput input = serializationService.createObjectDataInput(payload, PACKET_HEADER_SIZE);
                 final int itemCount = input.readInt();
                 for (int i = 0; i < itemCount; i++) {
                     final int mark = input.position();

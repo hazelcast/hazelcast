@@ -157,7 +157,8 @@ public class ExecutionContext implements DynamicMetricsProvider {
         for (Entry<Integer, Map<Integer, Map<Address, ReceiverTasklet>>> vertexIdEntry : plan.getReceiverMap().entrySet()) {
             for (Entry<Integer, Map<Address, ReceiverTasklet>> ordinalEntry : vertexIdEntry.getValue().entrySet()) {
                 for (Entry<Address, ReceiverTasklet> addressEntry : ordinalEntry.getValue().entrySet()) {
-                    SenderReceiverKey key = new SenderReceiverKey(vertexIdEntry.getKey(), ordinalEntry.getKey(), addressEntry.getKey());
+                    SenderReceiverKey key =
+                            new SenderReceiverKey(vertexIdEntry.getKey(), ordinalEntry.getKey(), addressEntry.getKey());
                     Queue<byte[]> queue = receiverQueuesMap.computeIfAbsent(key, createReceiverQueueFn);
                     addressEntry.getValue().initIncomingQueue(queue);
                     receiverMap.put(new SenderReceiverKey(vertexIdEntry.getKey(), ordinalEntry.getKey(), addressEntry.getKey()),

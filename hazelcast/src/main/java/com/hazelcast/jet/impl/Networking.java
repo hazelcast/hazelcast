@@ -47,7 +47,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public class Networking {
 
-    private static final int PACKET_HEADER_SIZE = 16;
+    public static final int PACKET_HEADER_SIZE = 16;
     private static final int FLOW_PACKET_INITIAL_SIZE = 128;
     private static final int TERMINAL_VERTEX_ID = -1;
     private static final long TERMINAL_EXECUTION_ID = Long.MIN_VALUE;

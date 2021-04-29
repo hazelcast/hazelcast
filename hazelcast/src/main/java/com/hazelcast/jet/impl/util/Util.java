@@ -63,15 +63,12 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLongArray;
-import java.util.function.BiConsumer;
-import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.ToIntFunction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -638,11 +635,10 @@ public final class Util {
         }
 
         return row0 -> {
-            String[] inputRow = row0;
             String[] projectedRow = new String[simpleFieldMap.length];
             for (int i = 0; i < simpleFieldMap.length; i++) {
                 if (simpleFieldMap[i] >= 0) {
-                    projectedRow[i] = inputRow[simpleFieldMap[i]];
+                    projectedRow[i] = row0[simpleFieldMap[i]];
                 }
             }
             return projectedRow;

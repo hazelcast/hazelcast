@@ -70,7 +70,8 @@ public class InitExecutionOperation extends AsyncJobOperation {
         ILogger logger = getLogger();
         JetService service = getService();
         Address caller = getCallerAddress();
-        LoggingUtil.logFine(logger, "Initializing execution plan for %s from %s", jobIdAndExecutionId(jobId(), executionId), caller);
+        LoggingUtil.logFine(logger, "Initializing execution plan for %s from %s", jobIdAndExecutionId(jobId(), executionId),
+                caller);
 
         ExecutionPlan plan = deserializePlan(serializedPlan);
         if (isLightJob) {

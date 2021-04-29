@@ -21,6 +21,8 @@ import com.hazelcast.jet.core.TestProcessors.MockP;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
+import com.hazelcast.jet.pipeline.Pipeline;
+import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.PacketFiltersUtil;
@@ -117,5 +119,14 @@ public class LightJobTest extends SimpleTestInClusterSupport {
         // join after late cancel won't fail with CancellationException because the job completed
         // before the cancellation
         job.join();
+    }
+
+    @Test
+    public void test_submitPipeline() {
+        Pipeline p = Pipeline.create();
+        p.readFrom(TestSources.items(0, 1, 2))
+                .writeTo(Sinks.noop());
+
+        submittingInstance().newLightJob(p).join();
     }
 }

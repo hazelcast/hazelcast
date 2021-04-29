@@ -197,13 +197,13 @@ public final class ArrayUtils {
     }
 
     /**
-     * A {@link Collector} for the stream API collecting to {@code long[]}.
+     * A {@link Collector} for the Java Stream API collecting to {@code long[]}.
      *
-     * @param mapper a function mapping the input elements to primitive {@code long}
+     * @param toLongMapper a function mapping the input elements to primitive {@code long}
      * @param <T> input element type
      * @return the collector
      */
-    public static <T> Collector<T, ?, long[]> collectToLongArray(ToLongFunction<T> mapper) {
+    public static <T> Collector<T, ?, long[]> collectToLongArray(ToLongFunction<T> toLongMapper) {
         return new Collector<T, ToLongAccumulator, long[]>() {
             @Override
             public Supplier<ToLongAccumulator> supplier() {
@@ -212,7 +212,7 @@ public final class ArrayUtils {
 
             @Override
             public BiConsumer<ToLongAccumulator, T> accumulator() {
-                return (accumulator, t) -> accumulator.accumulate(mapper.applyAsLong(t));
+                return (accumulator, t) -> accumulator.accumulate(toLongMapper.applyAsLong(t));
             }
 
             @Override
@@ -233,7 +233,9 @@ public final class ArrayUtils {
     }
 
     private static final class ToLongAccumulator {
-        long[] data = new long[10];
+        private static final int INITIAL_ARRAY_SIZE = 10;
+
+        long[] data = new long[INITIAL_ARRAY_SIZE];
         int size;
 
         public void accumulate(long t) {
@@ -245,7 +247,7 @@ public final class ArrayUtils {
 
         public ToLongAccumulator combine(ToLongAccumulator other) {
             if (data.length < size + other.size) {
-                data = Arrays.copyOf(data, size + other.size + 10);
+                data = Arrays.copyOf(data, size + other.size + INITIAL_ARRAY_SIZE);
             }
             System.arraycopy(other.data, 0, data, size, other.size);
             size += other.size;
