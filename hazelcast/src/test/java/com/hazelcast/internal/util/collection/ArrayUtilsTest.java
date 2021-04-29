@@ -25,9 +25,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Arrays;
-import java.util.stream.LongStream;
 
-import static com.hazelcast.internal.util.collection.ArrayUtils.collectToLongArray;
 import static com.hazelcast.internal.util.collection.ArrayUtils.replaceFirst;
 import static org.hamcrest.Matchers.arrayWithSize;
 import static org.hamcrest.Matchers.emptyArray;
@@ -285,15 +283,5 @@ public class ArrayUtilsTest extends HazelcastTestSupport {
     @Test(expected = IndexOutOfBoundsException.class)
     public void boundsCheck_whenCapacityIntegerMin() {
         ArrayUtils.boundsCheck(Integer.MIN_VALUE, 0, 100);
-    }
-
-    @Test
-    public void test_collectToLongArray() {
-        for (int i = 0; i < 100; i++) {
-            assertArrayEquals(LongStream.range(0, i).toArray(),
-                    LongStream.range(0, i).boxed().collect(collectToLongArray(l -> l)));
-            assertArrayEquals(LongStream.range(0, i).toArray(),
-                    LongStream.range(0, i).parallel().boxed().collect(collectToLongArray(l -> l)));
-        }
     }
 }

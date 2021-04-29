@@ -42,6 +42,7 @@ import com.hazelcast.jet.impl.execution.TaskletExecutionService;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.metrics.RawJobMetrics;
 import com.hazelcast.jet.impl.operation.CheckLightJobsOperation;
+import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
@@ -52,7 +53,10 @@ import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import javax.annotation.Nonnull;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -64,15 +68,15 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import static com.hazelcast.internal.util.collection.ArrayUtils.collectToLongArray;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.jobIdAndExecutionId;
 import static java.util.Collections.newSetFromMap;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toSet;
 
 /**
@@ -80,6 +84,19 @@ import static java.util.stream.Collectors.toSet;
  * operations from coordinator are handled here.
  */
 public class JobExecutionService implements DynamicMetricsProvider {
+
+    /**
+     * A timeout after which we cancel a light job that doesn't receive InitOp
+     * from the coordinator. {@link ExecutionContext} can be created in
+     * response to data packet received for that execution, but it doesn't know
+     * the coordinator. Therefore the checker cannot confirm with the
+     * coordinator if it still exists. We terminate these jobs after a timeout.
+     * However, the timeout has to be long enough because if the job happens to
+     * be initialized later, we'll lose data and we won't eve detect it. It can
+     * also happen that we lose a DONE_ITEM and the job will get stuck, though
+     * that's better than incorrect results.
+     */
+    private static final long UNINITIALIZED_CONTEXT_MAX_AGE_NS = MINUTES.toNanos(5);
 
     private final Object mutex = new Object();
 
@@ -485,19 +502,36 @@ public class JobExecutionService implements DynamicMetricsProvider {
      */
     private void checkLightExecutions() {
         try {
-            Map<Address, long[]> executionsPerMember = executionContexts.values().stream()
-                    .filter(ExecutionContext::isLightJob)
-                    .collect(groupingBy(ExecutionContext::coordinator, collectToLongArray(ExecutionContext::executionId)));
+            long uninitializedContextThreshold = System.nanoTime() - UNINITIALIZED_CONTEXT_MAX_AGE_NS;
+            Map<Address, List<Long>> executionsPerMember = new HashMap<>();
+            for (ExecutionContext ctx : executionContexts.values()) {
+                if (!ctx.isLightJob()) {
+                    continue;
+                }
+                Address coordinator = ctx.coordinator();
+                if (coordinator != null) {
+                    executionsPerMember
+                            .computeIfAbsent(coordinator, k -> new ArrayList<>())
+                            .add(ctx.executionId());
+                } else {
+                    if (uninitializedContextThreshold <= ctx.getCreatedOn()) {
+                        LoggingUtil.logFine(logger, "Terminating light job %s because it wasn't initialized during %d seconds",
+                                idToString(ctx.executionId()), NANOSECONDS.toSeconds(UNINITIALIZED_CONTEXT_MAX_AGE_NS));
+                        ctx.terminateExecution(TerminationMode.CANCEL_FORCEFUL);
+                    }
+                }
+            }
 
-            for (Entry<Address, long[]> en : executionsPerMember.entrySet()) {
-                Operation op = new CheckLightJobsOperation(en.getValue());
+            for (Entry<Address, List<Long>> en : executionsPerMember.entrySet()) {
+                long[] executionIds = en.getValue().stream().mapToLong(Long::longValue).toArray();
+                Operation op = new CheckLightJobsOperation(executionIds);
                 InvocationFuture<long[]> future = nodeEngine.getOperationService()
                         .createInvocationBuilder(JetService.SERVICE_NAME, op, en.getKey())
                         .invoke();
                 future.whenComplete((r, t) -> {
                     if (t instanceof TargetNotMemberException) {
                         // if the target isn't a member, then all executions are unknown
-                        r = en.getValue();
+                        r = executionIds;
                     } else if (t != null) {
                         logger.warning("Failed to check light job state with coordinator " + en.getKey() + ": " + t, t);
                         return;

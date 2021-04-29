@@ -18,15 +18,6 @@ package com.hazelcast.internal.util.collection;
 
 import java.lang.reflect.Array;
 import java.util.Arrays;
-import java.util.Set;
-import java.util.function.BiConsumer;
-import java.util.function.BinaryOperator;
-import java.util.function.Function;
-import java.util.function.Supplier;
-import java.util.function.ToLongFunction;
-import java.util.stream.Collector;
-
-import static java.util.Collections.emptySet;
 
 /**
  * Convenient method for array manipulations.
@@ -194,68 +185,4 @@ public final class ArrayUtils {
         if (capacity < 0 || index < 0 || length < 0 || (index > (capacity - length))) {
             throw new IndexOutOfBoundsException(String.format("index=%d, length=%d, capacity=%d", index, length, capacity));
         }
-    }
-
-    /**
-     * A {@link Collector} for the Java Stream API collecting to {@code long[]}.
-     *
-     * @param toLongMapper a function mapping the input elements to primitive {@code long}
-     * @param <T> input element type
-     * @return the collector
-     */
-    public static <T> Collector<T, ?, long[]> collectToLongArray(ToLongFunction<T> toLongMapper) {
-        return new Collector<T, ToLongAccumulator, long[]>() {
-            @Override
-            public Supplier<ToLongAccumulator> supplier() {
-                return ToLongAccumulator::new;
-            }
-
-            @Override
-            public BiConsumer<ToLongAccumulator, T> accumulator() {
-                return (accumulator, t) -> accumulator.accumulate(toLongMapper.applyAsLong(t));
-            }
-
-            @Override
-            public BinaryOperator<ToLongAccumulator> combiner() {
-                return ToLongAccumulator::combine;
-            }
-
-            @Override
-            public Function<ToLongAccumulator, long[]> finisher() {
-                return ToLongAccumulator::finish;
-            }
-
-            @Override
-            public Set<Characteristics> characteristics() {
-                return emptySet();
-            }
-        };
-    }
-
-    private static final class ToLongAccumulator {
-        private static final int INITIAL_ARRAY_SIZE = 10;
-
-        long[] data = new long[INITIAL_ARRAY_SIZE];
-        int size;
-
-        public void accumulate(long t) {
-            if (data.length == size) {
-                data = Arrays.copyOf(data, data.length * 2);
-            }
-            data[size++] = t;
-        }
-
-        public ToLongAccumulator combine(ToLongAccumulator other) {
-            if (data.length < size + other.size) {
-                data = Arrays.copyOf(data, size + other.size + INITIAL_ARRAY_SIZE);
-            }
-            System.arraycopy(other.data, 0, data, size, other.size);
-            size += other.size;
-            return this;
-        }
-
-        public long[] finish() {
-            return Arrays.copyOf(data, size);
-        }
-    }
-}
+    }}

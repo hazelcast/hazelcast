@@ -75,6 +75,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
     private final boolean isLightJob;
     private volatile Address coordinator;
     private volatile Set<Address> participants;
+    private final long createdOn = System.nanoTime();
     private final Object executionLock = new Object();
     private final ILogger logger;
     private final Counter startTime = MwCounter.newMwCounter(-1);
@@ -388,6 +389,10 @@ public class ExecutionContext implements DynamicMetricsProvider {
 
     public CompletableFuture<Void> getExecutionFuture() {
         return executionFuture;
+    }
+
+    public long getCreatedOn() {
+        return createdOn;
     }
 
     public static final class SenderReceiverKey {
