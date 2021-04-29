@@ -57,7 +57,7 @@ public class CaseOperatorIntegrationTest extends ExpressionTestSupport {
     }
 
     @Test
-    public void nested() throws Exception {
+    public void nested() {
         put(1);
 
         checkValue0("select \n"

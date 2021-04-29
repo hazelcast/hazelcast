@@ -194,7 +194,7 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
         QueryDataType sourceHzType = HazelcastTypeUtils.toHazelcastType(sourceType.getSqlTypeName());
         QueryDataType targetHzType = HazelcastTypeUtils.toHazelcastType(targetType.getSqlTypeName());
 
-        if (sourceHzType.getTypeFamily() == targetHzType.getTypeFamily()) {
+        if (sourceHzType.getTypeFamily() == targetHzType.getTypeFamily() || targetHzType == OBJECT) {
             // Do nothing.
             return true;
         }
@@ -202,8 +202,7 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
         boolean valid = sourceAndTargetAreNumeric(targetHzType, sourceHzType)
                 || sourceAndTargetAreTemporalAndSourceCanBeConvertedToTarget(targetHzType, sourceHzType)
                 || targetIsTemporalAndSourceIsVarcharLiteral(targetHzType, sourceHzType, rowElement)
-                || sourceHzType.getTypeFamily() == QueryDataTypeFamily.NULL
-                || targetHzType == OBJECT;
+                || sourceHzType.getTypeFamily() == QueryDataTypeFamily.NULL;
 
         if (!valid) {
             // Types cannot be converted to each other, fail to coerce
