@@ -162,11 +162,7 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
         checkSecurityAllowed();
         checkPersistenceAllowed();
         createAndSetPhoneHome();
-        // Since JetExtension#beforeShutdown is not compatible with
-        // versions lower than 5.0, do not initialize JetExtension
-        // unless the cluster version is set to 5.0 or above
-        if (!jetDisabled(node)
-                && node.getClusterService().getClusterVersion().isGreaterOrEqual(Versions.V5_0)) {
+        if (!jetDisabled(node)) {
             jetExtension = new JetExtension(node, createService(JetService.class));
         }
     }
@@ -212,10 +208,14 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
     @Override
     public void beforeStart() {
         if (jetExtension != null) {
-            systemLogger.info("Jet extension is enabled.");
+            // Add configurations for the internal jet distributed objects,
+            // compatible with V4.2
+            // It can block RU4_2 only if there are existing configurations
+            // with the same name as the jet's internal objects.
+            // For this case, recommend disabling Jet.
             jetExtension.beforeStart();
         } else {
-            systemLogger.info("Jet extension is disabled.");
+            systemLogger.info("Jet extension is disabled with \"hazelcast.jet.disabled\" property.");
         }
     }
 
@@ -503,8 +503,8 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
         if (!node.getVersion().asVersion().isEqualTo(newVersion)) {
             systemLogger.info("Cluster version set to " + newVersion);
         }
-        if (jetExtension == null && newVersion.isGreaterOrEqual(Versions.V5_0)) {
-            jetExtension = new JetExtension(node, createService(JetService.class));
+        if (jetExtension != null) {
+            jetExtension.onClusterVersionChange(newVersion);
         }
         ServiceManager serviceManager = node.getNodeEngine().getServiceManager();
         List<ClusterVersionListener> listeners = serviceManager.getServices(ClusterVersionListener.class);
