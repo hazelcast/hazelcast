@@ -59,7 +59,9 @@ public final class LocalDateConverter extends AbstractTemporalConverter {
     public OffsetDateTime asTimestampWithTimezone(Object val) {
         LocalDate date = cast(val);
 
-        return dateToTimestampWithTimezone(date);
+        LocalDateTime timestamp = dateToTimestamp(date);
+
+        return timestampToTimestampWithTimezone(timestamp);
     }
 
     @Override

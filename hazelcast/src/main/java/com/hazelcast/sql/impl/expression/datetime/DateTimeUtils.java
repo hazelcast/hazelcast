@@ -20,48 +20,9 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.Row;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
-import java.time.temporal.ChronoField;
 
 public final class DateTimeUtils {
-    private static final DateTimeFormatter FORMATTER_TIMESTAMP_WITH_TIMEZONE =
-            new DateTimeFormatterBuilder()
-                    .parseLenient()
-                    .append(DateTimeFormatter.ISO_LOCAL_DATE)
-                    .parseStrict()
-                    .optionalStart()
-                    .appendLiteral(' ')
-                    .append(DateTimeFormatter.ISO_LOCAL_TIME)
-                    .optionalEnd()
-                    .optionalStart()
-                    .parseLenient()
-                    .optionalStart()
-                    .appendLiteral(' ')
-                    .optionalEnd()
-                    .appendOffset("+H:mm", "")
-                    .optionalEnd()
-                    .parseDefaulting(ChronoField.HOUR_OF_DAY, 0)
-                    .parseDefaulting(ChronoField.MINUTE_OF_HOUR, 0)
-                    .parseDefaulting(ChronoField.SECOND_OF_MINUTE, 0)
-                    .toFormatter();
-
-    private static final DateTimeFormatter FORMATTER_TIMESTAMP =
-            new DateTimeFormatterBuilder()
-                    .parseLenient()
-                    .append(DateTimeFormatter.ISO_LOCAL_DATE)
-                    .optionalStart()
-                    .appendLiteral(' ')
-                    .append(DateTimeFormatter.ISO_LOCAL_TIME)
-                    .optionalEnd()
-                    .parseDefaulting(ChronoField.HOUR_OF_DAY, 0)
-                    .parseDefaulting(ChronoField.MINUTE_OF_HOUR, 0)
-                    .parseDefaulting(ChronoField.SECOND_OF_MINUTE, 0)
-                    .toFormatter();
-
 
     private DateTimeUtils() { }
 
@@ -73,18 +34,6 @@ public final class DateTimeUtils {
         }
 
         return expression.getType().getConverter().asTimestampWithTimezone(res);
-    }
-
-    public static OffsetDateTime parseAsOffsetDateTime(String string) {
-        return OffsetDateTime.parse(string, FORMATTER_TIMESTAMP_WITH_TIMEZONE);
-    }
-
-    public static LocalDateTime parseAsLocalDateTime(String string) {
-        return LocalDateTime.parse(string, FORMATTER_TIMESTAMP);
-    }
-
-    public static LocalDate parseAsLocalDate(String string) {
-        return LocalDate.parse(string);
     }
 
     public static double extractField(OffsetDateTime time, ExtractField field) {

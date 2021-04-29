@@ -23,8 +23,7 @@ import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
-import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -35,7 +34,10 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -47,8 +49,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 @RunWith(Enclosed.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@Category({QuickTest.class})
 public class ExtractFunctionIntegrationTest {
 
     @RunWith(Parameterized.class)
@@ -63,9 +65,12 @@ public class ExtractFunctionIntegrationTest {
         public String input;
 
         @Parameterized.Parameter(3)
+        public Object objectInput;
+
+        @Parameterized.Parameter(4)
         public double expected;
 
-        @Parameterized.Parameters(name = "{index}: EXTRACT({0} FROM {1} ''{2}'') == {3}")
+        @Parameterized.Parameters(name = "{index}: EXTRACT({0} FROM {1} ''{2}'') == {4}")
         public static Iterable<Object[]> data() {
             Iterable<TestCase> cases = testCases();
             List<Object[]> data = new ArrayList<>();
@@ -75,6 +80,7 @@ public class ExtractFunctionIntegrationTest {
                             result.getKey(),   // Field
                             c.type,            // Type
                             c.input,           // Input
+                            c.objectInput,     // Input argument for parameter
                             result.getValue(), // Expected result
                     });
                 }
@@ -85,11 +91,25 @@ public class ExtractFunctionIntegrationTest {
         private static Iterable<TestCase> testCases() {
             List<TestCase> testCases = new ArrayList<>();
             testCases.add(create("DATE", "1970-01-01",
+                    LocalDate.of(1970, 1, 1),
+                    results(
+                            "EPOCH", 0.0
+                    )
+            ));
+            testCases.add(create("DATE", "1970-1-1",
+                    LocalDate.of(1970, 1, 1),
+                    results(
+                            "EPOCH", 0.0
+                    )
+            ));
+            testCases.add(create("TIMESTAMP", "1970-01-01 00:00:00",
+                    LocalDateTime.of(1970, 1, 1, 0, 0, 0, 0),
                     results(
                             "EPOCH", 0.0
                     )
             ));
             testCases.add(create("TIMESTAMP WITH TIME ZONE", "2010-10-21 10:30:20+02:00",
+                    OffsetDateTime.of(2010, 10, 21, 10, 30, 20, 0, ZoneOffset.of("+2")),
                     results(
                             "YEAR", 2010.0,
                             "MONTH", 10.0,
@@ -97,6 +117,7 @@ public class ExtractFunctionIntegrationTest {
                     )
             ));
             testCases.add(create("TIMESTAMP WITH TIME ZONE", "2019-12-31 23:30:00-02:00",
+                    OffsetDateTime.of(2019, 12, 31, 23, 30, 0, 0, ZoneOffset.of("-2")),
                     results(
                             "YEAR", 2019.0,
                             "MONTH", 12.0,
@@ -105,6 +126,7 @@ public class ExtractFunctionIntegrationTest {
                     )
             ));
             testCases.add(create("TIME", "10:30:20",
+                    LocalTime.of(10, 30, 20),
                     results(
                             "HOUR", 10.0,
                             "MINUTE", 30.0,
@@ -114,6 +136,7 @@ public class ExtractFunctionIntegrationTest {
                     )
             ));
             testCases.add(create("TIME", "10:30:20.456",
+                    LocalTime.of(10, 30, 20, 456_000_000),
                     results(
                             "HOUR", 10.0,
                             "MINUTE", 30.0,
@@ -123,6 +146,7 @@ public class ExtractFunctionIntegrationTest {
                     )
             ));
             testCases.add(create("TIME", "10:30:20.456456",
+                    LocalTime.of(10, 30, 20, 456_456_000),
                     results(
                             "HOUR", 10.0,
                             "MINUTE", 30.0,
@@ -132,6 +156,7 @@ public class ExtractFunctionIntegrationTest {
                     )
             ));
             testCases.add(create("TIMESTAMP", "0001-04-23",
+                    LocalDateTime.of(1, 4, 23, 0, 0, 0),
                     results(
                             "MILLENNIUM", 1.0,
                             "CENTURY", 1.0,
@@ -154,6 +179,7 @@ public class ExtractFunctionIntegrationTest {
                     )
             ));
             testCases.add(create("TIMESTAMP", "0001-04-23 13:40:55",
+                    LocalDateTime.of(1, 4, 23, 13, 40, 55),
                     results(
                             "MILLENNIUM", 1.0,
                             "CENTURY", 1.0,
@@ -176,6 +202,7 @@ public class ExtractFunctionIntegrationTest {
                     )
             ));
             testCases.add(create("TIMESTAMP", "2006-01-01 00:00:00.0",
+                    LocalDateTime.of(2006, 1, 1, 0, 0, 0),
                     results(
                             "MILLENNIUM", 3.0,
                             "CENTURY", 21.0,
@@ -197,6 +224,7 @@ public class ExtractFunctionIntegrationTest {
                     )
             ));
             testCases.add(create("TIMESTAMP", "2001-02-16 20:38:40.123",
+                    LocalDateTime.of(2001, 2, 16, 20, 38, 40, 123_000_000),
                     results(
                             "HOUR", 20.0,
                             "MINUTE", 38.0,
@@ -206,7 +234,20 @@ public class ExtractFunctionIntegrationTest {
                             "EPOCH", 982_355_920.123 - diffUTCEpoch
                     )
             ));
+            testCases.add(create("TIMESTAMP", "2001-2-16 20:38:40.123",
+                    LocalDateTime.of(2001, 2, 16, 20, 38, 40, 123_000_000),
+                    results(
+                            "MONTH", 2.0,
+                            "HOUR", 20.0,
+                            "MINUTE", 38.0,
+                            "SECOND", 40.0,
+                            "MILLISECOND", 40_123.0,
+                            "MICROSECOND", 40_123_000.0,
+                            "EPOCH", 982_355_920.123 - diffUTCEpoch
+                    )
+            ));
             testCases.add(create("DATE", "2010-10-04",
+                    LocalDateTime.of(2010, 10, 4, 0, 0, 0),
                     results(
                             "MILLENNIUM", 3.0,
                             "CENTURY", 21.0,
@@ -227,6 +268,7 @@ public class ExtractFunctionIntegrationTest {
                             "EPOCH", 1_286_150_400.0
                     )));
             testCases.add(create("DATE", "2000-12-31",
+                    LocalDate.of(2000, 12, 31),
                     results(
                             "DOY", 366.0,
                             "MILLENNIUM", 2.0,
@@ -235,6 +277,7 @@ public class ExtractFunctionIntegrationTest {
                     )
             ));
             testCases.add(create("DATE", "2001-12-31",
+                    LocalDate.of(2001, 12, 31),
                     results(
                             "DOY", 365.0,
                             "MILLENNIUM", 3.0,
@@ -243,45 +286,53 @@ public class ExtractFunctionIntegrationTest {
                     )
             ));
             testCases.add(create("DATE", "2004-12-31",
+                    LocalDate.of(2004, 12, 31),
                     results(
                             "DOY", 366.0
                     )
             ));
             testCases.add(create("DATE", "2100-12-31",
+                    LocalDate.of(2100, 12, 31),
                     results(
                             "MILLENNIUM", 3.0,
                             "DOY", 365.0
                     )
             ));
             testCases.add(create("DATE", "2021-04-17",
+                    LocalDate.of(2021, 4, 17),
                     results(
                             "DOW", 6.0,
                             "ISODOW", 6.0
                     )
             ));
             testCases.add(create("DATE", "2021-04-18",
+                    LocalDate.of(2021, 4, 18),
                     results(
                             "DOW", 0.0,
                             "ISODOW", 7.0
                     )
             ));
             testCases.add(create("DATE", "2021-04-19",
+                    LocalDate.of(2021, 4, 19),
                     results(
                             "DOW", 1.0,
                             "ISODOW", 1.0
                     )
             ));
             testCases.add(create("DATE", "2005-01-01",
+                    LocalDate.of(2005, 1, 1),
                     results(
                             "WEEK", 53.0
                     )
             ));
             testCases.add(create("DATE", "2006-01-01",
+                    LocalDate.of(2006, 1, 1),
                     results(
                             "WEEK", 52.0
                     )
             ));
             testCases.add(create("DATE", "2012-12-31",
+                    LocalDate.of(2012, 12, 31),
                     results(
                             "WEEK", 1.0
                     )
@@ -296,10 +347,18 @@ public class ExtractFunctionIntegrationTest {
             put(1);
 
             if (literalSupported(type)) {
+
                 check(sql(field, literal(type, input)), expected);
             }
 
-            check(sql(field, "?"), expected, object(type, input));
+
+        }
+
+        @Test
+        public void test_parameter() {
+            put(1);
+
+            check(sql(field, "?"), expected, objectInput);
         }
 
         private <T> void check(String sql, T expectedResult, Object ...parameters) {
@@ -423,24 +482,8 @@ public class ExtractFunctionIntegrationTest {
         }
     }
 
-    private static Object object(String type, String input) {
-        switch (type) {
-            case "TIME":
-                return LocalTime.parse(input);
-            case "DATE":
-                return LocalDate.parse(input);
-            case "TIMESTAMP":
-                return DateTimeUtils.parseAsLocalDateTime(input);
-            case "TIMESTAMP WITH TIME ZONE":
-                return DateTimeUtils.parseAsOffsetDateTime(input);
-            default:
-                fail(type + " not supported for test");
-                return "";
-        }
-    }
-
-    private static TestCase create(String type, String input, Map<String, Double> results) {
-        return new TestCase(type, input, results);
+    private static TestCase create(String type, String input, Object objectInput, Map<String, Double> results) {
+        return new TestCase(type, input, objectInput, results);
     }
 
     private static Map<String, Double> results(Object ...args) {
@@ -463,11 +506,13 @@ public class ExtractFunctionIntegrationTest {
     private static class TestCase {
         private final String type;
         private final String input;
+        private final Object objectInput;
         private final Map<String, Double> results;
 
-        private TestCase(String type, String input, Map<String, Double> results) {
+        private TestCase(String type, String input, Object objectInput, Map<String, Double> results) {
             this.type = type;
             this.input = input;
+            this.objectInput = objectInput;
             this.results = results;
         }
     }
