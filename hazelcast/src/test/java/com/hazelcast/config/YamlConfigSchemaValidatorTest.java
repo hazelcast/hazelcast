@@ -18,8 +18,10 @@ package com.hazelcast.config;
 
 import com.hazelcast.internal.yaml.YamlDomBuilder;
 import com.hazelcast.internal.yaml.YamlMapping;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.After;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -28,6 +30,7 @@ import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
+@RunWith(HazelcastSerialClassRunner.class)
 public class YamlConfigSchemaValidatorTest {
 
     @After

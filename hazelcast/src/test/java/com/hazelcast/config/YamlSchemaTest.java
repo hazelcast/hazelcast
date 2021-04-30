@@ -16,6 +16,10 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.everit.json.schema.Schema;
 import org.everit.json.schema.ValidationException;
 import org.everit.json.schema.loader.SchemaLoader;
@@ -23,6 +27,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.reflections.Reflections;
@@ -40,7 +45,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 @RunWith(Parameterized.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class YamlSchemaTest {
+
+    private static final ILogger LOGGER = Logger.getLogger(YamlSchemaTest.class);
 
     public static final Schema SCHEMA = SchemaLoader.builder()
             .schemaJson(readJSONObject("/hazelcast-config-5.0.json"))
@@ -88,15 +96,14 @@ public class YamlSchemaTest {
         }
     }
 
-    private final String testName;
-    private final JSONObject input;
-    private final JSONObject expectedValidationError;
-
-    public YamlSchemaTest(String testName, JSONObject input, JSONObject expectedValidationError) {
-        this.testName = testName;
-        this.input = input;
-        this.expectedValidationError = expectedValidationError;
-    }
+    @Parameterized.Parameter(0)
+    public String testName;
+    
+    @Parameterized.Parameter(1)
+    public JSONObject input;
+    
+    @Parameterized.Parameter(2)
+    public JSONObject expectedValidationError;
 
     @Test
     public void runTest() {
@@ -107,7 +114,7 @@ public class YamlSchemaTest {
             }
         } catch (ValidationException e) {
             if (expectedValidationError == null) {
-                System.err.println(e.toJSON().toString(2));
+                LOGGER.severe(e.toJSON().toString(2));
                 fail("unexpected exception: " + e.getMessage());
             } else {
                 sortCauses(expectedValidationError);
