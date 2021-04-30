@@ -424,14 +424,15 @@ public class MasterJobContext {
     // Called as callback when all InitOperation invocations are done
     private void onInitStepCompleted(Collection<Map.Entry<MemberInfo, Object>> responses) {
         mc.coordinationService().submitToCoordinatorThread(() -> {
-            Throwable error = getResult("Init", responses);
+            Throwable error = getErrorFromResponses("Init", responses);
             JobStatus status = mc.jobStatus();
             if (error == null && status == STARTING) {
                 invokeStartExecution();
             } else {
                 cancelExecutionInvocations(mc.jobId(), mc.executionId(), null, () ->
                         onCompleteExecution(error != null ? error
-                                : new IllegalStateException("Cannot execute " + mc.jobIdString() + ": status is " + status))
+                                : new IllegalStateException("Cannot execute " + mc.jobIdString() + ": status is " + status),
+                                null)
                 );
             }
         });
@@ -449,9 +450,12 @@ public class MasterJobContext {
             handleTermination(requestedTerminationMode);
         }
 
-        Function<ExecutionPlan, Operation> operationCtor = plan -> new StartExecutionOperation(mc.jobId(), executionId);
+        boolean savingMetricsEnabled = mc.jobConfig().isStoreMetricsAfterJobCompletion();
+        Function<ExecutionPlan, Operation> operationCtor =
+                plan -> new StartExecutionOperation(mc.jobId(), executionId, savingMetricsEnabled);
         Consumer<Collection<Map.Entry<MemberInfo, Object>>> completionCallback =
-                responses -> onCompleteExecution(getResult("Execution", responses));
+                responses -> onCompleteExecution(getErrorFromResponses("Execution", responses),
+                        responses);
 
         mc.setJobStatus(RUNNING);
 
@@ -495,7 +499,7 @@ public class MasterJobContext {
      *     that the job will be restarted
      * </ul>
      */
-    private Throwable getResult(String opName, Collection<Map.Entry<MemberInfo, Object>> responses) {
+    private Throwable getErrorFromResponses(String opName, Collection<Map.Entry<MemberInfo, Object>> responses) {
         if (isCancelled()) {
             logger.fine(mc.jobIdString() + " to be cancelled after " + opName);
             return new CancellationException();
@@ -554,19 +558,27 @@ public class MasterJobContext {
         }
     }
 
-    private void onCompleteExecution(Throwable error) {
+    private void onCompleteExecution(Throwable error, Collection<Entry<MemberInfo, Object>> responses) {
         JobStatus status = mc.jobStatus();
         if (status != STARTING && status != RUNNING) {
             logCannotComplete(error);
             error = new IllegalStateException("Job coordination failed");
         }
 
+        setJobMetrics(responses.stream()
+                .filter(en -> en.getValue() instanceof RawJobMetrics)
+                .map(e1 -> (RawJobMetrics) e1.getValue())
+                .collect(Collectors.toList()));
+
         if (error instanceof JobTerminateRequestedException
                 && ((JobTerminateRequestedException) error).mode().isWithTerminalSnapshot()) {
-            // have to use Async version, the future is completed inside a synchronized block
             Throwable finalError = error;
+            // The terminal snapshot on members is always completed before replying to StartExecutionOp.
+            // However, the response to snapshot operations can be processed after the response to
+            // StartExecutionOp, so wait for that too.
             mc.snapshotContext().terminalSnapshotFuture()
-              .whenCompleteAsync(withTryCatch(logger, (r, e) -> finalizeJob(finalError)));
+                    // have to use Async version, the future is completed inside a synchronized block
+                    .whenCompleteAsync(withTryCatch(logger, (r, e) -> finalizeJob(finalError)));
         } else {
             finalizeJob(error);
         }
@@ -819,7 +831,13 @@ public class MasterJobContext {
     }
 
     private void setJobMetrics(List<RawJobMetrics> jobMetrics) {
-        this.jobMetrics = Objects.requireNonNull(jobMetrics);
+        // either all or no member should send metrics
+        assert jobMetrics.stream().allMatch(Objects::nonNull) || jobMetrics.stream().allMatch(Objects::isNull)
+                : "responses=" + jobMetrics;
+        assert !jobMetrics.isEmpty() : "empty responses";
+        if (jobMetrics.get(0) != null) {
+            this.jobMetrics = Objects.requireNonNull(jobMetrics);
+        }
     }
 
     void collectMetrics(CompletableFuture<List<RawJobMetrics>> clientFuture) {

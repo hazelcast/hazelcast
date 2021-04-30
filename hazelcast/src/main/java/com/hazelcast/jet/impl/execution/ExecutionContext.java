@@ -123,7 +123,8 @@ public class ExecutionContext implements DynamicMetricsProvider {
 
         // The map is only concurrent for light jobs because they can receive packets before they are
         // initialized. For regular jobs we use non-concurrent map for performance
-        // TODO [viliam] convert to non-concurrent map after initialization?
+        // We considered replacing the CHM with a HM after initialization for performance, but there's
+        // not much benefit in that according to this: https://stackoverflow.com/a/32141829/952135
         receiverQueuesMap = isLightJob ? new ConcurrentHashMap<>() : new HashMap<>();
         createReceiverQueueFn = key -> new MPSCQueue<>(null);
     }

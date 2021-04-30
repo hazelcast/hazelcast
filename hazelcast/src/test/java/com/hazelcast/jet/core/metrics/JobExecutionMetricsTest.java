@@ -65,7 +65,6 @@ public class JobExecutionMetricsTest extends SimpleTestInClusterSupport {
 
     @Test
     public void testExecutionMetricsStreamJob() throws Exception {
-
         JobConfig jobConfig = new JobConfig();
         jobConfig.setStoreMetricsAfterJobCompletion(true);
         Job job = instance().newJob(streamPipeline(), jobConfig);

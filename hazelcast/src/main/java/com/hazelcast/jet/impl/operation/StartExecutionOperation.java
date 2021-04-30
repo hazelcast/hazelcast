@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
+import com.hazelcast.jet.impl.metrics.RawJobMetrics;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -32,18 +33,20 @@ import java.util.concurrent.CompletableFuture;
 public class StartExecutionOperation extends AsyncJobOperation {
 
     private long executionId;
+    private boolean collectMetrics;
 
     public StartExecutionOperation() {
     }
 
-    public StartExecutionOperation(long jobId, long executionId) {
+    public StartExecutionOperation(long jobId, long executionId, boolean collectMetrics) {
         super(jobId);
         this.executionId = executionId;
+        this.collectMetrics = collectMetrics;
     }
 
     @Override
-    protected CompletableFuture<Void> doRun() {
-        return getJetService().getJobExecutionService().beginExecution(getCallerAddress(), jobId(), executionId);
+    protected CompletableFuture<RawJobMetrics> doRun() {
+        return getJetService().getJobExecutionService().beginExecution(getCallerAddress(), jobId(), executionId, collectMetrics);
     }
 
     @Override
@@ -55,11 +58,13 @@ public class StartExecutionOperation extends AsyncJobOperation {
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(executionId);
+        out.writeBoolean(collectMetrics);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         executionId = in.readLong();
+        collectMetrics = in.readBoolean();
     }
 }

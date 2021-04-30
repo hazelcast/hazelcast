@@ -105,7 +105,9 @@ public final class ExecutionPlanBuilder {
             Function<? super Address, ? extends ProcessorSupplier> procSupplierFn = metaSupplier.get(addresses);
             for (Entry<MemberInfo, ExecutionPlan> e : plans.entrySet()) {
                 final ProcessorSupplier processorSupplier = procSupplierFn.apply(e.getKey().getAddress());
-                if (!isLightJob) { // TODO [viliam] why this?
+                if (!isLightJob) {
+                    // We avoid the check for light jobs - the user will get the error anyway, but maybe with less information.
+                    // And we can recommend the user to use normal job to have more checks.
                     checkSerializable(processorSupplier, "ProcessorSupplier in vertex '" + vertex.getName() + '\'');
                 }
                 final VertexDef vertexDef = new VertexDef(vertexId, vertex.getName(), processorSupplier, localParallelism);

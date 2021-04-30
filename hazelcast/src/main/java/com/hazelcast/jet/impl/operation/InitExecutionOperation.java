@@ -66,7 +66,7 @@ public class InitExecutionOperation extends AsyncJobOperation {
     }
 
     @Override
-    protected CompletableFuture<Void> doRun() {
+    protected CompletableFuture<?> doRun() {
         ILogger logger = getLogger();
         JetService service = getService();
         Address caller = getCallerAddress();
