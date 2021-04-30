@@ -64,7 +64,6 @@ hazelcast:
             consistency-check-strategy: MERKLE_TREES
 
         istanbul:
-          class-name: com.hazelcast.wan.custom.WanPublisher
           queue-full-behavior: THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE
           initial-publisher-state: STOPPED
           queue-capacity: 12345
