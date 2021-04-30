@@ -10,4 +10,4 @@ hazelcast:
       auto-detection:
         enabled: true
     memcache-protocol:
-    enabled: ture
+    enabled: true

@@ -19,7 +19,8 @@ package com.hazelcast.config;
 import com.hazelcast.internal.yaml.YamlDomBuilder;
 import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import org.junit.After;
+import com.hazelcast.test.OverridePropertyRule;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -33,10 +34,8 @@ import static org.junit.Assert.fail;
 @RunWith(HazelcastSerialClassRunner.class)
 public class YamlConfigSchemaValidatorTest {
 
-    @After
-    public void clearSysProp() {
-        System.clearProperty("yaml.config.validation.skip");
-    }
+    @Rule
+    public OverridePropertyRule hazelcastConfigProperty = OverridePropertyRule.clear("yaml.config.validation.skip");
 
     @Test
     public void validationDisabled() {
