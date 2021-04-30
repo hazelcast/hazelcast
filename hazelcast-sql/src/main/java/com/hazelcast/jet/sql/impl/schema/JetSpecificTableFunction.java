@@ -18,10 +18,7 @@ package com.hazelcast.jet.sql.impl.schema;
 
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
-import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastFunction;
 import com.hazelcast.sql.impl.expression.Expression;
-import org.apache.calcite.sql.SqlFunctionCategory;
-import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.SqlOperandTypeInference;
 import org.apache.calcite.sql.type.SqlReturnTypeInference;
 
@@ -30,30 +27,16 @@ import java.util.List;
 /**
  * A table function return type of which is known upfront.
  */
-public abstract class JetSpecificTableFunction extends HazelcastFunction implements JetTableFunction {
-
-    private final SqlConnector connector;
+public abstract class JetSpecificTableFunction extends JetTableFunction {
 
     protected JetSpecificTableFunction(
             String name,
+            List<JetTableFunctionParameter> parameters,
             SqlReturnTypeInference returnTypeInference,
             SqlOperandTypeInference operandTypeInference,
             SqlConnector connector
     ) {
-        super(
-                name,
-                SqlKind.OTHER_FUNCTION,
-                returnTypeInference,
-                operandTypeInference,
-                SqlFunctionCategory.USER_DEFINED_TABLE_SPECIFIC_FUNCTION
-        );
-
-        this.connector = connector;
-    }
-
-    @Override
-    public boolean isStream() {
-        return connector.isStream();
+        super(name, parameters, returnTypeInference, operandTypeInference, connector);
     }
 
     public abstract HazelcastTable toTable(List<Expression<?>> argumentExpressions);

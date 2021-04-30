@@ -48,6 +48,7 @@ public final class TypedOperandChecker extends AbstractOperandChecker {
     public static final TypedOperandChecker TIMESTAMP_WITH_TIMEZONE
             = new TypedOperandChecker(SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE);
     public static final TypedOperandChecker INTERVAL = new TypedOperandChecker(SqlTypeName.INTERVAL_DAY);
+    public static final TypedOperandChecker MAP = new TypedOperandChecker(SqlTypeName.MAP);
 
     private final SqlTypeName targetTypeName;
     private final RelDataType type;

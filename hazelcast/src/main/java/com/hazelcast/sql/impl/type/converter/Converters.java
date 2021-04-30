@@ -127,6 +127,9 @@ public final class Converters {
         converters.add(IntervalConverter.YEAR_MONTH);
         converters.add(IntervalConverter.DAY_SECOND);
 
+        // MAP converter.
+        converters.add(MapConverter.INSTANCE);
+
         // NULL converter.
         converters.add(NullConverter.INSTANCE);
 

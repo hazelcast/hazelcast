@@ -88,6 +88,8 @@ public final class HazelcastTypeUtils {
         // The inverse mapping is not needed, because we map multiple interval type to two internal types.
         HZ_TO_CALCITE.put(QueryDataTypeFamily.INTERVAL_YEAR_MONTH, INTERVAL_YEAR_MONTH);
         HZ_TO_CALCITE.put(QueryDataTypeFamily.INTERVAL_DAY_SECOND, INTERVAL_DAY_SECOND);
+
+        CALCITE_TO_HZ.put(SqlTypeName.MAP, QueryDataType.MAP);
     }
 
     private HazelcastTypeUtils() {

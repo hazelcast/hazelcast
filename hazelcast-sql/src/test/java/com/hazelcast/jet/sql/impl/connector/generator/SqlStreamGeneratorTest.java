@@ -78,6 +78,12 @@ public class SqlStreamGeneratorTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_generateStreamNamedArgumentsAndExplicitNull() {
+        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM TABLE(GENERATE_STREAM(rate => null))").iterator().next())
+                .hasMessageContaining("GENERATE_STREAM - rate cannot be null");
+    }
+
+    @Test
     public void test_generateStreamFilterAndProject() {
         assertRowsEventuallyInAnyOrder(
                 "SELECT v * 2 FROM TABLE(GENERATE_STREAM(100)) WHERE v > 0 AND v < 5",
@@ -102,6 +108,32 @@ public class SqlStreamGeneratorTest extends SqlTestSupport {
                         new Row(8L)
                 )
         );
+    }
+
+    @Test
+    public void test_generateStreamWithNamedArgumentsAndDynamicParameters() {
+        assertRowsEventuallyInAnyOrder(
+                "SELECT v * ? FROM TABLE(GENERATE_STREAM(rate => ?)) WHERE v > 1 - ? AND v < 5",
+                asList(2, 100, 1),
+                asList(
+                        new Row(2L),
+                        new Row(4L),
+                        new Row(6L),
+                        new Row(8L)
+                )
+        );
+    }
+
+    @Test
+    public void test_generateStreamWithDynamicParametersAndArgumentTypeMismatch() {
+        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM TABLE(GENERATE_STREAM(?))", "1"))
+                .hasMessageContaining("Parameter at position 0 must be of INTEGER type, but VARCHAR was found");
+    }
+
+    @Test
+    public void test_generateStreamWithNamedArgumentsDynamicParametersAndArgumentTypeMismatch() {
+        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM TABLE(GENERATE_STREAM(rate => ?))", "1"))
+                .hasMessageContaining("Parameter at position 0 must be of INTEGER type, but VARCHAR was found");
     }
 
     @Test

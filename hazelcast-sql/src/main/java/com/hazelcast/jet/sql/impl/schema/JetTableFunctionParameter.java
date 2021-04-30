@@ -16,55 +16,36 @@
 
 package com.hazelcast.jet.sql.impl.schema;
 
-import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.rel.type.RelDataTypeFactory;
-import org.apache.calcite.schema.FunctionParameter;
+import com.hazelcast.sql.impl.calcite.validate.operand.OperandChecker;
 import org.apache.calcite.sql.type.SqlTypeName;
 
-import static com.hazelcast.internal.util.Preconditions.checkTrue;
-import static org.apache.calcite.sql.type.SqlTypeName.INTEGER;
-import static org.apache.calcite.sql.type.SqlTypeName.MAP;
-import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
-
-public class JetTableFunctionParameter implements FunctionParameter {
+public class JetTableFunctionParameter {
 
     private final int ordinal;
     private final String name;
     private final SqlTypeName type;
-    private final boolean required;
+    private final OperandChecker checker;
 
-    public JetTableFunctionParameter(int ordinal, String name, SqlTypeName type, boolean required) {
+    public JetTableFunctionParameter(int ordinal, String name, SqlTypeName type, OperandChecker checker) {
         this.ordinal = ordinal;
         this.name = name;
-
-        // supporting just int, string & map[string, string] parameters for now
-        // allowing other types requires at least proper validation
-        // if/when implemented, consider using it in SqlOption as well
-        checkTrue(type == INTEGER || type == VARCHAR || type == MAP, "Unsupported type: " + type);
         this.type = type;
-
-        this.required = required;
+        this.checker = checker;
     }
 
-    @Override
-    public int getOrdinal() {
+    public int ordinal() {
         return ordinal;
     }
 
-    @Override
-    public String getName() {
+    public String name() {
         return name;
     }
 
-    @Override
-    public RelDataType getType(RelDataTypeFactory typeFactory) {
-        return type == INTEGER || type == VARCHAR
-                ? typeFactory.createSqlType(type)
-                : typeFactory.createMapType(typeFactory.createSqlType(VARCHAR), typeFactory.createSqlType(VARCHAR));
+    public SqlTypeName type() {
+        return type;
     }
 
-    @Override
-    public boolean isOptional() {
-        return !required;
+    public OperandChecker checker() {
+        return checker;
     }
 }

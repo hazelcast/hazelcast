@@ -21,6 +21,7 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastLikeOperator;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
+import com.hazelcast.sql.impl.expression.CaseExpression;
 import com.hazelcast.sql.impl.expression.CastExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -301,6 +302,9 @@ public final class RexToExpression {
                 ExtractField extractField = convertField(field);
 
                 return ExtractFunction.create(operands[1], extractField);
+
+            case CASE:
+                return CaseExpression.create(operands);
 
             case OTHER:
                 if (operator == HazelcastSqlOperatorTable.CONCAT) {

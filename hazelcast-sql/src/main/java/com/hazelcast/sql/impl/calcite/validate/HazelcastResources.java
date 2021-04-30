@@ -41,4 +41,7 @@ public interface HazelcastResources {
 
     @Resources.BaseMessage("CAST function cannot convert literal {0} to type {1}: {2}")
     Resources.ExInst<SqlValidatorException> cannotCastLiteralValue(String sourceValue, String targetType, String message);
+
+    @Resources.BaseMessage("Cannot infer return type for CASE among {0}")
+    Resources.ExInst<SqlValidatorException> cannotInferCaseResult(String types);
 }
