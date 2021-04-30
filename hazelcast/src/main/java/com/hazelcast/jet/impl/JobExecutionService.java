@@ -70,7 +70,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
 import static com.hazelcast.jet.Util.idToString;
@@ -193,24 +192,23 @@ public class JobExecutionService implements DynamicMetricsProvider {
     public void shutdown() {
         lightExecutionsSender.cancel(false);
         synchronized (mutex) {
-            cancelAllExecutions("Node is shutting down", HazelcastInstanceNotActiveException::new);
+            cancelAllExecutions("Node is shutting down");
         }
     }
 
     public void reset() {
-        cancelAllExecutions("reset", TopologyChangedException::new);
+        cancelAllExecutions("reset");
     }
 
     /**
      * Cancels all ongoing executions using the given failure supplier.
      */
-    private void cancelAllExecutions(String reason, Supplier<RuntimeException> exceptionSupplier) {
-        executionContexts.values().forEach(exeCtx -> {
-            String message = String.format("Completing %s locally. Reason: %s",
-                    exeCtx.jobNameAndExecutionId(),
-                    reason);
-            cancelAndComplete(exeCtx, message, exceptionSupplier.get());
-        });
+    private void cancelAllExecutions(String reason) {
+        for (ExecutionContext exeCtx : executionContexts.values()) {
+            LoggingUtil.logFine(logger, "Completing %s locally. Reason: %s",
+                    exeCtx.jobNameAndExecutionId(), reason);
+            exeCtx.terminateExecution(null);
+        }
     }
 
     /**
@@ -223,26 +221,10 @@ public class JobExecutionService implements DynamicMetricsProvider {
              .filter(exeCtx -> exeCtx.coordinator() != null
                      && (exeCtx.coordinator().equals(address) || exeCtx.hasParticipant(address)))
              .forEach(exeCtx -> {
-                 String message = String.format("Completing %s locally. Reason: Member %s left the cluster",
-                         exeCtx.jobNameAndExecutionId(),
-                         address);
-                 cancelAndComplete(exeCtx, message, new TopologyChangedException("Topology has been changed."));
+                 LoggingUtil.logFine(logger, "Completing %s locally. Reason: Member %s left the cluster",
+                         exeCtx.jobNameAndExecutionId(), address);
+                 exeCtx.terminateExecution(null);
              });
-    }
-
-    /**
-     * Cancel job execution and complete execution without waiting for coordinator
-     * to send CompleteOperation.
-     */
-    private void cancelAndComplete(ExecutionContext exeCtx, String message, Throwable t) {
-        try {
-            exeCtx.terminateExecution(null).whenComplete(withTryCatch(logger, (r, e) -> {
-                logger.fine(message);
-                completeExecution(exeCtx, t);
-            }));
-        } catch (Throwable e) {
-            logger.severe(String.format("Local cancellation of %s failed", exeCtx.jobNameAndExecutionId()), e);
-        }
     }
 
     public CompletableFuture<RawJobMetrics> runLightJob(
@@ -473,32 +455,30 @@ public class JobExecutionService implements DynamicMetricsProvider {
     public CompletableFuture<RawJobMetrics> beginExecution0(ExecutionContext execCtx, boolean collectMetrics) {
         executionStarted.inc();
         return execCtx.beginExecution(taskletExecutionService)
-              .handle((i, e) -> {
-                  execCtx.setCompletionTime();
+                .thenApply(r -> {
+                    RawJobMetrics terminalMetrics;
+                    if (collectMetrics) {
+                        JobMetricsCollector metricsRenderer = new JobMetricsCollector(execCtx.executionId(), nodeEngine.getLocalMember(),
+                                logger);
+                        nodeEngine.getMetricsRegistry().collect(metricsRenderer);
+                        terminalMetrics = metricsRenderer.getMetrics();
+                    } else {
+                        terminalMetrics = RawJobMetrics.empty();
+                    }
+                    return terminalMetrics;
+                })
+                .whenComplete(withTryCatch(logger, (i, e) -> {
+                    completeExecution(execCtx, peel(e));
 
-                  RawJobMetrics response;
-                  if (collectMetrics) {
-                      JobMetricsCollector metricsRenderer = new JobMetricsCollector(execCtx.executionId(), nodeEngine.getLocalMember(),
-                              logger);
-                      nodeEngine.getMetricsRegistry().collect(metricsRenderer);
-                      response = metricsRenderer.getMetrics();
-                  } else {
-                      response = RawJobMetrics.empty();
-                  }
-
-                  completeExecution(execCtx, peel(e));
-
-                  if (e instanceof CancellationException) {
-                      logger.fine("Execution of " + execCtx.jobNameAndExecutionId() + " was cancelled");
-                  } else if (e != null) {
-                      logger.fine("Execution of " + execCtx.jobNameAndExecutionId()
-                              + " completed with failure", e);
-                  } else {
-                      logger.fine("Execution of " + execCtx.jobNameAndExecutionId() + " completed");
-                  }
-
-                  return response;
-              });
+                    if (e instanceof CancellationException) {
+                        logger.fine("Execution of " + execCtx.jobNameAndExecutionId() + " was cancelled");
+                    } else if (e != null) {
+                        logger.fine("Execution of " + execCtx.jobNameAndExecutionId()
+                                + " completed with failure", e);
+                    } else {
+                        logger.fine("Execution of " + execCtx.jobNameAndExecutionId() + " completed");
+                    }
+                }));
     }
 
     int numberOfExecutions() {

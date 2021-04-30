@@ -185,4 +185,5 @@ public final class ArrayUtils {
         if (capacity < 0 || index < 0 || length < 0 || (index > (capacity - length))) {
             throw new IndexOutOfBoundsException(String.format("index=%d, length=%d, capacity=%d", index, length, capacity));
         }
-    }}
+    }
+}

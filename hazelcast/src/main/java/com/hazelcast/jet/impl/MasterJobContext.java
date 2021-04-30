@@ -432,7 +432,7 @@ public class MasterJobContext {
                 cancelExecutionInvocations(mc.jobId(), mc.executionId(), null, () ->
                         onCompleteExecution(error != null ? error
                                 : new IllegalStateException("Cannot execute " + mc.jobIdString() + ": status is " + status),
-                                null)
+                                emptyList())
                 );
             }
         });
@@ -831,13 +831,8 @@ public class MasterJobContext {
     }
 
     private void setJobMetrics(List<RawJobMetrics> jobMetrics) {
-        // either all or no member should send metrics
-        assert jobMetrics.stream().allMatch(Objects::nonNull) || jobMetrics.stream().allMatch(Objects::isNull)
-                : "responses=" + jobMetrics;
-        assert !jobMetrics.isEmpty() : "empty responses";
-        if (jobMetrics.get(0) != null) {
-            this.jobMetrics = Objects.requireNonNull(jobMetrics);
-        }
+        assert jobMetrics.stream().allMatch(Objects::nonNull) : "responses=" + jobMetrics;
+        this.jobMetrics = Objects.requireNonNull(jobMetrics);
     }
 
     void collectMetrics(CompletableFuture<List<RawJobMetrics>> clientFuture) {

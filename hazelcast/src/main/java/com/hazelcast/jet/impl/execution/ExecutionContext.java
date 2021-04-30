@@ -60,6 +60,7 @@ import java.util.function.Function;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.metrics.MetricNames.EXECUTION_COMPLETION_TIME;
 import static com.hazelcast.jet.core.metrics.MetricNames.EXECUTION_START_TIME;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
 
@@ -202,6 +203,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
                 ClassLoader cl = service.getJobExecutionService().getClassLoader(jobConfig, jobId);
                 executionFuture = taskletExecService
                         .beginExecute(tasklets, cancellationFuture, cl)
+                        .whenComplete(withTryCatch(logger, (r, t) -> setCompletionTime()))
                         .thenApply(res -> {
                             // There's a race here: a snapshot could be requested after the job just completed
                             // normally, in that case we'll report that it terminated with snapshot.

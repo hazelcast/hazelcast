@@ -65,6 +65,8 @@ public class LightJobTest extends SimpleTestInClusterSupport {
         return useClient ? client() : instance();
     }
 
+    // TODO [viliam] parametrize the ExecutionLifecycleTest and CancellationTest for light jobs
+
     @Test
     public void test() {
         List<Integer> items = IntStream.range(0, 1_000).boxed().collect(Collectors.toList());

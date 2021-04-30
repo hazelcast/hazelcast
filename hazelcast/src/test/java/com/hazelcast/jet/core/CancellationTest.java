@@ -429,9 +429,9 @@ public class CancellationTest extends JetTestSupport {
 
     private static class SingleNodeFaultSupplier implements ProcessorMetaSupplier {
 
-        private String host;
-        private int port;
-        private RuntimeException e;
+        private final String host;
+        private final int port;
+        private final RuntimeException e;
 
         SingleNodeFaultSupplier(Address failOnAddress, RuntimeException e) {
             this.e = e;
