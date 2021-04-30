@@ -110,6 +110,10 @@ public class PortableFactory implements com.hazelcast.nio.serialization.Portable
             return new Derived2Portable();
         } else if (classId == 6) {
             return new Student();
+        } else if (classId == 7) {
+            return new Classroom();
+        } else if (classId == 8) {
+            return new SmallClassroom();
         }
         return null;
     }
