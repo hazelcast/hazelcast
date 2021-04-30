@@ -82,7 +82,16 @@ public class ExternalConfigurationOverride {
                   configProvider.name(),
                   properties.entrySet().stream()
                     .filter(e -> !unprocessed.containsKey(e.getKey()))
-                    .map(e -> e.getKey() + "=" + e.getValue())
+                    .map(e -> {
+                        if (e.getKey().equals("hazelcast.licensekey")) {
+                            String[] licenceKeyParts = e.getValue().split("#");
+                            String originalKeyPart = licenceKeyParts[licenceKeyParts.length - 1];
+                            return e.getKey() + "=" + originalKeyPart.substring(0, 5) + "*********"
+                                    + originalKeyPart.substring(originalKeyPart.length() - 5) ;
+                        } else {
+                            return e.getKey() + "=" + e.getValue();
+                        }
+                    })
                     .collect(joining(","))));
 
                 if (!unprocessed.isEmpty()) {
