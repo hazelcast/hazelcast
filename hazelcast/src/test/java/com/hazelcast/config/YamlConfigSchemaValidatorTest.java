@@ -38,11 +38,11 @@ import static org.junit.Assert.fail;
 public class YamlConfigSchemaValidatorTest {
 
     @Rule
-    public OverridePropertyRule hazelcastConfigProperty = OverridePropertyRule.clear("yaml.config.validation.skip");
+    public OverridePropertyRule hazelcastConfigProperty = OverridePropertyRule.clear("hazelcast.config.schema.validation.enabled");
 
     @Test
     public void validationDisabled() {
-        System.setProperty("yaml.config.validation.skip", "true");
+        System.setProperty("hazelcast.config.schema.validation.enabled", "true");
         YamlMapping config = (YamlMapping) YamlDomBuilder.build(new HashMap<>());
         YamlConfigSchemaValidator validator = YamlConfigSchemaValidator.create();
         validator.validate(config);
