@@ -18,13 +18,6 @@
         "schemaLocation": "#/definitions/Network/properties/ssl",
         "pointerToViolation": "#/hazelcast/network/ssl",
         "causingExceptions": [],
-        "keyword": "required",
-        "message": "required key [factory-class-name] not found"
-      },
-      {
-        "schemaLocation": "#/definitions/Network/properties/ssl",
-        "pointerToViolation": "#/hazelcast/network/ssl",
-        "causingExceptions": [],
         "keyword": "additionalProperties",
         "message": "extraneous key [class-name] is not permitted"
       },
@@ -43,6 +36,6 @@
         "message": "expected type: JSONObject, found: Null"
       }
     ],
-    "message": "4 schema violations found"
+    "message": "3 schema violations found"
   }
 }

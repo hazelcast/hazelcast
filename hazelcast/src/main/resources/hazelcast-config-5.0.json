@@ -619,10 +619,7 @@
             "properties": {
               "type": "object"
             }
-          },
-          "required": [
-            "factory-class-name"
-          ]
+          }
         },
         "rest-api": {
           "type": "object",
