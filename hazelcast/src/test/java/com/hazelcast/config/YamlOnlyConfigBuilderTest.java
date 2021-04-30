@@ -111,19 +111,6 @@ public class YamlOnlyConfigBuilderTest {
         buildConfig(yaml);
     }
 
-    @Test
-    @Ignore
-    public void testWithoutRootHazelcastNode() {
-        String yaml = ""
-                + "map:\n"
-                + "  myMap:\n"
-                + "    backup-count: 2";
-
-        Config config = buildConfig(yaml);
-        MapConfig myMapConfig = config.getMapConfig("myMap");
-        assertEquals(2, myMapConfig.getBackupCount());
-    }
-
     private Config buildConfig(String yaml) {
         ByteArrayInputStream bis = new ByteArrayInputStream(yaml.getBytes());
         YamlConfigBuilder configBuilder = new YamlConfigBuilder(bis);
