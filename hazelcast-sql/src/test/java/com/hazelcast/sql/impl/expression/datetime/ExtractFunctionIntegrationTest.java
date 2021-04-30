@@ -23,10 +23,9 @@ import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.converter.AbstractTimestampWithTimezoneConverter;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.experimental.runners.Enclosed;
@@ -38,14 +37,15 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TimeZone;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertInstanceOf;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(Enclosed.class)
@@ -113,7 +113,8 @@ public class ExtractFunctionIntegrationTest {
                     results(
                             "YEAR", 2010.0,
                             "MONTH", 10.0,
-                            "DAY", 21.0
+                            "DAY", 21.0,
+                            "EPOCH", 1_287_649_820.0
                     )
             ));
             testCases.add(create("TIMESTAMP WITH TIME ZONE", "2019-12-31 23:30:00-02:00",
@@ -122,7 +123,8 @@ public class ExtractFunctionIntegrationTest {
                             "YEAR", 2019.0,
                             "MONTH", 12.0,
                             "DAY", 31.0,
-                            "HOUR", 23.0
+                            "HOUR", 23.0,
+                            "EPOCH", 1_577_842_200.0
                     )
             ));
             testCases.add(create("TIME", "10:30:20",
@@ -175,7 +177,7 @@ public class ExtractFunctionIntegrationTest {
                             "MINUTE", 0.0,
                             "MILLISECOND", 0.0,
                             "MICROSECOND", 0.0,
-                            "EPOCH", -62_125_920_000.0 - diffUTCEpoch
+                            "EPOCH", -62_125_920_000.0
                     )
             ));
             testCases.add(create("TIMESTAMP", "0001-04-23 13:40:55",
@@ -198,7 +200,7 @@ public class ExtractFunctionIntegrationTest {
                             "SECOND", 55.0,
                             "MILLISECOND", 55_000.0,
                             "MICROSECOND", 55_000_000.0,
-                            "EPOCH", -62_125_870_745.0 - diffUTCEpoch
+                            "EPOCH", -62_125_870_745.0
                     )
             ));
             testCases.add(create("TIMESTAMP", "2006-01-01 00:00:00.0",
@@ -220,7 +222,7 @@ public class ExtractFunctionIntegrationTest {
                             "SECOND", 0.0,
                             "MILLISECOND", 0.0,
                             "MICROSECOND", 0.0,
-                            "EPOCH", 1_136_073_600.0 - diffUTCEpoch
+                            "EPOCH", 1_136_073_600.0
                     )
             ));
             testCases.add(create("TIMESTAMP", "2001-02-16 20:38:40.123",
@@ -231,7 +233,7 @@ public class ExtractFunctionIntegrationTest {
                             "SECOND", 40.0,
                             "MILLISECOND", 40_123.0,
                             "MICROSECOND", 40_123_000.0,
-                            "EPOCH", 982_355_920.123 - diffUTCEpoch
+                            "EPOCH", 982_355_920.123
                     )
             ));
             testCases.add(create("TIMESTAMP", "2001-2-16 20:38:40.123",
@@ -243,7 +245,7 @@ public class ExtractFunctionIntegrationTest {
                             "SECOND", 40.0,
                             "MILLISECOND", 40_123.0,
                             "MICROSECOND", 40_123_000.0,
-                            "EPOCH", 982_355_920.123 - diffUTCEpoch
+                            "EPOCH", 982_355_920.123
                     )
             ));
             testCases.add(create("DATE", "2010-10-04",
@@ -347,8 +349,11 @@ public class ExtractFunctionIntegrationTest {
             put(1);
 
             if (literalSupported(type)) {
-
-                check(sql(field, literal(type, input)), expected);
+                double expectedOffset = 0.0;
+                if (field.equals("EPOCH") && (type.equals("TIMESTAMP") || type.equals("DATE"))) {
+                    expectedOffset = - calculateOffsetSeconds(objectInput);
+                }
+                check(sql(field, literal(type, input)), expected + expectedOffset);
             }
 
 
@@ -358,7 +363,12 @@ public class ExtractFunctionIntegrationTest {
         public void test_parameter() {
             put(1);
 
-            check(sql(field, "?"), expected, objectInput);
+            double expectedOffset = 0.0;
+            if (field.equals("EPOCH") && (type.equals("TIMESTAMP") || type.equals("DATE"))) {
+                expectedOffset = - calculateOffsetSeconds(objectInput);
+            }
+
+            check(sql(field, "?"), expected + expectedOffset, objectInput);
         }
 
         private <T> void check(String sql, T expectedResult, Object ...parameters) {
@@ -435,22 +445,29 @@ public class ExtractFunctionIntegrationTest {
 
     }
 
-    private static TimeZone defaultTimezone;
+    // This function is called for check() function to calculate adjustment
+    // of the actual value.
+    // The reason is that EXTRACT function cast its argument to TIMESTAMPTZ
+    // to run its logic. However, not for every case
+    // EXTRACT(EPOCH FROM source) == EXTRACT(EPOCH FROM CAST(source as TIMESTAMPTZ))
+    //
+    // TODO: After fixing the incompatibility, remove this function and and the places it is used.
+    private static long calculateOffsetSeconds(Object temporal) {
+        assertTrue(temporal instanceof LocalDateTime || temporal instanceof LocalDate);
 
-    private static final TimeZone testTimezone = TimeZone.getTimeZone("UTC+3");
-
-    private static final long diffUTCEpoch = testTimezone.getRawOffset() / 1_000;
-
-    @BeforeClass
-    public static void setUpClass() {
-        defaultTimezone = TimeZone.getDefault();
-        TimeZone.setDefault(testTimezone);
-        assertEquals(testTimezone, TimeZone.getDefault());
-    }
-
-    @AfterClass
-    public static void tearDownClass() {
-        TimeZone.setDefault(defaultTimezone);
+        ZonedDateTime zonedDateTime = null;
+        if (temporal instanceof LocalDate) {
+            LocalDate date = (LocalDate) temporal;
+            zonedDateTime = ZonedDateTime.of(
+                    date,
+                    LocalTime.of(0, 0),
+                    AbstractTimestampWithTimezoneConverter.DEFAULT_ZONE
+            );
+        } else {
+            LocalDateTime dateTime = (LocalDateTime) temporal;
+            zonedDateTime = ZonedDateTime.of(dateTime, AbstractTimestampWithTimezoneConverter.DEFAULT_ZONE);
+        }
+        return zonedDateTime.toOffsetDateTime().getOffset().getTotalSeconds();
     }
 
 
