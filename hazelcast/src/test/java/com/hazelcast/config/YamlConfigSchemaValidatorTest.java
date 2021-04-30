@@ -20,8 +20,10 @@ import com.hazelcast.internal.yaml.YamlDomBuilder;
 import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
@@ -32,6 +34,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
+@Category({QuickTest.class})
 public class YamlConfigSchemaValidatorTest {
 
     @Rule
