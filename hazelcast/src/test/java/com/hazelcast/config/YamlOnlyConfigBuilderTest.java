@@ -16,11 +16,10 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.util.RootCauseMatcher;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.internal.util.RootCauseMatcher;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -28,8 +27,6 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * Test cases specific only to YAML based configuration. The cases not

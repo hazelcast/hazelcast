@@ -68,7 +68,11 @@ public final class YamlToJsonConverter {
             try {
                 return new Integer(stringValue);
             } catch (NumberFormatException e) {
-                // returning rawNodeValue
+                try {
+                    return new Float(stringValue);
+                } catch (NumberFormatException e2) {
+                    // returning rawNodeValue
+                }
             }
         }
         return rawNodeValue;

@@ -98,10 +98,10 @@ public class YamlSchemaTest {
 
     @Parameterized.Parameter(0)
     public String testName;
-    
+
     @Parameterized.Parameter(1)
     public JSONObject input;
-    
+
     @Parameterized.Parameter(2)
     public JSONObject expectedValidationError;
 
