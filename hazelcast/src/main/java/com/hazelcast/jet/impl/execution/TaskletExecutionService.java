@@ -158,7 +158,7 @@ public class TaskletExecutionService {
 
     public void shutdown() {
         isShutdown = true;
-        Arrays.stream(cooperativeWorkers).forEach(thread -> thread.hasTasklet.release());
+        Arrays.stream(cooperativeWorkers).forEach(thread -> thread.newTaskletSemaphore.release());
         blockingTaskletExecutor.shutdownNow();
         hzExecutionService.shutdownExecutor(TASKLET_INIT_CLOSE_EXECUTOR_NAME);
     }
@@ -204,7 +204,7 @@ public class TaskletExecutionService {
         }
         for (int i = 0; i < trackersByThread.length; i++) {
             cooperativeWorkers[i].trackers.addAll(trackersByThread[i]);
-            cooperativeWorkers[i].hasTasklet.release();
+            cooperativeWorkers[i].newTaskletSemaphore.release();
         }
         Arrays.stream(cooperativeThreadPool).forEach(LockSupport::unpark);
     }
@@ -328,7 +328,7 @@ public class TaskletExecutionService {
         // prevent lambda allocation on each iteration
         private final Consumer<TaskletTracker> runTasklet = this::runTasklet;
 
-        private final Semaphore hasTasklet = new Semaphore(1);
+        private final Semaphore newTaskletSemaphore = new Semaphore(0);
 
         private boolean finestLogEnabled;
         private Thread myThread;
@@ -356,10 +356,10 @@ public class TaskletExecutionService {
                     idleCount = 0;
                 } else {
                     if (trackers.isEmpty()) {
-                        hasTasklet.drainPermits();
-                        if (trackers.isEmpty()) {
+                        newTaskletSemaphore.drainPermits();
+                        if (trackers.isEmpty() && !isShutdown) {
                             try {
-                                hasTasklet.acquire();
+                                newTaskletSemaphore.acquire();
                             } catch (InterruptedException e) {
                                 logger.fine(e.getMessage());
                             }
