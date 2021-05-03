@@ -24,7 +24,7 @@ import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
-import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -54,28 +54,32 @@ public class TcpIpHostnameJoinTest {
 
     private static final InetAddress LOCALHOST;
     private static final InetAddress LOCALHOST2;
+    private static final InetAddress LOCALHOST3;
+    private static final InetAddress LOCALHOST4;
 
     static {
         try {
             LOCALHOST = InetAddress.getByAddress("localhost", new byte[] {127, 0, 0, 1});
             LOCALHOST2 = InetAddress.getByAddress("localhost2", new byte[] {127, 0, 0, 1});
+            LOCALHOST3 = InetAddress.getByAddress("localhost3", new byte[] {127, 0, 0, 1});
+            LOCALHOST4 = InetAddress.getByAddress("localhost4", new byte[] {127, 0, 0, 1});
         } catch (UnknownHostException e) {
             throw ExceptionUtil.rethrow(e);
         }
     }
 
-    @Before
-    public void before() throws IOException {
+    @BeforeClass
+    public static void beforeClass() throws IOException {
         mockStatic(NetworkInterface.class);
 
         List<NetworkInterface> networkInterfaces = new ArrayList<NetworkInterface>();
-        networkInterfaces.add(createNetworkConfig("lo", true, LOCALHOST, LOCALHOST2));
+        networkInterfaces.add(createNetworkConfig("lo", true, LOCALHOST, LOCALHOST2, LOCALHOST3, LOCALHOST4));
         when(NetworkInterface.getNetworkInterfaces()).thenReturn(enumeration(networkInterfaces));
     }
 
     @After
-    public void after() throws IOException {
-        HazelcastInstanceFactory.terminateAll();
+    public void after() throws Exception {
+        HazelcastInstanceFactory.shutdownAll();
     }
 
     @Test
@@ -96,8 +100,9 @@ public class TcpIpHostnameJoinTest {
 
     @Test
     public void test_whenMembersDefinedHostnamesFormIndependentClusters() {
-        HazelcastInstance hz1 = instance("cluster1", "localhost");
-        HazelcastInstance hz2 = instance("cluster2", "localhost2");
+        HazelcastInstance hz1 = instance("cluster1", "localhost3");
+        HazelcastInstance hz2 = instance("cluster2", "localhost4");
+        //mocking doesn't always work properly if I use "localhost" and "localhost2" here...
 
         assertClusterSize(1, hz1);
         assertClusterSize(1, hz2);
@@ -122,7 +127,7 @@ public class TcpIpHostnameJoinTest {
         return Hazelcast.newHazelcastInstance(config);
     }
 
-    private NetworkInterface createNetworkConfig(String name, boolean loopback, InetAddress... addresses) throws IOException {
+    private static NetworkInterface createNetworkConfig(String name, boolean loopback, InetAddress... addresses) throws IOException {
         NetworkInterface networkInterface = mock(NetworkInterface.class);
         when(networkInterface.getName()).thenReturn(name);
         when(networkInterface.isUp()).thenReturn(true);

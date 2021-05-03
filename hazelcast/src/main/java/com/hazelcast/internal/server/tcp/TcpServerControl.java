@@ -24,6 +24,7 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.server.ServerContext;
+import com.hazelcast.internal.util.AddressUtil;
 import com.hazelcast.logging.ILogger;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -116,8 +117,7 @@ public final class TcpServerControl {
             // add the remote socket address as last alias. This way the intended public
             // address of the target member will be set correctly in TcpIpConnection.setEndpoint.
             if (mustRegisterRemoteSocketAddress) {
-                allAliases.add(new Address(connection.getRemoteSocketAddress()));
-                allAliases.add(connection.getRemoteAddress());
+                allAliases.addAll(AddressUtil.getAliases(connection.getRemoteSocketAddress()));
             }
         } else {
             // when not a member connection, register the remote socket address
@@ -181,7 +181,7 @@ public final class TcpServerControl {
                     logger.finest("Registering connection " + connection + " to address alias " + remoteAddressAlias
                             + " planeIndex:" + handshake.getPlaneIndex());
                 }
-                connectionManager.planes[handshake.getPlaneIndex()].connectionMap.putIfAbsent(remoteAddressAlias, connection);
+                connectionManager.planes[handshake.getPlaneIndex()].addConnection(remoteAddressAlias, connection);
             }
         }
     }

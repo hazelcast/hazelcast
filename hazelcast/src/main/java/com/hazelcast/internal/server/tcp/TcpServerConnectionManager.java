@@ -130,7 +130,7 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
         Plane plane = getPlane(streamId);
         TcpServerConnection connection = plane.connectionMap.get(address);
         if (connection == null && server.isLive()) {
-            if (plane.connectionsInProgress.add(address)) {
+            if (plane.addConnectionInProgress(address)) {
                 if (logger.isFineEnabled()) {
                     logger.fine("Connection to: " + address + " streamId:" + streamId + " is not yet progress");
                 }
@@ -184,7 +184,7 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
             });
             return true;
         } finally {
-            plane.connectionsInProgress.remove(remoteAddress);
+            plane.removeConnectionInProgress(remoteAddress);
         }
     }
 
@@ -208,7 +208,7 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
 
         connections.forEach(conn -> close(conn, "TcpServer is stopping"));
         acceptedChannels.clear();
-        stream(planes).forEach(plane -> plane.connectionsInProgress.clear());
+        stream(planes).forEach(plane -> plane.clearConnectionsInProgress());
         stream(planes).forEach(plane -> plane.errorHandlers.clear());
 
         connections.clear();
@@ -248,7 +248,7 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
     }
 
     void failedConnection(Address address, int planeIndex, Throwable t, boolean silent) {
-        planes[planeIndex].connectionsInProgress.remove(address);
+        planes[planeIndex].removeConnectionInProgress(address);
         serverContext.onFailedConnection(address);
         if (!silent) {
             getErrorHandler(address, planeIndex, false).onError(t);

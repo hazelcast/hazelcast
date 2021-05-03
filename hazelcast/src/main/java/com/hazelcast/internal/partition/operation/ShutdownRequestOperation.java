@@ -25,6 +25,8 @@ import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.logging.ILogger;
 
+import java.util.Iterator;
+
 public class ShutdownRequestOperation extends AbstractPartitionOperation implements MigrationCycleOperation {
 
     public ShutdownRequestOperation() {
@@ -39,6 +41,18 @@ public class ShutdownRequestOperation extends AbstractPartitionOperation impleme
         if (partitionService.isLocalMemberMaster()) {
             ClusterService clusterService = getNodeEngine().getClusterService();
             Member member = clusterService.getMember(caller);
+
+            if (member == null) {
+                Iterator<Address> aliasIterator = getAllAddressesOfCaller(caller).iterator();
+                while (aliasIterator.hasNext() && member == null) {
+                    Address alias = aliasIterator.next();
+                    if (alias.equals(caller)) {
+                        continue;
+                    }
+                    member = clusterService.getMember(alias);
+                }
+            }
+
             if (member != null) {
                 if (logger.isFinestEnabled()) {
                     logger.finest("Received shutdown request from " + caller);
@@ -47,6 +61,7 @@ public class ShutdownRequestOperation extends AbstractPartitionOperation impleme
             } else {
                 logger.warning("Ignoring shutdown request from " + caller + " because it is not a member");
             }
+
         } else {
             logger.warning("Received shutdown request from " + caller + " but this node is not master.");
         }

@@ -18,13 +18,7 @@ package com.hazelcast.internal.server.tcp;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.instance.EndpointQualifier;
-import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ENDPOINT_MANAGER_ACCEPTED_SOCKET_COUNT;
-import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ENDPOINT_MANAGER_ACTIVE_COUNT;
-import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ENDPOINT_MANAGER_CLOSED_COUNT;
-import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ENDPOINT_MANAGER_CONNECTION_LISTENER_COUNT;
-import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ENDPOINT_MANAGER_OPENED_COUNT;
 import com.hazelcast.internal.metrics.Probe;
-import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionLifecycleListener;
@@ -33,16 +27,13 @@ import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.server.NetworkStats;
 import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.server.ServerContext;
-import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.MutableLong;
 import com.hazelcast.internal.util.counters.MwCounter;
-import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import com.hazelcast.internal.util.executor.StripedRunnable;
 import com.hazelcast.logging.ILogger;
-import static com.hazelcast.spi.properties.ClusterProperty.CHANNEL_COUNT;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import static java.util.Collections.newSetFromMap;
+
 import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -50,6 +41,17 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ENDPOINT_MANAGER_ACCEPTED_SOCKET_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ENDPOINT_MANAGER_ACTIVE_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ENDPOINT_MANAGER_CLOSED_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ENDPOINT_MANAGER_CONNECTION_LISTENER_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ENDPOINT_MANAGER_OPENED_COUNT;
+import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
+import static com.hazelcast.spi.properties.ClusterProperty.CHANNEL_COUNT;
+import static java.util.Collections.newSetFromMap;
 
 /**
  * This base class solely exists for the purpose of simplification of the Manager class
@@ -121,6 +123,27 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
         Plane(int index) {
             this.index = index;
         }
+
+        void addConnection(Address address, TcpServerConnection connection) {
+            connectionMap.putIfAbsent(address, connection);
+        }
+
+        void removeConnection(TcpServerConnection connection) {
+            removeConnectionInProgress(connection.getRemoteAddress());
+            connectionMap.entrySet().removeIf(entry -> entry.getValue().equals(connection));
+        }
+
+        public boolean addConnectionInProgress(Address address) {
+            return connectionsInProgress.add(address);
+        }
+
+        public void removeConnectionInProgress(Address address) {
+            connectionsInProgress.remove(address);
+        }
+
+        public void clearConnectionsInProgress() {
+            connectionsInProgress.clear();
+        }
     }
 
     private final class SendTask implements Runnable {
@@ -179,8 +202,7 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
                 int planeIndex = connection.getPlaneIndex();
                 if (planeIndex > -1) {
                     Plane plane = planes[connection.getPlaneIndex()];
-                    plane.connectionsInProgress.remove(remoteAddress);
-                    plane.connectionMap.remove(remoteAddress);
+                    plane.removeConnection(connection);
                     fireConnectionRemovedEvent(connection, remoteAddress);
                 } else {
                     // it might be the case that the connection was closed quickly enough
@@ -188,7 +210,7 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
                     // by remoteAddress and connectionId over all planes and remove it wherever found.
                     boolean removed = false;
                     for (Plane plane : planes) {
-                        plane.connectionsInProgress.remove(remoteAddress);
+                        plane.removeConnectionInProgress(remoteAddress);
                         // not using removeIf due to https://bugs.java.com/bugdatabase/view_bug.do?bug_id=8078645
                         Iterator<TcpServerConnection> connections = plane.connectionMap.values().iterator();
                         while (connections.hasNext()) {
