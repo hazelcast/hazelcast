@@ -104,7 +104,7 @@ public abstract class AbstractJsonGetter extends Getter {
     }
 
     @Override
-    Object getValue(Object obj, String attributePath) {
+    Object getValue(Object obj, String attributePath, boolean asDataIfPossible) {
         JsonPathCursor pathCursor = getPath(attributePath);
 
         try (JsonParser parser = createParser(obj)) {
@@ -145,9 +145,9 @@ public abstract class AbstractJsonGetter extends Getter {
     }
 
     @Override
-    Object getValue(Object obj, String attributePath, Object metadata) throws Exception {
+    Object getValue(Object obj, String attributePath, Object metadata, boolean asDataIfPossible) throws Exception {
         if (metadata == null) {
-            return getValue(obj, attributePath);
+            return getValue(obj, attributePath, asDataIfPossible);
         }
         JsonSchemaNode schemaNode = (JsonSchemaNode) metadata;
 
@@ -171,7 +171,7 @@ public abstract class AbstractJsonGetter extends Getter {
         pathCursor.reset();
         if (knownPattern != null) {
             if (knownPattern.hasAny()) {
-                return getValue(obj, attributePath);
+                return getValue(obj, attributePath, asDataIfPossible);
             }
             queryContext.addOrVoteForPattern(knownPattern);
             return convertFromJsonValue(JsonSchemaHelper.findValueWithPattern(adapter, schemaNode, knownPattern, pathCursor));

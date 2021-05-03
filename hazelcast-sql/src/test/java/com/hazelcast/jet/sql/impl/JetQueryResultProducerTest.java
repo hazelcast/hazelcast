@@ -103,9 +103,9 @@ public class JetQueryResultProducerTest extends JetTestSupport {
         producer.done();
 
         assertThat(iterator.hasNext()).isTrue();
-        assertThat((int) iterator.next().get(0)).isEqualTo(1);
+        assertThat((int) iterator.next().get(0, false)).isEqualTo(1);
         assertThat(iterator.hasNext()).isTrue();
-        assertThat((int) iterator.next().get(0)).isEqualTo(2);
+        assertThat((int) iterator.next().get(0, false)).isEqualTo(2);
         assertThat(iterator).isExhausted();
     }
 
@@ -132,7 +132,7 @@ public class JetQueryResultProducerTest extends JetTestSupport {
     public void when_nextItemWhileWaiting_then_hasNextReturns() throws Exception {
         Future<?> future = spawn(() -> {
             assertThat(iterator.hasNext(1, DAYS)).isEqualTo(YES);
-            assertThat((int) iterator.next().get(0)).isEqualTo(42);
+            assertThat((int) iterator.next().get(0, false)).isEqualTo(42);
         });
         sleepMillis(50); // sleep so that the thread starts blocking in `hasNext`
 

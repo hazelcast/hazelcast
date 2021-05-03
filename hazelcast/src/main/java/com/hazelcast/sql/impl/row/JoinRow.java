@@ -45,13 +45,13 @@ public class JoinRow implements Row, IdentifiedDataSerializable {
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T> T get(int idx) {
+    public <T> T get(int idx, boolean asDataIfNonPrimitive) {
         int leftColumnCount = left.getColumnCount();
 
         if (idx < leftColumnCount) {
-            return (T) left.get(idx);
+            return (T) left.get(idx, false);
         } else {
-            return (T) right.get(idx - leftColumnCount);
+            return (T) right.get(idx - leftColumnCount, false);
         }
     }
 

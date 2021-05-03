@@ -684,7 +684,7 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
                 RowBatch batch = state.consumeBatch();
 
                 for (int i = 0; i < batch.getRowCount(); i++) {
-                    Integer value = batch.getRow(i).get(0);
+                    Integer value = batch.getRow(i).get(0, false);
 
                     if (value == VALUE_0) {
                         consumed0 = true;

@@ -106,22 +106,22 @@ public class HazelcastJsonQueryTargetTest {
 
         target.setTarget(value, null);
 
-        assertThat(topExtractor.get()).isInstanceOf(HazelcastJsonValue.class);
-        assertThat(nonExistingExtractor.get()).isNull();
-        assertThat(stringExtractor.get()).isEqualTo("string");
-        assertThat(booleanExtractor.get()).isEqualTo(true);
-        assertThat(byteExtractor.get()).isEqualTo((byte) 127);
-        assertThat(shortExtractor.get()).isEqualTo((short) 32767);
-        assertThat(intExtractor.get()).isEqualTo(2147483647);
-        assertThat(longExtractor.get()).isEqualTo(9223372036854775807L);
-        assertThat(floatExtractor.get()).isEqualTo(1234567890.1F);
-        assertThat(doubleExtractor.get()).isEqualTo(123451234567890.1D);
-        assertThat(decimalExtractor.get()).isEqualTo(new BigDecimal("9223372036854775.123"));
-        assertThat(timeExtractor.get()).isEqualTo(LocalTime.of(12, 23, 34));
-        assertThat(dateExtractor.get()).isEqualTo(LocalDate.of(2020, 9, 9));
-        assertThat(timestampExtractor.get()).isEqualTo(LocalDateTime.of(2020, 9, 9, 12, 23, 34, 100_000_000));
-        assertThat(timestampZoneExtractor.get()).isEqualTo(OffsetDateTime.of(2020, 9, 9, 12, 23, 34, 200_000_000, UTC));
-        assertThat(nullExtractor.get()).isNull();
-        assertThat(objectExtractor.get()).isNotNull();
+        assertThat(topExtractor.get(false)).isInstanceOf(HazelcastJsonValue.class);
+        assertThat(nonExistingExtractor.get(false)).isNull();
+        assertThat(stringExtractor.get(false)).isEqualTo("string");
+        assertThat(booleanExtractor.get(false)).isEqualTo(true);
+        assertThat(byteExtractor.get(false)).isEqualTo((byte) 127);
+        assertThat(shortExtractor.get(false)).isEqualTo((short) 32767);
+        assertThat(intExtractor.get(false)).isEqualTo(2147483647);
+        assertThat(longExtractor.get(false)).isEqualTo(9223372036854775807L);
+        assertThat(floatExtractor.get(false)).isEqualTo(1234567890.1F);
+        assertThat(doubleExtractor.get(false)).isEqualTo(123451234567890.1D);
+        assertThat(decimalExtractor.get(false)).isEqualTo(new BigDecimal("9223372036854775.123"));
+        assertThat(timeExtractor.get(false)).isEqualTo(LocalTime.of(12, 23, 34));
+        assertThat(dateExtractor.get(false)).isEqualTo(LocalDate.of(2020, 9, 9));
+        assertThat(timestampExtractor.get(false)).isEqualTo(LocalDateTime.of(2020, 9, 9, 12, 23, 34, 100_000_000));
+        assertThat(timestampZoneExtractor.get(false)).isEqualTo(OffsetDateTime.of(2020, 9, 9, 12, 23, 34, 200_000_000, UTC));
+        assertThat(nullExtractor.get(false)).isNull();
+        assertThat(objectExtractor.get(false)).isNotNull();
     }
 }

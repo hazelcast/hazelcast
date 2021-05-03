@@ -67,7 +67,7 @@ public class BlockingRootResultConsumerTest extends HazelcastTestSupport {
         consumer.consume(singletonList(HeapRow.of(1)), true);
 
         assertTrue(iterator.hasNext());
-        assertEquals(1, (int) iterator.next().get(0));
+        assertEquals(1, (int) iterator.next().get(0, false));
 
         assertFalse(iterator.hasNext());
 

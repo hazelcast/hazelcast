@@ -27,7 +27,7 @@ import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolFactory;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolFactoryImpl;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolThreadLocal;
 import com.hazelcast.internal.serialization.impl.defaultserializers.ConstantSerializers;
-import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecord;
+import com.hazelcast.internal.serialization.impl.portable.AbstractPortableGenericRecord;
 import com.hazelcast.internal.usercodedeployment.impl.ClassLocator;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -430,10 +430,10 @@ public abstract class AbstractSerializationService implements InternalSerializat
     protected final boolean safeRegister(final Class type, final SerializerAdapter serializer) {
         if (constantTypesMap.containsKey(type) && !allowOverrideDefaultSerializers) {
             throw new IllegalArgumentException(
-                "[" + type + "] serializer cannot be overridden."
-                + " See documentation of Hazelcast serialization configuration "
-                + " or setAllowOverrideDefaultSerializers method in SerializationConfig."
-              );
+                    "[" + type + "] serializer cannot be overridden."
+                            + " See documentation of Hazelcast serialization configuration "
+                            + " or setAllowOverrideDefaultSerializers method in SerializationConfig."
+            );
         }
         SerializerAdapter current = typeMap.putIfAbsent(type, serializer);
         if (current != null && current.getImpl().getClass() != serializer.getImpl().getClass()) {
@@ -529,7 +529,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
         if (Portable.class.isAssignableFrom(type)) {
             return portableSerializerAdapter;
         }
-        if (PortableGenericRecord.class.isAssignableFrom(type)) {
+        if (AbstractPortableGenericRecord.class.isAssignableFrom(type)) {
             return portableSerializerAdapter;
         }
         return constantTypesMap.get(type);

@@ -36,7 +36,7 @@ abstract class Getter {
      * Method for generic getters that are not bound to a specific path only, but can get any attributePath
      * and extract from it.
      */
-    Object getValue(Object obj, String attributePath) throws Exception {
+    Object getValue(Object obj, String attributePath, boolean asDataIfPossible) throws Exception {
         return getValue(obj);
     }
 
@@ -44,8 +44,8 @@ abstract class Getter {
      * Method for generic getters that can make use of metadata if available. These getters must
      * gracefully fallback to not using metadata if unavailable.
      */
-    Object getValue(Object obj, String attributePath, Object metadata) throws Exception {
-        return getValue(obj, attributePath);
+    Object getValue(Object obj, String attributePath, Object metadata, boolean asDataIfPossible) throws Exception {
+        return getValue(obj, attributePath, asDataIfPossible);
     }
 
     /**

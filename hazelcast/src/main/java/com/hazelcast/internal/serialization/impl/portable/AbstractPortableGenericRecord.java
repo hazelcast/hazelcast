@@ -14,25 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.row;
+package com.hazelcast.internal.serialization.impl.portable;
 
-/**
- * Single row.
- */
-public interface Row extends RowBatch {
-    @Override
-    default Row getRow(int index) {
-        assert index == 0;
+import com.hazelcast.internal.serialization.impl.AbstractGenericRecord;
+import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
+import com.hazelcast.nio.serialization.ClassDefinition;
 
-        return this;
-    }
+import javax.annotation.Nonnull;
 
-    @Override
-    default int getRowCount() {
-        return 1;
-    }
+public abstract class AbstractPortableGenericRecord extends AbstractGenericRecord implements InternalGenericRecord {
 
-    <T> T get(int index, boolean asDataIfNonPrimitive);
-
-    int getColumnCount();
+    @Nonnull
+    public abstract ClassDefinition getClassDefinition();
 }

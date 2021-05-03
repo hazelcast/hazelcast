@@ -29,7 +29,7 @@ public class GenericTargetExtractor extends AbstractGenericExtractor {
     }
 
     @Override
-    public Object get() {
+    public Object get(boolean asDataIfNonPrimitive) {
         try {
             return targetAccessor.getTargetForDirectAccess(type);
         } catch (QueryDataTypeMismatchException e) {

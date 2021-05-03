@@ -31,7 +31,7 @@ public final class FetchRow implements Row {
     }
 
     @Override
-    public <T> T get(int index) {
+    public <T> T get(int index, boolean asDataIfNonPrimitive) {
         throw new UnsupportedOperationException("Should not be called.");
     }
 

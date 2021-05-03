@@ -141,7 +141,7 @@ public class TernaryLogicTest {
     private static class MockRow implements Row {
 
         @Override
-        public <T> T get(int index) {
+        public <T> T get(int index, boolean asDataIfNonPrimitive) {
             throw new UnsupportedOperationException();
         }
 

@@ -16,8 +16,6 @@
 
 package com.hazelcast.internal.serialization.impl.portable;
 
-import com.hazelcast.internal.serialization.impl.AbstractGenericRecord;
-import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
@@ -36,7 +34,13 @@ import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.Set;
 
-public class PortableGenericRecord extends AbstractGenericRecord implements InternalGenericRecord {
+/**
+ * This implementation of GenericRecord is created when
+ * 1. A generic record is build via {@link GenericRecordBuilder#portable(ClassDefinition)}
+ * 2. A generic record is build via {@link GenericRecord#cloneWithBuilder()} from a portable GenericRecord
+ * 3. A generic record is build via {@link GenericRecord#newBuilder()} from a portable GenericRecord
+ */
+public class PortableGenericRecord extends AbstractPortableGenericRecord {
 
     private final ClassDefinition classDefinition;
     private final Object[] objects;
@@ -47,6 +51,8 @@ public class PortableGenericRecord extends AbstractGenericRecord implements Inte
         this.objects = objects;
     }
 
+    @Nonnull
+    @Override
     public ClassDefinition getClassDefinition() {
         return classDefinition;
     }
