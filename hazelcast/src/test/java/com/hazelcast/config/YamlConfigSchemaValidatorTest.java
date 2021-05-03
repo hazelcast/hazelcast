@@ -37,17 +37,6 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class})
 public class YamlConfigSchemaValidatorTest {
 
-    @Rule
-    public OverridePropertyRule hazelcastConfigProperty = OverridePropertyRule.clear("hazelcast.config.schema.validation.enabled");
-
-    @Test
-    public void validationDisabled() {
-        System.setProperty("hazelcast.config.schema.validation.enabled", "true");
-        YamlMapping config = (YamlMapping) YamlDomBuilder.build(new HashMap<>());
-        YamlConfigSchemaValidator validator = YamlConfigSchemaValidator.create();
-        validator.validate(config);
-    }
-
     @Test
     public void validationExceptionIsWrapped() {
         YamlMapping config = (YamlMapping) YamlDomBuilder.build(new HashMap<>());

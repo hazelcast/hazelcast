@@ -19,6 +19,7 @@ package com.hazelcast.config;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.OverridePropertyRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -56,6 +57,9 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
 
     @Rule
     public ExpectedException expected = ExpectedException.none();
+
+    @Rule
+    public OverridePropertyRule hazelcastConfigProperty = OverridePropertyRule.clear("hazelcast.config.schema.validation.enabled");
 
     @Test
     public abstract void testConfigurationURL() throws Exception;
@@ -448,6 +452,9 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
 
     @Test
     public abstract void testWhitespaceInNonSpaceStrings();
+    
+    @Test
+    public abstract void testSkippingSchemaValidation();
 
     @Test
     public void testCompleteAdvancedNetworkConfig() {

@@ -65,16 +65,7 @@ interface YamlConfigSchemaValidator {
         }
     }
 
-    /**
-     * Set it to {@code true} to skip the YAML configuration validation.
-     */
-    HazelcastProperty SKIP_PROP = new HazelcastProperty("hazelcast.config.schema.validation.enabled", "false");
-
     static YamlConfigSchemaValidator create() {
-        if ("true".equalsIgnoreCase(SKIP_PROP.getSystemProperty())) {
-            return rootNode -> {
-            };
-        }
         return new YamlConfigSchemaValidatorImpl();
     }
 

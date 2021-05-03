@@ -3856,4 +3856,11 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
         return new InMemoryXmlConfig(xml);
     }
+
+    @Override
+    public void testSkippingSchemaValidation() {
+        System.setProperty("hazelcast.config.schema.validation.enabled", "false");
+        String xml = HAZELCAST_START_TAG + "<invalid></invalid>" + HAZELCAST_END_TAG;
+        buildConfig(xml);
+    }
 }

@@ -3627,6 +3627,13 @@ public class YamlConfigBuilderTest
     }
 
     @Override
+    public void testSkippingSchemaValidation() {
+        System.setProperty("hazelcast.config.schema.validation.enabled", "false");
+        String yaml = "invalid: yes";
+        buildConfig(yaml);
+    }
+
+    @Override
     @Test
     public void testPersistentMemoryDirectoryConfiguration() {
         String yaml = ""

@@ -158,7 +158,9 @@ public class YamlConfigBuilder extends AbstractYamlConfigBuilder implements Conf
         replaceVariables(w3cRootNode);
         importDocuments(imdgRoot);
 
-        YamlConfigSchemaValidator.create().validate((YamlMapping) imdgRoot.parent());
+        if (shouldValidateTheSchema()) {
+            YamlConfigSchemaValidator.create().validate((YamlMapping) imdgRoot.parent());
+        }
 
         new YamlMemberDomConfigProcessor(true, config).buildConfig(w3cRootNode);
     }

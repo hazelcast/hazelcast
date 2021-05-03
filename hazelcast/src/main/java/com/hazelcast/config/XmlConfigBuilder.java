@@ -180,12 +180,6 @@ public class XmlConfigBuilder extends AbstractXmlConfigBuilder implements Config
         }
     }
 
-    private boolean shouldValidateTheSchema() {
-        // in case of overridden Hazelcast version there may be no schema with that version
-        // (this feature is used only in Simulator testing)
-        return System.getProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION) == null;
-    }
-
     @Override
     protected Document parse(InputStream is) throws Exception {
         DocumentBuilder builder = getNsAwareDocumentBuilderFactory().newDocumentBuilder();
