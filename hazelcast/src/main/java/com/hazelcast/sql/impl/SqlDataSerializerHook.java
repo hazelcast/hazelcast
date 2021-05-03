@@ -31,6 +31,7 @@ import com.hazelcast.sql.impl.expression.CastExpression;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.ParameterExpression;
+import com.hazelcast.sql.impl.expression.datetime.ExtractFunction;
 import com.hazelcast.sql.impl.expression.math.AbsFunction;
 import com.hazelcast.sql.impl.expression.math.DivideFunction;
 import com.hazelcast.sql.impl.expression.math.DoubleFunction;
@@ -196,7 +197,9 @@ public class SqlDataSerializerHook implements DataSerializerHook {
 
     public static final int EXPRESSION_CASE = 71;
 
-    public static final int LEN = EXPRESSION_CASE + 1;
+    public static final int EXPRESSION_EXTRACT = 72;
+
+    public static final int LEN = EXPRESSION_EXTRACT + 1;
 
     @Override
     public int getFactoryId() {
@@ -285,6 +288,8 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[EXPRESSION_TRIM] = arg -> new TrimFunction();
         constructors[EXPRESSION_REPLACE] = arg -> new ReplaceFunction();
         constructors[EXPRESSION_POSITION] = arg -> new PositionFunction();
+
+        constructors[EXPRESSION_EXTRACT] = arg -> new ExtractFunction();
 
         constructors[NODE_RECEIVE_MERGE_SORT] = arg -> new ReceiveSortMergePlanNode();
         constructors[NODE_FETCH] = arg -> new FetchPlanNode();

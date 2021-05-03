@@ -29,6 +29,7 @@ import org.junit.runner.RunWith;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -447,6 +448,12 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
     @Test
     public void test_CASE() {
         check(sql("CASE WHEN ? THEN ? END || CASE WHEN ? THEN ? END"), true, "foo", true, "bar");
+    }
+
+    @Test
+    public void test_EXTRACT() {
+        check(sql("EXTRACT(MONTH FROM ?) || EXTRACT(MONTH FROM ?)"),
+                LocalDateTime.now(), LocalDateTime.now());
     }
 
     private void check(String sql, Object... params) {

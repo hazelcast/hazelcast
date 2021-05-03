@@ -24,7 +24,11 @@ import org.apache.calcite.sql.type.SqlTypeName;
  */
 public class HazelcastType extends BasicSqlType {
     HazelcastType(SqlTypeName typeName, boolean nullable) {
-        super(HazelcastTypeSystem.INSTANCE, typeName);
+        this(typeName, nullable, PRECISION_NOT_SPECIFIED);
+    }
+
+    HazelcastType(SqlTypeName typeName, boolean nullable, int precision) {
+        super(HazelcastTypeSystem.INSTANCE, typeName, precision);
 
         this.isNullable = nullable;
 
