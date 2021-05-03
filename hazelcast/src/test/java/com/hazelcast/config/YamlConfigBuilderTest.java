@@ -68,6 +68,7 @@ import static com.hazelcast.config.WanQueueFullBehavior.DISCARD_AFTER_MUTATION;
 import static com.hazelcast.config.WanQueueFullBehavior.THROW_EXCEPTION;
 import static java.io.File.createTempFile;
 import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -3661,6 +3662,29 @@ public class YamlConfigBuilderTest
         assertEquals(0, dir0Config.getNumaNode());
         assertEquals("/mnt/pmem1", dir1Config.getDirectory());
         assertEquals(1, dir1Config.getNumaNode());
+    }
+
+    @Test
+    public void cacheEntryListenerConfigParsing() {
+        String yaml = "hazelcast:\n"
+                + "  cache:\n"
+                + "    my-cache:\n"
+                + "      cache-entry-listeners:\n"
+                + "        - old-value-required: true\n"
+                + "          synchronous: true\n"
+                + "          cache-entry-listener-factory:\n"
+                + "            class-name: com.example.cache.MyEntryListenerFactory\n"
+                + "          cache-entry-event-filter-factory:\n"
+                + "            class-name: com.example.cache.MyEntryEventFilterFactory";
+        Config actual = buildConfig(yaml);
+        CacheSimpleEntryListenerConfig expected = new CacheSimpleEntryListenerConfig()
+                .setOldValueRequired(true)
+                .setSynchronous(true)
+                .setCacheEntryListenerFactory("com.example.cache.MyEntryListenerFactory")
+                .setCacheEntryEventFilterFactory("com.example.cache.MyEntryEventFilterFactory");
+
+        List<CacheSimpleEntryListenerConfig> actualListeners = actual.findCacheConfig("my-cache").getCacheEntryListeners();
+        assertEquals(singletonList(expected), actualListeners);
     }
 
     @Override
