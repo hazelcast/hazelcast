@@ -33,7 +33,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.metrics.MetricNames.EXECUTION_COMPLETION_TIME;
 import static com.hazelcast.jet.core.metrics.MetricNames.EXECUTION_START_TIME;
 
@@ -73,14 +72,8 @@ public class JobExecutionMetricsTest extends SimpleTestInClusterSupport {
         assertTrueEventually(() -> jobChecker.assertSummedMetricValueAtLeast(EXECUTION_START_TIME, 1));
         JmxMetricsChecker jmxChecker = new JmxMetricsChecker(instance().getName(), job);
 
-        long executionStartTime = jmxChecker.assertMetricValueAtLeast(EXECUTION_START_TIME, 1);
+        jmxChecker.assertMetricValueAtLeast(EXECUTION_START_TIME, 1);
         jmxChecker.assertMetricValue(EXECUTION_COMPLETION_TIME, JOB_HAS_NOT_FINISHED_YET_TIME);
-
-        job.cancel();
-        assertJobStatusEventually(job, FAILED);
-
-        jobChecker.assertRandomMetricValue(EXECUTION_START_TIME, executionStartTime);
-        jobChecker.assertRandomMetricValueAtLeast(EXECUTION_COMPLETION_TIME, executionStartTime);
     }
 
     @Test
