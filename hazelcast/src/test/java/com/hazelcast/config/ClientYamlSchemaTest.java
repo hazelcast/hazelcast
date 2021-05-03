@@ -40,7 +40,19 @@ public class ClientYamlSchemaTest
         Object hazelcastValue = input.getJSONObject("hazelcast");
         input.remove("hazelcast");
         input.put("hazelcast-client", hazelcastValue);
+        amendInstancePointersForClient((JSONObject) args[2]);
         return new Object[]{args[0], input, args[2]};
+    }
+
+    private static void amendInstancePointersForClient(JSONObject error) {
+        if (error == null) {
+            return;
+        }
+        if (error.optString("pointerToViolation") != null) {
+            error.put("pointerToViolation", error.getString("pointerToViolation").replace("#/hazelcast", "#/hazelcast-client"));
+            error.optJSONArray("causingExceptions")
+                    .forEach(causingExcJson -> amendInstancePointersForClient((JSONObject) causingExcJson));
+        }
     }
 
     @Override
