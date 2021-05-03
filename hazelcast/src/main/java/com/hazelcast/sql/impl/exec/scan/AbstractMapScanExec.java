@@ -19,8 +19,9 @@ package com.hazelcast.sql.impl.exec.scan;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.query.impl.getters.Extractors;
-import com.hazelcast.sql.impl.SqlErrorCode;
+import com.hazelcast.sql.impl.LazyTarget;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.exec.AbstractExec;
 import com.hazelcast.sql.impl.exec.IterationResult;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -193,10 +194,14 @@ public abstract class AbstractMapScanExec extends AbstractExec {
 
         for (int j = 0; j < projects.size(); j++) {
             Object projectRes = this.row.get(projects.get(j), true);
-
-            row.set(j, projectRes);
+            if (projectRes instanceof Data) {
+                LazyTarget lazyTarget = new LazyTarget();
+                lazyTarget.setSerialized((Data) projectRes);
+                row.set(j, lazyTarget);
+            } else {
+                row.set(j, projectRes);
+            }
         }
-
         return row;
     }
 
