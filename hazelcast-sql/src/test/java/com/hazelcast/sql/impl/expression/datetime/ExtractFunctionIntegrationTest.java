@@ -24,7 +24,7 @@ import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.converter.AbstractTimestampWithTimezoneConverter;
-import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -50,13 +50,13 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(Enclosed.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ExtractFunctionIntegrationTest {
 
     @RunWith(Parameterized.class)
     public static class ParameterizedTests extends ExpressionTestSupport {
-        @Parameterized.Parameter(0)
+        @Parameterized.Parameter
         public String field;
 
         @Parameterized.Parameter(1)
@@ -66,7 +66,7 @@ public class ExtractFunctionIntegrationTest {
         public String input;
 
         @Parameterized.Parameter(3)
-        public Object objectInput;
+        public Object parameterInput;
 
         @Parameterized.Parameter(4)
         public double expected;
@@ -81,7 +81,7 @@ public class ExtractFunctionIntegrationTest {
                             result.getKey(),   // Field
                             c.type,            // Type
                             c.input,           // Input
-                            c.objectInput,     // Input argument for parameter
+                            c.parameterInput,     // Input argument for parameter
                             result.getValue(), // Expected result
                     });
                 }
@@ -352,7 +352,7 @@ public class ExtractFunctionIntegrationTest {
             if (literalSupported(type)) {
                 double expectedOffset = 0.0;
                 if (field.equals("EPOCH") && (type.equals("TIMESTAMP") || type.equals("DATE"))) {
-                    expectedOffset = - calculateOffsetSeconds(objectInput);
+                    expectedOffset = - calculateOffsetSeconds(parameterInput);
                 }
                 check(sql(field, literal(type, input)), expected + expectedOffset);
             }
@@ -366,10 +366,10 @@ public class ExtractFunctionIntegrationTest {
 
             double expectedOffset = 0.0;
             if (field.equals("EPOCH") && (type.equals("TIMESTAMP") || type.equals("DATE"))) {
-                expectedOffset = - calculateOffsetSeconds(objectInput);
+                expectedOffset = - calculateOffsetSeconds(parameterInput);
             }
 
-            check(sql(field, "?"), expected + expectedOffset, objectInput);
+            check(sql(field, "?"), expected + expectedOffset, parameterInput);
         }
 
         private <T> void check(String sql, T expectedResult, Object ...parameters) {
@@ -448,15 +448,15 @@ public class ExtractFunctionIntegrationTest {
 
     // This function is called for check() function to calculate adjustment
     // of the actual value.
-    // The reason is that EXTRACT function cast its argument to TIMESTAMPTZ
-    // to run its logic. However, not for every case
+    // The reason is that EXTRACT function casts its argument to TIMESTAMPTZ
+    // to run its logic. However, it's not true that
     // EXTRACT(EPOCH FROM source) == EXTRACT(EPOCH FROM CAST(source as TIMESTAMPTZ))
     //
-    // TODO: After fixing the incompatibility, remove this function and and the places it is used.
+    // TODO: After fixing https://github.com/hazelcast/hazelcast/issues/18620, remove this function and and the places it is used
     private static long calculateOffsetSeconds(Object temporal) {
         assertTrue(temporal instanceof LocalDateTime || temporal instanceof LocalDate);
 
-        ZonedDateTime zonedDateTime = null;
+        ZonedDateTime zonedDateTime;
         if (temporal instanceof LocalDate) {
             LocalDate date = (LocalDate) temporal;
             zonedDateTime = ZonedDateTime.of(
@@ -524,13 +524,13 @@ public class ExtractFunctionIntegrationTest {
     private static class TestCase {
         private final String type;
         private final String input;
-        private final Object objectInput;
+        private final Object parameterInput;
         private final Map<String, Double> results;
 
-        private TestCase(String type, String input, Object objectInput, Map<String, Double> results) {
+        private TestCase(String type, String input, Object parameterInput, Map<String, Double> results) {
             this.type = type;
             this.input = input;
-            this.objectInput = objectInput;
+            this.parameterInput = parameterInput;
             this.results = results;
         }
     }
