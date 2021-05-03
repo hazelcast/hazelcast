@@ -361,7 +361,8 @@ public class TaskletExecutionService {
                             try {
                                 newTaskletSemaphore.acquire();
                             } catch (InterruptedException e) {
-                                logger.fine(e.getMessage());
+                                logger.severe("Cooperative worker interrupted", e);
+                                return;
                             }
                         }
                     } else {
