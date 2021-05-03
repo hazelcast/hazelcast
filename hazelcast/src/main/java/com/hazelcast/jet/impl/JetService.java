@@ -143,8 +143,8 @@ public class JetService implements ManagedService, MembershipAwareService, LiveO
     }
 
     /**
-     * Tells master to gracefully shut terminate jobs on this member. Blocks
-     * until all are down.
+     * Tells master to gracefully terminate jobs on this member. Blocks until
+     * all are down.
      */
     public void shutDownJobs() {
         if (shutdownFuture.compareAndSet(null, new CompletableFuture<>())) {

@@ -259,11 +259,10 @@ public class ExecutionContext implements DynamicMetricsProvider {
     }
 
     /**
-     * Terminates the local execution of tasklets and returns a future which is
-     * only completed when all tasklets are completed and contains the result
-     * of the execution.
+     * Terminates the local execution of tasklets. Returns false, if the
+     * execution wasn't yet begun.
      */
-    public CompletableFuture<Void> terminateExecution(@Nullable TerminationMode mode) {
+    public boolean terminateExecution(@Nullable TerminationMode mode) {
         assert mode == null || !mode.isWithTerminalSnapshot()
                 : "terminating with a mode that should do a terminal snapshot";
 
@@ -273,13 +272,13 @@ public class ExecutionContext implements DynamicMetricsProvider {
             } else {
                 cancellationFuture.completeExceptionally(new JobTerminateRequestedException(mode));
             }
+            snapshotContext.cancel();
             if (executionFuture == null) {
                 // if cancelled before execution started, then assign the already completed future.
                 executionFuture = cancellationFuture;
-                completeExecution(mode != null ? new JobTerminateRequestedException(mode) : new CancellationException());
+                return false;
             }
-            snapshotContext.cancel();
-            return executionFuture;
+            return true;
         }
     }
 

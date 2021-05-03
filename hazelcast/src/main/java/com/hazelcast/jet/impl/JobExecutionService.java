@@ -32,6 +32,7 @@ import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 import com.hazelcast.internal.metrics.impl.MetricsCompressor;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TopologyChangedException;
@@ -208,7 +209,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
         for (ExecutionContext exeCtx : executionContexts.values()) {
             LoggingUtil.logFine(logger, "Completing %s locally. Reason: %s",
                     exeCtx.jobNameAndExecutionId(), reason);
-            exeCtx.terminateExecution(null);
+            terminateExecution0(exeCtx, null);
         }
     }
 
@@ -224,7 +225,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
              .forEach(exeCtx -> {
                  LoggingUtil.logFine(logger, "Completing %s locally. Reason: Member %s left the cluster",
                          exeCtx.jobNameAndExecutionId(), address);
-                 exeCtx.terminateExecution(null);
+                 terminateExecution0(exeCtx, null);
              });
     }
 
@@ -520,7 +521,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
                     if (uninitializedContextThreshold <= ctx.getCreatedOn()) {
                         LoggingUtil.logFine(logger, "Terminating light job %s because it wasn't initialized during %d seconds",
                                 idToString(ctx.executionId()), NANOSECONDS.toSeconds(UNINITIALIZED_CONTEXT_MAX_AGE_NS));
-                        ctx.terminateExecution(TerminationMode.CANCEL_FORCEFUL);
+                        terminateExecution0(ctx, TerminationMode.CANCEL_FORCEFUL);
                     }
                 }
             }
@@ -545,7 +546,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
                         if (execCtx != null) {
                             logger.fine("Terminating light job " + idToString(executionId)
                                     + " because the coordinator doesn't know it or has it cancelled");
-                            execCtx.terminateExecution(TerminationMode.CANCEL_FORCEFUL);
+                            terminateExecution0(execCtx, TerminationMode.CANCEL_FORCEFUL);
                         }
                     }
                 });
@@ -591,7 +592,15 @@ public class JobExecutionService implements DynamicMetricsProvider {
                     "%s, originally from coordinator %s, cannot do 'terminateExecution' by coordinator %s and execution %s",
                     executionContext.jobNameAndExecutionId(), coordinator, callerAddress, idToString(executionId)));
         }
-        executionContext.terminateExecution(mode);
+        terminateExecution0(executionContext, mode);
+    }
+
+    public void terminateExecution0(ExecutionContext executionContext, TerminationMode mode) {
+        if (!executionContext.terminateExecution(mode)) {
+            // if the execution was terminated before it began, call completeExecution now. Otherwise,
+            // if the execution was already begun, this method will be called when the tasklets complete.
+            completeExecution(executionContext, new JetException("terminated before begun"));
+        }
     }
 
     private static class JobMetricsCollector implements MetricsCollector {

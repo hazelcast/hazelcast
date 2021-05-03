@@ -50,7 +50,7 @@ public class ExecutionLifecycle_RestartableExceptionTest extends TestInClusterSu
     private static final RestartableException RESTARTABLE_EXCEPTION =
             new RestartableException("mock restartable exception");
 
-    private static JobConfig jobConfigWithAutoScaling = new JobConfig().setAutoScaling(true);
+    private static final JobConfig jobConfigWithAutoScaling = new JobConfig().setAutoScaling(true);
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
