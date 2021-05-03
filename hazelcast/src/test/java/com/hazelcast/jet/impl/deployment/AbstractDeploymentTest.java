@@ -62,6 +62,11 @@ public abstract class AbstractDeploymentTest extends SimpleTestInClusterSupport 
 
     public static final String CLASS_DIRECTORY = "src/test/class";
 
+    // We must use 1 member because the tests use assertCollected which runs only on
+    // one member to check the existence of files. If 2 members are used, the path on the
+    // other member might be deleted before the check and the check will fail.
+    static final int MEMBER_COUNT = 1;
+
     protected abstract JetInstance getJetInstance();
 
     @Test
