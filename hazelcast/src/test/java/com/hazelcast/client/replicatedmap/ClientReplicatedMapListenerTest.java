@@ -21,17 +21,14 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.MapEvent;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.Predicates;
+import com.hazelcast.replicatedmap.AbstractReplicatedMapListenerTest;
 import com.hazelcast.replicatedmap.ReplicatedMap;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Test;
@@ -39,113 +36,20 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class ClientReplicatedMapListenerTest extends HazelcastTestSupport {
+public class ClientReplicatedMapListenerTest extends AbstractReplicatedMapListenerTest {
 
-    private TestHazelcastFactory factory = new TestHazelcastFactory();
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @After
     public void tearDown() {
         factory.terminateAll();
-    }
-
-    @Test
-    public void testEntryAdded() {
-        ReplicatedMap<Object, Object> replicatedMap = createClusterAndGetRandomReplicatedMap();
-        final EventCountingListener listener = new EventCountingListener();
-        replicatedMap.addEntryListener(listener);
-        replicatedMap.put(1, 1);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(1, listener.addCount.get());
-            }
-        });
-    }
-
-    @Test
-    public void testEntryUpdated() {
-        ReplicatedMap<Object, Object> replicatedMap = createClusterAndGetRandomReplicatedMap();
-        final EventCountingListener listener = new EventCountingListener();
-        replicatedMap.addEntryListener(listener);
-        replicatedMap.put(1, 1);
-        replicatedMap.put(1, 2);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(1, listener.updateCount.get());
-            }
-        });
-    }
-
-    @Test
-    public void testEntryRemoved() {
-        ReplicatedMap<Object, Object> replicatedMap = createClusterAndGetRandomReplicatedMap();
-        final EventCountingListener listener = new EventCountingListener();
-        replicatedMap.addEntryListener(listener);
-        replicatedMap.put(1, 1);
-        replicatedMap.remove(1);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(1, listener.removeCount.get());
-            }
-        });
-    }
-
-    @Test
-    public void testMapClear() {
-        ReplicatedMap<Object, Object> replicatedMap = createClusterAndGetRandomReplicatedMap();
-        final EventCountingListener listener = new EventCountingListener();
-        replicatedMap.addEntryListener(listener);
-        replicatedMap.put(1, 1);
-        replicatedMap.clear();
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(1, listener.mapClearCount.get());
-            }
-        });
-    }
-
-    @Test
-    public void testListenToKeyForEntryAdded() {
-        ReplicatedMap<Object, Object> replicatedMap = createClusterAndGetRandomReplicatedMap();
-        final EventCountingListener listener = new EventCountingListener();
-        replicatedMap.addEntryListener(listener, 1);
-        replicatedMap.put(1, 1);
-        replicatedMap.put(2, 2);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(1, listener.keys.size());
-                assertEquals(1, listener.keys.peek());
-                assertEquals(1, listener.addCount.get());
-            }
-        });
-    }
-
-    @Test
-    @SuppressWarnings("unchecked")
-    public void testListenWithPredicate() {
-        ReplicatedMap<Object, Object> replicatedMap = createClusterAndGetRandomReplicatedMap();
-        final EventCountingListener listener = new EventCountingListener();
-        replicatedMap.addEntryListener(listener, Predicates.alwaysFalse());
-        replicatedMap.put(2, 2);
-        assertTrueFiveSeconds(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(0, listener.addCount.get());
-            }
-        });
     }
 
     @Test
@@ -193,76 +97,10 @@ public class ClientReplicatedMapListenerTest extends HazelcastTestSupport {
         }
     }
 
-    private <K, V> ReplicatedMap<K, V> createClusterAndGetRandomReplicatedMap() {
+    protected <K, V> ReplicatedMap<K, V> createClusterAndGetRandomReplicatedMap() {
         factory.newHazelcastInstance();
         HazelcastInstance client = factory.newHazelcastClient();
         String mapName = randomMapName();
         return client.getReplicatedMap(mapName);
-    }
-
-    public class EventCountingListener implements EntryListener<Object, Object> {
-
-        final ConcurrentLinkedQueue<Object> keys = new ConcurrentLinkedQueue<Object>();
-        final AtomicLong addCount = new AtomicLong();
-        final AtomicLong removeCount = new AtomicLong();
-        final AtomicLong updateCount = new AtomicLong();
-        final AtomicLong evictCount = new AtomicLong();
-        final AtomicLong expiryCount = new AtomicLong();
-        final AtomicLong mapClearCount = new AtomicLong();
-        final AtomicLong mapEvictCount = new AtomicLong();
-
-        EventCountingListener() {
-        }
-
-        @Override
-        public void entryAdded(EntryEvent<Object, Object> event) {
-            keys.add(event.getKey());
-            addCount.incrementAndGet();
-        }
-
-        @Override
-        public void entryRemoved(EntryEvent<Object, Object> event) {
-            keys.add(event.getKey());
-            removeCount.incrementAndGet();
-        }
-
-        @Override
-        public void entryUpdated(EntryEvent<Object, Object> event) {
-            keys.add(event.getKey());
-            updateCount.incrementAndGet();
-        }
-
-        @Override
-        public void entryEvicted(EntryEvent<Object, Object> event) {
-            keys.add(event.getKey());
-            evictCount.incrementAndGet();
-        }
-
-        @Override
-        public void entryExpired(EntryEvent<Object, Object> event) {
-            throw new UnsupportedOperationException("Expired event is not published by replicated map");
-        }
-
-        @Override
-        public void mapEvicted(MapEvent event) {
-            mapEvictCount.incrementAndGet();
-        }
-
-        @Override
-        public void mapCleared(MapEvent event) {
-            mapClearCount.incrementAndGet();
-        }
-
-        @Override
-        public String toString() {
-            return "EventCountingListener{"
-                    + "addCount=" + addCount
-                    + ", removeCount=" + removeCount
-                    + ", updateCount=" + updateCount
-                    + ", evictCount=" + evictCount
-                    + ", mapClearCount=" + mapClearCount
-                    + ", mapEvictCount=" + mapEvictCount
-                    + '}';
-        }
     }
 }
