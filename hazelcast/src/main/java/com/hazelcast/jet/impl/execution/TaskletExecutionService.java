@@ -50,6 +50,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -157,6 +158,7 @@ public class TaskletExecutionService {
 
     public void shutdown() {
         isShutdown = true;
+        Arrays.stream(cooperativeWorkers).forEach(thread -> thread.hasTasklet.release());
         blockingTaskletExecutor.shutdownNow();
         hzExecutionService.shutdownExecutor(TASKLET_INIT_CLOSE_EXECUTOR_NAME);
     }
@@ -202,6 +204,7 @@ public class TaskletExecutionService {
         }
         for (int i = 0; i < trackersByThread.length; i++) {
             cooperativeWorkers[i].trackers.addAll(trackersByThread[i]);
+            cooperativeWorkers[i].hasTasklet.release();
         }
         Arrays.stream(cooperativeThreadPool).forEach(LockSupport::unpark);
     }
@@ -325,6 +328,8 @@ public class TaskletExecutionService {
         // prevent lambda allocation on each iteration
         private final Consumer<TaskletTracker> runTasklet = this::runTasklet;
 
+        private final Semaphore hasTasklet = new Semaphore(1);
+
         private boolean finestLogEnabled;
         private Thread myThread;
         private MetricsImpl.Container userMetricsContextContainer;
@@ -350,7 +355,18 @@ public class TaskletExecutionService {
                 if (progressTracker.isMadeProgress()) {
                     idleCount = 0;
                 } else {
-                    idlerLocal.idle(++idleCount);
+                    if (trackers.isEmpty()) {
+                        hasTasklet.drainPermits();
+                        if (trackers.isEmpty()) {
+                            try {
+                                hasTasklet.acquire();
+                            } catch (InterruptedException e) {
+                                logger.fine(e.getMessage());
+                            }
+                        }
+                    } else {
+                        idlerLocal.idle(++idleCount);
+                    }
                 }
             }
             trackers.forEach(t -> t.executionTracker.taskletDone());
