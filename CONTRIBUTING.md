@@ -30,8 +30,9 @@ If it is Linux, kernel version is helpful.
 7.	Detailed description of the steps to reproduce your issue.
 8.	Unit test with the `hazelcast.xml` file.
 If you could include a unit test which reproduces your issue, it would speed the resolution time.
-9.	If available, integration module versions (_e.g._ Tomcat, Jetty, Spring, Hibernate).
-Also, include their  detailed configuration information such as `web.xml`, Hibernate configuration and `context.xml` for Spring.
+9.	If it's related to integration with an external system
+      (_e.g._ Tomcat, Spring, Hibernate, Kafka) details about the external
+      system and configuration parameters for connecting to it.
 
 ## Pull requests
 
@@ -55,6 +56,6 @@ All PRs follow the same process:
 That includes descriptive commit messages.
 5.	Please keep your PRs as small as possible, _i.e._ if you plan to perform a huge change, do not submit a single and large PR for it.
 For an enhancement or larger feature, you can create a GitHub issue first to discuss.
-6.	Before you push, run the command `mvn clean package -DskipTests` in your terminal and fix the CheckStyle errors if any.
+6.	Before you push, run the command `mvn clean validate` in your terminal and fix the CheckStyle errors if any.
 Push your PR once it is free of CheckStyle errors.
 7.	If you submit a PR as the solution to a specific issue, please mention the issue number either in the PR description or commit message.
