@@ -151,7 +151,6 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         Record record = recordFactory.newRecord(value);
         record.setCreationTime(now);
         record.setLastUpdateTime(now);
-        record.setLastAccessTime(now);
 
         setExpirationTimes(ttlMillis, maxIdle, record, mapContainer.getMapConfig(), true);
         updateStatsOnPut(false, now);
