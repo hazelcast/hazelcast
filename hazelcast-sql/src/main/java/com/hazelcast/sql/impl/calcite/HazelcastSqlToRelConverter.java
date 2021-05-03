@@ -49,6 +49,7 @@ import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlOperator;
+import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.fun.SqlInOperator;
 import org.apache.calcite.sql.fun.SqlRowOperator;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
@@ -65,6 +66,7 @@ import org.apache.calcite.util.Pair;
 import org.apache.calcite.util.TimeString;
 import org.apache.calcite.util.Util;
 
+import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -134,7 +136,7 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
 
         Object value;
 
-        if (HazelcastTypeUtils.isIntervalType(type)) {
+        if (HazelcastTypeUtils.isIntervalType(type) && !SqlUtil.isNullLiteral(literal, false)) {
             // Normalize interval literals to YEAR-MONTH or DAY-SECOND literals.
             value = literal.getValueAs(BigDecimal.class);
 
@@ -337,6 +339,13 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
 
                 try {
                     return blackboard.convertExpression(node);
+                } catch (RuntimeException e) {
+                    // For some operators Calcite does reflective call to validate the AST
+                    if (e.getCause() instanceof InvocationTargetException && e.getCause().getCause() instanceof QueryException) {
+                        throw (QueryException) e.getCause().getCause();
+                    } else {
+                        throw e;
+                    }
                 } finally {
                     HazelcastReturnTypeInference.pop();
                 }

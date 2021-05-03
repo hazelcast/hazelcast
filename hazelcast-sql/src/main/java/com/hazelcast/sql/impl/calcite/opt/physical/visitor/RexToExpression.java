@@ -18,13 +18,16 @@ package com.hazelcast.sql.impl.calcite.opt.physical.visitor;
 
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastLikeOperator;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
-import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
+import com.hazelcast.sql.impl.expression.CaseExpression;
 import com.hazelcast.sql.impl.expression.CastExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.SymbolExpression;
+import com.hazelcast.sql.impl.expression.datetime.ExtractField;
+import com.hazelcast.sql.impl.expression.datetime.ExtractFunction;
 import com.hazelcast.sql.impl.expression.math.AbsFunction;
 import com.hazelcast.sql.impl.expression.math.DivideFunction;
 import com.hazelcast.sql.impl.expression.math.DoubleBiFunction;
@@ -63,6 +66,7 @@ import com.hazelcast.sql.impl.expression.string.UpperFunction;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
 import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
+import org.apache.calcite.avatica.util.TimeUnitRange;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.sql.SqlFunction;
@@ -72,10 +76,14 @@ import org.apache.calcite.sql.fun.SqlTrimFunction;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.util.DateString;
 import org.apache.calcite.util.TimeString;
+import org.apache.calcite.util.TimestampString;
+import org.apache.calcite.util.TimestampWithTimeZoneString;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.OffsetDateTime;
 
 import static com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable.CHARACTER_LENGTH;
 import static com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable.CHAR_LENGTH;
@@ -134,6 +142,12 @@ public final class RexToExpression {
 
             case TIME:
                 return convertTimeLiteral(literal);
+
+            case TIMESTAMP:
+                return convertTimestamp(literal);
+
+            case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
+                return convertTimestampWithTimeZone(literal);
 
             case INTERVAL_YEAR_MONTH:
                 return convertIntervalYearMonth(literal);
@@ -278,6 +292,19 @@ public final class RexToExpression {
                         trimFlag.getLeft() == 1,
                         trimFlag.getRight() == 1
                 );
+
+            case EXTRACT:
+                assert operands.length == 2;
+                assert operands[0] instanceof SymbolExpression;
+
+                TimeUnitRange field = ((SymbolExpression) operands[0]).getSymbol();
+
+                ExtractField extractField = convertField(field);
+
+                return ExtractFunction.create(operands[1], extractField);
+
+            case CASE:
+                return CaseExpression.create(operands);
 
             case OTHER:
                 if (operator == HazelcastSqlOperatorTable.CONCAT) {
@@ -493,5 +520,77 @@ public final class RexToExpression {
         SqlDaySecondInterval value = new SqlDaySecondInterval(literal.getValueAs(Long.class));
 
         return ConstantExpression.create(value, QueryDataType.INTERVAL_DAY_SECOND);
+    }
+
+    public static Expression<?> convertTimestamp(RexLiteral literal) {
+        String timestampString = literal.getValueAs(TimestampString.class).toString();
+        timestampString = timestampString.replace(' ', 'T');
+        try {
+            LocalDateTime dateTime = LocalDateTime.parse(timestampString);
+
+            return ConstantExpression.create(dateTime, QueryDataType.TIMESTAMP);
+        } catch (Exception e) {
+            throw QueryException.dataException(
+                    "Cannot convert literal to " + SqlColumnType.TIMESTAMP + ": " + timestampString);
+        }
+    }
+
+    public static Expression<?> convertTimestampWithTimeZone(RexLiteral literal) {
+        String timestampString = literal.getValueAs(TimestampWithTimeZoneString.class).toString();
+        timestampString = timestampString.replace(' ', 'T');
+        try {
+            OffsetDateTime dateTime = OffsetDateTime.parse(timestampString);
+
+            return ConstantExpression.create(dateTime, QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME);
+        } catch (Exception e) {
+            throw QueryException.dataException(
+                    "Cannot convert literal to "
+                            + SqlColumnType.TIMESTAMP_WITH_TIME_ZONE
+                            + ": " + timestampString);
+        }
+    }
+
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:returncount"})
+    private static ExtractField convertField(TimeUnitRange field) {
+        switch (field) {
+            case CENTURY:
+                return ExtractField.CENTURY;
+            case DAY:
+                return ExtractField.DAY;
+            case DECADE:
+                return ExtractField.DECADE;
+            case DOW:
+                return ExtractField.DOW;
+            case DOY:
+                return ExtractField.DOY;
+            case EPOCH:
+                return ExtractField.EPOCH;
+            case HOUR:
+                return ExtractField.HOUR;
+            case ISODOW:
+                return ExtractField.ISODOW;
+            case ISOYEAR:
+                return ExtractField.ISOYEAR;
+            case MICROSECOND:
+                return ExtractField.MICROSECOND;
+            case MILLENNIUM:
+                return ExtractField.MILLENNIUM;
+            case MILLISECOND:
+                return ExtractField.MILLISECOND;
+            case MINUTE:
+                return ExtractField.MINUTE;
+            case MONTH:
+                return ExtractField.MONTH;
+            case QUARTER:
+                return ExtractField.QUARTER;
+            case SECOND:
+                return ExtractField.SECOND;
+            case WEEK:
+                return ExtractField.WEEK;
+            case YEAR:
+                return ExtractField.YEAR;
+            default:
+                throw new UnsupportedOperationException("Unsupported field " + field + " for EXTRACT");
+        }
     }
 }

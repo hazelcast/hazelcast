@@ -28,11 +28,9 @@ import org.apache.calcite.sql.SqlDynamicParam;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
-import org.apache.calcite.sql.type.SqlTypeName;
 
 public final class HazelcastComparisonPredicateUtils {
     private HazelcastComparisonPredicateUtils() {
-        // No-op
     }
 
     public static boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure) {
@@ -44,8 +42,8 @@ public final class HazelcastComparisonPredicateUtils {
         RelDataType firstType = validator.deriveType(binding.getScope(), first);
         RelDataType secondType = validator.deriveType(binding.getScope(), second);
 
-        assert firstType.getSqlTypeName() != SqlTypeName.NULL;
-        assert secondType.getSqlTypeName() != SqlTypeName.NULL;
+        assert !firstType.equals(validator.getUnknownType());
+        assert !secondType.equals(validator.getUnknownType());
 
         return checkOperandTypes(binding, throwOnFailure, validator, first, firstType, second, secondType);
     }
