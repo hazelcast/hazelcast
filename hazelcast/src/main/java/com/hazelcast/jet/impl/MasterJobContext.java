@@ -133,9 +133,10 @@ public class MasterJobContext {
     private volatile List<RawJobMetrics> jobMetrics = Collections.emptyList();
 
     /**
-     * A future (re)created when the job is started and completed when its
-     * execution ends. Execution ending doesn't mean the job is done, it may
-     * be just temporarily stopping due to suspension, job restarting, etc.
+     * A new instance is (re)assigned when the execution is started and
+     * completed when its execution ends. Execution ending doesn't mean the job
+     * is done, it may be just temporarily stopping due to suspension, job
+     * restarting, etc.
      * <p>
      * It's always completed normally, even if the execution fails.
      */

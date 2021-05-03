@@ -177,6 +177,21 @@ public class JobExecutionService implements DynamicMetricsProvider {
      * Gets the execution context or creates it, if it doesn't exist. If
      * we're creating it, we assume it's for a light job and that the
      * jobId == executionId.
+     * <p>
+     * We can also end up here for a non-light job in this scenario:<ul>
+     *     <li>job runs on 2 members. The master requests termination.
+     *     <li>execution on member A terminates and is removed from
+     *         executionContexts
+     *     <li>member A receives a packet from member B (because it was in transit
+     *         or simply because the execution on member B might terminate a little
+     *         later)
+     *     <li>ExecutionContext is recreated.
+     * </ul>
+     *
+     * We ignore this as we assume that we'll never receive the
+     * StartExecutionOperation. The improperly-created ExecutionContext will be
+     * removed after a timeout in {@link #checkLightExecutions()} because it
+     * will never be initialized.
      */
     public ExecutionContext getOrCreateExecutionContext(long executionId) {
         return executionContexts.computeIfAbsent(executionId, newLightJobExecutionContextFunction);
@@ -452,6 +467,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
             throw new TopologyChangedException(String.format("%s not found for coordinator %s for beginExecution",
                     jobIdAndExecutionId(jobId, executionId), coordinator));
         }
+        assert !execCtx.isLightJob() : "StartExecutionOperation received for a light job " + idToString(jobId);
         logger.info("Start execution of " + execCtx.jobNameAndExecutionId() + " from coordinator " + coordinator);
         return beginExecution0(execCtx, collectMetrics);
     }
@@ -483,10 +499,6 @@ public class JobExecutionService implements DynamicMetricsProvider {
                         logger.fine("Execution of " + execCtx.jobNameAndExecutionId() + " completed");
                     }
                 }));
-    }
-
-    int numberOfExecutions() {
-        return executionContexts.size();
     }
 
     @Override

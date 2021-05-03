@@ -153,8 +153,6 @@ public class JetService implements ManagedService, MembershipAwareService, LiveO
         try {
             CompletableFuture<Void> future = shutdownFuture.get();
             future.get(SHUTDOWN_JOBS_MAX_WAIT_SECONDS, SECONDS);
-            assert jobExecutionService.numberOfExecutions() == 0
-                    : "numberOfExecutions should be zero, but is " + jobExecutionService.numberOfExecutions();
         } catch (Exception e) {
             logger.severe("Shutdown jobs timeout", e);
         }
