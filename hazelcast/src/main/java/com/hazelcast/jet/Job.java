@@ -108,12 +108,12 @@ public interface Job {
      * the metrics are reset too, their values will reflect only updates
      * from the latest execution of the job.
      * <p>
-     * Once a job stops executing (successfully, after a failure, cancellation,
-     * or temporarily while suspended) the metrics will have their most
+     * Once a job completes successfully, the metrics will have their most
      * recent values (i.e. the last metric values from the moment before the
-     * job completed), assuming that
-     * {@link JobConfig#setStoreMetricsAfterJobCompletion(boolean) metrics
-     * storage} was enabled. Otherwise empty metrics will be returned.
+     * job completed), assuming that {@link
+     * JobConfig#setStoreMetricsAfterJobCompletion(boolean) metrics storage}
+     * was enabled. If a job fails, is cancelled or suspended, empty metrics
+     * will be returned.
      *
      * @since 3.2
      */
