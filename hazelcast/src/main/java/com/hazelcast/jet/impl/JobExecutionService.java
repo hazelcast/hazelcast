@@ -424,8 +424,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
         executionContexts.remove(executionContext.executionId());
         JetClassLoader removedClassLoader = classLoaders.remove(executionContext.jobId());
         try {
-            doWithClassLoader(removedClassLoader, () ->
-                executionContext.completeExecution(error));
+            doWithClassLoader(removedClassLoader, () -> executionContext.completeExecution(error));
         } finally {
             executionCompleted.inc();
             removedClassLoader.shutdown();
