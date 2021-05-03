@@ -2,9 +2,6 @@
   "$schema": "http://json-schema.org/draft-06/schema",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "hazelcast"
-  ],
   "properties": {
     "hazelcast": {
       "type": "object",
@@ -139,6 +136,15 @@
         },
         "jet": {
           "$ref": "#/definitions/Jet"
+        }
+      }
+    },
+    "hazelcast-client": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties":  {
+        "import": {
+          "$ref": "#/definitions/Import"
         }
       }
     }
