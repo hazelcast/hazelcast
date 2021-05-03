@@ -452,7 +452,7 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
 
     @Test
     public abstract void testWhitespaceInNonSpaceStrings();
-    
+
     @Test
     public abstract void testSkippingSchemaValidation();
 

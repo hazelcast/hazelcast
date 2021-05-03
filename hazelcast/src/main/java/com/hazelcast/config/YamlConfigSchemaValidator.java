@@ -19,7 +19,6 @@ package com.hazelcast.config;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.internal.yaml.YamlToJsonConverter;
-import com.hazelcast.spi.properties.HazelcastProperty;
 import org.everit.json.schema.Schema;
 import org.everit.json.schema.ValidationException;
 import org.everit.json.schema.loader.SchemaLoader;
