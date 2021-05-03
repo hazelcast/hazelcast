@@ -31,6 +31,9 @@ import static java.util.stream.Collectors.toList;
 
 interface YamlConfigSchemaValidator {
 
+    /**
+     * Default implementation of {@link YamlConfigSchemaValidator} returned by {@link YamlConfigSchemaValidator#create()}.
+     */
     class YamlConfigSchemaValidatorImpl
             implements YamlConfigSchemaValidator {
 
@@ -41,6 +44,9 @@ interface YamlConfigSchemaValidator {
                 .load()
                 .build();
 
+        /**
+         * Converts the validation exception thrown by the everit-org/json-schema library to its HZ-specific representation.
+         */
         SchemaViolationConfigurationException wrap(ValidationException e) {
             List<SchemaViolationConfigurationException> subErrors = e.getCausingExceptions()
                     .stream()

@@ -23,6 +23,9 @@ import java.util.stream.IntStream;
 import static java.util.Collections.unmodifiableList;
 import static java.util.stream.Collectors.joining;
 
+/**
+ * Thrown by {@link YamlConfigSchemaValidator} implementations.
+ */
 public class SchemaViolationConfigurationException
         extends InvalidConfigurationException {
 
@@ -41,14 +44,26 @@ public class SchemaViolationConfigurationException
         this.errors = unmodifiableList(new ArrayList<>(errors));
     }
 
+    /**
+     * @return a JSON pointer denoting the path to the keyword in the schema on which the validation failed.
+     */
     public String getKeywordLocation() {
         return keywordLocation;
     }
 
+    /**
+     * @return a JSON pointer denoting the path to the configuration element which failed to validate.
+     */
     public String getInstanceLocation() {
         return instanceLocation;
     }
 
+    /**
+     * @return a possibly empty list of sub-errors that caused the validation failure. If a higher-level configuration element
+     * has multiple sub-elements that violate the schema, then a {@code SchemaViolationConfigurationException} will be thrown with
+     * the {@link #getInstanceLocation()} pointing to the higher-level configuration element, and multiple exceptions are returned
+     * by {@link #getErrors()} for each invalid sub-element. The errors can form an arbitrarily deep tree structure.
+     */
     public List<SchemaViolationConfigurationException> getErrors() {
         return errors;
     }
