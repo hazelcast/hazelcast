@@ -69,15 +69,17 @@ public final class Extractors {
     }
 
     public Object extract(Object target, String attributeName, Object metadata) {
-        return extract(target, attributeName, metadata, true);
+        return extract(target, attributeName, metadata, true, false);
     }
 
-    public Object extract(Object target, String attributeName, Object metadata, boolean failOnMissingReflectiveAttribute) {
+    public Object extract(Object target, String attributeName, Object metadata,
+                          boolean failOnMissingReflectiveAttribute,
+                          boolean asDataIfPossible) {
         Object targetObject = getTargetObject(target);
         if (targetObject != null) {
             Getter getter = getGetter(targetObject, attributeName, failOnMissingReflectiveAttribute);
             try {
-                return getter.getValue(targetObject, attributeName, metadata);
+                return getter.getValue(targetObject, attributeName, metadata, asDataIfPossible);
             } catch (Exception ex) {
                 throw new QueryException(ex);
             }

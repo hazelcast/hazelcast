@@ -73,31 +73,31 @@ public class GenericQueryTargetTest extends SqlTestSupport {
 
         // Good top-level extractor.
         QueryExtractor targetExtractor = target.createExtractor(null, QueryDataType.OBJECT);
-        LazyTarget lazyTarget = (LazyTarget) targetExtractor.get();
+        LazyTarget lazyTarget = (LazyTarget) targetExtractor.get(false);
         TestObject extractedObject = (TestObject) (lazyTarget.deserialize(new DefaultSerializationServiceBuilder().build()));
         assertEquals(originalObject.getField(), extractedObject.getField());
         assertEquals(originalObject.getField2(), extractedObject.getField2());
 
         // Bad top-level extractor.
         QueryExtractor badTargetExtractor = target.createExtractor(null, QueryDataType.INT);
-        QueryException error = assertThrows(QueryException.class, badTargetExtractor::get);
+        QueryException error = assertThrows(QueryException.class, () -> badTargetExtractor.get(false));
         assertEquals(SqlErrorCode.DATA_EXCEPTION, error.getCode());
         assertTrue(error.getMessage().startsWith("Failed to extract map entry " + (target.isKey() ? "key" : "value")));
 
         // Good field extractor.
         QueryExtractor fieldExtractor = target.createExtractor("field", QueryDataType.OBJECT);
-        int extractedField = (Integer) fieldExtractor.get();
+        int extractedField = (Integer) fieldExtractor.get(false);
         assertEquals(originalObject.getField(), extractedField);
 
         // Bad field extractor (type).
         QueryExtractor badFieldTypeExtractor = target.createExtractor("field", QueryDataType.BIGINT);
-        error = assertThrows(QueryException.class, badFieldTypeExtractor::get);
+        error = assertThrows(QueryException.class, () -> badFieldTypeExtractor.get(false));
         assertEquals(SqlErrorCode.DATA_EXCEPTION, error.getCode());
         assertTrue(error.getMessage().startsWith("Failed to extract map entry " + (target.isKey() ? "key" : "value") + " field"));
 
         // Bad field extractor (name).
         QueryExtractor badFieldNameExtractor = target.createExtractor("badField", QueryDataType.INT);
-        assertNull(badFieldNameExtractor.get());
+        assertNull(badFieldNameExtractor.get(false));
     }
 
     private static Data toData(TestObject object) {

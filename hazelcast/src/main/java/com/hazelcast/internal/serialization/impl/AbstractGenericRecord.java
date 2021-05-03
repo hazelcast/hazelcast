@@ -191,7 +191,7 @@ public abstract class AbstractGenericRecord implements GenericRecord {
 
     @Override
     public String toString() {
-        StringBuilder str = new StringBuilder(getClassIdentifier().toString());
+        StringBuilder str = new StringBuilder("GenericRecord{" + getClassIdentifier().toString());
         str.append("\n{");
         Set<String> thisFieldNames = getFieldNames();
         for (String fieldName : thisFieldNames) {
@@ -241,7 +241,7 @@ public abstract class AbstractGenericRecord implements GenericRecord {
             }
             str.append(", \n");
         }
-        str.append("}");
+        str.append("}}");
         return str.toString();
     }
 

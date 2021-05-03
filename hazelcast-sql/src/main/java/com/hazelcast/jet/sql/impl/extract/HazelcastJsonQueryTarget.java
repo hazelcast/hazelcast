@@ -57,7 +57,7 @@ class HazelcastJsonQueryTarget implements QueryTarget {
     }
 
     private QueryExtractor createExtractor(QueryDataType type) {
-        return () -> {
+        return (boolean asDataIfNonPrimitive) -> {
             try {
                 Object value = serializationService.toObject(target);
                 return type.convert(value);
@@ -73,9 +73,9 @@ class HazelcastJsonQueryTarget implements QueryTarget {
     }
 
     private QueryExtractor createFieldExtractor(String path, QueryDataType type) {
-        return () -> {
+        return (boolean asDataIfNonPrimitive) -> {
             try {
-                Object value = extractors.extract(target, path, null, false);
+                Object value = extractors.extract(target, path, null, false, false);
                 return type.convert(value);
             } catch (QueryDataTypeMismatchException e) {
                 throw QueryException.dataException("Failed to extract map entry " + (key ? "key" : "value") + " field \""

@@ -39,7 +39,7 @@ public class FilterExecTest extends SqlTestSupport {
     public void testFilter() {
         UpstreamExec upstream = new UpstreamExec(1);
         Expression<Boolean> filter = new FunctionalPredicateExpression((row) -> {
-            int val = row.get(0);
+            int val = row.get(0, false);
 
             if (val % 2 == 0) {
                 return true;
@@ -86,7 +86,7 @@ public class FilterExecTest extends SqlTestSupport {
         assertEquals(size, batch.getRowCount());
 
         for (int i = 0; i < size; i++) {
-            int value = batch.getRow(i).get(0);
+            int value = batch.getRow(i).get(0, false);
 
             assertEquals(startValue + (i * 2), value);
         }

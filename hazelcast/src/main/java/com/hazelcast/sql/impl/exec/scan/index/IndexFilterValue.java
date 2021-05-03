@@ -172,7 +172,7 @@ public class IndexFilterValue implements IdentifiedDataSerializable {
         private static final NoColumnAccessRow INSTANCE = new NoColumnAccessRow();
 
         @Override
-        public <T> T get(int index) {
+        public <T> T get(int index, boolean asDataIfNonPrimitive) {
             throw new UnsupportedOperationException("Index filter cannot contain column expressions");
         }
 

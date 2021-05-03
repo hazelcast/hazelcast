@@ -111,8 +111,8 @@ public class KvRowProjector implements Row {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T> T get(int index) {
-        return (T) extractors[index].get();
+    public <T> T get(int index, boolean asDataIfNonPrimitive) {
+        return (T) extractors[index].get(asDataIfNonPrimitive);
     }
 
     @Override

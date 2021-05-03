@@ -59,13 +59,13 @@ public final class ColumnExpression<T> implements Expression<T>, IdentifiedDataS
 
     @Override
     public T evalTop(Row row, ExpressionEvalContext context) {
-        return row.get(index);
+        return row.get(index, false);
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public T eval(Row row, ExpressionEvalContext context) {
-        Object res = row.get(index);
+        Object res = row.get(index, false);
 
         if (res instanceof LazyTarget) {
             res = unwrapLazyValue((LazyTarget) res, context);

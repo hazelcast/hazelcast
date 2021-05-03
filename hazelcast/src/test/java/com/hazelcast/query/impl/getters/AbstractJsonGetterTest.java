@@ -58,10 +58,10 @@ public class AbstractJsonGetterTest {
         String jsonText = Json.object().add("at1", "val1").add("at2", "val2").toString();
         HazelcastJsonValue jsonValue = new HazelcastJsonValue(jsonText);
         JsonSchemaNode node = JsonSchemaHelper.createSchema(factory.createParser(jsonText));
-        assertEquals("val1", getter.getValue(jsonValue, "at1", node));
-        assertEquals("val1", getter.getValue(jsonValue, "at1", node));
-        assertEquals("val1", getter.getValue(jsonValue, "at1", node));
-        assertEquals("val1", getter.getValue(jsonValue, "at1", node));
+        assertEquals("val1", getter.getValue(jsonValue, "at1", node, false));
+        assertEquals("val1", getter.getValue(jsonValue, "at1", node, false));
+        assertEquals("val1", getter.getValue(jsonValue, "at1", node, false));
+        assertEquals("val1", getter.getValue(jsonValue, "at1", node, false));
 
         assertEquals(1, getter.getContextCacheSize());
     }
@@ -71,14 +71,14 @@ public class AbstractJsonGetterTest {
         String jsonText = Json.object().add("at1", "val1").add("at2", "val2").toString();
         HazelcastJsonValue jsonValue = new HazelcastJsonValue(jsonText);
         JsonSchemaNode node = JsonSchemaHelper.createSchema(factory.createParser(jsonText));
-        assertEquals("val1", getter.getValue(jsonValue, "at1", node));
-        assertEquals("val1", getter.getValue(jsonValue, "at1", node));
-        assertEquals("val1", getter.getValue(jsonValue, "at1", node));
-        assertEquals("val1", getter.getValue(jsonValue, "at1", node));
-        assertEquals("val2", getter.getValue(jsonValue, "at2", node));
-        assertEquals("val2", getter.getValue(jsonValue, "at2", node));
-        assertEquals("val2", getter.getValue(jsonValue, "at2", node));
-        assertEquals("val2", getter.getValue(jsonValue, "at2", node));
+        assertEquals("val1", getter.getValue(jsonValue, "at1", node, false));
+        assertEquals("val1", getter.getValue(jsonValue, "at1", node, false));
+        assertEquals("val1", getter.getValue(jsonValue, "at1", node, false));
+        assertEquals("val1", getter.getValue(jsonValue, "at1", node, false));
+        assertEquals("val2", getter.getValue(jsonValue, "at2", node, false));
+        assertEquals("val2", getter.getValue(jsonValue, "at2", node, false));
+        assertEquals("val2", getter.getValue(jsonValue, "at2", node, false));
+        assertEquals("val2", getter.getValue(jsonValue, "at2", node, false));
 
         assertEquals(2, getter.getContextCacheSize());
     }
@@ -117,20 +117,20 @@ public class AbstractJsonGetterTest {
     private void testRandomOrderObjectRepetitiveQuerying(final int queryCount) throws Exception {
         for (int i = 0; i < queryCount; i++) {
             HazelcastJsonValue value = createJsonValueWithRandomStructure(
-                    new String[] {"a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8", "a9", "a10"},
+                    new String[]{"a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8", "a9", "a10"},
                     new String[]{"v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9", "v10"});
             JsonSchemaNode schema = createMetadata(value);
 
-            assertEquals("v1", getter.getValue(value, "a1", schema));
-            assertEquals("v2", getter.getValue(value, "a2", schema));
-            assertEquals("v3", getter.getValue(value, "a3", schema));
-            assertEquals("v4", getter.getValue(value, "a4", schema));
-            assertEquals("v5", getter.getValue(value, "a5", schema));
-            assertEquals("v6", getter.getValue(value, "a6", schema));
-            assertEquals("v7", getter.getValue(value, "a7", schema));
-            assertEquals("v8", getter.getValue(value, "a8", schema));
-            assertEquals("v9", getter.getValue(value, "a9", schema));
-            assertEquals("v10", getter.getValue(value, "a10", schema));
+            assertEquals("v1", getter.getValue(value, "a1", schema, false));
+            assertEquals("v2", getter.getValue(value, "a2", schema, false));
+            assertEquals("v3", getter.getValue(value, "a3", schema, false));
+            assertEquals("v4", getter.getValue(value, "a4", schema, false));
+            assertEquals("v5", getter.getValue(value, "a5", schema, false));
+            assertEquals("v6", getter.getValue(value, "a6", schema, false));
+            assertEquals("v7", getter.getValue(value, "a7", schema, false));
+            assertEquals("v8", getter.getValue(value, "a8", schema, false));
+            assertEquals("v9", getter.getValue(value, "a9", schema, false));
+            assertEquals("v10", getter.getValue(value, "a10", schema, false));
         }
         assertTrue(getter.getContextCacheSize() <= 10);
     }
@@ -183,6 +183,7 @@ public class AbstractJsonGetterTest {
      * Creates a one level json object from given names and values. Each
      * value is associated with the respective name in given order. However,
      * the order of name-value pairs within object are random
+     *
      * @param names
      * @param values
      * @return
