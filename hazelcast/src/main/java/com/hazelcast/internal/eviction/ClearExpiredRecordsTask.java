@@ -28,9 +28,9 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -252,7 +252,7 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
 
     private List<T> addContainerTo(List<T> containersToProcess, T container) {
         if (containersToProcess == null) {
-            containersToProcess = new ArrayList<T>();
+            containersToProcess = new LinkedList<>();
         }
 
         containersToProcess.add(container);
