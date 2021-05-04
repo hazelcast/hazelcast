@@ -48,7 +48,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static com.hazelcast.client.impl.management.ManagementCenterService.MC_CLIENT_MODE_PROP;
-import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
@@ -344,14 +343,8 @@ class TestClientRegistry {
             super(localEndpoint, remoteEndpoint, nodeEngine);
             this.responseConnection = responseConnection;
             this.connectionId = connectionId;
-            register();
             lastReadTimeMillis = System.currentTimeMillis();
             lastWriteTimeMillis = System.currentTimeMillis();
-        }
-
-        private void register() {
-            Node node = remoteNodeEngine.getNode();
-            node.getServer().getConnectionManager(CLIENT).register(getRemoteAddress(), this);
         }
 
         @Override

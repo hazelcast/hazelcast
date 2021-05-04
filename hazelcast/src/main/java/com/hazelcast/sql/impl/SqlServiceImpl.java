@@ -243,7 +243,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         QueryId queryId,
         String schema,
         String sql,
-        List<Object> params,
+        List<Object> args,
         long timeout,
         int pageSize,
         SqlExpectedResultType expectedResultType,
@@ -254,7 +254,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
             throw QueryException.error("SQL statement cannot be empty.");
         }
 
-        List<Object> params0 = new ArrayList<>(params);
+        List<Object> args0 = new ArrayList<>(args);
 
         if (timeout < 0) {
             throw QueryException.error("Timeout cannot be negative: " + timeout);
@@ -265,16 +265,16 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         }
 
         // Prepare and execute
-        SqlPlan plan = prepare(schema, sql, expectedResultType);
+        SqlPlan plan = prepare(schema, sql, args0, expectedResultType);
 
         if (securityContext.isSecurityEnabled()) {
             plan.checkPermissions(securityContext);
         }
 
-        return execute(queryId, plan, params0, timeout, pageSize);
+        return execute(queryId, plan, args0, timeout, pageSize);
     }
 
-    private SqlPlan prepare(String schema, String sql, SqlExpectedResultType expectedResultType) {
+    private SqlPlan prepare(String schema, String sql, List<Object> arguments, SqlExpectedResultType expectedResultType) {
         List<List<String>> searchPaths = prepareSearchPaths(schema);
 
         PlanKey planKey = new PlanKey(searchPaths, sql);
@@ -284,7 +284,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         if (plan == null) {
             SqlCatalog catalog = new SqlCatalog(tableResolvers);
 
-            plan = optimizer.prepare(new OptimizationTask(sql, searchPaths, catalog));
+            plan = optimizer.prepare(new OptimizationTask(sql, arguments, searchPaths, catalog));
 
             if (plan.isCacheable()) {
                 planCache.put(planKey, plan);

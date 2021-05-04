@@ -32,6 +32,8 @@ import org.apache.calcite.sql2rel.SqlRexConvertletTable;
 import org.apache.calcite.sql2rel.SqlToRelConverter;
 import org.apache.calcite.sql2rel.SqlToRelConverter.Config;
 
+import java.util.List;
+
 /**
  * Provides various customization points for the optimization engine.
  */
@@ -42,7 +44,8 @@ public interface SqlBackend {
     SqlValidator validator(
             CatalogReader catalogReader,
             HazelcastTypeFactory typeFactory,
-            SqlConformance conformance
+            SqlConformance conformance,
+            List<Object> arguments
     );
 
     SqlVisitor<Void> unsupportedOperationVisitor(

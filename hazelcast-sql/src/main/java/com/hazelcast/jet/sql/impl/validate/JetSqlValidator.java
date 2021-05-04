@@ -38,6 +38,8 @@ import org.apache.calcite.sql.validate.SqlValidatorCatalogReader;
 import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.sql.validate.SqlValidatorTable;
 
+import java.util.List;
+
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 import static com.hazelcast.jet.sql.impl.validate.ValidatorResource.RESOURCE;
 import static org.apache.calcite.sql.SqlKind.AGGREGATE;
@@ -51,9 +53,10 @@ public class JetSqlValidator extends HazelcastSqlValidator {
     public JetSqlValidator(
             SqlValidatorCatalogReader catalogReader,
             HazelcastTypeFactory typeFactory,
-            SqlConformance conformance
+            SqlConformance conformance,
+            List<Object> arguments
     ) {
-        super(JetSqlOperatorTable.instance(), catalogReader, typeFactory, conformance);
+        super(JetSqlOperatorTable.instance(), catalogReader, typeFactory, conformance, arguments);
     }
 
     @Override
