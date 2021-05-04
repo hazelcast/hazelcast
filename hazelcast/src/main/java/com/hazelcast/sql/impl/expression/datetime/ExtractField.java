@@ -16,22 +16,37 @@
 
 package com.hazelcast.sql.impl.expression.datetime;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoField;
 import java.time.temporal.IsoFields;
+import java.time.temporal.Temporal;
+import java.time.temporal.TemporalField;
 import java.time.temporal.WeekFields;
 
 public enum ExtractField {
     CENTURY {
         @Override
         public double extract(OffsetDateTime time) {
-            int year = time.getYear();
-            int absYear = Math.abs(year);
-            int sign = year < 0 ? -1 : 1;
-            int quotient = absYear / YEARS_IN_CENTURY;
-            int remainder = absYear % YEARS_IN_CENTURY;
-            int absCentury = quotient + (remainder == 0 ? -1 : 0) + FIRST_CENTURY;
-            return sign * absCentury;
+            return ExtractField.extractCentury(time);
+        }
+
+        @Override
+        public double extract(LocalDateTime time) {
+            return ExtractField.extractCentury(time);
+        }
+
+        @Override
+        public double extract(LocalDate date) {
+            return ExtractField.extractCentury(date);
+        }
+
+        @Override
+        public double extract(LocalTime time) {
+            throw new IllegalArgumentException("Cannot extract CENTURY from TIME");
         }
     },
     DAY {
@@ -39,26 +54,83 @@ public enum ExtractField {
         public double extract(OffsetDateTime time) {
             return time.getDayOfMonth();
         }
+
+        @Override
+        public double extract(LocalDateTime time) {
+            return time.getDayOfMonth();
+        }
+
+        @Override
+        public double extract(LocalDate date) {
+            return date.getDayOfMonth();
+        }
+
+        @Override
+        public double extract(LocalTime time) {
+            throw new IllegalArgumentException("Cannot extract DAY from TIME");
+        }
     },
     DECADE {
         @Override
         public double extract(OffsetDateTime time) {
-            int year = time.getYear();
-            int decade = year / YEARS_IN_DECADE;
-            return decade;
+            return ExtractField.extractDecade(time);
+        }
+
+        @Override
+        public double extract(LocalDateTime time) {
+            return ExtractField.extractDecade(time);
+        }
+
+        @Override
+        public double extract(LocalDate date) {
+            return ExtractField.extractDecade(date);
+        }
+
+        @Override
+        public double extract(LocalTime time) {
+            throw new IllegalArgumentException("Cannot extract DECADE from TIME");
         }
     },
     DOW {
         @Override
         public double extract(OffsetDateTime time) {
-            int dayOfWeekUnadjusted = time.get(WeekFields.SUNDAY_START.dayOfWeek());
-            return dayOfWeekUnadjusted - FIRST_DAY_OF_WEEK;
+            return ExtractField.extractDow(time);
+        }
+
+        @Override
+        public double extract(LocalDateTime time) {
+            return ExtractField.extractDow(time);
+        }
+
+        @Override
+        public double extract(LocalDate date) {
+            return ExtractField.extractDow(date);
+        }
+
+        @Override
+        public double extract(LocalTime time) {
+            throw new IllegalArgumentException("Cannot extract DOW from TIME");
         }
     },
     DOY {
         @Override
         public double extract(OffsetDateTime time) {
             return time.getDayOfYear();
+        }
+
+        @Override
+        public double extract(LocalDateTime time) {
+            return time.getDayOfYear();
+        }
+
+        @Override
+        public double extract(LocalDate date) {
+            return date.getDayOfYear();
+        }
+
+        @Override
+        public double extract(LocalTime time) {
+            throw new IllegalArgumentException("Cannot extract DOY from TIME");
         }
     },
     EPOCH {
@@ -69,44 +141,125 @@ public enum ExtractField {
             double carrySeconds = ((double) carryNanoseconds / (double) NANOSECONDS_IN_SECOND);
             return carrySeconds + secondsSince;
         }
+
+        @Override
+        public double extract(LocalDateTime time) {
+            return EPOCH.extract(OffsetDateTime.of(time, ZoneOffset.UTC));
+        }
+
+        @Override
+        public double extract(LocalDate date) {
+            return EPOCH.extract(LocalDateTime.of(date, LocalTime.MIDNIGHT));
+        }
+
+        @Override
+        public double extract(LocalTime time) {
+            return EPOCH.extract(LocalDateTime.of(LocalDate.EPOCH, time));
+        }
     },
     HOUR {
         @Override
         public double extract(OffsetDateTime time) {
             return time.getHour();
         }
+
+        @Override
+        public double extract(LocalDateTime time) {
+            return time.getHour();
+        }
+
+        @Override
+        public double extract(LocalDate date) {
+            return 0;
+        }
+
+        @Override
+        public double extract(LocalTime time) {
+            return time.getHour();
+        }
     },
     ISODOW {
         @Override
         public double extract(OffsetDateTime time) {
-            return time.get(WeekFields.ISO.dayOfWeek());
+            return time.get(ISODOW_FIELD);
+        }
+
+        @Override
+        public double extract(LocalDateTime time) {
+            return time.get(ISODOW_FIELD);
+        }
+
+        @Override
+        public double extract(LocalDate date) {
+            return date.get(ISODOW_FIELD);
+        }
+
+        @Override
+        public double extract(LocalTime time) {
+            throw new IllegalArgumentException("Cannot extract ISODOW from TIME");
         }
     },
     ISOYEAR {
         @Override
         public double extract(OffsetDateTime time) {
-            int isoWeek = time.get(WeekFields.ISO.weekBasedYear());
-            return isoWeek;
+            return time.get(ISOYEAR_FIELD);
+        }
+
+        @Override
+        public double extract(LocalDateTime time) {
+            return time.get(ISOYEAR_FIELD);
+        }
+
+        @Override
+        public double extract(LocalDate date) {
+            return date.get(ISOYEAR_FIELD);
+        }
+
+        @Override
+        public double extract(LocalTime time) {
+            throw new IllegalArgumentException("Cannot extract ISOYEAR from TIME");
         }
     },
     MICROSECOND {
         @Override
         public double extract(OffsetDateTime time) {
-            int fractionMicroseconds = time.get(ChronoField.MICRO_OF_SECOND);
-            int seconds = time.getSecond();
-            return fractionMicroseconds + (seconds * MICROSECONDS_IN_SECOND);
+            return ExtractField.extractMicrosecond(time);
+        }
+
+        @Override
+        public double extract(LocalDateTime time) {
+            return ExtractField.extractMicrosecond(time);
+        }
+
+        @Override
+        public double extract(LocalDate date) {
+            return 0;
+        }
+
+        @Override
+        public double extract(LocalTime time) {
+            return ExtractField.extractMicrosecond(time);
         }
     },
     MILLENNIUM {
         @Override
         public double extract(OffsetDateTime time) {
-            int year = time.getYear();
-            int absYear = Math.abs(year);
-            int sign = year < 0 ? -1 : 1;
-            int quotient = absYear / YEARS_IN_MILLENNIUM;
-            int remainder = absYear % YEARS_IN_MILLENNIUM;
-            int absMillennium = quotient + (remainder == 0 ? -1 : 0) + FIRST_MILLENNIUM;
-            return sign * absMillennium;
+            return ExtractField.extractMillennium(time);
+        }
+
+        @Override
+        public double extract(LocalDateTime time) {
+            return ExtractField.extractMillennium(time);
+        }
+
+        @Override
+        public double extract(LocalDate date) {
+            return ExtractField.extractMillennium(date);
+        }
+
+        @Override
+        public double extract(LocalTime time) {
+            throw new IllegalArgumentException("Cannot extract MILLENNIUM from TIME");
         }
     },
     MILLISECOND {
@@ -116,10 +269,40 @@ public enum ExtractField {
             int seconds = time.getSecond();
             return fractionMilliseconds + (seconds * MILLISECONDS_IN_SECOND);
         }
+
+        @Override
+        public double extract(LocalDateTime time) {
+            return extract(OffsetDateTime.of(time, ZoneOffset.UTC));
+        }
+
+        @Override
+        public double extract(LocalDate date) {
+            return extract(LocalDateTime.of(date, LocalTime.MIDNIGHT));
+        }
+
+        @Override
+        public double extract(LocalTime time) {
+            return extract(LocalDateTime.of(LocalDate.EPOCH, time));
+        }
     },
     MINUTE {
         @Override
         public double extract(OffsetDateTime time) {
+            return time.getMinute();
+        }
+
+        @Override
+        public double extract(LocalDateTime time) {
+            return time.getMinute();
+        }
+
+        @Override
+        public double extract(LocalDate date) {
+            return 0;
+        }
+
+        @Override
+        public double extract(LocalTime time) {
             return time.getMinute();
         }
     },
@@ -128,11 +311,41 @@ public enum ExtractField {
         public double extract(OffsetDateTime time) {
             return time.getMonthValue();
         }
+
+        @Override
+        public double extract(LocalDateTime time) {
+            return time.getMonthValue();
+        }
+
+        @Override
+        public double extract(LocalDate date) {
+            return date.getMonthValue();
+        }
+
+        @Override
+        public double extract(LocalTime time) {
+            throw new IllegalArgumentException("Cannot extract MONTH from TIME");
+        }
     },
     QUARTER {
         @Override
         public double extract(OffsetDateTime time) {
-            return time.get(IsoFields.QUARTER_OF_YEAR);
+            return time.get(QUARTER_FIELD);
+        }
+
+        @Override
+        public double extract(LocalDateTime time) {
+            return time.get(QUARTER_FIELD);
+        }
+
+        @Override
+        public double extract(LocalDate date) {
+            return date.get(QUARTER_FIELD);
+        }
+
+        @Override
+        public double extract(LocalTime time) {
+            throw new IllegalArgumentException("Cannot extract QUARTER from TIME");
         }
     },
     SECOND {
@@ -140,17 +353,62 @@ public enum ExtractField {
         public double extract(OffsetDateTime time) {
             return time.getSecond();
         }
+
+        @Override
+        public double extract(LocalDateTime time) {
+            return time.getSecond();
+        }
+
+        @Override
+        public double extract(LocalDate date) {
+            return 0;
+        }
+
+        @Override
+        public double extract(LocalTime time) {
+            return time.getSecond();
+        }
     },
     WEEK {
         @Override
         public double extract(OffsetDateTime time) {
-            return time.get(WeekFields.ISO.weekOfWeekBasedYear());
+            return time.get(WEEK_FIELD);
+        }
+
+        @Override
+        public double extract(LocalDateTime time) {
+            return time.get(WEEK_FIELD);
+        }
+
+        @Override
+        public double extract(LocalDate date) {
+            return date.get(WEEK_FIELD);
+        }
+
+        @Override
+        public double extract(LocalTime time) {
+            throw new IllegalArgumentException("Cannot extract WEEK from TIME");
         }
     },
     YEAR {
         @Override
         public double extract(OffsetDateTime time) {
             return time.getYear();
+        }
+
+        @Override
+        public double extract(LocalDateTime time) {
+            return time.getYear();
+        }
+
+        @Override
+        public double extract(LocalDate date) {
+            return date.getYear();
+        }
+
+        @Override
+        public double extract(LocalTime time) {
+            throw new IllegalArgumentException("Cannot extract YEAR from TIME");
         }
     };
 
@@ -172,5 +430,53 @@ public enum ExtractField {
 
     protected static final int FIRST_DAY_OF_WEEK = 1;
 
+    protected static final TemporalField WEEK_FIELD = WeekFields.ISO.weekOfWeekBasedYear();
+
+    protected static final TemporalField QUARTER_FIELD = IsoFields.QUARTER_OF_YEAR;
+
+    protected static final TemporalField ISOYEAR_FIELD = WeekFields.ISO.weekBasedYear();
+
+    protected static final TemporalField ISODOW_FIELD = WeekFields.ISO.dayOfWeek();
+
     public abstract double extract(OffsetDateTime time);
+    public abstract double extract(LocalDateTime time);
+    public abstract double extract(LocalDate date);
+    public abstract double extract(LocalTime time);
+
+    private static double extractMillennium(Temporal temporal) {
+        int year = temporal.get(ChronoField.YEAR);
+        int absYear = Math.abs(year);
+        int sign = year < 0 ? -1 : 1;
+        int quotient = absYear / YEARS_IN_MILLENNIUM;
+        int remainder = absYear % YEARS_IN_MILLENNIUM;
+        int absMillennium = quotient + (remainder == 0 ? -1 : 0) + FIRST_MILLENNIUM;
+        return sign * absMillennium;
+    }
+
+    private static double extractCentury(Temporal temporal) {
+        int year = temporal.get(ChronoField.YEAR);
+        int absYear = Math.abs(year);
+        int sign = year < 0 ? -1 : 1;
+        int quotient = absYear / YEARS_IN_CENTURY;
+        int remainder = absYear % YEARS_IN_CENTURY;
+        int absCentury = quotient + (remainder == 0 ? -1 : 0) + FIRST_CENTURY;
+        return sign * absCentury;
+    }
+
+    private static double extractDecade(Temporal temporal) {
+        int year = temporal.get(ChronoField.YEAR);
+        int decade = year / YEARS_IN_DECADE;
+        return decade;
+    }
+
+    private static double extractDow(Temporal temporal) {
+        int dayOfWeekUnadjusted = temporal.get(WeekFields.SUNDAY_START.dayOfWeek());
+        return dayOfWeekUnadjusted - FIRST_DAY_OF_WEEK;
+    }
+
+    private static double extractMicrosecond(Temporal temporal) {
+        int fractionMicroseconds = temporal.get(ChronoField.MICRO_OF_SECOND);
+        int seconds = temporal.get(ChronoField.SECOND_OF_MINUTE);
+        return fractionMicroseconds + (seconds * MICROSECONDS_IN_SECOND);
+    }
 }

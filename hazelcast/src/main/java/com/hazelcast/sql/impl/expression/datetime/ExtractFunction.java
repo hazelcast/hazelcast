@@ -27,7 +27,6 @@ import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.io.IOException;
-import java.time.OffsetDateTime;
 import java.util.Objects;
 
 public class ExtractFunction extends UniExpression<Double> implements IdentifiedDataSerializable {
@@ -47,13 +46,13 @@ public class ExtractFunction extends UniExpression<Double> implements Identified
 
     @Override
     public Double eval(Row row, ExpressionEvalContext context) {
-        OffsetDateTime timestamp = DateTimeUtils.asTimestampWithTimezone(operand, row, context);
+        Object object = operand.eval(row, context);
 
-        if (timestamp == null) {
+        if (object == null) {
             return null;
         }
 
-        return DateTimeUtils.extractField(timestamp, extractField);
+        return DateTimeUtils.extractField(object, extractField);
     }
 
     @Override

@@ -23,7 +23,6 @@ import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.impl.type.converter.AbstractTimestampWithTimezoneConverter;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -38,7 +37,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -46,7 +44,6 @@ import java.util.Map;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertInstanceOf;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(Enclosed.class)
@@ -350,11 +347,7 @@ public class ExtractFunctionIntegrationTest {
             put(1);
 
             if (literalSupported(type)) {
-                double expectedOffset = 0.0;
-                if (field.equals("EPOCH") && (type.equals("TIMESTAMP") || type.equals("DATE"))) {
-                    expectedOffset = - calculateOffsetSeconds(parameterInput);
-                }
-                check(sql(field, literal(type, input)), expected + expectedOffset);
+                check(sql(field, literal(type, input)), expected);
             }
 
 
@@ -364,12 +357,7 @@ public class ExtractFunctionIntegrationTest {
         public void test_parameter() {
             put(1);
 
-            double expectedOffset = 0.0;
-            if (field.equals("EPOCH") && (type.equals("TIMESTAMP") || type.equals("DATE"))) {
-                expectedOffset = - calculateOffsetSeconds(parameterInput);
-            }
-
-            check(sql(field, "?"), expected + expectedOffset, parameterInput);
+            check(sql(field, "?"), expected, parameterInput);
         }
 
         private <T> void check(String sql, T expectedResult, Object ...parameters) {
@@ -397,16 +385,33 @@ public class ExtractFunctionIntegrationTest {
         public void whenUsingWrongType_thenFail() {
             put(1);
 
-            checkFailure0(sql("MONTH", "?"), SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of TIMESTAMP_WITH_TIME_ZONE type, but BOOLEAN was found", BOOLEAN_VAL);
-            checkFailure0(sql("MONTH", "?"), SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of TIMESTAMP_WITH_TIME_ZONE type, but TINYINT was found", BYTE_VAL);
-            checkFailure0(sql("MONTH", "?"), SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of TIMESTAMP_WITH_TIME_ZONE type, but SMALLINT was found", SHORT_VAL);
-            checkFailure0(sql("MONTH", "?"), SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of TIMESTAMP_WITH_TIME_ZONE type, but INTEGER was found", INTEGER_VAL);
-            checkFailure0(sql("MONTH", "?"), SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of TIMESTAMP_WITH_TIME_ZONE type, but REAL was found", FLOAT_VAL);
-            checkFailure0(sql("MONTH", "?"), SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of TIMESTAMP_WITH_TIME_ZONE type, but DOUBLE was found", DOUBLE_VAL);
-            checkFailure0(sql("MONTH", "?"), SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of TIMESTAMP_WITH_TIME_ZONE type, but VARCHAR was found", STRING_VAL);
-            checkFailure0(sql("MONTH", "?"), SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of TIMESTAMP_WITH_TIME_ZONE type, but VARCHAR was found", CHAR_VAL);
-            checkFailure0(sql("MONTH", "?"), SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of TIMESTAMP_WITH_TIME_ZONE type, but DECIMAL was found", BIG_DECIMAL_VAL);
-            checkFailure0(sql("MONTH", "?"), SqlErrorCode.DATA_EXCEPTION, "Parameter at position 0 must be of TIMESTAMP_WITH_TIME_ZONE type, but DECIMAL was found", BIG_INTEGER_VAL);
+            checkFailure0(sql("MONTH", "?"), SqlErrorCode.GENERIC, "Cannot extract field from BOOLEAN", BOOLEAN_VAL);
+            checkFailure0(sql("MONTH", "?"), SqlErrorCode.GENERIC, "Cannot extract field from TINYINT", BYTE_VAL);
+            checkFailure0(sql("MONTH", "?"), SqlErrorCode.GENERIC, "Cannot extract field from SMALLINT", SHORT_VAL);
+            checkFailure0(sql("MONTH", "?"), SqlErrorCode.GENERIC, "Cannot extract field from INTEGER", INTEGER_VAL);
+            checkFailure0(sql("MONTH", "?"), SqlErrorCode.GENERIC, "Cannot extract field from REAL", FLOAT_VAL);
+            checkFailure0(sql("MONTH", "?"), SqlErrorCode.GENERIC, "Cannot extract field from DOUBLE", DOUBLE_VAL);
+            checkFailure0(sql("MONTH", "?"), SqlErrorCode.GENERIC, "Cannot extract field from VARCHAR", STRING_VAL);
+            checkFailure0(sql("MONTH", "?"), SqlErrorCode.GENERIC, "Cannot extract field from VARCHAR", CHAR_VAL);
+            checkFailure0(sql("MONTH", "?"), SqlErrorCode.GENERIC, "Cannot extract field from DECIMAL", BIG_DECIMAL_VAL);
+            checkFailure0(sql("MONTH", "?"), SqlErrorCode.GENERIC, "Cannot extract field from DECIMAL", BIG_INTEGER_VAL);
+        }
+
+        @Test
+        public void whenExtractingUnsupportedFieldFromTime_thenFail() {
+            put(1);
+
+            checkFailure0(sql("MILLENNIUM", "?"), SqlErrorCode.GENERIC, "Cannot extract MILLENNIUM from TIME", LOCAL_TIME_VAL);
+            checkFailure0(sql("CENTURY", "?"), SqlErrorCode.GENERIC, "Cannot extract CENTURY from TIME", LOCAL_TIME_VAL);
+            checkFailure0(sql("DECADE", "?"), SqlErrorCode.GENERIC, "Cannot extract DECADE from TIME", LOCAL_TIME_VAL);
+            checkFailure0(sql("DOW", "?"), SqlErrorCode.GENERIC, "Cannot extract DOW from TIME", LOCAL_TIME_VAL);
+            checkFailure0(sql("ISODOW", "?"), SqlErrorCode.GENERIC, "Cannot extract ISODOW from TIME", LOCAL_TIME_VAL);
+            checkFailure0(sql("ISOYEAR", "?"), SqlErrorCode.GENERIC, "Cannot extract ISOYEAR from TIME", LOCAL_TIME_VAL);
+            checkFailure0(sql("QUARTER", "?"), SqlErrorCode.GENERIC, "Cannot extract QUARTER from TIME", LOCAL_TIME_VAL);
+            checkFailure0(sql("WEEK", "?"), SqlErrorCode.GENERIC, "Cannot extract WEEK from TIME", LOCAL_TIME_VAL);
+            checkFailure0(sql("DAY", "?"), SqlErrorCode.GENERIC, "Cannot extract DAY from TIME", LOCAL_TIME_VAL);
+            checkFailure0(sql("DOY", "?"), SqlErrorCode.GENERIC, "Cannot extract DOY from TIME", LOCAL_TIME_VAL);
+            checkFailure0(sql("MONTH", "?"), SqlErrorCode.GENERIC, "Cannot extract MONTH from TIME", LOCAL_TIME_VAL);
         }
 
         @Test
@@ -445,32 +450,6 @@ public class ExtractFunctionIntegrationTest {
         }
 
     }
-
-    // This function is called for check() function to calculate adjustment
-    // of the actual value.
-    // The reason is that EXTRACT function casts its argument to TIMESTAMPTZ
-    // to run its logic. However, it's not true that
-    // EXTRACT(EPOCH FROM source) == EXTRACT(EPOCH FROM CAST(source as TIMESTAMPTZ))
-    //
-    // TODO: After fixing https://github.com/hazelcast/hazelcast/issues/18620, remove this function and and the places it is used
-    private static long calculateOffsetSeconds(Object temporal) {
-        assertTrue(temporal instanceof LocalDateTime || temporal instanceof LocalDate);
-
-        ZonedDateTime zonedDateTime;
-        if (temporal instanceof LocalDate) {
-            LocalDate date = (LocalDate) temporal;
-            zonedDateTime = ZonedDateTime.of(
-                    date,
-                    LocalTime.of(0, 0),
-                    AbstractTimestampWithTimezoneConverter.DEFAULT_ZONE
-            );
-        } else {
-            LocalDateTime dateTime = (LocalDateTime) temporal;
-            zonedDateTime = ZonedDateTime.of(dateTime, AbstractTimestampWithTimezoneConverter.DEFAULT_ZONE);
-        }
-        return zonedDateTime.toOffsetDateTime().getOffset().getTotalSeconds();
-    }
-
 
     private static String sql(Object field, Object source) {
         return String.format("SELECT EXTRACT(%s FROM %s) FROM map", field, source);
