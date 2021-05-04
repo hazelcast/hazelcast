@@ -52,6 +52,7 @@ import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.jobNameAndExecutionId;
+import static java.util.stream.Collectors.toConcurrentMap;
 
 /**
  * Data pertaining to single job on master member. There's one instance per job,
@@ -87,7 +88,7 @@ public class MasterContext {
      * Responses to {@link StartExecutionOperation}, populated as they arrive.
      * We do not store the whole response, only the error or success status.
      */
-    volatile ConcurrentMap<Address, CompletableFuture<Void>> startOperationResponses;
+    private volatile ConcurrentMap<Address, CompletableFuture<Void>> startOperationResponses;
 
     private final MasterJobContext jobContext;
     private final MasterSnapshotContext snapshotContext;
@@ -197,6 +198,15 @@ public class MasterContext {
 
     Map<MemberInfo, ExecutionPlan> executionPlanMap() {
         return executionPlanMap;
+    }
+
+    ConcurrentMap<Address, CompletableFuture<Void>> startOperationResponses() {
+        return startOperationResponses;
+    }
+
+    void resetStartOperationResponses() {
+        startOperationResponses = executionPlanMap().keySet().stream()
+                .collect(toConcurrentMap(MemberInfo::getAddress, mi -> new CompletableFuture<>()));
     }
 
     void setExecutionPlanMap(Map<MemberInfo, ExecutionPlan> executionPlans) {

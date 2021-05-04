@@ -109,7 +109,6 @@ import static java.util.Collections.emptyList;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.Collectors.partitioningBy;
-import static java.util.stream.Collectors.toConcurrentMap;
 import static java.util.stream.Collectors.toMap;
 
 /**
@@ -461,10 +460,9 @@ public class MasterJobContext {
                         responses);
 
         mc.setJobStatus(RUNNING);
-        mc.startOperationResponses = mc.executionPlanMap().keySet().stream()
-                .collect(toConcurrentMap(MemberInfo::getAddress, mi -> new CompletableFuture<>()));
+        mc.resetStartOperationResponses();
 
-        executionFailureCallback = new ExecutionFailureCallback(executionId, mc.startOperationResponses);
+        executionFailureCallback = new ExecutionFailureCallback(executionId, mc.startOperationResponses());
         mc.invokeOnParticipants(operationCtor, completionCallback, executionFailureCallback, false);
 
         if (mc.jobConfig().getProcessingGuarantee() != NONE) {

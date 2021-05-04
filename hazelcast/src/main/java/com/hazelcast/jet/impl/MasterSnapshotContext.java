@@ -209,7 +209,7 @@ class MasterSnapshotContext {
                     // If the member doesn't know the execution, it might have completed normally or exceptionally.
                     // If normally, we ignore it, if exceptionally, we'll also fail the snapshot.
                     if (response instanceof ExecutionNotFoundException) {
-                        missingResponses.add(mc.startOperationResponses.get(entry.getKey().getAddress()));
+                        missingResponses.add(mc.startOperationResponses().get(entry.getKey().getAddress()));
                         continue;
                     }
                     response = new SnapshotPhase1Result(0, 0, 0, (Throwable) response);
@@ -287,8 +287,8 @@ class MasterSnapshotContext {
                                         stats.duration(), stats.numBytes(), stats.numKeys(), stats.numChunks(), snapshotMapName));
                             }
                             if (!isSuccess) {
-                                logger.warning(mc.jobIdString() + " snapshot " + snapshotId + " phase 1 failed on some member(s), " +
-                                        "one of the failures: " + mergedResult.getError());
+                                logger.warning(mc.jobIdString() + " snapshot " + snapshotId + " phase 1 failed on some " +
+                                        "member(s), one of the failures: " + mergedResult.getError());
                                 try {
                                     snapshotMap.clear();
                                 } catch (Exception e) {
@@ -307,8 +307,8 @@ class MasterSnapshotContext {
                         Function<ExecutionPlan, Operation> factory = plan -> new SnapshotPhase2Operation(
                                 mc.jobId(), executionId, snapshotId, isSuccess && !SnapshotFlags.isExportOnly(snapshotFlags));
                         mc.invokeOnParticipants(factory,
-                                responses2 -> onSnapshotPhase2Complete(mergedResult.getError(), responses2, executionId, snapshotId,
-                                        snapshotFlags, future, stats.startTime()),
+                                responses2 -> onSnapshotPhase2Complete(mergedResult.getError(), responses2, executionId,
+                                        snapshotId, snapshotFlags, future, stats.startTime()),
                                 null, true);
                     }));
         });
