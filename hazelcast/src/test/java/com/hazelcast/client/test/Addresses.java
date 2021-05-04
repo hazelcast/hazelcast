@@ -21,28 +21,28 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 /**
  * This class is for Non-java clients. Please do not remove or modify.
  */
-public class Address implements IdentifiedDataSerializable {
-    static final int CLASS_ID = 100;
-    public Street street;
+public class Addresses implements IdentifiedDataSerializable {
+    static final int CLASS_ID = 102;
+    public Street[] streets;
     public int zipCode;
 
-    public Address() {
+    public Addresses() {
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        street.writeData(out);
+        out.writeObject(streets);
         out.writeInt(zipCode);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        street = new Street();
-        street.readData(in);
+        streets = in.readObject();
         zipCode = in.readInt();
     }
 
@@ -58,6 +58,6 @@ public class Address implements IdentifiedDataSerializable {
 
     @Override
     public String toString() {
-        return String.format("Address(street=%s, zipCode=%d)", street, zipCode);
+        return String.format("Addresses(streets=%s, zipCode=%d)", Arrays.toString(streets), zipCode);
     }
 }

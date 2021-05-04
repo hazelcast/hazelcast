@@ -31,6 +31,9 @@ public class SmallClassroom implements Portable {
     private String className;
     private Student student;
 
+    public SmallClassroom() {
+    }
+
     @Override
     public int getFactoryId() {
         return PortableFactory.FACTORY_ID;
@@ -44,7 +47,11 @@ public class SmallClassroom implements Portable {
     @Override
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeString("className", className);
-        writer.writePortable("student", student);
+        if (student == null) {
+            writer.writeNullPortable("student", PortableFactory.FACTORY_ID, Student.CLASS_ID);
+        } else {
+            writer.writePortable("student", student);
+        }
     }
 
     @Override

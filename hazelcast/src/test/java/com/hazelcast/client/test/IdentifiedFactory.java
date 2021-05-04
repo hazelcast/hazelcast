@@ -93,6 +93,9 @@ public class IdentifiedFactory implements DataSerializableFactory {
         if (typeId == Address.CLASS_ID) {
             return new Address();
         }
+        if (typeId == Addresses.CLASS_ID) {
+            return new Addresses();
+        }
         return null;
     }
 }

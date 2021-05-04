@@ -25,25 +25,25 @@ import java.io.IOException;
 /**
  * This class is for Non-java clients. Please do not remove or modify.
  */
-public class Address implements IdentifiedDataSerializable {
-    static final int CLASS_ID = 100;
-    public Street street;
-    public int zipCode;
+public class Street implements IdentifiedDataSerializable {
+    static final int CLASS_ID = 101;
+    public String street;
 
-    public Address() {
+    public Street() {
+    }
+
+    public Street(String street) {
+        this.street = street;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        street.writeData(out);
-        out.writeInt(zipCode);
+        out.writeString(street);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        street = new Street();
-        street.readData(in);
-        zipCode = in.readInt();
+        street = in.readString();
     }
 
     @Override
@@ -58,6 +58,6 @@ public class Address implements IdentifiedDataSerializable {
 
     @Override
     public String toString() {
-        return String.format("Address(street=%s, zipCode=%d)", street, zipCode);
+        return String.format("Street(street=%s)", street);
     }
 }

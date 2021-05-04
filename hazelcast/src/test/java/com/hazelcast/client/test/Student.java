@@ -26,6 +26,8 @@ import java.io.IOException;
  * This class is for Non-java clients. Please do not remove or modify.
  */
 public class Student implements Portable {
+    static final int CLASS_ID = 6;
+
     private long age;
     private float height;
 
@@ -36,7 +38,7 @@ public class Student implements Portable {
 
     @Override
     public int getClassId() {
-        return 6;
+        return CLASS_ID;
     }
 
     @Override

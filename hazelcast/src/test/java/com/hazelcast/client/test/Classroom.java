@@ -31,6 +31,10 @@ public class Classroom implements Portable {
     private String className;
     private Student[] students;
 
+    public Classroom() {
+
+    }
+
     @Override
     public int getFactoryId() {
         return PortableFactory.FACTORY_ID;
@@ -53,3 +57,4 @@ public class Classroom implements Portable {
         students = (Student[]) reader.readPortableArray("students");
     }
 }
+
