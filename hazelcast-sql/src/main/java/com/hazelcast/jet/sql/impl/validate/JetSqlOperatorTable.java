@@ -28,6 +28,7 @@ import com.hazelcast.jet.sql.impl.connector.file.FileTableFunction;
 import com.hazelcast.jet.sql.impl.connector.generator.SeriesGeneratorTableFunction;
 import com.hazelcast.jet.sql.impl.connector.generator.StreamGeneratorTableFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.HazelcastCollectionTableOperator;
+import com.hazelcast.jet.sql.impl.validate.operators.HazelcastMapValueConstructor;
 import com.hazelcast.jet.sql.impl.validate.operators.HazelcastRowOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.HazelcastValuesOperator;
 import org.apache.calcite.sql.SqlFunction;
@@ -37,7 +38,6 @@ import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlSpecialOperator;
 import org.apache.calcite.sql.SqlSyntax;
-import org.apache.calcite.sql.fun.SqlMapValueConstructor;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.util.ReflectiveSqlOperatorTable;
 import org.apache.calcite.sql.validate.SqlNameMatcher;
@@ -50,6 +50,7 @@ public final class JetSqlOperatorTable extends ReflectiveSqlOperatorTable {
     public static final SqlSpecialOperator VALUES = new HazelcastValuesOperator();
     public static final SqlSpecialOperator ROW = new HazelcastRowOperator();
     public static final SqlSpecialOperator COLLECTION_TABLE = new HazelcastCollectionTableOperator("TABLE");
+    public static final SqlSpecialOperator MAP_VALUE_CONSTRUCTOR = new HazelcastMapValueConstructor();
 
     // We use an operator that doesn't implement the HazelcastOperandTypeCheckerAware interface.
     // The reason is that HazelcastOperandTypeCheckerAware.prepareBinding() gets the operand type for
@@ -57,9 +58,6 @@ public final class JetSqlOperatorTable extends ReflectiveSqlOperatorTable {
     // an SQL identifier and Calcite tries to resolve it as a column name. The other parameter accepts
     // ANY type so there's no need for this
     public static final SqlSpecialOperator ARGUMENT_ASSIGNMENT = SqlStdOperatorTable.ARGUMENT_ASSIGNMENT;
-
-    // TODO [viliam] this seems to work, but it doesn't extend the hz-specific classes
-    public static final SqlMapValueConstructor MAP_VALUE_CONSTRUCTOR = new SqlMapValueConstructor();
 
     public static final SqlFunction SUM = new HazelcastSumAggFunction();
     public static final SqlFunction COUNT = new HazelcastCountAggFunction();

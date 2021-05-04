@@ -73,7 +73,7 @@ public class HazelcastOperandTypeInference implements SqlOperandTypeInference {
 
     private static RelDataType toType(SqlTypeName parameterType, RelDataTypeFactory typeFactory) {
         if (parameterType == SqlTypeName.MAP) {
-            RelDataType sqlType = typeFactory.createSqlType(SqlTypeName.ANY);
+            RelDataType sqlType = typeFactory.createUnknownType();
             return typeFactory.createMapType(sqlType, sqlType);
         } else {
             RelDataType sqlType = typeFactory.createSqlType(parameterType);

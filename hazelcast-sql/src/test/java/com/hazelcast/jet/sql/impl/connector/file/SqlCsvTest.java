@@ -286,15 +286,27 @@ public class SqlCsvTest extends SqlTestSupport {
                 "SELECT CAST(long AS BIGINT) - ?"
                         + " FROM TABLE ("
                         + "csv_file ("
-                        + "path => '" + RESOURCES_PATH + "'"
-                        + ", glob => 'file.csv'"
-                        + ", options => MAP['key', 'value']"
+                        + "path => ?"
+                        + ", glob => ?"
+                        + ", options => MAP[?, ?]"
                         + ")"
                         + ")"
                         + "WHERE byte = ?",
-                asList(6, "127"),
+                asList(6, RESOURCES_PATH, "file.csv", "key", "value", "127"),
                 singletonList(new Row(9223372036854775801L))
         );
+    }
+
+    @Test
+    public void test_tableFunctionWithDynamicParametersAndArgumentTypeMismatch() {
+        assertThatThrownBy(() -> sqlService.execute("SELECT *"
+                + " FROM TABLE ("
+                + "csv_file ("
+                + "path => '" + RESOURCES_PATH + "'"
+                + ", glob => ?"
+                + ")"
+                + ")", 1
+        )).hasMessageContaining("Parameter at position 0 must be of VARCHAR type, but INTEGER was found");
     }
 
     @Test

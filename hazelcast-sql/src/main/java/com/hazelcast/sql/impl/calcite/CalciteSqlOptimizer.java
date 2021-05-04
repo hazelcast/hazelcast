@@ -117,6 +117,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         OptimizerContext context = OptimizerContext.create(
                 task.getSchema(),
                 task.getSearchPaths(),
+                task.getArguments(),
                 memberCount,
                 sqlBackend,
                 jetSqlBackend

@@ -93,6 +93,7 @@ public final class OptimizerContext {
     public static OptimizerContext create(
             SqlCatalog schema,
             List<List<String>> searchPaths,
+            List<Object> arguments,
             int memberCount,
             @Nonnull SqlBackend sqlBackend,
             @Nullable SqlBackend jetSqlBackend
@@ -100,12 +101,13 @@ public final class OptimizerContext {
         // Resolve tables.
         HazelcastSchema rootSchema = HazelcastSchemaUtils.createRootSchema(schema);
 
-        return create(rootSchema, searchPaths, memberCount, sqlBackend, jetSqlBackend);
+        return create(rootSchema, searchPaths, arguments, memberCount, sqlBackend, jetSqlBackend);
     }
 
     public static OptimizerContext create(
             HazelcastSchema rootSchema,
             List<List<String>> schemaPaths,
+            List<Object> arguments,
             int memberCount,
             @Nonnull SqlBackend sqlBackend,
             @Nullable SqlBackend jetSqlBackend
@@ -118,7 +120,7 @@ public final class OptimizerContext {
         VolcanoPlanner volcanoPlanner = createPlanner(CONNECTION_CONFIG, distributionTraitDef);
         HazelcastRelOptCluster cluster = createCluster(volcanoPlanner, typeFactory, distributionTraitDef);
 
-        QueryParser parser = new QueryParser(typeFactory, catalogReader, conformance, sqlBackend, jetSqlBackend);
+        QueryParser parser = new QueryParser(typeFactory, catalogReader, conformance, arguments, sqlBackend, jetSqlBackend);
         QueryConverter converter = new QueryConverter(catalogReader, cluster);
         QueryPlanner planner = new QueryPlanner(volcanoPlanner);
 
