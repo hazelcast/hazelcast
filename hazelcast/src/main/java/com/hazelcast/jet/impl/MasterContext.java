@@ -16,11 +16,13 @@
 
 package com.hazelcast.jet.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
+import com.hazelcast.jet.impl.operation.StartExecutionOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -32,10 +34,12 @@ import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -78,6 +82,12 @@ public class MasterContext {
     private volatile JobStatus jobStatus = NOT_RUNNING;
     private volatile long executionId;
     private volatile Map<MemberInfo, ExecutionPlan> executionPlanMap;
+
+    /**
+     * Responses to {@link StartExecutionOperation}, populated as they arrive.
+     * We do not store the whole response, only the error or success status.
+     */
+    volatile ConcurrentMap<Address, CompletableFuture<Void>> startOperationResponses;
 
     private final MasterJobContext jobContext;
     private final MasterSnapshotContext snapshotContext;
@@ -227,8 +237,8 @@ public class MasterContext {
      *                                exception thrown from the operation (the
      *                                pairs themselves will never be null); size
      *                                will be equal to participant count
-     * @param errorCallback           A callback that will be called after each
-     *                                failure of each individual operation
+     * @param individualCallback      A callback that will be called after each
+     *                                individual participant completes
      * @param retryOnTimeoutException if true, operations that threw {@link
      *                                com.hazelcast.core.OperationTimeoutException}
      *                                will be retried
@@ -236,7 +246,7 @@ public class MasterContext {
     void invokeOnParticipants(
             Function<ExecutionPlan, Operation> operationCtor,
             @Nullable Consumer<Collection<Map.Entry<MemberInfo, Object>>> completionCallback,
-            @Nullable Consumer<Throwable> errorCallback,
+            @Nullable BiConsumer<Address, Object> individualCallback,
             boolean retryOnTimeoutException
     ) {
         ConcurrentMap<MemberInfo, Object> responses = new ConcurrentHashMap<>();
@@ -244,7 +254,7 @@ public class MasterContext {
         for (Entry<MemberInfo, ExecutionPlan> entry : executionPlanMap.entrySet()) {
             MemberInfo memberInfo = entry.getKey();
             Supplier<Operation> opSupplier = () -> operationCtor.apply(entry.getValue());
-            invokeOnParticipant(memberInfo, opSupplier, completionCallback, errorCallback, retryOnTimeoutException,
+            invokeOnParticipant(memberInfo, opSupplier, completionCallback, individualCallback, retryOnTimeoutException,
                     responses, remainingCount);
         }
     }
@@ -253,7 +263,7 @@ public class MasterContext {
             MemberInfo memberInfo,
             Supplier<Operation> operationSupplier,
             @Nullable Consumer<Collection<Map.Entry<MemberInfo, Object>>> completionCallback,
-            @Nullable Consumer<Throwable> errorCallback,
+            @Nullable BiConsumer<Address, Object> individualCallback,
             boolean retryOnTimeoutException,
             ConcurrentMap<MemberInfo, Object> collectedResponses,
             AtomicInteger remainingCount
@@ -268,12 +278,12 @@ public class MasterContext {
             if (retryOnTimeoutException && throwable instanceof OperationTimeoutException) {
                 logger.warning("Retrying " + operation.getClass().getName() + " that failed with "
                         + OperationTimeoutException.class.getSimpleName() + " in " + jobIdString());
-                invokeOnParticipant(memberInfo, operationSupplier, completionCallback, errorCallback,
+                invokeOnParticipant(memberInfo, operationSupplier, completionCallback, individualCallback,
                         retryOnTimeoutException, collectedResponses, remainingCount);
                 return;
             }
-            if (errorCallback != null && throwable != null) {
-                errorCallback.accept(throwable);
+            if (individualCallback != null) {
+                individualCallback.accept(memberInfo.getAddress(), throwable != null ? peel(throwable) : r);
             }
             Object oldResponse = collectedResponses.put(memberInfo, response);
             assert oldResponse == null :

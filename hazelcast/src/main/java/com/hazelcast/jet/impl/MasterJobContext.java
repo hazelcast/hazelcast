@@ -34,19 +34,19 @@ import com.hazelcast.jet.core.metrics.MetricNames;
 import com.hazelcast.jet.core.metrics.MetricTags;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate;
+import com.hazelcast.jet.impl.exception.ExecutionNotFoundException;
 import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
 import com.hazelcast.jet.impl.exception.TerminatedWithSnapshotException;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.metrics.RawJobMetrics;
 import com.hazelcast.jet.impl.operation.GetLocalJobMetricsOperation;
-import com.hazelcast.jet.impl.operation.GetLocalJobMetricsOperation.ExecutionNotFoundException;
 import com.hazelcast.jet.impl.operation.InitExecutionOperation;
 import com.hazelcast.jet.impl.operation.StartExecutionOperation;
 import com.hazelcast.jet.impl.operation.TerminateExecutionOperation;
-import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.jet.impl.util.NonCompletableFuture;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.IMap;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
@@ -68,6 +68,7 @@ import java.util.UUID;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -108,6 +109,8 @@ import static java.util.Collections.emptyList;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.Collectors.partitioningBy;
+import static java.util.stream.Collectors.toConcurrentMap;
+import static java.util.stream.Collectors.toMap;
 
 /**
  * Part of {@link MasterContext} that deals with execution starting and
@@ -446,7 +449,6 @@ public class MasterJobContext {
 
         long executionId = mc.executionId();
 
-        executionFailureCallback = new ExecutionFailureCallback(executionId);
         if (requestedTerminationMode != null) {
             handleTermination(requestedTerminationMode);
         }
@@ -459,7 +461,10 @@ public class MasterJobContext {
                         responses);
 
         mc.setJobStatus(RUNNING);
+        mc.startOperationResponses = mc.executionPlanMap().keySet().stream()
+                .collect(toConcurrentMap(MemberInfo::getAddress, mi -> new CompletableFuture<>()));
 
+        executionFailureCallback = new ExecutionFailureCallback(executionId, mc.startOperationResponses);
         mc.invokeOnParticipants(operationCtor, completionCallback, executionFailureCallback, false);
 
         if (mc.jobConfig().getProcessingGuarantee() != NONE) {
@@ -714,7 +719,7 @@ public class MasterJobContext {
     }
 
     private static Map<String, Long> mergeByVertex(List<Measurement> measurements) {
-        return measurements.stream().collect(Collectors.toMap(
+        return measurements.stream().collect(toMap(
                 m -> m.tag(MetricTags.VERTEX),
                 Measurement::value,
                 Long::sum
@@ -861,7 +866,7 @@ public class MasterJobContext {
             // we'll return last known metrics, or it will be running again, in
             // which case we'll get fresh metrics.
             logFinest(logger, "Rescheduling collectMetrics for %s, some members threw %s", mc.jobIdString(),
-                    GetLocalJobMetricsOperation.ExecutionNotFoundException.class.getSimpleName());
+                    ExecutionNotFoundException.class.getSimpleName());
             mc.nodeEngine().getExecutionService().schedule(() ->
                     collectMetrics(clientFuture), COLLECT_METRICS_RETRY_DELAY_MILLIS, MILLISECONDS);
             return;
@@ -896,19 +901,32 @@ public class MasterJobContext {
      * Attached to {@link StartExecutionOperation} invocations to cancel
      * invocations in case of a failure.
      */
-    private class ExecutionFailureCallback implements Consumer<Throwable> {
+    private class ExecutionFailureCallback implements BiConsumer<Address, Object> {
 
         private final AtomicBoolean invocationsCancelled = new AtomicBoolean();
         private final long executionId;
+        private final Map<Address, CompletableFuture<Void>> startOperationResponses;
 
-        ExecutionFailureCallback(long executionId) {
+        ExecutionFailureCallback(long executionId, Map<Address, CompletableFuture<Void>> startOperationResponses) {
             this.executionId = executionId;
+            this.startOperationResponses = startOperationResponses;
         }
 
         @Override
-        public void accept(Throwable t) {
-            if (!(peel(t) instanceof TerminatedWithSnapshotException)) {
-                cancelInvocations(null);
+        public void accept(Address address, Object response) {
+            LoggingUtil.logFine(logger, "%s received response to StartExecutionOperation from %s: %s",
+                    mc.jobIdString(), address, response);
+            CompletableFuture<Void> future = startOperationResponses.get(address);
+            if (response instanceof Throwable) {
+                Throwable throwable = (Throwable) response;
+                future.completeExceptionally(throwable);
+
+                if (!(peel(throwable) instanceof TerminatedWithSnapshotException)) {
+                    cancelInvocations(null);
+                }
+            } else {
+                // complete successfully
+                future.complete(null);
             }
         }
 

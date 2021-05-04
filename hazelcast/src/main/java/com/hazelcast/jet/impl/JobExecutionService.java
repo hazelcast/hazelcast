@@ -38,6 +38,7 @@ import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.core.metrics.MetricNames;
 import com.hazelcast.jet.core.metrics.MetricTags;
 import com.hazelcast.jet.impl.deployment.JetClassLoader;
+import com.hazelcast.jet.impl.exception.ExecutionNotFoundException;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
 import com.hazelcast.jet.impl.execution.ExecutionContext.SenderReceiverKey;
 import com.hazelcast.jet.impl.execution.SenderTasklet;
@@ -54,7 +55,6 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
@@ -404,7 +404,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
         }
     }
 
-    @Nullable
+    @Nonnull
     public ExecutionContext assertExecutionContext(Address callerAddress, long jobId, long executionId,
                                                    String callerOpName) {
         Address masterAddress = nodeEngine.getMasterAddress();
@@ -420,9 +420,10 @@ public class JobExecutionService implements DynamicMetricsProvider {
 
         ExecutionContext executionContext = executionContexts.get(executionId);
         if (executionContext == null) {
-            return null;
-        }
-        if (!(executionContext.coordinator().equals(callerAddress) && executionContext.jobId() == jobId)) {
+            throw new ExecutionNotFoundException(String.format(
+                    "%s not found for coordinator %s for '%s'",
+                    jobIdAndExecutionId(jobId, executionId), callerAddress, callerOpName));
+        } else if (!(executionContext.coordinator().equals(callerAddress) && executionContext.jobId() == jobId)) {
             throw new IllegalStateException(String.format(
                     "%s, originally from coordinator %s, cannot do '%s' by coordinator %s and execution %s",
                     executionContext.jobNameAndExecutionId(), executionContext.coordinator(),
@@ -462,10 +463,6 @@ public class JobExecutionService implements DynamicMetricsProvider {
             boolean collectMetrics
     ) {
         ExecutionContext execCtx = assertExecutionContext(coordinator, jobId, executionId, "ExecuteJobOperation");
-        if (execCtx == null) {
-            throw new TopologyChangedException(String.format("%s not found for coordinator %s for beginExecution",
-                    jobIdAndExecutionId(jobId, executionId), coordinator));
-        }
         assert !execCtx.isLightJob() : "StartExecutionOperation received for a light job " + idToString(jobId);
         logger.info("Start execution of " + execCtx.jobNameAndExecutionId() + " from coordinator " + coordinator);
         return beginExecution0(execCtx, collectMetrics);

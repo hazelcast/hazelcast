@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.CompletableFuture.completedFuture;
@@ -64,10 +65,8 @@ public class SnapshotPhase1Operation extends AsyncJobOperation {
         ExecutionContext ctx = service.getJobExecutionService().assertExecutionContext(
                 getCallerAddress(), jobId(), executionId, getClass().getSimpleName()
         );
-        if (ctx == null) {
-            // this happens if the execution completed locally, but still runs on other members
-            return EMPTY_RESULT;
-        }
+        assert !ctx.isLightJob() : "snapshot phase 1 started on a light job: " + idToString(executionId);
+
         CompletableFuture<SnapshotPhase1Result> future =
             ctx.beginSnapshotPhase1(snapshotId, mapName, flags)
                 .exceptionally(exc -> new SnapshotPhase1Result(0, 0, 0, exc))
