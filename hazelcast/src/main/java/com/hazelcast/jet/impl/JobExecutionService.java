@@ -32,7 +32,6 @@ import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 import com.hazelcast.internal.metrics.impl.MetricsCompressor;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
-import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TopologyChangedException;
@@ -611,7 +610,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
         if (!executionContext.terminateExecution(mode)) {
             // if the execution was terminated before it began, call completeExecution now. Otherwise,
             // if the execution was already begun, this method will be called when the tasklets complete.
-            completeExecution(executionContext, new JetException("terminated before begun"));
+            completeExecution(executionContext, new CancellationException());
         }
     }
 
