@@ -86,6 +86,11 @@ public class MockConnection implements Connection {
     }
 
     @Override
+    public void setEndPoint(Address address) {
+        //no op. The endpoint is already set in the constructor.
+    }
+
+    @Override
     public Address getEndPoint() {
         return remoteEndpoint;
     }

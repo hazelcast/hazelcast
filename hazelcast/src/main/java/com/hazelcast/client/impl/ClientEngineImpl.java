@@ -41,7 +41,6 @@ import com.hazelcast.internal.cluster.impl.AddressCheckerImpl;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.internal.nio.ConnectionType;
-import com.hazelcast.internal.nio.tcp.TcpIpConnection;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.services.CoreService;
 import com.hazelcast.internal.services.ManagedService;
@@ -307,15 +306,21 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
             return false;
         }
 
-        endpointManager.registerEndpoint(endpoint);
-
         Connection conn = endpoint.getConnection();
-        if (conn instanceof TcpIpConnection) {
-            InetSocketAddress socketAddress = conn.getRemoteSocketAddress();
-            //socket address can be null if connection closed before bind
-            if (socketAddress != null) {
-                Address address = new Address(socketAddress);
-                ((TcpIpConnection) conn).setEndPoint(address);
+        InetSocketAddress socketAddress = conn.getRemoteSocketAddress();
+        //socket address can be null if connection closed before bind
+        if (socketAddress != null) {
+            conn.setEndPoint(new Address(socketAddress));
+        }
+
+        if (endpointManager.registerEndpoint(endpoint)) {
+            // remote address can be null if connection closed before bind.
+            // On such a case, `ClientEngine#connectionRemoved` will not be called for this connection since
+            // we did not register the connection.
+            // Endpoint removal logic(inside `ClientEngine#connectionRemoved`) will not be able to run, instead endpoint
+            // will be cleaned up by ClientHearbeatMonitor#cleanupEndpointsWithDeadConnections later.
+            if (conn.getEndPoint() != null) {
+                node.getEndpointManager(CLIENT).registerConnection(conn.getEndPoint(), conn);
             }
         }
 

@@ -69,8 +69,7 @@ public class ReplicatedMapEntryListenerOnReconnectTest extends AbstractListeners
         return replicatedMap.removeEntryListener(registrationId);
     }
 
-    @Override
-    protected void validateRegistrationsOnMembers(final TestHazelcastFactory factory) {
+    protected void validateRegistrationsOnMembers(final TestHazelcastFactory factory, int expected) {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
@@ -79,7 +78,7 @@ public class ReplicatedMapEntryListenerOnReconnectTest extends AbstractListeners
                     NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(instance);
                     EventServiceImpl eventService = (EventServiceImpl) nodeEngineImpl.getEventService();
                     EventServiceSegment serviceSegment = eventService.getSegment(getServiceName(), false);
-                    if (serviceSegment != null && serviceSegment.getRegistrationIdMap().size() == 1) {
+                    if (serviceSegment != null && serviceSegment.getRegistrationIdMap().size() == expected) {
                         found = true;
                     }
                 }

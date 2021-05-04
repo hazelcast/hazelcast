@@ -18,12 +18,13 @@ package com.hazelcast.client;
 
 
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.collection.IQueue;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.map.IMap;
-import com.hazelcast.topic.Message;
-import com.hazelcast.collection.IQueue;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationparker.impl.OperationParkerImpl;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationRegistry;
@@ -34,6 +35,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.topic.Message;
 import com.hazelcast.topic.ReliableMessageListener;
 import org.junit.After;
 import org.junit.Test;
@@ -273,5 +275,34 @@ public class ClientDisconnectTest extends HazelcastTestSupport {
         @Override
         public void onMessage(Message<Object> message) {
         }
+    }
+
+    @Test
+    public void testConnectionEventsFiredForClientsOnServerConnectionManager() {
+        HazelcastInstance server = hazelcastFactory.newHazelcastInstance();
+
+        CountDownLatch clientConnected = new CountDownLatch(1);
+        CountDownLatch clientDisconnected = new CountDownLatch(1);
+        getNodeEngineImpl(server).getNode().getEndpointManager().addConnectionListener(new ConnectionListener() {
+            @Override
+            public void connectionAdded(Connection connection) {
+                if (connection.isClient()) {
+                    clientConnected.countDown();
+                }
+            }
+
+            @Override
+            public void connectionRemoved(Connection connection) {
+                if (connection.isClient()) {
+                    clientDisconnected.countDown();
+                }
+            }
+        });
+
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+        assertOpenEventually(clientConnected);
+
+        client.shutdown();
+        assertOpenEventually(clientDisconnected);
     }
 }
