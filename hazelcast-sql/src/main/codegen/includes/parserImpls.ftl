@@ -177,6 +177,7 @@ QueryDataType CharacterTypes() :
 QueryDataType DateTimeTypes() :
 {
     QueryDataType type;
+    boolean withTimeZone = false;
 }
 {
     (
@@ -185,11 +186,14 @@ QueryDataType DateTimeTypes() :
         <DATE> { type = QueryDataType.DATE; }
     |
         <TIMESTAMP>
-        (
-            <WITH> <TIME> <ZONE> { type = QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME; }
-        |
-            { type = QueryDataType.TIMESTAMP; }
-        )
+        withTimeZone = HazelcastTimeZoneOpt()
+        {
+            if (withTimeZone) {
+                type = QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME;
+            } else {
+                type = QueryDataType.TIMESTAMP;
+            }
+        }
     )
     {
         return type;
@@ -473,3 +477,55 @@ SqlExtendedInsert SqlExtendedInsert() :
         );
     }
 }
+
+/**
+ * Hazelcast specific date-time types parsing.
+ */
+SqlTypeNameSpec SqlDateTimeTypeName() :
+{
+    int precision = -1;
+    SqlTypeName typeName;
+    boolean withTimeZone = false;
+}
+{
+    <DATE> {
+        typeName = SqlTypeName.DATE;
+        return new SqlBasicTypeNameSpec(typeName, getPos());
+    }
+|
+    LOOKAHEAD(2)
+    <TIME>
+    withTimeZone = HazelcastTimeZoneOpt()
+    {
+        if (withTimeZone) {
+            typeName = SqlTypeName.TIME_WITH_LOCAL_TIME_ZONE;
+        } else {
+            typeName = SqlTypeName.TIME;
+        }
+        return new SqlBasicTypeNameSpec(typeName, precision, getPos());
+    }
+|
+    <TIMESTAMP>
+    withTimeZone = HazelcastTimeZoneOpt()
+    {
+        if (withTimeZone) {
+            typeName = SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE;
+        } else {
+            typeName = SqlTypeName.TIMESTAMP;
+        }
+        return new SqlBasicTypeNameSpec(typeName, precision, getPos());
+    }
+}
+
+boolean HazelcastTimeZoneOpt() :
+{
+}
+{
+    LOOKAHEAD(3)
+    <WITHOUT> <TIME> <ZONE> { return false; }
+|
+    <WITH> <TIME> <ZONE> { return true; }
+|
+    { return false; }
+}
+

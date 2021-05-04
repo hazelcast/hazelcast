@@ -146,4 +146,9 @@ public enum QueryDataTypeFamily {
     public SqlColumnType getPublicType() {
         return publicType;
     }
+
+    @Override
+    public String toString() {
+        return name().replace('_', ' ');
+    }
 }

@@ -414,6 +414,7 @@ data: {
     # Return type of method implementation should be "SqlTypeNameSpec".
     # Example: SqlParseTimeStampZ().
     dataTypeParserMethods: [
+      "SqlDateTimeTypeName()"
     ]
 
     # List of methods for parsing builtin function calls.

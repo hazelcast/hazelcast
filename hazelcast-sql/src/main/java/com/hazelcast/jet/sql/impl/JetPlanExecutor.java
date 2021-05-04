@@ -205,9 +205,7 @@ class JetPlanExecutor {
                 Job job = jetInstance.newJob(jobId, plan.getDag(), jobConfig);
                 job.getFuture().whenComplete((r, t) -> {
                     if (t != null) {
-                        int errorCode = t instanceof QueryException
-                                ? ((QueryException) t).getCode()
-                                : SqlErrorCode.GENERIC;
+                        int errorCode = findQueryExceptionCode(t);
                         queryResultProducer.onError(
                                 QueryException.error(errorCode, "The Jet SQL job failed: " + t.getMessage(), t));
                     }
@@ -245,5 +243,15 @@ class JetPlanExecutor {
         }
 
         return arguments;
+    }
+
+    private static int findQueryExceptionCode(Throwable t) {
+        while (t != null) {
+            if (t instanceof QueryException) {
+                return ((QueryException) t).getCode();
+            }
+            t = t.getCause() == t ? null : t.getCause();
+        }
+        return SqlErrorCode.GENERIC;
     }
 }

@@ -215,6 +215,8 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
 
             fail("Must fail");
         } catch (HazelcastSqlException e) {
+            e.printStackTrace();
+
             assertTrue(expectedErrorMessage.length() != 0);
             assertNotNull(e.getMessage());
             assertTrue(
@@ -230,7 +232,7 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
         TestCase.assertNotNull(columnTypes);
 
         StringJoiner joiner = new StringJoiner(", ");
-        Arrays.stream(columnTypes).forEach((columnType) -> joiner.add(columnType.name()));
+        Arrays.stream(columnTypes).forEach((columnType) -> joiner.add(columnType.toString()));
 
         return "Cannot apply '" + functionName + "' function to [" + joiner + "] (consider adding an explicit CAST)";
     }

@@ -28,7 +28,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils.isObjectIdentifier;
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils.isTimestampWithTimeZoneIdentifier;
 import static org.apache.calcite.sql.parser.SqlParserPos.ZERO;
 import static org.apache.calcite.sql.type.SqlTypeName.ANY;
 import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;
@@ -74,13 +73,6 @@ public class HazelcastTypeSystemTest {
         assertTrue(isObjectIdentifier(new SqlIdentifier("object", ZERO)));
         assertTrue(isObjectIdentifier(new SqlIdentifier("OBJECT", ZERO)));
         assertFalse(isObjectIdentifier(new SqlIdentifier("foo", ZERO)));
-    }
-
-    @Test
-    public void isTimestampWithTimeZoneTest() {
-        assertTrue(isTimestampWithTimeZoneIdentifier(new SqlIdentifier("timestamp_with_time_zone", ZERO)));
-        assertTrue(isTimestampWithTimeZoneIdentifier(new SqlIdentifier("TIMESTAMP_WITH_TIME_ZONE", ZERO)));
-        assertFalse(isTimestampWithTimeZoneIdentifier(new SqlIdentifier("foo", ZERO)));
     }
 
     @Test

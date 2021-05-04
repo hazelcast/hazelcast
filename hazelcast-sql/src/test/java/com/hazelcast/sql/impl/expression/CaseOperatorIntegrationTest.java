@@ -156,6 +156,8 @@ public class CaseOperatorIntegrationTest extends ExpressionTestSupport {
                 "select case this \n"
                         + "when 1 then CAST('2021-01-01T10:00' AS TIMESTAMP) \n"
                         + "when 2 then CAST('2021-01-01' AS DATE) \n"
+                        // TODO: change 'TIMESTAMP WITH LOCAL TIME ZONE' to 'TIMESTAMP WITH TIME ZONE'
+                        //  once engines are merged and custom date-time parsing is used
                         + "else CAST('2021-01-01T10:00+00:00' as TIMESTAMP WITH LOCAL TIME ZONE) \n"
                         + "end from map",
                 SqlColumnType.TIMESTAMP_WITH_TIME_ZONE,

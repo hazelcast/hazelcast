@@ -163,7 +163,7 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         // OffsetDateTime
         putAndCheckValue(new ExpressionValue.StringVal(), sql("field1", TIMESTAMP_WITH_TIME_ZONE), TIMESTAMP_WITH_TIME_ZONE, null);
         putAndCheckValue(OFFSET_DATE_TIME_VAL.toString(), sql("this", TIMESTAMP_WITH_TIME_ZONE), TIMESTAMP_WITH_TIME_ZONE, OFFSET_DATE_TIME_VAL);
-        putAndCheckFailure("bad", sql("this", TIMESTAMP_WITH_TIME_ZONE), DATA_EXCEPTION, "Cannot parse VARCHAR value to TIMESTAMP_WITH_TIME_ZONE");
+        putAndCheckFailure("bad", sql("this", TIMESTAMP_WITH_TIME_ZONE), DATA_EXCEPTION, "Cannot parse VARCHAR value to TIMESTAMP WITH TIME ZONE");
 
         // Object
         putAndCheckValue(new ExpressionValue.StringVal(), sql("field1", OBJECT), OBJECT, null);
@@ -287,7 +287,7 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
 
         // VARCHAR -> TIMESTAMP_WITH_TIME_ZONE
         checkValue0(sql(stringLiteral(OFFSET_DATE_TIME_VAL), TIMESTAMP_WITH_TIME_ZONE), TIMESTAMP_WITH_TIME_ZONE, OFFSET_DATE_TIME_VAL);
-        checkFailure0(sql(stringLiteral("foo"), TIMESTAMP_WITH_TIME_ZONE), PARSING, "CAST function cannot convert literal 'foo' to type TIMESTAMP_WITH_TIME_ZONE: Cannot parse VARCHAR value to TIMESTAMP_WITH_TIME_ZONE");
+        checkFailure0(sql(stringLiteral("foo"), TIMESTAMP_WITH_TIME_ZONE), PARSING, "CAST function cannot convert literal 'foo' to type TIMESTAMP WITH TIME ZONE: Cannot parse VARCHAR value to TIMESTAMP WITH TIME ZONE");
 
         // VARCHAR -> OBJECT
         checkValue0(sql(stringLiteral("foo"), OBJECT), OBJECT, "foo");
@@ -1119,11 +1119,10 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
     }
 
     private static String sql(String source, SqlColumnType targetType) {
-        return sql(source, targetType.name());
-    }
-
-    private static String sql(String source, String target) {
-        return "SELECT CAST(" + source + " AS " + target + ") FROM map";
+        // TODO: reduce to else branch once engines are merged and custom date-time parsing is used
+        return targetType == TIMESTAMP_WITH_TIME_ZONE
+                ? "SELECT CAST(" + source + " AS TIMESTAMP WITH TIME ZONE) FROM (VALUES(1)) JOIN map ON 1 = 1"
+                : "SELECT CAST(" + source + " AS " + targetType + ") FROM map";
     }
 
     protected String castError(SqlColumnType type1, SqlColumnType type2) {
