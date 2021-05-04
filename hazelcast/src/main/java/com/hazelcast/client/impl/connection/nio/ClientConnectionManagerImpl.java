@@ -827,7 +827,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         synchronized (clientStateMutex) {
             checkPartitionCount(response.partitionCount);
             connection.setConnectedServerVersion(response.serverHazelcastVersion);
-            connection.setRemoteEndpoint(response.address);
+            connection.setEndPoint(response.address);
             connection.setRemoteUuid(response.memberUuid);
 
             ClientConnection existingConnection = activeConnections.get(response.memberUuid);

@@ -16,8 +16,6 @@
 
 package com.hazelcast.internal.networking;
 
-import com.hazelcast.internal.networking.Channel;
-import com.hazelcast.internal.networking.ChannelCloseListener;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;

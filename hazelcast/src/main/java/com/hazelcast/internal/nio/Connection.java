@@ -170,4 +170,6 @@ public interface Connection {
      * @return certificate chain (may be empty) or {@code null}
      */
     Certificate[] getRemoteCertificates();
+
+    void setEndPoint(Address address);
 }

@@ -116,8 +116,9 @@ public class ClientConnection implements Connection {
         return false;
     }
 
-    public void setRemoteEndpoint(Address remoteEndpoint) {
-        this.remoteEndpoint = remoteEndpoint;
+    @Override
+    public void setEndPoint(Address address) {
+        this.remoteEndpoint = address;
     }
 
     @Override
