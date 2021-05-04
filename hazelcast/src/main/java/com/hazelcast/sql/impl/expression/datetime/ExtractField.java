@@ -154,7 +154,7 @@ public enum ExtractField {
 
         @Override
         public double extract(LocalTime time) {
-            return EPOCH.extract(LocalDateTime.of(LocalDate.EPOCH, time));
+            return EPOCH.extract(LocalDateTime.of(LocalDate.ofEpochDay(0), time));
         }
     },
     HOUR {
@@ -282,7 +282,7 @@ public enum ExtractField {
 
         @Override
         public double extract(LocalTime time) {
-            return extract(LocalDateTime.of(LocalDate.EPOCH, time));
+            return extract(LocalDateTime.of(LocalDate.ofEpochDay(0), time));
         }
     },
     MINUTE {
