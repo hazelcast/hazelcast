@@ -50,7 +50,6 @@ import java.util.List;
 import static com.hazelcast.jet.impl.JobRepository.exportedSnapshotMapName;
 import static java.util.stream.Collectors.toList;
 
-
 /**
  * Represents either an instance of a Jet server node or a Jet client
  * instance that connects to a remote cluster.
@@ -227,13 +226,15 @@ public interface JetInstance {
 
     /**
      * Returns all submitted jobs including running and completed ones.
+     * Currently does not include {@linkplain #newLightJob(Pipeline) light
+     * jobs}.
      */
     @Nonnull
     List<Job> getJobs();
 
     /**
      * Returns the job with the given id or {@code null} if no such job could
-     * be found.
+     * be found. Currently it returns {@code null} also for light jobs.
      */
     @Nullable
     Job getJob(long jobId);
@@ -242,7 +243,8 @@ public interface JetInstance {
      * Returns all jobs submitted with the given name, ordered in descending
      * order by submission time. The active job is always first. Empty list
      * will be returned if no job with the given name exists. The list includes
-     * completed jobs.
+     * completed jobs, but currently does not include {@linkplain
+     * #newLightJob(Pipeline) light jobs}.
      */
     @Nonnull
     List<Job> getJobs(@Nonnull String name);

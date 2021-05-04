@@ -42,6 +42,11 @@ public class ClientLightJobProxy implements LightJob {
         this.future = new NonCompletableFuture(future);
     }
 
+    @Override
+    public long getId() {
+        return jobId;
+    }
+
     @Override @Nonnull
     public CompletableFuture<Void> getFuture() {
         return future;

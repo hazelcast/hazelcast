@@ -29,6 +29,19 @@ import java.util.concurrent.CompletableFuture;
 public interface LightJob {
 
     /**
+     * Returns the ID of this job.
+     */
+    long getId();
+
+    /**
+     * Returns the string representation of this job's ID.
+     */
+    @Nonnull
+    default String getIdString() {
+        return Util.idToString(getId());
+    }
+
+    /**
      * Waits for the job to complete and throws an exception if the job
      * completes with an error. Never returns for streaming (unbounded) jobs,
      * unless they fail or are cancelled.

@@ -28,7 +28,6 @@ import com.hazelcast.jet.pipeline.Pipeline;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.concurrent.CancellationException;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * A Jet computation job created by submitting a {@link DAG} or {@link
@@ -36,21 +35,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @since 3.0
  */
-// TODO [viliam] extend LightJob?
-public interface Job {
-
-    /**
-     * Returns the ID of this job.
-     *
-     * @throws IllegalStateException if the job has not started yet, and thus has no ID.
-     */
-    long getId();
-
-    /**
-     * Returns the string representation of this job's ID.
-     */
-    @Nonnull
-    String getIdString();
+public interface Job extends LightJob {
 
     /**
      * Returns the configuration this job was submitted with. Changes made to the
@@ -124,22 +109,9 @@ public interface Job {
     JobMetrics getMetrics();
 
     /**
-     * Gets the future associated with the job. The returned future is
-     * not cancellable. To cancel the job, the {@link #cancel()} method
-     * should be used.
-     *
-     * @throws IllegalStateException if the job has not started yet.
-     */
-    @Nonnull
-    CompletableFuture<Void> getFuture();
-
-    /**
-     * Waits for the job to complete and throws an exception if the job
-     * completes with an error. Does not return if the job gets suspended.
-     * Never returns for streaming (unbounded) jobs, unless they fail or are
-     * cancelled.
+     * {@inheritDoc}
      * <p>
-     * Shorthand for <code>job.getFuture().join()</code>.
+     * Does not return if the job gets suspended.
      *
      * @throws CancellationException if the job was cancelled
      */
@@ -196,10 +168,10 @@ public interface Job {
     void resume();
 
     /**
-     * Makes a request to cancel this job and returns. The job will complete
-     * after its execution has stopped on all the nodes. If the job is
-     * already suspended, Jet will delete its runtime resources and snapshots
-     * and it won't be able to resume again.
+     * {@inheritDoc}
+     * <p>
+     * If the job is already suspended, Jet will delete its runtime resources
+     * and snapshots and it won't be able to resume again.
      * <p>
      * <strong>NOTE:</strong> if the cluster becomes unstable (a member leaves
      * or similar) while the job is in the process of cancellation, it may end
@@ -207,8 +179,7 @@ public interface Job {
      * cancelled. Call {@link #getStatus()} to find out and possibly try to
      * cancel again.
      * <p>
-     * The job status will be {@link JobStatus#FAILED} after cancellation,
-     * {@link Job#join()} will throw a {@link CancellationException}.
+     * The job status will be {@link JobStatus#FAILED} after cancellation.
      * <p>
      * See {@link #cancelAndExportSnapshot(String)} to cancel with a terminal
      * snapshot.
