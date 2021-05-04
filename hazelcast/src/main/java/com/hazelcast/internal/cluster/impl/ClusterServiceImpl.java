@@ -466,7 +466,15 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     private boolean checkValidMaster(Collection<Address> callerAliases) {
+        if (callerAliases == null) {
+            return false;
+        }
+
         Address masterAddress = getMasterAddress();
+        if (masterAddress == null) {
+            return false;
+        }
+
         return callerAliases.stream().anyMatch(masterAddress::equals);
     }
 
