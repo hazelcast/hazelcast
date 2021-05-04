@@ -176,18 +176,16 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
 
         /**
          * When a client sends its local state to the cluster it has connected,
-         * it switches to this state. When a client loses all connections to
-         * the current cluster and connects to a new cluster, its goes
-         * to {@link #SWITCHING_CLUSTER}.
+         * it switches to this state.
          * <p>
          * Invocations are allowed in this state.
          */
         INITIALIZED_ON_CLUSTER,
         /**
-         * We get into this state when we got `ClientNotAllowedInClusterException` from the cluster or when
-         * we get connected to a cluster where cluster id is not same as the one we just disconnected from.
-         * On this state, no other connections are allowed to be opened until the cluster is switched.
-         * The client with no failover config will shutdown after it got `ClientNotAllowedInClusterException`
+         * We get into this state before we try to connect to next cluster. As soon as the state is `SWITCHING_CLUSTER`
+         * any connection happened without cluster switch intent are no longer allowed and will be closed.
+         * Also we will not allow ConnectToAllClusterMembersTask to make any further connection attempts as long as
+         * the state is `SWITCHING_CLUSTER`
          */
         SWITCHING_CLUSTER
     }
@@ -958,8 +956,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
         }
         //Following state can not happen. There is only one path with `switchingToNextCluster` as true
         //and that path starts only when the old switch fails. There are no concurrent run of that path.
-        if (!(clientState == ClientState.SWITCHING_CLUSTER || clientState == ClientState.INITIAL)
-                && switchingToNextCluster) {
+        if (clientState != ClientState.SWITCHING_CLUSTER && switchingToNextCluster) {
             String reason = "The cluster switch is already completed. "
                     + "This connection attempt is not allowed to be authenticated.";
             connection.close(reason, null);
