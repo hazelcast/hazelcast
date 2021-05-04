@@ -17,28 +17,19 @@
 package com.hazelcast.sql.impl.calcite.validate.operators.datetime;
 
 import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
-import com.hazelcast.sql.impl.calcite.validate.HazelcastResources;
-import com.hazelcast.sql.impl.calcite.validate.operand.AnyOperandChecker;
-import com.hazelcast.sql.impl.calcite.validate.operand.OperandCheckerProgram;
-import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.operators.ReplaceUnknownOperandTypeInference;
 import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastFunction;
 import com.hazelcast.sql.impl.calcite.validate.param.NoOpParameterConverter;
 import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.rel.type.RelDataTypeFamily;
 import org.apache.calcite.sql.SqlCall;
-import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlDynamicParam;
 import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperandCountRange;
-import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlWriter;
 import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
-import org.apache.calcite.sql.type.SqlOperandTypeInference;
-import org.apache.calcite.sql.type.SqlTypeFamily;
 import org.apache.calcite.sql.type.SqlTypeName;
 
 public final class HazelcastExtractFunction extends HazelcastFunction {
@@ -64,29 +55,9 @@ public final class HazelcastExtractFunction extends HazelcastFunction {
         }
 
         RelDataType fieldType = callBinding.getOperandType(0);
-        boolean isFieldValid = false;
-        switch (fieldType.getSqlTypeName()) {
-            case INTERVAL_SECOND:
-            case INTERVAL_MINUTE:
-            case INTERVAL_HOUR:
-            case INTERVAL_DAY:
-            case INTERVAL_MONTH:
-            case INTERVAL_YEAR:
-                isFieldValid = true;
-        }
-
         RelDataType sourceType = callBinding.getOperandType(1);
-        boolean isSourceValid = false;
-        switch (sourceType.getSqlTypeName()) {
-            case TIMESTAMP:
-            case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
-            case DATE:
-            case TIME:
-            case ANY:
-                isSourceValid = true;
-        }
 
-        if (!isFieldValid || !isSourceValid) {
+        if (!isFieldValid(fieldType) || !isSourceValid(sourceType)) {
             if (throwOnFailure) {
                 throw callBinding.newValidationSignatureError();
             }
@@ -109,5 +80,32 @@ public final class HazelcastExtractFunction extends HazelcastFunction {
         call.operand(1).unparse(writer, leftPrec, rightPrec);
 
         writer.endFunCall(frame);
+    }
+
+    private static boolean isSourceValid(RelDataType sourceType) {
+        switch (sourceType.getSqlTypeName()) {
+            case TIMESTAMP:
+            case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
+            case DATE:
+            case TIME:
+            case ANY:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private static boolean isFieldValid(RelDataType fieldType) {
+        switch (fieldType.getSqlTypeName()) {
+            case INTERVAL_SECOND:
+            case INTERVAL_MINUTE:
+            case INTERVAL_HOUR:
+            case INTERVAL_DAY:
+            case INTERVAL_MONTH:
+            case INTERVAL_YEAR:
+                return true;
+            default:
+                return false;
+        }
     }
 }
