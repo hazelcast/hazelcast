@@ -48,8 +48,9 @@ public class ClientYamlSchemaTest
         if (error == null) {
             return;
         }
-        if (error.optString("pointerToViolation") != null) {
-            error.put("pointerToViolation", error.getString("pointerToViolation").replace("#/hazelcast", "#/hazelcast-client"));
+        String pointerToViolation = error.optString("pointerToViolation");
+        if (pointerToViolation != null) {
+            error.put("pointerToViolation", pointerToViolation.replace("#/hazelcast", "#/hazelcast-client"));
             error.optJSONArray("causingExceptions")
                     .forEach(causingExcJson -> amendInstancePointersForClient((JSONObject) causingExcJson));
         }

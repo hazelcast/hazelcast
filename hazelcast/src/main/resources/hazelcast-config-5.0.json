@@ -142,9 +142,96 @@
     "hazelcast-client": {
       "type": "object",
       "additionalProperties": false,
-      "properties":  {
+      "properties": {
         "import": {
           "$ref": "#/definitions/Import"
+        },
+        "config-replacers": {
+          "$ref": "#/definitions/ConfigReplacers"
+        },
+        "cluster-name": {
+          "type": "string",
+          "description": "Specifies the cluster name. It's sent as part of the client authentication message to Hazelcast member(s)."
+        },
+        "instance-name": {
+          "$ref": "#/properties/hazelcast/properties/instance-name"
+        },
+        "properties": {
+          "$ref": "#/properties/hazelcast/properties/properties"
+        },
+        "client-labels": {
+          "description": "The 'client-labels' sequence lets you define labels in your Java client, similar to the way it can be done for the members. Through the client labels, you can assign special roles for your clients and use these roles to perform some actions specific to those client connections. You can also group your clients using the client labels. These client groups can be blacklisted in the Hazelcast Management Center so that they can be prevented from connecting to a cluster. See the related section in the Hazelcast Management Center Reference Manual for more information on this topic.",
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        },
+        "backup-ack-to-client": {
+          "type": "boolean",
+          "default": true,
+          "description": "The 'backup-ack-to-client-enabled' element lets you enable/disable backups ack to client. This feature reduces number of hops and increase performance for smart clients. It is enabled by default for smart clients. This config has no effect for unisocket clients."
+        },
+        "listeners": {
+          "$ref": "#/definitions/Listeners"
+        },
+        "serialization": {
+          "$ref": "#/definitions/Serialization"
+        },
+        "native-memory": {
+          "$ref": "#/definitions/NativeMemory"
+        },
+        "proxy-factories": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "class-name": {
+                "type": "string"
+              },
+              "service": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "class-name",
+              "service"
+            ]
+          }
+        },
+        "load-balancer": {
+          "description": "The load balancer can be configured with the \"load-balancer\" mapping. It has a scalar sub-node called \"type\". The valid values for the type of the load balancer are:\\n * \"random\": The member the operations to be sent to is chosen randomly.\\n * \"round-robin\": The member the operations to be sent to is chosen in a round-robin fashion.\\n * \"custom\": The member the operations to be sent to is chosen by provided load balancer implementation. The implementation class name is specified in additional \"class-name\" key. ",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "enum": [
+                "random",
+                "round-robin",
+                "custom"
+              ]
+            },
+            "class-name": {
+              "type": "string"
+            }
+          },
+          "anyOf": [
+            {
+              "not": {
+                "properties": {
+                  "type": {
+                    "const": "custom"
+                  }
+                }
+              }
+            },
+            {
+              "required": [
+                "class-name"
+              ]
+            }
+          ]
         }
       }
     }
@@ -2480,7 +2567,7 @@
                       "user-search-scope": {
                         "$ref": "#/definitions/LdapSearchScope"
                       },
-                      "system-authentication":  {
+                      "system-authentication": {
                         "type": "string"
                       },
                       "security-realm": {
@@ -3728,7 +3815,7 @@
         }
       ]
     },
-    "Jet":  {
+    "Jet": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -3738,7 +3825,7 @@
           "properties": {
             "cooperative-thread-count": {
               "type": "integer",
-              "description":  "the number of threads each cluster member will use to execute Jet jobs. This refers only to threads executing `cooperative` processors; each `blocking` processor is assigned its own thread. By default it is the same as the number of available processors."
+              "description": "the number of threads each cluster member will use to execute Jet jobs. This refers only to threads executing `cooperative` processors; each `blocking` processor is assigned its own thread. By default it is the same as the number of available processors."
             },
             "flow-control-period": {
               "type": "integer",
@@ -3747,13 +3834,13 @@
             },
             "backup-count": {
               "type": "integer",
-              "default":  1,
+              "default": 1,
               "maximum": 6,
               "description": "Sets the number of backups that Jet will maintain for the job metadata and snapshots. Each backup is on another cluster member; all backup write operations must complete before the overall write operation can complete. The maximum allowed number of backups is 6 and the default is 1. For example, if you set the backup count to 2, Jet will replicate all the job metadata and snapshot data to two other members. If one or two members of the cluster fail, Jet can recover the data from the snapshot and continue executing the job on the remaining members without loss."
             },
             "scale-up-delay-millis": {
               "type": "integer",
-              "default":  10000,
+              "default": 10000,
               "description": "Sets the delay after which auto-scaled jobs will restart if a new member is added to the cluster. Has no effect on jobs with auto scaling disabled."
             },
             "lossless-restart-enabled": {
@@ -3771,9 +3858,9 @@
             "queue-size": {
               "type": "integer",
               "default": 1024,
-              "description":  "Sets the capacity of processor-to-processor concurrent queues. The value is rounded upwards to the next power of 2. When data needs to travel between two processors on the same cluster member, Jet sends it over a concurrent single-producer, single-consumer (SPSC) queue of fixed capacity. Since there are several processors executing the logic of each vertex, and since the queues are SPSC, there will be `senderParallelism input.txt receiverParallelism` queues representing the edge on each member. The edge capacity should strike a balance between performance and memory usage."
+              "description": "Sets the capacity of processor-to-processor concurrent queues. The value is rounded upwards to the next power of 2. When data needs to travel between two processors on the same cluster member, Jet sends it over a concurrent single-producer, single-consumer (SPSC) queue of fixed capacity. Since there are several processors executing the logic of each vertex, and since the queues are SPSC, there will be `senderParallelism input.txt receiverParallelism` queues representing the edge on each member. The edge capacity should strike a balance between performance and memory usage."
             },
-            "packet-size-limit":  {
+            "packet-size-limit": {
               "type": "integer",
               "default": 16384,
               "description": "For a distributed edge, data is sent to a remote member via Hazelcast network packets. Each packet is dedicated to the data of a single edge, but may contain any number of data items. This setting limits the size of the packet in bytes. Packets should be large enough to drown out any fixed overheads, but small enough to allow good interleaving with other packets. Note that a single item cannot straddle packets, therefore the maximum packet size can exceed the value configured here by the size of a single data item. This setting has no effect on a non-distributed edge. "

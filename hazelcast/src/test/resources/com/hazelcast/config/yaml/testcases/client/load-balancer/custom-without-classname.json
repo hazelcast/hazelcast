@@ -1,0 +1,36 @@
+{
+  "instance": {
+    "hazelcast-client": {
+      "load-balancer": {
+        "type": "custom"
+      }
+    }
+  },
+  "error": {
+    "schemaLocation": "#/properties/hazelcast-client/properties/load-balancer",
+    "pointerToViolation": "#/hazelcast-client/load-balancer",
+    "causingExceptions": [{
+      "pointerToViolation": "#/hazelcast-client/load-balancer",
+      "causingExceptions": [
+        {
+          "schemaLocation": "#/properties/hazelcast-client/properties/load-balancer/anyOf/0",
+          "pointerToViolation": "#/hazelcast-client/load-balancer",
+          "causingExceptions": [],
+          "keyword": "not",
+          "message": "subject must not be valid against schema {\"properties\":{\"type\":{\"const\":\"custom\"}}}"
+        },
+        {
+          "schemaLocation": "#/properties/hazelcast-client/properties/load-balancer/anyOf/1",
+          "pointerToViolation": "#/hazelcast-client/load-balancer",
+          "causingExceptions": [],
+          "keyword": "required",
+          "message": "required key [class-name] not found"
+        }
+      ],
+      "keyword": "anyOf",
+      "message": "#: no subschema matched out of the total 2 subschemas"
+    }],
+    "keyword": "allOf",
+    "message": "#: only 1 subschema matches out of 2"
+  }
+}

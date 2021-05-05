@@ -1,0 +1,45 @@
+{
+  "instance": {
+    "hazelcast-client": {
+      "cluster-name": 2,
+      "instance-name": false,
+      "properties": null,
+      "backup-ack-to-client": "Off"
+    }
+  },
+  "error": {
+    "schemaLocation": "#/properties/hazelcast-client",
+    "pointerToViolation": "#/hazelcast-client",
+    "causingExceptions": [
+      {
+        "schemaLocation": "#/properties/hazelcast-client/properties/backup-ack-to-client",
+        "pointerToViolation": "#/hazelcast-client/backup-ack-to-client",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Boolean, found: String"
+      },
+      {
+        "schemaLocation": "#/properties/hazelcast-client/properties/cluster-name",
+        "pointerToViolation": "#/hazelcast-client/cluster-name",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: String, found: Integer"
+      },
+      {
+        "schemaLocation": "#/properties/hazelcast/properties/instance-name",
+        "pointerToViolation": "#/hazelcast-client/instance-name",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: String, found: Boolean"
+      },
+      {
+        "schemaLocation": "#/properties/hazelcast/properties/properties",
+        "pointerToViolation": "#/hazelcast-client/properties",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: JSONObject, found: Null"
+      }
+    ],
+    "message": "4 schema violations found"
+  }
+}
