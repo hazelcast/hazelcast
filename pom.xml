@@ -48,7 +48,7 @@
         <maven.checkstyle.plugin.version>3.1.1</maven.checkstyle.plugin.version>
         <maven.findbugs.plugin.version>3.0.5</maven.findbugs.plugin.version>
         <maven.sonar.plugin.version>3.3.0.603</maven.sonar.plugin.version>
-        <maven.jacoco.plugin.version>0.8.6</maven.jacoco.plugin.version>
+        <maven.jacoco.plugin.version>0.8.7</maven.jacoco.plugin.version>
         <jsr107.api.version>1.1.1</jsr107.api.version>
     </properties>
     <licenses>
