@@ -45,6 +45,7 @@ import java.util.Map;
 import static com.hazelcast.test.HazelcastTestSupport.assertInstanceOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeTrue;
 
 @RunWith(Enclosed.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
@@ -344,13 +345,10 @@ public class ExtractFunctionIntegrationTest {
 
         @Test
         public void test() {
+            assumeTrue(literalSupported(type));
             put(1);
 
-            if (literalSupported(type)) {
-                check(sql(field, literal(type, input)), expected);
-            }
-
-
+            check(sql(field, literal(type, input)), expected);
         }
 
         @Test
