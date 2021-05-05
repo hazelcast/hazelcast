@@ -286,6 +286,27 @@
               }
             }
           }
+        },
+        "flake-id-generator": {
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "prefetch-count": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum":  100000,
+                "default": 100,
+                "description": "Sets how many IDs are pre-fetched on the background when one call to FlakeIdGenerator#newId() is made."
+              },
+              "prefetch-validity-millis":  {
+                "type": "integer",
+                "minimum": 1,
+                "default": 600000,
+                "description":  "Sets for how long the pre-fetched IDs can be used. If this time elapses, a new batch of IDs will be fetched. Time unit is milliseconds, default is 600,000 (10 minutes)."
+              }
+            }
+          }
         }
       }
     }
