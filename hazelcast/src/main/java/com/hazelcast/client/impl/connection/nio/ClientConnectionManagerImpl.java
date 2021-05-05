@@ -152,7 +152,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private volatile UUID clusterId;
     private volatile ClientState clientState = ClientState.INITIAL;
     private volatile boolean connectToClusterTaskSubmitted;
-    private volatile boolean switchingToNextCluster;
 
     private enum ClientState {
         /**
@@ -172,13 +171,18 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
         /**
          * When a client sends its local state to the cluster it has connected,
-         * it switches to this state. When a client loses all connections to
-         * the current cluster and connects to a new cluster, its state goes
-         * back to {@link #CONNECTED_TO_CLUSTER}.
+         * it switches to this state.
          * <p>
          * Invocations are allowed in this state.
          */
-        INITIALIZED_ON_CLUSTER
+        INITIALIZED_ON_CLUSTER,
+        /**
+         * We get into this state before we try to connect to next cluster. As soon as the state is `SWITCHING_CLUSTER`
+         * any connection happened without cluster switch intent are no longer allowed and will be closed.
+         * Also we will not allow ConnectToAllClusterMembersTask to make any further connection attempts as long as
+         * the state is `SWITCHING_CLUSTER`
+         */
+        SWITCHING_CLUSTER
     }
 
     public ClientConnectionManagerImpl(HazelcastClientInstanceImpl client) {
@@ -301,7 +305,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         if (sync) {
             for (Member member : client.getClientClusterService().getMemberList()) {
                 try {
-                    getOrConnectToMember(member);
+                    getOrConnectToMember(member, false);
                 } catch (Exception e) {
                     EmptyStatement.ignore(e);
                 }
@@ -380,8 +384,18 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         logger.info("Trying to connect to cluster: " + currentContext.getClusterName());
 
         // try the current cluster
-        if (doConnectToCandidateCluster(currentContext)) {
+        if (doConnectToCandidateCluster(currentContext, false)) {
             return;
+        }
+
+        synchronized (clientStateMutex) {
+            if (activeConnections.isEmpty()) {
+                clientState = ClientState.SWITCHING_CLUSTER;
+            } else {
+                //ConnectToAllClusterMembersTask connected back to the same cluster
+                //we don't need to switch cluster anymore.
+                return;
+            }
         }
 
         // try the next cluster
@@ -406,8 +420,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         ((ClientLoggingService) client.getLoggingService()).updateClusterName(nextContext.getClusterName());
 
         logger.info("Trying to connect to next cluster: " + nextContext.getClusterName());
-        switchingToNextCluster = true;
-        if (doConnectToCandidateCluster(nextContext)) {
+
+        if (doConnectToCandidateCluster(nextContext, true)) {
             client.waitForInitialMembershipEvents();
             fireLifecycleEvent(CLIENT_CHANGED_CLUSTER);
             return true;
@@ -436,7 +450,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         lifecycleService.fireLifecycleEvent(state);
     }
 
-    private boolean doConnectToCandidateCluster(CandidateClusterContext context) {
+    private boolean doConnectToCandidateCluster(CandidateClusterContext context, boolean switchingToNextCluster) {
         Set<Address> triedAddresses = new HashSet<>();
         try {
             waitStrategy.reset();
@@ -451,7 +465,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 for (Member member : memberList) {
                     checkClientActive();
                     triedAddressesPerAttempt.add(member.getAddress());
-                    Connection connection = connect(member, o -> getOrConnectToMember((Member) o));
+                    Connection connection = connect(member, o -> getOrConnectToMember((Member) o, switchingToNextCluster));
                     if (connection != null) {
                         return true;
                     }
@@ -464,7 +478,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                         continue;
                     }
 
-                    Connection connection = connect(address, o -> getOrConnectToAddress((Address) o));
+                    Connection connection = connect(address, o -> getOrConnectToAddress((Address) o, switchingToNextCluster));
                     if (connection != null) {
                         return true;
                     }
@@ -559,7 +573,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         return activeConnections.get(uuid);
     }
 
-    ClientConnection getOrConnectToAddress(@Nonnull Address address) {
+    ClientConnection getOrConnectToAddress(@Nonnull Address address, boolean switchingToNextCluster) {
         for (ClientConnection connection : activeConnections.values()) {
             if (connection.getEndPoint().equals(address)) {
                 return connection;
@@ -569,10 +583,10 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         address = translate(address);
         ClientConnection connection = createSocketConnection(address);
         ClientAuthenticationCodec.ResponseParameters response = authenticateOnCluster(connection);
-        return onAuthenticated(connection, response);
+        return onAuthenticated(connection, response, switchingToNextCluster);
     }
 
-    ClientConnection getOrConnectToMember(@Nonnull Member member) {
+    ClientConnection getOrConnectToMember(@Nonnull Member member, boolean switchingToNextCluster) {
         UUID uuid = member.getUuid();
         ClientConnection connection = activeConnections.get(uuid);
         if (connection != null) {
@@ -583,7 +597,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         address = translate(address);
         connection = createSocketConnection(address);
         ClientAuthenticationCodec.ResponseParameters response = authenticateOnCluster(connection);
-        return onAuthenticated(connection, response);
+        return onAuthenticated(connection, response, switchingToNextCluster);
     }
 
     private void fireConnectionEvent(ClientConnection connection, boolean isAdded) {
@@ -783,38 +797,11 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private ClientAuthenticationCodec.ResponseParameters authenticateOnCluster(ClientConnection connection) {
         ClientMessage request = encodeAuthenticationRequest();
         ClientInvocationFuture future = new ClientInvocation(client, request, null, connection).invokeUrgent();
-        ClientAuthenticationCodec.ResponseParameters response;
         try {
-            response = ClientAuthenticationCodec.decodeResponse(future.get(authenticationTimeout, MILLISECONDS));
+            return ClientAuthenticationCodec.decodeResponse(future.get(authenticationTimeout, MILLISECONDS));
         } catch (Exception e) {
             connection.close("Failed to authenticate connection", e);
             throw rethrow(e);
-        }
-
-        AuthenticationStatus authenticationStatus = AuthenticationStatus.getById(response.status);
-        if (failoverConfigProvided && !response.failoverSupported) {
-            logger.warning("Cluster does not support failover. This feature is available in Hazelcast Enterprise");
-            authenticationStatus = NOT_ALLOWED_IN_CLUSTER;
-        }
-        switch (authenticationStatus) {
-            case AUTHENTICATED:
-                return response;
-            case CREDENTIALS_FAILED:
-                AuthenticationException authException = new AuthenticationException("Authentication failed. The configured "
-                        + "cluster name on the client (see ClientConfig.setClusterName()) does not match the one configured in "
-                        + "the cluster or the credentials set in the Client security config could not be authenticated");
-                connection.close("Failed to authenticate connection", authException);
-                throw authException;
-            case NOT_ALLOWED_IN_CLUSTER:
-                ClientNotAllowedInClusterException notAllowedException =
-                        new ClientNotAllowedInClusterException("Client is not allowed in the cluster");
-                connection.close("Failed to authenticate connection", notAllowedException);
-                throw notAllowedException;
-            default:
-                AuthenticationException exception =
-                        new AuthenticationException("Authentication status code not supported. status: " + authenticationStatus);
-                connection.close("Failed to authenticate connection", exception);
-                throw exception;
         }
     }
 
@@ -823,9 +810,10 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
      * connection to the given member.
      */
     private ClientConnection onAuthenticated(ClientConnection connection,
-                                                ClientAuthenticationCodec.ResponseParameters response) {
+                                             ClientAuthenticationCodec.ResponseParameters response,
+                                             boolean switchingToNextCluster) {
         synchronized (clientStateMutex) {
-            checkPartitionCount(response.partitionCount);
+            checkAuthenticationResponse(connection, response);
             connection.setConnectedServerVersion(response.serverHazelcastVersion);
             connection.setEndPoint(response.address);
             connection.setRemoteUuid(response.memberUuid);
@@ -837,21 +825,27 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             }
 
             UUID newClusterId = response.clusterId;
-
             if (logger.isFineEnabled()) {
                 logger.fine("Checking the cluster: " + newClusterId + ", current cluster: " + this.clusterId);
             }
-
+            // `clusterId` is `null` only at the start of the client.
+            // It is only set in this method below under `clientStateMutex`.
+            // `clusterId` is set by master when a cluster is started.
+            // `clusterId` is not preserved during HotRestart.
+            // In split brain, both sides have the same `clusterId`
             boolean clusterIdChanged = this.clusterId != null && !newClusterId.equals(this.clusterId);
             if (clusterIdChanged) {
-                checkClientStateOnClusterIdChange(connection);
+                checkClientStateOnClusterIdChange(connection, switchingToNextCluster);
                 logger.warning("Switching from current cluster: " + this.clusterId + " to new cluster: " + newClusterId);
                 client.onClusterRestart();
             }
+            checkClientState(connection, switchingToNextCluster);
 
             boolean connectionsEmpty = activeConnections.isEmpty();
             activeConnections.put(response.memberUuid, connection);
             if (connectionsEmpty) {
+                // The first connection that opens a connection to the new cluster should set `clusterId`.
+                // This one will initiate `initializeClientOnCluster` if necessary.
                 clusterId = newClusterId;
                 if (clusterIdChanged) {
                     clientState = ClientState.CONNECTED_TO_CLUSTER;
@@ -880,16 +874,78 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         return connection;
     }
 
-    private void checkClientStateOnClusterIdChange(ClientConnection connection) {
+    /**
+     * Checks the client state against the intend of the callee(switchingToNextCluster)
+     * closes the connection and throws exception if the authentication needs to be cancelled.
+     */
+    private void checkClientState(ClientConnection connection, boolean switchingToNextCluster) {
+        if (clientState == ClientState.SWITCHING_CLUSTER && !switchingToNextCluster) {
+            String reason = "There is a cluster switch in progress. "
+                    + "This connection attempt initiated before the progress and not allowed to be authenticated.";
+            connection.close(reason, null);
+            throw new AuthenticationException(reason);
+        }
+        //Following state can not happen. There is only one path with `switchingToNextCluster` as true
+        //and that path starts only when the old switch fails. There are no concurrent run of that path.
+        if (clientState != ClientState.SWITCHING_CLUSTER && switchingToNextCluster) {
+            String reason = "The cluster switch is already completed. "
+                    + "This connection attempt is not allowed to be authenticated.";
+            connection.close(reason, null);
+            throw new AuthenticationException(reason);
+        }
+    }
+
+    /**
+     * Checks the response from the server to see if authentication needs to be continued,
+     * closes the connection and throws exception if the authentication needs to be cancelled.
+     */
+    private void checkAuthenticationResponse(ClientConnection connection,
+                                             ClientAuthenticationCodec.ResponseParameters response) {
+        AuthenticationStatus authenticationStatus = AuthenticationStatus.getById(response.status);
+        if (failoverConfigProvided && !response.failoverSupported) {
+            logger.warning("Cluster does not support failover. This feature is available in Hazelcast Enterprise");
+            authenticationStatus = NOT_ALLOWED_IN_CLUSTER;
+        }
+        switch (authenticationStatus) {
+            case AUTHENTICATED:
+                break;
+            case CREDENTIALS_FAILED:
+                AuthenticationException authException = new AuthenticationException("Authentication failed. The configured "
+                        + "cluster name on the client (see ClientConfig.setClusterName()) does not match the one configured "
+                        + "in the cluster or the credentials set in the Client security config could not be authenticated");
+                connection.close("Failed to authenticate connection", authException);
+                throw authException;
+            case NOT_ALLOWED_IN_CLUSTER:
+                ClientNotAllowedInClusterException notAllowedException =
+                        new ClientNotAllowedInClusterException("Client is not allowed in the cluster");
+                connection.close("Failed to authenticate connection", notAllowedException);
+                throw notAllowedException;
+            default:
+                AuthenticationException exception =
+                        new AuthenticationException("Authentication status code not supported. status: " + authenticationStatus);
+                connection.close("Failed to authenticate connection", exception);
+                throw exception;
+        }
+        ClientPartitionServiceImpl partitionService = (ClientPartitionServiceImpl) client.getClientPartitionService();
+        if (!partitionService.checkAndSetPartitionCount(response.partitionCount)) {
+            ClientNotAllowedInClusterException exception =
+                    new ClientNotAllowedInClusterException("Client can not work with this cluster"
+                            + " because it has a different partition count. "
+                            + "Expected partition count: " + partitionService.getPartitionCount()
+                            + ", Member partition count: " + response.partitionCount);
+            connection.close("Failed to authenticate connection", exception);
+            throw exception;
+        }
+    }
+
+    private void checkClientStateOnClusterIdChange(ClientConnection connection, boolean switchingToNextCluster) {
         if (activeConnections.isEmpty()) {
             // We only have single connection established
             if (failoverConfigProvided) {
                 // If failover is provided, and this single connection is established after failover logic kicks in
-                // (checked via `switchingToNextCluster`), then it is OK to continue. Otherwise, we force the failover logic
-                // to be used by throwing `ClientNotAllowedInClusterException`
-                if (switchingToNextCluster) {
-                    switchingToNextCluster = false;
-                } else {
+                // (checked via `switchingToNextCluster`), then it is OK to continue.
+                // Otherwise, we force the failover logic to be used by throwing `ClientNotAllowedInClusterException`
+                if (!switchingToNextCluster) {
                     String reason = "Force to hard cluster switch";
                     connection.close(reason, null);
                     throw new ClientNotAllowedInClusterException(reason);
@@ -906,7 +962,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             // 4. In this case we will close the connection to the second member, thinking that it is not part of the
             // cluster we think we are in. We will reconnect to this member, and the connection is closed unnecessarily.
             // 5. The connection to the first cluster will be gone after that and we will initiate a reconnect to the cluster.
-
             String reason = "Connection does not belong to this cluster";
             connection.close(reason, null);
             throw new IllegalStateException(reason);
@@ -942,16 +997,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     protected void checkClientActive() {
         if (!client.getLifecycleService().isRunning()) {
             throw new HazelcastClientNotActiveException();
-        }
-    }
-
-    private void checkPartitionCount(int newPartitionCount) {
-        ClientPartitionServiceImpl partitionService = (ClientPartitionServiceImpl) client.getClientPartitionService();
-        if (!partitionService.checkAndSetPartitionCount(newPartitionCount)) {
-            throw new ClientNotAllowedInClusterException("Client can not work with this cluster"
-                    + " because it has a different partition count. "
-                    + "Expected partition count: " + partitionService.getPartitionCount()
-                    + ", Member partition count: " + newPartitionCount);
         }
     }
 
@@ -1032,6 +1077,10 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             }
 
             for (Member member : client.getClientClusterService().getMemberList()) {
+                if (clientState == ClientState.SWITCHING_CLUSTER) {
+                    // when switching cluster we only want to open a new connection via `doConnectToCandidateCluster`
+                    return;
+                }
                 UUID uuid = member.getUuid();
                 if (activeConnections.get(uuid) != null) {
                     continue;
@@ -1048,7 +1097,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                         if (!client.getLifecycleService().isRunning()) {
                             return;
                         }
-                        getOrConnectToMember(member);
+                        getOrConnectToMember(member, false);
                     } catch (Exception e) {
                         logger.warning("Could not connect to member " + uuid + ", reason " + e);
                     } finally {
