@@ -35,7 +35,6 @@ import com.hazelcast.sql.impl.plan.node.MapScanPlanNode;
 import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.row.RowBatch;
 
 import javax.annotation.Nonnull;
 import java.util.Iterator;
@@ -43,17 +42,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public class IMapReaderP extends AbstractProcessor {
+public class OnHeapMapScanP extends AbstractProcessor {
     protected final IMapTraverser traverser;
-    protected final MapContainer mapContainer;
 
-    public IMapReaderP(
+    public OnHeapMapScanP(
             @Nonnull String mapName,
             @Nonnull MapScanPlanNode node,
             @Nonnull NodeEngine nodeEngine,
-            InternalSerializationService serializationService,
-            List<Integer> projects,
-            Expression<Boolean> filter
+            InternalSerializationService serializationService
     ) {
         Map<UUID, PartitionIdSet> partitionMap = QueryUtils.createPartitionMap(
                 nodeEngine,
@@ -61,13 +57,13 @@ public class IMapReaderP extends AbstractProcessor {
                 false
         );
         MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
-        mapContainer = mapService.getMapServiceContext().getMapContainer(mapName);
+        MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(mapName);
         traverser = new IMapTraverser(
                 mapContainer,
                 partitionMap.get(nodeEngine.getClusterService().getLocalMember().getUuid()).iterator(),
                 serializationService,
-                projects,
-                filter
+                node.getProjects(),
+                node.getFilter()
         );
     }
 
@@ -146,15 +142,15 @@ public class IMapReaderP extends AbstractProcessor {
                 return EmptyRow.INSTANCE;
             }
 
-            HeapRow row = new HeapRow(projects.size());
+            HeapRow heapRow = new HeapRow(projects.size());
 
             for (int j = 0; j < projects.size(); j++) {
                 Object projectRes = this.row.get(projects.get(j));
 
-                row.set(j, projectRes);
+                heapRow.set(j, projectRes);
             }
 
-            return row;
+            return heapRow;
         }
     }
 
