@@ -360,6 +360,9 @@
               "description": "Sequence lists the classes available in the client class path to load."
             }
           }
+        },
+        "instance-tracking":  {
+          "$ref": "#/definitions/InstanceTracking"
         }
       }
     }
