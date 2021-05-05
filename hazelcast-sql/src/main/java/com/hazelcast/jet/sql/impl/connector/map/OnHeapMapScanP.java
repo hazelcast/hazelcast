@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl.connector.map;
 
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
@@ -47,9 +46,9 @@ public class OnHeapMapScanP extends AbstractProcessor {
 
     public OnHeapMapScanP(
             @Nonnull String mapName,
-            @Nonnull MapScanPlanNode node,
             @Nonnull NodeEngine nodeEngine,
-            InternalSerializationService serializationService
+            @Nonnull MapScanPlanNode node
+
     ) {
         Map<UUID, PartitionIdSet> partitionMap = QueryUtils.createPartitionMap(
                 nodeEngine,
@@ -61,16 +60,14 @@ public class OnHeapMapScanP extends AbstractProcessor {
         traverser = new IMapTraverser(
                 mapContainer,
                 partitionMap.get(nodeEngine.getClusterService().getLocalMember().getUuid()).iterator(),
-                serializationService,
-                node.getProjects(),
-                node.getFilter()
+                node
         );
     }
 
     @Override
     protected void init(@Nonnull Context context) throws Exception {
         super.init(context);
-        traverser.setCtx(SimpleExpressionEvalContext.from(context));
+        traverser.init(SimpleExpressionEvalContext.from(context));
     }
 
     @Override
@@ -79,26 +76,30 @@ public class OnHeapMapScanP extends AbstractProcessor {
     }
 
     static class IMapTraverser implements Traverser<Row> {
+        private final List<Integer> projects;
+        private final Expression<Boolean> filter;
+        private KeyValueIterator iteratorExec;
+
+        private final MapContainer mapContainer;
+        private final MapScanPlanNode node;
+        private final Iterator<Integer> localPartitionsIterator;
         private SimpleExpressionEvalContext ctx;
-        protected final List<Integer> projects;
-        protected final Expression<Boolean> filter;
-        protected KeyValueIterator iteratorExec;
         private MapScanRow row;
         private boolean done;
 
-
         IMapTraverser(
-                final MapContainer mapContainer,
-                Iterator<Integer> localPartitionsIterator,
-                InternalSerializationService serializationService,
-                List<Integer> projects,
-                Expression<Boolean> filter
+                @Nonnull final MapContainer mapContainer,
+                @Nonnull Iterator<Integer> localPartitionsIterator,
+                @Nonnull MapScanPlanNode node
         ) {
-            iteratorExec = new MapScanExecIterator(mapContainer, localPartitionsIterator, serializationService);
-            this.projects = projects;
-            this.filter = filter;
+            this.projects = node.getProjects();
+            this.filter = node.getFilter();
+            this.mapContainer = mapContainer;
+            this.node = node;
+            this.localPartitionsIterator = localPartitionsIterator;
         }
 
+        // TODO: return Object[] instead of Row
         @Override
         public Row next() {
             if (!done && iteratorExec.tryAdvance()) {
@@ -114,9 +115,19 @@ public class OnHeapMapScanP extends AbstractProcessor {
             return null;
         }
 
-        public void setCtx(SimpleExpressionEvalContext ctx) {
+        public void init(SimpleExpressionEvalContext ctx) {
+            this.row = MapScanRow.create(
+                    node.getKeyDescriptor(),
+                    node.getValueDescriptor(),
+                    node.getFieldPaths(),
+                    node.getFieldTypes(),
+                    mapContainer.getExtractors(),
+                    ctx.getSerializationService()
+            );
             this.ctx = ctx;
+            this.iteratorExec = new MapScanExecIterator(mapContainer, localPartitionsIterator, ctx.getSerializationService());
         }
+
 
         /**
          * Prepare the row for the given key and value:
