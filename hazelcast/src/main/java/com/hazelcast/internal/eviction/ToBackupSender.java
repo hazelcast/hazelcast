@@ -16,16 +16,16 @@
 
 package com.hazelcast.internal.eviction;
 
-import java.util.function.BiFunction;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
+import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.internal.util.CollectionUtil;
 
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.Queue;
+import java.util.function.BiFunction;
 
 /**
  * Helper class to create and send backup expiration operations.
@@ -59,7 +59,7 @@ public final class ToBackupSender<RS> {
     }
 
     private static Collection<ExpiredKey> pollExpiredKeys(Queue<ExpiredKey> expiredKeys) {
-        Collection<ExpiredKey> polledKeys = new ArrayList<ExpiredKey>(expiredKeys.size());
+        Collection<ExpiredKey> polledKeys = new LinkedList<>();
 
         do {
             ExpiredKey expiredKey = expiredKeys.poll();
