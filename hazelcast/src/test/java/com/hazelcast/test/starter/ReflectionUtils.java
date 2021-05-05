@@ -29,6 +29,7 @@ import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -40,6 +41,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.internal.util.Preconditions.checkHasText;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.test.starter.HazelcastStarterUtils.debug;
 import static java.lang.reflect.Proxy.getInvocationHandler;
 import static java.lang.reflect.Proxy.isProxyClass;
 import static java.net.URLClassLoader.newInstance;
@@ -129,6 +131,7 @@ public final class ReflectionUtils {
         return clazz.getName().equals(arg.getClass().getName());
     }
 
+    @SuppressWarnings("unchecked")
     public static <T> T getFieldValueReflectively(Object arg, String fieldName) throws IllegalAccessException {
         checkNotNull(arg, "Argument cannot be null");
         checkHasText(fieldName, "Field name cannot be null");
@@ -142,6 +145,25 @@ public final class ReflectionUtils {
 
         field.setAccessible(true);
         return (T) field.get(arg);
+    }
+
+    /**
+     * Copies the field values from the {@code source} object to the {@code target}
+     * object.
+     *
+     * @param source     the source object
+     * @param target     the target object
+     * @param fieldNames the fields to copy
+     * @throws IllegalAccessException   if this field is enforcing Java language access control and the
+     *                                  underlying field is either inaccessible or final
+     * @throws NullPointerException     if any of the provided objects is {@code null}
+     * @throws IllegalArgumentException if any of the field names is empty
+     */
+    public static void copyFieldValuesReflectively(Object source, Object target, String... fieldNames)
+            throws IllegalAccessException {
+        for (String fieldName : fieldNames) {
+            setFieldValueReflectively(target, fieldName, getFieldValueReflectively(source, fieldName));
+        }
     }
 
     public static void setFieldValueReflectively(Object arg, String fieldName, Object newValue) throws IllegalAccessException {
@@ -174,6 +196,56 @@ public final class ReflectionUtils {
             superClass = superClass.getSuperclass();
         }
         return fields;
+    }
+
+    /**
+     * Returns {@code true} if the provided {@code clazz} has a declared field
+     * with the provided {@code name}.
+     *
+     * @param clazz     the class to check
+     * @param fieldName the field name to check
+     * @return {@code true} if a declared field exists, {@code false} otherwise.
+     */
+    public static boolean hasField(Class<?> clazz, String fieldName) {
+        for (Field field : clazz.getDeclaredFields()) {
+            if (field.getName().equals(fieldName)) {
+                return true;
+            }
+        }
+        Class<?> superClass = clazz.getSuperclass();
+        while (superClass != null) {
+            for (Field field : superClass.getDeclaredFields()) {
+                if (field.getName().equals(fieldName)) {
+                    return true;
+                }
+            }
+            superClass = superClass.getSuperclass();
+        }
+        return false;
+    }
+
+    public static Method getSetter(Class<?> otherConfigClass,
+                                   Class<?> parameterType, String setterName) {
+        try {
+            return otherConfigClass.getMethod(setterName, parameterType);
+        } catch (NoSuchMethodException e) {
+            return null;
+        }
+    }
+
+    public static void invokeSetter(Object object, String setterName,
+                                     Class<?> parameterClass, Object parameter) {
+        Method setter = getSetter(object.getClass(), parameterClass, setterName);
+        invokeMethod(setter, object, parameter);
+    }
+
+    public static Object invokeMethod(Method method, Object methodObj, Object methodParam) {
+        try {
+            return method.invoke(methodObj, methodParam);
+        } catch (IllegalAccessException | InvocationTargetException | IllegalArgumentException e) {
+            debug("Could not invoke method %s: %s", method.getName(), e.getMessage());
+        }
+        return null;
     }
 
     public static Object getDelegateFromMock(Object mock) throws IllegalAccessException {

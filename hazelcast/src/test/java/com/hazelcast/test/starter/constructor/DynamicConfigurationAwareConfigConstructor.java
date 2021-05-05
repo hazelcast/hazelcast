@@ -16,12 +16,15 @@
 
 package com.hazelcast.test.starter.constructor;
 
+import com.hazelcast.internal.dynamicconfig.ConfigurationService;
 import com.hazelcast.test.starter.HazelcastStarterConstructor;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 
+import static com.hazelcast.test.starter.HazelcastProxyFactory.proxyObjectForStarter;
 import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
+import static com.hazelcast.test.starter.ReflectionUtils.invokeSetter;
 
 @HazelcastStarterConstructor(classNames = {"com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig"})
 public class DynamicConfigurationAwareConfigConstructor extends AbstractConfigConstructor {
@@ -47,6 +50,13 @@ public class DynamicConfigurationAwareConfigConstructor extends AbstractConfigCo
         setClassLoaderMethod.invoke(clonedConfig, classloader);
 
         Object[] args = new Object[]{clonedConfig, clonedHazelcastProperties};
-        return constructor.newInstance(args);
+        Object dynamicConfig = constructor.newInstance(args);
+
+        Object configurationService = getFieldValueReflectively(delegate, "configurationService");
+        Object proxiedConfigurationService = proxyObjectForStarter(classloader, configurationService);
+        invokeSetter(dynamicConfig, "setConfigurationService", ConfigurationService.class,
+                proxiedConfigurationService);
+
+        return dynamicConfig;
     }
 }

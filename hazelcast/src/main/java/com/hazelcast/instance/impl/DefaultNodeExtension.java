@@ -306,6 +306,12 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
+    public InternalSerializationService createCompatibilitySerializationService() {
+        // compatibility ser-de is not supported in OS
+        return null;
+    }
+
+    @Override
     public SecurityService getSecurityService() {
         return null;
     }

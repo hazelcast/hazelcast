@@ -105,6 +105,7 @@ public class NodeEngineImpl implements NodeEngine {
 
     private final Node node;
     private final SerializationService serializationService;
+    private final SerializationService compatibilitySerializationService;
     private final LoggingServiceImpl loggingService;
     private final ILogger logger;
     private final MetricsRegistryImpl metricsRegistry;
@@ -130,6 +131,7 @@ public class NodeEngineImpl implements NodeEngine {
         this.node = node;
         try {
             this.serializationService = node.getSerializationService();
+            this.compatibilitySerializationService = node.getCompatibilitySerializationService();
             this.concurrencyDetection = newConcurrencyDetection();
             this.loggingService = node.loggingService;
             this.logger = node.getLogger(NodeEngine.class.getName());
@@ -285,6 +287,11 @@ public class NodeEngineImpl implements NodeEngine {
     @Override
     public SerializationService getSerializationService() {
         return serializationService;
+    }
+
+    @Override
+    public SerializationService getCompatibilitySerializationService() {
+        return compatibilitySerializationService;
     }
 
     @Override

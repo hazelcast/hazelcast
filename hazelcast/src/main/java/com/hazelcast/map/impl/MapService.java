@@ -20,6 +20,8 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.WanAcknowledgeType;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.internal.cluster.ClusterStateListener;
+import com.hazelcast.internal.compatibility.wan.CompatibilityWanReplicationEvent;
+import com.hazelcast.internal.compatibility.wan.CompatibilityWanSupportingService;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
@@ -96,7 +98,7 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
         SplitBrainHandlerService, WanSupportingService, StatisticsAwareService<LocalMapStats>,
         PartitionAwareService, ClientAwareService, SplitBrainProtectionAwareService,
         NotifiableEventListener, ClusterStateListener, LockInterceptorService<Data>,
-        DynamicMetricsProvider, TenantContextAwareService {
+        DynamicMetricsProvider, TenantContextAwareService, CompatibilityWanSupportingService {
 
     public static final String SERVICE_NAME = "hz:impl:mapService";
 
@@ -108,6 +110,7 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
     protected PostJoinAwareService postJoinAwareService;
     protected SplitBrainHandlerService splitBrainHandlerService;
     protected WanSupportingService wanSupportingService;
+    protected CompatibilityWanSupportingService compatibilityWanSupportingService;
     protected StatisticsAwareService statisticsAwareService;
     protected PartitionAwareService partitionAwareService;
     protected ClientAwareService clientAwareService;
@@ -197,6 +200,11 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
     @Override
     public void onReplicationEvent(InternalWanEvent event, WanAcknowledgeType acknowledgeType) {
         wanSupportingService.onReplicationEvent(event, acknowledgeType);
+    }
+
+    @Override
+    public void onReplicationEvent(CompatibilityWanReplicationEvent event, WanAcknowledgeType acknowledgeType) {
+        compatibilityWanSupportingService.onReplicationEvent(event, acknowledgeType);
     }
 
     @Override

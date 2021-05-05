@@ -35,6 +35,7 @@ import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.SerializationServiceV1;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.util.ExceptionUtil;
@@ -451,7 +452,15 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
         Address caller = connection.getRemoteAddress();
         Operation op = null;
         try {
-            Object object = nodeEngine.toObject(packet);
+            // the packet was sent from 3.12 if the 4_0 flag is missing
+            // 4.0.1 and 4.2 members do not set this flag
+            // so this member should not be a part of a cluster
+            // with those members
+            boolean isCompatibility = !packet.isFlagRaised(Packet.FLAG_4_0);
+            InternalSerializationService serializationService = isCompatibility
+                    ? nodeEngine.getNode().getCompatibilitySerializationService()
+                    : nodeEngine.getNode().getSerializationService();
+            Object object = serializationService.toObject(packet);
             op = (Operation) object;
             op.setNodeEngine(nodeEngine);
             setCallerAddress(op, caller);

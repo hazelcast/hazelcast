@@ -156,7 +156,12 @@ public final class Packet extends HeapData implements OutboundFrame {
     }
 
     public Type getPacketType() {
-        return Type.fromFlags(flags);
+        // the packet was sent from 3.12 if the 4_0 flag is missing
+        // 4.0.1 and 4.2 members do not set this flag
+        // so this member should not be a part of a cluster
+        // with those members
+        boolean isCompatibility = !isFlagRaised(FLAG_4_0);
+        return Type.fromFlags(flags, isCompatibility);
     }
 
     /**
@@ -338,18 +343,51 @@ public final class Packet extends HeapData implements OutboundFrame {
          * <p>
          * {@code ordinal = 7}
          */
-        UNDEFINED7;
+        UNDEFINED7,
+        /**
+         * Type reserved for compatibility (3.x) bind messages. The appropriate
+         * type conversion will happen in {@link #fromFlags(int, boolean)}.
+         * <p>
+         * {@code ordinal = 4}
+         */
+        COMPATIBILITY_BIND_MESSAGE(4),
+        /**
+         * Type reserved for compatibility (3.x) extended bind messages. The appropriate
+         * type conversion will happen in {@link #fromFlags(int, boolean)}.
+         * <p>
+         * {@code ordinal = 5}
+         */
+        COMPATIBILITY_EXTENDED_BIND(5);
+
+        // COMPATIBILITY_BIND_MESSAGE occupies the same ordinal as SERVER_CONTROL
+        public static final int COMPATIBILITY_BIND_MESSAGE_ORDINAL = 4;
+
+        // COMPATIBILITY_EXTENDED_BIND occupies the same ordinal as SQL
+        public static final int COMPATIBILITY_EXTENDED_BIND_ORDINAL = 5;
 
         final char headerEncoding;
 
         private static final Type[] VALUES = values();
 
         Type() {
-            headerEncoding = (char) encodeOrdinal();
+            headerEncoding = (char) encodeHeader(ordinal());
         }
 
-        public static Type fromFlags(int flags) {
-            return VALUES[headerDecode(flags)];
+        Type(int ordinal) {
+            headerEncoding = (char) encodeHeader(ordinal);
+        }
+
+        public static Type fromFlags(int flags, boolean isCompatibility) {
+            int ordinal = headerDecode(flags);
+            if (isCompatibility) {
+                if (ordinal == COMPATIBILITY_EXTENDED_BIND_ORDINAL) {
+                    return COMPATIBILITY_EXTENDED_BIND;
+                }
+                if (ordinal == COMPATIBILITY_BIND_MESSAGE_ORDINAL) {
+                    return COMPATIBILITY_BIND_MESSAGE;
+                }
+            }
+            return VALUES[ordinal];
         }
 
         public String describeFlags(char flags) {
@@ -357,8 +395,7 @@ public final class Packet extends HeapData implements OutboundFrame {
         }
 
         @SuppressWarnings("checkstyle:booleanexpressioncomplexity")
-        private int encodeOrdinal() {
-            final int ordinal = ordinal();
+        private int encodeHeader(int ordinal) {
             assert ordinal < 8 : "Ordinal out of range for member " + name() + ": " + ordinal;
             return (ordinal & 0x01)
                     | (ordinal & 0x02) << 1
