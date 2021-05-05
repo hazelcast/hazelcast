@@ -481,9 +481,8 @@ SqlExtendedInsert SqlExtendedInsert() :
 /**
  * Hazelcast specific date-time types parsing.
  */
-SqlTypeNameSpec SqlDateTimeTypeName() :
+SqlTypeNameSpec HazelcastDateTimeTypeName() :
 {
-    int precision = -1;
     SqlTypeName typeName;
     boolean withTimeZone = false;
 }
@@ -494,15 +493,9 @@ SqlTypeNameSpec SqlDateTimeTypeName() :
     }
 |
     LOOKAHEAD(2)
-    <TIME>
-    withTimeZone = HazelcastTimeZoneOpt()
-    {
-        if (withTimeZone) {
-            typeName = SqlTypeName.TIME_WITH_LOCAL_TIME_ZONE;
-        } else {
-            typeName = SqlTypeName.TIME;
-        }
-        return new SqlBasicTypeNameSpec(typeName, precision, getPos());
+    <TIME> {
+        typeName = SqlTypeName.TIME;
+        return new SqlBasicTypeNameSpec(typeName, -1, getPos());
     }
 |
     <TIMESTAMP>
@@ -513,7 +506,7 @@ SqlTypeNameSpec SqlDateTimeTypeName() :
         } else {
             typeName = SqlTypeName.TIMESTAMP;
         }
-        return new SqlBasicTypeNameSpec(typeName, precision, getPos());
+        return new SqlBasicTypeNameSpec(typeName, -1, getPos());
     }
 }
 

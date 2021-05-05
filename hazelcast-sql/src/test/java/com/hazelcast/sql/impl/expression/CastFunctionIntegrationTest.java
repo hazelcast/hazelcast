@@ -73,7 +73,7 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         putAndCheckFailure('b', sql("this", DATE), DATA_EXCEPTION, "Cannot parse VARCHAR value to DATE");
         putAndCheckFailure('b', sql("this", TIME), DATA_EXCEPTION, "Cannot parse VARCHAR value to TIME");
         putAndCheckFailure('b', sql("this", TIMESTAMP), DATA_EXCEPTION, "Cannot parse VARCHAR value to TIMESTAMP");
-        putAndCheckFailure('b', sql("this", TIMESTAMP_WITH_TIME_ZONE), DATA_EXCEPTION, "Cannot parse VARCHAR value to TIMESTAMP_WITH_TIME_ZONE");
+        putAndCheckFailure('b', sql("this", TIMESTAMP_WITH_TIME_ZONE), DATA_EXCEPTION, "Cannot parse VARCHAR value to TIMESTAMP WITH TIME ZONE");
         putAndCheckValue('b', sql("this", OBJECT), OBJECT, "b");
     }
 

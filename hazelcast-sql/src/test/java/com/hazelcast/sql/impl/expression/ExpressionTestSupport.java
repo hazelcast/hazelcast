@@ -215,8 +215,6 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
 
             fail("Must fail");
         } catch (HazelcastSqlException e) {
-            e.printStackTrace();
-
             assertTrue(expectedErrorMessage.length() != 0);
             assertNotNull(e.getMessage());
             assertTrue(
