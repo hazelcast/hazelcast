@@ -250,7 +250,7 @@ class JetPlanExecutor {
             if (t instanceof QueryException) {
                 return ((QueryException) t).getCode();
             }
-            t = t.getCause() == t ? null : t.getCause();
+            t = t.getCause();
         }
         return SqlErrorCode.GENERIC;
     }

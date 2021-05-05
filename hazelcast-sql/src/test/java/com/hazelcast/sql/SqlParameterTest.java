@@ -109,8 +109,6 @@ public class SqlParameterTest {
                 + "CAST(? as DATE), "
                 + "CAST(? as TIME), "
                 + "CAST(? as TIMESTAMP), "
-                // TODO: change 'TIMESTAMP WITH LOCAL TIME ZONE' to 'TIMESTAMP WITH TIME ZONE'
-                //  once engines are merged and custom date-time parsing is used
                 + "CAST(? as TIMESTAMP WITH LOCAL TIME ZONE), "
                 + "CAST(? as OBJECT), "
                 + "CAST(? as OBJECT) "
