@@ -335,6 +335,31 @@
               }
             }
           }
+        },
+        "user-code-deployment": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": false,
+              "description": "If set to true, user code deployment is enabled."
+            },
+            "jarPaths": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Sequence lists the jar files containing the classes to load."
+            },
+            "classNames": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Sequence lists the classes available in the client class path to load."
+            }
+          }
         }
       }
     }
