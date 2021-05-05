@@ -81,7 +81,7 @@ public final class HazelcastCastFunction extends HazelcastFunction {
             SqlColumnType sourceType0 = toHazelcastType(sourceType.getSqlTypeName()).getTypeFamily().getPublicType();
             SqlColumnType targetType0 = toHazelcastType(targetType.getSqlTypeName()).getTypeFamily().getPublicType();
 
-            throw binding.newError(HazelcastResources.RESOURCES.cannotCastValue(sourceType0.name(), targetType0.name()));
+            throw binding.newError(HazelcastResources.RESOURCES.cannotCastValue(sourceType0.toString(), targetType0.toString()));
         } else {
             return false;
         }

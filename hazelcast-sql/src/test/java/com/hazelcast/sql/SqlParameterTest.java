@@ -58,7 +58,7 @@ public class SqlParameterTest {
     }
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         member = factory.newHazelcastInstance();
 
         if (useClient) {
@@ -109,7 +109,7 @@ public class SqlParameterTest {
                 + "CAST(? as DATE), "
                 + "CAST(? as TIME), "
                 + "CAST(? as TIMESTAMP), "
-                + "CAST(? as TIMESTAMP_WITH_TIME_ZONE), "
+                + "CAST(? as TIMESTAMP WITH LOCAL TIME ZONE), "
                 + "CAST(? as OBJECT), "
                 + "CAST(? as OBJECT) "
                 + "FROM " + MAP_NAME);

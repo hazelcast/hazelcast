@@ -52,14 +52,11 @@ public abstract class AbstractParameterConverter implements ParameterConverter {
         Converter valueConverter = Converters.getConverter(value.getClass());
 
         if (!isValid(value, valueConverter)) {
-            String actualTypeName = valueConverter.getTypeFamily().getPublicType().name();
-            String targetTypeName = targetType.getTypeFamily().getPublicType().name();
-
             String error = String.format(
                     "Parameter at position %d must be of %s type, but %s was found (consider adding an explicit CAST)",
                     ordinal,
-                    targetTypeName,
-                    actualTypeName
+                    targetType.getTypeFamily().getPublicType(),
+                    valueConverter.getTypeFamily().getPublicType()
             );
 
             throw QueryException.error(SqlErrorCode.DATA_EXCEPTION, withContext(error));
