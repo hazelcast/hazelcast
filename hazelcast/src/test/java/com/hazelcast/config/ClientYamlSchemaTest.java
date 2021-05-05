@@ -1,11 +1,14 @@
 package com.hazelcast.config;
 
+import com.hazelcast.internal.yaml.YamlLoader;
+import com.hazelcast.internal.yaml.YamlToJsonConverter;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.everit.json.schema.Schema;
 import org.everit.json.schema.loader.SchemaClient;
 import org.everit.json.schema.loader.SchemaLoader;
 import org.json.JSONObject;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;

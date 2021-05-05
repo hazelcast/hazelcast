@@ -307,6 +307,9 @@
               }
             }
           }
+        },
+        "query-caches": {
+          "$ref": "#/definitions/Map/additionalProperties/properties/query-caches"
         }
       }
     }
@@ -1467,6 +1470,10 @@
               "type": "object",
               "additionalProperties": false,
               "properties": {
+                "map-name": {
+                  "type": "string",
+                  "description":  "In client configurations it is used to identify the map to which this query cache belongs to.",
+                },
                 "include-value": {
                   "type": "boolean",
                   "default": true,
