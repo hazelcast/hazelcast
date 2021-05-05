@@ -36,7 +36,6 @@ import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.JobResult;
-import com.hazelcast.jet.impl.TerminationMode;
 import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
@@ -65,6 +64,7 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.NotSerializableException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -82,8 +82,10 @@ import static com.hazelcast.jet.core.TestUtil.assertExceptionInCauses;
 import static com.hazelcast.jet.core.TestUtil.executeAndPeel;
 import static com.hazelcast.jet.core.processor.Processors.noopP;
 import static com.hazelcast.jet.impl.JobExecutionRecord.NO_SNAPSHOT;
+import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static java.lang.String.format;
 import static java.util.Collections.nCopies;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -170,7 +172,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         LightJob job = runJobExpectFailure(dag, false);
 
         // Then
-        assertPmsClosedWithError(MOCK_ERROR);
+        assertPmsClosedWithError();
         assertJobFailed(job, MOCK_ERROR);
     }
 
@@ -203,7 +205,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         LightJob job = runJobExpectFailure(dag, false);
 
         // Then
-        assertPmsClosedWithError(MOCK_ERROR);
+        assertPmsClosedWithError();
         assertJobFailed(job, MOCK_ERROR);
     }
 
@@ -234,8 +236,8 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         LightJob job = runJobExpectFailure(dag, false);
 
         // Then
-        assertPsClosedWithError(new CancellationException());
-        assertPmsClosedWithError(MOCK_ERROR);
+        assertPsClosedWithError();
+        assertPmsClosedWithError();
         assertJobFailed(job, MOCK_ERROR);
     }
 
@@ -249,8 +251,8 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         LightJob job = runJobExpectFailure(dag, false);
 
         // Then
-        assertPsClosedWithError(new CancellationException());
-        assertPmsClosedWithError(MOCK_ERROR);
+        assertPsClosedWithError();
+        assertPmsClosedWithError();
         assertJobFailed(job, MOCK_ERROR);
     }
 
@@ -305,8 +307,8 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
         // Then
         assertPClosedWithError();
-        assertPsClosedWithError(MOCK_ERROR);
-        assertPmsClosedWithError(MOCK_ERROR);
+        assertPsClosedWithError();
+        assertPmsClosedWithError();
         assertJobFailed(job, MOCK_ERROR);
     }
 
@@ -324,12 +326,8 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
         // Then
         assertPClosedWithError();
-        try {
-            assertPsClosedWithError(MOCK_ERROR);
-        } catch (AssertionError e) {
-            assertPsClosedWithError(new CancellationException());
-        }
-        assertPmsClosedWithError(MOCK_ERROR);
+        assertPsClosedWithError();
+        assertPmsClosedWithError();
         assertJobFailed(job, MOCK_ERROR);
     }
 
@@ -345,8 +343,8 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
         // Then
         assertPClosedWithError();
-        assertPsClosedWithError(MOCK_ERROR);
-        assertPmsClosedWithError(MOCK_ERROR);
+        assertPsClosedWithError();
+        assertPmsClosedWithError();
         assertJobFailed(job, MOCK_ERROR);
     }
 
@@ -362,8 +360,8 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
         // Then
         assertPClosedWithError();
-        assertPsClosedWithError(MOCK_ERROR);
-        assertPmsClosedWithError(MOCK_ERROR);
+        assertPsClosedWithError();
+        assertPmsClosedWithError();
         assertJobFailed(job, MOCK_ERROR);
     }
 
@@ -380,8 +378,8 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
         // Then
         assertPClosedWithError();
-        assertPsClosedWithError(MOCK_ERROR);
-        assertPmsClosedWithError(MOCK_ERROR);
+        assertPsClosedWithError();
+        assertPmsClosedWithError();
         assertJobFailed(job, MOCK_ERROR);
     }
 
@@ -398,8 +396,8 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
         // Then
         assertPClosedWithError();
-        assertPsClosedWithError(MOCK_ERROR);
-        assertPmsClosedWithError(MOCK_ERROR);
+        assertPsClosedWithError();
+        assertPmsClosedWithError();
         assertJobFailed(job, MOCK_ERROR);
     }
 
@@ -433,12 +431,8 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         cancelAndJoin(job);
         assertTrueEventually(() -> {
             assertJobFailed(job, new CancellationException());
-            assertPsClosedWithError(new JobTerminateRequestedException(TerminationMode.CANCEL_FORCEFUL));
-            try {
-                assertPmsClosedWithError(new CancellationException());
-            } catch (AssertionError e) {
-                assertPmsClosedWithError(new JobTerminateRequestedException(TerminationMode.CANCEL_FORCEFUL));
-            }
+            assertPsClosedWithError();
+            assertPmsClosedWithError();
         });
     }
 
@@ -584,7 +578,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void when_clientJoinBeforeAndAfterComplete_then_exceptionEquals() throws InterruptedException {
+    public void when_clientJoinBeforeAndAfterComplete_then_exceptionEquals() {
         // not applicable to light jobs - we can't connect to light jobs after they complete
         assumeFalse(useLightJob);
 
@@ -724,8 +718,11 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
             job.join();
             fail("Job execution should have failed");
         } catch (Exception actual) {
-            Throwable cause = peel(actual);
-            assertContains(cause.getMessage(), MOCK_ERROR.getMessage());
+            String causeString = peel(actual).toString();
+            if (causeString == null
+                    || !(causeString.contains(MOCK_ERROR.toString()) || causeString.contains(CancellationException.class.getName()))) {
+                throw new AssertionError(format("'%s' didn't contain expected '%s'", causeString, MOCK_ERROR.getMessage()), actual);
+            }
         }
         return job;
     }
@@ -736,10 +733,12 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         assertNull("receivedCloseError", MockPMS.receivedCloseError.get());
     }
 
-    private void assertPmsClosedWithError(Throwable e) {
+    private void assertPmsClosedWithError() {
         assertTrue("init not called", MockPMS.initCalled.get());
         assertTrue("close not called", MockPMS.closeCalled.get());
-        assertExceptionInCauses(e, MockPMS.receivedCloseError.get());
+        assertOneOfExceptionsInCauses(MockPMS.receivedCloseError.get(),
+                MOCK_ERROR,
+                new CancellationException());
     }
 
     private void assertPsClosedWithoutError() {
@@ -748,13 +747,16 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         assertEquals(0, MockPS.receivedCloseErrors.size());
     }
 
-    private void assertPsClosedWithError(Throwable e) {
+    private void assertPsClosedWithError() {
         assertEquals(MEMBER_COUNT, MockPS.initCount.get());
         assertEquals(MEMBER_COUNT, MockPS.closeCount.get());
         assertEquals(MEMBER_COUNT, MockPS.receivedCloseErrors.size());
 
         for (int i = 0; i < MEMBER_COUNT; i++) {
-            assertExceptionInCauses(e, MockPS.receivedCloseErrors.get(i));
+            assertOneOfExceptionsInCauses(MockPS.receivedCloseErrors.get(i),
+                    MOCK_ERROR,
+                    new CancellationException(),
+                    new JobTerminateRequestedException(CANCEL_FORCEFUL));
         }
     }
 
@@ -765,6 +767,16 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
     private void assertPClosedWithError() {
         assertEquals(MEMBER_COUNT * parallelism, MockP.closeCount.get());
+    }
+
+    private void assertOneOfExceptionsInCauses(Throwable caught, Throwable... expected) {
+        for (Throwable exp : expected) {
+            try {
+                assertExceptionInCauses(exp, caught);
+                return;
+            } catch (AssertionError ignored) { }
+        }
+        throw new AssertionError("None of expected exceptions caught. Expected: " + Arrays.toString(expected), caught);
     }
 
     private void assertJobSucceeded(LightJob job) {

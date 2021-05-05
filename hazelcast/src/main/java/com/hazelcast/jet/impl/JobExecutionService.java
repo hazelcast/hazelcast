@@ -448,7 +448,10 @@ public class JobExecutionService implements DynamicMetricsProvider {
             doWithClassLoader(removedClassLoader, () -> executionContext.completeExecution(error));
         } finally {
             executionCompleted.inc();
-            removedClassLoader.shutdown();
+            // the class loader might not have been initialized if the job failed before that
+            if (removedClassLoader != null) {
+                removedClassLoader.shutdown();
+            }
             executionContextJobIds.remove(executionContext.jobId());
             logger.fine("Completed execution of " + executionContext.jobNameAndExecutionId());
         }
@@ -467,7 +470,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
             long executionId,
             boolean collectMetrics
     ) {
-        ExecutionContext execCtx = assertExecutionContext(coordinator, jobId, executionId, "ExecuteJobOperation");
+        ExecutionContext execCtx = assertExecutionContext(coordinator, jobId, executionId, "StartExecutionOperation");
         assert !execCtx.isLightJob() : "StartExecutionOperation received for a light job " + idToString(jobId);
         logger.info("Start execution of " + execCtx.jobNameAndExecutionId() + " from coordinator " + coordinator);
         return beginExecution0(execCtx, collectMetrics);
