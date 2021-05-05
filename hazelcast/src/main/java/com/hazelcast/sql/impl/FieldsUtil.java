@@ -164,7 +164,7 @@ public final class FieldsUtil {
         return fields;
     }
 
-    @SuppressWarnings("checkstyle:ReturnCount")
+    @SuppressWarnings({"checkstyle:ReturnCount", "checkstyle:cyclomaticcomplexity"})
     @Nonnull
     private static QueryDataType resolvePortableType(@Nonnull FieldType portableType) {
         switch (portableType) {
