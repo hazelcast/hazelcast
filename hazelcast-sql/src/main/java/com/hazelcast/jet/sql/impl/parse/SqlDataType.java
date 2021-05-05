@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.parse;
 
-import com.hazelcast.jet.sql.impl.type.QueryDataTypeUtils;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlWriter;
@@ -40,6 +39,6 @@ public class SqlDataType extends SqlIdentifier {
 
     @Override
     public void unparse(SqlWriter writer, int leftPrec, int rightPrec) {
-        writer.keyword(QueryDataTypeUtils.sqlTypeName(type));
+        writer.keyword(type.getTypeFamily().toString());
     }
 }
