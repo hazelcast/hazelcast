@@ -20,14 +20,15 @@ import com.hazelcast.client.config.impl.ClientConfigSections;
 import com.hazelcast.client.config.impl.YamlClientConfigLocator;
 import com.hazelcast.client.config.impl.YamlClientDomConfigProcessor;
 import com.hazelcast.config.AbstractYamlConfigBuilder;
-import com.hazelcast.internal.config.ConfigLoader;
 import com.hazelcast.config.InvalidConfigurationException;
+import com.hazelcast.config.YamlConfigSchemaValidator;
+import com.hazelcast.internal.config.ConfigLoader;
 import com.hazelcast.internal.config.yaml.YamlDomChecker;
+import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.yaml.YamlLoader;
 import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.internal.yaml.YamlNode;
-import com.hazelcast.internal.nio.IOUtil;
-import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.spi.annotation.PrivateApi;
 import org.w3c.dom.Node;
 
@@ -154,6 +155,10 @@ public class YamlClientConfigBuilder extends AbstractYamlConfigBuilder {
         Node w3cRootNode = asW3cNode(clientRoot);
         replaceVariables(w3cRootNode);
         importDocuments(clientRoot);
+
+        if (shouldValidateTheSchema()) {
+            YamlConfigSchemaValidator.create().validate((YamlMapping) clientRoot.parent());
+        }
 
         new YamlClientDomConfigProcessor(true, config).buildConfig(w3cRootNode);
     }

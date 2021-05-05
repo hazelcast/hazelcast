@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.client.config.YamlClientConfigBuilder;
 import com.hazelcast.internal.yaml.YamlLoader;
 import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.internal.yaml.YamlToJsonConverter;
@@ -32,10 +33,10 @@ public class YamlFullExampleTest {
      * The full-example yaml files don't validate successfully out of the box, because in their import declarations they refer to
      * non-existent yaml files, therefore {@link YamlConfigBuilder} and
      * {@link com.hazelcast.client.config.YamlClientConfigBuilder} throw exceptions while processing the imports.
-     *
+     * <p>
      * To work this around, here we read the original yaml config from a stream, parse it, remove the {@code import} object,
      * then print again and return it.
-     *
+     * <p>
      * Since {@link YamlMapping} can't print itself back to a YAML string, we convert the {@code YamlMapping} instance to a
      * {@code JSONObject} and use it to perform the removal of {@code import} node and serialization back to string. The result
      * will be a JSON string, but YAML is compatible with JSON, so the subsequent parsing in the ConfigBuilder under test will
@@ -51,5 +52,13 @@ public class YamlFullExampleTest {
     @Test
     public void memberFullExampleYamlLoadsSuccessfully() {
         new YamlConfigBuilder(removeImports(getClass().getResourceAsStream("/hazelcast-full-example.yaml"), "hazelcast")).build();
+    }
+
+    @Test
+    public void clientFullExampleYamlLoadsSuccessfully() {
+        new YamlClientConfigBuilder(
+                removeImports(getClass().getResourceAsStream("/hazelcast-client-full-example.yaml"), "hazelcast-client")
+        ).build();
+
     }
 }

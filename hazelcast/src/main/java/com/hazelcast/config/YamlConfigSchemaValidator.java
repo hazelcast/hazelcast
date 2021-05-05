@@ -29,7 +29,7 @@ import java.util.List;
 
 import static java.util.stream.Collectors.toList;
 
-interface YamlConfigSchemaValidator {
+public interface YamlConfigSchemaValidator {
 
     /**
      * Default implementation of {@link YamlConfigSchemaValidator} returned by {@link YamlConfigSchemaValidator#create()}.
