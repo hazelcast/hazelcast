@@ -195,6 +195,21 @@ public final class FieldsUtil {
             case DOUBLE:
                 return QueryDataType.DOUBLE;
 
+            case DECIMAL:
+                return QueryDataType.DECIMAL;
+
+            case TIME:
+                return QueryDataType.TIME;
+
+            case DATE:
+                return QueryDataType.DATE;
+
+            case TIMESTAMP:
+                return QueryDataType.TIMESTAMP;
+
+            case TIMESTAMP_WITH_TIMEZONE:
+                return QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME;
+
             default:
                 return QueryDataType.OBJECT;
         }
