@@ -44,7 +44,8 @@ public interface LightJob {
     /**
      * Waits for the job to complete and throws an exception if the job
      * completes with an error. Never returns for streaming (unbounded) jobs,
-     * unless they fail or are cancelled.
+     * unless they fail or are cancelled. In rare cases it can happen that
+     * after this method returns, the job is not fully cleaned up.
      * <p>
      * Shorthand for <code>job.getFuture().join()</code>.
      *

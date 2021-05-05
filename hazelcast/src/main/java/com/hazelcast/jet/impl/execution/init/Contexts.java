@@ -71,6 +71,7 @@ public final class Contexts {
         private final int totalParallelism;
         private final int memberCount;
         private final ProcessingGuarantee processingGuarantee;
+        private final boolean isLightJob;
 
         MetaSupplierCtx(
                 JetInstance jetInstance,
@@ -82,7 +83,8 @@ public final class Contexts {
                 int localParallelism,
                 int totalParallelism,
                 int memberCount,
-                ProcessingGuarantee processingGuarantee
+                ProcessingGuarantee processingGuarantee,
+                boolean isLightJob
         ) {
             this.jetInstance = jetInstance;
             this.jobId = jobId;
@@ -94,6 +96,7 @@ public final class Contexts {
             this.localParallelism = localParallelism;
             this.memberCount = memberCount;
             this.processingGuarantee = processingGuarantee;
+            this.isLightJob = isLightJob;
         }
 
         @Nonnull @Override
@@ -145,6 +148,11 @@ public final class Contexts {
         public ProcessingGuarantee processingGuarantee() {
             return processingGuarantee;
         }
+
+        @Override
+        public boolean isLightJob() {
+            return isLightJob;
+        }
     }
 
     public static class ProcSupplierCtx extends MetaSupplierCtx implements ProcessorSupplier.Context {
@@ -166,11 +174,12 @@ public final class Contexts {
                 int memberIndex,
                 int memberCount,
                 ProcessingGuarantee processingGuarantee,
+                boolean isLightJob,
                 ConcurrentHashMap<String, File> tempDirectories,
                 InternalSerializationService serializationService
         ) {
             super(jetInstance, jobId, executionId, jobConfig, logger, vertexName, localParallelism, totalParallelism,
-                    memberCount, processingGuarantee);
+                    memberCount, processingGuarantee, isLightJob);
             this.memberIndex = memberIndex;
             this.tempDirectories = tempDirectories;
             this.serializationService = serializationService;
@@ -294,6 +303,7 @@ public final class Contexts {
                        int localProcessorIndex,
                        int globalProcessorIndex,
                        ProcessingGuarantee processingGuarantee,
+                       boolean isLightJob,
                        int localParallelism,
                        int memberIndex,
                        int memberCount,
@@ -301,7 +311,7 @@ public final class Contexts {
                        InternalSerializationService serializationService) {
             super(instance, jobId, executionId, jobConfig, logger, vertexName, localParallelism,
                     memberCount * localParallelism, memberIndex, memberCount, processingGuarantee,
-                    tempDirectories, serializationService);
+                    isLightJob, tempDirectories, serializationService);
             this.localProcessorIndex = localProcessorIndex;
             this.globalProcessorIndex = globalProcessorIndex;
         }

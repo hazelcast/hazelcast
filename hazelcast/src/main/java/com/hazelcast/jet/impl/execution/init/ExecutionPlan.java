@@ -210,6 +210,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                         localProcessorIdx,
                         globalProcessorIndex,
                         jobConfig.getProcessingGuarantee(),
+                        isLightJob,
                         vertex.localParallelism(),
                         memberIndex,
                         memberCount,
@@ -340,6 +341,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                         memberIndex,
                         memberCount,
                         jobConfig.getProcessingGuarantee(),
+                        isLightJob,
                         tempDirectories,
                         jobSerializationService
                 ));

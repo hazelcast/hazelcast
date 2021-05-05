@@ -100,17 +100,20 @@ public class LightMasterContext {
             logFine(logger, "Building execution plan for %s", jobIdString);
         }
 
-        executionPlanMap = createExecutionPlans(nodeEngine, membersView, dag, jobId, jobId, LIGHT_JOB_CONFIG, 0, true);
+        vertices = new HashSet<>();
+        dag.iterator().forEachRemaining(vertices::add);
+        try {
+            executionPlanMap = createExecutionPlans(nodeEngine, membersView, dag, jobId, jobId, LIGHT_JOB_CONFIG, 0, true);
+        } catch (Throwable e) {
+            finalizeJob(e);
+            return jobCompletionFuture;
+        }
         logFine(logger, "Built execution plans for %s", jobIdString);
         Set<MemberInfo> participants = executionPlanMap.keySet();
         Function<ExecutionPlan, Operation> operationCtor = plan -> {
             Data serializedPlan = nodeEngine.getSerializationService().toData(plan);
-
-            return new InitExecutionOperation(jobId, jobId, membersView.getVersion(), participants,
-                    serializedPlan, true);
+            return new InitExecutionOperation(jobId, jobId, membersView.getVersion(), participants, serializedPlan, true);
         };
-        vertices = new HashSet<>();
-        dag.iterator().forEachRemaining(vertices::add);
         invokeOnParticipants(operationCtor,
                 responses -> finalizeJob(firstError(responses)),
                 error -> cancelInvocations(),
@@ -124,7 +127,7 @@ public class LightMasterContext {
             for (Vertex vertex : vertices) {
                 try {
                     vertex.getMetaSupplier().close(failure);
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     logger.severe(jobIdString
                             + " encountered an exception in ProcessorMetaSupplier.complete(), ignoring it", e);
                 }
@@ -137,7 +140,7 @@ public class LightMasterContext {
             // translate JobTerminateRequestedException(CANCEL_FORCEFUL) to CancellationException
             if (failure instanceof JobTerminateRequestedException
                     && ((JobTerminateRequestedException) failure).mode() == CANCEL_FORCEFUL) {
-                CancellationException newFailure = new CancellationException("job cancelled");
+                CancellationException newFailure = new CancellationException();
                 newFailure.initCause(failure);
                 failure = newFailure;
             }

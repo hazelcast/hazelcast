@@ -65,7 +65,7 @@ public class LightJobTest extends SimpleTestInClusterSupport {
         return useClient ? client() : instance();
     }
 
-    // TODO [viliam] parametrize the ExecutionLifecycleTest and CancellationTest for light jobs
+    // TODO [viliam] parametrize the CancellationTest for light jobs
 
     @Test
     public void test() {

@@ -45,6 +45,7 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
     private int localParallelism = 1;
     private String vertexName = "testVertex";
     private ProcessingGuarantee processingGuarantee = NONE;
+    private boolean isLightJob;
 
     @Nonnull @Override
     public JetInstance jetInstance() {
@@ -179,6 +180,20 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
     @Nonnull
     public TestProcessorMetaSupplierContext setProcessingGuarantee(@Nonnull ProcessingGuarantee processingGuarantee) {
         this.processingGuarantee = processingGuarantee;
+        return this;
+    }
+
+    @Override
+    public boolean isLightJob() {
+        return isLightJob;
+    }
+
+    /**
+     * Sets the isLightJob flag.
+     */
+    @Nonnull
+    public TestProcessorMetaSupplierContext setIsLightJob(boolean isLightJob) {
+        this.isLightJob = isLightJob;
         return this;
     }
 }

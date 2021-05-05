@@ -46,7 +46,6 @@ import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
 import static com.hazelcast.jet.impl.JetEvent.jetEvent;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -172,14 +171,14 @@ public final class TestProcessors {
                     initCalled.compareAndSet(false, true)
             );
             if (initError != null) {
-                throw sneakyThrow(initError);
+                throw new RuntimeException(initError);
             }
         }
 
         @Nonnull @Override
         public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
             if (getError != null) {
-                throw sneakyThrow(getError);
+                throw new RuntimeException(getError);
             }
             return a -> supplierFn.get();
         }
@@ -197,7 +196,7 @@ public final class TestProcessors {
             );
 
             if (closeError != null) {
-                throw sneakyThrow(closeError);
+                throw new RuntimeException(closeError);
             }
         }
     }
@@ -243,14 +242,14 @@ public final class TestProcessors {
             initCount.incrementAndGet();
 
             if (initError != null) {
-                throw sneakyThrow(initError);
+                throw new RuntimeException(initError);
             }
         }
 
         @Nonnull @Override
         public List<Processor> get(int count) {
             if (getError != null) {
-                throw sneakyThrow(getError);
+                throw new RuntimeException(getError);
             }
             return Stream.generate(supplier).limit(count).collect(toList());
         }
@@ -269,7 +268,7 @@ public final class TestProcessors {
                     + initCount.get() + " times!", closeCount.get() <= initCount.get());
 
             if (closeError != null) {
-                throw sneakyThrow(closeError);
+                throw new RuntimeException(closeError);
             }
         }
     }
@@ -339,14 +338,14 @@ public final class TestProcessors {
         protected void init(@Nonnull Context context) {
             initCount.incrementAndGet();
             if (initError != null) {
-                throw sneakyThrow(initError);
+                throw new RuntimeException(initError);
             }
         }
 
         @Override
         protected boolean tryProcess(int ordinal, @Nonnull Object item) {
             if (processError != null) {
-                throw sneakyThrow(processError);
+                throw new RuntimeException(processError);
             }
             return tryEmit(item);
         }
@@ -354,7 +353,7 @@ public final class TestProcessors {
         @Override
         public boolean complete() {
             if (completeError != null) {
-                throw sneakyThrow(completeError);
+                throw new RuntimeException(completeError);
             }
             return !streaming;
         }
@@ -363,7 +362,7 @@ public final class TestProcessors {
         public boolean saveToSnapshot() {
             saveToSnapshotCalled = true;
             if (saveToSnapshotError != null) {
-                throw sneakyThrow(saveToSnapshotError);
+                throw new RuntimeException(saveToSnapshotError);
             }
             return true;
         }
@@ -372,7 +371,7 @@ public final class TestProcessors {
         public boolean snapshotCommitFinish(boolean success) {
             onSnapshotCompletedCalled = true;
             if (onSnapshotCompleteError != null) {
-                throw sneakyThrow(onSnapshotCompleteError);
+                throw new RuntimeException(onSnapshotCompleteError);
             }
             return true;
         }
@@ -381,7 +380,7 @@ public final class TestProcessors {
         public void close() {
             closeCount.incrementAndGet();
             if (closeError != null) {
-                throw sneakyThrow(closeError);
+                throw new RuntimeException(closeError);
             }
         }
     }

@@ -26,6 +26,7 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.impl.processor.ExpectNothingP;
 import com.hazelcast.jet.impl.processor.MetaSupplierFromProcessorSupplier;
+import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -132,6 +133,7 @@ public interface ProcessorMetaSupplier extends Serializable {
      * <p>
      * If you rely on the fact that this method is run once per cluster, it can
      * happen that it is not called at all, if the coordinator member crashed.
+     * It can be also called multiple times, if the job restarts.
      *
      * @param error the exception (if any) that caused the job to fail;
      *              {@code null} in the case of successful job completion
@@ -480,5 +482,11 @@ public interface ProcessorMetaSupplier extends Serializable {
          * Returns the guarantee for current job.
          */
         ProcessingGuarantee processingGuarantee();
+
+        /**
+         * Returns if this job runs as a light job, see {@link
+         * JetInstance#newLightJob(Pipeline)}.
+         */
+        boolean isLightJob();
     }
 }

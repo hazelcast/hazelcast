@@ -264,7 +264,12 @@ public class JobExecutionService implements DynamicMetricsProvider {
 
         Set<Address> addresses = participants.stream().map(MemberInfo::getAddress).collect(toSet());
         ClassLoader jobCl = getClassLoader(plan.getJobConfig(), jobId);
-        doWithClassLoader(jobCl, () -> execCtx.initialize(coordinator, addresses, plan));
+        try {
+            doWithClassLoader(jobCl, () -> execCtx.initialize(coordinator, addresses, plan));
+        } catch (Throwable e) {
+            completeExecution(execCtx, new CancellationException());
+            throw e;
+        }
 
         // initial log entry with all of jobId, jobName, executionId
         if (logger.isFineEnabled()) {
@@ -553,7 +558,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
                         ExecutionContext execCtx = executionContexts.get(executionId);
                         if (execCtx != null) {
                             logger.fine("Terminating light job " + idToString(executionId)
-                                    + " because the coordinator doesn't know it or has it cancelled");
+                                    + " because the coordinator doesn't know it");
                             terminateExecution0(execCtx, TerminationMode.CANCEL_FORCEFUL);
                         }
                     }
@@ -605,8 +610,8 @@ public class JobExecutionService implements DynamicMetricsProvider {
 
     public void terminateExecution0(ExecutionContext executionContext, TerminationMode mode) {
         if (!executionContext.terminateExecution(mode)) {
-            // if the execution was terminated before it began, call completeExecution now. Otherwise,
-            // if the execution was already begun, this method will be called when the tasklets complete.
+            // If the execution was terminated before it began, call completeExecution now.
+            // Otherwise, if the execution was already begun, this method will be called when the tasklets complete.
             completeExecution(executionContext, new CancellationException());
         }
     }

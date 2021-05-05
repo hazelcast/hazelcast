@@ -47,6 +47,8 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ExecutionLifecycle_RestartableExceptionTest extends TestInClusterSupport {
 
+    // TODO [viliam] generalize for light jobs
+
     private static final RestartableException RESTARTABLE_EXCEPTION =
             new RestartableException("mock restartable exception");
 
