@@ -440,7 +440,7 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
 
         Resources.ExInst<SqlValidatorException> contextError = HazelcastResources.RESOURCES.cannotCastLiteralValue(
                 literalValue,
-                toType.getTypeFamily().getPublicType().name(),
+                toType.getTypeFamily().getPublicType().toString(),
                 e.getMessage()
         );
 

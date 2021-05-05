@@ -110,13 +110,13 @@ public class PositionFunctionIntegrationTest extends ExpressionTestSupport {
         checkError(sql("?", "?"), "Parameter at position 1 must be of VARCHAR type, but BOOLEAN was found (consider adding an explicit CAST)", STRING_VAL, BOOLEAN_VAL);
         checkError(sql("?", "?"), "Parameter at position 0 must be of VARCHAR type, but BOOLEAN was found (consider adding an explicit CAST)", BOOLEAN_VAL, STRING_VAL);
 
-        checkError(sql("?", "?"), "Parameter at position 0 must be of VARCHAR type, but TIMESTAMP_WITH_TIME_ZONE was found (consider adding an explicit CAST)", OFFSET_DATE_TIME_VAL, OFFSET_DATE_TIME_VAL);
-        checkError(sql("?", "?"), "Parameter at position 1 must be of VARCHAR type, but TIMESTAMP_WITH_TIME_ZONE was found (consider adding an explicit CAST)", STRING_VAL, OFFSET_DATE_TIME_VAL);
-        checkError(sql("?", "?"), "Parameter at position 0 must be of VARCHAR type, but TIMESTAMP_WITH_TIME_ZONE was found (consider adding an explicit CAST)", OFFSET_DATE_TIME_VAL, STRING_VAL);
+        checkError(sql("?", "?"), "Parameter at position 0 must be of VARCHAR type, but TIMESTAMP WITH TIME ZONE was found (consider adding an explicit CAST)", OFFSET_DATE_TIME_VAL, OFFSET_DATE_TIME_VAL);
+        checkError(sql("?", "?"), "Parameter at position 1 must be of VARCHAR type, but TIMESTAMP WITH TIME ZONE was found (consider adding an explicit CAST)", STRING_VAL, OFFSET_DATE_TIME_VAL);
+        checkError(sql("?", "?"), "Parameter at position 0 must be of VARCHAR type, but TIMESTAMP WITH TIME ZONE was found (consider adding an explicit CAST)", OFFSET_DATE_TIME_VAL, STRING_VAL);
 
         checkError(sql("?", "?", "?"), "Parameter at position 2 must be of INTEGER type, but VARCHAR was found (consider adding an explicit CAST)", STRING_VAL, STRING_VAL, STRING_VAL);
         checkError(sql("?", "?", "?"), "Parameter at position 2 must be of INTEGER type, but BOOLEAN was found (consider adding an explicit CAST)", STRING_VAL, STRING_VAL, BOOLEAN_VAL);
-        checkError(sql("?", "?", "?"), "Parameter at position 2 must be of INTEGER type, but TIMESTAMP_WITH_TIME_ZONE was found (consider adding an explicit CAST)", STRING_VAL, STRING_VAL, OFFSET_DATE_TIME_VAL);
+        checkError(sql("?", "?", "?"), "Parameter at position 2 must be of INTEGER type, but TIMESTAMP WITH TIME ZONE was found (consider adding an explicit CAST)", STRING_VAL, STRING_VAL, OFFSET_DATE_TIME_VAL);
     }
 
     @Test

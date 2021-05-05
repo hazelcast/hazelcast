@@ -69,25 +69,31 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     /** Parameter positions. */
     private final Map<Integer, SqlParserPos> parameterPositionMap = new HashMap<>();
 
+    /** Parameter values. */
+    private final List<Object> arguments;
+
     public HazelcastSqlValidator(
             SqlValidatorCatalogReader catalogReader,
             HazelcastTypeFactory typeFactory,
-            SqlConformance conformance
+            SqlConformance conformance,
+            List<Object> arguments
     ) {
-        this(null, catalogReader, typeFactory, conformance);
+        this(null, catalogReader, typeFactory, conformance, arguments);
     }
 
     public HazelcastSqlValidator(
             SqlOperatorTable extensionOperatorTable,
             SqlValidatorCatalogReader catalogReader,
             HazelcastTypeFactory typeFactory,
-            SqlConformance conformance
+            SqlConformance conformance,
+            List<Object> arguments
     ) {
         super(operatorTable(extensionOperatorTable), catalogReader, typeFactory, CONFIG.withSqlConformance(conformance));
 
         setTypeCoercion(new HazelcastTypeCoercion(this));
 
-        rewriteVisitor = new HazelcastSqlOperatorTable.RewriteVisitor(this);
+        this.rewriteVisitor = new HazelcastSqlOperatorTable.RewriteVisitor(this);
+        this.arguments = arguments;
     }
 
     private static SqlOperatorTable operatorTable(SqlOperatorTable extensionOperatorTable) {
@@ -215,6 +221,12 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
     public void setParameterConverter(int ordinal, ParameterConverter parameterConverter) {
         parameterConverterMap.put(ordinal, parameterConverter);
+    }
+
+    public Object getArgumentAt(int index) {
+        ParameterConverter parameterConverter = parameterConverterMap.get(index);
+        Object argument = arguments.get(index);
+        return parameterConverter.convert(argument);
     }
 
     public ParameterConverter[] getParameterConverters(SqlNode node) {

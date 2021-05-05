@@ -79,4 +79,12 @@ public class SqlUnsupportedFeaturesTest extends SqlTestSupport {
                 .hasCauseInstanceOf(QueryException.class)
                 .hasMessageContaining("Function 'EXISTS' does not exist");
     }
+
+    @Test
+    public void test_mapValueConstructor() {
+        TestBatchSqlConnector.create(sqlService, "b", 1);
+
+        assertThatThrownBy(() -> sqlService.execute("SELECT MAP[1, 2] FROM b"))
+                .hasMessageContaining("MAP VALUE CONSTRUCTOR not supported");
+    }
 }

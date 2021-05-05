@@ -20,6 +20,7 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.validate.ValidationUtil;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.schema.Table;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeComparability;
@@ -30,6 +31,7 @@ import org.apache.calcite.rel.type.StructKind;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlCollation;
+import org.apache.calcite.sql.SqlDynamicParam;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlIntervalQualifier;
 import org.apache.calcite.sql.SqlKind;
@@ -48,7 +50,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-import static org.apache.calcite.sql.SqlKind.MAP_VALUE_CONSTRUCTOR;
 import static org.apache.calcite.sql.type.SqlTypeName.MAP;
 import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
 
@@ -100,20 +101,23 @@ public abstract class JetDynamicTableFunction extends JetTableFunction {
     ) {
         SqlCallBinding binding = (SqlCallBinding) callBinding;
         SqlCall call = binding.getCall();
+        HazelcastSqlValidator validator = (HazelcastSqlValidator) binding.getValidator();
+
         return ValidationUtil.hasAssignment(call)
-                ? fromNamedArguments(functionName, parameters, call)
-                : fromPositionalArguments(functionName, parameters, call);
+                ? fromNamedArguments(functionName, parameters, call, validator)
+                : fromPositionalArguments(functionName, parameters, call, validator);
     }
 
     private static List<Object> fromNamedArguments(
             String functionName,
             List<JetTableFunctionParameter> parameters,
-            SqlCall call
+            SqlCall call,
+            HazelcastSqlValidator validator
     ) {
         List<Object> arguments = new ArrayList<>(parameters.size());
         for (JetTableFunctionParameter parameter : parameters) {
             SqlNode operand = findOperandByName(parameter.name(), call);
-            Object value = operand == null ? null : extractValue(functionName, parameter, operand);
+            Object value = operand == null ? null : extractValue(functionName, parameter, operand, validator);
             arguments.add(value);
         }
         return arguments;
@@ -133,11 +137,12 @@ public abstract class JetDynamicTableFunction extends JetTableFunction {
     private static List<Object> fromPositionalArguments(
             String functionName,
             List<JetTableFunctionParameter> parameters,
-            SqlCall call
+            SqlCall call,
+            HazelcastSqlValidator validator
     ) {
         List<Object> arguments = new ArrayList<>(parameters.size());
         for (int i = 0; i < call.operandCount(); i++) {
-            Object value = extractValue(functionName, parameters.get(i), call.operand(i));
+            Object value = extractValue(functionName, parameters.get(i), call.operand(i), validator);
             arguments.add(value);
         }
         for (int i = call.operandCount(); i < parameters.size(); i++) {
@@ -149,7 +154,8 @@ public abstract class JetDynamicTableFunction extends JetTableFunction {
     private static Object extractValue(
             String functionName,
             JetTableFunctionParameter parameter,
-            SqlNode operand
+            SqlNode operand,
+            HazelcastSqlValidator validator
     ) {
         if (operand.getKind() == SqlKind.DEFAULT) {
             return null;
@@ -157,15 +163,18 @@ public abstract class JetDynamicTableFunction extends JetTableFunction {
         if (SqlUtil.isNullLiteral(operand, true)) {
             return null;
         }
+        if (operand.getKind() == SqlKind.DYNAMIC_PARAM) {
+            return validator.getArgumentAt(((SqlDynamicParam) operand).getIndex());
+        }
 
         SqlTypeName parameterType = parameter.type();
-        if (SqlUtil.isLiteral(operand) && parameterType == VARCHAR) {
+        if (SqlUtil.isLiteral(operand) && parameterType == SqlTypeName.VARCHAR) {
             String value = extractStringValue(((SqlLiteral) operand));
             if (value != null) {
                 return value;
             }
-        } else if (operand.getKind() == MAP_VALUE_CONSTRUCTOR && parameterType == MAP) {
-            return extractMapValue(functionName, parameter, (SqlCall) operand);
+        } else if (operand.getKind() == SqlKind.MAP_VALUE_CONSTRUCTOR && parameterType == SqlTypeName.MAP) {
+            return extractMapValue(functionName, parameter, (SqlCall) operand, validator);
         }
         throw QueryException.error("Invalid argument of a call to function " + functionName + " - #"
                 + parameter.ordinal() + " (" + parameter.name() + "). Expected: " + parameterType
@@ -181,13 +190,14 @@ public abstract class JetDynamicTableFunction extends JetTableFunction {
     private static Map<String, String> extractMapValue(
             String functionName,
             JetTableFunctionParameter parameter,
-            SqlCall call
+            SqlCall call,
+            HazelcastSqlValidator validator
     ) {
         List<SqlNode> operands = call.getOperandList();
         Map<String, String> entries = new HashMap<>();
         for (int i = 0; i < operands.size(); i += 2) {
-            String key = extractMapLiteralValue(functionName, parameter, operands.get(i));
-            String value = extractMapLiteralValue(functionName, parameter, operands.get(i + 1));
+            String key = extractMapStringValue(functionName, parameter, operands.get(i), validator);
+            String value = extractMapStringValue(functionName, parameter, operands.get(i + 1), validator);
             if (entries.putIfAbsent(key, value) != null) {
                 throw QueryException.error(
                         "Duplicate entry in the MAP constructor in the call to function " + functionName + " - " +
@@ -197,11 +207,18 @@ public abstract class JetDynamicTableFunction extends JetTableFunction {
         return entries;
     }
 
-    private static String extractMapLiteralValue(
+    private static String extractMapStringValue(
             String functionName,
             JetTableFunctionParameter parameter,
-            SqlNode node
+            SqlNode node,
+            HazelcastSqlValidator validator
     ) {
+        if (node.getKind() == SqlKind.DYNAMIC_PARAM) {
+            Object value = validator.getArgumentAt(((SqlDynamicParam) node).getIndex());
+            if (value instanceof String) {
+                return (String) value;
+            }
+        }
         if (SqlUtil.isLiteral(node)) {
             SqlLiteral literal = (SqlLiteral) node;
             Object value = literal.getValue();

@@ -85,6 +85,9 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_KINDS.add(SqlKind.AND);
         SUPPORTED_KINDS.add(SqlKind.OR);
         SUPPORTED_KINDS.add(SqlKind.NOT);
+        SUPPORTED_KINDS.add(SqlKind.IN);
+        SUPPORTED_KINDS.add(SqlKind.NOT_IN);
+        SUPPORTED_KINDS.add(SqlKind.BETWEEN);
 
         // Arithmetics
         SUPPORTED_KINDS.add(SqlKind.PLUS);
@@ -119,6 +122,8 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_KINDS.add(SqlKind.LIKE);
         SUPPORTED_KINDS.add(SqlKind.TRIM);
 
+        SUPPORTED_KINDS.add(SqlKind.CASE);
+
         // Aggregations
         SUPPORTED_KINDS.add(SqlKind.COUNT);
         SUPPORTED_KINDS.add(SqlKind.MIN);
@@ -143,6 +148,10 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_OPERATORS = new HashSet<>();
 
         // Math
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.POWER);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.SQUARE);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.SQRT);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.CBRT);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.COS);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.SIN);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.TAN);
@@ -150,6 +159,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.ACOS);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.ASIN);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.ATAN);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.ATAN2);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.EXP);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.LN);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.LOG10);
@@ -175,6 +185,11 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.LTRIM);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.RTRIM);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.BTRIM);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.REPLACE);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.POSITION);
+
+        // Datetime
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.EXTRACT);
 
         // Extensions
         SUPPORTED_OPERATORS.add(SqlOption.OPERATOR);
@@ -210,8 +225,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         if (type.getTypeNameSpec() instanceof SqlUserDefinedTypeNameSpec) {
             SqlIdentifier typeName = type.getTypeName();
 
-            if (HazelcastTypeUtils.isObjectIdentifier(typeName)
-                    || HazelcastTypeUtils.isTimestampWithTimeZoneIdentifier(typeName)) {
+            if (HazelcastTypeUtils.isObjectIdentifier(typeName)) {
                 return null;
             }
         }

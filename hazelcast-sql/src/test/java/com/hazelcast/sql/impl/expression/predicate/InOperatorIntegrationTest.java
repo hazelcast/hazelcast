@@ -132,8 +132,8 @@ public class InOperatorIntegrationTest extends ExpressionTestSupport {
                 "Cannot parse VARCHAR value to DATE");
         checkFailure0(sqlQuery("IN (CAST('2020-01-01T14:01' AS TIMESTAMP))"), DATA_EXCEPTION,
                 "Cannot parse VARCHAR value to TIMESTAMP");
-        checkFailure0(sqlQuery("IN (CAST('2020-01-01T14:01+02:00' AS TIMESTAMP_WITH_TIME_ZONE))"), DATA_EXCEPTION,
-                "Cannot parse VARCHAR value to TIMESTAMP_WITH_TIME_ZONE");
+        checkFailure0(sqlQuery("IN (CAST('2020-01-01T14:01+02:00' AS TIMESTAMP WITH LOCAL TIME ZONE))"), DATA_EXCEPTION,
+                "Cannot parse VARCHAR value to TIMESTAMP WITH TIME ZONE");
 
         // in the following tests the conversion will succeed
         putAll("1", "2", "3");
@@ -154,7 +154,7 @@ public class InOperatorIntegrationTest extends ExpressionTestSupport {
                 SqlColumnType.VARCHAR, new String[]{"2021-01-02T01:01"});
 
         putAll("2021-01-01T01:01+01:00", "2021-01-02T01:01+01:00");
-        checkValues(sqlQuery("IN (CAST('2021-01-02T01:01+01:00' AS TIMESTAMP_WITH_TIME_ZONE), CAST('2021-01-03T01:01+01:00' AS TIMESTAMP_WITH_TIME_ZONE))"),
+        checkValues(sqlQuery("IN (CAST('2021-01-02T01:01+01:00' AS TIMESTAMP WITH LOCAL TIME ZONE), CAST('2021-01-03T01:01+01:00' AS TIMESTAMP WITH LOCAL TIME ZONE))"),
                 SqlColumnType.VARCHAR, new String[]{"2021-01-02T01:01+01:00"});
     }
 
@@ -202,7 +202,7 @@ public class InOperatorIntegrationTest extends ExpressionTestSupport {
         checkValues(sqlQuery("IN (1, 194919940239)"), SqlColumnType.VARCHAR, new String[]{"1"});
         checkValues(sqlQuery("IN (cast(1.0 as REAL), cast(2.3 as DOUBLE))"), SqlColumnType.VARCHAR, new String[]{"1"});
         putAll("2021-01-02T00:00:00+01:00", "2021-01-02T01:03:04+01:00");
-        checkValues(sqlQuery("NOT IN (CAST('2021-01-02' AS DATE), CAST('2021-01-02T01:03:04+01:00' AS TIMESTAMP_WITH_TIME_ZONE))"),
+        checkValues(sqlQuery("NOT IN (CAST('2021-01-02' AS DATE), CAST('2021-01-02T01:03:04+01:00' AS TIMESTAMP WITH LOCAL TIME ZONE))"),
                 SqlColumnType.VARCHAR, new String[]{"2021-01-02T00:00:00+01:00"});
 
         // this is a bug in Calcite that when an integer is followed by temporal type, it will try to coerce all right-hand values
@@ -234,13 +234,5 @@ public class InOperatorIntegrationTest extends ExpressionTestSupport {
 
     private String sqlQuery(String inClause) {
         return "SELECT this FROM map WHERE this " + inClause;
-    }
-
-    private String castError(String fromType, String toType) {
-        return fromType + " to " + toType;
-    }
-
-    private String sqlRowQuery(String inClause) {
-        return "SELECT this FROM map WHERE (key, __this) " + inClause;
     }
 }

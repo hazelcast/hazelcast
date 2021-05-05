@@ -72,6 +72,7 @@ import java.util.Map;
 
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.apache.calcite.rel.RelFieldCollation.Direction.ASCENDING;
 import static org.apache.calcite.rel.RelFieldCollation.Direction.DESCENDING;
@@ -474,6 +475,7 @@ public class PhysicalIndexScanTest extends IndexOptimizerTestSupport {
         OptimizerContext context = OptimizerContext.create(
                 HazelcastSchemaUtils.createCatalog(schema),
                 QueryUtils.prepareSearchPaths(null, null),
+                emptyList(),
                 2,
                 new HazelcastSqlBackend(null),
                 null

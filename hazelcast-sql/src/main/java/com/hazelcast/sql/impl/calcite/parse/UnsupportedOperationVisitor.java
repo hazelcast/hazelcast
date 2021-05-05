@@ -49,7 +49,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils.isObjectIdentifier;
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils.isTimestampWithTimeZoneIdentifier;
 
 /**
  * Visitor that throws exceptions for unsupported SQL features.
@@ -219,7 +218,7 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
         if (type.getTypeNameSpec() instanceof SqlUserDefinedTypeNameSpec) {
             SqlIdentifier typeName = type.getTypeName();
 
-            if (isObjectIdentifier(typeName) || isTimestampWithTimeZoneIdentifier(typeName)) {
+            if (isObjectIdentifier(typeName)) {
                 return null;
             }
         }
@@ -285,7 +284,6 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
             case CHAR:
             case TIMESTAMP:
             case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
-                // TODO: Add TIMESTAMP_WITH_LOCAL_TIME_ZONE support to the parser
             case DATE:
             case TIME:
             case ANY:
