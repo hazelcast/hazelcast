@@ -232,6 +232,60 @@
               ]
             }
           ]
+        },
+        "near-cache": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "time-to-live-seconds": {
+                "$ref": "#/definitions/Map/additionalProperties/properties/near-cache/properties/time-to-live-seconds"
+              },
+              "max-idle-seconds": {
+                "$ref": "#/definitions/Map/additionalProperties/properties/near-cache/properties/max-idle-seconds"
+              },
+              "invalidate-on-change": {
+                "$ref": "#/definitions/Map/additionalProperties/properties/near-cache/properties/invalidate-on-change"
+              },
+              "in-memory-format": {
+                "$ref": "#/definitions/Map/additionalProperties/properties/near-cache/properties/in-memory-format"
+              },
+              "serialize-keys": {
+                "$ref": "#/definitions/Map/additionalProperties/properties/near-cache/properties/serialize-keys"
+              },
+              "local-update-policy": {
+                "$ref": "#/definitions/Map/additionalProperties/properties/near-cache/properties/local-update-policy"
+              },
+              "eviction": {
+                "$ref": "#/definitions/Eviction"
+              },
+              "preloader": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "enabled": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "directory": {
+                    "type": "string",
+                    "default": ""
+                  },
+                  "store-initial-delay-seconds": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "default": 600
+                  },
+                  "store-interval-seconds": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "default": 600
+                  }
+                }
+              }
+            }
+          }
         }
       }
     }
@@ -1305,6 +1359,14 @@
                 "type": "boolean",
                 "default": false,
                 "description": "Sets if local entries are also cached in the Near Cache. This is useful when the in-memory format of the Near Cache is different from the backing data structure. This setting has no meaning on Hazelcast clients, since they have no local entries."
+              },
+              "local-update-policy": {
+                "description": "Defines how to reflect local updates to the Near Cache. Possible values:\\n * INVALIDATE: Local put and local remove immediately invalidate Near Cache.\\n * CACHE_ON_UPDATE: While local remove immediately invalidates Near Cache, local put adds new value to it.",
+                "enum": [
+                  "INVALIDATE",
+                  "CACHE_ON_UPDATE"
+                ],
+                "default": "INVALIDATE"
               },
               "eviction": {
                 "$ref": "#/definitions/Eviction"
