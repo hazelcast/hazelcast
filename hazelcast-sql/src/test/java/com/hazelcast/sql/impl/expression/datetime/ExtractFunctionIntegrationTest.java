@@ -383,33 +383,33 @@ public class ExtractFunctionIntegrationTest {
         public void whenUsingWrongType_thenFail() {
             put(1);
 
-            checkFailure0(sql("MONTH", "?"), SqlErrorCode.GENERIC, "Cannot extract field from BOOLEAN", BOOLEAN_VAL);
-            checkFailure0(sql("MONTH", "?"), SqlErrorCode.GENERIC, "Cannot extract field from TINYINT", BYTE_VAL);
-            checkFailure0(sql("MONTH", "?"), SqlErrorCode.GENERIC, "Cannot extract field from SMALLINT", SHORT_VAL);
-            checkFailure0(sql("MONTH", "?"), SqlErrorCode.GENERIC, "Cannot extract field from INTEGER", INTEGER_VAL);
-            checkFailure0(sql("MONTH", "?"), SqlErrorCode.GENERIC, "Cannot extract field from REAL", FLOAT_VAL);
-            checkFailure0(sql("MONTH", "?"), SqlErrorCode.GENERIC, "Cannot extract field from DOUBLE", DOUBLE_VAL);
-            checkFailure0(sql("MONTH", "?"), SqlErrorCode.GENERIC, "Cannot extract field from VARCHAR", STRING_VAL);
-            checkFailure0(sql("MONTH", "?"), SqlErrorCode.GENERIC, "Cannot extract field from VARCHAR", CHAR_VAL);
-            checkFailure0(sql("MONTH", "?"), SqlErrorCode.GENERIC, "Cannot extract field from DECIMAL", BIG_DECIMAL_VAL);
-            checkFailure0(sql("MONTH", "?"), SqlErrorCode.GENERIC, "Cannot extract field from DECIMAL", BIG_INTEGER_VAL);
+            checkFailure0(sql("MONTH", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot extract field from BOOLEAN", BOOLEAN_VAL);
+            checkFailure0(sql("MONTH", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot extract field from TINYINT", BYTE_VAL);
+            checkFailure0(sql("MONTH", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot extract field from SMALLINT", SHORT_VAL);
+            checkFailure0(sql("MONTH", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot extract field from INTEGER", INTEGER_VAL);
+            checkFailure0(sql("MONTH", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot extract field from REAL", FLOAT_VAL);
+            checkFailure0(sql("MONTH", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot extract field from DOUBLE", DOUBLE_VAL);
+            checkFailure0(sql("MONTH", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot extract field from VARCHAR", STRING_VAL);
+            checkFailure0(sql("MONTH", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot extract field from VARCHAR", CHAR_VAL);
+            checkFailure0(sql("MONTH", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot extract field from DECIMAL", BIG_DECIMAL_VAL);
+            checkFailure0(sql("MONTH", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot extract field from DECIMAL", BIG_INTEGER_VAL);
         }
 
         @Test
         public void whenExtractingUnsupportedFieldFromTime_thenFail() {
             put(1);
 
-            checkFailure0(sql("MILLENNIUM", "?"), SqlErrorCode.GENERIC, "Cannot extract MILLENNIUM from TIME", LOCAL_TIME_VAL);
-            checkFailure0(sql("CENTURY", "?"), SqlErrorCode.GENERIC, "Cannot extract CENTURY from TIME", LOCAL_TIME_VAL);
-            checkFailure0(sql("DECADE", "?"), SqlErrorCode.GENERIC, "Cannot extract DECADE from TIME", LOCAL_TIME_VAL);
-            checkFailure0(sql("DOW", "?"), SqlErrorCode.GENERIC, "Cannot extract DOW from TIME", LOCAL_TIME_VAL);
-            checkFailure0(sql("ISODOW", "?"), SqlErrorCode.GENERIC, "Cannot extract ISODOW from TIME", LOCAL_TIME_VAL);
-            checkFailure0(sql("ISOYEAR", "?"), SqlErrorCode.GENERIC, "Cannot extract ISOYEAR from TIME", LOCAL_TIME_VAL);
-            checkFailure0(sql("QUARTER", "?"), SqlErrorCode.GENERIC, "Cannot extract QUARTER from TIME", LOCAL_TIME_VAL);
-            checkFailure0(sql("WEEK", "?"), SqlErrorCode.GENERIC, "Cannot extract WEEK from TIME", LOCAL_TIME_VAL);
-            checkFailure0(sql("DAY", "?"), SqlErrorCode.GENERIC, "Cannot extract DAY from TIME", LOCAL_TIME_VAL);
-            checkFailure0(sql("DOY", "?"), SqlErrorCode.GENERIC, "Cannot extract DOY from TIME", LOCAL_TIME_VAL);
-            checkFailure0(sql("MONTH", "?"), SqlErrorCode.GENERIC, "Cannot extract MONTH from TIME", LOCAL_TIME_VAL);
+            checkFailure0(sql("MILLENNIUM", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot extract MILLENNIUM from TIME", LOCAL_TIME_VAL);
+            checkFailure0(sql("CENTURY", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot extract CENTURY from TIME", LOCAL_TIME_VAL);
+            checkFailure0(sql("DECADE", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot extract DECADE from TIME", LOCAL_TIME_VAL);
+            checkFailure0(sql("DOW", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot extract DOW from TIME", LOCAL_TIME_VAL);
+            checkFailure0(sql("ISODOW", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot extract ISODOW from TIME", LOCAL_TIME_VAL);
+            checkFailure0(sql("ISOYEAR", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot extract ISOYEAR from TIME", LOCAL_TIME_VAL);
+            checkFailure0(sql("QUARTER", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot extract QUARTER from TIME", LOCAL_TIME_VAL);
+            checkFailure0(sql("WEEK", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot extract WEEK from TIME", LOCAL_TIME_VAL);
+            checkFailure0(sql("DAY", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot extract DAY from TIME", LOCAL_TIME_VAL);
+            checkFailure0(sql("DOY", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot extract DOY from TIME", LOCAL_TIME_VAL);
+            checkFailure0(sql("MONTH", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot extract MONTH from TIME", LOCAL_TIME_VAL);
         }
 
         @Test

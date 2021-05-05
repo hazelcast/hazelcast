@@ -19,7 +19,9 @@ package com.hazelcast.sql.impl.expression.datetime;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.UniExpression;
@@ -52,7 +54,11 @@ public class ExtractFunction extends UniExpression<Double> implements Identified
             return null;
         }
 
-        return DateTimeUtils.extractField(object, extractField);
+        try {
+            return DateTimeUtils.extractField(object, extractField);
+        } catch (IllegalArgumentException e) {
+            throw QueryException.error(SqlErrorCode.DATA_EXCEPTION, e.getMessage(), e);
+        }
     }
 
     @Override
