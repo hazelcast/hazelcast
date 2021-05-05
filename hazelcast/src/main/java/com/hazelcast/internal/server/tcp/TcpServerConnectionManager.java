@@ -71,6 +71,7 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
     private final Function<EndpointQualifier, ChannelInitializer> channelInitializerFn;
     private final TcpServerConnector connector;
     private final TcpServerControl serverControl;
+    private final CompatibilityTcpServerControl compatibilityServerControl;
 
     private final AtomicInteger connectionIdGen = new AtomicInteger();
 
@@ -83,6 +84,7 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
         this.channelInitializerFn = channelInitializerFn;
         this.connector = new TcpServerConnector(this);
         this.serverControl = new TcpServerControl(this, serverContext, logger, supportedProtocolTypes);
+        this.compatibilityServerControl = new CompatibilityTcpServerControl(this, serverContext, logger, supportedProtocolTypes);
     }
 
     @Override
@@ -103,7 +105,16 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
 
     @Override
     public synchronized void accept(Packet packet) {
-        serverControl.process(packet);
+        // the packet was sent from 3.12 if the 4_0 flag is missing
+        // 4.0.1 and 4.2 members do not set this flag
+        // so this member should not be a part of a cluster
+        // with those members
+        boolean isCompatibility = !packet.isFlagRaised(Packet.FLAG_4_0);
+        if (isCompatibility) {
+            compatibilityServerControl.process(packet);
+        } else {
+            serverControl.process(packet);
+        }
     }
 
     @Override

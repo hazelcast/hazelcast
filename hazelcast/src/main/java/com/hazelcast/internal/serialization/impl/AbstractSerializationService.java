@@ -86,8 +86,8 @@ public abstract class AbstractSerializationService implements InternalSerializat
 
     private final IdentityHashMap<Class, SerializerAdapter> constantTypesMap;
     private final SerializerAdapter[] constantTypeIds;
-    private final ConcurrentMap<Class, SerializerAdapter> typeMap = new ConcurrentHashMap<>();
-    private final ConcurrentMap<Integer, SerializerAdapter> idMap = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Class, SerializerAdapter> typeMap = new ConcurrentHashMap<Class, SerializerAdapter>();
+    private final ConcurrentMap<Integer, SerializerAdapter> idMap = new ConcurrentHashMap<Integer, SerializerAdapter>();
     private final AtomicReference<SerializerAdapter> global = new AtomicReference<SerializerAdapter>();
 
     //Global serializer may override Java Serialization or not
@@ -151,6 +151,9 @@ public abstract class AbstractSerializationService implements InternalSerializat
     //region Serialization Service
     @Override
     public final <B extends Data> B toData(Object obj) {
+        if (isCompatibility) {
+            throw new UnsupportedOperationException("Only deserialization is supported in compatibility mode");
+        }
         return toData(obj, globalPartitioningStrategy);
     }
 
@@ -189,6 +192,9 @@ public abstract class AbstractSerializationService implements InternalSerializat
 
     @Override
     public final <B extends Data> B toData(Object obj, PartitioningStrategy strategy) {
+        if (isCompatibility) {
+            throw new UnsupportedOperationException("Only deserialization is supported in compatibility mode");
+        }
         if (obj == null) {
             return null;
         }

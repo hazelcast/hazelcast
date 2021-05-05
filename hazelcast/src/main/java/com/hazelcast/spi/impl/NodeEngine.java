@@ -72,6 +72,11 @@ public interface NodeEngine {
      */
     SerializationService getCompatibilitySerializationService();
 
+    /**
+     * Gets the ProxyService.
+     *
+     * @return the ProxyService
+     */
     ProxyService getProxyService();
 
     /**

@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.core.EntryView;
+import com.hazelcast.internal.compatibility.map.CompatibilityWanMapEntryView;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.record.Record;
@@ -64,5 +65,21 @@ public final class EntryViews {
                 .withTtl(expiryMetadata.getTtl())
                 .withMaxIdle(expiryMetadata.getMaxIdle())
                 .withExpirationTime(expiryMetadata.getExpirationTime());
+    }
+
+    public static <K, V> WanMapEntryView<K, V> createWanEntryView(Data key, Data value,
+                                                                  CompatibilityWanMapEntryView compatibilityView,
+                                                                  SerializationService serializationService) {
+        return new WanMapEntryView<K, V>(key, value, serializationService)
+                .withCost(compatibilityView.getCost())
+                .withVersion(compatibilityView.getVersion())
+                .withHits(compatibilityView.getHits())
+                .withLastAccessTime(compatibilityView.getLastAccessTime())
+                .withLastUpdateTime(compatibilityView.getLastUpdateTime())
+                .withTtl(compatibilityView.getTtl())
+                .withMaxIdle(compatibilityView.getMaxIdle())
+                .withCreationTime(compatibilityView.getCreationTime())
+                .withExpirationTime(compatibilityView.getExpirationTime())
+                .withLastStoredTime(compatibilityView.getLastStoredTime());
     }
 }
