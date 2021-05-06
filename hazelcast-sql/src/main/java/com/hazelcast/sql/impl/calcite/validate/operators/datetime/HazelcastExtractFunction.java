@@ -17,14 +17,15 @@
 package com.hazelcast.sql.impl.calcite.validate.operators.datetime;
 
 import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
-import com.hazelcast.sql.impl.calcite.validate.operand.AnyOperandChecker;
-import com.hazelcast.sql.impl.calcite.validate.operand.OperandCheckerProgram;
-import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.operators.ReplaceUnknownOperandTypeInference;
 import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastFunction;
+import com.hazelcast.sql.impl.calcite.validate.param.NoOpParameterConverter;
+import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlCall;
+import org.apache.calcite.sql.SqlDynamicParam;
 import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlKind;
+import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.SqlWriter;
 import org.apache.calcite.sql.type.ReturnTypes;
@@ -39,21 +40,30 @@ public final class HazelcastExtractFunction extends HazelcastFunction {
                 "EXTRACT",
                 SqlKind.EXTRACT,
                 ReturnTypes.DOUBLE_NULLABLE,
-                new ReplaceUnknownOperandTypeInference(
-                        new SqlTypeName[] {
-                                null,
-                                SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE
-                        }),
+                new ReplaceUnknownOperandTypeInference(SqlTypeName.ANY),
                 SqlFunctionCategory.SYSTEM
         );
     }
 
     @Override
     protected boolean checkOperandTypes(HazelcastCallBinding callBinding, boolean throwOnFailure) {
-        return new OperandCheckerProgram(
-                    AnyOperandChecker.INSTANCE,
-                    TypedOperandChecker.TIMESTAMP_WITH_TIMEZONE
-            ).check(callBinding, throwOnFailure);
+        SqlNode sourceOperand = callBinding.operand(1);
+
+        if (sourceOperand.getKind() == SqlKind.DYNAMIC_PARAM) {
+            int parameterIndex = ((SqlDynamicParam) sourceOperand).getIndex();
+            callBinding.getValidator().setParameterConverter(parameterIndex, NoOpParameterConverter.INSTANCE);
+        }
+
+        RelDataType fieldType = callBinding.getOperandType(0);
+        RelDataType sourceType = callBinding.getOperandType(1);
+
+        if (!isFieldValid(fieldType) || !isSourceValid(sourceType)) {
+            if (throwOnFailure) {
+                throw callBinding.newValidationSignatureError();
+            }
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -70,5 +80,32 @@ public final class HazelcastExtractFunction extends HazelcastFunction {
         call.operand(1).unparse(writer, leftPrec, rightPrec);
 
         writer.endFunCall(frame);
+    }
+
+    private static boolean isSourceValid(RelDataType sourceType) {
+        switch (sourceType.getSqlTypeName()) {
+            case TIMESTAMP:
+            case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
+            case DATE:
+            case TIME:
+            case ANY:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private static boolean isFieldValid(RelDataType fieldType) {
+        switch (fieldType.getSqlTypeName()) {
+            case INTERVAL_SECOND:
+            case INTERVAL_MINUTE:
+            case INTERVAL_HOUR:
+            case INTERVAL_DAY:
+            case INTERVAL_MONTH:
+            case INTERVAL_YEAR:
+                return true;
+            default:
+                return false;
+        }
     }
 }
