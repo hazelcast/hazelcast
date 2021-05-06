@@ -361,11 +361,14 @@
             }
           }
         },
-        "instance-tracking":  {
+        "instance-tracking": {
           "$ref": "#/definitions/InstanceTracking"
         },
         "metrics": {
           "$ref": "#/definitions/ClientMetrics"
+        },
+        "connection-strategy": {
+          "$ref": "#/definitions/ConnectionStrategy"
         }
       }
     }
@@ -2327,7 +2330,12 @@
             }
           },
           "propertyNames": {
-            "enum": ["enabled", "management-center", "jmx", "collection-frequency-seconds"]
+            "enum": [
+              "enabled",
+              "management-center",
+              "jmx",
+              "collection-frequency-seconds"
+            ]
           }
         },
         {
@@ -2342,7 +2350,11 @@
         },
         {
           "propertyNames": {
-            "enum": ["enabled", "jmx", "collection-frequency-seconds"]
+            "enum": [
+              "enabled",
+              "jmx",
+              "collection-frequency-seconds"
+            ]
           }
         }
       ]
@@ -4041,6 +4053,64 @@
               "type": "integer",
               "default": 3,
               "description": "Sets the scaling factor used by the adaptive receive window sizing function. For each distributed edge the receiving member regularly sends flow-control (\"ack\") packets to its sender which prevent it from sending too much data and overflowing the buffers. The sender is allowed to send the data one `receive window` further than the last acknowledged byte and the receive window is sized in proportion to the rate of processing at the receiver. Ack packets are sent in regular intervals (InstanceConfig#setFlowControlPeriodMs) and the `receive window multiplier` sets the factor of the linear relationship between the amount of data processed within one such interval and the size of the receive window. To put it another way, let us define an `ackworth` as the amount of data processed between two consecutive ack packets. The receive window multiplier determines the number of ackworths the sender can be ahead of the last acked byte. This setting has no effect on a non-distributed edge."
+            }
+          }
+        }
+      }
+    },
+    "ConnectionStrategy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "async-start": {
+          "type": "boolean",
+          "default": false,
+          "description": "If set to true, creating Hazelcast client does not wait for connecting to the cluster."
+        },
+        "reconnect-mode": {
+          "description": "Defines the reconnection mode. The valid values are:\\n * \"ON\": Enables reconnection in a blocking manner where all the waiting invocations are blocked until a cluster connection is established or failed. This is the default value.\\n * \"OFF\": Disables the reconnection.\\n * \"ASYNC\": Enables reconnection in a non-blocking manner where all the waiting invocations receive a HazelcastClientOfflineException.",
+          "enum": [
+            "ASYNC",
+            "ON",
+            "OFF"
+          ],
+          "default": "ON"
+        },
+        "connection-retry": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Defines the configuration used when retrying to connect to the cluster.",
+          "properties": {
+            "initial-backoff-millis": {
+              "type": "integer",
+              "default": 1000,
+              "minimum": 0,
+              "description": "Specifies how long to wait (backoff) after the first failure before retrying in milliseconds."
+            },
+            "max-backoff-millis": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 30000,
+              "description": "Specifies the upper limit for the backoff in milliseconds."
+            },
+            "multiplier": {
+              "type": "number",
+              "default": 1.05,
+              "minimum": 1.0,
+              "description": "Factor to multiply the backoff after a failed retry."
+            },
+            "cluster-connect-timeout-millis": {
+              "type": "integer",
+              "default": -1,
+              "minimum": -1,
+              "description": "Timeout value in milliseconds for the client to give up to connect to the current cluster Depending on FailoverConfig, a client can shutdown or start trying on alternative cluster after reaching the timeout. Its default value is -1. For the default value, the client will not stop trying to connect to the cluster. If the failover client is used, the client will start trying to connect alternative clusters after 120000 ms. For any other value, both the failover and non-failover client will use that as it is."
+            },
+            "jitter": {
+              "type": "number",
+              "default": 0,
+              "minimum": 0,
+              "maximum": 1,
+              "description": "Specifies by how much to randomize backoffs."
             }
           }
         }
