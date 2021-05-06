@@ -140,11 +140,6 @@ public final class HazelcastTypeUtils {
         return identifier.isSimple() && SqlColumnType.OBJECT.name().equalsIgnoreCase(identifier.getSimple());
     }
 
-    public static boolean isTimestampWithTimeZoneIdentifier(SqlIdentifier identifier) {
-        return identifier.isSimple()
-                && SqlColumnType.TIMESTAMP_WITH_TIME_ZONE.name().equalsIgnoreCase(identifier.getSimple());
-    }
-
     /**
      * @return {@code true} if the given type is a numeric type, {@code false}
      * otherwise.

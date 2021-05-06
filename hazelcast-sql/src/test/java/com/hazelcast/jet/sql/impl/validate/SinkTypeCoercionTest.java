@@ -147,10 +147,10 @@ public class SinkTypeCoercionTest extends SqlTestSupport {
                         .setExpectedFailureNonLiteral("Cannot assign to target field 'field1' of type TIMESTAMP from source field 'v' of type VARCHAR"),
                 TestParams.passingCase(1127, VARCHAR, TIMESTAMP_WITH_TIME_ZONE, "'2020-12-30T01:42:00-05:00'",
                         "2020-12-30T01:42:00-05:00", OffsetDateTime.of(2020, 12, 30, 1, 42, 0, 0, ZoneOffset.ofHours(-5)))
-                        .setExpectedFailureNonLiteral("Cannot assign to target field 'field1' of type TIMESTAMP_WITH_TIME_ZONE from source field 'v' of type VARCHAR"),
+                        .setExpectedFailureNonLiteral("Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field 'v' of type VARCHAR"),
                 TestParams.failingCase(1128, VARCHAR, TIMESTAMP_WITH_TIME_ZONE, "'foo'", "foo",
                         "Cannot parse VARCHAR value to TIMESTAMP_WITH_TIME_ZONE")
-                        .setExpectedFailureNonLiteral("Cannot assign to target field 'field1' of type TIMESTAMP_WITH_TIME_ZONE from source field 'v' of type VARCHAR"),
+                        .setExpectedFailureNonLiteral("Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field 'v' of type VARCHAR"),
                 TestParams.passingCase(1129, VARCHAR, OBJECT, "'foo'", "foo", "foo"),
 
                 // BOOLEAN
@@ -178,7 +178,7 @@ public class SinkTypeCoercionTest extends SqlTestSupport {
                 TestParams.failingCase(1212, BOOLEAN, TIMESTAMP, "true", "true",
                         "Cannot assign to target field 'field1' of type TIMESTAMP from source field '.+' of type BOOLEAN"),
                 TestParams.failingCase(1213, BOOLEAN, TIMESTAMP_WITH_TIME_ZONE, "true", "true",
-                        "Cannot assign to target field 'field1' of type TIMESTAMP_WITH_TIME_ZONE from source field '.+' of type BOOLEAN"),
+                        "Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type BOOLEAN"),
                 TestParams.passingCase(1214, BOOLEAN, OBJECT, "true", "true", true),
 
                 // TINYINT
@@ -200,7 +200,7 @@ public class SinkTypeCoercionTest extends SqlTestSupport {
                 TestParams.failingCase(1312, TINYINT, TIMESTAMP, "cast(42 as tinyint)",
                         "42", "Cannot assign to target field 'field1' of type TIMESTAMP from source field '.+' of type TINYINT"),
                 TestParams.failingCase(1313, TINYINT, TIMESTAMP_WITH_TIME_ZONE, "cast(42 as tinyint)",
-                        "42", "Cannot assign to target field 'field1' of type TIMESTAMP_WITH_TIME_ZONE from source field '.+' of type TINYINT"),
+                        "42", "Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type TINYINT"),
                 TestParams.passingCase(1314, TINYINT, OBJECT, "cast(42 as tinyint)", "42", (byte) 42),
 
                 // SMALLINT
@@ -224,7 +224,7 @@ public class SinkTypeCoercionTest extends SqlTestSupport {
                 TestParams.failingCase(1413, SMALLINT, TIMESTAMP, "cast(42 as smallint)",
                         "42", "Cannot assign to target field 'field1' of type TIMESTAMP from source field '.+' of type SMALLINT"),
                 TestParams.failingCase(1414, SMALLINT, TIMESTAMP_WITH_TIME_ZONE, "cast(42 as smallint)",
-                        "42", "Cannot assign to target field 'field1' of type TIMESTAMP_WITH_TIME_ZONE from source field '.+' of type SMALLINT"),
+                        "42", "Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type SMALLINT"),
                 TestParams.passingCase(1415, SMALLINT, OBJECT, "cast(42 as smallint)", "42", (short) 42),
 
                 // INTEGER
@@ -250,7 +250,7 @@ public class SinkTypeCoercionTest extends SqlTestSupport {
                 TestParams.failingCase(1514, INTEGER, TIMESTAMP, "cast(42 as integer)",
                         "42", "Cannot assign to target field 'field1' of type TIMESTAMP from source field '.+' of type INTEGER"),
                 TestParams.failingCase(1515, INTEGER, TIMESTAMP_WITH_TIME_ZONE, "cast(42 as integer)",
-                        "42", "Cannot assign to target field 'field1' of type TIMESTAMP_WITH_TIME_ZONE from source field '.+' of type INTEGER"),
+                        "42", "Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type INTEGER"),
                 TestParams.passingCase(1516, INTEGER, OBJECT, "cast(42 as integer)", "42", 42),
 
                 // BIGINT
@@ -278,7 +278,7 @@ public class SinkTypeCoercionTest extends SqlTestSupport {
                 TestParams.failingCase(1615, BIGINT, TIMESTAMP, "cast(42 as bigint)",
                         "42", "Cannot assign to target field 'field1' of type TIMESTAMP from source field '.+' of type BIGINT"),
                 TestParams.failingCase(1616, BIGINT, TIMESTAMP_WITH_TIME_ZONE, "cast(42 as bigint)",
-                        "42", "Cannot assign to target field 'field1' of type TIMESTAMP_WITH_TIME_ZONE from source field '.+' of type BIGINT"),
+                        "42", "Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type BIGINT"),
                 TestParams.passingCase(1617, BIGINT, OBJECT, "cast(42 as bigint)", "42", 42L),
 
                 // DECIMAL
@@ -308,7 +308,7 @@ public class SinkTypeCoercionTest extends SqlTestSupport {
                 TestParams.failingCase(1716, DECIMAL, TIMESTAMP, "cast(42 as decimal)",
                         "42", "Cannot assign to target field 'field1' of type TIMESTAMP from source field '.+' of type DECIMAL\\(38, 38\\)"),
                 TestParams.failingCase(1717, DECIMAL, TIMESTAMP_WITH_TIME_ZONE, "cast(42 as decimal)",
-                        "42", "Cannot assign to target field 'field1' of type TIMESTAMP_WITH_TIME_ZONE from source field '.+' of type DECIMAL\\(38, 38\\)"),
+                        "42", "Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type DECIMAL\\(38, 38\\)"),
                 TestParams.passingCase(1718, DECIMAL, OBJECT, "cast(42 as decimal)", "42", BigDecimal.valueOf(42)),
 
                 // REAL
@@ -338,7 +338,7 @@ public class SinkTypeCoercionTest extends SqlTestSupport {
                 TestParams.failingCase(1816, REAL, TIMESTAMP, "cast(42 as real)",
                         "42", "Cannot assign to target field 'field1' of type TIMESTAMP from source field '.+' of type REAL"),
                 TestParams.failingCase(1817, REAL, TIMESTAMP_WITH_TIME_ZONE, "cast(42 as real)",
-                        "42", "Cannot assign to target field 'field1' of type TIMESTAMP_WITH_TIME_ZONE from source field '.+' of type REAL"),
+                        "42", "Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type REAL"),
                 TestParams.passingCase(1818, REAL, OBJECT, "cast(42 as real)", "42", 42f),
 
                 // DOUBLE
@@ -370,7 +370,7 @@ public class SinkTypeCoercionTest extends SqlTestSupport {
                 TestParams.failingCase(1917, DOUBLE, TIMESTAMP, "cast(42 as double)",
                         "42", "Cannot assign to target field 'field1' of type TIMESTAMP from source field '.+' of type DOUBLE"),
                 TestParams.failingCase(1918, DOUBLE, TIMESTAMP_WITH_TIME_ZONE, "cast(42 as double)",
-                        "42", "Cannot assign to target field 'field1' of type TIMESTAMP_WITH_TIME_ZONE from source field '.+' of type DOUBLE"),
+                        "42", "Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type DOUBLE"),
                 TestParams.passingCase(1919, DOUBLE, OBJECT, "cast(42 as double)", "42", 42d),
 
                 // TIME
@@ -466,33 +466,33 @@ public class SinkTypeCoercionTest extends SqlTestSupport {
                         LocalDateTime.of(2020, 12, 30, 1, 42)),
 
                 // TIMESTAMP WITH TIME ZONE
-                TestParams.failingCase(2301, TIMESTAMP_WITH_TIME_ZONE, VARCHAR, "cast('2020-12-30T01:42:00-05:00' as timestamp with local time zone)",
-                        "2020-12-30T01:42:00-05:00", "Cannot assign to target field 'field1' of type VARCHAR from source field '.+' of type TIMESTAMP_WITH_TIME_ZONE"),
-                TestParams.failingCase(2302, TIMESTAMP_WITH_TIME_ZONE, BOOLEAN, "cast('2020-12-30T01:42:00-05:00' as timestamp with local time zone)",
-                        "2020-12-30T01:42:00-05:00", "Cannot assign to target field 'field1' of type BOOLEAN from source field '.+' of type TIMESTAMP_WITH_TIME_ZONE"),
-                TestParams.failingCase(2303, TIMESTAMP_WITH_TIME_ZONE, TINYINT, "cast('2020-12-30T01:42:00-05:00' as timestamp with local time zone)",
-                        "2020-12-30T01:42:00-05:00", "Cannot assign to target field 'field1' of type TINYINT from source field '.+' of type TIMESTAMP_WITH_TIME_ZONE"),
-                TestParams.failingCase(2304, TIMESTAMP_WITH_TIME_ZONE, SMALLINT, "cast('2020-12-30T01:42:00-05:00' as timestamp with local time zone)",
-                        "2020-12-30T01:42:00-05:00", "Cannot assign to target field 'field1' of type SMALLINT from source field '.+' of type TIMESTAMP_WITH_TIME_ZONE"),
-                TestParams.failingCase(2305, TIMESTAMP_WITH_TIME_ZONE, INTEGER, "cast('2020-12-30T01:42:00-05:00' as timestamp with local time zone)",
-                        "2020-12-30T01:42:00-05:00", "Cannot assign to target field 'field1' of type INTEGER from source field '.+' of type TIMESTAMP_WITH_TIME_ZONE"),
-                TestParams.failingCase(2306, TIMESTAMP_WITH_TIME_ZONE, BIGINT, "cast('2020-12-30T01:42:00-05:00' as timestamp with local time zone)",
-                        "2020-12-30T01:42:00-05:00", "Cannot assign to target field 'field1' of type BIGINT from source field '.+' of type TIMESTAMP_WITH_TIME_ZONE"),
-                TestParams.failingCase(2307, TIMESTAMP_WITH_TIME_ZONE, DECIMAL, "cast('2020-12-30T01:42:00-05:00' as timestamp with local time zone)",
-                        "2020-12-30T01:42:00-05:00", "Cannot assign to target field 'field1' of type DECIMAL\\(38, 38\\) from source field '.+' of type TIMESTAMP_WITH_TIME_ZONE"),
-                TestParams.failingCase(2308, TIMESTAMP_WITH_TIME_ZONE, REAL, "cast('2020-12-30T01:42:00-05:00' as timestamp with local time zone)",
-                        "2020-12-30T01:42:00-05:00", "Cannot assign to target field 'field1' of type REAL from source field '.+' of type TIMESTAMP_WITH_TIME_ZONE"),
-                TestParams.failingCase(2309, TIMESTAMP_WITH_TIME_ZONE, DOUBLE, "cast('2020-12-30T01:42:00-05:00' as timestamp with local time zone)",
-                        "2020-12-30T01:42:00-05:00", "Cannot assign to target field 'field1' of type DOUBLE from source field '.+' of type TIMESTAMP_WITH_TIME_ZONE"),
-                TestParams.passingCase(2310, TIMESTAMP_WITH_TIME_ZONE, TIME, "cast('2020-12-30T01:42:00-05:00' as timestamp with local time zone)",
+                TestParams.failingCase(2301, TIMESTAMP_WITH_TIME_ZONE, VARCHAR, "cast('2020-12-30T01:42:00-05:00' as timestamp with time zone)",
+                        "2020-12-30T01:42:00-05:00", "Cannot assign to target field 'field1' of type VARCHAR from source field '.+' of type TIMESTAMP WITH TIME ZONE"),
+                TestParams.failingCase(2302, TIMESTAMP_WITH_TIME_ZONE, BOOLEAN, "cast('2020-12-30T01:42:00-05:00' as timestamp with time zone)",
+                        "2020-12-30T01:42:00-05:00", "Cannot assign to target field 'field1' of type BOOLEAN from source field '.+' of type TIMESTAMP WITH TIME ZONE"),
+                TestParams.failingCase(2303, TIMESTAMP_WITH_TIME_ZONE, TINYINT, "cast('2020-12-30T01:42:00-05:00' as timestamp with time zone)",
+                        "2020-12-30T01:42:00-05:00", "Cannot assign to target field 'field1' of type TINYINT from source field '.+' of type TIMESTAMP WITH TIME ZONE"),
+                TestParams.failingCase(2304, TIMESTAMP_WITH_TIME_ZONE, SMALLINT, "cast('2020-12-30T01:42:00-05:00' as timestamp with time zone)",
+                        "2020-12-30T01:42:00-05:00", "Cannot assign to target field 'field1' of type SMALLINT from source field '.+' of type TIMESTAMP WITH TIME ZONE"),
+                TestParams.failingCase(2305, TIMESTAMP_WITH_TIME_ZONE, INTEGER, "cast('2020-12-30T01:42:00-05:00' as timestamp with time zone)",
+                        "2020-12-30T01:42:00-05:00", "Cannot assign to target field 'field1' of type INTEGER from source field '.+' of type TIMESTAMP WITH TIME ZONE"),
+                TestParams.failingCase(2306, TIMESTAMP_WITH_TIME_ZONE, BIGINT, "cast('2020-12-30T01:42:00-05:00' as timestamp with time zone)",
+                        "2020-12-30T01:42:00-05:00", "Cannot assign to target field 'field1' of type BIGINT from source field '.+' of type TIMESTAMP WITH TIME ZONE"),
+                TestParams.failingCase(2307, TIMESTAMP_WITH_TIME_ZONE, DECIMAL, "cast('2020-12-30T01:42:00-05:00' as timestamp with time zone)",
+                        "2020-12-30T01:42:00-05:00", "Cannot assign to target field 'field1' of type DECIMAL\\(38, 38\\) from source field '.+' of type TIMESTAMP WITH TIME ZONE"),
+                TestParams.failingCase(2308, TIMESTAMP_WITH_TIME_ZONE, REAL, "cast('2020-12-30T01:42:00-05:00' as timestamp with time zone)",
+                        "2020-12-30T01:42:00-05:00", "Cannot assign to target field 'field1' of type REAL from source field '.+' of type TIMESTAMP WITH TIME ZONE"),
+                TestParams.failingCase(2309, TIMESTAMP_WITH_TIME_ZONE, DOUBLE, "cast('2020-12-30T01:42:00-05:00' as timestamp with time zone)",
+                        "2020-12-30T01:42:00-05:00", "Cannot assign to target field 'field1' of type DOUBLE from source field '.+' of type TIMESTAMP WITH TIME ZONE"),
+                TestParams.passingCase(2310, TIMESTAMP_WITH_TIME_ZONE, TIME, "cast('2020-12-30T01:42:00-05:00' as timestamp with time zone)",
                         "2020-12-30T01:42:00-05:00", LocalTime.of(1, 42)),
-                TestParams.passingCase(2311, TIMESTAMP_WITH_TIME_ZONE, DATE, "cast('2020-12-30T01:42:00-05:00' as timestamp with local time zone)",
+                TestParams.passingCase(2311, TIMESTAMP_WITH_TIME_ZONE, DATE, "cast('2020-12-30T01:42:00-05:00' as timestamp with time zone)",
                         "2020-12-30T01:42:00-05:00", LocalDate.of(2020, 12, 30)),
-                TestParams.passingCase(2312, TIMESTAMP_WITH_TIME_ZONE, TIMESTAMP, "cast('2020-12-30T01:42:00-05:00' as timestamp with local time zone)",
+                TestParams.passingCase(2312, TIMESTAMP_WITH_TIME_ZONE, TIMESTAMP, "cast('2020-12-30T01:42:00-05:00' as timestamp with time zone)",
                         "2020-12-30T01:42:00-05:00", LocalDateTime.of(2020, 12, 30, 1, 42)),
-                TestParams.passingCase(2313, TIMESTAMP_WITH_TIME_ZONE, TIMESTAMP_WITH_TIME_ZONE, "cast('2020-12-30T01:42:00-05:00' as timestamp with local time zone)",
+                TestParams.passingCase(2313, TIMESTAMP_WITH_TIME_ZONE, TIMESTAMP_WITH_TIME_ZONE, "cast('2020-12-30T01:42:00-05:00' as timestamp with time zone)",
                         "2020-12-30T01:42:00-05:00", OffsetDateTime.of(2020, 12, 30, 1, 42, 0, 0, ZoneOffset.ofHours(-5))),
-                TestParams.passingCase(2314, TIMESTAMP_WITH_TIME_ZONE, OBJECT, "cast('2020-12-30T01:42:00-05:00' as timestamp with local time zone)",
+                TestParams.passingCase(2314, TIMESTAMP_WITH_TIME_ZONE, OBJECT, "cast('2020-12-30T01:42:00-05:00' as timestamp with time zone)",
                         "2020-12-30T01:42:00-05:00", OffsetDateTime.of(2020, 12, 30, 1, 42, 0, 0, ZoneOffset.ofHours(-5))),
 
                 // OBJECT
@@ -521,8 +521,8 @@ public class SinkTypeCoercionTest extends SqlTestSupport {
                 TestParams.failingCase(2412, OBJECT, TIMESTAMP, "cast(cast('2020-12-30T01:42:00' as timestamp) as object)", null,
                         "Cannot assign to target field 'field1' of type TIMESTAMP from source field 'EXPR\\$1' of type OBJECT"),
                 TestParams.failingCase(2413, OBJECT, TIMESTAMP_WITH_TIME_ZONE,
-                        "cast(cast('2020-12-30T01:42:00-05:00' as timestamp with local time zone) as object)", null,
-                        "Cannot assign to target field 'field1' of type TIMESTAMP_WITH_TIME_ZONE from source field 'EXPR\\$1' of type OBJECT"),
+                        "cast(cast('2020-12-30T01:42:00-05:00' as timestamp with time zone) as object)", null,
+                        "Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field 'EXPR\\$1' of type OBJECT"),
                 TestParams.passingCase(2414, OBJECT, OBJECT, "cast('foo' as object)",
                         null, "foo"),
         };

@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.pipeline;
 
+import com.hazelcast.collection.IList;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Util;
@@ -30,6 +31,7 @@ import com.hazelcast.jet.datamodel.ItemsByTag;
 import com.hazelcast.jet.datamodel.Tag;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
+import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -64,6 +66,7 @@ import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.summingLong;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -628,6 +631,28 @@ public class RebalanceBatchStageTest extends PipelineTestSupport {
                         e.getKey(),
                         tuple3(e.getValue().get(tag0), e.getValue().get(tag1), e.getValue().get(tag2))))
         );
+    }
+
+    @Test
+    public void twoConsecutiveRebalance() {
+        Pipeline p = Pipeline.create();
+        p.readFrom(TestSources.items(1, 2, 3, 4, 5, 6, 7, 8))
+                .rebalance()
+                .filter(simpleEvent -> true)
+                .setName("filter trues 1")
+                .filter(simpleEvent -> true)
+                .setName("filter trues 2")
+                .writeTo(SinkBuilder.sinkBuilder("sink", context -> context.jetInstance().getList("result" + context.globalProcessorIndex()))
+                .receiveFn((list, o) -> list.add(o)).build());
+
+        member.newJob(p).join();
+
+        IList<Object> result0 = member.getList("result0");
+        IList<Object> result1 = member.getList("result1");
+
+        assertThat(result0).hasSize(4);
+        assertThat(result1).hasSize(4);
+
     }
 
     @Nonnull

@@ -19,8 +19,14 @@ package com.hazelcast.sql.impl.expression.datetime;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.Row;
+import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.time.ZonedDateTime;
 
 public final class DateTimeUtils {
 
@@ -36,7 +42,20 @@ public final class DateTimeUtils {
         return expression.getType().getConverter().asTimestampWithTimezone(res);
     }
 
-    public static double extractField(OffsetDateTime time, ExtractField field) {
-        return field.extract(time);
+    public static double extractField(Object object, ExtractField field) {
+        if (object instanceof OffsetDateTime) {
+            return field.extract((OffsetDateTime) object);
+        } else if (object instanceof ZonedDateTime) {
+            return field.extract(((ZonedDateTime) object).toOffsetDateTime());
+        } else if (object instanceof LocalDateTime) {
+            return field.extract((LocalDateTime) object);
+        } else if (object instanceof LocalDate) {
+            return field.extract((LocalDate) object);
+        } else if (object instanceof LocalTime) {
+            return field.extract((LocalTime) object);
+        } else {
+            QueryDataType type = QueryDataTypeUtils.resolveTypeForClass(object.getClass());
+            throw new IllegalArgumentException("Cannot extract field from " + type.getTypeFamily().getPublicType());
+        }
     }
 }
