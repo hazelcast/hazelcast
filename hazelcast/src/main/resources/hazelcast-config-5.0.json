@@ -210,6 +210,9 @@
         },
         "connection-strategy": {
           "$ref": "#/definitions/ConnectionStrategy"
+        },
+        "security": {
+          "$ref": "#/definitions/ClientSecurity"
         }
       }
     }
@@ -2616,45 +2619,13 @@
                 "maxProperties": 1,
                 "properties": {
                   "username-password": {
-                    "type": "object",
-                    "additionalProperties": false,
-                    "description": "Defines a static UsernamePasswordCredentials instance as the member's identity. It has mandatory \"username\" and \"password\" attributes.",
-                    "properties": {
-                      "username": {
-                        "type": "string"
-                      },
-                      "password": {
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "username",
-                      "password"
-                    ]
+                    "$ref": "#/definitions/UsernamePasswordIdentity"
                   },
                   "token": {
-                    "type": "object",
-                    "additionalProperties": false,
-                    "description": "Defines a static TokenCredentials instance as the client's identity. It has a \"value\" and it can have also \"encoding\" defined.",
-                    "properties": {
-                      "encoding": {
-                        "enum": [
-                          "none",
-                          "base64"
-                        ]
-                      },
-                      "value": {
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "encoding",
-                      "value"
-                    ]
+                    "$ref": "#/definitions/TokenIdentity"
                   },
                   "credentials-factory": {
-                    "description": " Specifies the name and properties of your class that you developed by implementing Hazelcast's Credentials interface. This element has a mandatory \"class-name\" attribute where you should define the factory class implementing ICredentialsFactory used to create Credentials objects. With the \"properties\" child property, you can define properties for the factory class.",
-                    "$ref": "#/definitions/ClassNameWithProps"
+                    "$ref": "#/definitions/CredentialsFactoryIdentity"
                   }
                 }
               }
@@ -4133,6 +4104,74 @@
           }
         }
       }
+    },
+    "ClientSecurity": {
+      "type": "object",
+      "additionalProperties": false,
+      "propertyNames": {
+        "enum": [
+          "realms",
+          "username-password",
+          "kerberos",
+          "token",
+          "credentials-factory"
+        ]
+      },
+      "properties": {
+        "username-password": {
+          "$ref": "#/definitions/UsernamePasswordIdentity"
+        },
+        "token": {
+          "$ref": "#/definitions/TokenIdentity"
+        },
+        "credentials-factory": {
+          "$ref": "#/definitions/CredentialsFactoryIdentity"
+        },
+        "realms": {
+          "$ref": "#/definitions/Security/properties/realms"
+        }
+      }
+    },
+    "UsernamePasswordIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Defines a static UsernamePasswordCredentials instance as the member's identity. It has mandatory \"username\" and \"password\" attributes.",
+      "properties": {
+        "username": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "username",
+        "password"
+      ]
+    },
+    "TokenIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Defines a static TokenCredentials instance as the client's identity. It has a \"value\" and it can have also \"encoding\" defined.",
+      "properties": {
+        "encoding": {
+          "enum": [
+            "none",
+            "base64"
+          ]
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "encoding",
+        "value"
+      ]
+    },
+    "CredentialsFactoryIdentity": {
+      "description": " Specifies the name and properties of your class that you developed by implementing Hazelcast's Credentials interface. This element has a mandatory \"class-name\" attribute where you should define the factory class implementing ICredentialsFactory used to create Credentials objects. With the \"properties\" child property, you can define properties for the factory class.",
+      "$ref": "#/definitions/ClassNameWithProps"
     }
   }
 }
