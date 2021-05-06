@@ -4200,7 +4200,8 @@
             "ttl": {
               "description": "Maximum number of hops the packets should go through. You can set to 0 to use your system’s default TTL.",
               "type": "integer",
-              "default": 255
+              "default": 255,
+              "minimum": 0,
             },
             "echo-fail-fast-on-startup": {
               "description": "The client will fail to start if it is unable to action an ICMP ping command when ICMP is enabled. Failure is usually due to OS level restrictions.",
@@ -4320,11 +4321,13 @@
         "linger-seconds": {
           "type": "integer",
           "default": 3,
+          "minimum": 0,
           "description": "Enables/disables SO_LINGER with the specified linger time in seconds."
         },
         "buffer-size": {
           "type": "integer",
           "default": 128,
+          "minimum": 0,
           "description": "Sets the SO_SNDBUF and SO_RCVBUF options to the specified value in KB for this Socket."
         }
       }
