@@ -99,7 +99,7 @@ public class JetExtension {
             setActivated(true);
             logger.info("Jet extension is enabled");
         } else {
-            logger.info("Jet extension is disabled due to the current cluster version is lower than 5.0.");
+            logger.info("Jet extension is disabled due to current cluster version being less than 5.0.");
         }
     }
 
