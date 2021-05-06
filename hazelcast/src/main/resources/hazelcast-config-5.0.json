@@ -213,6 +213,9 @@
         },
         "security": {
           "$ref": "#/definitions/ClientSecurity"
+        },
+        "network": {
+          "$ref": "#/definitions/ClientNetwork"
         }
       }
     }
@@ -324,15 +327,7 @@
           }
         },
         "auto-detection": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "enabled": {
-              "type": "boolean",
-              "default": "true"
-            }
-          },
-          "description": "When enabled, it will walk through all available discovery strategies and detect the correct one for the current runtime environment. For example, it will automatically use the hazelcast-aws plugin if run on an AWS instance."
+          "$ref": "#/definitions/AutoDetection"
         },
         "tcp-ip": {
           "type": "object",
@@ -678,22 +673,7 @@
           "description": "Allows to configure Memcache text protocol support in Hazelcast."
         },
         "ssl": {
-          "type": "object",
-          "additionalProperties": false,
-          "description": "Lets you configure SSL using the SSL context factory. This feature is available only in Hazelcast Enterprise. To be able to use it, encryption should NOT be enabled and you should first implement your SSLContextFactory class. Its configuration contains the factory class and SSL properties. By default, it is disabled.",
-          "properties": {
-            "enabled": {
-              "type": "boolean",
-              "default": false
-            },
-            "factory-class-name": {
-              "type": "string",
-              "example": "com.hazelcast.nio.ssl.BasicSSLContextFactory"
-            },
-            "properties": {
-              "type": "object"
-            }
-          }
+          "$ref": "#/definitions/SSL"
         },
         "rest-api": {
           "type": "object",
@@ -734,21 +714,7 @@
           }
         },
         "socket-interceptor": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "enabled": {
-              "type": "boolean",
-              "default": false
-            },
-            "class-name": {
-              "type": "string"
-            },
-            "properties": {
-              "type": "object"
-            }
-          },
-          "description": "Lets you add custom hooks to join and perform connection procedures (like a custom authentication protocol, etc.). This feature is available only in Hazelcast Enterprise. To be able to use it, you should first implement the MemberSocketInterceptor (for members joining to a cluster) or SocketInterceptor (for clients connecting to a member) class. Its configuration contains the class you implemented and socket interceptor properties. By default, it is disabled."
+          "$ref": "#/definitions/SocketInterceptor"
         }
       }
     },
@@ -4172,6 +4138,196 @@
     "CredentialsFactoryIdentity": {
       "description": " Specifies the name and properties of your class that you developed by implementing Hazelcast's Credentials interface. This element has a mandatory \"class-name\" attribute where you should define the factory class implementing ICredentialsFactory used to create Credentials objects. With the \"properties\" child property, you can define properties for the factory class.",
       "$ref": "#/definitions/ClassNameWithProps"
+    },
+    "ClientNetwork": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "cluster-members": {
+          "description": "This sequence lets you list the members in your cluster the client is connecting to.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "outbound-ports": {
+          "$ref": "#/definitions/OutboundPorts"
+        },
+        "smart-routing": {
+          "type": "boolean",
+          "default": true,
+          "description": "If true, client will route the key based operations to owner of the key at the best effort. Note that it uses a cached version of com.hazelcast.core.PartitionService#getPartitions() and doesn't guarantee that the operation will always be executed on the owner. The cached table is updated every second."
+        },
+        "redo-operation": {
+          "type": "boolean",
+          "default": false,
+          "description": "If true, client will redo the operations that were executing on the server and client lost the connection. This can be because of network, or simply because the member died. However it is not clear whether the application is performed or not. For idempotent operations this is harmless, but for non idempotent ones retrying can cause to undesirable effects. Note that the redo can perform on any member. If false, the operation will throw a RuntimeException that is wrapping a java.io.IOException."
+        },
+        "socket-interceptor": {
+          "$ref": "#/definitions/SocketInterceptor"
+        },
+        "connection-timeout": {
+          "type": "integer",
+          "description": "Connection timeout is the timeout value in milliseconds for members to accept client connection requests. The following are the example configurations. Its default value is 5000.",
+          "default": 5000,
+          "minimum": 0
+        },
+        "icmp-ping": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": false,
+              "description": "Flag to enable icmp ping failure detector. When set to true, this client will use icmp ping failure detector to detect unavailable members."
+            },
+            "interval-milliseconds": {
+              "type": "integer",
+              "default": 1000,
+              "minimum": 1000,
+              "description": "Interval, in milliseconds, between each ping attempt. 1000ms (1 sec) is also the minimum interval allowed."
+            },
+            "timeout-milliseconds": {
+              "type": "integer",
+              "default": 1000,
+              "description": "Number of milliseconds until a ping attempt is considered failed if there was no reply."
+            },
+            "max-attempts": {
+              "type": "integer",
+              "description": "Maximum number of ping attempts before the member gets suspected by the detector.",
+              "default": 3
+            },
+            "ttl": {
+              "description": "Maximum number of hops the packets should go through. You can set to 0 to use your system’s default TTL.",
+              "type": "integer",
+              "default": 255
+            },
+            "echo-fail-fast-on-startup": {
+              "description": "The client will fail to start if it is unable to action an ICMP ping command when ICMP is enabled. Failure is usually due to OS level restrictions.",
+              "type": "boolean",
+              "default": true
+            }
+          }
+        },
+        "auto-detection": {
+          "$ref": "#/definitions/AutoDetection"
+        },
+        "azure": {
+          "$ref": "#/definitions/AzureDiscovery"
+        },
+        "gcp": {
+          "$ref": "#/definitions/GcpDiscovery"
+        },
+        "aws": {
+          "$ref": "#/definitions/AwsDiscovery"
+        },
+        "kubernetes": {
+          "$ref": "#/definitions/KubernetesDiscovery"
+        },
+        "ssl": {
+          "$ref": "#/definitions/SSL"
+        },
+        "eureka": {
+          "$ref": "#/definitions/EurekaDiscovery"
+        },
+        "discovery-strategies": {
+          "$ref": "#/definitions/DiscoveryStrategies"
+        },
+        "hazelcast-cloud": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Set its \"enabled\" sub-element to true for cluster discovery in the Hazelcast Cloud infrastructure. You need to define the mandatory \"discovery-token\" sub-node used by the discovery mechanism.",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": false
+            },
+            "discovery-token": {
+              "type": "string"
+            }
+          }
+        },
+        "socket-options": {
+          "$ref": "#/definitions/ClientSocketOptions"
+        }
+      }
+    },
+    "SocketInterceptor": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "class-name": {
+          "type": "string"
+        },
+        "properties": {
+          "type": "object"
+        }
+      },
+      "description": "Lets you add custom hooks to join and perform connection procedures (like a custom authentication protocol, etc.). This feature is available only in Hazelcast Enterprise. To be able to use it, you should first implement the MemberSocketInterceptor (for members joining to a cluster) or SocketInterceptor (for clients connecting to a member) class. Its configuration contains the class you implemented and socket interceptor properties. By default, it is disabled."
+    },
+    "AutoDetection": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": "true"
+        }
+      },
+      "description": "When enabled, it will walk through all available discovery strategies and detect the correct one for the current runtime environment. For example, it will automatically use the hazelcast-aws plugin if run on an AWS instance."
+    },
+    "SSL": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Lets you configure SSL using the SSL context factory. This feature is available only in Hazelcast Enterprise. To be able to use it, encryption should NOT be enabled and you should first implement your SSLContextFactory class. Its configuration contains the factory class and SSL properties. By default, it is disabled.",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "factory-class-name": {
+          "type": "string",
+          "example": "com.hazelcast.nio.ssl.BasicSSLContextFactory"
+        },
+        "properties": {
+          "type": "object"
+        }
+      }
+    },
+    "ClientSocketOptions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "tcp-no-delay": {
+          "description": "Enables/disables the TCP_NODELAY socket option.",
+          "default": true,
+          "type": "boolean"
+        },
+        "keep-alive": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enables/disables the SO_KEEPALIVE socket option."
+        },
+        "reuse-address": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enables/disables the SO_REUSEADDR socket option."
+        },
+        "linger-seconds": {
+          "type": "integer",
+          "default": 3,
+          "description": "Enables/disables SO_LINGER with the specified linger time in seconds."
+        },
+        "buffer-size": {
+          "type": "integer",
+          "default": 128,
+          "description": "Sets the SO_SNDBUF and SO_RCVBUF options to the specified value in KB for this Socket."
+        }
+      }
     }
   }
 }
