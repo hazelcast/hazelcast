@@ -32,6 +32,7 @@ import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.server.NetworkStats;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.server.ServerContext;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.executor.StripedRunnable;
 
 import java.io.IOException;
@@ -39,6 +40,10 @@ import java.nio.channels.SocketChannel;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -58,11 +63,9 @@ import static com.hazelcast.internal.nio.ConnectionType.REST_CLIENT;
 import static com.hazelcast.internal.nio.IOUtil.close;
 import static com.hazelcast.internal.nio.IOUtil.setChannelOptions;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import static java.lang.Math.abs;
 import static java.util.Arrays.stream;
 import static java.util.Collections.unmodifiableSet;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -124,11 +127,15 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
         Plane plane = getPlane(streamId);
         TcpServerConnection connection = plane.connectionMap.get(address);
         if (connection == null && server.isLive()) {
-            if (plane.connectionsInProgress.putIfAbsent(address, new CountDownLatch(1)) == null) {
+            final AtomicBoolean isNotYetInProgress = new AtomicBoolean();
+            plane.connectionsInProgress.computeIfAbsent(address, key -> {
+                isNotYetInProgress.set(true);
+                return connector.asyncConnect(address, silent, plane.index);
+            });
+            if (isNotYetInProgress.get()) {
                 if (logger.isFineEnabled()) {
                     logger.fine("Connection to: " + address + " streamId:" + streamId + " is not yet progress");
                 }
-                connector.asyncConnect(address, silent, plane.index);
             } else {
                 if (logger.isFineEnabled()) {
                     logger.fine("Connection to: " + address + " streamId:" + streamId + " is already in progress");
@@ -178,7 +185,7 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
             });
             return true;
         } finally {
-            unblock(plane, remoteAddress);
+            plane.connectionsInProgress.remove(remoteAddress);
         }
     }
 
@@ -202,10 +209,7 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
 
         connections.forEach(conn -> close(conn, "TcpServer is stopping"));
         acceptedChannels.clear();
-        stream(planes).forEach(plane -> {
-            plane.connectionsInProgress.forEach((address, holder) -> unblock(plane, address));
-            plane.connectionsInProgress.clear();
-        });
+        stream(planes).forEach(plane -> plane.connectionsInProgress.clear());
         stream(planes).forEach(plane -> plane.errorHandlers.clear());
 
         connections.clear();
@@ -245,7 +249,7 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
     }
 
     void failedConnection(Address address, int planeIndex, Throwable t, boolean silent) {
-        unblock(planes[planeIndex], address);
+        planes[planeIndex].connectionsInProgress.remove(address);
         serverContext.onFailedConnection(address);
         if (!silent) {
             getErrorHandler(address, planeIndex, false).onError(t);
@@ -351,22 +355,21 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
         }
     }
 
-    @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED")
     @Override
-    public void blockOnConnect(Address address, long millis, int streamId) throws InterruptedException {
+    public boolean blockOnConnect(Address address, long millis, int streamId) throws InterruptedException {
         Plane plane = getPlane(streamId);
-        CountDownLatch latch = new CountDownLatch(1);
-        CountDownLatch previous = plane.connectionsInProgress.putIfAbsent(address, latch);
-        if (previous != null) {
-            latch = previous;
-        }
-        latch.await(millis, TimeUnit.MILLISECONDS);
-    }
-
-    private void unblock(Plane plane, final Address remoteAddress) {
-        CountDownLatch latch = plane.connectionsInProgress.remove(remoteAddress);
-        if (latch != null) {
-            latch.countDown();
+        try {
+            Future<Void> future = plane.connectionsInProgress.get(address);
+            if (future != null) {
+                future.get(millis, TimeUnit.MILLISECONDS);
+                return future.isDone();
+            } else {
+                // connection-in-progress has come and gone,
+                // so we are not timed out here
+                return true;
+            }
+        } catch (ExecutionException | TimeoutException ex) {
+            throw ExceptionUtil.rethrow(ex);
         }
     }
 }

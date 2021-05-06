@@ -55,6 +55,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
@@ -196,14 +198,16 @@ public class MockServerContext implements ServerContext {
     }
 
     @Override
-    public void executeAsync(final Runnable runnable) {
-        new Thread(() -> {
+    public Future<Void> executeAsync(final Runnable runnable) {
+        FutureTask<Void> future = new FutureTask<>(() -> {
             try {
                 runnable.run();
             } catch (Throwable t) {
                 logger.severe(t);
             }
-        }).start();
+        }, null);
+        new Thread(() -> future.run()).start();
+        return future;
     }
 
     @Override

@@ -1073,8 +1073,13 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         return "ClusterService" + "{address=" + getThisAddress() + '}';
     }
 
-    @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED")
-    public void blockOnJoin(long millis) throws InterruptedException {
-        joined.get().latch.await(millis, TimeUnit.MILLISECONDS);
+    /**
+     *
+     * @param millis
+     * @return true is cluster has been joined, false if timed out
+     * @throws InterruptedException
+     */
+    public boolean blockOnJoin(long millis) throws InterruptedException {
+        return joined.get().latch.await(millis, TimeUnit.MILLISECONDS);
     }
 }

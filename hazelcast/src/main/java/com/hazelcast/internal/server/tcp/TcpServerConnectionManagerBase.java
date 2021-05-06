@@ -48,7 +48,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -116,7 +116,7 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
 
     static class Plane {
         final ConcurrentHashMap<Address, TcpServerConnection> connectionMap = new ConcurrentHashMap<>(100);
-        final Map<Address, CountDownLatch> connectionsInProgress = new ConcurrentHashMap<>();
+        final Map<Address, Future<Void>> connectionsInProgress = new ConcurrentHashMap<>();
         final ConcurrentHashMap<Address, TcpServerConnectionErrorHandler> errorHandlers = new ConcurrentHashMap<>(100);
         final int index;
 

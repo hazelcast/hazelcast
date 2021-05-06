@@ -222,9 +222,11 @@ public interface ServerConnectionManager
      * @param address
      * @param millis
      * @param streamId
+     * @return true is connected successfully, false if timed out
      * @throws java.lang.InterruptedException
      */
-    default void blockOnConnect(Address address, long millis, int streamId) throws InterruptedException {
+    default boolean blockOnConnect(Address address, long millis, int streamId) throws InterruptedException {
         LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(millis));
+        return false;
     }
 }
