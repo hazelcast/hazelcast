@@ -26,6 +26,7 @@ import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.LightJob;
+import com.hazelcast.jet.RestartableException;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.ListSource;
@@ -99,6 +100,12 @@ import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
 
+/**
+ * This class tests that if a {@link RestartableException} is thrown in any
+ * processor or processor supplier methods, the job restarts.
+ * <p>
+ * For light jobs it tests that the job fails with this exception.
+ */
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})

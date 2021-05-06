@@ -115,7 +115,7 @@ public class LightMasterContext {
             return new InitExecutionOperation(jobId, jobId, membersView.getVersion(), participants, serializedPlan, true);
         };
         invokeOnParticipants(operationCtor,
-                responses -> finalizeJob(firstError(responses)),
+                responses -> finalizeJob(findError(responses)),
                 error -> cancelInvocations(),
                 false);
         return jobCompletionFuture;
@@ -231,9 +231,20 @@ public class LightMasterContext {
         return clusterService.getMembershipManager().getMembersView();
     }
 
-    private Throwable firstError(Collection<Object> responses) {
-        return responses.stream().filter(Throwable.class::isInstance).map(Throwable.class::cast)
-                        .findFirst().orElse(null);
+    /**
+     * Returns any error from a collection of responses. Ignores non-Throwable
+     * responses. Exceptions other than {@link CancellationException} and
+     * {@link JobTerminateRequestedException} take precedence.
+     */
+    private Throwable findError(Collection<Object> responses) {
+        Throwable result = null;
+        for (Object response : responses) {
+            if (response instanceof Throwable
+                    && (result == null || result instanceof JobTerminateRequestedException || result instanceof CancellationException)) {
+                result = (Throwable) response;
+            }
+        }
+        return result;
     }
 
     public void requestTermination() {
