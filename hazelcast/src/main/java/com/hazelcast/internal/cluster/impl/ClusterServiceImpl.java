@@ -562,6 +562,17 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     @Override
+    public MemberImpl getMember(Collection<Address> addressAliases) {
+        for (Address address : addressAliases) {
+            MemberImpl member = getMember(address);
+            if (member != null) {
+                return member;
+            }
+        }
+        return null;
+    }
+
+    @Override
     public MemberImpl getMember(Address address) {
         if (address == null) {
             return null;

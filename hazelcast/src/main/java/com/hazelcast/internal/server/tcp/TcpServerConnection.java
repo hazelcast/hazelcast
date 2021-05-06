@@ -27,19 +27,23 @@ import com.hazelcast.internal.nio.ConnectionLifecycleListener;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.server.ServerContext;
+import com.hazelcast.internal.util.AddressUtil;
 import com.hazelcast.logging.ILogger;
+import org.jetbrains.annotations.NotNull;
 
+import javax.security.auth.login.LoginContext;
+import javax.security.auth.login.LoginException;
 import java.io.EOFException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.channels.CancelledKeyException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
-
-import javax.security.auth.login.LoginContext;
-import javax.security.auth.login.LoginException;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_CONNECTION_CONNECTION_TYPE;
 import static com.hazelcast.internal.metrics.ProbeUnit.ENUM;
@@ -248,7 +252,8 @@ public class TcpServerConnection implements ServerConnection {
         }
 
         lifecycleListener.onConnectionClose(this, null, false);
-        serverContext.onDisconnect(remoteAddress, cause);
+
+        serverContext.onDisconnect(addressAliases(), cause);
 
         LoginContext lc = (LoginContext) attributeMap.remove(LoginContext.class);
         if (lc != null) {
@@ -261,6 +266,15 @@ public class TcpServerConnection implements ServerConnection {
         if (cause != null && errorHandler != null) {
             errorHandler.onError(cause);
         }
+    }
+
+    @NotNull
+    private List<Address> addressAliases() {
+        List<Address> addressAliases = new ArrayList<>();
+        addressAliases.add(remoteAddress);
+        addressAliases.addAll(AddressUtil.getAliases(getRemoteSocketAddress())
+                .stream().filter(a -> !a.equals(remoteAddress)).collect(Collectors.toSet()));
+        return addressAliases;
     }
 
     public boolean setHandshake() {

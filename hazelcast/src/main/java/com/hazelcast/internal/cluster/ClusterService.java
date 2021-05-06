@@ -16,11 +16,11 @@
 
 package com.hazelcast.internal.cluster;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MemberSelector;
 import com.hazelcast.cluster.impl.MemberImpl;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.services.CoreService;
 
 import java.util.Collection;
@@ -32,6 +32,14 @@ import java.util.UUID;
  * This API is an internal API; the end user will use the {@link Cluster} interface.
  */
 public interface ClusterService extends CoreService, Cluster {
+
+    /**
+     * Gets the first member matching any of the provided addresses.
+     *
+     * @param addressAliases a collection of known addresses that could belong to a certain member
+     * @return the found member, or {@code null} if not found ({@code null} collection not allowed)
+     */
+    MemberImpl getMember(Collection<Address> addressAliases);
 
     /**
      * Gets the member for the given address.

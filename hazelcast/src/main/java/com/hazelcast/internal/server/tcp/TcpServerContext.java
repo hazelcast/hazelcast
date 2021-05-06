@@ -19,6 +19,7 @@ package com.hazelcast.internal.server.tcp;
 import com.hazelcast.auditlog.AuditlogService;
 import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.config.AdvancedNetworkConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EndpointConfig;
@@ -37,8 +38,8 @@ import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.server.ServerConnection;
+import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.util.AddressUtil;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.MemberSocketInterceptor;
@@ -52,6 +53,7 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -179,14 +181,15 @@ public class TcpServerContext implements ServerContext {
     }
 
     @Override
-    public void onDisconnect(final Address endpoint, Throwable cause) {
+    public void onDisconnect(final List<Address> endpointAddresses, Throwable cause) {
         if (cause == null) {
             // connection is closed explicitly. we should not attempt to reconnect
             return;
         }
 
-        if (node.clusterService.getMember(endpoint) != null) {
-            nodeEngine.getExecutionService().execute(ExecutionService.IO_EXECUTOR, new ReconnectionTask(endpoint));
+        MemberImpl member = node.clusterService.getMember(endpointAddresses);
+        if (member != null) {
+            nodeEngine.getExecutionService().execute(ExecutionService.IO_EXECUTOR, new ReconnectionTask(member.getAddress()));
         }
     }
 
