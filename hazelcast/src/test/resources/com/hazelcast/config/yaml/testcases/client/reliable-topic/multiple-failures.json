@@ -14,36 +14,29 @@
     }
   },
   "error": {
-    "schemaLocation": "#/properties/hazelcast-client/properties/reliable-topic",
+    "schemaLocation": "#/definitions/ClientReliableTopic",
     "pointerToViolation": "#/hazelcast-client/reliable-topic",
     "causingExceptions": [
       {
-        "schemaLocation": "#/properties/hazelcast-client/properties/reliable-topic/additionalProperties/properties/read-batch-size",
-        "pointerToViolation": "#/hazelcast-client/reliable-topic/other-topic/read-batch-size",
-        "causingExceptions": [],
-        "keyword": "minimum",
-        "message": "0 is not greater or equal to 1"
-      },
-      {
-        "schemaLocation": "#/properties/hazelcast-client/properties/reliable-topic/additionalProperties",
+        "schemaLocation": "#/definitions/ClientReliableTopic/additionalProperties",
         "pointerToViolation": "#/hazelcast-client/reliable-topic/my-reliable-topic",
         "causingExceptions": [
           {
-            "schemaLocation": "#/properties/hazelcast-client/properties/reliable-topic/additionalProperties",
+            "schemaLocation": "#/definitions/ClientReliableTopic/additionalProperties",
             "pointerToViolation": "#/hazelcast-client/reliable-topic/my-reliable-topic",
             "causingExceptions": [],
             "keyword": "additionalProperties",
             "message": "extraneous key [unknown] is not permitted"
           },
           {
-            "schemaLocation": "#/properties/hazelcast-client/properties/reliable-topic/additionalProperties/properties/read-batch-size",
+            "schemaLocation": "#/definitions/ClientReliableTopic/additionalProperties/properties/read-batch-size",
             "pointerToViolation": "#/hazelcast-client/reliable-topic/my-reliable-topic/read-batch-size",
             "causingExceptions": [],
             "keyword": "type",
             "message": "expected type: Integer, found: String"
           },
           {
-            "schemaLocation": "#/properties/hazelcast-client/properties/reliable-topic/additionalProperties/properties/topic-overload-policy",
+            "schemaLocation": "#/definitions/ClientReliableTopic/additionalProperties/properties/topic-overload-policy",
             "pointerToViolation": "#/hazelcast-client/reliable-topic/my-reliable-topic/topic-overload-policy",
             "causingExceptions": [],
             "keyword": "enum",
@@ -51,6 +44,13 @@
           }
         ],
         "message": "3 schema violations found"
+      },
+      {
+        "schemaLocation": "#/definitions/ClientReliableTopic/additionalProperties/properties/read-batch-size",
+        "pointerToViolation": "#/hazelcast-client/reliable-topic/other-topic/read-batch-size",
+        "causingExceptions": [],
+        "keyword": "minimum",
+        "message": "0 is not greater or equal to 1"
       }
     ],
     "message": "4 schema violations found"

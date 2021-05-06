@@ -7,20 +7,20 @@
     }
   },
   "error": {
-    "schemaLocation": "#/properties/hazelcast-client/properties/load-balancer",
+    "schemaLocation": "#/definitions/LoadBalancer",
     "pointerToViolation": "#/hazelcast-client/load-balancer",
     "causingExceptions": [{
       "pointerToViolation": "#/hazelcast-client/load-balancer",
       "causingExceptions": [
         {
-          "schemaLocation": "#/properties/hazelcast-client/properties/load-balancer/anyOf/0",
+          "schemaLocation": "#/definitions/LoadBalancer/anyOf/0",
           "pointerToViolation": "#/hazelcast-client/load-balancer",
           "causingExceptions": [],
           "keyword": "not",
           "message": "subject must not be valid against schema {\"properties\":{\"type\":{\"const\":\"custom\"}}}"
         },
         {
-          "schemaLocation": "#/properties/hazelcast-client/properties/load-balancer/anyOf/1",
+          "schemaLocation": "#/definitions/LoadBalancer/anyOf/1",
           "pointerToViolation": "#/hazelcast-client/load-balancer",
           "causingExceptions": [],
           "keyword": "required",

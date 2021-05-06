@@ -7,10 +7,10 @@
     }
   },
   "error": {
-    "schemaLocation": "#/properties/hazelcast-client/properties/load-balancer",
+    "schemaLocation": "#/definitions/LoadBalancer",
     "pointerToViolation": "#/hazelcast-client/load-balancer",
     "causingExceptions": [{
-      "schemaLocation": "#/properties/hazelcast-client/properties/load-balancer/properties/type",
+      "schemaLocation": "#/definitions/LoadBalancer/properties/type",
       "pointerToViolation": "#/hazelcast-client/load-balancer/type",
       "causingExceptions": [],
       "keyword": "enum",

@@ -12,36 +12,36 @@
     }
   },
   "error": {
-    "schemaLocation": "#/properties/hazelcast-client/properties/user-code-deployment",
+    "schemaLocation": "#/definitions/ClientUserCodeDeployment",
     "pointerToViolation": "#/hazelcast-client/user-code-deployment",
     "causingExceptions": [
       {
-        "schemaLocation": "#/properties/hazelcast-client/properties/user-code-deployment",
+        "schemaLocation": "#/definitions/ClientUserCodeDeployment",
         "pointerToViolation": "#/hazelcast-client/user-code-deployment",
         "causingExceptions": [],
         "keyword": "additionalProperties",
         "message": "extraneous key [unknown] is not permitted"
       },
       {
-        "schemaLocation": "#/properties/hazelcast-client/properties/user-code-deployment/properties/jarPaths",
-        "pointerToViolation": "#/hazelcast-client/user-code-deployment/jarPaths",
-        "causingExceptions": [],
-        "keyword": "type",
-        "message": "expected type: JSONArray, found: JSONObject"
-      },
-      {
-        "schemaLocation": "#/properties/hazelcast-client/properties/user-code-deployment/properties/classNames",
+        "schemaLocation": "#/definitions/ClientUserCodeDeployment/properties/classNames",
         "pointerToViolation": "#/hazelcast-client/user-code-deployment/classNames",
         "causingExceptions": [],
         "keyword": "type",
         "message": "expected type: JSONArray, found: String"
       },
       {
-        "schemaLocation": "#/properties/hazelcast-client/properties/user-code-deployment/properties/enabled",
+        "schemaLocation": "#/definitions/ClientUserCodeDeployment/properties/enabled",
         "pointerToViolation": "#/hazelcast-client/user-code-deployment/enabled",
         "causingExceptions": [],
         "keyword": "type",
         "message": "expected type: Boolean, found: String"
+      },
+      {
+        "schemaLocation": "#/definitions/ClientUserCodeDeployment/properties/jarPaths",
+        "pointerToViolation": "#/hazelcast-client/user-code-deployment/jarPaths",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: JSONArray, found: JSONObject"
       }
     ],
     "message": "4 schema violations found"
