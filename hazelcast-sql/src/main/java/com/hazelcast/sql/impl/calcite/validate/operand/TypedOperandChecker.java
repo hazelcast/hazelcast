@@ -44,8 +44,6 @@ public final class TypedOperandChecker extends AbstractOperandChecker {
     public static final TypedOperandChecker DECIMAL = new TypedOperandChecker(SqlTypeName.DECIMAL);
     public static final TypedOperandChecker REAL = new TypedOperandChecker(SqlTypeName.REAL);
     public static final TypedOperandChecker DOUBLE = new TypedOperandChecker(SqlTypeName.DOUBLE);
-    public static final TypedOperandChecker TIMESTAMP  = new TypedOperandChecker(SqlTypeName.TIMESTAMP);
-    public static final TypedOperandChecker INTERVAL = new TypedOperandChecker(SqlTypeName.INTERVAL_DAY);
     public static final TypedOperandChecker MAP = new TypedOperandChecker(SqlTypeName.MAP);
 
     private final SqlTypeName targetTypeName;
