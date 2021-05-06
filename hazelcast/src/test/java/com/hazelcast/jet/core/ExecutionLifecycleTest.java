@@ -156,7 +156,6 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
         LightJob job = newJob(dag);
         assertTrueEventually(this::assertPClosedWithoutError);
-//        assertEquals(RUNNING, job.getStatus()); // TODO [viliam] uncomment
         NoOutputSourceP.proceedLatch.countDown();
         job.join();
         assertJobSucceeded(job);
@@ -190,7 +189,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         runJobExpectFailure(dagFaulty, false);
 
         // Then
-//        assertTrueAllTheTime(() -> assertEquals(RUNNING, jobGood.getStatus()), 5); // TODO [viliam] uncomment
+        assertTrueAllTheTime(() -> assertFalse(jobGood.getFuture().isDone()), 2);
         NoOutputSourceP.proceedLatch.countDown();
         jobGood.join();
     }
@@ -481,18 +480,14 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         DAG dag = new DAG().vertex(new Vertex("test",
                 new MockPS(() -> new NoOutputSourceP(10_000), MEMBER_COUNT)));
 
-        // When
         LightJob job = newJob(dag);
-
         assertOpenEventually(NoOutputSourceP.executionStarted);
 
-        // Then
+        // When
         job.cancel();
 
-//        assertJobStatusEventually(job, COMPLETING, 3); // TODO [viliam] uncomment
-
         assertTrueAllTheTime(() -> {
-//            assertEquals(COMPLETING, job.getStatus()); // TODO [viliam] uncomment
+            // Then
             assertEquals("PS.close called before execution finished", 0, MockPS.closeCount.get());
         }, 1);
 
