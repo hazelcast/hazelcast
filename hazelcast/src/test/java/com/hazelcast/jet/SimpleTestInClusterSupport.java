@@ -20,6 +20,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -93,7 +94,12 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
         for (Job job : jobs) {
             ditchJob(job, instances());
         }
-        // TODO [viliam] ditch also light jobs and all their executions, cancellation might not be enough
+        // cancel all light jobs by cancelling their executions
+        for (JetInstance inst : instances) {
+            JetService jetService = getNodeEngineImpl(inst).getService(JetService.SERVICE_NAME);
+            jetService.getJobExecutionService().cancelAllExecutions("ditching all jobs after a test");
+            jetService.getJobExecutionService().waitAllExecutionsTerminated();
+        }
         Collection<DistributedObject> objects = instances()[0].getHazelcastInstance().getDistributedObjects();
         SUPPORT_LOGGER.info("Destroying " + objects.size()
                 + " distributed objects in SimpleTestInClusterSupport.@After: "

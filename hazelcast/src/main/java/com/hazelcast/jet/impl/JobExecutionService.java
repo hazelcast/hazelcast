@@ -219,7 +219,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
     /**
      * Cancels all ongoing executions using the given failure supplier.
      */
-    private void cancelAllExecutions(String reason) {
+    public void cancelAllExecutions(String reason) {
         for (ExecutionContext exeCtx : executionContexts.values()) {
             LoggingUtil.logFine(logger, "Completing %s locally. Reason: %s",
                     exeCtx.jobNameAndExecutionId(), reason);
@@ -618,6 +618,16 @@ public class JobExecutionService implements DynamicMetricsProvider {
             logger.fine(executionContext.jobNameAndExecutionId()
                     + " calling completeExecution because execution terminated before it started");
             completeExecution(executionContext, new CancellationException());
+        }
+    }
+
+    // for test
+    public void waitAllExecutionsTerminated() {
+        for (ExecutionContext ctx : executionContexts.values()) {
+            try {
+                ctx.getExecutionFuture().join();
+            } catch (Throwable ignored) {
+            }
         }
     }
 
