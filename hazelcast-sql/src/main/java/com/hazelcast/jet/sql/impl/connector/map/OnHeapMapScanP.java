@@ -31,9 +31,7 @@ import com.hazelcast.sql.impl.exec.scan.MapScanRow;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.predicate.TernaryLogic;
 import com.hazelcast.sql.impl.plan.node.MapScanPlanNode;
-import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.HeapRow;
-import com.hazelcast.sql.impl.row.Row;
 
 import javax.annotation.Nonnull;
 import java.util.Iterator;
@@ -75,7 +73,7 @@ public class OnHeapMapScanP extends AbstractProcessor {
         return emitFromTraverser(traverser);
     }
 
-    static class IMapTraverser implements Traverser<Row> {
+    static class IMapTraverser implements Traverser<Object[]> {
         private final List<Integer> projects;
         private final Expression<Boolean> filter;
         private KeyValueIterator iteratorExec;
@@ -99,11 +97,10 @@ public class OnHeapMapScanP extends AbstractProcessor {
             this.localPartitionsIterator = localPartitionsIterator;
         }
 
-        // TODO: return Object[] instead of Row
         @Override
-        public Row next() {
+        public Object[] next() {
             if (!done && iteratorExec.tryAdvance()) {
-                Row row = prepareRow(
+                Object[] row = prepareRow(
                         iteratorExec.getKey(),
                         iteratorExec.getKeyData(),
                         iteratorExec.getValue(),
@@ -140,7 +137,7 @@ public class OnHeapMapScanP extends AbstractProcessor {
          * @param rawValueData value as data, might be null
          * @return Row that is ready for processing by parent operators or {@code null} if the row hasn't passed the filter.
          */
-        protected Row prepareRow(Object rawKey, Data rawKeyData, Object rawValue, Data rawValueData) {
+        protected Object[] prepareRow(Object rawKey, Data rawKeyData, Object rawValue, Data rawValueData) {
             row.setKeyValue(rawKey, rawKeyData, rawValue, rawValueData);
 
             // Filter.
@@ -148,9 +145,8 @@ public class OnHeapMapScanP extends AbstractProcessor {
                 return null;
             }
 
-            // Project.
             if (projects.size() == 0) {
-                return EmptyRow.INSTANCE;
+                return new Object[0];
             }
 
             HeapRow heapRow = new HeapRow(projects.size());
@@ -161,7 +157,7 @@ public class OnHeapMapScanP extends AbstractProcessor {
                 heapRow.set(j, projectRes);
             }
 
-            return heapRow;
+            return heapRow.getValues();
         }
     }
 

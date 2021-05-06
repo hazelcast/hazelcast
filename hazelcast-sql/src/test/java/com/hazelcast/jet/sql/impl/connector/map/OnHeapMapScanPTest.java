@@ -11,6 +11,7 @@ import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.expression.ConstantPredicateExpression;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
+import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.plan.node.MapScanPlanNode;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -20,12 +21,12 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiPredicate;
 
-import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
 import static com.hazelcast.sql.impl.SqlTestSupport.valuePath;
 import static java.util.Collections.emptyList;
@@ -34,6 +35,23 @@ import static java.util.Collections.emptyList;
 public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
 
     protected static volatile AtomicInteger id;
+
+    public static final BiPredicate<List<?>, List<?>> LENIENT_SAME_ITEMS_ANY_ORDER =
+            (expected, actual) -> {
+                if (expected.size() != actual.size()) { // shortcut
+                    return false;
+                }
+                List<Object[]> expectedList = (List<Object[]>) expected;
+                List<Object[]> actualList = (List<Object[]>) actual;
+                expectedList.sort(Comparator.comparingInt((Object[] o) -> (int) o[0]));
+                actualList.sort(Comparator.comparingInt((Object[] o) -> (int) o[0]));
+                for (int i = 0; i < expectedList.size(); i++) {
+                    if (!Arrays.equals(expectedList.get(i), actualList.get(i))) {
+                        return false;
+                    }
+                }
+                return true;
+            };
 
     @BeforeClass
     public static void setUp() {
@@ -45,10 +63,10 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
     public void test_whenNoPredicateAndNoProjection() {
 
         IMap<Integer, String> map = instance().getMap(randomMapName());
-        List<Map.Entry<Integer, String>> expected = new ArrayList<>();
+        List<Object[]> expected = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
             map.put(i, "value-" + i);
-            expected.add(entry(i, "value-" + i));
+            expected.add(new Object[]{i, "value-" + i});
         }
 
         final MapProxyImpl mapProxy = (MapProxyImpl) map;
@@ -59,9 +77,9 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
                 map.getName(),
                 GenericQueryTargetDescriptor.DEFAULT,
                 GenericQueryTargetDescriptor.DEFAULT,
-                Collections.singletonList(valuePath("this")),
-                Collections.singletonList(QueryDataType.VARCHAR),
-                Collections.emptyList(),
+                Arrays.asList(QueryPath.KEY_PATH, valuePath("this")),
+                Arrays.asList(QueryDataType.INT, QueryDataType.VARCHAR),
+                Arrays.asList(0, 1),
                 new ConstantPredicateExpression(true)
         );
 
@@ -69,9 +87,9 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
                 .verifyProcessor(getProcessorSupplierEx(map.getName(), nodeEngine, scanNode))
                 .jetInstance(instance())
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
+                .outputChecker(LENIENT_SAME_ITEMS_ANY_ORDER)
                 .disableSnapshots()
                 .disableProgressAssertion()
-                .outputChecker(TestSupport.SAME_ITEMS_ANY_ORDER)
                 .expectOutput(expected);
     }
 
