@@ -115,7 +115,7 @@ Apache License, Version 2.0
   OpenCensus:0.24.0
   OpenCensus:0.24.0
   perfmark:perfmark-api:0.19.0
-  jmx_prometheus_javaagent:0.13.0
+  jmx_prometheus_javaagent:0.14.0
   Joda-Time:2.10.1
   ASM based accessors helper used by json-smart:1.2
   JSON Small and Fast Parser:2.3
