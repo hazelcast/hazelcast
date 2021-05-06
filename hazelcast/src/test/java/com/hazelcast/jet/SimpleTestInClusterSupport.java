@@ -93,6 +93,7 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
         for (Job job : jobs) {
             ditchJob(job, instances());
         }
+        // TODO [viliam] ditch also light jobs and all their executions, cancalleation might not be enough
         Collection<DistributedObject> objects = instances()[0].getHazelcastInstance().getDistributedObjects();
         SUPPORT_LOGGER.info("Destroying " + objects.size()
                 + " distributed objects in SimpleTestInClusterSupport.@After: "
