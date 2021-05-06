@@ -240,7 +240,10 @@ public class LightMasterContext {
         Throwable result = null;
         for (Object response : responses) {
             if (response instanceof Throwable
-                    && (result == null || result instanceof JobTerminateRequestedException || result instanceof CancellationException)) {
+                    && (result == null
+                            || result instanceof JobTerminateRequestedException
+                            || result instanceof CancellationException)
+            ) {
                 result = (Throwable) response;
             }
         }
