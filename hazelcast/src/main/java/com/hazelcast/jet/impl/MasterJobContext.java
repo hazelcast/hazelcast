@@ -447,7 +447,8 @@ public class MasterJobContext {
         logger.fine("Executing " + mc.jobIdString());
 
         long executionId = mc.executionId();
-
+        mc.resetStartOperationResponses();
+        executionFailureCallback = new ExecutionFailureCallback(executionId, mc.startOperationResponses());
         if (requestedTerminationMode != null) {
             handleTermination(requestedTerminationMode);
         }
@@ -460,9 +461,6 @@ public class MasterJobContext {
                         responses);
 
         mc.setJobStatus(RUNNING);
-        mc.resetStartOperationResponses();
-
-        executionFailureCallback = new ExecutionFailureCallback(executionId, mc.startOperationResponses());
         mc.invokeOnParticipants(operationCtor, completionCallback, executionFailureCallback, false);
 
         if (mc.jobConfig().getProcessingGuarantee() != NONE) {

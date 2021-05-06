@@ -738,7 +738,8 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         assertTrue("close not called", MockPMS.closeCalled.get());
         assertOneOfExceptionsInCauses(MockPMS.receivedCloseError.get(),
                 MOCK_ERROR,
-                new CancellationException());
+                new CancellationException(),
+                new JobTerminateRequestedException(CANCEL_FORCEFUL));
     }
 
     private void assertPsClosedWithoutError() {

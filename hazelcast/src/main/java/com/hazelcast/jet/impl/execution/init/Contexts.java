@@ -73,6 +73,7 @@ public final class Contexts {
         private final ProcessingGuarantee processingGuarantee;
         private final boolean isLightJob;
 
+        @SuppressWarnings("checkstyle:ParameterNumber")
         MetaSupplierCtx(
                 JetInstance jetInstance,
                 long jobId,
