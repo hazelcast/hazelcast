@@ -16,7 +16,9 @@
 
 package example.serialization;
 
-public class NodeDTO {
+import javax.annotation.Nonnull;
+
+public class NodeDTO implements Comparable<NodeDTO> {
 
     private NodeDTO child;
     private int id;
@@ -55,5 +57,10 @@ public class NodeDTO {
         int result = child != null ? child.hashCode() : 0;
         result = 31 * result + id;
         return result;
+    }
+
+    @Override
+    public int compareTo(@Nonnull NodeDTO o) {
+        return id - o.id;
     }
 }

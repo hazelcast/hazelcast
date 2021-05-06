@@ -98,7 +98,7 @@ public class DelegatingSerializationServiceTest {
 
         // When
         // Then
-        assertThatThrownBy(() -> service.serializerFor(new UnregisteredValue()))
+        assertThatThrownBy(() -> service.serializerFor(new UnregisteredValue(), false))
                 .isInstanceOf(JetException.class);
         assertThatThrownBy(() -> service.serializerFor(Integer.MAX_VALUE))
                 .isInstanceOf(JetException.class);
@@ -112,7 +112,7 @@ public class DelegatingSerializationServiceTest {
         // When
         // Then
         assertThat(service.serializerFor(TYPE_ID).getImpl()).isInstanceOf(ValueSerializer.class);
-        assertThat(service.serializerFor(new Value()).getImpl()).isInstanceOf(ValueSerializer.class);
+        assertThat(service.serializerFor(new Value(), false).getImpl()).isInstanceOf(ValueSerializer.class);
     }
 
     @Test
@@ -126,7 +126,7 @@ public class DelegatingSerializationServiceTest {
         // When
         // Then
         assertThat(service.serializerFor(TYPE_ID).getImpl()).isEqualTo(serializer);
-        assertThat(service.serializerFor(Byte.valueOf((byte) 1)).getImpl()).isEqualTo(serializer);
+        assertThat(service.serializerFor(Byte.valueOf((byte) 1), false).getImpl()).isEqualTo(serializer);
     }
 
     @Test
@@ -136,7 +136,7 @@ public class DelegatingSerializationServiceTest {
 
         // When
         // Then
-        assertThat(service.serializerFor(null).getImpl()).isNotNull();
+        assertThat(service.serializerFor(null, false).getImpl()).isNotNull();
     }
 
     private static class Value {

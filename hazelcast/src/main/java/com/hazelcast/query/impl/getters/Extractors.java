@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.TYPE_COMPACT;
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.TYPE_COMPACT_WITH_SCHEMA;
 import static com.hazelcast.query.impl.getters.ExtractorHelper.extractArgumentsFromAttributeName;
 import static com.hazelcast.query.impl.getters.ExtractorHelper.extractAttributeNameNameWithoutArguments;
 import static com.hazelcast.query.impl.getters.ExtractorHelper.instantiateExtractors;
@@ -108,7 +109,8 @@ public final class Extractors {
         }
         if (target instanceof Data) {
             targetData = (Data) target;
-            if (targetData.isPortable() || targetData.isJson() || targetData.getType() == TYPE_COMPACT) {
+            if (targetData.isPortable() || targetData.isJson() || targetData.getType() == TYPE_COMPACT
+                    || targetData.getType() == TYPE_COMPACT_WITH_SCHEMA) {
                 return targetData;
             } else {
                 // convert non-portable Data to object
@@ -174,7 +176,7 @@ public final class Extractors {
             return jsonDataGetter;
         }
 
-        if (data.getType() == TYPE_COMPACT) {
+        if (data.getType() == TYPE_COMPACT || data.getType() == TYPE_COMPACT_WITH_SCHEMA) {
             if (compactGetter == null) {
                 // will be initialised a couple of times in the worst case
                 compactGetter = new CompactGetter(ss);

@@ -20,8 +20,8 @@ import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nonnull;
 import java.util.TreeMap;
 
 class DeserializedSchemaBoundGenericRecordBuilder extends AbstractGenericRecordBuilder {
@@ -33,7 +33,8 @@ class DeserializedSchemaBoundGenericRecordBuilder extends AbstractGenericRecordB
         this.schema = schema;
     }
 
-    public @NotNull GenericRecord build() {
+    public @Nonnull
+    GenericRecord build() {
         return new DeserializedGenericRecord(schema, objects);
     }
 

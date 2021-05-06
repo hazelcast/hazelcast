@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Fetches a schema from the cluster with the given schemaId
  */
-@Generated("69275baedbdd78cbe2f3132a341aaf9a")
+@Generated("321b08a3fc22ea4a4fb6c1ac39e63cf8")
 public final class ClientFetchSchemaCodec {
     //hex: 0x001400
     public static final int REQUEST_MESSAGE_TYPE = 5120;
@@ -70,13 +70,13 @@ public final class ClientFetchSchemaCodec {
         return decodeLong(initialFrame.content, REQUEST_SCHEMA_ID_FIELD_OFFSET);
     }
 
-    public static ClientMessage encodeResponse(com.hazelcast.internal.serialization.impl.compact.Schema schema) {
+    public static ClientMessage encodeResponse(@Nullable com.hazelcast.internal.serialization.impl.compact.Schema schema) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        SchemaCodec.encode(clientMessage, schema);
+        CodecUtil.encodeNullable(clientMessage, schema, SchemaCodec::encode);
         return clientMessage;
     }
 
@@ -87,7 +87,7 @@ public final class ClientFetchSchemaCodec {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame
         iterator.next();
-        return SchemaCodec.decode(iterator);
+        return CodecUtil.decodeNullable(iterator, SchemaCodec::decode);
     }
 
 }

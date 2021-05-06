@@ -29,6 +29,7 @@ import com.hazelcast.query.impl.getters.Extractors;
 import java.io.IOException;
 
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.TYPE_COMPACT;
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.TYPE_COMPACT_WITH_SCHEMA;
 
 /**
  * Entry of the Query.
@@ -169,27 +170,18 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> implements Iden
         Object targetObject;
         if (key) {
             // keyData is never null
-            if (keyData.isPortable() || keyData.isJson() || keyData.getType() == TYPE_COMPACT) {
+            if (keyData.isPortable() || keyData.isJson() || keyData.getType() == TYPE_COMPACT
+                    || keyData.getType() == TYPE_COMPACT_WITH_SCHEMA) {
                 targetObject = keyData;
             } else {
                 targetObject = getKey();
             }
         } else {
             if (valueObject == null) {
-                if (valueData == null) {
-                    // Query Cache depends on this behaviour when its caching of
-                    // values is off.
-                    return null;
-                }
-
-                if (valueData.isPortable() || valueData.isJson() || valueData.getType() == TYPE_COMPACT) {
-                    targetObject = valueData;
-                } else {
-                    targetObject = getValue();
-                }
+                targetObject = getTargetObjectFromData();
             } else {
                 //TODO sancar should I check for Portable/CompactGenericRecord
-                if (valueObject instanceof Portable || serializationService.serializerIsCompactSerializer(valueObject)) {
+                if (valueObject instanceof Portable || serializationService.isCompactSerializable(valueObject)) {
                     targetObject = getValueData();
                 } else {
                     targetObject = getValue();
@@ -197,6 +189,19 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> implements Iden
             }
         }
         return targetObject;
+    }
+
+    private Object getTargetObjectFromData() {
+        if (valueData == null) {
+            // Query Cache depends on this behaviour when its caching of
+            // values is off.
+            return null;
+        } else if (valueData.isPortable() || valueData.isJson() || valueData.getType() == TYPE_COMPACT
+                || valueData.getType() == TYPE_COMPACT_WITH_SCHEMA) {
+            return valueData;
+        } else {
+            return getValue();
+        }
     }
 
     @Override

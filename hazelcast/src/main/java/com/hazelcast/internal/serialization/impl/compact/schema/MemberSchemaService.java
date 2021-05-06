@@ -17,8 +17,8 @@
 package com.hazelcast.internal.serialization.impl.compact.schema;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.internal.serialization.impl.compact.SchemaService;
@@ -29,8 +29,8 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
-import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -101,7 +101,7 @@ public class MemberSchemaService implements ManagedService, PreJoinAwareService,
     private CompletableFuture<Schema> searchClusterAsync(long schemaId, Iterator<Member> iterator,
                                                          OperationService operationService) {
         if (!iterator.hasNext()) {
-            throw new HazelcastException("Could not found schema on the cluster with schemaId " + schemaId);
+            return CompletableFuture.completedFuture(null);
         }
         Address address = iterator.next().getAddress();
         FetchSchemaOperation op = new FetchSchemaOperation(schemaId);
@@ -137,6 +137,9 @@ public class MemberSchemaService implements ManagedService, PreJoinAwareService,
             if (logger.isFinestEnabled()) {
                 logger.finest("Sending schema id  " + schemaId + " locally, will search on the cluster" + schemaId);
             }
+            if (nodeEngine.getClusterService().getClusterState().equals(ClusterState.PASSIVE)) {
+                return;
+            }
             invokeOnStableClusterSerial(nodeEngine, () -> new SendSchemaOperation(schemaId, schema), MAX_RETRIES)
                     .joinInternal();
         }
@@ -145,13 +148,16 @@ public class MemberSchemaService implements ManagedService, PreJoinAwareService,
     public CompletableFuture<Void> putAsync(long schemaId, Schema schema) {
         schema.setSchemaId(schemaId);
         if (putIfAbsent(schemaId, schema)) {
+            if (nodeEngine.getClusterService().getClusterState().equals(ClusterState.PASSIVE)) {
+                return CompletableFuture.completedFuture(null);
+            }
             return invokeOnStableClusterSerial(nodeEngine, () -> new SendSchemaOperation(schemaId, schema), MAX_RETRIES);
         } else {
             return CompletableFuture.completedFuture(null);
         }
     }
 
-    @NotNull
+    @Nonnull
     public CompletableFuture<Void> putAllAsync(List<Map.Entry<Long, Schema>> parameters) {
         ArrayList<CompletableFuture<Void>> futures = new ArrayList<>(parameters.size());
         if (logger.isFinestEnabled()) {

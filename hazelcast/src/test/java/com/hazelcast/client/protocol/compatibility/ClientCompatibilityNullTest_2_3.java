@@ -473,7 +473,7 @@ public class ClientCompatibilityNullTest_2_3 {
     public void test_ClientFetchSchemaCodec_decodeResponse() {
         int fileClientMessageIndex = 46;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aSchema, ClientFetchSchemaCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, ClientFetchSchemaCodec.decodeResponse(fromFile)));
     }
 
     @Test

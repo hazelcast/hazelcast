@@ -431,7 +431,7 @@ public class MemberCompatibilityNullTest_2_3 {
     @Test
     public void test_ClientFetchSchemaCodec_encodeResponse() {
         int fileClientMessageIndex = 46;
-        ClientMessage encoded = ClientFetchSchemaCodec.encodeResponse(aSchema);
+        ClientMessage encoded = ClientFetchSchemaCodec.encodeResponse(null);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
