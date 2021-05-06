@@ -26,8 +26,8 @@ import com.hazelcast.jet.impl.JobExecutionService;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
+import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.pipeline.test.SimpleEvent;
-import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -54,10 +54,17 @@ public class HazelcastConnector_RestartTest extends JetTestSupport {
 
     @Test
     public void when_iListWrittenAndMemberShutdown_then_jobRestarts() {
-        IList<SimpleEvent> sinkList = instance1.getHazelcastInstance().getList("list");
+        IList<Integer> sinkList = instance1.getHazelcastInstance().getList("list");
 
         Pipeline p = Pipeline.create();
-        p.readFrom(TestSources.itemStream(10))
+        p.readFrom(
+                SourceBuilder.stream("src", ctx -> null)
+                        .distributed(1)
+                        .<Integer>fillBufferFn((ctx, buf) -> {
+                            buf.add(0);
+                            sleepMillis(100);
+                        })
+                        .build())
                 .withoutTimestamps()
                 .writeTo(Sinks.list(sinkList));
 
