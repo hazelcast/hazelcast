@@ -16,7 +16,9 @@
 
 package example.serialization;
 
-public class EmployeeDTO {
+import javax.annotation.Nonnull;
+
+public class EmployeeDTO implements Comparable<EmployeeDTO> {
 
     private int age;
     private long id;
@@ -71,4 +73,11 @@ public class EmployeeDTO {
         result = 31 * result + (int) (id ^ (id >>> 32));
         return result;
     }
+
+    @Override
+    public int compareTo(@Nonnull EmployeeDTO o) {
+        return (int) (o.id - id);
+    }
+
+
 }

@@ -54,6 +54,9 @@ public class ClientSchemaService implements SchemaService {
         ClientInvocation invocation = new ClientInvocation(client, ClientFetchSchemaCodec.encodeRequest(schemaId), SERVICE_NAME);
         ClientMessage message = invocation.invoke().joinInternal();
         schema = ClientFetchSchemaCodec.decodeResponse(message);
+        if (schema != null) {
+            return schema;
+        }
         schemas.put(schemaId, schema);
         return schema;
 

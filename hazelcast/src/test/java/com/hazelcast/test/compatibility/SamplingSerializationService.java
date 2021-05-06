@@ -22,6 +22,7 @@ import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.DataType;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.internal.serialization.impl.portable.PortableContext;
 import com.hazelcast.nio.ObjectDataInput;
@@ -68,6 +69,13 @@ public class SamplingSerializationService implements InternalSerializationServic
     @Override
     public <B extends Data> B toData(Object obj) {
         B data = delegate.toData(obj);
+        sampleObject(obj, data == null ? null : data.toByteArray());
+        return data;
+    }
+
+    @Override
+    public <B extends Data> B toDataWithSchema(Object obj) {
+        B data = delegate.toDataWithSchema(obj);
         sampleObject(obj, data == null ? null : data.toByteArray());
         return data;
     }
@@ -164,13 +172,18 @@ public class SamplingSerializationService implements InternalSerializationServic
     }
 
     @Override
+    public HeapData trimSchema(HeapData data) {
+        return delegate.trimSchema(data);
+    }
+
+    @Override
     public InternalGenericRecord readAsInternalGenericRecord(Data data) throws IOException {
         return delegate.readAsInternalGenericRecord(data);
     }
 
     @Override
-    public boolean serializerIsCompactSerializer(Object object) {
-        return delegate.serializerIsCompactSerializer(object);
+    public boolean isCompactSerializable(Object object) {
+        return delegate.isCompactSerializable(object);
     }
 
     @Override

@@ -81,7 +81,7 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
     protected CompactSerializationConfig compactSerializationConfig;
     protected Supplier<RuntimeException> notActiveExceptionSupplier;
     protected ClassNameFilter classNameFilter;
-    private SchemaService schemaService;
+    protected SchemaService schemaService;
 
     @Override
     public SerializationServiceBuilder setVersion(byte version) {

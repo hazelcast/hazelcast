@@ -14,61 +14,54 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.serialization.impl;
+package com.hazelcast.internal.serialization.impl.compact;
 
+import com.hazelcast.internal.nio.BufferObjectDataInput;
+import com.hazelcast.internal.nio.BufferObjectDataOutput;
+import com.hazelcast.internal.serialization.impl.SerializerAdapter;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.ByteArraySerializer;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Serializer;
-import com.hazelcast.nio.serialization.TypedByteArrayDeserializer;
+import com.hazelcast.nio.serialization.TypedStreamDeserializer;
 
 import java.io.IOException;
+import java.util.Objects;
 
-class ByteArraySerializerAdapter implements SerializerAdapter {
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.TYPE_COMPACT_WITH_SCHEMA;
 
-    protected final ByteArraySerializer serializer;
+public class CompactWithSchemaStreamSerializerAdapter implements SerializerAdapter {
 
-    ByteArraySerializerAdapter(ByteArraySerializer serializer) {
-        this.serializer = serializer;
+    private final CompactStreamSerializer serializer;
+
+    public CompactWithSchemaStreamSerializerAdapter(CompactStreamSerializer compactStreamSerializer) {
+        this.serializer = compactStreamSerializer;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public void write(ObjectDataOutput out, Object object) throws IOException {
-        byte[] bytes = serializer.write(object);
-        out.writeByteArray(bytes);
+        serializer.write((BufferObjectDataOutput) out, object, true);
     }
 
     @Override
     public Object read(ObjectDataInput in) throws IOException {
-        byte[] bytes = in.readByteArray();
-        if (bytes == null) {
-            return null;
-        }
-        return serializer.read(bytes);
+        return serializer.read((BufferObjectDataInput) in, true);
     }
 
     @Override
     public Object read(ObjectDataInput in, Class aClass) throws IOException {
-        byte[] bytes = in.readByteArray();
-        if (bytes == null) {
-            return null;
+        if (!(serializer instanceof TypedStreamDeserializer)) {
+            throw new HazelcastSerializationException(this + " is not implementing the " + TypedStreamDeserializer.class
+                    + " interface. Please implement this interface to deserialize for class " + aClass);
         }
 
-        if (!(serializer instanceof TypedByteArrayDeserializer)) {
-            throw new HazelcastSerializationException(
-                    serializer + " is not implementing the " + TypedByteArrayDeserializer.class
-                            + " interface. Please implement this interface to deserialize for class " + aClass);
-        }
-
-        TypedByteArrayDeserializer deserializer = (TypedByteArrayDeserializer) serializer;
-        return deserializer.read(bytes, aClass);
+        TypedStreamDeserializer deserializer = (TypedStreamDeserializer) serializer;
+        return deserializer.read(in, aClass);
     }
 
     @Override
     public int getTypeId() {
-        return serializer.getTypeId();
+        return TYPE_COMPACT_WITH_SCHEMA;
     }
 
     @Override
@@ -83,7 +76,7 @@ class ByteArraySerializerAdapter implements SerializerAdapter {
 
     @Override
     public String toString() {
-        return "SerializerAdapter{serializer=" + serializer + '}';
+        return "StreamSerializerAdapter{serializer=" + serializer + '}';
     }
 
     @Override
@@ -95,13 +88,9 @@ class ByteArraySerializerAdapter implements SerializerAdapter {
             return false;
         }
 
-        ByteArraySerializerAdapter that = (ByteArraySerializerAdapter) o;
+        CompactWithSchemaStreamSerializerAdapter that = (CompactWithSchemaStreamSerializerAdapter) o;
 
-        if (serializer != null ? !serializer.equals(that.serializer) : that.serializer != null) {
-            return false;
-        }
-
-        return true;
+        return Objects.equals(serializer, that.serializer);
     }
 
     @Override

@@ -23,6 +23,7 @@ import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -55,11 +56,12 @@ public class SerializingGenericRecordCloner implements GenericRecordBuilder {
         this.serializer = serializer;
         this.schema = schema;
         this.genericRecord = record;
-        this.compactWriter = new DefaultCompactWriter(serializer, bufferObjectDataOutputSupplier.get(), (Schema) schema);
+        this.compactWriter = new DefaultCompactWriter(serializer, bufferObjectDataOutputSupplier.get(), schema, false);
         this.bufferObjectDataInputFunc = bufferObjectDataInputFunc;
     }
 
     @Override
+    @Nonnull
     public GenericRecord build() {
         try {
             for (FieldDescriptor field : schema.getFields()) {
@@ -76,188 +78,218 @@ public class SerializingGenericRecordCloner implements GenericRecordBuilder {
             byte[] bytes = compactWriter.toByteArray();
             Class associatedClass = genericRecord.getAssociatedClass();
             BufferObjectDataInput dataInput = bufferObjectDataInputFunc.apply(bytes);
-            return new DefaultCompactReader(serializer, dataInput, schema, associatedClass);
+            return new DefaultCompactReader(serializer, dataInput, schema, associatedClass, false);
         } catch (IOException e) {
             throw new HazelcastSerializationException(e);
         }
     }
 
     @Override
-    public GenericRecordBuilder setInt(String fieldName, int value) {
+    @Nonnull
+    public GenericRecordBuilder setInt(@Nonnull String fieldName, int value) {
         overwrittenFields.put(fieldName, () -> compactWriter.writeInt(fieldName, value));
         return this;
     }
 
     @Override
-    public GenericRecordBuilder setLong(String fieldName, long value) {
+    @Nonnull
+    public GenericRecordBuilder setLong(@Nonnull String fieldName, long value) {
         overwrittenFields.put(fieldName, () -> compactWriter.writeLong(fieldName, value));
         return this;
     }
 
     @Override
-    public GenericRecordBuilder setString(String fieldName, String value) {
+    @Nonnull
+    public GenericRecordBuilder setString(@Nonnull String fieldName, String value) {
         overwrittenFields.put(fieldName, () -> compactWriter.writeString(fieldName, value));
         return this;
     }
 
     @Override
-    public GenericRecordBuilder setBoolean(String fieldName, boolean value) {
+    @Nonnull
+    public GenericRecordBuilder setBoolean(@Nonnull String fieldName, boolean value) {
         overwrittenFields.put(fieldName, () -> compactWriter.writeBoolean(fieldName, value));
         return this;
     }
 
     @Override
-    public GenericRecordBuilder setByte(String fieldName, byte value) {
+    @Nonnull
+    public GenericRecordBuilder setByte(@Nonnull String fieldName, byte value) {
         overwrittenFields.put(fieldName, () -> compactWriter.writeByte(fieldName, value));
         return this;
     }
 
     @Override
-    public GenericRecordBuilder setChar(String fieldName, char value) {
+    @Nonnull
+    public GenericRecordBuilder setChar(@Nonnull String fieldName, char value) {
         overwrittenFields.put(fieldName, () -> compactWriter.writeChar(fieldName, value));
         return this;
     }
 
     @Override
-    public GenericRecordBuilder setDouble(String fieldName, double value) {
+    @Nonnull
+    public GenericRecordBuilder setDouble(@Nonnull String fieldName, double value) {
         overwrittenFields.put(fieldName, () -> compactWriter.writeDouble(fieldName, value));
         return this;
     }
 
     @Override
-    public GenericRecordBuilder setFloat(String fieldName, float value) {
+    @Nonnull
+    public GenericRecordBuilder setFloat(@Nonnull String fieldName, float value) {
         overwrittenFields.put(fieldName, () -> compactWriter.writeFloat(fieldName, value));
         return this;
     }
 
     @Override
-    public GenericRecordBuilder setShort(String fieldName, short value) {
+    @Nonnull
+    public GenericRecordBuilder setShort(@Nonnull String fieldName, short value) {
         overwrittenFields.put(fieldName, () -> compactWriter.writeShort(fieldName, value));
         return this;
     }
 
     @Override
-    public GenericRecordBuilder setDecimal(String fieldName, BigDecimal value) {
+    @Nonnull
+    public GenericRecordBuilder setDecimal(@Nonnull String fieldName, BigDecimal value) {
         overwrittenFields.put(fieldName, () -> compactWriter.writeDecimal(fieldName, value));
         return this;
     }
 
     @Override
-    public GenericRecordBuilder setTime(String fieldName, LocalTime value) {
+    @Nonnull
+    public GenericRecordBuilder setTime(@Nonnull String fieldName, LocalTime value) {
         overwrittenFields.put(fieldName, () -> compactWriter.writeTime(fieldName, value));
         return this;
     }
 
     @Override
-    public GenericRecordBuilder setDate(String fieldName, LocalDate value) {
+    @Nonnull
+    public GenericRecordBuilder setDate(@Nonnull String fieldName, LocalDate value) {
         overwrittenFields.put(fieldName, () -> compactWriter.writeDate(fieldName, value));
         return this;
     }
 
     @Override
-    public GenericRecordBuilder setTimestamp(String fieldName, LocalDateTime value) {
+    @Nonnull
+    public GenericRecordBuilder setTimestamp(@Nonnull String fieldName, LocalDateTime value) {
         overwrittenFields.put(fieldName, () -> compactWriter.writeTimestamp(fieldName, value));
         return this;
     }
 
     @Override
-    public GenericRecordBuilder setTimestampWithTimezone(String fieldName, OffsetDateTime value) {
+    @Nonnull
+    public GenericRecordBuilder setTimestampWithTimezone(@Nonnull String fieldName, OffsetDateTime value) {
         overwrittenFields.put(fieldName, () -> compactWriter.writeTimestampWithTimezone(fieldName, value));
         return this;
     }
 
     @Override
-    public GenericRecordBuilder setGenericRecord(String fieldName, GenericRecord value) {
+    @Nonnull
+    public GenericRecordBuilder setGenericRecord(@Nonnull String fieldName, GenericRecord value) {
         overwrittenFields.put(fieldName, () -> compactWriter.writeGenericRecord(fieldName, value));
         return this;
     }
 
     @Override
-    public GenericRecordBuilder setGenericRecordArray(String fieldName, GenericRecord[] value) {
+    @Nonnull
+    public GenericRecordBuilder setGenericRecordArray(@Nonnull String fieldName, GenericRecord[] value) {
         overwrittenFields.put(fieldName, () -> compactWriter.writeGenericRecordArray(fieldName, value));
         return this;
     }
 
     @Override
-    public GenericRecordBuilder setByteArray(String fieldName, byte[] value) {
+    @Nonnull
+    public GenericRecordBuilder setByteArray(@Nonnull String fieldName, byte[] value) {
         overwrittenFields.put(fieldName, () -> compactWriter.writeByteArray(fieldName, value));
         return this;
     }
 
     @Override
-    public GenericRecordBuilder setBooleanArray(String fieldName, boolean[] value) {
+    @Nonnull
+    public GenericRecordBuilder setBooleanArray(@Nonnull String fieldName, boolean[] value) {
         overwrittenFields.put(fieldName, () -> compactWriter.writeBooleanArray(fieldName, value));
         return this;
     }
 
     @Override
-    public GenericRecordBuilder setCharArray(String fieldName, char[] value) {
+    @Nonnull
+    public GenericRecordBuilder setCharArray(@Nonnull String fieldName, char[] value) {
         overwrittenFields.put(fieldName, () -> compactWriter.writeCharArray(fieldName, value));
         return this;
     }
 
     @Override
-    public GenericRecordBuilder setIntArray(String fieldName, int[] value) {
+    @Nonnull
+    public GenericRecordBuilder setIntArray(@Nonnull String fieldName, int[] value) {
         overwrittenFields.put(fieldName, () -> compactWriter.writeIntArray(fieldName, value));
         return this;
     }
 
     @Override
-    public GenericRecordBuilder setLongArray(String fieldName, long[] value) {
+    @Nonnull
+    public GenericRecordBuilder setLongArray(@Nonnull String fieldName, long[] value) {
         overwrittenFields.put(fieldName, () -> compactWriter.writeLongArray(fieldName, value));
         return this;
     }
 
     @Override
-    public GenericRecordBuilder setDoubleArray(String fieldName, double[] value) {
+    @Nonnull
+    public GenericRecordBuilder setDoubleArray(@Nonnull String fieldName, double[] value) {
         overwrittenFields.put(fieldName, () -> compactWriter.writeDoubleArray(fieldName, value));
         return this;
     }
 
     @Override
-    public GenericRecordBuilder setFloatArray(String fieldName, float[] value) {
+    @Nonnull
+    public GenericRecordBuilder setFloatArray(@Nonnull String fieldName, float[] value) {
         overwrittenFields.put(fieldName, () -> compactWriter.writeFloatArray(fieldName, value));
         return this;
     }
 
     @Override
-    public GenericRecordBuilder setShortArray(String fieldName, short[] value) {
+    @Nonnull
+    public GenericRecordBuilder setShortArray(@Nonnull String fieldName, short[] value) {
         overwrittenFields.put(fieldName, () -> compactWriter.writeShortArray(fieldName, value));
         return this;
     }
 
     @Override
-    public GenericRecordBuilder setStringArray(String fieldName, String[] value) {
+    @Nonnull
+    public GenericRecordBuilder setStringArray(@Nonnull String fieldName, String[] value) {
         overwrittenFields.put(fieldName, () -> compactWriter.writeStringArray(fieldName, value));
         return this;
     }
 
     @Override
-    public GenericRecordBuilder setDecimalArray(String fieldName, BigDecimal[] value) {
+    @Nonnull
+    public GenericRecordBuilder setDecimalArray(@Nonnull String fieldName, BigDecimal[] value) {
         overwrittenFields.put(fieldName, () -> compactWriter.writeDecimalArray(fieldName, value));
         return this;
     }
 
     @Override
-    public GenericRecordBuilder setTimeArray(String fieldName, LocalTime[] value) {
+    @Nonnull
+    public GenericRecordBuilder setTimeArray(@Nonnull String fieldName, LocalTime[] value) {
         overwrittenFields.put(fieldName, () -> compactWriter.writeTimeArray(fieldName, value));
         return this;
     }
 
     @Override
-    public GenericRecordBuilder setDateArray(String fieldName, LocalDate[] value) {
+    @Nonnull
+    public GenericRecordBuilder setDateArray(@Nonnull String fieldName, LocalDate[] value) {
         overwrittenFields.put(fieldName, () -> compactWriter.writeDateArray(fieldName, value));
         return this;
     }
 
     @Override
-    public GenericRecordBuilder setTimestampArray(String fieldName, LocalDateTime[] value) {
+    @Nonnull
+    public GenericRecordBuilder setTimestampArray(@Nonnull String fieldName, LocalDateTime[] value) {
         overwrittenFields.put(fieldName, () -> compactWriter.writeTimestampArray(fieldName, value));
         return this;
     }
 
     @Override
-    public GenericRecordBuilder setTimestampWithTimezoneArray(String fieldName, OffsetDateTime[] value) {
+    @Nonnull
+    public GenericRecordBuilder setTimestampWithTimezoneArray(@Nonnull String fieldName, OffsetDateTime[] value) {
         overwrittenFields.put(fieldName, () -> compactWriter.writeTimestampWithTimezoneArray(fieldName, value));
         return this;
     }

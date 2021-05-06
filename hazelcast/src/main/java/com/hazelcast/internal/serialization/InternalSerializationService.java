@@ -96,7 +96,7 @@ public interface InternalSerializationService extends SerializationService, Disp
      */
     InternalGenericRecord readAsInternalGenericRecord(Data data) throws IOException;
 
-    boolean serializerIsCompactSerializer(Object object);
+    boolean isCompactSerializable(Object object);
 
     PortableContext getPortableContext();
 

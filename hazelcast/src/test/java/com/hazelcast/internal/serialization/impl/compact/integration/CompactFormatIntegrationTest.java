@@ -160,14 +160,4 @@ public abstract class CompactFormatIntegrationTest extends HazelcastTestSupport 
 
     protected abstract void restartCluster();
 
-    @Test
-    public void testHotRestart() {
-        throw new RuntimeException();
-    }
-
-    @Test
-    public void testWanReplication() {
-        throw new RuntimeException();
-    }
-
 }

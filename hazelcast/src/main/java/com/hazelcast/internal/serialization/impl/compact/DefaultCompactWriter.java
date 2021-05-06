@@ -66,15 +66,16 @@ import static com.hazelcast.nio.serialization.FieldType.UTF_ARRAY;
 
 public class DefaultCompactWriter implements CompactWriter {
 
-    protected final CompactStreamSerializer serializer;
-    protected final Schema schema;
-    protected final BufferObjectDataOutput out;
-    protected final int offset;
+    private final CompactStreamSerializer serializer;
+    private final Schema schema;
+    private final BufferObjectDataOutput out;
+    private final int offset;
     private final boolean isDebug = System.getProperty("com.hazelcast.serialization.compact.debug") != null;
     private final int[] fieldPositions;
+    private final boolean includeSchemaOnBinary;
 
     public DefaultCompactWriter(CompactStreamSerializer serializer,
-                                BufferObjectDataOutput out, Schema schema) {
+                                BufferObjectDataOutput out, Schema schema, boolean includeSchemaOnBinary) {
         this.serializer = serializer;
         this.out = out;
         this.schema = schema;
@@ -82,6 +83,7 @@ public class DefaultCompactWriter implements CompactWriter {
         offset = out.position() + INT_SIZE_IN_BYTES;
         //skip for length and primitives
         out.writeZeroBytes(schema.getPrimitivesLength() + INT_SIZE_IN_BYTES);
+        this.includeSchemaOnBinary = includeSchemaOnBinary;
         if (isDebug) {
             System.out.println("DEBUG WRITE " + schema.getTypeName() + "  offset  " + offset + " " + out);
             System.out.println("DEBUG WRITE " + "schema.getNumberOfVariableLengthFields() "
@@ -215,11 +217,13 @@ public class DefaultCompactWriter implements CompactWriter {
 
     @Override
     public void writeObject(String fieldName, Object value) {
-        writeVariableLength(fieldName, COMPOSED, value, serializer::writeObject);
+        writeVariableLength(fieldName, COMPOSED, value,
+                (out, val) -> serializer.writeObject(out, val, includeSchemaOnBinary));
     }
 
     public void writeGenericRecord(String fieldName, GenericRecord value) {
-        writeVariableLength(fieldName, COMPOSED, value, serializer::writeGenericRecord);
+        writeVariableLength(fieldName, COMPOSED, value,
+                (out, val) -> serializer.writeGenericRecord(out, (CompactGenericRecord) val, includeSchemaOnBinary));
     }
 
     @Override
@@ -421,11 +425,13 @@ public class DefaultCompactWriter implements CompactWriter {
 
     @Override
     public <T> void writeObjectArray(String fieldName, T[] values) {
-        writeObjectArrayField(fieldName, COMPOSED_ARRAY, values, serializer::writeObject);
+        writeObjectArrayField(fieldName, COMPOSED_ARRAY, values,
+                (out, val) -> serializer.writeObject(out, val, includeSchemaOnBinary));
     }
 
     public void writeGenericRecordArray(String fieldName, GenericRecord[] values) {
-        writeObjectArrayField(fieldName, COMPOSED_ARRAY, values, serializer::writeGenericRecord);
+        writeObjectArrayField(fieldName, COMPOSED_ARRAY, values,
+                (out, val) -> serializer.writeGenericRecord(out, (CompactGenericRecord) val, includeSchemaOnBinary));
     }
 
     @Override
@@ -445,7 +451,7 @@ public class DefaultCompactWriter implements CompactWriter {
                 if (value != null) {
                     int position = out.position();
                     out.writeInt(offset + i * INT_SIZE_IN_BYTES, position);
-                    serializer.writeObject(out, value);
+                    serializer.writeObject(out, value, includeSchemaOnBinary);
                 } else {
                     out.writeInt(offset + i * INT_SIZE_IN_BYTES, -1);
                 }

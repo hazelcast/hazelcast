@@ -29,6 +29,7 @@ import java.util.EnumMap;
 import java.util.Map;
 
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.TYPE_COMPACT;
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.TYPE_COMPACT_WITH_SCHEMA;
 import static com.hazelcast.map.impl.record.Record.NOT_CACHED;
 import static com.hazelcast.map.impl.record.RecordReaderWriter.DATA_RECORD_READER_WRITER;
 import static com.hazelcast.map.impl.record.RecordReaderWriter.DATA_RECORD_WITH_STATS_READER_WRITER;
@@ -231,7 +232,8 @@ public final class Records {
         // If we allow using the deserialized values, the metadata might not be safe to use.
         if (value instanceof Data) {
             Data data = (Data) value;
-            return !(data.isPortable() || data.isJson() || data.getType() != TYPE_COMPACT);
+            return !(data.isPortable() || data.isJson()
+                    || data.getType() == TYPE_COMPACT || data.getType() == TYPE_COMPACT_WITH_SCHEMA);
         }
         return false;
     }

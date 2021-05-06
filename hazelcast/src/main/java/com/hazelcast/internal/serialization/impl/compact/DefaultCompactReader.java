@@ -75,24 +75,24 @@ import static com.hazelcast.nio.serialization.FieldType.UTF_ARRAY;
 
 public class DefaultCompactReader extends CompactGenericRecord implements InternalGenericRecord, CompactReader {
 
-    protected static final int NULL_POSITION = -1;
-    protected final Schema schema;
-    protected final BufferObjectDataInput in;
-    protected final int finalPosition;
-    protected final int offset;
+    private static final int NULL_POSITION = -1;
+    private final Schema schema;
+    private final BufferObjectDataInput in;
+    private final int finalPosition;
+    private final int offset;
     private final boolean isDebug = System.getProperty("com.hazelcast.serialization.compact.debug") != null;
     private final CompactStreamSerializer serializer;
-
+    private final boolean schemaIncludedInBinary;
     private final @Nullable
     Class associatedClass;
 
     public DefaultCompactReader(CompactStreamSerializer serializer, BufferObjectDataInput in, Schema schema,
-                                @Nullable Class associatedClass) {
+                                @Nullable Class associatedClass, boolean schemaIncludedInBinary) {
         this.in = in;
         this.serializer = serializer;
-        this.schema = (Schema) schema;
+        this.schema = schema;
         this.associatedClass = associatedClass;
-
+        this.schemaIncludedInBinary = schemaIncludedInBinary;
         try {
             int length = in.readInt();
             offset = in.position();
@@ -122,11 +122,13 @@ public class DefaultCompactReader extends CompactGenericRecord implements Intern
     }
 
     @Override
+    @Nonnull
     public GenericRecordBuilder newBuilder() {
         return serializer.createGenericRecordBuilder(schema);
     }
 
     @Override
+    @Nonnull
     public GenericRecordBuilder cloneWithBuilder() {
         return new SerializingGenericRecordCloner(serializer, schema, this,
                 bytes -> serializer.getInternalSerializationService().createObjectDataInput(bytes),
@@ -134,6 +136,7 @@ public class DefaultCompactReader extends CompactGenericRecord implements Intern
     }
 
     @Override
+    @Nonnull
     public FieldType getFieldType(@Nonnull String fieldName) {
         return schema.getField(fieldName).getType();
     }
@@ -380,12 +383,12 @@ public class DefaultCompactReader extends CompactGenericRecord implements Intern
 
     @Override
     public GenericRecord getGenericRecord(@Nonnull String fieldName) {
-        return getVariableLength(fieldName, COMPOSED, serializer::readGenericRecord);
+        return getVariableLength(fieldName, COMPOSED, in -> serializer.readGenericRecord(in, schemaIncludedInBinary));
     }
 
     @Override
     public <T> T getObject(@Nonnull String fieldName) {
-        return getVariableLength(fieldName, COMPOSED, serializer::readObject);
+        return getVariableLength(fieldName, COMPOSED, in -> serializer.readObject(in, schemaIncludedInBinary));
     }
 
     @Override
@@ -536,13 +539,15 @@ public class DefaultCompactReader extends CompactGenericRecord implements Intern
 
     @Override
     public GenericRecord[] getGenericRecordArray(@Nonnull String fieldName) {
-        return getVariableLengthArray(fieldName, COMPOSED_ARRAY, GenericRecord[]::new, serializer::readGenericRecord);
+        return getVariableLengthArray(fieldName, COMPOSED_ARRAY, GenericRecord[]::new,
+                in -> serializer.readGenericRecord(in, schemaIncludedInBinary));
     }
 
     @Override
     public <T> T[] getObjectArray(@Nonnull String fieldName, Class<T> componentType) {
         return getVariableLengthArray(fieldName, COMPOSED_ARRAY,
-                length -> (T[]) Array.newInstance(componentType, length), serializer::readObject);
+                length -> (T[]) Array.newInstance(componentType, length),
+                in -> serializer.readObject(in, schemaIncludedInBinary));
     }
 
     @Override
@@ -566,7 +571,7 @@ public class DefaultCompactReader extends CompactGenericRecord implements Intern
                 int pos = in.readInt(offset + i * Bits.INT_SIZE_IN_BYTES);
                 if (pos != NULL_ARRAY_LENGTH) {
                     in.position(pos);
-                    objects.add(serializer.readObject(in));
+                    objects.add(serializer.readObject(in, schemaIncludedInBinary));
                 }
             }
             return objects;
@@ -725,7 +730,8 @@ public class DefaultCompactReader extends CompactGenericRecord implements Intern
 
     @Override
     public GenericRecord getGenericRecordFromArray(@Nonnull String fieldName, int index) {
-        return getVarSizeFromArray(fieldName, COMPOSED_ARRAY, serializer::readGenericRecord, index);
+        return getVarSizeFromArray(fieldName, COMPOSED_ARRAY,
+                in -> serializer.readGenericRecord(in, schemaIncludedInBinary), index);
     }
 
     @Override
@@ -755,7 +761,8 @@ public class DefaultCompactReader extends CompactGenericRecord implements Intern
 
     @Override
     public Object getObjectFromArray(@Nonnull String fieldName, int index) {
-        return getVarSizeFromArray(fieldName, COMPOSED_ARRAY, serializer::readObject, index);
+        return getVarSizeFromArray(fieldName, COMPOSED_ARRAY,
+                in -> serializer.readObject(in, schemaIncludedInBinary), index);
     }
 
     private <T> T getVarSizeFromArray(@Nonnull String fieldName, FieldType fieldType,

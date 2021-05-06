@@ -219,7 +219,7 @@ public class AbstractSerializationServiceTest {
     @Test(expected = HazelcastInstanceNotActiveException.class)
     public void testSerializerFor_ServiceInactive() throws Exception {
         abstractSerializationService.dispose();
-        abstractSerializationService.serializerFor(new CustomSerializationTest.Foo());
+        abstractSerializationService.serializerFor(new CustomSerializationTest.Foo(), false);
     }
 
     @Test

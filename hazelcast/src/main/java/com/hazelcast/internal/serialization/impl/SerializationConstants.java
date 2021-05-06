@@ -139,8 +139,9 @@ public final class SerializationConstants {
 
     public static final int TYPE_COMPACT = -55;
 
-    // NUMBER OF CONSTANT SERIALIZERS...
-    public static final int CONSTANT_SERIALIZERS_LENGTH = 56;
+    public static final int TYPE_COMPACT_WITH_SCHEMA = -56;
+
+    public static final int CONSTANT_SERIALIZERS_LENGTH = 57;
 
     // ------------------------------------------------------------
     // JAVA SERIALIZATION

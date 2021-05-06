@@ -46,7 +46,6 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
     private final boolean isDebug = System.getProperty("com.hazelcast.serialization.compact.debug") != null;
     private final Map<Class, ConfigurationRegistry> classToRegistryMap = new ConcurrentHashMap<>();
     private final Map<String, ConfigurationRegistry> classNameToRegistryMap = new ConcurrentHashMap<>();
-
     private final Map<Class, Schema> classToSchemaMap = new ConcurrentHashMap<>();
     private final ReflectiveCompactSerializer reflectiveSerializer = new ReflectiveCompactSerializer();
     private final SchemaService schemaService;
@@ -76,8 +75,9 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
         return internalSerializationService;
     }
 
-    public InternalGenericRecord readAsInternalGenericRecord(ObjectDataInput input) throws IOException {
-        return (InternalGenericRecord) readGenericRecord(input);
+    public InternalGenericRecord readAsInternalGenericRecord(ObjectDataInput input, boolean schemaIncludedInBinary)
+            throws IOException {
+        return (InternalGenericRecord) readGenericRecord(input, schemaIncludedInBinary);
     }
 
     @Override
@@ -96,19 +96,19 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
     public void write(ObjectDataOutput out, Object o) throws IOException {
         assert out instanceof BufferObjectDataOutput;
         BufferObjectDataOutput bufferObjectDataOutput = (BufferObjectDataOutput) out;
-        if (o instanceof GenericRecord) {
-            writeGenericRecord(bufferObjectDataOutput, (GenericRecord) o);
+        write(bufferObjectDataOutput, o, false);
+    }
+
+    void write(BufferObjectDataOutput out, Object o, boolean includeSchemaOnBinary) throws IOException {
+        if (o instanceof CompactGenericRecord) {
+            writeGenericRecord(out, (CompactGenericRecord) o, includeSchemaOnBinary);
         } else {
-            writeObject(bufferObjectDataOutput, o);
+            writeObject(out, o, includeSchemaOnBinary);
         }
     }
 
-    void writeGenericRecord(BufferObjectDataOutput out, GenericRecord o) throws IOException {
-        writeCompactGenericRecord(out, (CompactGenericRecord) o);
-    }
-
-    @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:CyclomaticComplexity"})
-    void writeCompactGenericRecord(BufferObjectDataOutput output, CompactGenericRecord record) throws IOException {
+    void writeGenericRecord(BufferObjectDataOutput output, CompactGenericRecord record,
+                            boolean includeSchemaOnBinary) throws IOException {
         Schema schema = record.getSchema();
         if (!schema.isSchemaIdSet()) {
             Data data = internalSerializationService.toData(schema);
@@ -120,8 +120,8 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
             System.out.println("DEBUG WRITE DESERIALIZED GENERIC RECORD " + schema.getTypeName() + " pos "
                     + output.position() + " " + schema.getSchemaId());
         }
-        output.writeLong(schema.getSchemaId());
-        DefaultCompactWriter writer = new DefaultCompactWriter(this, output, schema);
+        writeSchema(output, includeSchemaOnBinary, schema);
+        DefaultCompactWriter writer = new DefaultCompactWriter(this, output, schema, includeSchemaOnBinary);
         Collection<FieldDescriptor> fields = schema.getFields();
         for (FieldDescriptor fieldDescriptor : fields) {
             String fieldName = fieldDescriptor.getFieldName();
@@ -131,7 +131,7 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
         writer.end();
     }
 
-    public void writeObject(BufferObjectDataOutput out, Object o) throws IOException {
+    public void writeObject(BufferObjectDataOutput out, Object o, boolean includeSchemaOnBinary) throws IOException {
         ConfigurationRegistry registry = getOrCreateRegistry(o);
         Class<?> aClass = o.getClass();
 
@@ -150,10 +150,22 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
             System.out.println("DEBUG WRITE OBJECT " + schema.getTypeName() + " pos "
                     + out.position() + " " + schema.getSchemaId());
         }
-        out.writeLong(schema.getSchemaId());
-        DefaultCompactWriter writer = new DefaultCompactWriter(this, out, schema);
+        writeSchema(out, includeSchemaOnBinary, schema);
+        DefaultCompactWriter writer = new DefaultCompactWriter(this, out, schema, includeSchemaOnBinary);
         registry.getSerializer().write(writer, o);
         writer.end();
+    }
+
+    private void writeSchema(BufferObjectDataOutput out, boolean includeSchemaOnBinary, Schema schema) throws IOException {
+        out.writeLong(schema.getSchemaId());
+        if (includeSchemaOnBinary) {
+            int sizeOfSchemaPosition = out.position();
+            out.writeInt(0);
+            int schemaBeginPos = out.position();
+            schema.writeData(out);
+            int schemaEndPosition = out.position();
+            out.writeInt(sizeOfSchemaPosition, schemaEndPosition - schemaBeginPos);
+        }
     }
 
 
@@ -162,14 +174,15 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
     @Override
     public Object read(ObjectDataInput in) throws IOException {
         BufferObjectDataInput input = (BufferObjectDataInput) in;
+        return read(input, false);
+    }
+
+    Object read(BufferObjectDataInput input, boolean schemaIncludedInBinary) throws IOException {
         if (isDebug) {
             System.out.print("DEBUG READ pos " + input.position());
         }
-        long schemaId = input.readLong();
-        if (isDebug) {
-            System.out.println(" schemaId " + schemaId);
-        }
-        Schema schema = schemaService.get(schemaId);
+
+        Schema schema = getOrReadSchema(input, schemaIncludedInBinary);
         if (isDebug) {
             System.out.println("DEBUG READ schema class name " + schema.getTypeName());
         }
@@ -177,19 +190,47 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
 
         if (registry == null) {
             //we have tried to load class via class loader, it did not work. We are returning a GenericRecord.
-            return new DefaultCompactReader(this, input, schema, null);
+            return new DefaultCompactReader(this, input, schema, null, schemaIncludedInBinary);
         }
 
-        DefaultCompactReader genericRecord = new DefaultCompactReader(this, input, schema, registry.getClazz());
+        DefaultCompactReader genericRecord = new DefaultCompactReader(this, input, schema,
+                registry.getClazz(), schemaIncludedInBinary);
         Object object = registry.getSerializer().read(genericRecord);
         return managedContext != null ? managedContext.initialize(object) : object;
 
     }
 
-    public <T> T readObject(ObjectDataInput in) throws IOException {
-        BufferObjectDataInput input = (BufferObjectDataInput) in;
+    private Schema getOrReadSchema(ObjectDataInput input, boolean schemaIncludedInBinary) throws IOException {
         long schemaId = input.readLong();
         Schema schema = schemaService.get(schemaId);
+        if (schema != null) {
+            if (schemaIncludedInBinary) {
+                int sizeOfSchema = input.readInt();
+                input.skipBytes(sizeOfSchema);
+            }
+            return schema;
+        }
+        if (schemaIncludedInBinary) {
+            //sizeOfSchema
+            input.readInt();
+            schema = new Schema();
+            schema.readData(input);
+            //TODO sancar cache data of shcema in schema service
+            Data data = internalSerializationService.toData(schema);
+            long includedSchemaId = RabinFingerPrint.fingerprint64(data.toByteArray());
+            if (schemaId != includedSchemaId) {
+                throw new HazelcastSerializationException("Invalid schema id found. Expected " + schemaId
+                        + ", actual " + includedSchemaId + " for schema " + schema);
+            }
+            schema.setSchemaId(schemaId);
+            schemaService.put(schema);
+        }
+        return schema;
+    }
+
+    public <T> T readObject(ObjectDataInput in, boolean schemaIncludedInBinary) throws IOException {
+        BufferObjectDataInput input = (BufferObjectDataInput) in;
+        Schema schema = getOrReadSchema(in, schemaIncludedInBinary);
         ConfigurationRegistry registry = getOrCreateRegistry(schema.getTypeName());
 
         if (registry == null) {
@@ -197,7 +238,8 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
                     + "Associated schema for the data : " + schema);
         }
 
-        DefaultCompactReader genericRecord = new DefaultCompactReader(this, input, schema, registry.getClazz());
+        DefaultCompactReader genericRecord = new DefaultCompactReader(this, input, schema,
+                registry.getClazz(), schemaIncludedInBinary);
         Object object = registry.getSerializer().read(genericRecord);
         return managedContext != null ? (T) managedContext.initialize(object) : (T) object;
     }
@@ -229,10 +271,9 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
         });
     }
 
-    public GenericRecord readGenericRecord(ObjectDataInput in) throws IOException {
-        long schemaId = in.readLong();
-        Schema schema = schemaService.get(schemaId);
+    public GenericRecord readGenericRecord(ObjectDataInput in, boolean schemaIncludedInBinary) throws IOException {
+        Schema schema = getOrReadSchema(in, schemaIncludedInBinary);
         BufferObjectDataInput input = (BufferObjectDataInput) in;
-        return new DefaultCompactReader(this, input, schema, null);
+        return new DefaultCompactReader(this, input, schema, null, schemaIncludedInBinary);
     }
 }
