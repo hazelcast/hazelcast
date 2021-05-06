@@ -363,6 +363,9 @@
         },
         "instance-tracking":  {
           "$ref": "#/definitions/InstanceTracking"
+        },
+        "metrics": {
+          "$ref": "#/definitions/ClientMetrics"
         }
       }
     }
@@ -2301,30 +2304,56 @@
     },
     "Metrics": {
       "type": "object",
-      "additionalProperties": false,
+      "allOf": [
+        {
+          "properties": {
+            "management-center": {
+              "type": "object",
+              "description": "Defines the Hazelcast Management Center related metrics configuration.",
+              "additionalProperties": false,
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "Controls whether the metrics collected are exposed to Hazelcast Management Center. Please note that the metrics are polled by the Hazelcast Management Center, hence the members need to buffer the collected metrics between two polls. The aim for this switch is to reduce memory consumption of the metrics system if the Hazelcast Management Center is not used."
+                },
+                "retention-seconds": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "default": 5,
+                  "description": "Sets the number of seconds the metrics will be retained on the instance. More retention means more heap memory, but allows for longer client hiccups without losing a value (for example to restart the Management Center)."
+                }
+              }
+            }
+          },
+          "propertyNames": {
+            "enum": ["enabled", "management-center", "jmx", "collection-frequency-seconds"]
+          }
+        },
+        {
+          "$ref": "#/definitions/BaseMetrics"
+        }
+      ]
+    },
+    "ClientMetrics": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/BaseMetrics"
+        },
+        {
+          "propertyNames": {
+            "enum": ["enabled", "jmx", "collection-frequency-seconds"]
+          }
+        }
+      ]
+    },
+    "BaseMetrics": {
+      "type": "object",
       "properties": {
         "enabled": {
           "type": "boolean",
           "default": true,
           "description": "The master-switch for the metrics collection. If this is set to false no metrics collection is done, regardless of the other settings."
-        },
-        "management-center": {
-          "type": "object",
-          "description": "Defines the Hazelcast Management Center related metrics configuration.",
-          "additionalProperties": false,
-          "properties": {
-            "enabled": {
-              "type": "boolean",
-              "default": true,
-              "description": "Controls whether the metrics collected are exposed to Hazelcast Management Center. Please note that the metrics are polled by the Hazelcast Management Center, hence the members need to buffer the collected metrics between two polls. The aim for this switch is to reduce memory consumption of the metrics system if the Hazelcast Management Center is not used."
-            },
-            "retention-seconds": {
-              "type": "integer",
-              "minimum": 1,
-              "default": 5,
-              "description": "Sets the number of seconds the metrics will be retained on the instance. More retention means more heap memory, but allows for longer client hiccups without losing a value (for example to restart the Management Center)."
-            }
-          }
         },
         "jmx": {
           "type": "object",
