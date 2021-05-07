@@ -79,7 +79,7 @@ public class LightJobTest extends SimpleTestInClusterSupport {
 
         Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items(items))
-                .writeTo(Sinks.noop());
+                .writeTo(Sinks.list("sink"));
 
         submittingInstance().newLightJob(p).join();
         List<Integer> result = instance().getList("sink");
