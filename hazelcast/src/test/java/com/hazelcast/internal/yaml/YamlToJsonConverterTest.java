@@ -68,6 +68,15 @@ public class YamlToJsonConverterTest {
     }
 
     @Test
+    public void floatConversion() {
+        YamlMappingImpl hazelcastNode = new YamlMappingImpl(null, "hazelcast");
+        hazelcastNode.addChild("myFloat", new YamlScalarImpl(hazelcastNode, "myFloat", "0.5"));
+
+        JSONObject actual = (JSONObject) YamlToJsonConverter.convert(hazelcastNode);
+        assertTrue(actual.get("myFloat") instanceof Float);
+    }
+
+    @Test
     public void convertUnknownNode() {
         YamlMappingImpl parentNode = createYamlMapping();
         YamlMappingImpl hazelcast = (YamlMappingImpl) parentNode.childAsMapping("hazelcast");
