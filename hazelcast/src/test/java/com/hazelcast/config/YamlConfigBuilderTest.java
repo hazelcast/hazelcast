@@ -3157,21 +3157,6 @@ public class YamlConfigBuilderTest
                 permTypes.isEmpty());
     }
 
-    @Test
-    public void cacheEntryListenerParsingTest()
-            throws Exception {
-        String yaml = IOUtils.toString(getClass().getResourceAsStream("/com/hazelcast/config/yaml/cache-entry-listener.yaml"),
-                StandardCharsets.UTF_8);
-        Config actual = buildConfig(yaml);
-        CacheSimpleEntryListenerConfig expected = new CacheSimpleEntryListenerConfig()
-                .setOldValueRequired(true)
-                .setSynchronous(true)
-                .setCacheEntryListenerFactory("com.example.cache.MyEntryListenerFactory")
-                .setCacheEntryEventFilterFactory("com.example.cache.MyEntryEventFilterFactory");
-        CacheSimpleEntryListenerConfig listenerCfg = actual.getCacheConfig("my-cache").getCacheEntryListeners().get(0);
-        assertEquals(expected, listenerCfg);
-    }
-
     @Override
     @Test(expected = InvalidConfigurationException.class)
     @Ignore("Schema validation is supposed to fail with missing mandatory field: class-name")
