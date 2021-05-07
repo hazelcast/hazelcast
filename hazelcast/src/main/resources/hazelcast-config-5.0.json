@@ -218,6 +218,25 @@
           "$ref": "#/definitions/ClientNetwork"
         }
       }
+    },
+    "hazelcast-client-failover": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "The Hazelcast client can configurations that the client is using to connect to a Hazelcast cluster in the case of a disconnect is listed under the \"clients\" array. You can list client configurations as many as you want.",
+      "properties": {
+        "clients": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "try-count": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 2147483647
+        }
+      }
     }
   },
   "definitions": {
@@ -3104,7 +3123,7 @@
           "member-count-split-brain-protection": {
             "enabled": {
               "type": "boolean",
-              "default":  false
+              "default": false
             },
             "protect-on": {
               "enum": [
@@ -4220,7 +4239,7 @@
               "description": "Maximum number of hops the packets should go through. You can set to 0 to use your system’s default TTL.",
               "type": "integer",
               "default": 255,
-              "minimum": 0,
+              "minimum": 0
             },
             "echo-fail-fast-on-startup": {
               "description": "The client will fail to start if it is unable to action an ICMP ping command when ICMP is enabled. Failure is usually due to OS level restrictions.",

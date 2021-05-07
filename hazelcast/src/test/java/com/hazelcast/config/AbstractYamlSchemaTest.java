@@ -23,6 +23,8 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.everit.json.schema.Schema;
 import org.everit.json.schema.ValidationException;
+import org.everit.json.schema.loader.SchemaClient;
+import org.everit.json.schema.loader.SchemaLoader;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -50,6 +52,13 @@ import static org.junit.Assert.fail;
 public abstract class AbstractYamlSchemaTest {
 
     private static final ILogger LOGGER = Logger.getLogger(AbstractYamlSchemaTest.class);
+
+    public static final Schema SCHEMA = SchemaLoader.builder()
+            .schemaJson(readJSONObject("/hazelcast-config-5.0.json"))
+            .draftV6Support()
+            .schemaClient(SchemaClient.classPathAwareClient())
+            .build()
+            .load().build();
 
     static JSONObject readJSONObject(String absPath) {
         return new JSONObject(new JSONTokener(MemberYamlSchemaTest.class.getResourceAsStream(absPath)));
@@ -102,8 +111,7 @@ public abstract class AbstractYamlSchemaTest {
     @Test
     public void runTest() {
         try {
-            Schema schema = getSchema();
-            schema.validate(input);
+            SCHEMA.validate(input);
             if (expectedValidationError != null) {
                 fail("did not throw exception");
             }
@@ -119,7 +127,5 @@ public abstract class AbstractYamlSchemaTest {
             }
         }
     }
-
-    protected abstract Schema getSchema();
 
 }

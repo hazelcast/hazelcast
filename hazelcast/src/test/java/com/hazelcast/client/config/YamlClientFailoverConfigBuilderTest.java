@@ -17,6 +17,7 @@
 package com.hazelcast.client.config;
 
 import com.hazelcast.config.InvalidConfigurationException;
+import com.hazelcast.config.SchemaViolationConfigurationException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.internal.util.RootCauseMatcher;
@@ -54,13 +55,11 @@ public class YamlClientFailoverConfigBuilderTest extends AbstractClientFailoverC
         assertEquals(2, clientFailoverConfig.getTryCount());
     }
 
-    @Test
+    @Test(expected = SchemaViolationConfigurationException.class)
     public void testExpectsAtLeastOneConfig() {
         String yaml = ""
                 + "hazelcast-client-failover:\n"
-                + "  clients: {}";
-
-        expected.expect(new RootCauseMatcher(InvalidConfigurationException.class, "hazelcast-client-failover/clients"));
+                + "  clients: []";
         buildConfig(yaml);
     }
 
@@ -125,7 +124,7 @@ public class YamlClientFailoverConfigBuilderTest extends AbstractClientFailoverC
         return new YamlClientFailoverConfigBuilder().build();
     }
 
-    private static ClientFailoverConfig buildConfig(String yaml) {
+    public static ClientFailoverConfig buildConfig(String yaml) {
         return buildConfig(yaml, null);
     }
 

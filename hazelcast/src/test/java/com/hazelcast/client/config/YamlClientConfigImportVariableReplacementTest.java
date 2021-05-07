@@ -19,6 +19,7 @@ package com.hazelcast.client.config;
 import com.hazelcast.config.AbstractConfigImportVariableReplacementTest.IdentityReplacer;
 import com.hazelcast.config.AbstractConfigImportVariableReplacementTest.TestReplacer;
 import com.hazelcast.config.InvalidConfigurationException;
+import com.hazelcast.config.SchemaViolationConfigurationException;
 import com.hazelcast.config.helpers.DeclarativeConfigFileHelper;
 import com.hazelcast.config.replacer.EncryptionReplacer;
 import com.hazelcast.core.HazelcastException;
@@ -62,7 +63,7 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
     }
 
     @Override
-    @Test
+    @Test(expected = SchemaViolationConfigurationException.class)
     public void testImportElementOnlyAppearsInTopLevel() throws IOException {
         String config1Yaml = ""
                 + "hazelcast-client:\n"
@@ -79,24 +80,6 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
         // verify that instance-name is not set, because the import is not
         // processed when defined at this level
         assertNull(clientConfig.getInstanceName());
-    }
-
-    @Test
-    public void testImportNoHazelcastClientRootNode() throws Exception {
-        String importedYaml = ""
-                + "properties:\n"
-                + "  prop1: value1\n"
-                + "  prop2: value2\n";
-        String configPath = helper.givenConfigFileInWorkDir("foo.bar", importedYaml).getAbsolutePath();
-
-        String yaml = ""
-                + "import:\n"
-                + "  - " + "${file}\n"
-                + "instance-name: my-instance";
-        ClientConfig clientConfig = buildConfig(yaml, "file", configPath);
-        assertEquals("my-instance", clientConfig.getInstanceName());
-        assertEquals("value1", clientConfig.getProperty("prop1"));
-        assertEquals("value2", clientConfig.getProperty("prop2"));
     }
 
     @Override

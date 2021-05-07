@@ -22,6 +22,7 @@ import com.hazelcast.client.config.impl.YamlClientFailoverDomConfigProcessor;
 import com.hazelcast.config.AbstractYamlConfigBuilder;
 import com.hazelcast.internal.config.ConfigLoader;
 import com.hazelcast.config.InvalidConfigurationException;
+import com.hazelcast.internal.config.YamlConfigSchemaValidator;
 import com.hazelcast.internal.config.yaml.YamlDomChecker;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.yaml.YamlLoader;
@@ -157,6 +158,10 @@ public class YamlClientFailoverConfigBuilder extends AbstractYamlConfigBuilder {
         Node w3cRootNode = asW3cNode(clientFailoverRoot);
         replaceVariables(w3cRootNode);
         importDocuments(clientFailoverRoot);
+        
+        if (shouldValidateTheSchema()) {
+            new YamlConfigSchemaValidator().validate((YamlMapping) yamlRootNode);
+        }
 
         new YamlClientFailoverDomConfigProcessor(true, config).buildConfig(w3cRootNode);
     }

@@ -18,20 +18,13 @@ package com.hazelcast.config;
 
 import org.junit.runners.Parameterized;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.toList;
-
-public class MemberYamlSchemaTest
-        extends AbstractYamlSchemaTest {
+public class ClientFailoverYamlSchemaTest extends AbstractYamlSchemaTest {
 
     @Parameterized.Parameters(name = "{0}")
     public static List<Object[]> buildTestcases() {
-        return Stream.concat(
-                buildTestcases("com/hazelcast/config/yaml/testcases/member/").stream(),
-                buildTestcases("com/hazelcast/config/yaml/testcases/common/").stream()
-        ).collect(toList());
+        return new ArrayList<>(buildTestcases("com/hazelcast/config/yaml/testcases/client-failover/"));
     }
-
 }

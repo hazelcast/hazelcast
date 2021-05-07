@@ -169,7 +169,9 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigBuilder {
             domLevel3 = false;
         }
         process(root);
-        schemaValidation(root.getOwnerDocument());
+        if (shouldValidateTheSchema()) {
+            schemaValidation(root.getOwnerDocument());
+        }
         new ClientDomConfigProcessor(domLevel3, clientConfig).buildConfig(root);
     }
 

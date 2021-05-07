@@ -28,10 +28,15 @@ import org.json.JSONTokener;
 
 import java.util.List;
 
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
+import static java.util.Collections.unmodifiableList;
 
 public class YamlConfigSchemaValidator {
+
+    private static final List<String> PERMITTED_ROOT_NODES = unmodifiableList(
+            asList("hazelcast", "hazelcast-client", "hazelcast-client-failover"));
 
     private static final Schema SCHEMA = SchemaLoader.builder().draftV6Support()
             .schemaJson(readJSONObject("/hazelcast-config-" + Versions.CURRENT_CLUSTER_VERSION.getMajor() + "."
@@ -62,14 +67,15 @@ public class YamlConfigSchemaValidator {
      */
     public void validate(YamlMapping rootNode) {
         try {
-            boolean memberRootMissing = rootNode.child("hazelcast") == null;
-            boolean clientRootMissing = rootNode.child("hazelcast-client") == null;
             // this could be expressed in the schema as well, but that would make all the schema validation errors much harder
             // to read, so it is better to implement it here as a semantic check
-            if (memberRootMissing == clientRootMissing) {
+            long definedRootNodeCount = PERMITTED_ROOT_NODES.stream()
+                    .filter(rootNodeName -> rootNode.child(rootNodeName) != null)
+                    .count();
+            if (definedRootNodeCount != 1) {
                 throw new SchemaViolationConfigurationException(
-                        "exactly one of [hazelcast] and [hazelcast-client] should be present in the root schema document, "
-                                + (memberRootMissing ? "none of them" : "both of them") + " are present",
+                        "exactly one of [hazelcast], [hazelcast-client] and [hazelcast-client-failover] should be present in the"
+                                + " root schema document, " + definedRootNodeCount + " are present",
                         "#", "#", emptyList());
             }
             SCHEMA.validate(YamlToJsonConverter.convert(rootNode));
