@@ -3101,6 +3101,25 @@
               "type": "string"
             }
           },
+          "member-count-split-brain-protection": {
+            "enabled": {
+              "type": "boolean",
+              "default":  false
+            },
+            "protect-on": {
+              "enum": [
+                "READ",
+                "WRITE",
+                "READ_WRITE"
+              ]
+            },
+            "minimum-cluster-size": {
+              "type": "integer"
+            },
+            "member-count-split-brain-protection": {
+              "type": "object"
+            }
+          },
           "recently-active-split-brain-protection": {
             "type": "object",
             "additionalProperties": false,

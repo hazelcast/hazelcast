@@ -19,6 +19,10 @@ package com.hazelcast.internal.yaml;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+/**
+ * Used to convert YAML configurations from their {@link YamlMapping} representation to their equivalent {@link JSONObject}
+ * representation. It is necessary to convert the configuration written in YAML syntax against a JSON schema.
+ */
 public final class YamlToJsonConverter {
 
     private YamlToJsonConverter() {

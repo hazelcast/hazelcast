@@ -935,6 +935,12 @@
         <statistics-enabled>false</statistics-enabled>
     </pn-counter>
 
+    <split-brain-protection enabled="true" name="member-count-split-brain-protection">
+        <protect-on>READ_WRITE</protect-on>
+        <minimum-cluster-size>3</minimum-cluster-size>
+        <member-count-split-brain-protection/>
+    </split-brain-protection>
+
     <split-brain-protection enabled="true" name="probabilistic-split-brain-protection">
         <minimum-cluster-size>3</minimum-cluster-size>
         <protect-on>READ_WRITE</protect-on>

@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.YamlConfigSchemaValidator;
 import com.hazelcast.internal.yaml.YamlDomBuilder;
 import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -38,7 +39,7 @@ public class YamlConfigSchemaValidatorTest {
     @Test
     public void validationExceptionIsWrapped() {
         YamlMapping config = (YamlMapping) YamlDomBuilder.build(new HashMap<>());
-        YamlConfigSchemaValidator validator = YamlConfigSchemaValidator.create();
+        YamlConfigSchemaValidator validator = new YamlConfigSchemaValidator();
         try {
             validator.validate(config);
             fail("did not throw exception for invalid config");

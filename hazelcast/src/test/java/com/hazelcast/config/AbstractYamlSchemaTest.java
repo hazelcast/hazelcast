@@ -1,13 +1,34 @@
+/*
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.config;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.everit.json.schema.Schema;
 import org.everit.json.schema.ValidationException;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.reflections.Reflections;
 import org.reflections.scanners.ResourcesScanner;
@@ -23,10 +44,13 @@ import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public abstract class AbstractYamlSchemaTest {
 
     private static final ILogger LOGGER = Logger.getLogger(AbstractYamlSchemaTest.class);
-    
+
     static JSONObject readJSONObject(String absPath) {
         return new JSONObject(new JSONTokener(MemberYamlSchemaTest.class.getResourceAsStream(absPath)));
     }
@@ -51,7 +75,6 @@ public abstract class AbstractYamlSchemaTest {
         String testName = path.substring(rootDir.length(), path.length() - 5);
         return new Object[]{testName, testcase.getJSONObject("instance"), error};
     }
-
 
     private void sortCauses(JSONObject exc) {
         JSONArray causes = exc.optJSONArray("causingExceptions");

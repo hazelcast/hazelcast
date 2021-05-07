@@ -36,7 +36,6 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.wan.WanPublisherState;
-import org.apache.commons.io.IOUtils;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -48,7 +47,6 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.HashSet;
@@ -1791,7 +1789,7 @@ public class YamlConfigBuilderTest
         assertFalse(consumerConfig.isPersistWanReplicatedData());
     }
 
-    protected Config buildConfig(String yaml) {
+    protected static Config buildConfig(String yaml) {
         ByteArrayInputStream bis = new ByteArrayInputStream(yaml.getBytes());
         YamlConfigBuilder configBuilder = new YamlConfigBuilder(bis);
         return configBuilder.build();
@@ -3157,21 +3155,6 @@ public class YamlConfigBuilderTest
                 permTypes.isEmpty());
     }
 
-    @Test
-    public void cacheEntryListenerParsingTest()
-            throws Exception {
-        String yaml = IOUtils.toString(getClass().getResourceAsStream("/com/hazelcast/config/yaml/cache-entry-listener.yaml"),
-                StandardCharsets.UTF_8);
-        Config actual = buildConfig(yaml);
-        CacheSimpleEntryListenerConfig expected = new CacheSimpleEntryListenerConfig()
-                .setOldValueRequired(true)
-                .setSynchronous(true)
-                .setCacheEntryListenerFactory("com.example.cache.MyEntryListenerFactory")
-                .setCacheEntryEventFilterFactory("com.example.cache.MyEntryEventFilterFactory");
-        CacheSimpleEntryListenerConfig listenerCfg = actual.getCacheConfig("my-cache").getCacheEntryListeners().get(0);
-        assertEquals(expected, listenerCfg);
-    }
-
     @Override
     @Test(expected = InvalidConfigurationException.class)
     @Ignore("Schema validation is supposed to fail with missing mandatory field: class-name")
@@ -3624,13 +3607,6 @@ public class YamlConfigBuilderTest
                 + "      enabled: true\n"
                 + "      protect-on:   WRITE   \n";
 
-        buildConfig(yaml);
-    }
-
-    @Override
-    public void testSkippingSchemaValidation() {
-        System.setProperty("hazelcast.config.schema.validation.enabled", "false");
-        String yaml = "invalid: yes";
         buildConfig(yaml);
     }
 

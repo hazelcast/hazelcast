@@ -18,6 +18,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.internal.config.ConfigSections;
 import com.hazelcast.internal.config.YamlConfigLocator;
+import com.hazelcast.internal.config.YamlConfigSchemaValidator;
 import com.hazelcast.internal.config.YamlMemberDomConfigProcessor;
 import com.hazelcast.internal.config.yaml.YamlDomChecker;
 import com.hazelcast.internal.nio.IOUtil;
@@ -159,7 +160,7 @@ public class YamlConfigBuilder extends AbstractYamlConfigBuilder implements Conf
         importDocuments(imdgRoot);
 
         if (shouldValidateTheSchema()) {
-            YamlConfigSchemaValidator.create().validate((YamlMapping) imdgRoot.parent());
+            new YamlConfigSchemaValidator().validate((YamlMapping) imdgRoot.parent());
         }
 
         new YamlMemberDomConfigProcessor(true, config).buildConfig(w3cRootNode);

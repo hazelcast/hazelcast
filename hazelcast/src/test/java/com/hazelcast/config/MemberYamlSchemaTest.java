@@ -32,7 +32,8 @@ import static java.util.stream.Collectors.toList;
 
 @RunWith(Parameterized.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class MemberYamlSchemaTest extends AbstractYamlSchemaTest {
+public class MemberYamlSchemaTest
+        extends AbstractYamlSchemaTest {
 
     public static final Schema SCHEMA = SchemaLoader.builder()
             .schemaJson(readJSONObject("/hazelcast-config-5.0.json"))
