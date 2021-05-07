@@ -16,10 +16,13 @@
 
 package com.hazelcast.jet.sql.impl.connector.map;
 
+import com.hazelcast.function.SupplierEx;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
+import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
@@ -161,4 +164,22 @@ public class OnHeapMapScanP extends AbstractProcessor {
         }
     }
 
+    public static ProcessorMetaSupplier ohHeapMapScanP(
+            @Nonnull String mapName,
+            @Nonnull NodeEngine nodeEngine,
+            @Nonnull MapScanPlanNode mapScanPlanNode
+    ) {
+        return ProcessorMetaSupplier.of(
+                processorSupplier(mapName, nodeEngine, mapScanPlanNode)
+        );
+    }
+
+    @Nonnull
+    public static SupplierEx<Processor> processorSupplier(
+            @Nonnull String mapName,
+            @Nonnull NodeEngine nodeEngine,
+            @Nonnull MapScanPlanNode mapScanPlanNode
+    ) {
+        return () -> new OnHeapMapScanP(mapName, nodeEngine, mapScanPlanNode);
+    }
 }
