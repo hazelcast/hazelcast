@@ -74,7 +74,7 @@ public class TcpIpHostnameJoinTest {
 
         List<NetworkInterface> networkInterfaces = new ArrayList<NetworkInterface>();
         networkInterfaces.add(createNetworkConfig("lo", true, LOCALHOST, LOCALHOST2, LOCALHOST3, LOCALHOST4));
-        when(NetworkInterface.getNetworkInterfaces()).thenReturn(enumeration(networkInterfaces));
+        when(NetworkInterface.getNetworkInterfaces()).then(invocation -> enumeration(networkInterfaces));
     }
 
     @After
