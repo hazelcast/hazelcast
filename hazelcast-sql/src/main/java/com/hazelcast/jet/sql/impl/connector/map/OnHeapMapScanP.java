@@ -42,6 +42,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * This is SQL internal processor to provide a background for DML operations (e.g., SELECT * FROM map).
+ * <p>
+ * The main idea here is to encapsulate all map walking process into IMapTraverser.
+ * There is a special {@link MapScanExecIterator} inside the traverser that allows
+ * it to walk over all map partitions and extract map entries.
+ * IMapTraverser does a setup of MapScanExecIterator and starts traversing map partitions.
+ * Simultaneously, usage of Traverser interface saves simplicity and cleanliness:
+ * it just return all map entries which it can read.
+ */
 public class OnHeapMapScanP extends AbstractProcessor {
     protected final IMapTraverser traverser;
 
