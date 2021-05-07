@@ -71,13 +71,14 @@ public class MetricsTest extends JetTestSupport {
 
     private final Pipeline pipeline = Pipeline.create();
     private JetInstance instance;
+    private Config config;
 
     @Before
     public void before() {
-        Config config = new Config();
+        config = smallInstanceConfig();
         config.setProperty("hazelcast.jmx", "true");
         config.getMetricsConfig().setCollectionFrequencySeconds(1);
-        instance = createJetMembers(config, 1)[0];
+        instance = createJetMember(config);
 
         TestProcessors.reset(1);
     }
@@ -415,7 +416,7 @@ public class MetricsTest extends JetTestSupport {
 
         String instanceName = instance.getHazelcastInstance().getName();
         long sum = 0;
-        int availableProcessors = Runtime.getRuntime().availableProcessors();
+        int availableProcessors = config.getJetConfig().getInstanceConfig().getCooperativeThreadCount();
         for (int i = 0; i < availableProcessors; i++) {
             JmxMetricsChecker jmxMetricsChecker = new JmxMetricsChecker(instanceName, job,
                     "vertex=fused(filter, map)", "procType=TransformP", "proc=" + i, "user=true");
