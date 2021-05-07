@@ -23,7 +23,7 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * A handler to a submitted <i>light job</i>. See {@link
+ * A handle to a submitted job. See {@link
  * JetInstance#newLightJob(Pipeline)}.
  */
 public interface LightJob {
