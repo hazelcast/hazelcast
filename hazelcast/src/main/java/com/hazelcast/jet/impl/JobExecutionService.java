@@ -487,7 +487,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
                         nodeEngine.getMetricsRegistry().collect(metricsRenderer);
                         terminalMetrics = metricsRenderer.getMetrics();
                     } else {
-                        terminalMetrics = RawJobMetrics.empty();
+                        terminalMetrics = null;
                     }
                     return terminalMetrics;
                 })

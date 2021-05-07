@@ -433,7 +433,7 @@ public class MasterJobContext {
                 invokeStartExecution();
             } else {
                 cancelExecutionInvocations(mc.jobId(), mc.executionId(), null, () ->
-                        onCompleteExecution(error != null ? error
+                        onStartExecutionComplete(error != null ? error
                                 : new IllegalStateException("Cannot execute " + mc.jobIdString() + ": status is " + status),
                                 emptyList())
                 );
@@ -457,7 +457,7 @@ public class MasterJobContext {
         Function<ExecutionPlan, Operation> operationCtor =
                 plan -> new StartExecutionOperation(mc.jobId(), executionId, savingMetricsEnabled);
         Consumer<Collection<Map.Entry<MemberInfo, Object>>> completionCallback =
-                responses -> onCompleteExecution(getErrorFromResponses("Execution", responses),
+                responses -> onStartExecutionComplete(getErrorFromResponses("Execution", responses),
                         responses);
 
         mc.setJobStatus(RUNNING);
@@ -560,7 +560,7 @@ public class MasterJobContext {
         }
     }
 
-    private void onCompleteExecution(Throwable error, Collection<Entry<MemberInfo, Object>> responses) {
+    private void onStartExecutionComplete(Throwable error, Collection<Entry<MemberInfo, Object>> responses) {
         JobStatus status = mc.jobStatus();
         if (status != STARTING && status != RUNNING) {
             logCannotComplete(error);
