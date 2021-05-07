@@ -17,15 +17,12 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.jet.core.DAG;
-import com.hazelcast.jet.core.TestProcessors.MockP;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.SinkProcessors;
-import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
-import com.hazelcast.test.PacketFiltersUtil;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -35,14 +32,11 @@ import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.List;
-import java.util.concurrent.CancellationException;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.core.Edge.between;
-import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
@@ -66,7 +60,7 @@ public class LightJobTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void test() {
+    public void smokeTest_dag() {
         List<Integer> items = IntStream.range(0, 1_000).boxed().collect(Collectors.toList());
 
         DAG dag = new DAG();
@@ -80,53 +74,15 @@ public class LightJobTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void test_cancellation() {
-        DAG dag = new DAG();
-        dag.newVertex("v", () -> new MockP().streaming());
+    public void smokeTest_pipeline() {
+        List<Integer> items = IntStream.range(0, 1_000).boxed().collect(Collectors.toList());
 
-        LightJob job = submittingInstance().newLightJob(dag);
-        // sleep a little to make it quite likely that the job is deployed to both members
-        sleepMillis(100);
-        job.cancel();
-        assertThatThrownBy(job::join)
-                .isInstanceOf(CancellationException.class);
-    }
-
-    @Test
-    public void when_terminateOpLost_then_jobTerminatesAnyway() {
-        DAG dag = new DAG();
-        dag.newVertex("v", () -> new MockP().streaming());
-        LightJob job = submittingInstance().newLightJob(dag);
-        sleepSeconds(1);
-
-        // When
-        PacketFiltersUtil.dropOperationsFrom(instance().getHazelcastInstance(), JetInitDataSerializerHook.FACTORY_ID,
-                singletonList(JetInitDataSerializerHook.TERMINATE_EXECUTION_OP));
-        job.cancel();
-
-        // Then
-        assertThatThrownBy(job::join)
-                .isInstanceOf(CancellationException.class);
-    }
-
-    @Test
-    public void test_cancelAfterCompleted() {
-        DAG dag = new DAG();
-        dag.newVertex("v", MockP::new);
-        LightJob job = submittingInstance().newLightJob(dag);
-        job.join();
-        job.cancel();
-        // join after late cancel won't fail with CancellationException because the job completed
-        // before the cancellation
-        job.join();
-    }
-
-    @Test
-    public void test_submitPipeline() {
         Pipeline p = Pipeline.create();
-        p.readFrom(TestSources.items(0, 1, 2))
+        p.readFrom(TestSources.items(items))
                 .writeTo(Sinks.noop());
 
         submittingInstance().newLightJob(p).join();
+        List<Integer> result = instance().getList("sink");
+        assertThat(result).containsExactlyInAnyOrderElementsOf(items);
     }
 }

@@ -117,7 +117,7 @@ public class LightMasterContext {
         invokeOnParticipants(operationCtor,
                 responses -> finalizeJob(findError(responses)),
                 error -> cancelInvocations(),
-                false);
+                true);
         return jobCompletionFuture;
     }
 

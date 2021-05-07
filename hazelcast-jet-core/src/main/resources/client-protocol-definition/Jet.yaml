@@ -273,8 +273,7 @@ methods:
           doc: ''
   - id: 15
     name: submitLightJob
-    # TODO really 2.0?
-    since: 2.0
+    since: 2.3
     doc: ''
     request:
       retryable: true
@@ -283,20 +282,17 @@ methods:
         - name: jobId
           type: long
           nullable: false
-          # TODO really 2.0?
-          since: 2.0
+          since: 2.3
           doc: ''
         - name: dag
           type: Data
           nullable: false
-          # TODO really 2.0?
-          since: 2.0
+          since: 2.3
           doc: ''
     response: {}
   - id: 16
     name: cancelLightJob
-    # TODO really 2.0?
-    since: 2.0
+    since: 2.3
     doc: ''
     request:
       retryable: true
@@ -305,7 +301,6 @@ methods:
         - name: jobId
           type: long
           nullable: false
-          # TODO really 2.0?
-          since: 2.0
+          since: 2.3
           doc: ''
     response: {}

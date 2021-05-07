@@ -103,7 +103,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
     private final CompletableFuture<Void> cancellationFuture = new CompletableFuture<>();
 
     private final NodeEngine nodeEngine;
-    private SnapshotContext snapshotContext;
+    private volatile SnapshotContext snapshotContext;
     private JobConfig jobConfig;
 
     private boolean metricsEnabled;
@@ -272,12 +272,12 @@ public class ExecutionContext implements DynamicMetricsProvider {
             } else {
                 cancellationFuture.completeExceptionally(new JobTerminateRequestedException(mode));
             }
-            snapshotContext.cancel();
             if (executionFuture == null) {
                 // if cancelled before execution started, then assign the already completed future.
                 executionFuture = cancellationFuture;
                 return false;
             }
+            snapshotContext.cancel();
             return true;
         }
     }
