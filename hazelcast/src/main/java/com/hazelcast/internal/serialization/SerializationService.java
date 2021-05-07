@@ -17,7 +17,6 @@
 package com.hazelcast.internal.serialization;
 
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.partition.PartitioningStrategy;
 
 /**
@@ -39,7 +38,7 @@ public interface SerializationService {
      */
     <B extends Data> B toData(Object obj);
 
-    <B extends Data> B  toDataWithSchema(Object object);
+    <B extends Data> B toDataWithSchema(Object object);
 
     /**
      * Serializes an object to a {@link Data}.
@@ -91,5 +90,5 @@ public interface SerializationService {
      */
     ManagedContext getManagedContext();
 
-    HeapData trimSchema(HeapData data);
+    <B extends Data> B trimSchema(Data data);
 }

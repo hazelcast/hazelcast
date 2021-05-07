@@ -166,9 +166,9 @@ public abstract class AbstractSerializationService implements InternalSerializat
     }
 
     @Override
-    public HeapData trimSchema(HeapData data) {
+    public <B extends Data> B trimSchema(Data data) {
         if (data.getType() != SerializationConstants.TYPE_COMPACT_WITH_SCHEMA) {
-            return data;
+            return (B) data;
         }
         Object obj = toObject(data);
         return toData(obj);

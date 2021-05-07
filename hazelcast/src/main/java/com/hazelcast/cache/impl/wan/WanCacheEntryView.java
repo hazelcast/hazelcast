@@ -44,6 +44,8 @@ public class WanCacheEntryView<K, V> implements CacheEntryView<K, V>, Identified
     private V value;
     private Data dataKey;
     private Data dataValue;
+    private Data trimmedDataKey;
+    private Data trimmedDataValue;
     private long creationTime;
     private long expirationTime;
     private long lastAccessTime;
@@ -59,8 +61,8 @@ public class WanCacheEntryView<K, V> implements CacheEntryView<K, V>, Identified
                              long lastAccessTime,
                              long hits,
                              @Nonnull SerializationService serializationService) {
-        this.dataKey = dataKey;
-        this.dataValue = dataValue;
+        this.dataKey = serializationService.toDataWithSchema(dataKey);
+        this.dataValue = serializationService.toDataWithSchema(dataValue);
         this.creationTime = creationTime;
         this.expirationTime = expirationTime;
         this.lastAccessTime = lastAccessTime;
@@ -71,25 +73,31 @@ public class WanCacheEntryView<K, V> implements CacheEntryView<K, V>, Identified
     @Override
     public K getKey() {
         if (key == null) {
-            key = serializationService.toObject(dataKey);
+            key = serializationService.toObject(getDataKey());
         }
         return key;
     }
 
     public Data getDataKey() {
-        return dataKey;
+        if (trimmedDataKey == null) {
+            trimmedDataKey = serializationService.trimSchema(dataKey);
+        }
+        return trimmedDataKey;
     }
 
     @Override
     public V getValue() {
         if (value == null) {
-            value = serializationService.toObject(dataValue);
+            value = serializationService.toObject(getDataValue());
         }
         return value;
     }
 
     public Data getDataValue() {
-        return dataValue;
+        if (trimmedDataValue == null) {
+            trimmedDataValue = serializationService.trimSchema(dataValue);
+        }
+        return trimmedDataValue;
     }
 
     @Override
