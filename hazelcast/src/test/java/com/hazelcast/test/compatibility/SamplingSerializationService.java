@@ -172,7 +172,7 @@ public class SamplingSerializationService implements InternalSerializationServic
     }
 
     @Override
-    public HeapData trimSchema(HeapData data) {
+    public HeapData trimSchema(Data data) {
         return delegate.trimSchema(data);
     }
 

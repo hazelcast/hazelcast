@@ -224,8 +224,9 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
             }
             schema.setSchemaId(schemaId);
             schemaService.put(schema);
+            return schema;
         }
-        return schema;
+        throw new HazelcastSerializationException("The cchema can not be found with id " + schemaId);
     }
 
     public <T> T readObject(ObjectDataInput in, boolean schemaIncludedInBinary) throws IOException {
