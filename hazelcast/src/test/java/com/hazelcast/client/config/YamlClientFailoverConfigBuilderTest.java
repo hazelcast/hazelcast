@@ -16,11 +16,9 @@
 
 package com.hazelcast.client.config;
 
-import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.SchemaViolationConfigurationException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.internal.util.RootCauseMatcher;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;

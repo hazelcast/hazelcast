@@ -15,13 +15,10 @@
  */
 package com.hazelcast.config;
 
-import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.client.config.XmlClientConfigBuilderTest;
 import com.hazelcast.client.config.XmlClientFailoverConfigBuilderTest;
 import com.hazelcast.client.config.YamlClientConfigBuilderTest;
-import com.hazelcast.client.config.YamlClientFailoverConfigBuilder;
 import com.hazelcast.client.config.YamlClientFailoverConfigBuilderTest;
-import com.hazelcast.client.config.impl.ClientConfigSections;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.QuickTest;
@@ -41,10 +38,6 @@ import static com.hazelcast.config.XMLConfigBuilderTest.HAZELCAST_START_TAG;
 @Category(QuickTest.class)
 public class SchemaValidationSkippingTest {
 
-    public static final String INVALID_XML = HAZELCAST_START_TAG + "<invalid></invalid>" + HAZELCAST_END_TAG;
-
-    static final String INVALID_CLIENT_XML = HAZELCAST_CLIENT_START_TAG + "<invalid />" + HAZELCAST_CLIENT_END_TAG;
-
     public static final String INVALID_YAML = "invalid: yes";
     @Rule
     public OverridePropertyRule setProp = OverridePropertyRule.set("hazelcast.config.schema.validation.enabled", "false");
@@ -56,24 +49,24 @@ public class SchemaValidationSkippingTest {
 
     @Test
     public void testSkipping_Member_Xml_SchemaValidation() {
-        XMLConfigBuilderTest.buildConfig(INVALID_XML);
+        XMLConfigBuilderTest.buildConfig(HAZELCAST_START_TAG + "<invalid></invalid>" + HAZELCAST_END_TAG);
     }
 
     @Test
     public void testSkipping_ClientFailover_Xml_SchemaValidation() {
         XmlClientFailoverConfigBuilderTest.buildConfig(HAZELCAST_CLIENT_FAILOVER_START_TAG
-                        + "<invalid/>"
-                        +HAZELCAST_CLIENT_FAILOVER_END_TAG);
+                + "<invalid/>"
+                + HAZELCAST_CLIENT_FAILOVER_END_TAG);
     }
 
     @Test
     public void testSkipping_ClientFailover_Yaml_SchemaValidation() {
         YamlClientFailoverConfigBuilderTest.buildConfig(INVALID_YAML);
     }
-    
+
     @Test
     public void testSkipping_Client_Xml_SchemaValidation() {
-        XmlClientConfigBuilderTest.buildConfig(INVALID_CLIENT_XML);
+        XmlClientConfigBuilderTest.buildConfig(HAZELCAST_CLIENT_START_TAG + "<invalid />" + HAZELCAST_CLIENT_END_TAG);
     }
 
     @Test
