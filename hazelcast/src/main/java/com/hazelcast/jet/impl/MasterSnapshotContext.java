@@ -228,6 +228,10 @@ class MasterSnapshotContext {
                         boolean isSuccess;
                         SnapshotStats stats;
                         try {
+                            if (!missingResponses.isEmpty()) {
+                                LoggingUtil.logFine(logger, "%s all awaited responses to StartExecutionOperation received",
+                                        mc.jobIdString());
+                            }
                             // Note: this method can be called after finalizeJob() is called or even after new execution started.
                             // Check the execution ID to check if a new execution didn't start yet.
                             if (executionId != mc.executionId()) {

@@ -195,26 +195,26 @@ public class WriteKafkaPTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void test_transactional_withRestarts_graceful_exOnce() {
-        test_transactional_withRestarts(true, true);
+    public void stressTest_graceful_exOnce() {
+        stressTest(true, true);
     }
 
     @Test
-    public void test_transactional_withRestarts_forceful_exOnce() {
-        test_transactional_withRestarts(false, true);
+    public void stressTest_forceful_exOnce() {
+        stressTest(false, true);
     }
 
     @Test
-    public void test_transactional_withRestarts_graceful_atLeastOnce() {
-        test_transactional_withRestarts(false, false);
+    public void stressTest_graceful_atLeastOnce() {
+        stressTest(false, false);
     }
 
     @Test
-    public void test_transactional_withRestarts_forceful_atLeastOnce() {
-        test_transactional_withRestarts(false, false);
+    public void stressTest_forceful_atLeastOnce() {
+        stressTest(false, false);
     }
 
-    private void test_transactional_withRestarts(boolean graceful, boolean exactlyOnce) {
+    private void stressTest(boolean graceful, boolean exactlyOnce) {
         String topicLocal = topic;
         Sink<Integer> sink = KafkaSinks.<Integer>kafka(properties)
                 .toRecordFn(v -> new ProducerRecord<>(topicLocal, 0, null, v.toString()))

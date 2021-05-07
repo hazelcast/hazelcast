@@ -26,7 +26,6 @@ import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.LightJob;
-import com.hazelcast.jet.RestartableException;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.ListSource;
