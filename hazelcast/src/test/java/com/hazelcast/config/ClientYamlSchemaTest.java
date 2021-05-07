@@ -56,5 +56,4 @@ public class ClientYamlSchemaTest
                     .forEach(causingExcJson -> amendInstancePointersForClient((JSONObject) causingExcJson));
         }
     }
-
 }

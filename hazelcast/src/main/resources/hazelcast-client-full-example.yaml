@@ -109,7 +109,7 @@ hazelcast-client:
   # This feature reduces number of hops and increase performance for smart clients.
   # It is enabled by default for smart clients. This config has no effect for unisocket clients.
   #
-  backup-ack-to-client: true
+  backup-ack-to-client-enabled: true
 
   #
   # ===== HAZELCAST NETWORK CONFIGURATION =====

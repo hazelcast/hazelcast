@@ -4,7 +4,8 @@
       "cluster-name": 2,
       "instance-name": false,
       "properties": null,
-      "backup-ack-to-client": "Off"
+      "backup-ack-to-client-enabled": "Off",
+      "unknown": false
     }
   },
   "error": {
@@ -12,8 +13,15 @@
     "pointerToViolation": "#/hazelcast-client",
     "causingExceptions": [
       {
-        "schemaLocation": "#/properties/hazelcast-client/properties/backup-ack-to-client",
-        "pointerToViolation": "#/hazelcast-client/backup-ack-to-client",
+        "schemaLocation": "#/properties/hazelcast-client",
+        "pointerToViolation": "#/hazelcast-client",
+        "causingExceptions": [],
+        "keyword": "additionalProperties",
+        "message": "extraneous key [unknown] is not permitted"
+      },
+      {
+        "schemaLocation": "#/properties/hazelcast-client/properties/backup-ack-to-client-enabled",
+        "pointerToViolation": "#/hazelcast-client/backup-ack-to-client-enabled",
         "causingExceptions": [],
         "keyword": "type",
         "message": "expected type: Boolean, found: String"
@@ -40,6 +48,6 @@
         "message": "expected type: JSONObject, found: Null"
       }
     ],
-    "message": "4 schema violations found"
+    "message": "5 schema violations found"
   }
 }

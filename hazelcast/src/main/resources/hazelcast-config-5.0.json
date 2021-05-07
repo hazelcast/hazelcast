@@ -167,7 +167,7 @@
             "type": "string"
           }
         },
-        "backup-ack-to-client": {
+        "backup-ack-to-client-enabled": {
           "type": "boolean",
           "default": true,
           "description": "The 'backup-ack-to-client-enabled' element lets you enable/disable backups ack to client. This feature reduces number of hops and increase performance for smart clients. It is enabled by default for smart clients. This config has no effect for unisocket clients."
@@ -4131,6 +4131,9 @@
         "credentials-factory": {
           "$ref": "#/definitions/CredentialsFactoryIdentity"
         },
+        "kerberos": {
+          "$ref": "#/definitions/KerberosIdentity"
+        },
         "realms": {
           "$ref": "#/definitions/Security/properties/realms"
         }
@@ -4152,6 +4155,34 @@
         "username",
         "password"
       ]
+    },
+    "KerberosIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "realm": {
+          "type": "string"
+        },
+        "security-realm": {
+          "type": "string"
+        },
+        "principal": {
+          "type": "string"
+        },
+        "keytab-file": {
+          "type": "string"
+        },
+        "service-name-prefix": {
+          "type": "string"
+        },
+        "spn": {
+          "type": "string"
+        },
+        "use-canonical-hostname": {
+          "type": "boolean",
+          "default": false
+        }
+      }
     },
     "TokenIdentity": {
       "type": "object",

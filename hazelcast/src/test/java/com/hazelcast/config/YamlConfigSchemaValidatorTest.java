@@ -46,8 +46,8 @@ public class YamlConfigSchemaValidatorTest {
         } catch (SchemaViolationConfigurationException e) {
             assertEquals("#", e.getKeywordLocation());
             assertEquals("#", e.getInstanceLocation());
-            assertEquals("exactly one of [hazelcast] and [hazelcast-client] should be present in the root schema document, "
-                    + "none of them are present", e.getMessage());
+            assertEquals("exactly one of [hazelcast], [hazelcast-client] and [hazelcast-client-failover] should be present in the" 
+                    + " root schema document, 0 are present", e.getMessage());
         }
     }
 
