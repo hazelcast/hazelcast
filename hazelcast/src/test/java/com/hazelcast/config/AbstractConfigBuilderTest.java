@@ -19,7 +19,6 @@ package com.hazelcast.config;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.OverridePropertyRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
