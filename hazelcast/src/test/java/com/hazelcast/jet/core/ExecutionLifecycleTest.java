@@ -100,12 +100,6 @@ import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
 
-/**
- * This class tests that if a {@link RestartableException} is thrown in any
- * processor or processor supplier methods, the job restarts.
- * <p>
- * For light jobs it tests that the job fails with this exception.
- */
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})

@@ -51,6 +51,12 @@ import static com.hazelcast.jet.core.processor.Processors.noopP;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertTrue;
 
+/**
+ * This class tests that if a {@link RestartableException} is thrown in any
+ * processor or processor supplier methods, the job restarts.
+ * <p>
+ * For light jobs it tests that the job fails with this exception.
+ */
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
