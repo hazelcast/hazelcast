@@ -24,7 +24,7 @@ import static java.util.Collections.unmodifiableList;
 import static java.util.stream.Collectors.joining;
 
 /**
- * Thrown by {@link YamlConfigSchemaValidator} implementations.
+ * Thrown by {@link com.hazelcast.internal.config.YamlConfigSchemaValidator} implementations.
  */
 public class SchemaViolationConfigurationException
         extends InvalidConfigurationException {

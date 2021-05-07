@@ -1791,7 +1791,7 @@ public class YamlConfigBuilderTest
         assertFalse(consumerConfig.isPersistWanReplicatedData());
     }
 
-    protected Config buildConfig(String yaml) {
+    protected static Config buildConfig(String yaml) {
         ByteArrayInputStream bis = new ByteArrayInputStream(yaml.getBytes());
         YamlConfigBuilder configBuilder = new YamlConfigBuilder(bis);
         return configBuilder.build();
@@ -3624,13 +3624,6 @@ public class YamlConfigBuilderTest
                 + "      enabled: true\n"
                 + "      protect-on:   WRITE   \n";
 
-        buildConfig(yaml);
-    }
-
-    @Override
-    public void testSkippingSchemaValidation() {
-        System.setProperty("hazelcast.config.schema.validation.enabled", "false");
-        String yaml = "invalid: yes";
         buildConfig(yaml);
     }
 
