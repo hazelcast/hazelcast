@@ -424,6 +424,10 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
 
     @Override
     public void shutdown() {
+    }
+
+    @Override
+    public void afterShutdown() {
         logger.info("Destroying node NodeExtension.");
         if (phoneHome != null) {
             phoneHome.shutdown();

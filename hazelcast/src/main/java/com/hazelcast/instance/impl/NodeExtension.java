@@ -92,8 +92,15 @@ public interface NodeExtension {
 
     /**
      * Shutdowns <tt>NodeExtension</tt>. Called on <tt>Node.shutdown()</tt>
+     * right after setting the state to PASSIVE.
      */
     void shutdown();
+
+    /**
+     * Shutdowns <tt>NodeExtension</tt>. Called on <tt>Node.shutdown()</tt>
+     * right before setting the state to SHUT_DOWN.
+     */
+    void afterShutdown();
 
     /**
      * Creates a <tt>SerializationService</tt> instance to be used by this <tt>Node</tt>.

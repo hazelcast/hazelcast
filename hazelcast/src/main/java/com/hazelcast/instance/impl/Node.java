@@ -500,6 +500,9 @@ public class Node {
             waitIfAlreadyShuttingDown();
             return;
         }
+        if (nodeExtension != null) {
+            nodeExtension.shutdown();
+        }
 
         if (!terminate) {
             int maxWaitSeconds = properties.getSeconds(GRACEFUL_SHUTDOWN_MAX_WAIT);
@@ -600,7 +603,7 @@ public class Node {
         }
 
         if (nodeExtension != null) {
-            nodeExtension.shutdown();
+            nodeExtension.afterShutdown();
         }
         if (healthMonitor != null) {
             healthMonitor.stop();
