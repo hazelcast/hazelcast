@@ -21,6 +21,7 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuil
 import com.hazelcast.jet.sql.impl.inject.PrimitiveUpsertTargetDescriptor;
 import com.hazelcast.jet.sql.impl.inject.UpsertInjector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTarget;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -42,13 +43,13 @@ public class KvProjectorTest {
     @Test
     public void test_project() {
         KvProjector projector = new KvProjector(
-                new QueryPath[]{QueryPath.KEY_PATH, QueryPath.VALUE_PATH},
+                null, new QueryPath[]{QueryPath.KEY_PATH, QueryPath.VALUE_PATH},
                 new QueryDataType[]{QueryDataType.INT, QueryDataType.INT},
                 new MultiplyingTarget(),
                 new MultiplyingTarget()
         );
 
-        Entry<Object, Object> entry = projector.project(new Object[]{1, 2});
+        Entry<Object, Object> entry = projector.project(new JetSqlRow(new Object[]{1, 2}));
 
         assertThat(entry.getKey()).isEqualTo(2);
         assertThat(entry.getValue()).isEqualTo(4);
@@ -57,7 +58,7 @@ public class KvProjectorTest {
     @Test
     public void when_fieldIsHidden_then_itIsSkipped() {
         KvProjector projector = new KvProjector(
-                new QueryPath[]{
+                null, new QueryPath[]{
                         QueryPath.KEY_PATH,
                         QueryPath.create(QueryPath.VALUE_PREFIX + "field1"),
                         QueryPath.create(QueryPath.VALUE_PREFIX + "field2")
@@ -67,7 +68,7 @@ public class KvProjectorTest {
                 new MultiplyingTarget()
         );
 
-        Entry<Object, Object> entry = projector.project(new Object[]{1, null, 2});
+        Entry<Object, Object> entry = projector.project(new JetSqlRow(new Object[]{1, null, 2}));
 
         assertThat(entry.getKey()).isEqualTo(2);
         assertThat(entry.getValue()).isEqualTo(4);

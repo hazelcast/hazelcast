@@ -26,6 +26,7 @@ import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.jet.sql.impl.schema.MappingField;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -109,7 +110,7 @@ public class TestStreamSqlConnector implements SqlConnector {
             @Nullable Expression<Boolean> predicate,
             @Nonnull List<Expression<?>> projection
     ) {
-        StreamSourceTransform<Object[]> source = (StreamSourceTransform<Object[]>) SourceBuilder
+        StreamSourceTransform<JetSqlRow> source = (StreamSourceTransform<JetSqlRow>) SourceBuilder
                 .stream("stream", ctx -> {
                     ExpressionEvalContext evalContext = SimpleExpressionEvalContext.from(ctx);
                     return new TestStreamDataGenerator(predicate, projection, evalContext);
@@ -188,11 +189,11 @@ public class TestStreamSqlConnector implements SqlConnector {
             this.evalContext = evalContext;
         }
 
-        private void fillBuffer(SourceBuilder.SourceBuffer<Object[]> buffer) {
+        private void fillBuffer(SourceBuilder.SourceBuffer<JetSqlRow> buffer) {
             long now = System.nanoTime();
             long emitValuesUpTo = (now - startTime) / NANOS_PER_MICRO;
             for (int i = 0; i < MAX_BATCH_SIZE && sequence < emitValuesUpTo; i++) {
-                Object[] row = ExpressionUtil.evaluate(predicate, projections, new Object[]{sequence}, evalContext);
+                JetSqlRow row = ExpressionUtil.evaluate(predicate, projections, new JetSqlRow(new Object[]{sequence}), evalContext);
                 if (row != null) {
                     buffer.add(row);
                 }

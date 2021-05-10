@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector;
 
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -70,16 +71,16 @@ public class RowProjector implements Row {
         return extractors;
     }
 
-    public Object[] project(Object object) {
+    public JetSqlRow project(Object object) {
         target.setTarget(object, null);
 
         if (!Boolean.TRUE.equals(evaluate(predicate, this, evalContext))) {
             return null;
         }
 
-        Object[] row = new Object[projection.size()];
+        JetSqlRow row = new JetSqlRow(projection.size());
         for (int i = 0; i < projection.size(); i++) {
-            row[i] = evaluate(projection.get(i), this, evalContext);
+            row.set(i, evaluate(projection.get(i), this, evalContext));
         }
         return row;
     }

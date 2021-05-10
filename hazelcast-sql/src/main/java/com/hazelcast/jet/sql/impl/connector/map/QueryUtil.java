@@ -21,6 +21,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceAware;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -46,7 +47,8 @@ final class QueryUtil {
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     static Predicate<Object, Object> toPredicate(
-            Object[] left,
+            InternalSerializationService serializationService,
+            JetSqlRow left,
             int[] leftEquiJoinIndices,
             int[] rightEquiJoinIndices,
             QueryPath[] rightPaths
@@ -54,7 +56,7 @@ final class QueryUtil {
         PredicateBuilder builder = Predicates.newPredicateBuilder();
         EntryObject entryObject = builder.getEntryObject();
         for (int i = 0; i < leftEquiJoinIndices.length; i++) {
-            Comparable leftValue = asComparable(left[leftEquiJoinIndices[i]]);
+            Comparable leftValue = asComparable(left.get(serializationService, leftEquiJoinIndices[i]));
 
             // might need a change when/if IS NOT DISTINCT FROM is supported
             if (leftValue == null) {
@@ -92,7 +94,7 @@ final class QueryUtil {
         }
     }
 
-    static Projection<Entry<Object, Object>, Object[]> toProjection(
+    static Projection<Entry<Object, Object>, JetSqlRow> toProjection(
             KvRowProjector.Supplier rightRowProjectorSupplier,
             ExpressionEvalContext evalContext
     ) {
@@ -104,7 +106,7 @@ final class QueryUtil {
             justification = "the class is never java-serialized"
     )
     private static final class JoinProjection
-            implements Projection<Entry<Object, Object>, Object[]>, DataSerializable, SerializationServiceAware {
+            implements Projection<Entry<Object, Object>, JetSqlRow>, DataSerializable, SerializationServiceAware {
 
         private KvRowProjector.Supplier rightRowProjectorSupplier;
         private List<Object> arguments;
@@ -123,7 +125,7 @@ final class QueryUtil {
         }
 
         @Override
-        public Object[] transform(Entry<Object, Object> entry) {
+        public JetSqlRow transform(Entry<Object, Object> entry) {
             return rightRowProjectorSupplier.get(evalContext, extractors).project(entry);
         }
 

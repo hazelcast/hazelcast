@@ -24,10 +24,10 @@ import com.hazelcast.jet.pipeline.SourceBuilder.TimestampedSourceBuffer;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.pipeline.StreamSourceStage;
+import com.hazelcast.jet.pipeline.test.impl.ItemsDistributedFillBufferFn;
 
 import javax.annotation.Nonnull;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -84,16 +84,7 @@ public final class TestSources {
     public static <T> BatchSource<T> itemsDistributed(@Nonnull Iterable<? extends T> items) {
         Objects.requireNonNull(items, "items");
         return SourceBuilder.batch("items", ctx -> ctx)
-                .<T>fillBufferFn((ctx, buf) -> {
-                    Iterator<? extends T> iterator = items.iterator();
-                    for (int i = 0; iterator.hasNext(); i++) {
-                        T item = iterator.next();
-                        if (i % ctx.totalParallelism() == ctx.globalProcessorIndex()) {
-                            buf.add(item);
-                        }
-                    }
-                    buf.close();
-                })
+                .<T>fillBufferFn(new ItemsDistributedFillBufferFn<>(items))
                 .distributed(1)
                 .build();
     }

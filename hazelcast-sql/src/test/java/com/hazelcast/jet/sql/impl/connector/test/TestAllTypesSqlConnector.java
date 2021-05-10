@@ -26,6 +26,7 @@ import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.jet.sql.impl.schema.MappingField;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -79,7 +80,7 @@ public class TestAllTypesSqlConnector implements SqlConnector {
 
     private static final List<TableField> FIELD_LIST2 = toList(FIELD_LIST, f -> new TableField(f.name(), f.type(), false));
 
-    private static final Object[] VALUES = new Object[]{
+    private static final JetSqlRow VALUES = new JetSqlRow(new Object[]{
             "string",
             true,
             (byte) 127,
@@ -94,7 +95,7 @@ public class TestAllTypesSqlConnector implements SqlConnector {
             LocalDateTime.of(2020, 4, 15, 12, 23, 34, 1_000_000),
             OffsetDateTime.of(2020, 4, 15, 12, 23, 34, 200_000_000, UTC),
             null
-    };
+    });
 
     public static final SqlTestSupport.Row ALL_TYPES_ROW = new SqlTestSupport.Row(VALUES);
 
@@ -148,15 +149,17 @@ public class TestAllTypesSqlConnector implements SqlConnector {
             @Nullable Expression<Boolean> predicate,
             @Nonnull List<Expression<?>> projection
     ) {
-        BatchSource<Object[]> source = SourceBuilder
+        BatchSource<JetSqlRow> source = SourceBuilder
                 .batch("batch", SimpleExpressionEvalContext::from)
-                .<Object[]>fillBufferFn((ctx, buf) -> {
-                    Object[] row = ExpressionUtil.evaluate(predicate, projection, VALUES, ctx);
-                    buf.add(row);
+                .<JetSqlRow>fillBufferFn((ctx, buf) -> {
+                    JetSqlRow row = ExpressionUtil.evaluate(predicate, projection, VALUES, ctx);
+                    if (row != null) {
+                        buf.add(row);
+                    }
                     buf.close();
                 })
                 .build();
-        ProcessorMetaSupplier pms = ((BatchSourceTransform<Object[]>) source).metaSupplier;
+        ProcessorMetaSupplier pms = ((BatchSourceTransform<JetSqlRow>) source).metaSupplier;
         return dag.newUniqueVertex(table.toString(), pms);
     }
 

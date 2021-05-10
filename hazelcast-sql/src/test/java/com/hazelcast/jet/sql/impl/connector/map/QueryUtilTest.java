@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.map;
 
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -35,7 +36,7 @@ public class QueryUtilTest {
     @Test
     public void when_leftValueIsNull_then_returnsNull() {
         Predicate<Object, Object> predicate =
-                toPredicate(new Object[]{null}, new int[]{0}, new int[]{0}, new QueryPath[]{QueryPath.KEY_PATH});
+                toPredicate(null, new JetSqlRow(1), new int[]{0}, new int[]{0}, new QueryPath[]{QueryPath.KEY_PATH});
 
         assertThat(predicate).isNull();
     }

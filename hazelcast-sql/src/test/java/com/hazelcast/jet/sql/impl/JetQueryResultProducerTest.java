@@ -45,7 +45,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class JetQueryResultProducerTest extends JetTestSupport {
 
-    private final JetQueryResultProducer producer = new JetQueryResultProducer();
+    private final JetQueryResultProducer producer = new JetQueryResultProducer(null);
     private final ResultIterator<Row> iterator = producer.iterator();
     private final ArrayDequeInbox inbox = new ArrayDequeInbox(new ProgressTracker());
 

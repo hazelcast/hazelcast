@@ -20,6 +20,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.sql.impl.inject.UpsertInjector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTarget;
 import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -33,13 +34,14 @@ import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.sql.impl.type.converter.ToConverters.getToConverter;
 
 /**
- * A utility to convert a row represented as {@code Object[]} to a
+ * A utility to convert a row represented as {@link JetSqlRow} to a
  * key-value entry represented as {@code Entry<Object, Object>}.
  * <p>
  * {@link KvRowProjector} does the reverse.
  */
 class KvProjector {
 
+    private final InternalSerializationService serializationService;
     private final QueryDataType[] types;
 
     private final UpsertTarget keyTarget;
@@ -48,11 +50,13 @@ class KvProjector {
     private final UpsertInjector[] injectors;
 
     KvProjector(
+            InternalSerializationService serializationService,
             QueryPath[] paths,
             QueryDataType[] types,
             UpsertTarget keyTarget,
             UpsertTarget valueTarget
     ) {
+        this.serializationService = serializationService;
         this.types = types;
 
         this.keyTarget = keyTarget;
@@ -75,11 +79,11 @@ class KvProjector {
         return injectors;
     }
 
-    Entry<Object, Object> project(Object[] row) {
+    Entry<Object, Object> project(JetSqlRow row) {
         keyTarget.init();
         valueTarget.init();
-        for (int i = 0; i < row.length; i++) {
-            Object value = getToConverter(types[i]).convert(row[i]);
+        for (int i = 0; i < row.getFieldCount(); i++) {
+            Object value = getToConverter(types[i]).convert(row.get(serializationService, i));
             injectors[i].set(value);
         }
         return entry(keyTarget.conclude(), valueTarget.conclude());
@@ -120,6 +124,7 @@ class KvProjector {
 
         public KvProjector get(InternalSerializationService serializationService) {
             return new KvProjector(
+                    serializationService,
                     paths,
                     types,
                     keyDescriptor.create(serializationService),

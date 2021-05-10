@@ -16,14 +16,15 @@
 
 package com.hazelcast.jet.sql.impl;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.internal.util.concurrent.IdleStrategy;
 import com.hazelcast.internal.util.concurrent.OneToOneConcurrentArrayQueue;
 import com.hazelcast.jet.core.Inbox;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryResultProducer;
 import com.hazelcast.sql.impl.ResultIterator;
-import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.Row;
 
 import java.util.NoSuchElementException;
@@ -43,11 +44,17 @@ public class JetQueryResultProducer implements QueryResultProducer {
 
     private static final Exception NORMAL_COMPLETION = new NormalCompletionException();
 
+    private final InternalSerializationService serializationService;
+
     private final OneToOneConcurrentArrayQueue<Row> rows = new OneToOneConcurrentArrayQueue<>(QUEUE_CAPACITY);
     private final AtomicReference<Exception> done = new AtomicReference<>();
 
     private InternalIterator iterator;
     private long limit = Long.MAX_VALUE;
+
+    public JetQueryResultProducer(InternalSerializationService serializationService) {
+        this.serializationService = serializationService;
+    }
 
     public void init(long limit) {
         this.limit = limit;
@@ -74,7 +81,7 @@ public class JetQueryResultProducer implements QueryResultProducer {
 
     public void consume(Inbox inbox) {
         ensureNotDone();
-        for (Object[] row; (row = (Object[]) inbox.peek()) != null && rows.offer(new HeapRow(row)); ) {
+        for (JetSqlRow row; (row = (JetSqlRow) inbox.peek()) != null && rows.offer(row.getRow(serializationService)); ) {
             inbox.remove();
             if (limit != Long.MAX_VALUE) {
                 limit -= 1;

@@ -21,6 +21,7 @@ import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.jet.sql.impl.schema.MappingField;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -211,7 +212,7 @@ public interface SqlConnector {
     /**
      * Returns a supplier for a source vertex reading the input according to
      * the {@code projection}/{@code predicate}. The output type of the source
-     * is Object[].
+     * is {@link JetSqlRow}.
      * <p>
      * The field indexes in the predicate and projection refer to the
      * zero-based indexes of the original fields of the {@code table}. For
@@ -249,11 +250,11 @@ public interface SqlConnector {
     /**
      * Creates a vertex to read the given {@code table} as a part of a
      * nested-loop join. The vertex will receive items from the left side of
-     * the join as {@code Object[]}. For each record it must read the matching
+     * the join as {@link JetSqlRow}. For each record it must read the matching
      * records from the {@code table}, according to the {@code joinInfo} and
-     * emit joined records, again as {@code Object[]}. The length of the output
-     * array is {@code inputRecordLength + projection.size()}. See {@link
-     * ExpressionUtil#join} for a utility to create output records.
+     * emit joined records, again as {@link JetSqlRow}. The number of fields in
+     * the the output row is {@code inputRecordLength + projection.size()}. See
+     * {@link ExpressionUtil#join} for a utility to create output rows.
      * <p>
      * The given {@code predicate} and {@code projection} apply only to the
      * records of the {@code table} (i.e. of the right-side of the join, before

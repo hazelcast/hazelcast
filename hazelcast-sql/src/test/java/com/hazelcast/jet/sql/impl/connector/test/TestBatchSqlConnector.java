@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector.test;
 
 import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.impl.pipeline.transform.BatchSourceTransform;
@@ -25,6 +26,7 @@ import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.jet.sql.impl.schema.MappingField;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -48,6 +50,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.IntStream;
 
+import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.resolveTypeForTypeFamily;
 import static java.lang.String.join;
 import static java.util.Collections.singletonList;
@@ -211,15 +214,18 @@ public class TestBatchSqlConnector implements SqlConnector {
     ) {
         List<Object[]> rows = ((TestBatchTable) table).rows;
 
-        BatchSource<Object[]> source = SourceBuilder
+        BatchSource<JetSqlRow> source = SourceBuilder
                 .batch("batch", ctx -> {
                     ExpressionEvalContext evalContext = SimpleExpressionEvalContext.from(ctx);
                     return new TestBatchDataGenerator(rows, predicate, projection, evalContext);
                 })
                 .fillBufferFn(TestBatchDataGenerator::fillBuffer)
                 .build();
-        ProcessorMetaSupplier pms = ((BatchSourceTransform<Object[]>) source).metaSupplier;
-        return dag.newUniqueVertex(table.toString(), pms);
+        ProcessorMetaSupplier pms = ((BatchSourceTransform<JetSqlRow>) source).metaSupplier;
+        Vertex v1 = dag.newUniqueVertex(table.toString(), pms);
+        Vertex v2 = dag.newUniqueVertex(table.toString() + "-map", mapP(row -> new JetSqlRow((Object[]) row)));
+        dag.edge(Edge.between(v1, v2).isolated());
+        return v2;
     }
 
     private static final class TestBatchTable extends JetTable {
@@ -279,7 +285,7 @@ public class TestBatchSqlConnector implements SqlConnector {
 
         private static final int MAX_BATCH_SIZE = 1024;
 
-        private final Iterator<Object[]> iterator;
+        private final Iterator<JetSqlRow> iterator;
 
         private TestBatchDataGenerator(
                 List<Object[]> rows,
@@ -288,12 +294,12 @@ public class TestBatchSqlConnector implements SqlConnector {
                 ExpressionEvalContext evalContext
         ) {
             this.iterator = rows.stream()
-                    .map(row -> ExpressionUtil.evaluate(predicate, projections, row, evalContext))
+                    .map(row -> ExpressionUtil.evaluate(predicate, projections, new JetSqlRow(row), evalContext))
                     .filter(Objects::nonNull)
                     .iterator();
         }
 
-        private void fillBuffer(SourceBuilder.SourceBuffer<Object[]> buffer) {
+        private void fillBuffer(SourceBuilder.SourceBuffer<JetSqlRow> buffer) {
             for (int i = 0; i < MAX_BATCH_SIZE; i++) {
                 if (iterator.hasNext()) {
                     buffer.add(iterator.next());

@@ -25,6 +25,7 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.jet.sql.impl.schema.MappingField;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -107,7 +108,7 @@ final class InfoSchemaConnector implements SqlConnector {
         private final List<Expression<?>> projection;
         private final List<Object[]> rows;
 
-        private Traverser<Object[]> traverser;
+        private Traverser<JetSqlRow> traverser;
 
         private StaticSourceP(Expression<Boolean> predicate, List<Expression<?>> projection, List<Object[]> rows) {
             this.predicate = predicate;
@@ -118,7 +119,8 @@ final class InfoSchemaConnector implements SqlConnector {
         @Override
         protected void init(@Nonnull Context context) {
             ExpressionEvalContext evalContext = SimpleExpressionEvalContext.from(context);
-            List<Object[]> processedRows = ExpressionUtil.evaluate(predicate, projection, rows, evalContext);
+            List<JetSqlRow> processedRows = ExpressionUtil.evaluate(predicate, projection,
+                    rows.stream().map(row -> new JetSqlRow(row)), evalContext);
             traverser = Traversers.traverseIterable(processedRows);
         }
 

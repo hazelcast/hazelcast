@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.config.JobConfig;
@@ -197,7 +198,7 @@ class JetPlanExecutor {
 
             return SqlResultImpl.createUpdateCountResult(0);
         } else {
-            JetQueryResultProducer queryResultProducer = new JetQueryResultProducer();
+            JetQueryResultProducer queryResultProducer = new JetQueryResultProducer(getSerializationService());
             Long jobId = jetInstance.newJobId();
             Object oldValue = resultConsumerRegistry.put(jobId, queryResultProducer);
             assert oldValue == null : oldValue;
@@ -217,6 +218,10 @@ class JetPlanExecutor {
 
             return new JetSqlResultImpl(queryId, queryResultProducer, plan.getRowMetadata(), plan.isStreaming());
         }
+    }
+
+    private InternalSerializationService getSerializationService() {
+        return ((HazelcastInstanceImpl) jetInstance.getHazelcastInstance()).getSerializationService();
     }
 
     private List<Object> prepareArguments(QueryParameterMetadata parameterMetadata, List<Object> arguments) {

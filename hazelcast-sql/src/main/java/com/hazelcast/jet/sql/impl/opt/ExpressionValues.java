@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.opt;
 
 import com.google.common.collect.ImmutableList;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.RexToExpression;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -40,7 +41,7 @@ import static java.util.stream.Collectors.toList;
  */
 public abstract class ExpressionValues implements Serializable {
 
-    public abstract List<Object[]> toValues(ExpressionEvalContext context);
+    public abstract List<JetSqlRow> toValues(ExpressionEvalContext context);
 
     /**
      * Representation of the VALUES clause data in the form of a simple {@code
@@ -57,9 +58,9 @@ public abstract class ExpressionValues implements Serializable {
         }
 
         @Override
-        public List<Object[]> toValues(ExpressionEvalContext context) {
+        public List<JetSqlRow> toValues(ExpressionEvalContext context) {
             return expressions.stream()
-                    .map(es -> es.stream().map(e -> e.eval(EmptyRow.INSTANCE, context)).toArray(Object[]::new))
+                    .map(es -> new JetSqlRow(es.stream().map(e -> e.eval(EmptyRow.INSTANCE, context)).toArray(Object[]::new)))
                     .collect(toList());
         }
 
@@ -97,9 +98,10 @@ public abstract class ExpressionValues implements Serializable {
         }
 
         @Override
-        public List<Object[]> toValues(ExpressionEvalContext context) {
+        public List<JetSqlRow> toValues(ExpressionEvalContext context) {
             return values.stream()
-                    .flatMap(vs -> ExpressionUtil.evaluate(predicate, projection, vs.toValues(context), context).stream())
+                    .flatMap(vs ->
+                            ExpressionUtil.evaluate(predicate, projection, vs.toValues(context).stream(), context).stream())
                     .collect(toList());
         }
 

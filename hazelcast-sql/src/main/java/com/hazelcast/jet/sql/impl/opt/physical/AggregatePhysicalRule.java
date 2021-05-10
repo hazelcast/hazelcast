@@ -28,6 +28,7 @@ import com.hazelcast.jet.sql.impl.aggregate.SumSqlAggregations;
 import com.hazelcast.jet.sql.impl.aggregate.ValueSqlAggregation;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.AggregateLogicalRel;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.RelOptRule;
@@ -77,7 +78,7 @@ final class AggregatePhysicalRule extends RelOptRule {
     }
 
     private static RelNode toAggregate(AggregateLogicalRel logicalAggregate, RelNode physicalInput) {
-        AggregateOperation<?, Object[]> aggrOp = aggregateOperation(
+        AggregateOperation<?, JetSqlRow> aggrOp = aggregateOperation(
                 physicalInput.getRowType(),
                 logicalAggregate.getGroupSet(),
                 logicalAggregate.getAggCallList()
@@ -114,7 +115,7 @@ final class AggregatePhysicalRule extends RelOptRule {
     }
 
     private static RelNode toAggregateByKey(AggregateLogicalRel logicalAggregate, RelNode physicalInput) {
-        AggregateOperation<?, Object[]> aggrOp = aggregateOperation(
+        AggregateOperation<?, JetSqlRow> aggrOp = aggregateOperation(
                 physicalInput.getRowType(),
                 logicalAggregate.getGroupSet(),
                 logicalAggregate.getAggCallList()
@@ -151,7 +152,7 @@ final class AggregatePhysicalRule extends RelOptRule {
         }
     }
 
-    private static AggregateOperation<?, Object[]> aggregateOperation(
+    private static AggregateOperation<?, JetSqlRow> aggregateOperation(
             RelDataType inputType,
             ImmutableBitSet groupSet,
             List<AggregateCall> aggregateCalls
@@ -159,11 +160,11 @@ final class AggregatePhysicalRule extends RelOptRule {
         List<QueryDataType> operandTypes = OptUtils.schema(inputType).getTypes();
 
         List<SupplierEx<SqlAggregation>> aggregationProviders = new ArrayList<>();
-        List<FunctionEx<Object[], Object>> valueProviders = new ArrayList<>();
+        List<FunctionEx<JetSqlRow, Object>> valueProviders = new ArrayList<>();
 
         for (Integer groupIndex : groupSet.toList()) {
             aggregationProviders.add(ValueSqlAggregation::new);
-            valueProviders.add(row -> row[groupIndex]);
+            valueProviders.add(row -> row.getMaybeSerialized(groupIndex));
         }
         for (AggregateCall aggregateCall : aggregateCalls) {
             boolean distinct = aggregateCall.isDistinct();
@@ -174,11 +175,11 @@ final class AggregatePhysicalRule extends RelOptRule {
                     if (distinct) {
                         int countIndex = aggregateCallArguments.get(0);
                         aggregationProviders.add(() -> CountSqlAggregations.from(true, true));
-                        valueProviders.add(row -> row[countIndex]);
+                        valueProviders.add(row -> row.getMaybeSerialized(countIndex));
                     } else if (aggregateCallArguments.size() == 1) {
                         int countIndex = aggregateCallArguments.get(0);
                         aggregationProviders.add(() -> CountSqlAggregations.from(true, false));
-                        valueProviders.add(row -> row[countIndex]);
+                        valueProviders.add(row -> row.getMaybeSerialized(countIndex));
                     } else {
                         aggregationProviders.add(() -> CountSqlAggregations.from(false, false));
                         valueProviders.add(row -> null);
@@ -187,24 +188,24 @@ final class AggregatePhysicalRule extends RelOptRule {
                 case MIN:
                     int minIndex = aggregateCallArguments.get(0);
                     aggregationProviders.add(MinSqlAggregation::new);
-                    valueProviders.add(row -> row[minIndex]);
+                    valueProviders.add(row -> row.getMaybeSerialized(minIndex));
                     break;
                 case MAX:
                     int maxIndex = aggregateCallArguments.get(0);
                     aggregationProviders.add(MaxSqlAggregation::new);
-                    valueProviders.add(row -> row[maxIndex]);
+                    valueProviders.add(row -> row.getMaybeSerialized(maxIndex));
                     break;
                 case SUM:
                     int sumIndex = aggregateCallArguments.get(0);
                     QueryDataType sumOperandType = operandTypes.get(sumIndex);
                     aggregationProviders.add(() -> SumSqlAggregations.from(sumOperandType, distinct));
-                    valueProviders.add(row -> row[sumIndex]);
+                    valueProviders.add(row -> row.getMaybeSerialized(sumIndex));
                     break;
                 case AVG:
                     int avgIndex = aggregateCallArguments.get(0);
                     QueryDataType avgOperandType = operandTypes.get(avgIndex);
                     aggregationProviders.add(() -> AvgSqlAggregations.from(avgOperandType, distinct));
-                    valueProviders.add(row -> row[avgIndex]);
+                    valueProviders.add(row -> row.getMaybeSerialized(avgIndex));
                     break;
                 default:
                     throw QueryException.error("Unsupported aggregation function: " + kind);
@@ -219,7 +220,7 @@ final class AggregatePhysicalRule extends RelOptRule {
                     }
                     return aggregations;
                 })
-                .andAccumulate((List<SqlAggregation> aggregations, Object[] row) -> {
+                .andAccumulate((List<SqlAggregation> aggregations, JetSqlRow row) -> {
                     for (int i = 0; i < aggregations.size(); i++) {
                         aggregations.get(i).accumulate(valueProviders.get(i).apply(row));
                     }
@@ -232,11 +233,11 @@ final class AggregatePhysicalRule extends RelOptRule {
                     }
                 })
                 .andExportFinish(aggregations -> {
-                    Object[] values = new Object[aggregations.size()];
+                    JetSqlRow row = new JetSqlRow(aggregations.size());
                     for (int i = 0; i < aggregations.size(); i++) {
-                        values[i] = aggregations.get(i).collect();
+                        row.set(i, aggregations.get(i).collect());
                     }
-                    return values;
+                    return row;
                 });
     }
 }

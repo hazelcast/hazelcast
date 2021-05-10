@@ -17,13 +17,21 @@
 package com.hazelcast.jet.sql.impl.connector.map;
 
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.sql.impl.extract.QueryPath;
 
 final class IMapJoiner {
+
+    /**
+     * A {@link Data} value that's used instead of a null key.
+     */
+    private static final Data NULL_KEY_MARKER = new HeapData(new byte[0]);
 
     private IMapJoiner() {
     }
@@ -112,10 +120,10 @@ final class IMapJoiner {
         return -1;
     }
 
-    private static FunctionEx<Object, ?> extractPrimitiveKeyFn(int index) {
+    private static FunctionEx<Object, Data> extractPrimitiveKeyFn(int index) {
         return row -> {
-            Object value = ((Object[]) row)[index];
-            return value == null ? "" : value;
+            Data value = ((JetSqlRow) row).getSerialized(null, index);
+            return value == null ? NULL_KEY_MARKER : value;
         };
     }
 }

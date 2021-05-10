@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector;
 
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -56,9 +57,9 @@ public class RowProjectorTest {
                 mock(ExpressionEvalContext.class)
         );
 
-        Object[] row = projector.project(1);
+        JetSqlRow row = projector.project(1);
 
-        assertThat(row).isEqualTo(new Object[]{2});
+        assertThat(row.getValues()).isEqualTo(new Object[]{2});
     }
 
     @Test
@@ -73,7 +74,7 @@ public class RowProjectorTest {
                 mock(ExpressionEvalContext.class)
         );
 
-        Object[] row = projector.project(1);
+        JetSqlRow row = projector.project(1);
 
         assertThat(row).isNull();
     }

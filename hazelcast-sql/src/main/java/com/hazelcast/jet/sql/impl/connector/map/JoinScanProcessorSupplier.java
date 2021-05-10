@@ -26,6 +26,7 @@ import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector.Supplier;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -43,7 +44,6 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import static com.hazelcast.jet.Traversers.traverseIterable;
-import static com.hazelcast.jet.impl.util.Util.extendArray;
 
 @SuppressFBWarnings(
         value = {"SE_BAD_FIELD", "SE_NO_SERIALVERSIONID"},
@@ -84,9 +84,7 @@ final class JoinScanProcessorSupplier implements ProcessorSupplier, DataSerializ
         List<Processor> processors = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
             Processor processor =
-                    new TransformBatchedP<Object[], Object[]>(
-                            joinFn(joinInfo, map, rightRowProjectorSupplier, evalContext)
-                    ) {
+                    new TransformBatchedP<JetSqlRow, JetSqlRow>(joinFn(joinInfo, map, rightRowProjectorSupplier, evalContext)) {
                         @Override
                         public boolean isCooperative() {
                             return false;
@@ -97,17 +95,17 @@ final class JoinScanProcessorSupplier implements ProcessorSupplier, DataSerializ
         return processors;
     }
 
-    private static FunctionEx<Iterable<Object[]>, Traverser<Object[]>> joinFn(
+    private static FunctionEx<Iterable<JetSqlRow>, Traverser<JetSqlRow>> joinFn(
             @Nonnull JetJoinInfo joinInfo,
             @Nonnull IMap<Object, Object> map,
             @Nonnull Supplier rightRowProjectorSupplier,
             @Nonnull ExpressionEvalContext evalContext
     ) {
-        Projection<Entry<Object, Object>, Object[]> projection =
+        Projection<Entry<Object, Object>, JetSqlRow> projection =
                 QueryUtil.toProjection(rightRowProjectorSupplier, evalContext);
 
         return lefts -> {
-            List<Object[]> rights = new ArrayList<>();
+            List<JetSqlRow> rights = new ArrayList<>();
             // TODO it would be nice if we executed the project() with the predicate that the rightRowProjector
             //  uses, maybe the majority of rows are rejected. In general it's good to do filtering as closely to the
             //  source as possible. However, the predicate has state. Without a state the predicate will have to
@@ -115,17 +113,17 @@ final class JoinScanProcessorSupplier implements ProcessorSupplier, DataSerializ
 
             // current rules pull projects up, hence project() cardinality won't be greater than the source's
             // changing the rules might require revisiting
-            for (Object[] right : map.project(projection)) {
+            for (JetSqlRow right : map.project(projection)) {
                 if (right != null) {
                     rights.add(right);
                 }
             }
 
-            List<Object[]> rows = new ArrayList<>();
-            for (Object[] left : lefts) {
+            List<JetSqlRow> rows = new ArrayList<>();
+            for (JetSqlRow left : lefts) {
                 boolean joined = join(rows, left, rights, joinInfo.condition(), evalContext);
                 if (!joined && joinInfo.isLeftOuter()) {
-                    rows.add(extendArray(left, rightRowProjectorSupplier.columnCount()));
+                    rows.add(left.extendedRow(rightRowProjectorSupplier.columnCount()));
                 }
             }
             return traverseIterable(rows);
@@ -133,15 +131,15 @@ final class JoinScanProcessorSupplier implements ProcessorSupplier, DataSerializ
     }
 
     private static boolean join(
-            @Nonnull List<Object[]> rows,
-            @Nonnull Object[] left,
-            @Nonnull List<Object[]> rights,
+            @Nonnull List<JetSqlRow> rows,
+            @Nonnull JetSqlRow left,
+            @Nonnull List<JetSqlRow> rights,
             @Nonnull Expression<Boolean> condition,
             @Nonnull ExpressionEvalContext evalContext
     ) {
         boolean matched = false;
-        for (Object[] right : rights) {
-            Object[] joined = ExpressionUtil.join(left, right, condition, evalContext);
+        for (JetSqlRow right : rights) {
+            JetSqlRow joined = ExpressionUtil.join(left, right, condition, evalContext);
             if (joined != null) {
                 rows.add(joined);
                 matched = true;

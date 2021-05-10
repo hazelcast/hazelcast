@@ -24,6 +24,7 @@ import com.hazelcast.jet.impl.execution.init.Contexts.ProcSupplierCtx;
 import com.hazelcast.jet.impl.processor.TransformP;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -49,7 +50,7 @@ public final class KvProcessors {
 
     /**
      * Returns a supplier of processors that convert a map entry represented as
-     * {@code Entry<Object, Object>} to a row represented as {@code Object[]}.
+     * {@code Entry<Object, Object>} to a row represented as {@link JetSqlRow}.
      */
     public static ProcessorSupplier rowProjector(
             QueryPath[] paths,
@@ -65,7 +66,7 @@ public final class KvProcessors {
 
     /**
      * Returns a supplier of processors that convert a row represented as
-     * {@code Object[]} to an entry represented as {@code Entry<Object,
+     * {@link JetSqlRow} to an entry represented as {@code Entry<Object,
      * Object>}.
      */
     public static ProcessorSupplier entryProjector(
@@ -107,9 +108,9 @@ public final class KvProcessors {
         public Collection<? extends Processor> get(int count) {
             List<Processor> processors = new ArrayList<>(count);
             for (int i = 0; i < count; i++) {
-                ResettableSingletonTraverser<Object[]> traverser = new ResettableSingletonTraverser<>();
+                ResettableSingletonTraverser<JetSqlRow> traverser = new ResettableSingletonTraverser<>();
                 KvRowProjector projector = projectorSupplier.get(evalContext, extractors);
-                Processor processor = new TransformP<Entry<Object, Object>, Object[]>(entry -> {
+                Processor processor = new TransformP<Entry<Object, Object>, JetSqlRow>(entry -> {
                     traverser.accept(projector.project(entry));
                     return traverser;
                 });
@@ -159,7 +160,7 @@ public final class KvProcessors {
             for (int i = 0; i < count; i++) {
                 ResettableSingletonTraverser<Object> traverser = new ResettableSingletonTraverser<>();
                 KvProjector projector = projectorSupplier.get(serializationService);
-                Processor processor = new TransformP<Object[], Object>(row -> {
+                Processor processor = new TransformP<JetSqlRow, Object>(row -> {
                     traverser.accept(projector.project(row));
                     return traverser;
                 });

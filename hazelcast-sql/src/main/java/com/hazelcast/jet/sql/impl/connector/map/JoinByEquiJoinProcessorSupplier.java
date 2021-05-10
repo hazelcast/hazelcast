@@ -29,6 +29,7 @@ import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -56,7 +57,6 @@ import java.util.function.Function;
 import static com.hazelcast.jet.Traversers.empty;
 import static com.hazelcast.jet.Traversers.singleton;
 import static com.hazelcast.jet.Traversers.traverseIterable;
-import static com.hazelcast.jet.impl.util.Util.extendArray;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
@@ -114,7 +114,7 @@ final class JoinByEquiJoinProcessorSupplier implements ProcessorSupplier, DataSe
                     : new PartitionIdSet(partitionCount, this.partitions);
             QueryPath[] rightPaths = rightRowProjectorSupplier.paths();
             KvRowProjector rightProjector = rightRowProjectorSupplier.get(evalContext, extractors);
-            Processor processor = new TransformP<Object[], Object[]>(
+            Processor processor = new TransformP<JetSqlRow, JetSqlRow>(
                     joinFn(joinInfo, map, partitions, rightPaths, rightProjector, evalContext)
             ) {
                 @Override
@@ -127,7 +127,7 @@ final class JoinByEquiJoinProcessorSupplier implements ProcessorSupplier, DataSe
         return processors;
     }
 
-    private static FunctionEx<Object[], Traverser<Object[]>> joinFn(
+    private static FunctionEx<JetSqlRow, Traverser<JetSqlRow>> joinFn(
             JetJoinInfo joinInfo,
             MapProxyImpl<Object, Object> map,
             PartitionIdSet partitions,
@@ -137,6 +137,7 @@ final class JoinByEquiJoinProcessorSupplier implements ProcessorSupplier, DataSe
     ) {
         return left -> {
             Predicate<Object, Object> predicate = QueryUtil.toPredicate(
+                    evalContext.getSerializationService(),
                     left,
                     joinInfo.leftEquiJoinIndices(),
                     joinInfo.rightEquiJoinIndices(),
@@ -145,34 +146,34 @@ final class JoinByEquiJoinProcessorSupplier implements ProcessorSupplier, DataSe
             if (predicate == null) {
                 return joinInfo.isInner()
                         ? empty()
-                        : singleton(extendArray(left, rightRowProjector.getColumnCount()));
+                        : singleton(left.extendedRow(rightRowProjector.getColumnCount()));
             }
 
             Set<Entry<Object, Object>> matchingRows = joinInfo.isInner()
                     ? map.entrySet(predicate, partitions.copy())
                     : map.entrySet(predicate);
-            List<Object[]> joined = join(left, matchingRows, rightRowProjector, joinInfo.nonEquiCondition(), evalContext);
+            List<JetSqlRow> joined = join(left, matchingRows, rightRowProjector, joinInfo.nonEquiCondition(), evalContext);
             return joined.isEmpty() && joinInfo.isLeftOuter()
-                    ? singleton(extendArray(left, rightRowProjector.getColumnCount()))
+                    ? singleton(left.extendedRow(rightRowProjector.getColumnCount()))
                     : traverseIterable(joined);
         };
     }
 
-    private static List<Object[]> join(
-            Object[] left,
+    private static List<JetSqlRow> join(
+            JetSqlRow left,
             Set<Entry<Object, Object>> entries,
             KvRowProjector rightRowProjector,
             Expression<Boolean> condition,
             ExpressionEvalContext evalContext
     ) {
-        List<Object[]> rows = new ArrayList<>();
+        List<JetSqlRow> rows = new ArrayList<>();
         for (Entry<Object, Object> entry : entries) {
-            Object[] right = rightRowProjector.project(entry);
+            JetSqlRow right = rightRowProjector.project(entry);
             if (right == null) {
                 continue;
             }
 
-            Object[] joined = ExpressionUtil.join(left, right, condition, evalContext);
+            JetSqlRow joined = ExpressionUtil.join(left, right, condition, evalContext);
             if (joined != null) {
                 rows.add(joined);
             }

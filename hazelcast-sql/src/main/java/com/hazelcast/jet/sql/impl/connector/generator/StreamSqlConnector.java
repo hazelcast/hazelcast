@@ -22,6 +22,7 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.impl.pipeline.transform.StreamSourceTransform;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.jet.sql.impl.schema.MappingField;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -97,7 +98,7 @@ class StreamSqlConnector implements SqlConnector {
     ) {
         StreamTable table = (StreamTable) table0;
 
-        StreamSourceTransform<Object[]> source = (StreamSourceTransform<Object[]>) table.items(predicate, projections);
+        StreamSourceTransform<JetSqlRow> source = (StreamSourceTransform<JetSqlRow>) table.items(predicate, projections);
         ProcessorMetaSupplier pms = source.metaSupplierFn.apply(EventTimePolicy.noEventTime());
         return dag.newUniqueVertex(table.toString(), pms);
     }

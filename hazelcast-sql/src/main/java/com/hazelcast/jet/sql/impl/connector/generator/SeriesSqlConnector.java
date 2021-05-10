@@ -22,6 +22,7 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.impl.pipeline.transform.BatchSourceTransform;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.jet.sql.impl.schema.MappingField;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -97,8 +98,8 @@ class SeriesSqlConnector implements SqlConnector {
     ) {
         SeriesTable table = (SeriesTable) table0;
 
-        BatchSource<Object[]> source = table.items(predicate, projections);
-        ProcessorMetaSupplier pms = ((BatchSourceTransform<Object[]>) source).metaSupplier;
+        BatchSource<JetSqlRow> source = table.items(predicate, projections);
+        ProcessorMetaSupplier pms = ((BatchSourceTransform<JetSqlRow>) source).metaSupplier;
         return dag.newUniqueVertex(table.toString(), pms);
     }
 }

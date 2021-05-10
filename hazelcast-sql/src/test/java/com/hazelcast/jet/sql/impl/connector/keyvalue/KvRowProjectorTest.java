@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.connector.keyvalue;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -63,9 +64,9 @@ public class KvRowProjectorTest {
                 NOT_IMPLEMENTED_ARGUMENTS_CONTEXT
         );
 
-        Object[] row = projector.project(entry(1, 8));
+        JetSqlRow row = projector.project(entry(1, 8));
 
-        assertThat(row).isEqualTo(new Object[]{2, 4});
+        assertThat(row.getValues()).isEqualTo(new Object[]{2, 4});
     }
 
     @Test
@@ -81,7 +82,7 @@ public class KvRowProjectorTest {
                 NOT_IMPLEMENTED_ARGUMENTS_CONTEXT
         );
 
-        Object[] row = projector.project(entry(1, 8));
+        JetSqlRow row = projector.project(entry(1, 8));
 
         assertThat(row).isNull();
     }

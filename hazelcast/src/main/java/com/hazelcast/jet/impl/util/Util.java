@@ -327,16 +327,6 @@ public final class Util {
     }
 
     /**
-     * Creates a copy of the {@code array} with length increased by {@code
-     * extendBy}. The added elements will contain {@code null}s. If {@code
-     * extendBy == 0}, no copy is created.
-     */
-    public static Object[] extendArray(Object[] array, int extendBy) {
-        assert extendBy > -1;
-        return extendBy == 0 ? array : Arrays.copyOf(array, array.length + extendBy);
-    }
-
-    /**
      * Returns a future which is already completed with the supplied exception.
      */
     // replace with CompletableFuture.failedFuture(e) once we depend on java9+
