@@ -42,7 +42,6 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_DISCRIMINATOR_BINDADDRESS;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_DISCRIMINATOR_ENDPOINT;
@@ -109,15 +108,12 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
 
     @Override
     public ServerConnection get(Address address, int streamId) {
-        return getPlane(streamId).connectionMap.get(address);
+        return getPlane(streamId).getConnection(address);
     }
 
     public Set<Address> getKnownAliases(TcpServerConnection connection) {
         Plane plane = planes[connection.getPlaneIndex()];
-        return plane.connectionMap.entrySet().stream()
-                .filter(e -> e.getValue().equals(connection))
-                .map(Map.Entry::getKey)
-                .collect(Collectors.toSet());
+        return plane.getAddresses(connection);
     }
 
     @Override
@@ -128,7 +124,7 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
     @Override
     public ServerConnection getOrConnect(final Address address, final boolean silent, int streamId) {
         Plane plane = getPlane(streamId);
-        TcpServerConnection connection = plane.connectionMap.get(address);
+        TcpServerConnection connection = plane.getConnection(address);
         if (connection == null && server.isLive()) {
             if (plane.addConnectionInProgress(address)) {
                 if (logger.isFineEnabled()) {
@@ -169,7 +165,7 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
             if (!connection.isClient()) {
                 connection.setErrorHandler(getErrorHandler(remoteAddress, plane.index, true));
             }
-            plane.connectionMap.put(remoteAddress, connection);
+            plane.putConnection(remoteAddress, connection);
 
             serverContext.getEventService().executeEventCallback(new StripedRunnable() {
                 @Override
@@ -202,8 +198,8 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
     public synchronized void reset(boolean cleanListeners) {
         acceptedChannels.forEach(IOUtil::closeResource);
         for (Plane plane : planes) {
-            plane.connectionMap.values().forEach(conn -> close(conn, "TcpServer is stopping"));
-            plane.connectionMap.clear();
+            plane.forEachConnection(conn -> close(conn, "TcpServer is stopping"));
+            plane.clearConnections();
         }
 
         connections.forEach(conn -> close(conn, "TcpServer is stopping"));
@@ -292,7 +288,7 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
     private int connectionsInProgress() {
         int c = 0;
         for (Plane plane : planes) {
-            c += plane.connectionsInProgress.size();
+            c += plane.noOfConnectionsInProgress();
         }
         return c;
     }
@@ -301,7 +297,7 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
     public int connectionCount() {
         int c = 0;
         for (Plane plane : planes) {
-            c += plane.connectionMap.size();
+            c += plane.connectionCount();
         }
         return c;
     }
@@ -328,7 +324,7 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
         int clientCount = 0;
         int textCount = 0;
         for (Plane plane : planes) {
-            for (Map.Entry<Address, TcpServerConnection> entry : plane.connectionMap.entrySet()) {
+            for (Map.Entry<Address, TcpServerConnection> entry : plane.connections()) {
                 Address bindAddress = entry.getKey();
                 TcpServerConnection connection = entry.getValue();
                 if (connection.isClient()) {

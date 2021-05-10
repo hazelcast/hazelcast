@@ -145,8 +145,11 @@ public final class TcpServerControl {
                                        Address remoteEndpoint,
                                        Collection<Address> remoteAddressAliases,
                                        MemberHandshake handshake) {
-        final Address remoteAddress = new Address(connection.getRemoteSocketAddress());
-        if (connectionManager.planes[handshake.getPlaneIndex()].connectionsInProgress.contains(remoteAddress)) {
+        Address remoteAddress = connection.getRemoteAddress();
+        if (remoteAddress == null) {
+            remoteAddress = new Address(connection.getRemoteSocketAddress());
+        }
+        if (connectionManager.planes[handshake.getPlaneIndex()].hasConnectionInProgress(remoteAddress)) {
             // this is the connection initiator side --> register the connection under the address that was requested
             remoteEndpoint = remoteAddress;
         }
@@ -181,13 +184,13 @@ public final class TcpServerControl {
                     logger.finest("Registering connection " + connection + " to address alias " + remoteAddressAlias
                             + " planeIndex:" + handshake.getPlaneIndex());
                 }
-                connectionManager.planes[handshake.getPlaneIndex()].addConnection(remoteAddressAlias, connection);
+                connectionManager.planes[handshake.getPlaneIndex()].putConnectionIfAbsent(remoteAddressAlias, connection);
             }
         }
     }
 
     private boolean checkAlreadyConnected(TcpServerConnection connection, Address remoteEndPoint, int planeIndex) {
-        Connection existingConnection = connectionManager.planes[planeIndex].connectionMap.get(remoteEndPoint);
+        Connection existingConnection = connectionManager.planes[planeIndex].getConnection(remoteEndPoint);
         if (existingConnection != null && existingConnection.isAlive()) {
             if (existingConnection != connection) {
                 if (logger.isFinestEnabled()) {

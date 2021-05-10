@@ -34,13 +34,17 @@ import com.hazelcast.internal.util.executor.StripedRunnable;
 import com.hazelcast.logging.ILogger;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ENDPOINT_MANAGER_ACCEPTED_SOCKET_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ENDPOINT_MANAGER_ACTIVE_COUNT;
@@ -115,22 +119,71 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
     }
 
     static class Plane {
-        final ConcurrentHashMap<Address, TcpServerConnection> connectionMap = new ConcurrentHashMap<>(100);
-        final Set<Address> connectionsInProgress = newSetFromMap(new ConcurrentHashMap<>());
         final ConcurrentHashMap<Address, TcpServerConnectionErrorHandler> errorHandlers = new ConcurrentHashMap<>(100);
         final int index;
+
+        private final Set<Address> connectionsInProgress = newSetFromMap(new ConcurrentHashMap<>());
+        private final ConcurrentHashMap<Address, TcpServerConnection> connectionMap = new ConcurrentHashMap<>(100);
 
         Plane(int index) {
             this.index = index;
         }
 
-        void addConnection(Address address, TcpServerConnection connection) {
+        TcpServerConnection getConnection(Address address) {
+            return connectionMap.get(address);
+        }
+
+        void putConnection(Address address, TcpServerConnection connection) {
+            connectionMap.put(address, connection);
+        }
+
+        void putConnectionIfAbsent(Address address, TcpServerConnection connection) {
             connectionMap.putIfAbsent(address, connection);
         }
 
         void removeConnection(TcpServerConnection connection) {
             removeConnectionInProgress(connection.getRemoteAddress());
             connectionMap.entrySet().removeIf(entry -> entry.getValue().equals(connection));
+        }
+
+        public Set<Address> getAddresses(TcpServerConnection connection) {
+            return connectionMap.entrySet().stream()
+                    .filter(e -> e.getValue().equals(connection))
+                    .map(Map.Entry::getKey)
+                    .collect(Collectors.toSet());
+        }
+
+        public boolean removeConnectionsWithId(int id) {
+            boolean found = false;
+            Iterator<TcpServerConnection> connections = connectionMap.values().iterator();
+            while (connections.hasNext()) {
+                TcpServerConnection cxn = connections.next();
+                if (cxn.getConnectionId() == id) {
+                    connections.remove();
+                    found = true;
+                }
+            }
+            return found;
+        }
+
+        public void forEachConnection(Consumer<? super TcpServerConnection> consumer) {
+            connectionMap.values().forEach(consumer);
+        }
+
+        public void clearConnections() {
+            connectionMap.clear();
+        }
+
+        public Set<Map.Entry<Address, TcpServerConnection>> connections() {
+            return Collections.unmodifiableSet(connectionMap.entrySet());
+        }
+
+        public int connectionCount() {
+            return (int) connectionMap.values().stream().distinct().count();
+        }
+
+        public boolean hasConnectionInProgress(Address address) {
+            return connectionsInProgress.contains(address);
         }
 
         public boolean addConnectionInProgress(Address address) {
@@ -143,6 +196,10 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
 
         public void clearConnectionsInProgress() {
             connectionsInProgress.clear();
+        }
+
+        public int noOfConnectionsInProgress() {
+            return connectionsInProgress.size();
         }
     }
 
@@ -212,13 +269,8 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
                     for (Plane plane : planes) {
                         plane.removeConnectionInProgress(remoteAddress);
                         // not using removeIf due to https://bugs.java.com/bugdatabase/view_bug.do?bug_id=8078645
-                        Iterator<TcpServerConnection> connections = plane.connectionMap.values().iterator();
-                        while (connections.hasNext()) {
-                            TcpServerConnection cxn = connections.next();
-                            if (cxn.getConnectionId() == connection.getConnectionId()) {
-                                connections.remove();
-                                removed = true;
-                            }
+                        if (plane.removeConnectionsWithId(connection.getConnectionId())) {
+                            removed = true;
                         }
                     }
                     if (removed) {
