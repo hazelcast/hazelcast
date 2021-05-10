@@ -47,7 +47,7 @@
     <maven.sonar.plugin.version>3.3.0.603</maven.sonar.plugin.version>
     <maven.jacoco.plugin.version>0.8.7</maven.jacoco.plugin.version>
     <maven.javadoc.plugin.version>3.2.0</maven.javadoc.plugin.version>
-    <maven.gpg.plugin.version>1.6</maven.gpg.plugin.version>
+    <maven.gpg.plugin.version>3.0.1</maven.gpg.plugin.version>
     <maven.bundle.plugin.version>5.1.2</maven.bundle.plugin.version>
     <maven.compiler.plugin.version>3.8.1</maven.compiler.plugin.version>
     <maven.release.plugin.version>2.5.3</maven.release.plugin.version>
@@ -484,7 +484,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
-            <version>1.6</version>
+            <version>3.0.1</version>
             <executions>
               <execution>
                 <id>sign-artifacts</id>
