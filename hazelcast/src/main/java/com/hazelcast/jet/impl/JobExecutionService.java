@@ -128,7 +128,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
 
     private final Function<? super Long, ? extends ExecutionContext> newLightJobExecutionContextFunction;
 
-    private final ScheduledFuture<?> lightExecutionsSender;
+    private final ScheduledFuture<?> lightExecutionsCheckerFuture;
 
     JobExecutionService(NodeEngineImpl nodeEngine, TaskletExecutionService taskletExecutionService,
                         JobRepository jobRepository) {
@@ -145,7 +145,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
                 .withTag(MetricTags.MODULE, "jet");
         registry.registerStaticMetrics(descriptor, this);
 
-        this.lightExecutionsSender = nodeEngine.getExecutionService().scheduleWithRepetition(
+        this.lightExecutionsCheckerFuture = nodeEngine.getExecutionService().scheduleWithRepetition(
                 this::checkLightExecutions, 0, 1, SECONDS);
     }
 
@@ -206,7 +206,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
     }
 
     public void shutdown() {
-        lightExecutionsSender.cancel(false);
+        lightExecutionsCheckerFuture.cancel(false);
         synchronized (mutex) {
             cancelAllExecutions("Node is shutting down");
         }

@@ -71,6 +71,9 @@ import static java.util.Collections.unmodifiableList;
  */
 public class ExecutionContext implements DynamicMetricsProvider {
 
+    private static final Function<? super SenderReceiverKey, ? extends Queue<byte[]>> CREATE_RECEIVER_QUEUE_FN =
+            key -> new MPSCQueue<>(null);
+
     private final long jobId;
     private final long executionId;
     private final boolean isLightJob;
@@ -110,7 +113,6 @@ public class ExecutionContext implements DynamicMetricsProvider {
     private volatile RawJobMetrics jobMetrics = RawJobMetrics.empty();
 
     private InternalSerializationService serializationService;
-    private final Function<? super SenderReceiverKey, ? extends Queue<byte[]>> createReceiverQueueFn;
 
     public ExecutionContext(NodeEngine nodeEngine, long jobId, long executionId, boolean isLightJob) {
         this.jobId = jobId;
@@ -127,7 +129,6 @@ public class ExecutionContext implements DynamicMetricsProvider {
         // We considered replacing the CHM with a HM after initialization for performance, but there's
         // not much benefit in that according to this: https://stackoverflow.com/a/32141829/952135
         receiverQueuesMap = isLightJob ? new ConcurrentHashMap<>() : new HashMap<>();
-        createReceiverQueueFn = key -> new MPSCQueue<>(null);
     }
 
     public ExecutionContext initialize(
@@ -162,10 +163,12 @@ public class ExecutionContext implements DynamicMetricsProvider {
                 for (Entry<Address, ReceiverTasklet> addressEntry : ordinalEntry.getValue().entrySet()) {
                     SenderReceiverKey key =
                             new SenderReceiverKey(vertexIdEntry.getKey(), ordinalEntry.getKey(), addressEntry.getKey());
-                    Queue<byte[]> queue = receiverQueuesMap.computeIfAbsent(key, createReceiverQueueFn);
-                    addressEntry.getValue().initIncomingQueue(queue);
+                    // the queue might already exist, if some data were received for it, or it will be created now
+                    Queue<byte[]> queue = receiverQueuesMap.computeIfAbsent(key, CREATE_RECEIVER_QUEUE_FN);
+                    ReceiverTasklet receiverTasklet = addressEntry.getValue();
+                    receiverTasklet.initIncomingQueue(queue);
                     receiverMap.put(new SenderReceiverKey(vertexIdEntry.getKey(), ordinalEntry.getKey(), addressEntry.getKey()),
-                            addressEntry.getValue());
+                            receiverTasklet);
                 }
             }
         }
@@ -319,7 +322,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
     }
 
     public void handlePacket(int vertexId, int ordinal, Address sender, byte[] payload) {
-        receiverQueuesMap.computeIfAbsent(new SenderReceiverKey(vertexId, ordinal, sender), createReceiverQueueFn)
+        receiverQueuesMap.computeIfAbsent(new SenderReceiverKey(vertexId, ordinal, sender), CREATE_RECEIVER_QUEUE_FN)
                    .add(payload);
     }
 

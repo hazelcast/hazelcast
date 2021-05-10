@@ -153,6 +153,10 @@ public class JetService implements ManagedService, MembershipAwareService, LiveO
         try {
             CompletableFuture<Void> future = shutdownFuture.get();
             future.get(SHUTDOWN_JOBS_MAX_WAIT_SECONDS, SECONDS);
+            // Note that at this point there can still be executions running - those for light jobs
+            // or those created automatically after a packet was received.
+            // They are all non-fault-tolerant or contain only the packets, that will be dropped
+            // when this member actually shuts down.
         } catch (Exception e) {
             logger.severe("Shutdown jobs timeout", e);
         }

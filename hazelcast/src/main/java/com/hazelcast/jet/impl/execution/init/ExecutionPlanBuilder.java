@@ -144,7 +144,6 @@ public final class ExecutionPlanBuilder {
                                                       Address[] partitionOwners) {
         IPartitionService partitionService = nodeEngine.getPartitionService();
         Set<Address> addresses = new HashSet<>(membersView.size());
-        // TODO [viliam] can we do this faster?
         for (int partitionId = 0; partitionId < partitionOwners.length; partitionId++) {
             Address address = partitionService.getPartitionOwnerOrWait(partitionId);
             partitionOwners[partitionId] = address;

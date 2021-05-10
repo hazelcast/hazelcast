@@ -65,7 +65,6 @@ We addressed this race by moving the received packet buffer to
 found when data arrives. When later the `init` operation arrives, we
 create the processors and they will process the accumulated data.
 
-
 ### Job receives data, but is never initialized
 
 This can happen e.g. if the coordinator dies or the operation is lost.
@@ -133,27 +132,22 @@ light jobs we will have to implement a new `GetLightJobsOperation` that
 will be sent to all members and they will reply with a list of light
 jobs they coordinate.
 
+## Graceful Shutdown
 
+When a Jet member is shut down, it first gracefully terminates all
+executions. That means, fault tolerant jobs will save a snapshot and
+process no data after it, so even sinks with at-least-once guarantee
+don't produce duplicates.
 
+However, this mechanism is not needed for non-fault-tolerant jobs, which
+includes all light jobs. Even though we terminate non-fault-tolerant
+normal jobs during graceful shutdown, we didn't implement the shutdown
+of light jobs. Those will be terminated abruptly after the member shuts
+down.
 
+## Java Serialization of Processors
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+After the job roundtrip got to microsecond scale, the serialization time
+for Jet processors became non-negligible, though not major. It might be
+worthwhile to convert the common processors to use
+`IdentifiedDataSerializable`.

@@ -22,6 +22,13 @@ import java.util.concurrent.CompletableFuture;
 
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
+/**
+ * An operation sent from a client or another member to the light job
+ * coordinator member to cancel a light job.
+ * <p>
+ * See also {@link TerminateJobOperation} and {@link
+ * TerminateExecutionOperation}.
+ */
 public class CancelLightJobOperation extends AsyncJobOperation {
 
     // for deserialization

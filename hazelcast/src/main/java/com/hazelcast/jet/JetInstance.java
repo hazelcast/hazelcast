@@ -199,19 +199,24 @@ public interface JetInstance {
      *     <li>no job configuration, that means no processing guarantee, no custom
      *         classes or job resources
      *
-     *     <li>no job metrics
+     *     <li>no metrics after job completion
      *
-     *     <li>no visibility in Management Center (this might be added later)
+     *     <li>no visibility in {@link #getJobs()} or in Management Center (this
+     *         will be added later)
      *
      *     <li>failures will be only reported to the caller and logged in the
      *         cluster logs, but no trace of the job will remain in the cluster after
      *         it's done
      *
-     *     <li>the job will not be cancelled if the client disconnects.
+     *     <li>{@link RestartableException} doesn't restart the job, but it will
+     *         fail
      * </ul>
      * <p>
      * It substantially reduces the overhead for jobs that take milliseconds to
      * complete.
+     * <p>
+     * A light job will not be cancelled if the client disconnects. It's
+     * potential failure will be only logged in member logs.
      */
     @Nonnull
     LightJob newLightJob(Pipeline p);
