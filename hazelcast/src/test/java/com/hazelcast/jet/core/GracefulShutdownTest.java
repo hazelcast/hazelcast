@@ -113,7 +113,7 @@ public class GracefulShutdownTest extends JetTestSupport {
 
         // When
         logger.info("Shutting down instance...");
-        instances[shutDownInstance].shutdown();
+        instances[shutDownInstance].getHazelcastInstance().shutdown();
         logger.info("Joining job...");
         job.join();
         logger.info("Joined");
@@ -163,7 +163,7 @@ public class GracefulShutdownTest extends JetTestSupport {
         Future future = spawn(() -> {
             JetInstance nonParticipatingMember = createJetMember();
             sleepSeconds(1);
-            nonParticipatingMember.shutdown();
+            nonParticipatingMember.getHazelcastInstance().shutdown();
         });
         assertTrueAllTheTime(() -> assertEquals(RUNNING, job.getStatus()), 5);
         future.get();
@@ -202,7 +202,7 @@ public class GracefulShutdownTest extends JetTestSupport {
         job.restart();
         assertTrueEventually(() -> assertTrue("blocking did not happen", BlockingMapStore.wasBlocked), 5);
 
-        Future shutdownFuture = spawn(() -> instances[1].shutdown());
+        Future shutdownFuture = spawn(() -> instances[1].getHazelcastInstance().shutdown());
         logger.info("savedCounters=" + EmitIntegersP.savedCounters);
         int minCounter = EmitIntegersP.savedCounters.values().stream().mapToInt(Integer::intValue).min().getAsInt();
         BlockingMapStore.shouldBlock = false;

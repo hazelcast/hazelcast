@@ -493,12 +493,12 @@ public class Node {
         if (logger.isFinestEnabled()) {
             logger.finest("We are being asked to shutdown when state = " + state);
         }
+        if (nodeExtension != null) {
+            nodeExtension.beforeShutdown(terminate);
+        }
         if (!setShuttingDown()) {
             waitIfAlreadyShuttingDown();
             return;
-        }
-        if (nodeExtension != null) {
-            nodeExtension.beforeShutdown(terminate);
         }
 
         if (!terminate) {
