@@ -116,8 +116,8 @@ public class LightMasterContext {
         };
         invokeOnParticipants(operationCtor,
                 responses -> finalizeJob(findError(responses)),
-                error -> cancelInvocations(),
-                true);
+                error -> cancelInvocations()
+        );
         return jobCompletionFuture;
     }
 
@@ -171,22 +171,18 @@ public class LightMasterContext {
      *                           be equal to participant count
      * @param errorCallback A callback that will be called after each a
      *                     failure of each individual operation
-     * @param retryOnTimeoutException if true, operations that threw {@link
-     *      OperationTimeoutException} will be retried
      */
     private void invokeOnParticipants(
             Function<ExecutionPlan, Operation> operationCtor,
             @Nullable Consumer<Collection<Object>> completionCallback,
-            @Nullable Consumer<Throwable> errorCallback,
-            boolean retryOnTimeoutException
+            @Nullable Consumer<Throwable> errorCallback
     ) {
         ConcurrentMap<Address, Object> responses = new ConcurrentHashMap<>();
         AtomicInteger remainingCount = new AtomicInteger(executionPlanMap.size());
         for (Entry<MemberInfo, ExecutionPlan> entry : executionPlanMap.entrySet()) {
             Address address = entry.getKey().getAddress();
             Operation op = operationCtor.apply(entry.getValue());
-            invokeOnParticipant(address, op, completionCallback, errorCallback, retryOnTimeoutException, responses,
-                    remainingCount);
+            invokeOnParticipant(address, op, completionCallback, errorCallback, responses, remainingCount);
         }
     }
 
@@ -195,20 +191,19 @@ public class LightMasterContext {
             Operation op,
             @Nullable Consumer<Collection<Object>> completionCallback,
             @Nullable Consumer<Throwable> errorCallback,
-            boolean retryOnTimeoutException,
             ConcurrentMap<Address, Object> collectedResponses,
             AtomicInteger remainingCount
     ) {
         InvocationFuture<Object> future = nodeEngine.getOperationService()
-                                                             .createInvocationBuilder(JetService.SERVICE_NAME, op, address)
-                                                             .invoke();
+                                                    .createInvocationBuilder(JetService.SERVICE_NAME, op, address)
+                                                    .invoke();
 
         future.whenComplete((r, throwable) -> {
             Object response = r != null ? r : throwable != null ? peel(throwable) : NULL_OBJECT;
-            if (retryOnTimeoutException && throwable instanceof OperationTimeoutException) {
+            if (throwable instanceof OperationTimeoutException) {
                 logger.warning("Retrying " + op.getClass().getSimpleName() + " that failed with "
                         + OperationTimeoutException.class.getSimpleName() + " in " + jobIdString);
-                invokeOnParticipant(address, op, completionCallback, errorCallback, true,
+                invokeOnParticipant(address, op, completionCallback, errorCallback,
                         collectedResponses, remainingCount);
                 return;
             }
