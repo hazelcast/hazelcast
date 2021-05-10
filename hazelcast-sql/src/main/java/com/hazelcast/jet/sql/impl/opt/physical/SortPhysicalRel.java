@@ -61,7 +61,7 @@ public class SortPhysicalRel extends Sort implements PhysicalRel {
 
     @Override
     public Vertex accept(CreateDagVisitor visitor) {
-        throw new UnsupportedOperationException();
+        return visitor.onSort(this);
     }
 
     @Override

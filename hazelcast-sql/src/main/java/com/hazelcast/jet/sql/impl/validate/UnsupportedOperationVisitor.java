@@ -144,6 +144,11 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_KINDS.add(SqlKind.COLLECTION_TABLE);
         SUPPORTED_KINDS.add(SqlKind.ARGUMENT_ASSIGNMENT);
 
+        // Ordering
+        SUPPORTED_KINDS.add(SqlKind.NULLS_FIRST);
+        SUPPORTED_KINDS.add(SqlKind.NULLS_LAST);
+        SUPPORTED_KINDS.add(SqlKind.DESCENDING);
+
         // Supported operators
         SUPPORTED_OPERATORS = new HashSet<>();
 
@@ -203,6 +208,11 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_OPERATORS.add(JetSqlOperatorTable.JSON_FILE);
         SUPPORTED_OPERATORS.add(JetSqlOperatorTable.AVRO_FILE);
         SUPPORTED_OPERATORS.add(JetSqlOperatorTable.PARQUET_FILE);
+
+        // Ordering
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.DESC);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.NULLS_FIRST);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.NULLS_LAST);
     }
 
     private UnsupportedOperationVisitor() {
@@ -346,10 +356,6 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
     }
 
     private void processSelect(SqlSelect select) {
-        if (select.hasOrderBy()) {
-            throw unsupported(select.getOrderList(), SqlKind.ORDER_BY);
-        }
-
         if (select.getOffset() != null) {
             throw unsupported(select.getOffset(), "OFFSET");
         }

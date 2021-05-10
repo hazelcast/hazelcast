@@ -33,6 +33,7 @@ import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
+import com.hazelcast.jet.sql.impl.opt.FieldCollation;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
@@ -49,11 +50,13 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.function.Functions.entryKey;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.Processors.filterUsingServiceP;
 import static com.hazelcast.jet.core.processor.Processors.mapUsingServiceP;
+import static com.hazelcast.jet.core.processor.Processors.sortP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.convenientSourceP;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 import static com.hazelcast.jet.sql.impl.processors.RootResultConsumerSink.rootResultConsumerSink;
@@ -117,6 +120,22 @@ public class CreateDagVisitor {
         return vertex;
     }
 
+    public Vertex onSort(SortPhysicalRel rel) {
+        Vertex vertex = dag.newUniqueVertex("Sort",
+                ProcessorMetaSupplier.forceTotalParallelismOne(
+                        ProcessorSupplier.of(
+                                sortP(ExpressionUtil.comparisonFn(getCollations(rel))
+                                )
+                        ),
+                        localMemberAddress
+                )
+        );
+
+        connectInput(rel.getInput(), vertex, edge -> edge.distributeTo(localMemberAddress).allToOne(""));
+
+        return vertex;
+    }
+
     public Vertex onProject(ProjectPhysicalRel rel) {
         List<Expression<?>> projection = rel.projection(parameterMetadata);
 
@@ -126,7 +145,12 @@ public class CreateDagVisitor {
                 (BiFunctionEx<Function<Object[], Object[]>, Object[], Object[]>) Function::apply
         ));
 
-        connectInput(rel.getInput(), vertex, null);
+        Consumer<Edge> edgeConfig = null;
+        if (rel.getTraitSet().getCollation().getFieldCollations().size() > 0) {
+            edgeConfig = edge -> edge.distributeTo(localMemberAddress).allToOne("");
+        }
+
+        connectInput(rel.getInput(), vertex, edgeConfig);
         return vertex;
     }
 
@@ -227,15 +251,22 @@ public class CreateDagVisitor {
         if (input instanceof SortPhysicalRel) {
             SortPhysicalRel sortRel = (SortPhysicalRel) input;
             assert sortRel.offset == null : "Offset is not supported";
-            assert sortRel.collation.getFieldCollations().isEmpty() : "Collation is not supported";
 
-            Expression<?> fetch = sortRel.fetch(parameterMetadata);
+            Expression<?> fetch;
+            if (sortRel.fetch == null) {
+                fetch = ConstantExpression.create(Long.MAX_VALUE, QueryDataType.BIGINT);
+            } else {
+                fetch = sortRel.fetch(parameterMetadata);
+            }
+
+            if (sortRel.collation.getFieldCollations().isEmpty()) {
+                input = sortRel.getInput();
+            }
 
             vertex = dag.newUniqueVertex(
                     "ClientSink",
                     rootResultConsumerSink(rootRel.getInitiatorAddress(), fetch)
             );
-            input = sortRel.getInput();
         } else {
             vertex = dag.newUniqueVertex(
                     "ClientSink",
@@ -285,5 +316,10 @@ public class CreateDagVisitor {
         if (objectKey != null) {
             objectKeys.add(objectKey);
         }
+    }
+
+    private static List<FieldCollation> getCollations(SortPhysicalRel rel) {
+        return rel.getCollation().getFieldCollations()
+                .stream().map(FieldCollation::new).collect(Collectors.toList());
     }
 }

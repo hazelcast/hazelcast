@@ -111,6 +111,10 @@ public class JetSqlValidator extends HazelcastSqlValidator {
         if (containsGroupingOrAggregation(select) && isInfiniteRows(select)) {
             throw newValidationError(select, RESOURCE.streamingAggregationsNotSupported());
         }
+
+        if (containsSorting(select) && isInfiniteRows(select)) {
+            throw newValidationError(select, RESOURCE.streamingSortingNotSupported());
+        }
     }
 
     private boolean containsGroupingOrAggregation(SqlSelect select) {
@@ -129,6 +133,10 @@ public class JetSqlValidator extends HazelcastSqlValidator {
         }
 
         return false;
+    }
+
+    private boolean containsSorting(SqlSelect select) {
+        return select.getOrderList() != null && select.getOrderList().size() > 0;
     }
 
     /**
