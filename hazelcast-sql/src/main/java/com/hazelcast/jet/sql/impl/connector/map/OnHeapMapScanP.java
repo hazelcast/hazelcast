@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector.map;
 
 import com.hazelcast.function.SupplierEx;
+import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.jet.Traverser;
@@ -53,14 +54,22 @@ import java.util.UUID;
  * it just return all map entries which it can read.
  */
 public class OnHeapMapScanP extends AbstractProcessor {
-    protected final IMapTraverser traverser;
+    protected IMapTraverser traverser;
+    private final String mapName;
+    private final MapScanPlanNode planNode;
 
     public OnHeapMapScanP(
             @Nonnull String mapName,
-            @Nonnull NodeEngine nodeEngine,
             @Nonnull MapScanPlanNode node
 
     ) {
+        this.mapName = mapName;
+        this.planNode = node;
+    }
+
+    @Override
+    protected void init(@Nonnull Context context) throws Exception {
+        NodeEngine nodeEngine = ((HazelcastInstanceImpl) context.jetInstance().getHazelcastInstance()).node.nodeEngine;
         Map<UUID, PartitionIdSet> partitionMap = QueryUtils.createPartitionMap(
                 nodeEngine,
                 nodeEngine.getLocalMember().getVersion(),
@@ -71,12 +80,8 @@ public class OnHeapMapScanP extends AbstractProcessor {
         traverser = new IMapTraverser(
                 mapContainer,
                 partitionMap.get(nodeEngine.getClusterService().getLocalMember().getUuid()).iterator(),
-                node
+                planNode
         );
-    }
-
-    @Override
-    protected void init(@Nonnull Context context) throws Exception {
         super.init(context);
         traverser.init(SimpleExpressionEvalContext.from(context));
     }
@@ -176,20 +181,18 @@ public class OnHeapMapScanP extends AbstractProcessor {
 
     public static ProcessorMetaSupplier ohHeapMapScanP(
             @Nonnull String mapName,
-            @Nonnull NodeEngine nodeEngine,
             @Nonnull MapScanPlanNode mapScanPlanNode
     ) {
         return ProcessorMetaSupplier.of(
-                processorSupplier(mapName, nodeEngine, mapScanPlanNode)
+                processorSupplier(mapName, mapScanPlanNode)
         );
     }
 
     @Nonnull
     public static SupplierEx<Processor> processorSupplier(
             @Nonnull String mapName,
-            @Nonnull NodeEngine nodeEngine,
             @Nonnull MapScanPlanNode mapScanPlanNode
     ) {
-        return () -> new OnHeapMapScanP(mapName, nodeEngine, mapScanPlanNode);
+        return () -> new OnHeapMapScanP(mapName, mapScanPlanNode);
     }
 }
