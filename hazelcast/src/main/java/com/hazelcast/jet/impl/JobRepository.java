@@ -25,6 +25,7 @@ import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ResourceConfig;
 import com.hazelcast.jet.core.JetProperties;
@@ -207,6 +208,10 @@ public class JobRepository {
      * uploaded resources are cleaned up.
      */
     long uploadJobResources(long jobId, JobConfig jobConfig) {
+        JetConfig config = jetInstance.getConfig();
+        if (!config.isUploadResources()) {
+            return jobId;
+        }
         Map<String, byte[]> tmpMap = new HashMap<>();
         try {
             Supplier<IMap<String, byte[]>> jobFileStorage = Util.memoize(() -> getJobResources(jobId));

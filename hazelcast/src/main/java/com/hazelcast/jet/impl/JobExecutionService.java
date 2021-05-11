@@ -30,6 +30,7 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.jet.Util;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.core.metrics.MetricNames;
@@ -114,14 +115,22 @@ public class JobExecutionService implements DynamicMetricsProvider {
     }
 
     public ClassLoader getClassLoader(JobConfig config, long jobId) {
+        JetConfig jetConfig = nodeEngine.getConfig().getJetConfig();
+        if (!jetConfig.isUploadResources()) {
+            return parentClassLoader(config);
+        }
         return classLoaders.computeIfAbsent(jobId,
                 k -> AccessController.doPrivileged(
                         (PrivilegedAction<JetClassLoader>) () -> {
-                            ClassLoader parent = config.getClassLoaderFactory() != null
-                                    ? config.getClassLoaderFactory().getJobClassLoader()
-                                    : nodeEngine.getConfigClassLoader();
+                            ClassLoader parent = parentClassLoader(config);
                             return new JetClassLoader(nodeEngine, parent, config.getName(), jobId, jobRepository);
                         }));
+    }
+
+    private ClassLoader parentClassLoader(JobConfig config) {
+        return config.getClassLoaderFactory() != null
+                ? config.getClassLoaderFactory().getJobClassLoader()
+                : nodeEngine.getConfigClassLoader();
     }
 
     public ExecutionContext getExecutionContext(long executionId) {

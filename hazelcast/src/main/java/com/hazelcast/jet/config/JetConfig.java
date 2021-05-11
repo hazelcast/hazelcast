@@ -29,12 +29,44 @@ public class JetConfig {
 
     private InstanceConfig instanceConfig = new InstanceConfig();
     private EdgeConfig defaultEdgeConfig = new EdgeConfig();
+    private boolean enabled = true;
+    private boolean uploadResources;
 
     /**
      * Creates a new, empty {@code JetConfig} with the default configuration.
      * Doesn't consider any configuration XML files.
      */
     public JetConfig() {
+    }
+
+    /**
+     * Returns if Jet is enabled
+     */
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    /**
+     * Sets if Jet is enabled
+     */
+    public JetConfig setEnabled(boolean enabled) {
+        this.enabled = enabled;
+        return this;
+    }
+
+    /**
+     * Returns if uploading resources when submitting the job enabled
+     */
+    public boolean isUploadResources() {
+        return uploadResources;
+    }
+
+    /**
+     * Sets if uploading resources when submitting the job enabled
+     */
+    public JetConfig setUploadResources(boolean uploadResources) {
+        this.uploadResources = uploadResources;
+        return this;
     }
 
     /**

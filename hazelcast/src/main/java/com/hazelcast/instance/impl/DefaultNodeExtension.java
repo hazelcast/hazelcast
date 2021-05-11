@@ -143,7 +143,6 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
             + "\to  o o   o o---o o--o O---o  o-o o   o o--o    o       o     O---o o   o  o   o     o-o  o   o o   o";
 
     private static final String COPYRIGHT_LINE = "Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.";
-    private static final String JET_DISABLED_PROPERTY = "hazelcast.jet.disabled";
 
     protected final Node node;
     protected final ILogger logger;
@@ -161,7 +160,8 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
         checkSecurityAllowed();
         checkPersistenceAllowed();
         createAndSetPhoneHome();
-        if (!jetDisabled(node)) {
+
+        if (node.getConfig().getJetConfig().isEnabled()) {
             jetExtension = new JetExtension(node, createService(JetService.class));
         }
     }
@@ -663,14 +663,5 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
             throw new IllegalArgumentException("Jet is disabled");
         }
         jetExtension.handlePacket(packet);
-    }
-
-    private boolean jetDisabled(Node node) {
-        String disabled = System.getProperty(JET_DISABLED_PROPERTY);
-        if (Boolean.parseBoolean(disabled)) {
-            return true;
-        }
-        disabled = node.getProperties().get(JET_DISABLED_PROPERTY);
-        return Boolean.parseBoolean(disabled);
     }
 }
