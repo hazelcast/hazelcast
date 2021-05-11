@@ -33,7 +33,6 @@ import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
-import com.hazelcast.jet.sql.impl.opt.FieldCollation;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
@@ -50,7 +49,6 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import static com.hazelcast.function.Functions.entryKey;
 import static com.hazelcast.jet.core.Edge.between;
@@ -124,7 +122,7 @@ public class CreateDagVisitor {
         Vertex vertex = dag.newUniqueVertex("Sort",
                 ProcessorMetaSupplier.forceTotalParallelismOne(
                         ProcessorSupplier.of(
-                                sortP(ExpressionUtil.comparisonFn(getCollations(rel))
+                                sortP(ExpressionUtil.comparisonFn(rel.getCollations())
                                 )
                         ),
                         localMemberAddress
@@ -246,13 +244,13 @@ public class CreateDagVisitor {
     }
 
     public Vertex onRoot(JetRootRel rootRel) {
-        Vertex vertex;
         RelNode input = rootRel.getInput();
+        Expression<?> fetch;
+
         if (input instanceof SortPhysicalRel) {
             SortPhysicalRel sortRel = (SortPhysicalRel) input;
             assert sortRel.offset == null : "Offset is not supported";
 
-            Expression<?> fetch;
             if (sortRel.fetch == null) {
                 fetch = ConstantExpression.create(Long.MAX_VALUE, QueryDataType.BIGINT);
             } else {
@@ -262,20 +260,14 @@ public class CreateDagVisitor {
             if (sortRel.collation.getFieldCollations().isEmpty()) {
                 input = sortRel.getInput();
             }
-
-            vertex = dag.newUniqueVertex(
-                    "ClientSink",
-                    rootResultConsumerSink(rootRel.getInitiatorAddress(), fetch)
-            );
         } else {
-            vertex = dag.newUniqueVertex(
-                    "ClientSink",
-                    rootResultConsumerSink(
-                            rootRel.getInitiatorAddress(),
-                            ConstantExpression.create(Long.MAX_VALUE, QueryDataType.BIGINT)
-                    )
-            );
+            fetch = ConstantExpression.create(Long.MAX_VALUE, QueryDataType.BIGINT);
         }
+
+        Vertex vertex = dag.newUniqueVertex(
+                "ClientSink",
+                rootResultConsumerSink(rootRel.getInitiatorAddress(), fetch)
+        );
 
         // We use distribute-to-one edge to send all the items to the initiator member.
         // Such edge has to be partitioned, but the sink is LP=1 anyway, so we can use
@@ -316,10 +308,5 @@ public class CreateDagVisitor {
         if (objectKey != null) {
             objectKeys.add(objectKey);
         }
-    }
-
-    private static List<FieldCollation> getCollations(SortPhysicalRel rel) {
-        return rel.getCollation().getFieldCollations()
-                .stream().map(FieldCollation::new).collect(Collectors.toList());
     }
 }
