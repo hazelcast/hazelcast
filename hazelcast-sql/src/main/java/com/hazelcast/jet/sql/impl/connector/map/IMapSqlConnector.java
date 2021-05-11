@@ -37,6 +37,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
+import com.hazelcast.sql.impl.plan.node.MapScanMetadata;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
@@ -153,6 +154,32 @@ public class IMapSqlConnector implements SqlConnector {
                 KvRowProjector.supplier(paths, types, keyDescriptor, valueDescriptor, predicate, projections);
 
         return IMapJoiner.join(dag, name, toString(table), joinInfo, rightRowProjectorSupplier);
+    }
+
+    @Override
+    public boolean supportsFullScanReader() {
+        return true;
+    }
+
+    @Nonnull
+    @Override
+    public Vertex fullScanReader(
+            @Nonnull DAG dag,
+            @Nonnull Table table0,
+            @Nullable Expression<Boolean> filter,
+            @Nonnull List<Expression<?>> projection) {
+        PartitionedMapTable table = (PartitionedMapTable) table0;
+        MapScanMetadata mapScanMetadata = new MapScanMetadata(
+                table.getMapName(),
+                table.getKeyDescriptor(),
+                table.getValueDescriptor(),
+                table.fieldPaths(),
+                table.types(),
+                projection,
+                filter
+        );
+
+        return dag.newUniqueVertex(table.toString(), OnHeapMapScanP.onHeapMapScanP(mapScanMetadata));
     }
 
     @Override

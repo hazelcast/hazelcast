@@ -35,7 +35,6 @@ import org.apache.calcite.sql.util.SqlVisitor;
 import org.apache.calcite.sql.validate.SqlConformance;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.List;
 
 /**
@@ -57,7 +56,7 @@ public class QueryParser {
             SqlConformance conformance,
             List<Object> arguments,
             @Nonnull SqlBackend sqlBackend,
-            @Nullable SqlBackend jetSqlBackend
+            @Nonnull SqlBackend jetSqlBackend
     ) {
         this.typeFactory = typeFactory;
         this.catalogReader = catalogReader;
@@ -73,11 +72,7 @@ public class QueryParser {
             try {
                 return parse(sql, sqlBackend);
             } catch (Exception e) {
-                if (jetSqlBackend != null) {
-                    return parse(sql, jetSqlBackend);
-                } else {
-                    throw e;
-                }
+                return parse(sql, jetSqlBackend);
             }
         } catch (Exception e) {
             String message;
