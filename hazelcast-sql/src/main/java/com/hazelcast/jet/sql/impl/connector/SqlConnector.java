@@ -328,6 +328,11 @@ public interface SqlConnector {
         throw new UnsupportedOperationException("Sink not supported for " + typeName());
     }
 
+    @Nonnull
+    default Vertex deleteProcessor(@Nonnull DAG dag, @Nonnull Table table) {
+        throw new UnsupportedOperationException("Delete not supported for " + typeName());
+    }
+
     /**
      * Definition of a vertex along with a function to configure the input
      * edge(s).

@@ -245,52 +245,14 @@ class JetPlanExecutor {
         return new JetSqlResultImpl(queryId, queryResultProducer, plan.getRowMetadata(), plan.isStreaming());
     }
 
-    @SuppressWarnings("checkstyle:nestedifdepth")
-    public SqlResult execute(DeletePlan plan, QueryId queryId) {
-        if (plan.isEarlyExit()) {
-            return SqlResultImpl.createUpdateCountResult(0);
-        }
-        AbstractMapTable table = plan.getTable().getTarget();
-        IMap<Object, Object> map = jetInstance.getMap(table.getSqlName());
+    public SqlResult execute(DeletePlan plan, QueryId queryId, List<Object> arguments) {
+        List<Object> args = prepareArguments(plan.getParameterMetadata(), arguments);
+        JobConfig jobConfig = new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, args);
 
-        Expression<Boolean> filter = plan.filter();
-        if (filter instanceof ComparisonPredicate) {
-            Object key = extractKey((ComparisonPredicate) filter);
-            if (key == null) {
-                throw QueryException.error(SqlErrorCode.GENERIC, "DELETE query has to contain __key = <const value> predicate");
-            }
-            Object value = map.remove(key);
-            return SqlResultImpl.createUpdateCountResult(value != null ? 1 : 0);
-        } else if (filter instanceof AndPredicate) {
-            Object key = null;
-            for (Expression<?> expr : ((AndPredicate) filter).getOperands()) {
-                if (expr instanceof ComparisonPredicate) {
-                    Object key0 = extractKey((ComparisonPredicate) expr);
-                    if (key0 != null) {
-                        if (key != null) {
-                            return SqlResultImpl.createUpdateCountResult(0);
-                        }
-                        key = key0;
-                    }
-                }
-            }
-            if (key == null) {
-                throw QueryException.error(SqlErrorCode.GENERIC, "DELETE query has to contain __key = <const value> predicate");
-            }
-            List<Expression<?>> projection = plan.getProjection();
-            List<TableField> fields = table.getFields();
-            QueryPath[] paths = fields.stream().map(field -> ((MapTableField) field).getPath()).toArray(QueryPath[]::new);
-            QueryDataType[] types = fields.stream().map(TableField::getType).toArray(QueryDataType[]::new);
-            QueryTargetDescriptor keyDescriptor = table.getKeyDescriptor();
-            QueryTargetDescriptor valueDescriptor = table.getValueDescriptor();
+        Job job = jetInstance.newJob(plan.getDag(), jobConfig);
+        job.join();
 
-            KvRowProjector.Supplier supplier = KvRowProjector.supplier(
-                    paths, types, keyDescriptor, valueDescriptor, null, projection);
-            boolean removed = map.executeOnKey(key, new DeleteBySingleKey(supplier, filter));
-            return SqlResultImpl.createUpdateCountResult(removed ? 1 : 0);
-        } else {
-            throw QueryException.error(SqlErrorCode.GENERIC, "Complex DELETE queries unsupported");
-        }
+        return SqlResultImpl.createUpdateCountResult(0);
     }
 
     private static class DeleteBySingleKey

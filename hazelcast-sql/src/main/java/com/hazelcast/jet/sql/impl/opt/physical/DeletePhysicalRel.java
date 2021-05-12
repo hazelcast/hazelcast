@@ -53,7 +53,7 @@ public class DeletePhysicalRel extends TableModify implements PhysicalRel {
 
     @Override
     public Vertex accept(CreateDagVisitor visitor) {
-        throw new UnsupportedOperationException("DELETE query should not be submitted as a Job");
+        return visitor.onDelete(this);
     }
 
     @Override

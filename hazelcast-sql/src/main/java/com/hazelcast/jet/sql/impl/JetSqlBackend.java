@@ -291,10 +291,8 @@ class JetSqlBackend implements SqlBackend {
         boolean isDelete = physicalRel instanceof TableModify && ((TableModify) physicalRel).isDelete();
 
         if (isDelete) {
-            SingleKeyQueryPlanVisitor visitor = new SingleKeyQueryPlanVisitor();
-            physicalRel.accept(visitor);
-            return new DeletePlan(planKey, visitor.getTable(), visitor.getFilter(), visitor.isEarlyExit(),
-                    visitor.getProjection(), planExecutor);
+            CreateDagVisitor result = traverseRel(physicalRel, localAddress, parameterMetadata);
+            return new DeletePlan(planKey, parameterMetadata, result.getDag(), planExecutor);
         } else if (isInsert) {
             CreateDagVisitor result = traverseRel(physicalRel, localAddress, parameterMetadata);
             return new SinkPlan(planKey, parameterMetadata, result.getObjectKeys(), result.getDag(), planExecutor,

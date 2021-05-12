@@ -627,41 +627,28 @@ abstract class JetPlan extends SqlPlan {
     }
 
     static class DeletePlan extends DmlPlan {
-        private final HazelcastTable table;
-        private final Expression<Boolean> filter;
-        private final boolean earlyExit;
-        private final List<Expression<?>> projection;
+        private final QueryParameterMetadata parameterMetadata;
+        private final DAG dag;
         private final JetPlanExecutor planExecutor;
 
-        DeletePlan(PlanKey planKey, HazelcastTable table, Expression<Boolean> filter, boolean earlyExit,
-                   List<Expression<?>> projection, JetPlanExecutor planExecutor) {
+        public DeletePlan(PlanKey planKey, QueryParameterMetadata parameterMetadata, DAG dag, JetPlanExecutor planExecutor) {
             super(planKey);
-            this.table = table;
-            this.filter = filter;
-            this.earlyExit = earlyExit;
-            this.projection = projection;
+            this.parameterMetadata = parameterMetadata;
+            this.dag = dag;
             this.planExecutor = planExecutor;
         }
 
-        public List<Expression<?>> getProjection() {
-            return projection;
+        public DAG getDag() {
+            return dag;
         }
 
-        public HazelcastTable getTable() {
-            return table;
-        }
-
-        public Expression<Boolean> filter() {
-            return filter;
-        }
-
-        public boolean isEarlyExit() {
-            return earlyExit;
+        public QueryParameterMetadata getParameterMetadata() {
+            return parameterMetadata;
         }
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments) {
-            return planExecutor.execute(this, queryId);
+            return planExecutor.execute(this, queryId, arguments);
         }
 
         @Override

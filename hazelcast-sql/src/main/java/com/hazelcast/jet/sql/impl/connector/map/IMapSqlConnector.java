@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector.map;
 
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Vertex;
@@ -190,6 +191,20 @@ public class IMapSqlConnector implements SqlConnector {
 
         dag.edge(between(vStart, vEnd));
         return vStart;
+    }
+
+    @Nonnull @Override
+    public Vertex deleteProcessor(
+            @Nonnull DAG dag,
+            @Nonnull Table table0) {
+        PartitionedMapTable table = (PartitionedMapTable) table0;
+
+        Vertex vEnd = dag.newUniqueVertex(
+                toString(table),
+                SinkProcessors.updateMapP(table.getMapName(), (FunctionEx<Map.Entry, Object>) Map.Entry::getKey, (v, t) -> null)
+        );
+
+        return vEnd;
     }
 
     private static String toString(PartitionedMapTable table) {
