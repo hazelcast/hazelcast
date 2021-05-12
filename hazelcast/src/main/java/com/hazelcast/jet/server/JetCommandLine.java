@@ -31,6 +31,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.instance.JetBuildInfo;
+import com.hazelcast.instance.impl.HazelcastBootstrap;
 import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetInstance;
@@ -331,8 +332,9 @@ public class JetCommandLine implements Runnable {
 
         targetsMixin.replace(targets);
 
-        JetBootstrap.executeJar(() -> getJetClient(false), file.getAbsolutePath(),
-                snapshotName, name, mainClass, params);
+        HazelcastBootstrap.executeJar(
+                () -> uncheckCall(() -> HazelcastClient.newHazelcastClient(getClientConfig(false))),
+                file.getAbsolutePath(), snapshotName, name, mainClass, params);
     }
 
     @Command(description = "Suspends a running job")
