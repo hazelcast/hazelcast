@@ -27,8 +27,6 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.optimizer.PlanCheckContext;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
-import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.optimizer.PlanKey;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
@@ -631,7 +629,7 @@ abstract class JetPlan extends SqlPlan {
         private final DAG dag;
         private final JetPlanExecutor planExecutor;
 
-        public DeletePlan(PlanKey planKey, QueryParameterMetadata parameterMetadata, DAG dag, JetPlanExecutor planExecutor) {
+        DeletePlan(PlanKey planKey, QueryParameterMetadata parameterMetadata, DAG dag, JetPlanExecutor planExecutor) {
             super(planKey);
             this.parameterMetadata = parameterMetadata;
             this.dag = dag;

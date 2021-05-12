@@ -17,9 +17,6 @@
 package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.serialization.SerializationServiceAware;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.config.JobConfig;
@@ -36,15 +33,8 @@ import com.hazelcast.jet.sql.impl.JetPlan.DropSnapshotPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.SelectPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.SinkPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.ShowStatementPlan;
-import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget;
 import com.hazelcast.jet.sql.impl.schema.MappingCatalog;
-import com.hazelcast.map.EntryProcessor;
-import com.hazelcast.map.IMap;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlResult;
@@ -55,22 +45,8 @@ import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.SqlResultImpl;
-import com.hazelcast.sql.impl.expression.ColumnExpression;
-import com.hazelcast.sql.impl.expression.ConstantExpression;
-import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
-import com.hazelcast.sql.impl.expression.predicate.AndPredicate;
-import com.hazelcast.sql.impl.expression.predicate.ComparisonMode;
-import com.hazelcast.sql.impl.expression.predicate.ComparisonPredicate;
-import com.hazelcast.sql.impl.extract.QueryPath;
-import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.row.HeapRow;
-import com.hazelcast.sql.impl.schema.TableField;
-import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
-import com.hazelcast.sql.impl.schema.map.MapTableField;
-import com.hazelcast.sql.impl.type.QueryDataType;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -78,7 +54,6 @@ import java.util.concurrent.CancellationException;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
-import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
 class JetPlanExecutor {
@@ -253,79 +228,6 @@ class JetPlanExecutor {
         job.join();
 
         return SqlResultImpl.createUpdateCountResult(0);
-    }
-
-    private static class DeleteBySingleKey
-            implements EntryProcessor<Object, Object, Boolean>, DataSerializable, SerializationServiceAware {
-        private KvRowProjector.Supplier supplier;
-        private Expression<Boolean> filter;
-        private ExpressionEvalContext evalContext;
-        private Extractors extractors;
-
-        @SuppressWarnings("unused")
-        private DeleteBySingleKey() {
-        }
-
-        DeleteBySingleKey(KvRowProjector.Supplier supplier, Expression<Boolean> filter) {
-            this.supplier = supplier;
-            this.filter = filter;
-        }
-
-        @Override
-        public Boolean process(Map.Entry<Object, Object> entry) {
-            KvRowProjector projector = supplier.get(evalContext, extractors);
-            Boolean eval = filter.eval(new HeapRow(projector.project(entry)), evalContext);
-            boolean result = eval != null && eval;
-            if (result) {
-                entry.setValue(null);
-            }
-            return result;
-        }
-
-        @Override
-        public void setSerializationService(SerializationService serializationService) {
-            this.evalContext =
-                    new SimpleExpressionEvalContext(emptyList(), (InternalSerializationService) serializationService);
-            this.extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeObject(supplier);
-            out.writeObject(filter);
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
-            supplier = in.readObject();
-            filter = in.readObject();
-        }
-    }
-
-    private Object extractKey(ComparisonPredicate predicate) {
-        Object key = null;
-        ComparisonMode mode = predicate.getMode();
-        if (mode != ComparisonMode.EQUALS) {
-            throw QueryException.error(SqlErrorCode.GENERIC, mode + " predicate is not supported for DELETE queries");
-        }
-        Expression<?> operand1 = predicate.getOperand1();
-        Expression<?> operand2 = predicate.getOperand2();
-        if (isKeyColumn(operand1)) {
-            if (!(operand2 instanceof ConstantExpression)) {
-                throw QueryException.error(SqlErrorCode.GENERIC, "DELETE query has to contain __key = <const value> predicate");
-            }
-            key = operand2.eval(null, null);
-        } else if (isKeyColumn(operand2)) {
-            if (!(operand1 instanceof ConstantExpression)) {
-                throw QueryException.error(SqlErrorCode.GENERIC, "DELETE query has to contain __key = <const value> predicate");
-            }
-            key = operand1.eval(null, null);
-        }
-        return key;
-    }
-
-    private boolean isKeyColumn(Expression<?> expression) {
-        return expression instanceof ColumnExpression && ((ColumnExpression<?>) expression).getIndex() == 0;
     }
 
     private List<Object> prepareArguments(QueryParameterMetadata parameterMetadata, List<Object> arguments) {
