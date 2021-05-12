@@ -100,7 +100,7 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
         );
 
         TestSupport
-                .verifyProcessor(OnHeapMapScanP.ohHeapMapScanP(map.getName(), scanNode))
+                .verifyProcessor(OnHeapMapScanP.onHeapMapScanP(map.getName(), scanNode))
                 .jetInstance(instance())
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
                 .disableSnapshots()
@@ -128,7 +128,7 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
         );
 
         TestSupport
-                .verifyProcessor(OnHeapMapScanP.ohHeapMapScanP(map.getName(), scanNode))
+                .verifyProcessor(OnHeapMapScanP.onHeapMapScanP(map.getName(), scanNode))
                 .jetInstance(instance())
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
                 .outputChecker(LENIENT_SAME_ITEMS_ANY_ORDER)
@@ -159,7 +159,7 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
         );
 
         TestSupport
-                .verifyProcessor(OnHeapMapScanP.ohHeapMapScanP(map.getName(), scanNode))
+                .verifyProcessor(OnHeapMapScanP.onHeapMapScanP(map.getName(), scanNode))
                 .jetInstance(instance())
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
                 .disableSnapshots()
@@ -189,7 +189,7 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
         );
 
         TestSupport
-                .verifyProcessor(OnHeapMapScanP.ohHeapMapScanP(objectMap.getName(), scanNode))
+                .verifyProcessor(OnHeapMapScanP.onHeapMapScanP(objectMap.getName(), scanNode))
                 .jetInstance(instance())
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
                 .outputChecker(LENIENT_SAME_ITEMS_ANY_ORDER)

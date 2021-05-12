@@ -372,7 +372,7 @@ class JetSqlBackend implements SqlBackend {
             Address localAddress,
             QueryParameterMetadata parameterMetadata
     ) {
-        CreateDagVisitor visitor = new CreateDagVisitor(nodeEngine, localAddress, parameterMetadata);
+        CreateDagVisitor visitor = new CreateDagVisitor(localAddress, parameterMetadata);
         physicalRel.accept(visitor);
         return Tuple2.tuple2(visitor.getDag(), visitor.getObjectKeys());
     }

@@ -179,7 +179,7 @@ public class OnHeapMapScanP extends AbstractProcessor {
         }
     }
 
-    public static ProcessorMetaSupplier ohHeapMapScanP(
+    public static ProcessorMetaSupplier onHeapMapScanP(
             @Nonnull String mapName,
             @Nonnull MapScanPlanNode mapScanPlanNode
     ) {
