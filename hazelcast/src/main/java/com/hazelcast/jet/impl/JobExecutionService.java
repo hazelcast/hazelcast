@@ -594,16 +594,14 @@ public class JobExecutionService implements DynamicMetricsProvider {
         }
         Address coordinator = executionContext.coordinator();
         if (coordinator == null) {
-            // This can happen if:
-            // - InitOp wasn't handled yet
-            // - ExecutionContext was created due to a data packet received
-            // The TerminateOp is always sent after InitOp, but it can happen to be handled
-            // first on the target member - we ignore and rely on the CheckLightJobsOperation to clean it up.
+            // This can happen if ExecutionContext was created after a received data packet,
+            // either before the initialization or after a completion.
+            // The TerminateOp is always sent after InitOp on coordinator, but it can happen that it's handled
+            // first on the target member.
+            // We ignore this and rely on the CheckLightJobsOperation to clean up.
             // It can't happen for normal jobs
             assert executionContext.isLightJob() : "null coordinator for non-light job";
-            return;
-        }
-        if (!coordinator.equals(callerAddress)) {
+        } else if (!coordinator.equals(callerAddress)) {
             throw new IllegalStateException(String.format(
                     "%s, originally from coordinator %s, cannot do 'terminateExecution' by coordinator %s and execution %s",
                     executionContext.jobNameAndExecutionId(), coordinator, callerAddress, idToString(executionId)));

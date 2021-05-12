@@ -42,9 +42,11 @@ import static com.hazelcast.spi.impl.operationservice.ExceptionAction.THROW_EXCE
 /**
  * Operation sent from master to members to initialize execution of a job.
  * The behavior is different for light and normal jobs:
- * - for light jobs, it immediately starts the execution
- * - for normal jobs, after the master receives all responses to this op,
- * it sends {@link StartExecutionOperation}.
+ * <ul>
+ *     <li>for light jobs, it immediately starts the execution
+ *     <li>for normal jobs, after the master receives all responses to this op,
+ *         it sends {@link StartExecutionOperation}.
+ * </ul>
  */
 public class InitExecutionOperation extends AsyncJobOperation {
 

@@ -26,7 +26,8 @@ import com.hazelcast.jet.impl.JobExecutionService;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
-import com.hazelcast.jet.pipeline.SourceBuilder;
+import com.hazelcast.jet.pipeline.test.SimpleEvent;
+import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -53,24 +54,20 @@ public class HazelcastConnector_RestartTest extends JetTestSupport {
 
     @Test
     public void when_iListWrittenAndMemberShutdown_then_jobRestarts() {
-        IList<Integer> sinkList = instance1.getHazelcastInstance().getList("list");
+        IList<SimpleEvent> sinkList = instance1.getHazelcastInstance().getList("list");
 
         Pipeline p = Pipeline.create();
-        p.readFrom(
-                SourceBuilder.stream("src", ctx -> null)
-                        .distributed(1)
-                        .<Integer>fillBufferFn((ctx, buf) -> {
-                            buf.add(0);
-                            sleepMillis(100);
-                        })
-                        .build())
+        p.readFrom(TestSources.itemStream(10))
                 .withoutTimestamps()
                 .writeTo(Sinks.list(sinkList));
 
         Job job = instance1.newJob(p);
         assertTrueEventually(() -> assertTrue("no output to sink", sinkList.size() > 0), 10);
 
-        long executionId = executionId(job);
+        Long executionId = executionId(instance1, job);
+        if (executionId == null) {
+            executionId = executionId(instance2, job);
+        }
         instance2.shutdown();
 
         // Then - assert that the job stopped producing output
@@ -82,8 +79,8 @@ public class HazelcastConnector_RestartTest extends JetTestSupport {
                 assertTrue("no output after migration completed", sinkList.size() > sizeAfterShutdown), 20);
     }
 
-    private long executionId(Job job) {
-        JetService jetService = getNodeEngineImpl(instance1).getService(JetService.SERVICE_NAME);
+    private Long executionId(JetInstance instance, Job job) {
+        JetService jetService = getNodeEngineImpl(instance).getService(JetService.SERVICE_NAME);
         JobExecutionService executionService = jetService.getJobExecutionService();
         return executionService.getExecutionIdForJobId(job.getId());
     }

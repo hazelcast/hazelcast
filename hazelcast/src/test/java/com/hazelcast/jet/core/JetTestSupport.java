@@ -189,10 +189,25 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
         JobExecutionService service = getNodeEngineImpl(instance)
                 .<JetService>getService(JetService.SERVICE_NAME)
                 .getJobExecutionService();
+        long nullSince = Long.MIN_VALUE;
         do {
             assertJobStatusEventually(job, RUNNING);
             // executionId can be null if the execution just terminated
             executionId = service.getExecutionIdForJobId(job.getId());
+            if (executionId == null) {
+                if (nullSince == Long.MIN_VALUE) {
+                    nullSince = System.nanoTime();
+                } else {
+                    if (NANOSECONDS.toSeconds(System.nanoTime() - nullSince) > 10) {
+                        // Because we check the execution ID, make sure the execution is running on
+                        // the given instance. E.g. a job with a non-distributed source and no
+                        // distributed edge will complete on all but one members immediately.
+                        throw new RuntimeException("The executionId is null for 10 secs - is the job running on all members?");
+                    }
+                }
+            } else {
+                nullSince = Long.MIN_VALUE;
+            }
         } while (executionId == null || executionId.equals(ignoredExecutionId));
         return executionId;
     }

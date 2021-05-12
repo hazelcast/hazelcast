@@ -69,7 +69,7 @@ public interface ProcessorSupplier extends Serializable {
      * @param error the exception (if any) that caused the job to fail;
      *              {@code null} in the case of successful job completion.
      *              Note that it might not be the actual error that caused the job
-     *              to fail - it can several other exceptions. We only guarantee
+     *              to fail - it can be several other exceptions. We only guarantee
      *              that it's non-null if the job didn't complete successfully.
      */
     default void close(@Nullable Throwable error) throws Exception {
