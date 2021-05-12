@@ -17,6 +17,9 @@
 package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.jet.core.AbstractProcessor;
+import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.impl.memory.MaxProcessorAccumulatedItemsExceededException;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -47,8 +50,11 @@ public class HashJoinCollectP<K, T, V> extends AbstractProcessor {
     // the value is either a V or a HashJoinArrayList (if multiple values for
     // the key were observed)
     private final Map<K, Object> lookupTable = new HashMap<>();
-    @Nonnull private final Function<T, K> keyFn;
-    @Nonnull private final Function<T, V> projectFn;
+    private final Function<T, K> keyFn;
+    private final Function<T, V> projectFn;
+
+    private long maxEntries;
+    private long numberOfEntries;
 
     public HashJoinCollectP(@Nonnull Function<T, K> keyFn, @Nonnull Function<T, V> projectFn) {
         this.keyFn = keyFn;
@@ -56,12 +62,22 @@ public class HashJoinCollectP<K, T, V> extends AbstractProcessor {
     }
 
     @Override
+    protected void init(@NotNull Processor.Context context) throws Exception {
+        maxEntries = context.maxProcessorAccumulatedRecords();
+    }
+
+    @Override
     @SuppressWarnings("unchecked")
     protected boolean tryProcess0(@Nonnull Object item) {
+        if (numberOfEntries == maxEntries) {
+            throw new MaxProcessorAccumulatedItemsExceededException();
+        }
+
         T t = (T) item;
         K key = keyFn.apply(t);
         V value = projectFn.apply(t);
         lookupTable.merge(key, value, MERGE_FN);
+        numberOfEntries++;
         return true;
     }
 

@@ -145,6 +145,11 @@ public final class Contexts {
         public ProcessingGuarantee processingGuarantee() {
             return processingGuarantee;
         }
+
+        @Override
+        public long maxProcessorAccumulatedRecords() {
+            return jetInstance.getConfig().getInstanceConfig().getMaxProcessorAccumulatedRecords();
+        }
     }
 
     public static class ProcSupplierCtx extends MetaSupplierCtx implements ProcessorSupplier.Context {

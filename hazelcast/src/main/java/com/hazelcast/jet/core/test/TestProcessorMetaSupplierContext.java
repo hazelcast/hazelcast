@@ -173,6 +173,11 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
         return processingGuarantee;
     }
 
+    @Override
+    public long maxProcessorAccumulatedRecords() {
+        return jetInstance.getConfig().getInstanceConfig().getMaxProcessorAccumulatedRecords();
+    }
+
     /**
      * Sets the processing guarantee.
      */
