@@ -198,7 +198,7 @@ public class MockServerContext implements ServerContext {
     }
 
     @Override
-    public Future<Void> executeAsync(final Runnable runnable) {
+    public Future<Void> submitAsync(final Runnable runnable) {
         FutureTask<Void> future = new FutureTask<>(() -> {
             try {
                 runnable.run();

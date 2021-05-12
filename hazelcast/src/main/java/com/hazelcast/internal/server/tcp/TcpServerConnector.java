@@ -75,7 +75,7 @@ class TcpServerConnector {
 
     Future<Void> asyncConnect(Address address, boolean silent, int planeIndex) {
         serverContext.shouldConnectTo(address);
-        return serverContext.executeAsync(new ConnectTask(address, silent, planeIndex));
+        return serverContext.submitAsync(new ConnectTask(address, silent, planeIndex));
     }
 
     private boolean useAnyOutboundPort() {

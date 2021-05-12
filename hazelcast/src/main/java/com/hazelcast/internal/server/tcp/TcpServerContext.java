@@ -267,7 +267,7 @@ public class TcpServerContext implements ServerContext {
 
     @Override
     @SuppressWarnings("unchecked")
-    public Future<Void> executeAsync(final Runnable runnable) {
+    public Future<Void> submitAsync(final Runnable runnable) {
         return (Future<Void>) nodeEngine.getExecutionService().submit(ExecutionService.IO_EXECUTOR, runnable);
     }
 

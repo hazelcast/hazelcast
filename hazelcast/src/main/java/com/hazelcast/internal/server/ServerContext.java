@@ -102,7 +102,7 @@ public interface ServerContext {
 
     void onDisconnect(Address endpoint, Throwable cause);
 
-    Future<Void> executeAsync(Runnable runnable);
+    Future<Void> submitAsync(Runnable runnable);
 
     EventService getEventService();
 
