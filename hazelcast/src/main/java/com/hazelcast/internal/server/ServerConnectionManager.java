@@ -218,7 +218,7 @@ public interface ServerConnectionManager
 
     /**
      * blocks the caller thread until a connection is established (or failed)
-     * or the time runs out
+     * or the time runs out. Callers must ensure a connection is established after this method returns {@code true}.
      * @param address
      * @param millis
      * @param streamId
