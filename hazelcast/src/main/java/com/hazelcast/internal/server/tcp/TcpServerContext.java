@@ -200,13 +200,13 @@ public class TcpServerContext implements ServerContext {
     @Override
     public void onFailedConnection(final Address address) {
         ClusterService clusterService = node.clusterService;
-        if (!clusterService.isJoined()) {
-            node.getJoiner().blacklist(address, false);
-        } else {
+        if (clusterService.isJoined()) {
             if (clusterService.getMember(address) != null) {
                 nodeEngine.getExecutionService().schedule(ExecutionService.IO_EXECUTOR, new ReconnectionTask(address),
                         getConnectionMonitorInterval(), TimeUnit.MILLISECONDS);
             }
+        } else {
+            node.getJoiner().blacklist(address, false);
         }
     }
 
