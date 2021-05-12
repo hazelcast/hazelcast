@@ -36,7 +36,6 @@ import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.IMap;
