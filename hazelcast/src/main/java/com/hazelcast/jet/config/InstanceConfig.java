@@ -194,19 +194,19 @@ public class InstanceConfig {
      * <p>
      * Operations like grouping, sorting or joining require certain amount of
      * records to be accumulated before they can proceed. You can set this option
-     * to prevent potential {@link OutOfMemoryError}.
+     * to reduce the probability of {@link OutOfMemoryError}.
      * <p>
-     * This option applies to each and every {@link Processor} instance, hence the
+     * This option applies to each {@link Processor} instance separately, hence the
      * effective limit of records accumulated by each cluster member is influenced
-     * by the vertex's {@code localParallelism} and number of jobs in the cluster.
+     * by the vertex's {@code localParallelism} and the number of jobs in the cluster.
      * <p>
      * Currently, {@code maxProcessorAccumulatedRecords} limits:
      * <ul><li>
-     *     number of items accumulated by sort operation
+     *     number of items sorted by the sort operation
      * </li><li>
-     *     number of entries accumulated by aggregation operations
+     *     number of distinct keys accumulated by aggregation operations
      * </li><li>
-     *     number of entries accumulated by each Hash-Join lookup table
+     *     number of entries in the hash-join lookup tables
      * </li></ul>
      * <p>
      * The default value is {@link Long#MAX_VALUE}.
@@ -214,7 +214,7 @@ public class InstanceConfig {
      * @since 5.0
      */
     public void setMaxProcessorAccumulatedRecords(long maxProcessorAccumulatedRecords) {
-        checkPositive(maxProcessorAccumulatedRecords, "maxProcessorAccumulatedRecords should be a positive number");
+        checkPositive(maxProcessorAccumulatedRecords, "maxProcessorAccumulatedRecords must be a positive number");
         this.maxProcessorAccumulatedRecords = maxProcessorAccumulatedRecords;
     }
 
