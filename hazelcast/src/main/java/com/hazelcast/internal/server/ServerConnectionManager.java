@@ -222,7 +222,7 @@ public interface ServerConnectionManager
      * @param address
      * @param millis
      * @param streamId
-     * @return true is connected successfully, false if timed out
+     * @return true if connected successfully, false if timed out
      * @throws java.lang.InterruptedException
      */
     default boolean blockOnConnect(Address address, long millis, int streamId) throws InterruptedException {
