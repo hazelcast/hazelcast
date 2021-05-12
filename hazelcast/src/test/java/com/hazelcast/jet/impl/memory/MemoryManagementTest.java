@@ -36,7 +36,6 @@ import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
 import static com.hazelcast.jet.pipeline.Sinks.noop;
 import static com.hazelcast.jet.pipeline.test.AssertionSinks.assertAnyOrder;
 import static com.hazelcast.jet.pipeline.test.AssertionSinks.assertOrdered;
-import static java.util.Collections.nCopies;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
