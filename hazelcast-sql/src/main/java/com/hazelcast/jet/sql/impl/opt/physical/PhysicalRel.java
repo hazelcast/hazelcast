@@ -72,7 +72,4 @@ public interface PhysicalRel extends RelNode {
      * @return the DAG vertex created for this rel
      */
     Vertex accept(CreateDagVisitor visitor);
-
-    default void accept(SingleKeyQueryPlanVisitor visitor) {
-    }
 }

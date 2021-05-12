@@ -70,9 +70,4 @@ public class DeletePhysicalRel extends TableModify implements PhysicalRel {
                 isFlattened()
         );
     }
-
-    @Override
-    public void accept(SingleKeyQueryPlanVisitor visitor) {
-        visitor.onDelete(this);
-    }
 }

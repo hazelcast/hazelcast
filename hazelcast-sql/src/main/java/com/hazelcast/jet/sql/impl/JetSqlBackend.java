@@ -22,7 +22,6 @@ import com.hazelcast.jet.sql.impl.JetPlan.CreateJobPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.CreateMappingPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.CreateSnapshotPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DeletePlan;
-import com.hazelcast.jet.sql.impl.JetPlan.DmlPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropJobPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropMappingPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropSnapshotPlan;
@@ -273,7 +272,7 @@ class JetSqlBackend implements SqlBackend {
         return new SinkPlan(null, parameterMetadata, visitor.getObjectKeys(), visitor.getDag(), planExecutor, permissions);
     }
 
-    private DmlPlan toPlan(
+    private JetPlan toPlan(
             PlanKey planKey,
             QueryParameterMetadata parameterMetadata,
             RelNode rel,

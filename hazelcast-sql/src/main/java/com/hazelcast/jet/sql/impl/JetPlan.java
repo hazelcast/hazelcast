@@ -478,13 +478,7 @@ abstract class JetPlan extends SqlPlan {
         }
     }
 
-    abstract static class DmlPlan extends JetPlan {
-        DmlPlan(PlanKey planKey) {
-            super(planKey);
-        }
-    }
-
-    static class SinkPlan extends DmlPlan {
+    static class SinkPlan extends JetPlan {
         private final Set<PlanObjectKey> objectKeys;
         private final QueryParameterMetadata parameterMetadata;
         private final DAG dag;
@@ -544,7 +538,7 @@ abstract class JetPlan extends SqlPlan {
         }
     }
 
-    static class SelectPlan extends DmlPlan {
+    static class SelectPlan extends JetPlan {
         private final Set<PlanObjectKey> objectKeys;
         private final QueryParameterMetadata parameterMetadata;
         private final DAG dag;
@@ -624,7 +618,7 @@ abstract class JetPlan extends SqlPlan {
         }
     }
 
-    static class DeletePlan extends DmlPlan {
+    static class DeletePlan extends JetPlan {
         private final QueryParameterMetadata parameterMetadata;
         private final DAG dag;
         private final JetPlanExecutor planExecutor;
