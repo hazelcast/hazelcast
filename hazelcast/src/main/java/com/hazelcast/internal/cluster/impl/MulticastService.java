@@ -124,7 +124,7 @@ public final class MulticastService implements Runnable {
                 multicastSocket.setLoopbackMode(!multicastConfig.isLoopbackModeEnabled());
                 if (!bindAddress.getInetAddress().isLoopbackAddress() || !multicastConfig.isLoopbackModeEnabled()) {
                     multicastSocket.setInterface(bindAddress.getInetAddress());
-                } else if (multicastConfig.isLoopbackModeEnabled()){
+                } else if (multicastConfig.isLoopbackModeEnabled()) {
                     // If LoopBack is not enabled but its the selected interface from the given
                     // bind address, then we rely on Default Network Interface.
                     logger.warning("Hazelcast is bound to " + bindAddress.getHost() + " and loop-back mode is "
