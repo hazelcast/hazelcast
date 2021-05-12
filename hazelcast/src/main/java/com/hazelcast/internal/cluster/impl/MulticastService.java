@@ -118,16 +118,19 @@ public final class MulticastService implements Runnable {
             multicastSocket.bind(new InetSocketAddress(multicastConfig.getMulticastPort()));
             multicastSocket.setTimeToLive(multicastConfig.getMulticastTimeToLive());
             try {
-                multicastSocket.setInterface(bindAddress.getInetAddress());
-                if (bindAddress.getInetAddress().isLoopbackAddress()) {
-                    // the parameter of the setLoopbackMode method is "disable: true to disable the LoopbackMode"!
-                    multicastSocket.setLoopbackMode(! multicastConfig.isLoopbackModeEnabled());
-                    if (multicastSocket.getLoopbackMode()) {
-                        logger.warning("Hazelcast is bound to " + bindAddress.getHost() + " and loop-back mode is "
-                                + "disabled. This could cause multicast auto-discovery issues "
-                                + "and render it unable to work. Check your network connectivity, try to enable the "
-                                + "loopback mode and/or force -Djava.net.preferIPv4Stack=true on your JVM.");
-                    }
+                // warning: before modifying lines below, take a look at those links:
+                // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4417033
+                // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6402758
+                multicastSocket.setLoopbackMode(!multicastConfig.isLoopbackModeEnabled());
+                if (!bindAddress.getInetAddress().isLoopbackAddress() || !multicastConfig.isLoopbackModeEnabled()) {
+                    multicastSocket.setInterface(bindAddress.getInetAddress());
+                } else if (multicastConfig.isLoopbackModeEnabled()){
+                    // If LoopBack is not enabled but its the selected interface from the given
+                    // bind address, then we rely on Default Network Interface.
+                    logger.warning("Hazelcast is bound to " + bindAddress.getHost() + " and loop-back mode is "
+                            + "disabled. This could cause multicast auto-discovery issues "
+                            + "and render it unable to work. Check your network connectivity, try to enable the "
+                            + "loopback mode and/or force -Djava.net.preferIPv4Stack=true on your JVM.");
                 }
             } catch (Exception e) {
                 logger.warning(e);
