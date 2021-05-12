@@ -175,7 +175,7 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
 
     @Override
     public long maxProcessorAccumulatedRecords() {
-        return jetInstance.getConfig().getInstanceConfig().getMaxProcessorAccumulatedRecords();
+        return Long.MAX_VALUE;
     }
 
     /**

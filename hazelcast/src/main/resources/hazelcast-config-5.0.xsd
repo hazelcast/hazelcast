@@ -5134,6 +5134,25 @@
                                 </xs:documentation>
                             </xs:annotation>
                         </xs:element>
+                        <xs:element name="max-processor-accumulated-records" type="xs:long" minOccurs="0">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Sets the maximum number of records that can be accumulated by any single
+                                    processor instance.
+                                    Operations like grouping, sorting or joining require certain amount of
+                                    records to be accumulated before they can proceed. You can set this option
+                                    to prevent potential OutOfMemoryError.
+                                    This option applies to each and every Processor instance, hence the
+                                    effective limit of records accumulated by each cluster member is influenced
+                                    by the vertex's localParallelism and number of jobs in the cluster.
+                                    Currently, maxProcessorAccumulatedRecords limits:
+                                    1. number of items accumulated by sort operation
+                                    2. number of entries accumulated by aggregation operations
+                                    3. number of entries accumulated by each Hash-Join lookup table
+                                    The default value is Long.MAX_VALUE.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
                     </xs:all>
                 </xs:complexType>
             </xs:element>
