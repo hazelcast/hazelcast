@@ -23,9 +23,9 @@ import com.hazelcast.jet.config.InstanceConfig;
  *
  * @see InstanceConfig#setMaxProcessorAccumulatedRecords
  */
-public class MaxProcessorAccumulatedItemsExceededException extends RuntimeException {
+public class AccumulationLimitExceededException extends RuntimeException {
 
-    public MaxProcessorAccumulatedItemsExceededException() {
+    public AccumulationLimitExceededException() {
         super("Exception thrown to prevent an OutOfMemoryError on this Hazelcast instance."
                 + " An OOME might occur when a job accumulates large data sets in one of the processors,"
                 + " e.g. grouping, sorting, hash join."

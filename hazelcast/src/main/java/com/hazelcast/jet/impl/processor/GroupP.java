@@ -22,7 +22,7 @@ import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.impl.memory.MaxProcessorAccumulatedItemsExceededException;
+import com.hazelcast.jet.impl.memory.AccumulationLimitExceededException;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
@@ -86,7 +86,7 @@ public class GroupP<K, A, R, OUT> extends AbstractProcessor {
         K key = keyFn.apply(item);
         A acc = keyToAcc.computeIfAbsent(key, k -> {
             if (keyToAcc.size() == maxEntries) {
-                throw new MaxProcessorAccumulatedItemsExceededException();
+                throw new AccumulationLimitExceededException();
             }
 
             return aggrOp.createFn().get();

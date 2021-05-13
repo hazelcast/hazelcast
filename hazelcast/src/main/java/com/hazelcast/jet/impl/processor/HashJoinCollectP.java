@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.impl.memory.MaxProcessorAccumulatedItemsExceededException;
+import com.hazelcast.jet.impl.memory.AccumulationLimitExceededException;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
@@ -70,7 +70,7 @@ public class HashJoinCollectP<K, T, V> extends AbstractProcessor {
     @SuppressWarnings("unchecked")
     protected boolean tryProcess0(@Nonnull Object item) {
         if (numberOfEntries == maxEntries) {
-            throw new MaxProcessorAccumulatedItemsExceededException();
+            throw new AccumulationLimitExceededException();
         }
 
         T t = (T) item;

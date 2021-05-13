@@ -34,7 +34,6 @@ import static com.hazelcast.function.Functions.wholeItem;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
 import static com.hazelcast.jet.pipeline.Sinks.noop;
-import static com.hazelcast.jet.pipeline.test.AssertionSinks.assertAnyOrder;
 import static com.hazelcast.jet.pipeline.test.AssertionSinks.assertOrdered;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -73,7 +72,7 @@ public class MemoryManagementTest extends SimpleTestInClusterSupport {
                 .writeTo(noop());
 
         assertThatThrownBy(() -> instance().newJob(pipeline).join())
-                .hasMessageContaining("This exception has been thrown to prevent an OOME on this Hazelcast instance");
+                .hasMessageContaining("Exception thrown to prevent an OutOfMemoryError on this Hazelcast instance");
     }
 
     @Test
@@ -94,7 +93,7 @@ public class MemoryManagementTest extends SimpleTestInClusterSupport {
                 .writeTo(noop());
 
         assertThatThrownBy(() -> instance().newJob(pipeline).join())
-                .hasMessageContaining("This exception has been thrown to prevent an OOME on this Hazelcast instance.");
+                .hasMessageContaining("Exception thrown to prevent an OutOfMemoryError on this Hazelcast instance");
     }
 
     @Test
@@ -103,7 +102,7 @@ public class MemoryManagementTest extends SimpleTestInClusterSupport {
         BatchStage<Integer> left = pipeline.readFrom(TestSources.items(list(MAX_PROCESSOR_ACCUMULATED_RECORDS)));
         BatchStage<Entry<Integer, Long>> right = pipeline.readFrom(TestSources.items(cardinalities(MAX_PROCESSOR_ACCUMULATED_RECORDS)));
         left.hashJoin(right, JoinClause.joinMapEntries(wholeItem()), Util::entry)
-                .writeTo(assertAnyOrder(cardinalities(MAX_PROCESSOR_ACCUMULATED_RECORDS)));
+                .writeTo(assertOrdered(cardinalities(MAX_PROCESSOR_ACCUMULATED_RECORDS)));
 
         instance().newJob(pipeline).join();
     }
@@ -117,7 +116,7 @@ public class MemoryManagementTest extends SimpleTestInClusterSupport {
                 .writeTo(noop());
 
         assertThatThrownBy(() -> instance().newJob(pipeline).join())
-                .hasMessageContaining("This exception has been thrown to prevent an OOME on this Hazelcast instance.");
+                .hasMessageContaining("Exception thrown to prevent an OutOfMemoryError on this Hazelcast instance");
     }
 
     private static Collection<Integer> list(int numberOfItems) {
