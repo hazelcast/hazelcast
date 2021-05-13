@@ -50,7 +50,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
-import static com.hazelcast.internal.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static com.hazelcast.jet.config.ResourceType.CLASS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -1170,11 +1170,15 @@ public class JobConfig implements IdentifiedDataSerializable {
      * For more info see {@link InstanceConfig#setMaxProcessorAccumulatedRecords(long)}.
      * <p>
      * If set, it has precedence over {@link InstanceConfig}'s one.
+     * <p>
+     * The default value is {@code -1} - in that case {@link InstanceConfig}'s value
+     * will be used.
      *
      * @since 5.0
      */
     public JobConfig setMaxProcessorAccumulatedRecords(long maxProcessorAccumulatedRecords) {
-        checkPositive(maxProcessorAccumulatedRecords, "maxProcessorAccumulatedRecords must be a positive number");
+        checkTrue(maxProcessorAccumulatedRecords > 0 || maxProcessorAccumulatedRecords == -1,
+                "maxProcessorAccumulatedRecords must be a positive number or -1");
         this.maxProcessorAccumulatedRecords = maxProcessorAccumulatedRecords;
         return this;
     }
