@@ -29,7 +29,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.expression.ConstantPredicateExpression;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
-import com.hazelcast.sql.impl.plan.node.MapScanPlanNode;
+import com.hazelcast.sql.impl.plan.node.JetMapScanMetadata;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -54,9 +54,7 @@ import static java.util.Collections.emptyList;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
 
-    private static AtomicInteger id;
     private IMap<Integer, String> map;
-    private IMap<Integer, Person> objectMap;
 
     public static final BiPredicate<List<?>, List<?>> LENIENT_SAME_ITEMS_ANY_ORDER =
             (expected, actual) -> {
@@ -77,7 +75,6 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
 
     @BeforeClass
     public static void setUp() {
-        id = new AtomicInteger(0);
         initialize(1, null);
     }
 
@@ -88,8 +85,7 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
 
     @Test
     public void test_whenEmpty() {
-        MapScanPlanNode scanNode = new MapScanPlanNode(
-                id.getAndIncrement(),
+        JetMapScanMetadata scanNode = new JetMapScanMetadata(
                 map.getName(),
                 GenericQueryTargetDescriptor.DEFAULT,
                 GenericQueryTargetDescriptor.DEFAULT,
@@ -116,8 +112,7 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
             expected.add(new Object[]{i, "value-" + i});
         }
 
-        MapScanPlanNode scanNode = new MapScanPlanNode(
-                id.getAndIncrement(),
+        JetMapScanMetadata scanNode = new JetMapScanMetadata(
                 map.getName(),
                 GenericQueryTargetDescriptor.DEFAULT,
                 GenericQueryTargetDescriptor.DEFAULT,
@@ -144,11 +139,7 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
             map.put(i, "value-" + i);
         }
 
-        final MapProxyImpl mapProxy = (MapProxyImpl) map;
-        final NodeEngine nodeEngine = ((MapService) mapProxy.getService()).getMapServiceContext().getNodeEngine();
-
-        MapScanPlanNode scanNode = new MapScanPlanNode(
-                id.getAndIncrement(),
+        JetMapScanMetadata scanNode = new JetMapScanMetadata(
                 map.getName(),
                 GenericQueryTargetDescriptor.DEFAULT,
                 GenericQueryTargetDescriptor.DEFAULT,
@@ -169,7 +160,7 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
 
     @Test
     public void test_whenNoFilterButProjectionExists() {
-        objectMap = instance().getMap(randomMapName());
+        IMap<Integer, Person> objectMap = instance().getMap(randomMapName());
 
         List<Object[]> expected = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
@@ -177,8 +168,7 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
             expected.add(new Object[]{i, "value-" + i, 100 - i});
         }
 
-        MapScanPlanNode scanNode = new MapScanPlanNode(
-                id.getAndIncrement(),
+        JetMapScanMetadata scanNode = new JetMapScanMetadata(
                 objectMap.getName(),
                 GenericQueryTargetDescriptor.DEFAULT,
                 GenericQueryTargetDescriptor.DEFAULT,

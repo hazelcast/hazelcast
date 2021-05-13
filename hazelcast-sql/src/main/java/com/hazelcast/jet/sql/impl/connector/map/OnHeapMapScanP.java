@@ -34,7 +34,7 @@ import com.hazelcast.sql.impl.exec.scan.MapScanExecIterator;
 import com.hazelcast.sql.impl.exec.scan.MapScanRow;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.predicate.TernaryLogic;
-import com.hazelcast.sql.impl.plan.node.MapScanPlanNode;
+import com.hazelcast.sql.impl.plan.node.JetMapScanMetadata;
 import com.hazelcast.sql.impl.row.HeapRow;
 
 import javax.annotation.Nonnull;
@@ -56,11 +56,11 @@ import java.util.UUID;
 public class OnHeapMapScanP extends AbstractProcessor {
     protected IMapTraverser traverser;
     private final String mapName;
-    private final MapScanPlanNode planNode;
+    private final JetMapScanMetadata planNode;
 
     public OnHeapMapScanP(
             @Nonnull String mapName,
-            @Nonnull MapScanPlanNode node
+            @Nonnull JetMapScanMetadata node
 
     ) {
         this.mapName = mapName;
@@ -96,7 +96,7 @@ public class OnHeapMapScanP extends AbstractProcessor {
         private KeyValueIterator iteratorExec;
 
         private final MapContainer mapContainer;
-        private final MapScanPlanNode node;
+        private final JetMapScanMetadata node;
         private final Iterator<Integer> localPartitionsIterator;
         private SimpleExpressionEvalContext ctx;
         private MapScanRow row;
@@ -105,7 +105,7 @@ public class OnHeapMapScanP extends AbstractProcessor {
         IMapTraverser(
                 @Nonnull final MapContainer mapContainer,
                 @Nonnull Iterator<Integer> localPartitionsIterator,
-                @Nonnull MapScanPlanNode node
+                @Nonnull JetMapScanMetadata node
         ) {
             this.projects = node.getProjects();
             this.filter = node.getFilter();
@@ -180,7 +180,7 @@ public class OnHeapMapScanP extends AbstractProcessor {
 
     public static ProcessorMetaSupplier onHeapMapScanP(
             @Nonnull String mapName,
-            @Nonnull MapScanPlanNode mapScanPlanNode
+            @Nonnull JetMapScanMetadata mapScanPlanNode
     ) {
         return ProcessorMetaSupplier.of(
                 processorSupplier(mapName, mapScanPlanNode)
@@ -190,7 +190,7 @@ public class OnHeapMapScanP extends AbstractProcessor {
     @Nonnull
     public static SupplierEx<Processor> processorSupplier(
             @Nonnull String mapName,
-            @Nonnull MapScanPlanNode mapScanPlanNode
+            @Nonnull JetMapScanMetadata mapScanPlanNode
     ) {
         return () -> new OnHeapMapScanP(mapName, mapScanPlanNode);
     }
