@@ -209,6 +209,8 @@ public class InstanceConfig {
      *     number of entries in the hash-join lookup tables
      * </li></ul>
      * <p>
+     * Note: the limit does not apply to streaming aggregations.
+     * <p>
      * The default value is {@link Long#MAX_VALUE}.
      *
      * @since 5.0
