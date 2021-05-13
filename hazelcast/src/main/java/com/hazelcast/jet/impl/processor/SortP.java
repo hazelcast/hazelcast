@@ -20,7 +20,6 @@ import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.impl.memory.AccumulationLimitExceededException;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -40,7 +39,7 @@ public class SortP<T> extends AbstractProcessor {
     }
 
     @Override
-    protected void init(@NotNull Processor.Context context) throws Exception {
+    protected void init(@Nonnull Processor.Context context) throws Exception {
         maxItems = context.maxProcessorAccumulatedRecords();
     }
 

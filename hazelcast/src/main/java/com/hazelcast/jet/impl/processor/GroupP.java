@@ -23,7 +23,6 @@ import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.impl.memory.AccumulationLimitExceededException;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import java.util.HashMap;
@@ -75,7 +74,7 @@ public class GroupP<K, A, R, OUT> extends AbstractProcessor {
     }
 
     @Override
-    protected void init(@NotNull Processor.Context context) throws Exception {
+    protected void init(@Nonnull Processor.Context context) throws Exception {
         maxEntries = context.maxProcessorAccumulatedRecords();
     }
 
