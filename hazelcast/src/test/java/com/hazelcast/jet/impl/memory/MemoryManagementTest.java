@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl.memory;
 import com.hazelcast.config.Config;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.Util;
+import com.hazelcast.jet.aggregate.AggregateOperations;
 import com.hazelcast.jet.pipeline.BatchStage;
 import com.hazelcast.jet.pipeline.JoinClause;
 import com.hazelcast.jet.pipeline.Pipeline;
@@ -35,6 +36,7 @@ import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
 import static com.hazelcast.jet.pipeline.Sinks.noop;
 import static com.hazelcast.jet.pipeline.test.AssertionSinks.assertOrdered;
+import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -56,6 +58,16 @@ public class MemoryManagementTest extends SimpleTestInClusterSupport {
     public void when_maxAccumulatedRecordsCountIsNotExceededWhileAggregating_then_succeeds() {
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(TestSources.items(list(MAX_PROCESSOR_ACCUMULATED_RECORDS)))
+                .aggregate(AggregateOperations.toList())
+                .writeTo(assertOrdered(singletonList(list(MAX_PROCESSOR_ACCUMULATED_RECORDS))));
+
+        instance().newJob(pipeline).join();
+    }
+
+    @Test
+    public void when_maxAccumulatedRecordsCountIsNotExceededWhileGrouping_then_succeeds() {
+        Pipeline pipeline = Pipeline.create();
+        pipeline.readFrom(TestSources.items(list(MAX_PROCESSOR_ACCUMULATED_RECORDS)))
                 .groupingKey(wholeItem())
                 .aggregate(counting())
                 .writeTo(assertOrdered(cardinalities(MAX_PROCESSOR_ACCUMULATED_RECORDS)));
@@ -64,7 +76,7 @@ public class MemoryManagementTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void when_maxAccumulatedRecordsCountIsExceededWhileAggregating_then_throws() {
+    public void when_maxAccumulatedRecordsCountIsExceededWhileGrouping_then_throws() {
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(TestSources.items(list(MAX_PROCESSOR_ACCUMULATED_RECORDS + 1)))
                 .groupingKey(wholeItem())
