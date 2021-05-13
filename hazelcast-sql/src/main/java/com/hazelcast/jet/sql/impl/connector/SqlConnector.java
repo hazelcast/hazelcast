@@ -25,6 +25,7 @@ import com.hazelcast.jet.sql.impl.schema.MappingField;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.schema.Table;
+import org.apache.calcite.sql.SqlNodeList;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -330,7 +331,18 @@ public interface SqlConnector {
 
     @Nonnull
     default Vertex deleteProcessor(@Nonnull DAG dag, @Nonnull Table table) {
-        throw new UnsupportedOperationException("Delete not supported for " + typeName());
+        throw new UnsupportedOperationException("DELETE not supported for " + typeName());
+    }
+
+    /**
+     * Return the indexes of fields that are primary key. These fields will be
+     * fed to the delete processor.
+     *
+     * If there's no primary key, theis method should what? (TODO)
+     * @return
+     */
+    default SqlNodeList getPrimaryKey(Table table) {
+        throw new UnsupportedOperationException("no primary key in " + typeName());
     }
 
     /**

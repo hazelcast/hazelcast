@@ -132,4 +132,9 @@ public final class ColumnExpression<T> implements Expression<T>, IdentifiedDataS
 
         return index == that.index && type.equals(that.type);
     }
+
+    @Override
+    public String toString() {
+        return "ColumnExpression{index=" + index + ", type=" + type + '}';
+    }
 }
