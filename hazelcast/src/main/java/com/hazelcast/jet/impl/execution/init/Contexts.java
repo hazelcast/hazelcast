@@ -70,7 +70,6 @@ public final class Contexts {
         private final int localParallelism;
         private final int totalParallelism;
         private final int memberCount;
-        private final ProcessingGuarantee processingGuarantee;
 
         MetaSupplierCtx(
                 JetInstance jetInstance,
@@ -81,8 +80,7 @@ public final class Contexts {
                 String vertexName,
                 int localParallelism,
                 int totalParallelism,
-                int memberCount,
-                ProcessingGuarantee processingGuarantee
+                int memberCount
         ) {
             this.jetInstance = jetInstance;
             this.jobId = jobId;
@@ -93,7 +91,6 @@ public final class Contexts {
             this.totalParallelism = totalParallelism;
             this.localParallelism = localParallelism;
             this.memberCount = memberCount;
-            this.processingGuarantee = processingGuarantee;
         }
 
         @Nonnull @Override
@@ -143,7 +140,7 @@ public final class Contexts {
 
         @Override
         public ProcessingGuarantee processingGuarantee() {
-            return processingGuarantee;
+            return jobConfig.getProcessingGuarantee();
         }
     }
 
@@ -165,12 +162,11 @@ public final class Contexts {
                 int totalParallelism,
                 int memberIndex,
                 int memberCount,
-                ProcessingGuarantee processingGuarantee,
                 ConcurrentHashMap<String, File> tempDirectories,
                 InternalSerializationService serializationService
         ) {
             super(jetInstance, jobId, executionId, jobConfig, logger, vertexName, localParallelism, totalParallelism,
-                    memberCount, processingGuarantee);
+                    memberCount);
             this.memberIndex = memberIndex;
             this.tempDirectories = tempDirectories;
             this.serializationService = serializationService;
@@ -293,14 +289,13 @@ public final class Contexts {
                        String vertexName,
                        int localProcessorIndex,
                        int globalProcessorIndex,
-                       ProcessingGuarantee processingGuarantee,
                        int localParallelism,
                        int memberIndex,
                        int memberCount,
                        ConcurrentHashMap<String, File> tempDirectories,
                        InternalSerializationService serializationService) {
             super(instance, jobId, executionId, jobConfig, logger, vertexName, localParallelism,
-                    memberCount * localParallelism, memberIndex, memberCount, processingGuarantee,
+                    memberCount * localParallelism, memberIndex, memberCount,
                     tempDirectories, serializationService);
             this.localProcessorIndex = localProcessorIndex;
             this.globalProcessorIndex = globalProcessorIndex;
