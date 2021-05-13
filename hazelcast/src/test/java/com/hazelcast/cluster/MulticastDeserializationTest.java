@@ -118,6 +118,7 @@ public class MulticastDeserializationTest {
                 .setEnabled(false);
         join.getMulticastConfig()
                 .setEnabled(true)
+                .setLoopbackModeEnabled(true)
                 .setMulticastPort(MULTICAST_PORT)
                 .setMulticastGroup(MULTICAST_GROUP)
                 .setMulticastTimeToLive(MULTICAST_TTL);
