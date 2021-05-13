@@ -52,6 +52,8 @@ import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR_CHARACTER;
 
 /**
  * Utility methods for SQL data types.
+ * <p>
+ * Length descriptions are generated using https://github.com/openjdk/jol.
  */
 public final class QueryDataTypeUtils {
     /**
