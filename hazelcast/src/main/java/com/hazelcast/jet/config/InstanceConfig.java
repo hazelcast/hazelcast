@@ -207,6 +207,8 @@ public class InstanceConfig {
      *     number of distinct keys accumulated by aggregation operations
      * </li><li>
      *     number of entries in the hash-join lookup tables
+     * </li><li>
+     *     number of entries in stateful transforms
      * </li></ul>
      * <p>
      * Note: the limit does not apply to streaming aggregations.
