@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.memory;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.aggregate.AggregateOperations;
@@ -126,6 +127,28 @@ public class MemoryManagementTest extends SimpleTestInClusterSupport {
         BatchStage<Integer> left = pipeline.readFrom(TestSources.items(list(MAX_PROCESSOR_ACCUMULATED_RECORDS + 1)));
         BatchStage<Entry<Integer, Long>> right = pipeline.readFrom(TestSources.items(cardinalities(MAX_PROCESSOR_ACCUMULATED_RECORDS + 1)));
         left.hashJoin(right, JoinClause.joinMapEntries(wholeItem()), Util::entry)
+                .writeTo(noop());
+
+        assertThatThrownBy(() -> instance().newJob(pipeline).join())
+                .hasMessageContaining("Exception thrown to prevent an OutOfMemoryError on this Hazelcast instance");
+    }
+
+    @Test
+    public void when_maxAccumulatedRecordsCountIsNotExceededWhileTransforming_then_succeeds() {
+        Pipeline pipeline = Pipeline.create();
+        pipeline.readFrom(TestSources.items(list(MAX_PROCESSOR_ACCUMULATED_RECORDS)))
+                .mapStateful(() -> 1, (s, i) -> i)
+                .writeTo(assertOrdered(list(MAX_PROCESSOR_ACCUMULATED_RECORDS)));
+
+        instance().newJob(pipeline).join();
+    }
+
+    @Test
+    public void when_maxAccumulatedRecordsCountIsExceededWhileTransforming_then_throws() {
+        Pipeline pipeline = Pipeline.create();
+        pipeline.readFrom(TestSources.items(list(MAX_PROCESSOR_ACCUMULATED_RECORDS + 1)))
+                .groupingKey(FunctionEx.identity())
+                .mapStateful(() -> 1, (a, k, i) -> i)
                 .writeTo(noop());
 
         assertThatThrownBy(() -> instance().newJob(pipeline).join())
