@@ -21,6 +21,8 @@ import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.core.AbstractProcessor;
+import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.impl.memory.AccumulationLimitExceededException;
 
 import javax.annotation.Nonnull;
 import java.util.HashMap;
@@ -42,13 +44,14 @@ import static java.util.Collections.singletonList;
  */
 public class GroupP<K, A, R, OUT> extends AbstractProcessor {
 
-    final Map<K, A> keyToAcc = new HashMap<>();
-    @Nonnull
+    protected final Map<K, A> keyToAcc = new HashMap<>();
+
     private final List<FunctionEx<?, ? extends K>> groupKeyFns;
-    @Nonnull
     private final AggregateOperation<A, R> aggrOp;
-    private Traverser<OUT> resultTraverser;
     private final BiFunction<? super K, ? super R, OUT> mapToOutputFn;
+
+    private long maxEntries;
+    private Traverser<OUT> resultTraverser;
 
     public GroupP(
             @Nonnull List<FunctionEx<?, ? extends K>> groupKeyFns,
@@ -71,11 +74,22 @@ public class GroupP<K, A, R, OUT> extends AbstractProcessor {
     }
 
     @Override
+    protected void init(@Nonnull Processor.Context context) throws Exception {
+        maxEntries = context.maxProcessorAccumulatedRecords();
+    }
+
+    @Override
     @SuppressWarnings("unchecked")
     protected boolean tryProcess(int ordinal, @Nonnull Object item) {
         Function<Object, ? extends K> keyFn = (Function<Object, ? extends K>) groupKeyFns.get(ordinal);
         K key = keyFn.apply(item);
-        A acc = keyToAcc.computeIfAbsent(key, k -> aggrOp.createFn().get());
+        A acc = keyToAcc.computeIfAbsent(key, k -> {
+            if (keyToAcc.size() == maxEntries) {
+                throw new AccumulationLimitExceededException();
+            }
+
+            return aggrOp.createFn().get();
+        });
         aggrOp.accumulateFn(ordinal).accept(acc, item);
         return true;
     }
