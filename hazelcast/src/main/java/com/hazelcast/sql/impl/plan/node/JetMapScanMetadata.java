@@ -29,9 +29,6 @@ import java.util.Objects;
  * POJO that contains all specific information to scan a partitioned map by Jet processor.
  */
 public class JetMapScanMetadata implements Serializable {
-    public JetMapScanMetadata() {
-        // No-op.
-    }
 
     protected String mapName;
     protected QueryTargetDescriptor keyDescriptor;
@@ -40,6 +37,10 @@ public class JetMapScanMetadata implements Serializable {
     protected List<QueryDataType> fieldTypes;
     protected List<Expression<?>> projections;
     protected Expression<Boolean> filter;
+
+    public JetMapScanMetadata() {
+        // No-op.
+    }
 
     public JetMapScanMetadata(
             String mapName,

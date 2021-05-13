@@ -20,16 +20,12 @@ import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.map.IMap;
-import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.ConstantPredicateExpression;
-import com.hazelcast.sql.impl.expression.math.DivideFunction;
 import com.hazelcast.sql.impl.expression.math.MultiplyFunction;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
@@ -41,11 +37,13 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import sun.tools.tree.MultiplyExpression;
 
 import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 import java.util.function.BiPredicate;
 
 import static com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
@@ -90,7 +88,7 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
 
     @Test
     public void test_whenEmpty() {
-        JetMapScanMetadata scanNode = new JetMapScanMetadata(
+        JetMapScanMetadata scanMetadata = new JetMapScanMetadata(
                 map.getName(),
                 GenericQueryTargetDescriptor.DEFAULT,
                 GenericQueryTargetDescriptor.DEFAULT,
@@ -101,7 +99,7 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
         );
 
         TestSupport
-                .verifyProcessor(OnHeapMapScanP.onHeapMapScanP(map.getName(), scanNode))
+                .verifyProcessor(OnHeapMapScanP.onHeapMapScanP(scanMetadata))
                 .jetInstance(instance())
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
                 .disableSnapshots()
@@ -117,7 +115,7 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
             expected.add(new Object[]{i, "value-" + i});
         }
 
-        JetMapScanMetadata scanNode = new JetMapScanMetadata(
+        JetMapScanMetadata scanMetadata = new JetMapScanMetadata(
                 map.getName(),
                 GenericQueryTargetDescriptor.DEFAULT,
                 GenericQueryTargetDescriptor.DEFAULT,
@@ -131,7 +129,7 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
         );
 
         TestSupport
-                .verifyProcessor(OnHeapMapScanP.onHeapMapScanP(map.getName(), scanNode))
+                .verifyProcessor(OnHeapMapScanP.onHeapMapScanP(scanMetadata))
                 .jetInstance(instance())
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
                 .outputChecker(LENIENT_SAME_ITEMS_ANY_ORDER)
@@ -147,7 +145,7 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
             map.put(i, "value-" + i);
         }
 
-        JetMapScanMetadata scanNode = new JetMapScanMetadata(
+        JetMapScanMetadata scanMetadata = new JetMapScanMetadata(
                 map.getName(),
                 GenericQueryTargetDescriptor.DEFAULT,
                 GenericQueryTargetDescriptor.DEFAULT,
@@ -161,7 +159,7 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
         );
 
         TestSupport
-                .verifyProcessor(OnHeapMapScanP.onHeapMapScanP(map.getName(), scanNode))
+                .verifyProcessor(OnHeapMapScanP.onHeapMapScanP(scanMetadata))
                 .jetInstance(instance())
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
                 .disableSnapshots()
@@ -179,7 +177,7 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
             expected.add(new Object[]{i, "value-" + i, (100 - i) * 5});
         }
 
-        JetMapScanMetadata scanNode = new JetMapScanMetadata(
+        JetMapScanMetadata scanMetadata = new JetMapScanMetadata(
                 objectMap.getName(),
                 GenericQueryTargetDescriptor.DEFAULT,
                 GenericQueryTargetDescriptor.DEFAULT,
@@ -198,7 +196,7 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
         );
 
         TestSupport
-                .verifyProcessor(OnHeapMapScanP.onHeapMapScanP(objectMap.getName(), scanNode))
+                .verifyProcessor(OnHeapMapScanP.onHeapMapScanP(scanMetadata))
                 .jetInstance(instance())
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
                 .outputChecker(LENIENT_SAME_ITEMS_ANY_ORDER)

@@ -52,7 +52,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.estimatePartitionedMapRowCount;
@@ -184,13 +183,7 @@ public class IMapSqlConnector implements SqlConnector {
                 filter
         );
 
-        return dag.newUniqueVertex(
-                table.toString(),
-                OnHeapMapScanP.onHeapMapScanP(
-                        table.getMapName(),
-                        mapScanMetadata
-                )
-        );
+        return dag.newUniqueVertex(table.toString(), OnHeapMapScanP.onHeapMapScanP(mapScanMetadata));
     }
 
     @Override

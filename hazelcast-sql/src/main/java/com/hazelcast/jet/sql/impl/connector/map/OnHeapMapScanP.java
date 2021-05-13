@@ -19,7 +19,6 @@ package com.hazelcast.jet.sql.impl.connector.map;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Processor;
@@ -29,7 +28,6 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.exec.scan.KeyValueIterator;
 import com.hazelcast.sql.impl.exec.scan.MapScanExecIterator;
 import com.hazelcast.sql.impl.exec.scan.MapScanRow;
@@ -41,8 +39,6 @@ import com.hazelcast.sql.impl.row.HeapRow;
 import javax.annotation.Nonnull;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.sql.impl.ExpressionUtil.evaluate;
@@ -59,16 +55,10 @@ import static com.hazelcast.jet.sql.impl.ExpressionUtil.evaluate;
  */
 public class OnHeapMapScanP extends AbstractProcessor {
     protected IMapTraverser traverser;
-    private final String mapName;
-    private final JetMapScanMetadata planNode;
+    private final JetMapScanMetadata mapScanMetadata;
 
-    public OnHeapMapScanP(
-            @Nonnull String mapName,
-            @Nonnull JetMapScanMetadata node
-
-    ) {
-        this.mapName = mapName;
-        this.planNode = node;
+    public OnHeapMapScanP(@Nonnull JetMapScanMetadata mapScanMetadata) {
+        this.mapScanMetadata = mapScanMetadata;
     }
 
     @Override
@@ -82,12 +72,10 @@ public class OnHeapMapScanP extends AbstractProcessor {
                 .map(Partition::getPartitionId)
                 .collect(Collectors.toList());
 
-        MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
-        MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(mapName);
         traverser = new IMapTraverser(
-                mapContainer,
-                partitions.iterator(),
-                planNode
+                nodeEngine,
+                mapScanMetadata,
+                partitions.iterator()
         );
         traverser.init(SimpleExpressionEvalContext.from(context));
     }
@@ -110,15 +98,16 @@ public class OnHeapMapScanP extends AbstractProcessor {
         private boolean done;
 
         IMapTraverser(
-                @Nonnull final MapContainer mapContainer,
-                @Nonnull Iterator<Integer> localPartitionsIterator,
-                @Nonnull JetMapScanMetadata node
+                @Nonnull final NodeEngine nodeEngine,
+                @Nonnull JetMapScanMetadata node,
+                @Nonnull Iterator<Integer> localPartitionsIterator
         ) {
+            this.node = node;
+            MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
+            this.mapContainer = mapService.getMapServiceContext().getMapContainer(node.getMapName());
+            this.localPartitionsIterator = localPartitionsIterator;
             this.projections = node.getProjects();
             this.filter = node.getFilter();
-            this.mapContainer = mapContainer;
-            this.node = node;
-            this.localPartitionsIterator = localPartitionsIterator;
         }
 
         @Override
@@ -184,20 +173,12 @@ public class OnHeapMapScanP extends AbstractProcessor {
         }
     }
 
-    public static ProcessorMetaSupplier onHeapMapScanP(
-            @Nonnull String mapName,
-            @Nonnull JetMapScanMetadata mapScanPlanNode
-    ) {
-        return ProcessorMetaSupplier.of(
-                processorSupplier(mapName, mapScanPlanNode)
-        );
+    public static ProcessorMetaSupplier onHeapMapScanP(@Nonnull JetMapScanMetadata mapScanPlanNode) {
+        return ProcessorMetaSupplier.of(processorSupplier(mapScanPlanNode));
     }
 
     @Nonnull
-    public static SupplierEx<Processor> processorSupplier(
-            @Nonnull String mapName,
-            @Nonnull JetMapScanMetadata mapScanPlanNode
-    ) {
-        return () -> new OnHeapMapScanP(mapName, mapScanPlanNode);
+    public static SupplierEx<Processor> processorSupplier(@Nonnull JetMapScanMetadata mapScanPlanNode) {
+        return () -> new OnHeapMapScanP(mapScanPlanNode);
     }
 }
