@@ -148,7 +148,10 @@ public final class Contexts {
 
         @Override
         public long maxProcessorAccumulatedRecords() {
-            return jetInstance.getConfig().getInstanceConfig().getMaxProcessorAccumulatedRecords();
+            long jobMaxProcessorAccumulatedRecords = jobConfig.getMaxProcessorAccumulatedRecords();
+            return jobMaxProcessorAccumulatedRecords > -1
+                    ? jobMaxProcessorAccumulatedRecords
+                    : jetInstance.getConfig().getInstanceConfig().getMaxProcessorAccumulatedRecords();
         }
     }
 

@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.aggregate.AggregateOperations;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.pipeline.BatchStage;
 import com.hazelcast.jet.pipeline.JoinClause;
 import com.hazelcast.jet.pipeline.Pipeline;
@@ -128,6 +129,20 @@ public class MemoryManagementTest extends SimpleTestInClusterSupport {
                 .writeTo(noop());
 
         assertThatThrownBy(() -> instance().newJob(pipeline).join())
+                .hasMessageContaining("Exception thrown to prevent an OutOfMemoryError on this Hazelcast instance");
+    }
+
+    @Test
+    public void test_jobConfigurationHasPrecedenceOverInstanceOne() {
+        Pipeline pipeline = Pipeline.create();
+        pipeline.readFrom(TestSources.items(list(MAX_PROCESSOR_ACCUMULATED_RECORDS)))
+                .groupingKey(wholeItem())
+                .aggregate(counting())
+                .writeTo(noop());
+
+        JobConfig jobConfig = new JobConfig().setMaxProcessorAccumulatedRecords(MAX_PROCESSOR_ACCUMULATED_RECORDS - 1);
+
+        assertThatThrownBy(() -> instance().newJob(pipeline, jobConfig).join())
                 .hasMessageContaining("Exception thrown to prevent an OutOfMemoryError on this Hazelcast instance");
     }
 

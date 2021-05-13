@@ -176,6 +176,9 @@ public class SqlCreateJob extends SqlCreate {
                 case "initialSnapshotName":
                     jobConfig.setInitialSnapshotName(value);
                     break;
+                case "maxProcessorAccumulatedRecords":
+                    jobConfig.setMaxProcessorAccumulatedRecords(Long.parseLong(value));
+                    break;
                 default:
                     throw validator.newValidationError(option.key(), RESOURCE.unknownJobOption(key));
             }

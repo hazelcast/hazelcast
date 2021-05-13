@@ -23,6 +23,7 @@ import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.annotation.EvolvingApi;
+import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.jet.impl.util.ReflectionUtils.Resources;
@@ -49,6 +50,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.jet.config.ResourceType.CLASS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -69,6 +71,7 @@ public class JobConfig implements IdentifiedDataSerializable {
     private boolean splitBrainProtectionEnabled;
     private boolean enableMetrics = true;
     private boolean storeMetricsAfterJobCompletion;
+    private long maxProcessorAccumulatedRecords = -1;
     // Note: new options in JobConfig must also be added to `SqlCreateJob`
 
     private Map<String, ResourceConfig> resourceConfigs = new LinkedHashMap<>();
@@ -1150,6 +1153,32 @@ public class JobConfig implements IdentifiedDataSerializable {
         return this;
     }
 
+    /**
+     * Returns the maximum number of records that can be accumulated by any single
+     * {@link Processor} instance in the context of the job.
+     *
+     * @since 5.0
+     */
+    public long getMaxProcessorAccumulatedRecords() {
+        return maxProcessorAccumulatedRecords;
+    }
+
+    /**
+     * Sets the maximum number of records that can be accumulated by any single
+     * {@link Processor} instance in the context of the job.
+     * <p>
+     * For more info see {@link InstanceConfig#setMaxProcessorAccumulatedRecords(long)}.
+     * <p>
+     * If set, it has precedence over {@link InstanceConfig}'s one.
+     *
+     * @since 5.0
+     */
+    public JobConfig setMaxProcessorAccumulatedRecords(long maxProcessorAccumulatedRecords) {
+        checkPositive(maxProcessorAccumulatedRecords, "maxProcessorAccumulatedRecords must be a positive number");
+        this.maxProcessorAccumulatedRecords = maxProcessorAccumulatedRecords;
+        return this;
+    }
+
     @Override
     public int getFactoryId() {
         return JetConfigDataSerializerHook.FACTORY_ID;
@@ -1175,6 +1204,7 @@ public class JobConfig implements IdentifiedDataSerializable {
         out.writeString(initialSnapshotName);
         out.writeBoolean(enableMetrics);
         out.writeBoolean(storeMetricsAfterJobCompletion);
+        out.writeLong(maxProcessorAccumulatedRecords);
     }
 
     @Override
@@ -1192,6 +1222,7 @@ public class JobConfig implements IdentifiedDataSerializable {
         initialSnapshotName = in.readString();
         enableMetrics = in.readBoolean();
         storeMetricsAfterJobCompletion = in.readBoolean();
+        maxProcessorAccumulatedRecords = in.readLong();
     }
 
     @Override
@@ -1203,24 +1234,27 @@ public class JobConfig implements IdentifiedDataSerializable {
             return false;
         }
         JobConfig jobConfig = (JobConfig) o;
-        return snapshotIntervalMillis == jobConfig.snapshotIntervalMillis && autoScaling == jobConfig.autoScaling
+        return snapshotIntervalMillis == jobConfig.snapshotIntervalMillis
+                && autoScaling == jobConfig.autoScaling
                 && suspendOnFailure == jobConfig.suspendOnFailure
                 && splitBrainProtectionEnabled == jobConfig.splitBrainProtectionEnabled
                 && enableMetrics == jobConfig.enableMetrics
                 && storeMetricsAfterJobCompletion == jobConfig.storeMetricsAfterJobCompletion
-                && Objects.equals(name, jobConfig.name) && processingGuarantee == jobConfig.processingGuarantee
+                && Objects.equals(name, jobConfig.name)
+                && processingGuarantee == jobConfig.processingGuarantee
                 && Objects.equals(resourceConfigs, jobConfig.resourceConfigs)
                 && Objects.equals(serializerConfigs, jobConfig.serializerConfigs)
                 && Objects.equals(arguments, jobConfig.arguments)
                 && Objects.equals(classLoaderFactory, jobConfig.classLoaderFactory)
-                && Objects.equals(initialSnapshotName, jobConfig.initialSnapshotName);
+                && Objects.equals(initialSnapshotName, jobConfig.initialSnapshotName)
+                && maxProcessorAccumulatedRecords == jobConfig.maxProcessorAccumulatedRecords;
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(name, processingGuarantee, snapshotIntervalMillis, autoScaling, suspendOnFailure,
                 splitBrainProtectionEnabled, enableMetrics, storeMetricsAfterJobCompletion, resourceConfigs,
-                serializerConfigs, arguments, classLoaderFactory, initialSnapshotName);
+                serializerConfigs, arguments, classLoaderFactory, initialSnapshotName, maxProcessorAccumulatedRecords);
     }
 
     @Override
@@ -1231,7 +1265,7 @@ public class JobConfig implements IdentifiedDataSerializable {
                 ", storeMetricsAfterJobCompletion=" + storeMetricsAfterJobCompletion +
                 ", resourceConfigs=" + resourceConfigs + ", serializerConfigs=" + serializerConfigs +
                 ", arguments=" + arguments + ", classLoaderFactory=" + classLoaderFactory +
-                ", initialSnapshotName=" + initialSnapshotName + "}";
+                ", initialSnapshotName=" + initialSnapshotName + ", maxProcessorAccumulatedRecords=" +
+                maxProcessorAccumulatedRecords + "}";
     }
-
 }
