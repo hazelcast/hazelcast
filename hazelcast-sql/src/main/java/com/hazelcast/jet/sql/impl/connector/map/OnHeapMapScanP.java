@@ -27,6 +27,7 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.partition.Partition;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.exec.scan.KeyValueIterator;
@@ -42,6 +43,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.sql.impl.ExpressionUtil.evaluate;
 
@@ -72,16 +74,19 @@ public class OnHeapMapScanP extends AbstractProcessor {
     @Override
     protected void init(@Nonnull Context context) throws Exception {
         NodeEngine nodeEngine = ((HazelcastInstanceImpl) context.jetInstance().getHazelcastInstance()).node.nodeEngine;
-        Map<UUID, PartitionIdSet> partitionMap = QueryUtils.createPartitionMap(
-                nodeEngine,
-                nodeEngine.getLocalMember().getVersion(),
-                false
-        );
+        List<Integer> partitions = context.jetInstance()
+                .getHazelcastInstance()
+                .getPartitionService()
+                .getPartitions()
+                .stream()
+                .map(Partition::getPartitionId)
+                .collect(Collectors.toList());
+
         MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
         MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(mapName);
         traverser = new IMapTraverser(
                 mapContainer,
-                partitionMap.get(nodeEngine.getClusterService().getLocalMember().getUuid()).iterator(),
+                partitions.iterator(),
                 planNode
         );
         traverser.init(SimpleExpressionEvalContext.from(context));
