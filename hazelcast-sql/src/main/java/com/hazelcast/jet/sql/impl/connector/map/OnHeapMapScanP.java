@@ -43,6 +43,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import static com.hazelcast.jet.sql.impl.ExpressionUtil.evaluate;
+
 /**
  * This is SQL internal processor to provide a backend for SQL operations (e.g., SELECT * FROM map).
  * <p>
@@ -91,7 +93,7 @@ public class OnHeapMapScanP extends AbstractProcessor {
     }
 
     static class IMapTraverser implements Traverser<Object[]> {
-        private final List<Integer> projects;
+        private final List<Expression<?>> projections;
         private final Expression<Boolean> filter;
         private KeyValueIterator iteratorExec;
 
@@ -107,7 +109,7 @@ public class OnHeapMapScanP extends AbstractProcessor {
                 @Nonnull Iterator<Integer> localPartitionsIterator,
                 @Nonnull JetMapScanMetadata node
         ) {
-            this.projects = node.getProjects();
+            this.projections = node.getProjects();
             this.filter = node.getFilter();
             this.mapContainer = mapContainer;
             this.node = node;
@@ -162,15 +164,14 @@ public class OnHeapMapScanP extends AbstractProcessor {
                 return null;
             }
 
-            if (projects.size() == 0) {
+            if (projections.size() == 0) {
                 return new Object[0];
             }
 
-            HeapRow heapRow = new HeapRow(projects.size());
+            HeapRow heapRow = new HeapRow(projections.size());
 
-            for (int j = 0; j < projects.size(); j++) {
-                Object projectRes = this.row.get(projects.get(j));
-
+            for (int j = 0; j < projections.size(); j++) {
+                Object projectRes = evaluate(projections.get(j), row, ctx);
                 heapRow.set(j, projectRes);
             }
 

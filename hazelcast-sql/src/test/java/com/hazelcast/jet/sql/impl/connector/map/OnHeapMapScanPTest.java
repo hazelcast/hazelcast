@@ -26,7 +26,11 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.sql.impl.expression.ColumnExpression;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.ConstantPredicateExpression;
+import com.hazelcast.sql.impl.expression.math.DivideFunction;
+import com.hazelcast.sql.impl.expression.math.MultiplyFunction;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.plan.node.JetMapScanMetadata;
@@ -37,17 +41,18 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import sun.tools.tree.MultiplyExpression;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiPredicate;
 
 import static com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
 import static com.hazelcast.sql.impl.SqlTestSupport.valuePath;
+import static com.hazelcast.sql.impl.type.QueryDataType.INT;
+import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 
 @SuppressWarnings("rawtypes")
@@ -90,8 +95,8 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
                 GenericQueryTargetDescriptor.DEFAULT,
                 GenericQueryTargetDescriptor.DEFAULT,
                 Arrays.asList(QueryPath.KEY_PATH, valuePath("this")),
-                Arrays.asList(QueryDataType.INT, QueryDataType.VARCHAR),
-                Arrays.asList(0, 1),
+                Arrays.asList(QueryDataType.INT, VARCHAR),
+                Collections.emptyList(),
                 new ConstantPredicateExpression(true)
         );
 
@@ -105,7 +110,7 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void test_whenNoFilterAndNoProjection() {
+    public void test_whenNoFilterAndNoSpecificProjection() {
         List<Object[]> expected = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
             map.put(i, "value-" + i);
@@ -117,8 +122,11 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
                 GenericQueryTargetDescriptor.DEFAULT,
                 GenericQueryTargetDescriptor.DEFAULT,
                 Arrays.asList(QueryPath.KEY_PATH, valuePath("this")),
-                Arrays.asList(QueryDataType.INT, QueryDataType.VARCHAR),
-                Arrays.asList(0, 1),
+                Arrays.asList(QueryDataType.INT, VARCHAR),
+                asList(
+                        ColumnExpression.create(0, INT),
+                        ColumnExpression.create(1, VARCHAR)
+                ),
                 new ConstantPredicateExpression(true)
         );
 
@@ -144,8 +152,11 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
                 GenericQueryTargetDescriptor.DEFAULT,
                 GenericQueryTargetDescriptor.DEFAULT,
                 Arrays.asList(QueryPath.KEY_PATH, valuePath("this")),
-                Arrays.asList(QueryDataType.INT, QueryDataType.VARCHAR),
-                Arrays.asList(0, 1),
+                Arrays.asList(QueryDataType.INT, VARCHAR),
+                asList(
+                        ColumnExpression.create(0, INT),
+                        ColumnExpression.create(1, VARCHAR)
+                ),
                 new ConstantPredicateExpression(false)
         );
 
@@ -165,7 +176,7 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
         List<Object[]> expected = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
             objectMap.put(i, new Person("value-" + i, 100 - i));
-            expected.add(new Object[]{i, "value-" + i, 100 - i});
+            expected.add(new Object[]{i, "value-" + i, (100 - i) * 5});
         }
 
         JetMapScanMetadata scanNode = new JetMapScanMetadata(
@@ -173,8 +184,16 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
                 GenericQueryTargetDescriptor.DEFAULT,
                 GenericQueryTargetDescriptor.DEFAULT,
                 Arrays.asList(QueryPath.KEY_PATH, valuePath("this.name"), valuePath("this.age")),
-                Arrays.asList(QueryDataType.INT, QueryDataType.VARCHAR, QueryDataType.INT),
-                Arrays.asList(0, 1, 2),
+                Arrays.asList(QueryDataType.INT, VARCHAR, QueryDataType.INT),
+                asList(
+                        ColumnExpression.create(0, INT),
+                        ColumnExpression.create(1, VARCHAR),
+                        MultiplyFunction.create(
+                                ColumnExpression.create(2, INT),
+                                ConstantExpression.create(5, INT),
+                                INT
+                        )
+                ),
                 new ConstantPredicateExpression(true)
         );
 

@@ -38,7 +38,7 @@ public class JetMapScanMetadata implements Serializable {
     protected QueryTargetDescriptor valueDescriptor;
     protected List<QueryPath> fieldPaths;
     protected List<QueryDataType> fieldTypes;
-    protected List<Integer> projects;
+    protected List<Expression<?>> projections;
     protected Expression<Boolean> filter;
 
     public JetMapScanMetadata(
@@ -47,7 +47,7 @@ public class JetMapScanMetadata implements Serializable {
             QueryTargetDescriptor valueDescriptor,
             List<QueryPath> fieldPaths,
             List<QueryDataType> fieldTypes,
-            List<Integer> projects,
+            List<Expression<?>> projections,
             Expression<Boolean> filter
     ) {
         this.mapName = mapName;
@@ -55,7 +55,7 @@ public class JetMapScanMetadata implements Serializable {
         this.valueDescriptor = valueDescriptor;
         this.fieldPaths = fieldPaths;
         this.fieldTypes = fieldTypes;
-        this.projects = projects;
+        this.projections = projections;
         this.filter = filter;
     }
 
@@ -79,8 +79,8 @@ public class JetMapScanMetadata implements Serializable {
         return fieldTypes;
     }
 
-    public List<Integer> getProjects() {
-        return projects;
+    public List<Expression<?>> getProjects() {
+        return projections;
     }
 
     public Expression<Boolean> getFilter() {
@@ -104,7 +104,7 @@ public class JetMapScanMetadata implements Serializable {
                 && valueDescriptor.equals(that.valueDescriptor)
                 && fieldPaths.equals(that.fieldPaths)
                 && fieldTypes.equals(that.fieldTypes)
-                && projects.equals(that.projects)
+                && projections.equals(that.projections)
                 && Objects.equals(filter, that.filter);
     }
 
@@ -115,7 +115,7 @@ public class JetMapScanMetadata implements Serializable {
         result = 31 * result + valueDescriptor.hashCode();
         result = 31 * result + fieldPaths.hashCode();
         result = 31 * result + fieldTypes.hashCode();
-        result = 31 * result + projects.hashCode();
+        result = 31 * result + projections.hashCode();
         result = 31 * result + (filter != null ? filter.hashCode() : 0);
         return result;
     }
@@ -123,6 +123,6 @@ public class JetMapScanMetadata implements Serializable {
     @Override
     public String toString() {
         return getClass().getSimpleName() + "{mapName=" + mapName + ", fieldPaths=" + fieldPaths
-                + ", projects=" + projects + ", filter=" + filter + '}';
+                + ", projects=" + projections + ", filter=" + filter + '}';
     }
 }

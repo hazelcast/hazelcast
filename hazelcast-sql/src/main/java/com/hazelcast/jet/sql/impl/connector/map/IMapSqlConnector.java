@@ -71,8 +71,6 @@ public class IMapSqlConnector implements SqlConnector {
             MetadataJsonResolver.INSTANCE
     );
 
-    private final AtomicInteger id = new AtomicInteger(0);
-
     @Override
     public String typeName() {
         return TYPE_NAME;
@@ -168,7 +166,7 @@ public class IMapSqlConnector implements SqlConnector {
     public Vertex fullScanReader(
             @Nonnull DAG dag,
             @Nonnull Table table0,
-            @Nullable Expression<Boolean> predicate,
+            @Nullable Expression<Boolean> filter,
             @Nonnull List<Expression<?>> projection) {
         PartitionedMapTable table = (PartitionedMapTable) table0;
         PlanNodeSchema schemaBefore = getScanSchemaBeforeProject(table);
@@ -179,19 +177,17 @@ public class IMapSqlConnector implements SqlConnector {
                 table.getValueDescriptor(),
                 getScanFieldPaths(table),
                 schemaBefore.getTypes(),
-                getProjections(table, projection),
-                predicate
+                projection,
+                filter
         );
 
-        Vertex vStart = dag.newUniqueVertex(
+        return dag.newUniqueVertex(
                 table.toString(),
                 OnHeapMapScanP.onHeapMapScanP(
                         table.getMapName(),
                         mapScanPlanNode
                 )
         );
-        return vStart;
-
     }
 
     @Override
@@ -261,16 +257,6 @@ public class IMapSqlConnector implements SqlConnector {
         }
 
         return new PlanNodeSchema(types);
-    }
-
-    private List<Integer> getProjections(PartitionedMapTable table, List<Expression<?>> projections) {
-        // TODO: APPLY NEEDED PROJECTIONS
-        int fieldCount = table.getFieldCount();
-        List<Integer> res = new ArrayList<>(fieldCount);
-        for (int i = 0; i < fieldCount; i++) {
-            res.add(i);
-        }
-        return res;
     }
 
 }
