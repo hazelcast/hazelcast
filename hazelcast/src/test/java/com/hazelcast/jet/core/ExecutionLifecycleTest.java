@@ -60,6 +60,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
@@ -90,9 +91,19 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
+    static class NonSerializableException extends RuntimeException {
+
+        private Optional<Boolean> thing = Optional.of(true);
+
+        public NonSerializableException(String message) {
+            super(message);
+        }
+    }
+
     private static final int MEMBER_COUNT = 2;
 
     private static final Throwable MOCK_ERROR = new AssertionError("mock error");
+    private static final Throwable MOCK_ERROR_NON_SERIALIZABLE = new NonSerializableException("mock error");
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
@@ -218,6 +229,21 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         assertPsClosedWithError(MOCK_ERROR);
         assertPmsClosedWithError(MOCK_ERROR);
         assertJobFailed(job, MOCK_ERROR);
+    }
+
+    @Test
+    public void when_psInitThrowsNonSerializable_then_jobFails() {
+        // Given
+        DAG dag = new DAG().vertex(new Vertex("test",
+                new MockPMS(() -> new MockPS(MockP::new, MEMBER_COUNT).setInitError(() -> MOCK_ERROR_NON_SERIALIZABLE))));
+
+        // When
+        Job job = runJobExpectFailure(dag, false);
+
+        // Then
+        assertPsClosedWithError(MOCK_ERROR_NON_SERIALIZABLE);
+        assertPmsClosedWithError(MOCK_ERROR_NON_SERIALIZABLE);
+        assertJobFailed(job, MOCK_ERROR_NON_SERIALIZABLE);
     }
 
     @Test
