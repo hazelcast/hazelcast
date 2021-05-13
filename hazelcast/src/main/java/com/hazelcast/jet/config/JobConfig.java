@@ -1172,7 +1172,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      * If set, it has precedence over {@link InstanceConfig}'s one.
      * <p>
      * The default value is {@code -1} - in that case {@link InstanceConfig}'s value
-     * will be used.
+     * is used.
      *
      * @since 5.0
      */
