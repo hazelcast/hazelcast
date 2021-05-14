@@ -32,7 +32,7 @@ class DeletedDelayedEntry<K, V> implements DelayedEntry<K, V> {
     private final K key;
     private final int partitionId;
     private long storeTime;
-    private long sequence;
+    private volatile long sequence;
     private UUID txnId;
 
     DeletedDelayedEntry(K key, long storeTime, int partitionId) {
