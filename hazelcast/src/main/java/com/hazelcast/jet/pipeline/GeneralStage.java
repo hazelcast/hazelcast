@@ -268,6 +268,10 @@ public interface GeneralStage<T> extends Stage {
      * perform it on a single member, single-threaded. Jet also supports
      * {@link GeneralStageWithKey#rollingAggregate keyed rolling aggregation}
      * which it can parallelize by partitioning.
+     * <p>
+     * This operation is subject to memory limits. See {@link
+     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * information.
      *
      * @param aggrOp the aggregate operation to do the aggregation
      * @param <R> result type of the aggregate operation
@@ -982,6 +986,10 @@ public interface GeneralStage<T> extends Stage {
      * StreamStage<User> joined = builder.build((user, itemsByTag) ->
      *         user.setCountry(itemsByTag.get(tCountry)).setCompany(itemsByTag.get(tCompany)));
      * }</pre>
+     * <p>
+     * This operation is subject to memory limits. See {@link
+     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * information.
      *
      * @return the newly attached stage
      */
@@ -1001,10 +1009,6 @@ public interface GeneralStage<T> extends Stage {
      * <b>Note:</b> make sure the extracted key is not-null, it would fail the
      * job otherwise. Also make sure that it implements {@code equals()} and
      * {@code hashCode()}.
-     * <p>
-     * This operation is subject to memory limits. See {@link
-     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
-     * information.
      *
      * @param keyFn function that extracts the grouping key. It must be
      *     stateless and {@linkplain Processor#isCooperative() cooperative}.
