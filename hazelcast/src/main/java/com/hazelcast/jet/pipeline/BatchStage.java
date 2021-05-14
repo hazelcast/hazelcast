@@ -297,10 +297,6 @@ public interface BatchStage<T> extends GeneralStage<T> {
      * // Emits a single item, the number 2:
      * BatchStage<Long> count = stage.aggregate(AggregateOperations.counting());
      * }</pre>
-     * <p>
-     * This operation is subject to memory limits. See {@link
-     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
-     * information.
      *
      * @see AggregateOperations AggregateOperations
      * @param aggrOp the aggregate operation to perform
@@ -336,10 +332,6 @@ public interface BatchStage<T> extends GeneralStage<T> {
      *                 AggregateOperations.counting())
      *         );
      * }</pre>
-     * <p>
-     * This operation is subject to memory limits. See {@link
-     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
-     * information.
      *
      * @param aggrOp the aggregate operation to perform
      * @param <T1> type of items in {@code stage1}
@@ -364,10 +356,6 @@ public interface BatchStage<T> extends GeneralStage<T> {
      *         addToCarts, AggregateOperations.counting()
      * );
      * }</pre>
-     * <p>
-     * This operation is subject to memory limits. See {@link
-     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
-     * information.
      *
      * @param aggrOp0 aggregate operation to perform on this stage
      * @param stage1 the other stage
@@ -414,10 +402,6 @@ public interface BatchStage<T> extends GeneralStage<T> {
      *                 AggregateOperations.counting(),
      *                 AggregateOperations.counting()));
      * }</pre>
-     * <p>
-     * This operation is subject to memory limits. See {@link
-     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
-     * information.
      *
      * @param aggrOp the aggregate operation to perform
      * @param <T1> type of items in {@code stage1}
@@ -446,10 +430,6 @@ public interface BatchStage<T> extends GeneralStage<T> {
      *         payments, AggregateOperations.counting()
      * );
      * }</pre>
-     * <p>
-     * This operation is subject to memory limits. See {@link
-     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
-     * information.
      *
      * @param aggrOp0 aggregate operation to perform on this stage
      * @param stage1 the first additional stage
@@ -508,10 +488,6 @@ public interface BatchStage<T> extends GeneralStage<T> {
      *         ibt.get(tag0), ibt.get(tag1), ibt.get(tag2))
      * );
      *}</pre>
-     * <p>
-     * This operation is subject to memory limits. See {@link
-     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
-     * information.
      */
     @Nonnull
     default <R0> AggregateBuilder<R0> aggregateBuilder(AggregateOperation1<? super T, ?, ? extends R0> aggrOp0) {
@@ -564,10 +540,6 @@ public interface BatchStage<T> extends GeneralStage<T> {
      *         .andCombine(HashSet::addAll)
      *         .andFinish(HashSet::size));
      * }</pre>
-     * <p>
-     * This operation is subject to memory limits. See {@link
-     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
-     * information.
      */
     @Nonnull
     default AggregateBuilder1<T> aggregateBuilder() {

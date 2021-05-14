@@ -212,10 +212,6 @@ public interface GeneralStageWithKey<T, K> {
      * This operation is subject to memory limits. See {@link
      * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
      * information.
-     * <p>
-     * This operation is subject to memory limits. See {@link
-     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
-     * information.
      *
      * @param aggrOp the aggregate operation to perform
      * @param <R> type of the aggregate operation result

@@ -150,10 +150,6 @@ public interface GeneralStage<T> extends Stage {
      * }</pre>
      * This code has the same result as {@link #rollingAggregate
      * latencies.rollingAggregate(summing())}.
-     * <p>
-     * This operation is subject to memory limits. See {@link
-     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
-     * information.
      *
      * @param createFn function that returns the state object. It must be
      *                 stateless and {@linkplain Processor#isCooperative() cooperative}.
@@ -187,10 +183,6 @@ public interface GeneralStage<T> extends Stage {
      *         }
      * );
      * }</pre>
-     * <p>
-     * This operation is subject to memory limits. See {@link
-     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
-     * information.
      *
      * @param createFn function that returns the state object. It must be
      *                 stateless and {@linkplain Processor#isCooperative() cooperative}.
@@ -226,10 +218,6 @@ public interface GeneralStage<T> extends Stage {
      *         }
      * );
      * }</pre>
-     * <p>
-     * This operation is subject to memory limits. See {@link
-     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
-     * information.
      *
      * @param createFn  function that returns the state object. It must be
      *                  stateless and {@linkplain Processor#isCooperative() cooperative}.
@@ -268,10 +256,6 @@ public interface GeneralStage<T> extends Stage {
      * perform it on a single member, single-threaded. Jet also supports
      * {@link GeneralStageWithKey#rollingAggregate keyed rolling aggregation}
      * which it can parallelize by partitioning.
-     * <p>
-     * This operation is subject to memory limits. See {@link
-     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
-     * information.
      *
      * @param aggrOp the aggregate operation to do the aggregation
      * @param <R> result type of the aggregate operation
