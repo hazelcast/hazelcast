@@ -25,6 +25,7 @@ import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
+import com.hazelcast.jet.config.InstanceConfig;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
@@ -150,9 +151,9 @@ public interface GeneralStage<T> extends Stage {
      * This code has the same result as {@link #rollingAggregate
      * latencies.rollingAggregate(summing())}.
      * <p>
-     * This operation is subject to memory limits.
-     * See {@link com.hazelcast.jet.config.InstanceConfig#setMaxProcessorAccumulatedRecords(long)}
-     * for more information.
+     * This operation is subject to memory limits. See {@link
+     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * information.
      *
      * @param createFn function that returns the state object. It must be
      *                 stateless and {@linkplain Processor#isCooperative() cooperative}.
@@ -187,9 +188,9 @@ public interface GeneralStage<T> extends Stage {
      * );
      * }</pre>
      * <p>
-     * This operation is subject to memory limits.
-     * See {@link com.hazelcast.jet.config.InstanceConfig#setMaxProcessorAccumulatedRecords(long)}
-     * for more information.
+     * This operation is subject to memory limits. See {@link
+     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * information.
      *
      * @param createFn function that returns the state object. It must be
      *                 stateless and {@linkplain Processor#isCooperative() cooperative}.
@@ -226,9 +227,9 @@ public interface GeneralStage<T> extends Stage {
      * );
      * }</pre>
      * <p>
-     * This operation is subject to memory limits.
-     * See {@link com.hazelcast.jet.config.InstanceConfig#setMaxProcessorAccumulatedRecords(long)}
-     * for more information.
+     * This operation is subject to memory limits. See {@link
+     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * information.
      *
      * @param createFn  function that returns the state object. It must be
      *                  stateless and {@linkplain Processor#isCooperative() cooperative}.
@@ -777,9 +778,9 @@ public interface GeneralStage<T> extends Stage {
      * )
      * }</pre>
      * <p>
-     * This operation is subject to memory limits.
-     * See {@link com.hazelcast.jet.config.InstanceConfig#setMaxProcessorAccumulatedRecords(long)}
-     * for more information.
+     * This operation is subject to memory limits. See {@link
+     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * information.
      *
      * @param stage1        the stage to hash-join with this one
      * @param joinClause1   specifies how to join the two streams
@@ -824,9 +825,9 @@ public interface GeneralStage<T> extends Stage {
      * that both input items will be not-null. Nulls will be filtered out
      * before reaching {@code #mapToOutputFn}.
      * <p>
-     * This operation is subject to memory limits.
-     * See {@link com.hazelcast.jet.config.InstanceConfig#setMaxProcessorAccumulatedRecords(long)}
-     * for more information.
+     * This operation is subject to memory limits. See {@link
+     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * information.
      *
      * @param stage1        the stage to hash-join with this one
      * @param joinClause1   specifies how to join the two streams
@@ -870,9 +871,9 @@ public interface GeneralStage<T> extends Stage {
      * )
      * }</pre>
      * <p>
-     * This operation is subject to memory limits.
-     * See {@link com.hazelcast.jet.config.InstanceConfig#setMaxProcessorAccumulatedRecords(long)}
-     * for more information.
+     * This operation is subject to memory limits. See {@link
+     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * information.
      *
      * @param stage1        the first stage to join
      * @param joinClause1   specifies how to join with {@code stage1}
@@ -921,9 +922,9 @@ public interface GeneralStage<T> extends Stage {
      * )
      * }</pre>
      * <p>
-     * This operation is subject to memory limits.
-     * See {@link com.hazelcast.jet.config.InstanceConfig#setMaxProcessorAccumulatedRecords(long)}
-     * for more information.
+     * This operation is subject to memory limits. See {@link
+     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * information.
      *
      * <p>
      * This method is similar to {@link #hashJoin2} method, but it guarantees
@@ -1001,9 +1002,9 @@ public interface GeneralStage<T> extends Stage {
      * job otherwise. Also make sure that it implements {@code equals()} and
      * {@code hashCode()}.
      * <p>
-     * This operation is subject to memory limits.
-     * See {@link com.hazelcast.jet.config.InstanceConfig#setMaxProcessorAccumulatedRecords(long)}
-     * for more information.
+     * This operation is subject to memory limits. See {@link
+     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * information.
      *
      * @param keyFn function that extracts the grouping key. It must be
      *     stateless and {@linkplain Processor#isCooperative() cooperative}.

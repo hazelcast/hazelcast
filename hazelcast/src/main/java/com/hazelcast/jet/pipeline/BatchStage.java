@@ -28,6 +28,7 @@ import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.aggregate.AggregateOperation2;
 import com.hazelcast.jet.aggregate.AggregateOperation3;
 import com.hazelcast.jet.aggregate.AggregateOperations;
+import com.hazelcast.jet.config.InstanceConfig;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
@@ -76,9 +77,9 @@ public interface BatchStage<T> extends GeneralStage<T> {
      * items.sort()
      * }</pre>
      * <p>
-     * This operation is subject to memory limits.
-     * See {@link com.hazelcast.jet.config.InstanceConfig#setMaxProcessorAccumulatedRecords(long)}
-     * for more information.
+     * This operation is subject to memory limits. See {@link
+     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * information.
      *
      * @return the newly attached stage
      * @see ComparatorEx#naturalOrder
@@ -98,9 +99,9 @@ public interface BatchStage<T> extends GeneralStage<T> {
      * BatchStage<Trade> sortedTrades = trades.sort(ComparatorEx.comparing(Trade::ticker));
      * }</pre>
      * <p>
-     * This operation is subject to memory limits.
-     * See {@link com.hazelcast.jet.config.InstanceConfig#setMaxProcessorAccumulatedRecords(long)}
-     * for more information.
+     * This operation is subject to memory limits. See {@link
+     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * information.
      *
      * @param comparator the user-provided comparator that will be used for
      *     sorting. It must be stateless and {@linkplain Processor#isCooperative()
@@ -223,9 +224,9 @@ public interface BatchStage<T> extends GeneralStage<T> {
      * to their definition of equality ({@code equals} and {@code hashCode}).
      * There is no guarantee which one of equal items it will emit.
      * <p>
-     * This operation is subject to memory limits.
-     * See {@link com.hazelcast.jet.config.InstanceConfig#setMaxProcessorAccumulatedRecords(long)}
-     * for more information.
+     * This operation is subject to memory limits. See {@link
+     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * information.
      *
      * @return the newly attached stage
      */
