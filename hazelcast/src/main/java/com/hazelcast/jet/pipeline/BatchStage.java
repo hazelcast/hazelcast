@@ -75,6 +75,10 @@ public interface BatchStage<T> extends GeneralStage<T> {
      * <pre>{@code
      * items.sort()
      * }</pre>
+     * <p>
+     * This operation is subject to memory limits.
+     * See {@link com.hazelcast.jet.config.InstanceConfig#setMaxProcessorAccumulatedRecords(long)}
+     * for more information.
      *
      * @return the newly attached stage
      * @see ComparatorEx#naturalOrder
@@ -93,6 +97,10 @@ public interface BatchStage<T> extends GeneralStage<T> {
      * BatchStage<Trade> trades = pipeline.readFrom(tradeSource);
      * BatchStage<Trade> sortedTrades = trades.sort(ComparatorEx.comparing(Trade::ticker));
      * }</pre>
+     * <p>
+     * This operation is subject to memory limits.
+     * See {@link com.hazelcast.jet.config.InstanceConfig#setMaxProcessorAccumulatedRecords(long)}
+     * for more information.
      *
      * @param comparator the user-provided comparator that will be used for
      *     sorting. It must be stateless and {@linkplain Processor#isCooperative()
@@ -214,6 +222,10 @@ public interface BatchStage<T> extends GeneralStage<T> {
      * Attaches a stage that emits just the items that are distinct according
      * to their definition of equality ({@code equals} and {@code hashCode}).
      * There is no guarantee which one of equal items it will emit.
+     * <p>
+     * This operation is subject to memory limits.
+     * See {@link com.hazelcast.jet.config.InstanceConfig#setMaxProcessorAccumulatedRecords(long)}
+     * for more information.
      *
      * @return the newly attached stage
      */
