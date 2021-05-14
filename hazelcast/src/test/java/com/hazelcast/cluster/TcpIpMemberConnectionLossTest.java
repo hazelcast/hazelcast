@@ -38,6 +38,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 import static com.hazelcast.spi.properties.ClusterProperty.CONNECTION_MONITOR_INTERVAL;
+import static com.hazelcast.spi.properties.ClusterProperty.MAX_NO_HEARTBEAT_SECONDS;
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSize;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomName;
@@ -46,6 +47,8 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
 public class TcpIpMemberConnectionLossTest {
+
+    private static final int MEMBER_KICKED_DUE_TO_MISSING_HB = 120;
 
     @Before
     @After
@@ -85,7 +88,8 @@ public class TcpIpMemberConnectionLossTest {
             rejectionProxy.start();
 
             //then it eventually gets dropped from the cluster
-            assertTrueEventually(() -> assertClusterSize(1, h2));
+            assertTrueEventually(() -> assertClusterSize(1, h2),
+                    MEMBER_KICKED_DUE_TO_MISSING_HB / 2);
         } finally {
             rejectionProxy.stop();
         }
@@ -95,6 +99,7 @@ public class TcpIpMemberConnectionLossTest {
     private Config getConfig() {
         Config config = new Config();
         config.setClusterName(randomName());
+        config.setProperty(MAX_NO_HEARTBEAT_SECONDS.getName(), Integer.toString(MEMBER_KICKED_DUE_TO_MISSING_HB));
 
         NetworkConfig networkConfig = config.getNetworkConfig();
         JoinConfig join = networkConfig.getJoin();
