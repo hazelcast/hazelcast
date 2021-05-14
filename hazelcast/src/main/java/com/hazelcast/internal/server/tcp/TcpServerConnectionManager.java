@@ -288,7 +288,7 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
     private int connectionsInProgress() {
         int c = 0;
         for (Plane plane : planes) {
-            c += plane.noOfConnectionsInProgress();
+            c += plane.connectionsInProgressCount();
         }
         return c;
     }
