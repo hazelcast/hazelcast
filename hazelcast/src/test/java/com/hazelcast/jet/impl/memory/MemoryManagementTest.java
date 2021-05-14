@@ -156,6 +156,27 @@ public class MemoryManagementTest extends SimpleTestInClusterSupport {
     }
 
     @Test
+    public void when_maxAccumulatedRecordsCountIsNotExceededWhileDistinct_then_succeeds() {
+        Pipeline pipeline = Pipeline.create();
+        pipeline.readFrom(TestSources.items(list(MAX_PROCESSOR_ACCUMULATED_RECORDS)))
+                .distinct()
+                .writeTo(assertOrdered(list(MAX_PROCESSOR_ACCUMULATED_RECORDS)));
+
+        instance().newJob(pipeline).join();
+    }
+
+    @Test
+    public void when_maxAccumulatedRecordsCountIsExceededWhileDistinct_then_throws() {
+        Pipeline pipeline = Pipeline.create();
+        pipeline.readFrom(TestSources.items(list(MAX_PROCESSOR_ACCUMULATED_RECORDS + 1)))
+                .distinct()
+                .writeTo(noop());
+
+        assertThatThrownBy(() -> instance().newJob(pipeline).join())
+                .hasMessageContaining("Exception thrown to prevent an OutOfMemoryError on this Hazelcast instance");
+    }
+
+    @Test
     public void test_jobConfigurationHasPrecedenceOverInstanceOne() {
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(TestSources.items(list(MAX_PROCESSOR_ACCUMULATED_RECORDS)))

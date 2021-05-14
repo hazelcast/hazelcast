@@ -19,11 +19,13 @@ package com.hazelcast.jet.impl.pipeline.transform;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.impl.memory.AccumulationLimitExceededException;
+import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
-import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
 
 import java.util.HashSet;
+import java.util.Set;
 
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.Partitioner.HASH_CODE;
@@ -33,6 +35,7 @@ import static com.hazelcast.jet.impl.pipeline.transform.AggregateTransform.FIRST
 import static com.hazelcast.jet.pipeline.ServiceFactories.nonSharedService;
 
 public class DistinctTransform<T, K> extends AbstractTransform {
+
     private final FunctionEx<? super T, ? extends K> keyFn;
 
     public DistinctTransform(Transform upstream, FunctionEx<? super T, ? extends K> keyFn) {
@@ -53,7 +56,34 @@ public class DistinctTransform<T, K> extends AbstractTransform {
 
     @SuppressWarnings("unchecked")
     private static <T, K> ProcessorSupplier distinctP(FunctionEx<? super T, ? extends K> keyFn) {
-        return filterUsingServiceP(nonSharedService(pctx -> new HashSet<>()),
-                (seenItems, item) -> seenItems.add(keyFn.apply((T) item)));
+        return filterUsingServiceP(
+                nonSharedService(context -> new DistinctChecker<T, K>(keyFn, context.maxProcessorAccumulatedRecords())),
+                (checker, item) -> checker.isDistinct((T) item)
+        );
+    }
+
+    private static class DistinctChecker<T, K> {
+
+        private final FunctionEx<? super T, ? extends K> keyFn;
+        private final long maxItems;
+        private final Set<K> seenItems;
+
+        private DistinctChecker(FunctionEx<? super T, ? extends K> keyFn, long maxItems) {
+            this.keyFn = keyFn;
+            this.maxItems = maxItems;
+            this.seenItems = new HashSet<>();
+        }
+
+        private boolean isDistinct(T item) {
+            if (seenItems.add(keyFn.apply(item))) {
+                if (seenItems.size() > maxItems) {
+                    throw new AccumulationLimitExceededException();
+                }
+
+                return true;
+            } else {
+                return false;
+            }
+        }
     }
 }

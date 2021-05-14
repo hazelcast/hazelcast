@@ -5340,6 +5340,7 @@
                                     2. number of distinct keys accumulated by aggregation operations
                                     3. number of entries in each hash-join lookup table
                                     4. number of entries in stateful transforms
+                                    5. number of distinct items in distinct operation
                                     Note: the limit does not apply to streaming aggregations.
                                     The default value is Long.MAX_VALUE.
                                 </xs:documentation>
