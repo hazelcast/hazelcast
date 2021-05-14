@@ -44,7 +44,6 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ENDPOINT_MANAGER_ACCEPTED_SOCKET_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ENDPOINT_MANAGER_ACTIVE_COUNT;
@@ -143,22 +142,22 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
 
         void removeConnection(TcpServerConnection connection) {
             removeConnectionInProgress(connection.getRemoteAddress());
-            connectionMap.entrySet().removeIf(entry -> entry.getValue().equals(connection));
-        }
 
-        public Set<Address> getAddresses(TcpServerConnection connection) {
-            return connectionMap.entrySet().stream()
-                    .filter(e -> e.getValue().equals(connection))
-                    .map(Map.Entry::getKey)
-                    .collect(Collectors.toSet());
+            Iterator<TcpServerConnection> connections = connectionMap.values().iterator();
+            while (connections.hasNext()) { // not using removeIf due to https://bugs.java.com/bugdatabase/view_bug.do?bug_id=8078645
+                TcpServerConnection c = connections.next();
+                if (c.equals(connection)) {
+                    connections.remove();
+                }
+            }
         }
 
         public boolean removeConnectionsWithId(int id) {
             boolean found = false;
             Iterator<TcpServerConnection> connections = connectionMap.values().iterator();
-            while (connections.hasNext()) {
-                TcpServerConnection cxn = connections.next();
-                if (cxn.getConnectionId() == id) {
+            while (connections.hasNext()) { // not using removeIf due to https://bugs.java.com/bugdatabase/view_bug.do?bug_id=8078645
+                TcpServerConnection c = connections.next();
+                if (c.getConnectionId() == id) {
                     connections.remove();
                     found = true;
                 }
@@ -198,7 +197,7 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
             connectionsInProgress.clear();
         }
 
-        public int noOfConnectionsInProgress() {
+        public int connectionsInProgressCount() {
             return connectionsInProgress.size();
         }
     }
@@ -274,7 +273,6 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
                     if (p.removeConnectionInProgress(remoteAddress)) {
                         plane = p;
                     }
-                    // not using removeIf due to https://bugs.java.com/bugdatabase/view_bug.do?bug_id=8078645
                     if (p.removeConnectionsWithId(connection.getConnectionId())) {
                         plane = p;
                         removed = true;

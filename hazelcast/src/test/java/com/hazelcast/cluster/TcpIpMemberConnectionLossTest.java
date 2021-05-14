@@ -50,7 +50,7 @@ public class TcpIpMemberConnectionLossTest {
     @Before
     @After
     public void killAllHazelcastInstances() throws IOException {
-        HazelcastInstanceFactory.shutdownAll();
+        HazelcastInstanceFactory.terminateAll();
     }
 
     @Test
@@ -62,7 +62,7 @@ public class TcpIpMemberConnectionLossTest {
         assertClusterSize(2, h1, h2);
 
         //when a member disappears and the other one can't connect to it
-        h1.shutdown();
+        h1.getLifecycleService().terminate();
         //then it eventually gets dropped from the cluster
         assertTrueEventually(() -> assertClusterSize(1, h2));
     }
@@ -79,7 +79,7 @@ public class TcpIpMemberConnectionLossTest {
         RejectionProxy rejectionProxy = new RejectionProxy(address.getHostName(), address.getPort());
         try {
             //when a member disappears
-            h1.shutdown();
+            h1.getLifecycleService().terminate();
             //and connections to it don't succeed (they can be established, but immediately drop)
             //(for example a TCP proxy might do this)
             rejectionProxy.start();
@@ -120,7 +120,7 @@ public class TcpIpMemberConnectionLossTest {
         void start() {
             running = true;
             thread = new Thread(() -> {
-                System.err.println("Starting rejection proxy on port " + port);
+                System.out.println("Starting rejection proxy on port " + port);
                 try {
                     try (ServerSocket server = new ServerSocket(port)) {
                         while (running) {
@@ -132,7 +132,7 @@ public class TcpIpMemberConnectionLossTest {
                 } catch (Exception e) {
                     //ignore
                 } finally {
-                    System.err.println("Rejection proxy terminated");
+                    System.out.println("Rejection proxy terminated");
                 }
             });
             thread.setDaemon(true);
