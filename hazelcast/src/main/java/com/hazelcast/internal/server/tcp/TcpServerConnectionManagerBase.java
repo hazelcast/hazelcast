@@ -143,8 +143,9 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
         void removeConnection(TcpServerConnection connection) {
             removeConnectionInProgress(connection.getRemoteAddress());
 
+            // not using removeIf due to https://bugs.java.com/bugdatabase/view_bug.do?bug_id=8078645
             Iterator<TcpServerConnection> connections = connectionMap.values().iterator();
-            while (connections.hasNext()) { // not using removeIf due to https://bugs.java.com/bugdatabase/view_bug.do?bug_id=8078645
+            while (connections.hasNext()) {
                 TcpServerConnection c = connections.next();
                 if (c.equals(connection)) {
                     connections.remove();
@@ -153,9 +154,10 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
         }
 
         public boolean removeConnectionsWithId(int id) {
+            // not using removeIf due to https://bugs.java.com/bugdatabase/view_bug.do?bug_id=8078645
             boolean found = false;
             Iterator<TcpServerConnection> connections = connectionMap.values().iterator();
-            while (connections.hasNext()) { // not using removeIf due to https://bugs.java.com/bugdatabase/view_bug.do?bug_id=8078645
+            while (connections.hasNext()) {
                 TcpServerConnection c = connections.next();
                 if (c.getConnectionId() == id) {
                     connections.remove();
