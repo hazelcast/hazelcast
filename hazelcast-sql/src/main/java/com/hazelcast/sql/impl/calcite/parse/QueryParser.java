@@ -70,14 +70,10 @@ public class QueryParser {
 
     public QueryParseResult parse(String sql) {
         try {
-            try {
+            if (jetSqlBackend != null) {
+                return parse(sql, jetSqlBackend);
+            } else {
                 return parse(sql, sqlBackend);
-            } catch (Exception e) {
-                if (jetSqlBackend != null) {
-                    return parse(sql, jetSqlBackend);
-                } else {
-                    throw e;
-                }
             }
         } catch (Exception e) {
             String message;
