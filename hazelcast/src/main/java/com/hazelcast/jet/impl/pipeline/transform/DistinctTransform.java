@@ -62,7 +62,7 @@ public class DistinctTransform<T, K> extends AbstractTransform {
         );
     }
 
-    private static class DistinctChecker<T, K> {
+    private static final class DistinctChecker<T, K> {
 
         private final FunctionEx<? super T, ? extends K> keyFn;
         private final long maxItems;
