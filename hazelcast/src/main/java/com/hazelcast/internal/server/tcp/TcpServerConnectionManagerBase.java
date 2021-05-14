@@ -255,31 +255,33 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
             }
 
             Address remoteAddress = connection.getRemoteAddress();
+            if (remoteAddress == null) {
+                return;
+            }
+
             Plane plane = null;
-            if (remoteAddress != null) {
-                int planeIndex = connection.getPlaneIndex();
-                if (planeIndex > -1) {
-                    plane = planes[connection.getPlaneIndex()];
-                    plane.removeConnection(connection);
+            int planeIndex = connection.getPlaneIndex();
+            if (planeIndex > -1) {
+                plane = planes[connection.getPlaneIndex()];
+                plane.removeConnection(connection);
+                fireConnectionRemovedEvent(connection, remoteAddress);
+            } else {
+                // it might be the case that the connection was closed quickly enough
+                // that the planeIndex was not set. Instead look for the connection
+                // by remoteAddress and connectionId over all planes and remove it wherever found.
+                boolean removed = false;
+                for (Plane p : planes) {
+                    if (p.removeConnectionInProgress(remoteAddress)) {
+                        plane = p;
+                    }
+                    // not using removeIf due to https://bugs.java.com/bugdatabase/view_bug.do?bug_id=8078645
+                    if (p.removeConnectionsWithId(connection.getConnectionId())) {
+                        plane = p;
+                        removed = true;
+                    }
+                }
+                if (removed) {
                     fireConnectionRemovedEvent(connection, remoteAddress);
-                } else {
-                    // it might be the case that the connection was closed quickly enough
-                    // that the planeIndex was not set. Instead look for the connection
-                    // by remoteAddress and connectionId over all planes and remove it wherever found.
-                    boolean removed = false;
-                    for (Plane p : planes) {
-                        if (p.removeConnectionInProgress(remoteAddress)) {
-                            plane = p;
-                        }
-                        // not using removeIf due to https://bugs.java.com/bugdatabase/view_bug.do?bug_id=8078645
-                        if (p.removeConnectionsWithId(connection.getConnectionId())) {
-                            plane = p;
-                            removed = true;
-                        }
-                    }
-                    if (removed) {
-                        fireConnectionRemovedEvent(connection, remoteAddress);
-                    }
                 }
             }
 
