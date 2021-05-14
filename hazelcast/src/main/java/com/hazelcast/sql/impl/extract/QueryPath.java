@@ -24,6 +24,7 @@ import com.hazelcast.sql.impl.SqlDataSerializerHook;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.io.Serializable;
 
 import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
 import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
@@ -31,7 +32,7 @@ import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
 /**
  * Represent a path to the attribute within a key-value pair.
  */
-public final class QueryPath implements IdentifiedDataSerializable {
+public final class QueryPath implements IdentifiedDataSerializable, Serializable {
 
     public static final String KEY = KEY_ATTRIBUTE_NAME.value();
     public static final String VALUE = THIS_ATTRIBUTE_NAME.value();

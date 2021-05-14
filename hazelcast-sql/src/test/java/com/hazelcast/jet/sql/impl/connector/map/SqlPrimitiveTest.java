@@ -27,11 +27,19 @@ import org.junit.Test;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.time.*;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.Arrays;
 
 import static com.hazelcast.jet.core.TestUtil.createMap;
-import static com.hazelcast.jet.sql.impl.connector.SqlConnector.*;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -91,16 +99,16 @@ public class SqlPrimitiveTest extends SqlTestSupport {
     @Test
     public void test_select() {
         HazelcastInstance hazelcastInstance = instance().getHazelcastInstance();
-        IMap<Integer, String> map = hazelcastInstance.getMap("map");
+        String name = randomName();
+        IMap<Integer, String> map = hazelcastInstance.getMap(name);
 
         map.put(0, "a");
         map.put(1, "b");
         map.put(2, "c");
 
-        SqlService sqlService = instance().getSql();
-        SqlResult rows = sqlService.execute("SELECT * FROM " + map.getName());
+        SqlResult rows = sqlService.execute("SELECT * FROM " + name);
         System.out.println(rows);
-        assertRowsAnyOrder("SELECT * FROM " + map.getName(),
+        assertRowsAnyOrder("SELECT * FROM " + name,
                 Arrays.asList(new Row(0, "a"), new Row(1, "b"), new Row(2, "c")));
     }
 
@@ -282,8 +290,7 @@ public class SqlPrimitiveTest extends SqlTestSupport {
         instance().getMap(name).put(0, 0);
         sqlService.execute(javaSerializableMapDdl(name, String.class, String.class));
 
-        assertThatThrownBy(() -> sqlService.execute("SELECT __key FROM " + name).iterator().forEachRemaining(row -> {
-        }))
+        assertThatThrownBy(() -> sqlService.execute("SELECT __key FROM " + name).iterator().forEachRemaining(row -> { }))
                 .hasMessageContaining("Failed to extract map entry key because of type mismatch " +
                         "[expectedClass=java.lang.String, actualClass=java.lang.Integer]");
     }

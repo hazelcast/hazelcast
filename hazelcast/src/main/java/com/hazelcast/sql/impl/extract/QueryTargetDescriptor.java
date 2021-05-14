@@ -20,6 +20,8 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.impl.getters.Extractors;
 
+import java.io.Serializable;
+
 /**
  * Descriptor of the target object (key or value from map record). Used to generate the proper attribute extraction strategy
  * and to impose additional restrictions on data that is used for compilation. For example, expected class name or expected
@@ -28,7 +30,7 @@ import com.hazelcast.query.impl.getters.Extractors;
  * The principal difference to {@link QueryTarget} is that descriptor is transferred over a wire, while the target object
  * may contain non-serializable internals.
  */
-public interface QueryTargetDescriptor extends DataSerializable {
+public interface QueryTargetDescriptor extends DataSerializable, Serializable {
     /**
      * Create the target that will be used for extraction.
      *
