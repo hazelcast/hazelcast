@@ -16,13 +16,15 @@
 
 package com.hazelcast.jet.sql.impl.connector.map;
 
-import com.hazelcast.function.SupplierEx;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
@@ -39,9 +41,15 @@ import com.hazelcast.sql.impl.row.HeapRow;
 import javax.annotation.Nonnull;
 import java.util.Iterator;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
 
+import static com.hazelcast.jet.impl.util.Util.distributeObjects;
 import static com.hazelcast.jet.sql.impl.ExpressionUtil.evaluate;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.mapping;
+import static java.util.stream.Collectors.toList;
 
 /**
  * This is SQL internal processor to provide a backend for SQL operations (e.g., SELECT * FROM map).
@@ -55,27 +63,28 @@ import static com.hazelcast.jet.sql.impl.ExpressionUtil.evaluate;
  */
 public class OnHeapMapScanP extends AbstractProcessor {
     protected IMapTraverser traverser;
+    private final HazelcastInstance hazelcastInstance;
     private final JetMapScanMetadata mapScanMetadata;
+    private final List<Integer> partitions;
 
-    public OnHeapMapScanP(@Nonnull JetMapScanMetadata mapScanMetadata) {
+    public OnHeapMapScanP(
+            @Nonnull HazelcastInstance hazelcastInstance,
+            @Nonnull JetMapScanMetadata mapScanMetadata,
+            @Nonnull List<Integer> partitions
+    ) {
+        this.hazelcastInstance = hazelcastInstance;
         this.mapScanMetadata = mapScanMetadata;
+        this.partitions = partitions;
     }
 
     @Override
     protected void init(@Nonnull Context context) throws Exception {
-        NodeEngine nodeEngine = ((HazelcastInstanceImpl) context.jetInstance().getHazelcastInstance()).node.nodeEngine;
-        List<Integer> partitions = context.jetInstance()
-                .getHazelcastInstance()
-                .getPartitionService()
-                .getPartitions()
-                .stream()
-                .map(Partition::getPartitionId)
-                .collect(Collectors.toList());
+        NodeEngine nodeEngine = ((HazelcastInstanceImpl) hazelcastInstance).node.nodeEngine;
 
         traverser = new IMapTraverser(
                 nodeEngine,
                 mapScanMetadata,
-                partitions.iterator()
+                this.partitions.iterator()
         );
         traverser.init(SimpleExpressionEvalContext.from(context));
     }
@@ -173,12 +182,61 @@ public class OnHeapMapScanP extends AbstractProcessor {
         }
     }
 
-    public static ProcessorMetaSupplier onHeapMapScanP(@Nonnull JetMapScanMetadata mapScanPlanNode) {
-        return ProcessorMetaSupplier.of(processorSupplier(mapScanPlanNode));
+    public static ProcessorMetaSupplier onHeapMapScanP(@Nonnull JetMapScanMetadata mapScanMetadata) {
+        return new OnHeapMapScanMetaSupplier(mapScanMetadata);
     }
 
-    @Nonnull
-    public static SupplierEx<Processor> processorSupplier(@Nonnull JetMapScanMetadata mapScanPlanNode) {
-        return () -> new OnHeapMapScanP(mapScanPlanNode);
+    public static class OnHeapMapScanMetaSupplier implements ProcessorMetaSupplier {
+        private final JetMapScanMetadata mapScanMetadata;
+        private transient Map<Address, List<Integer>> addrToPartitions;
+
+        public OnHeapMapScanMetaSupplier(@Nonnull JetMapScanMetadata mapScanMetadata) {
+            this.mapScanMetadata = mapScanMetadata;
+        }
+
+        @Override
+        public void init(@Nonnull Context context) throws Exception {
+            Set<Partition> partitions = context.jetInstance()
+                    .getHazelcastInstance()
+                    .getPartitionService()
+                    .getPartitions();
+
+            addrToPartitions = partitions.stream()
+                    .collect(groupingBy(
+                            partition -> partition.getOwner().getAddress(),
+                            mapping(Partition::getPartitionId, toList()))
+                    );
+        }
+
+        @Nonnull
+        @Override
+        public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
+            return address -> new OnHeapMapScanSupplier(mapScanMetadata, addrToPartitions.get(address));
+        }
+    }
+
+    public static class OnHeapMapScanSupplier implements ProcessorSupplier {
+        private final JetMapScanMetadata mapScanMetadata;
+        private final List<Integer> memberPartitions;
+        private HazelcastInstance hazelcastInstance;
+
+        public OnHeapMapScanSupplier(JetMapScanMetadata mapScanMetadata, List<Integer> memberPartitions) {
+            this.mapScanMetadata = mapScanMetadata;
+            this.memberPartitions = memberPartitions;
+        }
+
+        @Override
+        public void init(@Nonnull Context context) throws Exception {
+            this.hazelcastInstance = context.jetInstance().getHazelcastInstance();
+        }
+
+        @Nonnull
+        @Override
+        public List<Processor> get(int count) {
+            return distributeObjects(count, memberPartitions).values().stream()
+                    .map(partitions ->
+                            new OnHeapMapScanP(hazelcastInstance, mapScanMetadata, partitions))
+                    .collect(toList());
+        }
     }
 }
