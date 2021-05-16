@@ -30,6 +30,7 @@ import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.server.tcp.TcpServerContext;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.internal.util.ByteArrayProcessor;
 
 import java.io.EOFException;
@@ -118,19 +119,29 @@ public final class MulticastService implements Runnable {
             multicastSocket.bind(new InetSocketAddress(multicastConfig.getMulticastPort()));
             multicastSocket.setTimeToLive(multicastConfig.getMulticastTimeToLive());
             try {
-                // warning: before modifying lines below, take a look at those links:
-                // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4417033
-                // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6402758
+                boolean loopbackBind = bindAddress.getInetAddress().isLoopbackAddress();
+                // setting loopbackmode is just a hint - and the argument means "disable"!
+                // to check the real value value we call getLoopbackMode() (and again - return value means "disabled")
                 multicastSocket.setLoopbackMode(!multicastConfig.isLoopbackModeEnabled());
-                if (!bindAddress.getInetAddress().isLoopbackAddress() || !multicastConfig.isLoopbackModeEnabled()) {
-                    multicastSocket.setInterface(bindAddress.getInetAddress());
-                } else if (multicastConfig.isLoopbackModeEnabled()) {
-                    // If LoopBack is not enabled but its the selected interface from the given
-                    // bind address, then we rely on Default Network Interface.
+                // If LoopBack mode is not enabled (i.e. getLoopbackMode return true) and bind address is a loopback one,
+                // then print a warning
+                if (loopbackBind && multicastSocket.getLoopbackMode()) {
                     logger.warning("Hazelcast is bound to " + bindAddress.getHost() + " and loop-back mode is "
                             + "disabled. This could cause multicast auto-discovery issues "
                             + "and render it unable to work. Check your network connectivity, try to enable the "
                             + "loopback mode and/or force -Djava.net.preferIPv4Stack=true on your JVM.");
+                }
+
+                // warning: before modifying lines below, take a look at these links:
+                // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4417033
+                // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6402758
+                boolean callSetInterface = loopbackBind || !multicastConfig.isLoopbackModeEnabled();
+                String propSetInterface = node.getProperties().getString(ClusterProperty.MULTICAST_SOCKET_SET_INTERFACE);
+                if (propSetInterface != null) {
+                    callSetInterface = Boolean.parseBoolean(propSetInterface);
+                }
+                if (callSetInterface) {
+                    multicastSocket.setInterface(bindAddress.getInetAddress());
                 }
             } catch (Exception e) {
                 logger.warning(e);
