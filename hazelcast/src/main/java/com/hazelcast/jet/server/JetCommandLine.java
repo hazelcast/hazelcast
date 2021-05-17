@@ -40,7 +40,6 @@ import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.core.JobStatus;
-import com.hazelcast.jet.impl.JetBootstrap;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.jet.impl.JobSummary;
 import com.hazelcast.jet.server.JetCommandLine.JetVersionProvider;
@@ -115,8 +114,8 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 @SuppressWarnings({"unused", "MismatchedQueryAndUpdateOfCollection"})
 @Command(
-        name = "jet",
-        description = "Utility to perform operations on a Hazelcast Jet cluster.%n" +
+        name = "hazelcast",
+        description = "Utility to perform operations on a Hazelcast cluster.%n" +
                 "By default it uses the file config/hazelcast-client.yaml to configure the client connection." +
                 "%n%n" +
                 "Global options are:%n",
@@ -200,7 +199,7 @@ public class JetCommandLine implements Runnable {
                             .style(AttributedStyle.BOLD.foreground(SECONDARY_COLOR)).append("%M%P > ").toAnsi())
                     .variable(LineReader.INDENTATION, 2)
                     .option(LineReader.Option.DISABLE_EVENT_EXPANSION, true)
-                    .appName("hazelcast-jet-sql")
+                    .appName("hazelcast-sql")
                     .build();
 
             AtomicReference<SqlResult> activeSqlResult = new AtomicReference<>();
@@ -649,7 +648,7 @@ public class JetCommandLine implements Runnable {
     }
 
     private void configureLogging() {
-        JetBootstrap.configureLogging();
+        HazelcastBootstrap.configureLogging();
         Level logLevel = Level.WARNING;
         if (verbosity.isVerbose) {
             println("Verbose mode is on, setting logging level to INFO");
@@ -769,9 +768,8 @@ public class JetCommandLine implements Runnable {
     ) {
         CommandLine cmd = new CommandLine(new JetCommandLine(jetClientFn, out, err));
         cmd.getSubcommands().get("submit").setStopAtPositional(true);
-
-        String jetVersion = getBuildInfo().getJetBuildInfo().getVersion();
-        cmd.getCommandSpec().usageMessage().header("Hazelcast Jet " + jetVersion);
+        String version = getBuildInfo().getVersion();
+        cmd.getCommandSpec().usageMessage().header("Hazelcast Platform " + version);
 
         if (args.length == 0) {
             cmd.usage(out);
@@ -1060,7 +1058,7 @@ public class JetCommandLine implements Runnable {
         }
 
         public static class Targets {
-            private String clusterName = "jet";
+            private String clusterName = "dev";
             private List<String> addresses = Collections.emptyList();
         }
 
