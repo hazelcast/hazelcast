@@ -55,7 +55,7 @@ public class AddBackupListenerMessageTask
 
     @Override
     protected void addDestroyAction(UUID registrationId) {
-        endpoint.addDestroyAction(registrationId, () -> clientEngine.deregisterBackupListener(registrationId));
+        endpoint.addDestroyAction(registrationId, () -> clientEngine.deregisterBackupListener(registrationId, this));
     }
 
     @Override

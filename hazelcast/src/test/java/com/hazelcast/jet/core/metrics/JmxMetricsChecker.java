@@ -52,7 +52,7 @@ class JmxMetricsChecker {
         Set<ObjectName> publishedDescriptors = platformMBeanServer
                 .queryMBeans(new ObjectName(PREFIX + ":*"), null)
                 .stream().map(ObjectInstance::getObjectName).collect(toSet());
-        assertTrue("name: " + metricName + " not published", publishedDescriptors.contains(descriptor));
+        assertTrue("metric '" + metricName + "' not published", publishedDescriptors.contains(descriptor));
         return (long) platformMBeanServer.getAttribute(descriptor, metricName);
     }
 

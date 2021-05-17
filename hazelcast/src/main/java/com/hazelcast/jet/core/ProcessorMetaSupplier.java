@@ -480,5 +480,11 @@ public interface ProcessorMetaSupplier extends Serializable {
          * Returns the guarantee for current job.
          */
         ProcessingGuarantee processingGuarantee();
+
+        /**
+         * Returns the maximum number of records that can be accumulated by any
+         * single {@link Processor}.
+         */
+        long maxProcessorAccumulatedRecords();
     }
 }

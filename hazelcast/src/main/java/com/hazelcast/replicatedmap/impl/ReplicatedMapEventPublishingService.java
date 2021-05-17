@@ -33,6 +33,7 @@ import com.hazelcast.internal.monitor.impl.LocalReplicatedMapStatsImpl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.impl.QueryEntry;
+import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.replicatedmap.impl.record.AbstractReplicatedRecordStore;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedQueryEventFilter;
@@ -68,12 +69,16 @@ public class ReplicatedMapEventPublishingService
     private final NodeEngine nodeEngine;
     private final Config config;
     private final EventService eventService;
+    private final InternalSerializationService serializationService;
+    private final Extractors extractors;
 
     public ReplicatedMapEventPublishingService(ReplicatedMapService replicatedMapService) {
         this.replicatedMapService = replicatedMapService;
         this.nodeEngine = replicatedMapService.getNodeEngine();
         this.config = nodeEngine.getConfig();
         this.eventService = nodeEngine.getEventService();
+        this.serializationService = (InternalSerializationService) nodeEngine.getSerializationService();
+        this.extractors = Extractors.newBuilder(this.serializationService).build();
     }
 
     @Override
@@ -213,9 +218,7 @@ public class ReplicatedMapEventPublishingService
             } else {
                 testValue = value;
             }
-            InternalSerializationService serializationService
-                    = (InternalSerializationService) nodeEngine.getSerializationService();
-            queryEntry = new QueryEntry(serializationService, key, testValue, null);
+            queryEntry = new QueryEntry(serializationService, key, testValue, extractors);
         }
         return filter == null || filter.eval(queryEntry != null ? queryEntry : key);
     }
