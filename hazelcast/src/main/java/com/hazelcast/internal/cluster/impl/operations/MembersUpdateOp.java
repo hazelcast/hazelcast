@@ -67,7 +67,7 @@ public class MembersUpdateOp extends AbstractClusterOperation {
     @Override
     public void run() throws Exception {
         ClusterServiceImpl clusterService = getService();
-        List<Address> callerAddresses = getAllAddressesOfCaller(getConnectionEndpointOrThisAddress());
+        List<Address> callerAddresses = getAllKnownAliases(getConnectionEndpointOrThisAddress());
         UUID callerUuid = getCallerUuid();
         if (clusterService.updateMembers(getMembersView(), callerAddresses, callerUuid, targetUuid)) {
             processPartitionState();

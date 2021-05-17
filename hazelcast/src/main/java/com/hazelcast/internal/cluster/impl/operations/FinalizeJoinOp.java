@@ -81,7 +81,7 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
     @Override
     public void run() throws Exception {
         ClusterServiceImpl clusterService = getService();
-        List<Address> callerAddresses = getAllAddressesOfCaller(getConnectionEndpointOrThisAddress());
+        List<Address> callerAddresses = getAllKnownAliases(getConnectionEndpointOrThisAddress());
         UUID callerUuid = getCallerUuid();
         UUID targetUuid = getTargetUuid();
 

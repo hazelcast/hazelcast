@@ -40,7 +40,7 @@ public class JoinMastershipClaimOp extends AbstractJoinOperation {
         final ILogger logger = node.getLogger(getClass().getName());
         if (joiner instanceof TcpIpJoiner) {
             TcpIpJoiner tcpIpJoiner = (TcpIpJoiner) joiner;
-            List<Address> endpointAliases = getAllAddressesOfCaller(getCallerAddress());
+            List<Address> endpointAliases = getAllKnownAliases(getCallerAddress());
             final Address masterAddress = clusterService.getMasterAddress();
             approvedAsMaster = !tcpIpJoiner.isClaimingMastership() && !clusterService.isMaster()
                     && (masterAddress == null || endpointAliases.stream().anyMatch(masterAddress::equals));

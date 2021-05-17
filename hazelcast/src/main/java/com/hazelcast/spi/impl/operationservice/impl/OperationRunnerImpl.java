@@ -531,7 +531,7 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
         }
         MemberImpl callerMember = node.clusterService.getMember(caller);
         if (callerMember == null) {
-            Iterator<Address> aliasIterator = op.getAllAddressesOfCaller(caller).iterator();
+            Iterator<Address> aliasIterator = op.getAllKnownAliases(caller).iterator();
             while (aliasIterator.hasNext() && callerMember == null) {
                 Address alias = aliasIterator.next();
                 if (alias.equals(caller)) {

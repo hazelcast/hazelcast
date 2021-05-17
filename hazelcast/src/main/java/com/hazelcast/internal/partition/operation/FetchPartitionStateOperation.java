@@ -35,6 +35,7 @@ import com.hazelcast.spi.impl.operationservice.Offload;
 import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -48,19 +49,20 @@ public final class FetchPartitionStateOperation extends AbstractPartitionOperati
 
     @Override
     public void beforeRun() {
-        Address caller = getCallerAddress();
+        List<Address> callerAddresses = getAllKnownAliases(getCallerAddress());
         Address masterAddress = getNodeEngine().getMasterAddress();
         ILogger logger = getLogger();
-        if (!caller.equals(masterAddress)) {
-            String msg = caller + " requested our partition table but it's not our known master. " + "Master: " + masterAddress;
+        if (callerAddresses.stream().noneMatch(a -> a.equals(masterAddress))) {
+            String msg = callerAddresses.get(0) + " requested our partition table but it's not our known master. " + "Master:" +
+                            " " + masterAddress;
             logger.warning(msg);
             // Master address should be already updated after mastership claim.
             throw new IllegalStateException(msg);
         }
 
         InternalPartitionServiceImpl service = getService();
-        if (!service.isMemberMaster(caller)) {
-            String msg = caller + " requested our partition table but it's not the master known by migration system.";
+        if (!service.isMemberMaster(callerAddresses)) {
+            String msg = callerAddresses.get(0) + " requested our partition table but it's not the master known by migration system.";
             logger.warning(msg);
             // PartitionService has not received result of mastership claim process yet.
             // It will learn eventually.

@@ -43,7 +43,7 @@ public class ShutdownRequestOperation extends AbstractPartitionOperation impleme
             Member member = clusterService.getMember(caller);
 
             if (member == null) {
-                Iterator<Address> aliasIterator = getAllAddressesOfCaller(caller).iterator();
+                Iterator<Address> aliasIterator = getAllKnownAliases(caller).iterator();
                 while (aliasIterator.hasNext() && member == null) {
                     Address alias = aliasIterator.next();
                     if (alias.equals(caller)) {

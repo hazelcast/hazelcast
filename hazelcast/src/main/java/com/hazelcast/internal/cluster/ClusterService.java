@@ -42,6 +42,16 @@ public interface ClusterService extends CoreService, Cluster {
     MemberImpl getMember(Collection<Address> addressAliases);
 
     /**
+     * Gets the first member matching the given UUID and any of the provided addresses.
+     *
+     * @param addressAliases a collection of known addresses that could belong to a certain member
+     * @param uuid UUID of the member
+     * @return the found member, or {@code null} if not found
+     * (if the UUID and/or address is {@code null}, {@code null} is returned)
+     */
+    MemberImpl getMember(Collection<Address> addressAliases, UUID uuid);
+
+    /**
      * Gets the member for the given address.
      *
      * @param address the address of the member to lookup

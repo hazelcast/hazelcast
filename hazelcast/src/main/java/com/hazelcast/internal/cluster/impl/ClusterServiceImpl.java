@@ -246,32 +246,33 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         operationService.send(op, triggerTo);
     }
 
-    public MembersView handleMastershipClaim(@Nonnull Address candidateAddress,
+    public MembersView handleMastershipClaim(@Nonnull List<Address> candidateAddresses,
                                              @Nonnull UUID candidateUuid) {
-        checkNotNull(candidateAddress);
+        checkNotNull(candidateAddresses);
         checkNotNull(candidateUuid);
-        checkFalse(getThisAddress().equals(candidateAddress), "cannot accept my own mastership claim!");
+        checkFalse(candidateAddresses.stream().anyMatch(a -> getThisAddress().equals(a)),
+                "cannot accept my own mastership claim!");
 
         lock.lock();
         try {
-            checkTrue(isJoined(), candidateAddress + " claims mastership but this node is not joined!");
+            checkTrue(isJoined(), candidateAddresses.get(0) + " claims mastership but this node is not joined!");
             checkFalse(isMaster(),
-                    candidateAddress + " claims mastership but this node is master!");
+                    candidateAddresses.get(0) + " claims mastership but this node is master!");
 
-            MemberImpl masterCandidate = membershipManager.getMember(candidateAddress, candidateUuid);
+            MemberImpl masterCandidate = getMember(candidateAddresses, candidateUuid);
             checkTrue(masterCandidate != null,
-                    candidateAddress + " claims mastership but it is not a member!");
+                    candidateAddresses.get(0) + " claims mastership but it is not a member!");
 
             MemberMap memberMap = membershipManager.getMemberMap();
             if (!shouldAcceptMastership(memberMap, masterCandidate)) {
-                String message = "Cannot accept mastership claim of " + candidateAddress
+                String message = "Cannot accept mastership claim of " + candidateAddresses.get(0)
                         + " at the moment. There are more suitable master candidates in the member list.";
                 logger.fine(message);
                 throw new RetryableHazelcastException(message);
             }
 
             if (!membershipManager.clearMemberSuspicion(masterCandidate, "Mastership claim")) {
-                throw new IllegalStateException("Cannot accept mastership claim of " + candidateAddress + ". "
+                throw new IllegalStateException("Cannot accept mastership claim of " + candidateAddresses.get(0) + ". "
                         + getMasterAddress() + " is already master.");
             }
 
@@ -279,7 +280,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
             MembersView response = memberMap.toTailMembersView(masterCandidate, true);
 
-            logger.warning("Mastership of " + candidateAddress + " is accepted. Response: " + response);
+            logger.warning("Mastership of " + candidateAddresses.get(0) + " is accepted. Response: " + response);
 
             return response;
         } finally {
@@ -565,6 +566,17 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     public MemberImpl getMember(Collection<Address> addressAliases) {
         for (Address address : addressAliases) {
             MemberImpl member = getMember(address);
+            if (member != null) {
+                return member;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public MemberImpl getMember(Collection<Address> addressAliases, UUID uuid) {
+        for (Address address : addressAliases) {
+            MemberImpl member = getMember(address, uuid);
             if (member != null) {
                 return member;
             }

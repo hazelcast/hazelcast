@@ -427,7 +427,7 @@ public abstract class Operation implements DataSerializable, Tenantable {
         return this;
     }
 
-    public final List<Address> getAllAddressesOfCaller(Address caller) {
+    public final List<Address> getAllKnownAliases(Address caller) {
         List<Address> addresses = new ArrayList<>();
         addresses.add(caller);
         if (connection instanceof TcpServerConnection) {

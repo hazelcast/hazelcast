@@ -35,7 +35,7 @@ public class ShutdownResponseOperation extends AbstractPartitionOperation implem
     public void run() {
         InternalPartitionServiceImpl partitionService = getService();
         ILogger logger = getLogger();
-        List<Address> callerAddresses = getAllAddressesOfCaller(getCallerAddress());
+        List<Address> callerAddresses = getAllKnownAliases(getCallerAddress());
 
         NodeEngine nodeEngine = getNodeEngine();
         if (nodeEngine.isRunning()) {
