@@ -57,7 +57,7 @@ public class QueryParser {
             SqlConformance conformance,
             List<Object> arguments,
             @Nonnull SqlBackend sqlBackend,
-            @Nullable SqlBackend jetSqlBackend
+            @Nonnull SqlBackend jetSqlBackend
     ) {
         this.typeFactory = typeFactory;
         this.catalogReader = catalogReader;
@@ -71,13 +71,13 @@ public class QueryParser {
     public QueryParseResult parse(String sql) {
         try {
             try {
-                return parse(sql, sqlBackend);
+                return parse(sql, jetSqlBackend);
             } catch (Exception e) {
-                if (jetSqlBackend != null) {
-                    return parse(sql, jetSqlBackend);
-                } else {
-                    throw e;
-                }
+//                if (jetSqlBackend != null) {
+                    return parse(sql, sqlBackend);
+//                } else {
+//                    throw e;
+//                }
             }
         } catch (Exception e) {
             String message;

@@ -34,6 +34,7 @@ import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
+import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
@@ -113,6 +114,23 @@ public class CreateDagVisitor {
         SqlConnector jetSqlConnector = getJetSqlConnector(table);
 
         return jetSqlConnector.fullScanReader(dag, table, rel.filter(parameterMetadata), rel.projection(parameterMetadata));
+    }
+
+    public Vertex onIndexScan(IMapIndexScanPhysicalRel rel) {
+        Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
+        collectObjectKeys(table);
+        SqlConnector sqlConnector = getJetSqlConnector(table);
+        // TODO: discuss it.
+        assert sqlConnector instanceof IMapSqlConnector;
+        IMapSqlConnector mapSqlConnector = (IMapSqlConnector) sqlConnector;
+
+        return mapSqlConnector.indexScanReader(
+                dag,
+                table,
+                rel,
+                rel.filter(parameterMetadata),
+                rel.projection(parameterMetadata)
+        );
     }
 
     public Vertex onFilter(FilterPhysicalRel rel) {
