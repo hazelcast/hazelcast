@@ -89,7 +89,7 @@ public class DetermineLocalParallelismTest extends SimpleTestInClusterSupport {
         ExecutionPlanBuilder.createExecutionPlans(
                 nodeEngine,
                 ((ClusterServiceImpl) nodeEngine.getClusterService()).getMembershipManager().getMembersView(),
-                dag, 1, 1, new JobConfig(), NO_SNAPSHOT);
+                dag, 1, 1, new JobConfig(), NO_SNAPSHOT, false);
     }
 
     private static class ValidatingMetaSupplier implements ProcessorMetaSupplier {

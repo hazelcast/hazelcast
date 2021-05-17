@@ -170,12 +170,10 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
         return p;
     }
 
-    private Pipeline streamingPipeline() {
-        Pipeline p = Pipeline.create();
-        p.readFrom(TestSources.itemStream(3))
-                .withoutTimestamps()
-                .writeTo(Sinks.logger());
-        return p;
+    private DAG streamingPipeline() {
+        DAG dag = new DAG();
+        dag.newVertex("v", () -> new MockP().streaming());
+        return dag;
     }
 
     private void assertJobStats(int submitted, int executionsStarted, int executionsTerminated,

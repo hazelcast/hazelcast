@@ -30,6 +30,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.util.ArrayDeque;
+import java.util.Queue;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
@@ -42,6 +44,7 @@ public class ReceiverTaskletTest {
     private ReceiverTasklet t;
     private MockOutboundCollector collector;
     private InternalSerializationService serService;
+    private final Queue<byte[]> queue = new ArrayDeque<>();
 
     @Before
     public void before() {
@@ -49,6 +52,7 @@ public class ReceiverTaskletTest {
         serService = new DefaultSerializationServiceBuilder().build();
         t = new ReceiverTasklet(collector, serService, 3, 100, mock(LoggingService.class),
                 new Address(), 0, "", null, "");
+        t.initIncomingQueue(queue);
     }
 
     @Test
@@ -60,11 +64,16 @@ public class ReceiverTaskletTest {
 
     private void pushObjects(Object... objs) throws IOException {
         final BufferObjectDataOutput out = serService.createObjectDataOutput();
+        // packet header
+        out.writeLong(0);
+        out.writeInt(0);
+        out.writeInt(0);
+        // the packet
         out.writeInt(objs.length);
         for (Object obj : objs) {
             out.writeObject(obj);
             out.writeInt(Math.abs(obj.hashCode())); // partition id
         }
-        t.receiveStreamPacket(out.toByteArray(), 0);
+        queue.add(out.toByteArray());
     }
 }

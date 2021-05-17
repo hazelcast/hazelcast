@@ -33,7 +33,7 @@ import javax.annotation.Nonnull;
  * load and use its classes. However, from within a running {@code main()}
  * method it is not trivial to find out the filename of the JAR containing
  * it.
- **/
+ */
 public final class JetBootstrap {
 
     private JetBootstrap() {
