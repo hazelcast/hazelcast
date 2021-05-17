@@ -20,6 +20,7 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Processor;
@@ -62,7 +63,10 @@ import static java.util.stream.Collectors.toList;
  * it just returns all map entries which it can read.
  */
 public class OnHeapMapScanP extends AbstractProcessor {
+    private static int DEFAULT_ORDINAL = -1;
+
     protected IMapTraverser traverser;
+    protected Object[] pendingItems;
     private final HazelcastInstance hazelcastInstance;
     private final JetMapScanMetadata mapScanMetadata;
     private final List<Integer> partitions;
@@ -84,15 +88,33 @@ public class OnHeapMapScanP extends AbstractProcessor {
         traverser = new IMapTraverser(
                 nodeEngine,
                 mapScanMetadata,
-                this.partitions.iterator()
+                this.partitions
         );
         traverser.init(SimpleExpressionEvalContext.from(context));
     }
 
     @Override
     public boolean complete() {
-        return emitFromTraverser(traverser);
+        Object[] items;
+        if (pendingItems != null) {
+            items = pendingItems;
+            pendingItems = null;
+        } else {
+            items = traverser.next();
+        }
+        for (; items != null; items = traverser.next()) {
+            if (items.length == 0) {
+                return false;
+            }
+            if (!tryEmit(DEFAULT_ORDINAL, items)) {
+                pendingItems = items;
+                return false;
+            }
+        }
+        return true;
     }
+
+
 
     static class IMapTraverser implements Traverser<Object[]> {
         private final List<Expression<?>> projections;
@@ -101,35 +123,33 @@ public class OnHeapMapScanP extends AbstractProcessor {
 
         private final MapContainer mapContainer;
         private final JetMapScanMetadata node;
-        private final Iterator<Integer> localPartitionsIterator;
+        private final Set<Integer> partitions;
         private SimpleExpressionEvalContext ctx;
         private MapScanRow row;
-        private boolean done;
 
         IMapTraverser(
                 @Nonnull final NodeEngine nodeEngine,
-                @Nonnull JetMapScanMetadata node,
-                @Nonnull Iterator<Integer> localPartitionsIterator
+                @Nonnull final JetMapScanMetadata node,
+                @Nonnull final List<Integer> partitions
+
         ) {
             this.node = node;
             MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
             this.mapContainer = mapService.getMapServiceContext().getMapContainer(node.getMapName());
-            this.localPartitionsIterator = localPartitionsIterator;
+            this.partitions = new PartitionIdSet(partitions.size(), partitions);
             this.projections = node.getProjects();
             this.filter = node.getFilter();
         }
 
         @Override
         public Object[] next() {
-            if (!done && iteratorExec.tryAdvance()) {
-                Object[] row = prepareRow(
+            if (iteratorExec.tryAdvance()) {
+                return prepareRow(
                         iteratorExec.getKey(),
                         iteratorExec.getKeyData(),
                         iteratorExec.getValue(),
                         iteratorExec.getValueData()
                 );
-                done = iteratorExec.done();
-                return row;
             }
             return null;
         }
@@ -144,7 +164,7 @@ public class OnHeapMapScanP extends AbstractProcessor {
                     ctx.getSerializationService()
             );
             this.ctx = ctx;
-            this.iteratorExec = new MapScanExecIterator(mapContainer, localPartitionsIterator, ctx.getSerializationService());
+            this.iteratorExec = new MapScanExecIterator(mapContainer, partitions.iterator(), ctx.getSerializationService());
         }
 
 
@@ -164,7 +184,7 @@ public class OnHeapMapScanP extends AbstractProcessor {
 
             // Filter.
             if (filter != null && TernaryLogic.isNotTrue(filter.evalTop(row, ctx))) {
-                return null;
+                return new Object[0];
             }
 
             if (projections.size() == 0) {

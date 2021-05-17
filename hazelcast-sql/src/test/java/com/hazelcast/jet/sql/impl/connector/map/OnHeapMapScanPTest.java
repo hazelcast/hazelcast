@@ -39,13 +39,11 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.function.BiPredicate;
 
 import static com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
@@ -56,8 +54,17 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 
 @SuppressWarnings("rawtypes")
+@RunWith(Parameterized.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
+
+    @Parameterized.Parameters(name = "count:{0}")
+    public static Collection<Integer> parameters() {
+        return asList(500, 25_000);
+    }
+
+    @Parameterized.Parameter(0)
+    public int count;
 
     private IMap<Integer, String> map;
 
@@ -112,7 +119,7 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
     @Test
     public void test_whenNoFilterAndNoSpecificProjection() {
         List<Object[]> expected = new ArrayList<>();
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < count; i++) {
             map.put(i, "value-" + i);
             expected.add(new Object[]{i, "value-" + i});
         }
@@ -144,7 +151,7 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
     public void test_whenFilterExistsAndNoProjection() {
         IMap<Integer, String> map = instance().getMap(randomMapName());
         List<Object[]> expected = new ArrayList<>();
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < count; i++) {
             map.put(i, "value-" + i);
             if (i % 2 == 0) {
                 expected.add(new Object[]{i, "value-" + i});
@@ -173,6 +180,7 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
                 .verifyProcessor(OnHeapMapScanP.onHeapMapScanP(scanMetadata))
                 .jetInstance(instance())
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
+                .outputChecker(LENIENT_SAME_ITEMS_ANY_ORDER)
                 .disableSnapshots()
                 .disableProgressAssertion()
                 .expectOutput(expected);
@@ -183,9 +191,9 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
         IMap<Integer, Person> objectMap = instance().getMap(randomMapName());
 
         List<Object[]> expected = new ArrayList<>();
-        for (int i = 0; i < 100; i++) {
-            objectMap.put(i, new Person("value-" + i, 100 - i));
-            expected.add(new Object[]{i, "value-" + i, (100 - i) * 5});
+        for (int i = 0; i < count; i++) {
+            objectMap.put(i, new Person("value-" + i, count - i));
+            expected.add(new Object[]{i, "value-" + i, (count - i) * 5});
         }
 
         JetMapScanMetadata scanMetadata = new JetMapScanMetadata(
