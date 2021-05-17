@@ -48,8 +48,6 @@ import static java.lang.Math.max;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-import java.net.MulticastSocket;
-
 /**
  * Defines the name and default value for Hazelcast properties.
  */
@@ -378,8 +376,8 @@ public final class ClusterProperty {
             = new HazelcastProperty("hazelcast.tcp.join.port.try.count", 3);
 
     /**
-     * Allows explicitly control iff the {@link MulticastSocket#setInterface(java.net.InetAddress)} method is called in the
-     * Hazelcast multicast discovery service. This configuration may affect the multicast behavior on some platforms. The
+     * Allows explicitly control if the {@link java.net.MulticastSocket#setInterface(java.net.InetAddress)} method is called in
+     * the Hazelcast multicast discovery service. This configuration may affect the multicast behavior on some platforms. The
      * default value is not specified here and in such case Hazelcast multicast service itself decides if the
      * {@code setInterface()} call should be called.
      */
