@@ -16,24 +16,22 @@
 
 package com.hazelcast.jet.sql.impl.opt.logical;
 
+import com.hazelcast.sql.impl.calcite.opt.AbstractScanRel;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.core.TableScan;
 
 import java.util.List;
 
-import static java.util.Collections.emptyList;
-
-public class FullScanLogicalRel extends TableScan implements LogicalRel {
+public class FullScanLogicalRel extends AbstractScanRel implements LogicalRel {
 
     FullScanLogicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelOptTable table
     ) {
-        super(cluster, traitSet, emptyList(), table);
+        super(cluster, traitSet, table);
     }
 
     @Override

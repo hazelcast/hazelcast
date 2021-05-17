@@ -29,6 +29,7 @@ import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolvers;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvProcessors;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
+import com.hazelcast.jet.sql.impl.opt.physical.IMapIndexScanPhysicalRel;
 import com.hazelcast.jet.sql.impl.schema.MappingField;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
@@ -37,6 +38,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
+import com.hazelcast.sql.impl.plan.node.MapIndexScanMetadata;
 import com.hazelcast.sql.impl.plan.node.MapScanMetadata;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.Table;
@@ -180,6 +182,37 @@ public class IMapSqlConnector implements SqlConnector {
         );
 
         return dag.newUniqueVertex(table.toString(), OnHeapMapScanP.onHeapMapScanP(mapScanMetadata));
+    }
+
+    public Vertex indexScanReader(
+            @Nonnull DAG dag,
+            @Nonnull Table table0,
+            @Nonnull IMapIndexScanPhysicalRel rel,
+            @Nullable Expression<Boolean> filter,
+            @Nonnull List<Expression<?>> projection
+    ) {
+        PartitionedMapTable table = (PartitionedMapTable) table0;
+
+        MapScanMetadata mapScanMetadata = new MapScanMetadata(
+                table.getMapName(),
+                table.getKeyDescriptor(),
+                table.getValueDescriptor(),
+                table.fieldPaths(),
+                table.types(),
+                projection,
+                filter
+        );
+
+        MapIndexScanMetadata indexScanMetadata = new MapIndexScanMetadata(
+                mapScanMetadata,
+                rel.getIndex().getName(),
+                rel.getIndex().getComponentsCount(),
+                rel.getIndexFilter(),
+                rel.getConverterTypes(),
+                rel.getAscs()
+        );
+
+        return dag.newUniqueVertex(table.toString(), OnHeapMapScanP.onHeapMapScanP(indexScanMetadata));
     }
 
     @Override
