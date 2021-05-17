@@ -38,7 +38,6 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.plan.node.MapScanMetadata;
-import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
@@ -48,7 +47,6 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -175,7 +173,7 @@ public class IMapSqlConnector implements SqlConnector {
                 table.getMapName(),
                 table.getKeyDescriptor(),
                 table.getValueDescriptor(),
-                table.getScanFieldPaths(),
+                table.fieldPaths(),
                 table.types(),
                 projection,
                 filter
