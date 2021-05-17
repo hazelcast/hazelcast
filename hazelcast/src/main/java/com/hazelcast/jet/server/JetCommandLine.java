@@ -30,7 +30,7 @@ import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.function.ConsumerEx;
-import com.hazelcast.instance.JetBuildInfo;
+import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.impl.HazelcastBootstrap;
 import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.jet.JetException;
@@ -42,7 +42,7 @@ import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.jet.impl.JobSummary;
-import com.hazelcast.jet.server.JetCommandLine.JetVersionProvider;
+import com.hazelcast.jet.server.JetCommandLine.HazelcastVersionProvider;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlColumnType;
@@ -119,7 +119,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
                 "By default it uses the file config/hazelcast-client.yaml to configure the client connection." +
                 "%n%n" +
                 "Global options are:%n",
-        versionProvider = JetVersionProvider.class,
+        versionProvider = HazelcastVersionProvider.class,
         mixinStandardHelpOptions = true,
         sortOptions = false,
         subcommands = {HelpCommand.class}
@@ -156,7 +156,7 @@ public class JetCommandLine implements Runnable {
     @Option(names = {"-n", "--cluster-name"},
             description = "[DEPRECATED] The cluster name to use when connecting to the cluster " +
                     "specified by the <addresses> parameter. Use --targets instead.",
-            defaultValue = "jet",
+            defaultValue = "dev",
             showDefaultValue = Visibility.ALWAYS,
             order = 2
     )
@@ -768,8 +768,9 @@ public class JetCommandLine implements Runnable {
     ) {
         CommandLine cmd = new CommandLine(new JetCommandLine(jetClientFn, out, err));
         cmd.getSubcommands().get("submit").setStopAtPositional(true);
+
         String version = getBuildInfo().getVersion();
-        cmd.getCommandSpec().usageMessage().header("Hazelcast Platform " + version);
+        cmd.getCommandSpec().usageMessage().header("Hazelcast " + version);
 
         if (args.length == 0) {
             cmd.usage(out);
@@ -1003,15 +1004,15 @@ public class JetCommandLine implements Runnable {
         out.println(builder.toAnsi());
     }
 
-    public static class JetVersionProvider implements IVersionProvider {
+    public static class HazelcastVersionProvider implements IVersionProvider {
 
         @Override
         public String[] getVersion() {
-            JetBuildInfo jetBuildInfo = getBuildInfo().getJetBuildInfo();
+            BuildInfo buildInfo = getBuildInfo();
             return new String[]{
-                    "Hazelcast Jet " + jetBuildInfo.getVersion(),
-                    "Revision " + jetBuildInfo.getRevision(),
-                    "Build " + jetBuildInfo.getBuild()
+                    "Hazelcast " + buildInfo.getVersion(),
+                    "Revision " + buildInfo.getRevision(),
+                    "Build " + buildInfo.getBuild()
             };
         }
     }
