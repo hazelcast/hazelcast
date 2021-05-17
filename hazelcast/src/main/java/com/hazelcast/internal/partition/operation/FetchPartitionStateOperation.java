@@ -53,8 +53,8 @@ public final class FetchPartitionStateOperation extends AbstractPartitionOperati
         Address masterAddress = getNodeEngine().getMasterAddress();
         ILogger logger = getLogger();
         if (callerAddresses.stream().noneMatch(a -> a.equals(masterAddress))) {
-            String msg = callerAddresses.get(0) + " requested our partition table but it's not our known master. " + "Master:" +
-                            " " + masterAddress;
+            String msg = callerAddresses.get(0) + " requested our partition table but it's not our known master. "
+                    + "Master: " + masterAddress;
             logger.warning(msg);
             // Master address should be already updated after mastership claim.
             throw new IllegalStateException(msg);
@@ -62,7 +62,8 @@ public final class FetchPartitionStateOperation extends AbstractPartitionOperati
 
         InternalPartitionServiceImpl service = getService();
         if (!service.isMemberMaster(callerAddresses)) {
-            String msg = callerAddresses.get(0) + " requested our partition table but it's not the master known by migration system.";
+            String msg = callerAddresses.get(0) + " requested our partition table but it's not"
+                    + " the master known by migration system.";
             logger.warning(msg);
             // PartitionService has not received result of mastership claim process yet.
             // It will learn eventually.
