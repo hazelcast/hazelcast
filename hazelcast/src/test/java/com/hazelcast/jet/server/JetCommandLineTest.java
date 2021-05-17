@@ -98,7 +98,8 @@ public class JetCommandLineTest extends JetTestSupport {
 
     public static void createJarFile() throws IOException {
         testJobJarFile = Files.createTempFile("testjob-", ".jar");
-        IOUtil.copy(JetCommandLineTest.class.getResourceAsStream("testjob.jar"), testJobJarFile.toFile());
+        IOUtil.copy(JetCommandLineTest.class.getResourceAsStream("testjob-with-hz-bootstrap.jar"),
+                testJobJarFile.toFile());
     }
 
     @AfterClass
