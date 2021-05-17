@@ -78,7 +78,7 @@ import com.hazelcast.sql.impl.operation.QueryFlowControlExchangeOperation;
 import com.hazelcast.sql.impl.plan.node.EmptyPlanNode;
 import com.hazelcast.sql.impl.plan.node.FetchPlanNode;
 import com.hazelcast.sql.impl.plan.node.FilterPlanNode;
-import com.hazelcast.sql.impl.plan.node.JetMapScanMetadata;
+import com.hazelcast.sql.impl.plan.node.MapScanMetadata;
 import com.hazelcast.sql.impl.plan.node.MapIndexScanPlanNode;
 import com.hazelcast.sql.impl.plan.node.MapScanPlanNode;
 import com.hazelcast.sql.impl.plan.node.ProjectPlanNode;
@@ -200,9 +200,9 @@ public class SqlDataSerializerHook implements DataSerializerHook {
 
     public static final int EXPRESSION_EXTRACT = 72;
 
-    public static final int JET_MAP_SCAN_METADATA = 73;
+    public static final int MAP_SCAN_METADATA = 73;
 
-    public static final int LEN = JET_MAP_SCAN_METADATA + 1;
+    public static final int LEN = MAP_SCAN_METADATA + 1;
 
     @Override
     public int getFactoryId() {
@@ -294,7 +294,7 @@ public class SqlDataSerializerHook implements DataSerializerHook {
 
         constructors[EXPRESSION_EXTRACT] = arg -> new ExtractFunction();
 
-        constructors[JET_MAP_SCAN_METADATA] = arg -> new JetMapScanMetadata();
+        constructors[MAP_SCAN_METADATA] = arg -> new MapScanMetadata();
         constructors[NODE_RECEIVE_MERGE_SORT] = arg -> new ReceiveSortMergePlanNode();
         constructors[NODE_FETCH] = arg -> new FetchPlanNode();
 

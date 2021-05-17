@@ -34,7 +34,7 @@ import java.util.Objects;
 /**
  * POJO that contains all specific information to scan a partitioned map by Jet processor.
  */
-public class JetMapScanMetadata implements IdentifiedDataSerializable, Serializable {
+public class MapScanMetadata implements IdentifiedDataSerializable, Serializable {
 
     protected String mapName;
     protected QueryTargetDescriptor keyDescriptor;
@@ -44,11 +44,11 @@ public class JetMapScanMetadata implements IdentifiedDataSerializable, Serializa
     protected List<Expression<?>> projections;
     protected Expression<Boolean> filter;
 
-    public JetMapScanMetadata() {
+    public MapScanMetadata() {
         // No-op.
     }
 
-    public JetMapScanMetadata(
+    public MapScanMetadata(
             String mapName,
             QueryTargetDescriptor keyDescriptor,
             QueryTargetDescriptor valueDescriptor,
@@ -104,7 +104,7 @@ public class JetMapScanMetadata implements IdentifiedDataSerializable, Serializa
             return false;
         }
 
-        JetMapScanMetadata that = (JetMapScanMetadata) o;
+        MapScanMetadata that = (MapScanMetadata) o;
 
         return mapName.equals(that.mapName)
                 && keyDescriptor.equals(that.keyDescriptor)
@@ -162,6 +162,6 @@ public class JetMapScanMetadata implements IdentifiedDataSerializable, Serializa
 
     @Override
     public int getClassId() {
-        return SqlDataSerializerHook.JET_MAP_SCAN_METADATA;
+        return SqlDataSerializerHook.MAP_SCAN_METADATA;
     }
 }

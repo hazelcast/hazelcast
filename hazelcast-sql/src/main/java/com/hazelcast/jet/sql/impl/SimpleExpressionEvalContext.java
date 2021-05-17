@@ -50,13 +50,11 @@ public final class SimpleExpressionEvalContext implements ExpressionEvalContext 
                     requireNonNull(ctx.jobConfig().getArgument(SQL_ARGUMENTS_KEY_NAME)),
                     ((Contexts.ProcSupplierCtx) ctx).serializationService()
             );
-        } else {
-            // this branch covers the TestProcessorSupplierContext
-            return new SimpleExpressionEvalContext(
-                    requireNonNull(ctx.jobConfig().getArgument(SQL_ARGUMENTS_KEY_NAME)),
-                    hazelcastInstance.getSerializationService()
-            );
         }
+        return new SimpleExpressionEvalContext(
+                requireNonNull(ctx.jobConfig().getArgument(SQL_ARGUMENTS_KEY_NAME)),
+                hazelcastInstance.getSerializationService()
+        );
     }
 
     @Override

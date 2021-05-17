@@ -31,7 +31,7 @@ import com.hazelcast.sql.impl.expression.FunctionalPredicateExpression;
 import com.hazelcast.sql.impl.expression.math.MultiplyFunction;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
-import com.hazelcast.sql.impl.plan.node.JetMapScanMetadata;
+import com.hazelcast.sql.impl.plan.node.MapScanMetadata;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -102,7 +102,7 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
 
     @Test
     public void test_whenEmpty() {
-        JetMapScanMetadata scanMetadata = new JetMapScanMetadata(
+        MapScanMetadata scanMetadata = new MapScanMetadata(
                 map.getName(),
                 GenericQueryTargetDescriptor.DEFAULT,
                 GenericQueryTargetDescriptor.DEFAULT,
@@ -129,7 +129,7 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
             expected.add(new Object[]{i, "value-" + i});
         }
 
-        JetMapScanMetadata scanMetadata = new JetMapScanMetadata(
+        MapScanMetadata scanMetadata = new MapScanMetadata(
                 map.getName(),
                 GenericQueryTargetDescriptor.DEFAULT,
                 GenericQueryTargetDescriptor.DEFAULT,
@@ -168,7 +168,7 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
             return value % 2 == 0;
         });
 
-        JetMapScanMetadata scanMetadata = new JetMapScanMetadata(
+        MapScanMetadata scanMetadata = new MapScanMetadata(
                 map.getName(),
                 GenericQueryTargetDescriptor.DEFAULT,
                 GenericQueryTargetDescriptor.DEFAULT,
@@ -201,7 +201,7 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
             expected.add(new Object[]{i, "value-" + i, (count - i) * 5});
         }
 
-        JetMapScanMetadata scanMetadata = new JetMapScanMetadata(
+        MapScanMetadata scanMetadata = new MapScanMetadata(
                 objectMap.getName(),
                 GenericQueryTargetDescriptor.DEFAULT,
                 GenericQueryTargetDescriptor.DEFAULT,

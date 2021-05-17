@@ -20,7 +20,6 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Processor;
@@ -36,7 +35,7 @@ import com.hazelcast.sql.impl.exec.scan.MapScanExecIterator;
 import com.hazelcast.sql.impl.exec.scan.MapScanRow;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.predicate.TernaryLogic;
-import com.hazelcast.sql.impl.plan.node.JetMapScanMetadata;
+import com.hazelcast.sql.impl.plan.node.MapScanMetadata;
 import com.hazelcast.sql.impl.row.HeapRow;
 
 import javax.annotation.Nonnull;
@@ -61,15 +60,15 @@ import static java.util.stream.Collectors.toList;
  * Simultaneously, usage of Traverser interface saves simplicity and cleanliness:
  * it just returns all map entries which it can read.
  */
-public class OnHeapMapScanP extends AbstractProcessor {
+public final class OnHeapMapScanP extends AbstractProcessor {
     protected IMapTraverser traverser;
     private final HazelcastInstance hazelcastInstance;
-    private final JetMapScanMetadata mapScanMetadata;
+    private final MapScanMetadata mapScanMetadata;
     private final List<Integer> partitions;
 
     private OnHeapMapScanP(
             @Nonnull HazelcastInstance hazelcastInstance,
-            @Nonnull JetMapScanMetadata mapScanMetadata,
+            @Nonnull MapScanMetadata mapScanMetadata,
             @Nonnull List<Integer> partitions
     ) {
         this.hazelcastInstance = hazelcastInstance;
@@ -84,9 +83,9 @@ public class OnHeapMapScanP extends AbstractProcessor {
         traverser = new IMapTraverser(
                 nodeEngine,
                 mapScanMetadata,
-                this.partitions
+                this.partitions,
+                SimpleExpressionEvalContext.from(context)
         );
-        traverser.init(SimpleExpressionEvalContext.from(context));
     }
 
     @Override
@@ -97,26 +96,34 @@ public class OnHeapMapScanP extends AbstractProcessor {
     static class IMapTraverser implements Traverser<Object[]> {
         private final List<Expression<?>> projections;
         private final Expression<Boolean> filter;
-        private KeyValueIterator iteratorExec;
+        private final KeyValueIterator iteratorExec;
 
-        private final MapContainer mapContainer;
-        private final JetMapScanMetadata scanMetadata;
-        private final Set<Integer> partitions;
-        private SimpleExpressionEvalContext ctx;
+        private final SimpleExpressionEvalContext ctx;
         private MapScanRow row;
 
         IMapTraverser(
                 @Nonnull final NodeEngine nodeEngine,
-                @Nonnull final JetMapScanMetadata scanMetadata,
-                @Nonnull final List<Integer> partitions
+                @Nonnull final MapScanMetadata scanMetadata,
+                @Nonnull final List<Integer> partitions,
+                @Nonnull SimpleExpressionEvalContext ctx
 
         ) {
-            this.scanMetadata = scanMetadata;
+            this.ctx = ctx;
             MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
-            this.mapContainer = mapService.getMapServiceContext().getMapContainer(scanMetadata.getMapName());
-            this.partitions = new PartitionIdSet(partitions.size(), partitions);
+            MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(scanMetadata.getMapName());
             this.projections = scanMetadata.getProjects();
             this.filter = scanMetadata.getFilter();
+            this.iteratorExec = new MapScanExecIterator(mapContainer, partitions.iterator(), ctx.getSerializationService());
+
+            this.row = MapScanRow.create(
+                    scanMetadata.getKeyDescriptor(),
+                    scanMetadata.getValueDescriptor(),
+                    scanMetadata.getFieldPaths(),
+                    scanMetadata.getFieldTypes(),
+                    mapContainer.getExtractors(),
+                    ctx.getSerializationService()
+            );
+
         }
 
         @Override
@@ -134,20 +141,6 @@ public class OnHeapMapScanP extends AbstractProcessor {
             }
             return null;
         }
-
-        public void init(SimpleExpressionEvalContext ctx) {
-            this.row = MapScanRow.create(
-                    scanMetadata.getKeyDescriptor(),
-                    scanMetadata.getValueDescriptor(),
-                    scanMetadata.getFieldPaths(),
-                    scanMetadata.getFieldTypes(),
-                    mapContainer.getExtractors(),
-                    ctx.getSerializationService()
-            );
-            this.ctx = ctx;
-            this.iteratorExec = new MapScanExecIterator(mapContainer, partitions.iterator(), ctx.getSerializationService());
-        }
-
 
         /**
          * Prepare the row for the given key and value:
@@ -179,15 +172,15 @@ public class OnHeapMapScanP extends AbstractProcessor {
         }
     }
 
-    public static ProcessorMetaSupplier onHeapMapScanP(@Nonnull JetMapScanMetadata mapScanMetadata) {
+    public static ProcessorMetaSupplier onHeapMapScanP(@Nonnull MapScanMetadata mapScanMetadata) {
         return new OnHeapMapScanMetaSupplier(mapScanMetadata);
     }
 
-    public static class OnHeapMapScanMetaSupplier implements ProcessorMetaSupplier {
-        private final JetMapScanMetadata mapScanMetadata;
+    public static final class OnHeapMapScanMetaSupplier implements ProcessorMetaSupplier {
+        private final MapScanMetadata mapScanMetadata;
         private transient Map<Address, List<Integer>> addrToPartitions;
 
-        private OnHeapMapScanMetaSupplier(@Nonnull JetMapScanMetadata mapScanMetadata) {
+        private OnHeapMapScanMetaSupplier(@Nonnull MapScanMetadata mapScanMetadata) {
             this.mapScanMetadata = mapScanMetadata;
         }
 
@@ -212,12 +205,12 @@ public class OnHeapMapScanP extends AbstractProcessor {
         }
     }
 
-    public static class OnHeapMapScanSupplier implements ProcessorSupplier {
-        private final JetMapScanMetadata mapScanMetadata;
+    public static final class OnHeapMapScanSupplier implements ProcessorSupplier {
+        private final MapScanMetadata mapScanMetadata;
         private final List<Integer> memberPartitions;
         private HazelcastInstance hazelcastInstance;
 
-        private OnHeapMapScanSupplier(JetMapScanMetadata mapScanMetadata, List<Integer> memberPartitions) {
+        private OnHeapMapScanSupplier(MapScanMetadata mapScanMetadata, List<Integer> memberPartitions) {
             this.mapScanMetadata = mapScanMetadata;
             this.memberPartitions = memberPartitions;
         }
