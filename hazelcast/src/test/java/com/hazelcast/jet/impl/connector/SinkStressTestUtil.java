@@ -61,15 +61,16 @@ public final class SinkStressTestUtil {
     ) {
         int numItems = 1000;
         Pipeline p = Pipeline.create();
-        p.readFrom(SourceBuilder.stream("src", procCtx -> new int[1])
+        p.readFrom(SourceBuilder.stream("src", procCtx -> new int[]{procCtx.globalProcessorIndex() == 0 ? 0 : Integer.MAX_VALUE})
                 .<Integer>fillBufferFn((ctx, buf) -> {
                     if (ctx[0] < numItems) {
                         buf.add(ctx[0]++);
                         sleepMillis(5);
                     }
                 })
-                .createSnapshotFn(ctx -> ctx[0])
-                .restoreSnapshotFn((ctx, state) -> ctx[0] = state.get(0))
+                .distributed(1)
+                .createSnapshotFn(ctx -> ctx[0] < Integer.MAX_VALUE ? ctx[0] : null)
+                .restoreSnapshotFn((ctx, state) -> ctx[0] = ctx[0] != Integer.MAX_VALUE ? state.get(0) : Integer.MAX_VALUE)
                 .build())
          .withoutTimestamps()
          .peek()

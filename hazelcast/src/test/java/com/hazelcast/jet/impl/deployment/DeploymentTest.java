@@ -31,7 +31,7 @@ public class DeploymentTest extends AbstractDeploymentTest {
         FilteringClassLoader filteringClassLoader = new FilteringClassLoader(singletonList("deployment"), null);
         config.setClassLoader(filteringClassLoader);
 
-        initialize(2, config);
+        initialize(MEMBER_COUNT, config);
     }
 
     @Override

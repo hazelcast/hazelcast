@@ -21,20 +21,26 @@ import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectsCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
+import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.LightJob;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.client.protocol.codec.JetExistsDistributedObjectCodec;
 import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobIdsByNameCodec;
 import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobIdsCodec;
 import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobSummaryListCodec;
+import com.hazelcast.jet.impl.client.protocol.codec.JetSubmitLightJobCodec;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
@@ -56,8 +62,29 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
         ExceptionUtil.registerJetExceptions(hazelcastInstance.getClientExceptionFactory());
     }
 
-    @Nonnull
-    @Override
+    @Nonnull @Override
+    public LightJob newLightJobInt(Object jobDefinition) {
+        Data jobDefinitionSerialized = serializationService.toData(jobDefinition);
+        long jobId = newJobId();
+        ClientMessage message = JetSubmitLightJobCodec.encodeRequest(jobId, jobDefinitionSerialized);
+
+        // find random non-lite member
+        Member[] members = client.getCluster().getMembers().toArray(new Member[0]);
+        int randomMemberIndex = ThreadLocalRandom.current().nextInt(members.length);
+        for (int i = 0; i < members.length && members[randomMemberIndex].isLiteMember(); i++) {
+            randomMemberIndex++;
+            if (randomMemberIndex == members.length) {
+                randomMemberIndex = 0;
+            }
+        }
+        UUID coordinatorUuid = members[randomMemberIndex].getUuid();
+        ClientInvocation invocation = new ClientInvocation(client, message, null, coordinatorUuid);
+
+        ClientInvocationFuture future = invocation.invoke();
+        return new ClientLightJobProxy(client, coordinatorUuid, jobId, future);
+    }
+
+    @Nonnull @Override
     public JetConfig getConfig() {
         throw new UnsupportedOperationException("Jet Configuration is not available on the client");
     }
@@ -142,5 +169,4 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
             throw rethrow(t);
         }
     }
-
 }

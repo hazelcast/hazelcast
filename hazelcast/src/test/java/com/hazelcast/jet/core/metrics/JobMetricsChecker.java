@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import static com.hazelcast.function.PredicateEx.alwaysTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -32,7 +33,7 @@ final class JobMetricsChecker {
     private final Predicate<Measurement> filter;
 
     JobMetricsChecker(Job job) {
-        this(job, (IGNORED) -> true);
+        this(job, alwaysTrue());
     }
 
     JobMetricsChecker(Job job, Predicate<Measurement> filter) {

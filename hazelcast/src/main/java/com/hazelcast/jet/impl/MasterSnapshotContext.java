@@ -20,11 +20,12 @@ import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.impl.JobExecutionRecord.SnapshotStats;
+import com.hazelcast.jet.impl.exception.ExecutionNotFoundException;
 import com.hazelcast.jet.impl.execution.SnapshotFlags;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
-import com.hazelcast.jet.impl.operation.SnapshotPhase2Operation;
 import com.hazelcast.jet.impl.operation.SnapshotPhase1Operation;
 import com.hazelcast.jet.impl.operation.SnapshotPhase1Operation.SnapshotPhase1Result;
+import com.hazelcast.jet.impl.operation.SnapshotPhase2Operation;
 import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.IMap;
@@ -32,12 +33,15 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.Util.idToString;
@@ -46,7 +50,9 @@ import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
 import static com.hazelcast.jet.impl.JobRepository.EXPORTED_SNAPSHOTS_PREFIX;
 import static com.hazelcast.jet.impl.JobRepository.exportedSnapshotMapName;
 import static com.hazelcast.jet.impl.JobRepository.snapshotDataMapName;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
+import static com.hazelcast.jet.impl.util.Util.jobNameAndExecutionId;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
 /**
@@ -161,9 +167,10 @@ class MasterSnapshotContext {
             int snapshotFlags = SnapshotFlags.create(isTerminal, isExport);
             String finalMapName = isExport ? exportedSnapshotMapName(snapshotMapName)
                     : snapshotDataMapName(mc.jobId(), mc.jobExecutionRecord().ongoingDataMapIndex());
-                mc.nodeEngine().getHazelcastInstance().getMap(finalMapName).clear();
+            mc.nodeEngine().getHazelcastInstance().getMap(finalMapName).clear();
             logFine(logger, "Starting snapshot %d for %s, flags: %s, writing to: %s",
-                    newSnapshotId, mc.jobIdString(), SnapshotFlags.toString(snapshotFlags), snapshotMapName);
+                    newSnapshotId, jobNameAndExecutionId(mc.jobName(), localExecutionId),
+                    SnapshotFlags.toString(snapshotFlags), snapshotMapName);
 
             Function<ExecutionPlan, Operation> factory = plan ->
                     new SnapshotPhase1Operation(mc.jobId(), localExecutionId, newSnapshotId, finalMapName, snapshotFlags);
@@ -194,26 +201,77 @@ class MasterSnapshotContext {
     ) {
         mc.coordinationService().submitToCoordinatorThread(() -> {
             SnapshotPhase1Result mergedResult = new SnapshotPhase1Result();
+            List<CompletableFuture<Void>> missingResponses = new ArrayList<>();
             for (Map.Entry<MemberInfo, Object> entry : responses) {
                 // the response is either SnapshotOperationResult or an exception, see #invokeOnParticipants() method
                 Object response = entry.getValue();
                 if (response instanceof Throwable) {
+                    // If the member doesn't know the execution, it might have completed normally or exceptionally.
+                    // If normally, we ignore it, if exceptionally, we'll also fail the snapshot. To know, we have
+                    // to look at the result of the StartExecutionOperation, which might not yet arrive. We'll collect
+                    // all the responses to an array and we'll wait for them later.
+                    if (response instanceof ExecutionNotFoundException) {
+                        missingResponses.add(mc.startOperationResponses().get(entry.getKey().getAddress()));
+                        continue;
+                    }
                     response = new SnapshotPhase1Result(0, 0, 0, (Throwable) response);
                 }
                 mergedResult.merge((SnapshotPhase1Result) response);
             }
+            if (!missingResponses.isEmpty()) {
+                LoggingUtil.logFine(logger, "%s will wait for %d responses to StartExecutionOperation in " +
+                        "onSnapshotPhase1Complete()", mc.jobIdString(), missingResponses.size());
+            }
+
+            // In a typical case `missingResponses` will be empty. It will be non-empty if some member completed
+            // its execution and some other not, or near the completion of ao job, e.g. after a failure.
+            // `allOf` for an empty array returns a completed future immediately.
+            CompletableFuture.allOf(missingResponses.toArray(new CompletableFuture[0]))
+                    .whenComplete(withTryCatch(logger, (r, t) ->
+                            onSnapshotPhase1CompleteWithStartResponses(responses, executionId, snapshotId, snapshotMapName,
+                                    snapshotFlags, future, mergedResult, missingResponses)));
+        });
+    }
+
+    private void onSnapshotPhase1CompleteWithStartResponses(
+            Collection<Entry<MemberInfo, Object>> responses,
+            long executionId,
+            long snapshotId,
+            String snapshotMapName,
+            int snapshotFlags,
+            @Nullable CompletableFuture<Void> future,
+            SnapshotPhase1Result mergedResult,
+            List<CompletableFuture<Void>> missingResponses
+    ) {
+        mc.coordinationService().submitToCoordinatorThread(() -> {
+            mc.lock();
+
             boolean isSuccess;
             SnapshotStats stats;
-
-            mc.lock();
             try {
+                if (!missingResponses.isEmpty()) {
+                    LoggingUtil.logFine(logger, "%s all awaited responses to StartExecutionOperation received or " +
+                                    "were already received", mc.jobIdString());
+                }
                 // Note: this method can be called after finalizeJob() is called or even after new execution started.
                 // Check the execution ID to check if a new execution didn't start yet.
                 if (executionId != mc.executionId()) {
                     LoggingUtil.logFine(logger, "%s: ignoring responses for snapshot %s phase 1: " +
                                     "the responses are from a different execution: %s. Responses: %s",
                             mc.jobIdString(), snapshotId, idToString(executionId), responses);
+                    // a new execution started, ignore this response.
                     return;
+                }
+
+                for (CompletableFuture<Void> response : missingResponses) {
+                    assert response.isDone() : "response not done";
+                    try {
+                        response.get();
+                    } catch (ExecutionException e) {
+                        mergedResult.merge(new SnapshotPhase1Result(0, 0, 0, e.getCause()));
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
                 }
 
                 IMap<Object, Object> snapshotMap = mc.nodeEngine().getHazelcastInstance().getMap(snapshotMapName);
@@ -255,8 +313,8 @@ class MasterSnapshotContext {
                             stats.duration(), stats.numBytes(), stats.numKeys(), stats.numChunks(), snapshotMapName));
                 }
                 if (!isSuccess) {
-                    logger.warning(mc.jobIdString() + " snapshot " + snapshotId + " phase 1 failed on some member(s), " +
-                            "one of the failures: " + mergedResult.getError());
+                    logger.warning(mc.jobIdString() + " snapshot " + snapshotId + " phase 1 failed on some " +
+                            "member(s), one of the failures: " + mergedResult.getError());
                     try {
                         snapshotMap.clear();
                     } catch (Exception e) {
@@ -275,8 +333,8 @@ class MasterSnapshotContext {
             Function<ExecutionPlan, Operation> factory = plan -> new SnapshotPhase2Operation(
                     mc.jobId(), executionId, snapshotId, isSuccess && !SnapshotFlags.isExportOnly(snapshotFlags));
             mc.invokeOnParticipants(factory,
-                    responses2 -> onSnapshotPhase2Complete(mergedResult.getError(), responses2, executionId, snapshotId,
-                            snapshotFlags, future, stats.startTime()),
+                    responses2 -> onSnapshotPhase2Complete(mergedResult.getError(), responses2, executionId,
+                            snapshotId, snapshotFlags, future, stats.startTime()),
                     null, true);
         });
     }
@@ -338,7 +396,7 @@ class MasterSnapshotContext {
                         // If the terminal snapshot failed, the executions might not terminate on some members
                         // normally and we don't care if they do - the snapshot is done and we have to bring the
                         // execution down. Let's execute the CompleteExecutionOperation to terminate them.
-                        mc.jobContext().cancelExecutionInvocations(mc.jobId(), mc.executionId(), null);
+                        mc.jobContext().cancelExecutionInvocations(mc.jobId(), mc.executionId(), null, null);
                     }
                 } else if (!SnapshotFlags.isExport(snapshotFlags)) {
                     // if this snapshot was an automatic snapshot, schedule the next one

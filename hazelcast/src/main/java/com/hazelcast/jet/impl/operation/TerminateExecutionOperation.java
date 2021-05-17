@@ -20,7 +20,6 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.JobExecutionService;
 import com.hazelcast.jet.impl.TerminationMode;
-import com.hazelcast.jet.impl.execution.ExecutionContext;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -33,9 +32,9 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.isRestartableException;
 import static com.hazelcast.spi.impl.operationservice.ExceptionAction.THROW_EXCEPTION;
 
 /**
- * Operation sent from master to members to terminate execution of particular
- * job. See also {@link TerminateJobOperation}, which is sent from client to
- * coordinator to initiate the termination.
+ * Operation sent from master to members to terminate execution of a
+ * particular job. See also {@link TerminateJobOperation}, which is sent
+ * from client to coordinator to initiate the termination.
  */
 public class TerminateExecutionOperation extends AbstractJobOperation {
 
@@ -56,9 +55,7 @@ public class TerminateExecutionOperation extends AbstractJobOperation {
         JetService service = getService();
         JobExecutionService executionService = service.getJobExecutionService();
         Address callerAddress = getCallerAddress();
-        ExecutionContext ctx = executionService.assertExecutionContext(callerAddress, jobId(), executionId,
-                getClass().getSimpleName());
-        ctx.terminateExecution(mode);
+        executionService.terminateExecution(jobId(), executionId, callerAddress, mode);
     }
 
     @Override

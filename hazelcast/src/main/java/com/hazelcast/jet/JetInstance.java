@@ -50,7 +50,6 @@ import java.util.List;
 import static com.hazelcast.jet.impl.JobRepository.exportedSnapshotMapName;
 import static java.util.stream.Collectors.toList;
 
-
 /**
  * Represents either an instance of a Jet server node or a Jet client
  * instance that connects to a remote cluster.
@@ -191,14 +190,56 @@ public interface JetInstance {
     Job newJobIfAbsent(@Nonnull Pipeline pipeline, @Nonnull JobConfig config);
 
     /**
+     * Submits a light job for execution. This kind of job is focused on
+     * reducing the job startup and teardown time: only a single operation is
+     * used to deploy the job instead of 2 for normal jobs.
+     *
+     * Limitation of light jobs:
+     * <ul>
+     *     <li>no job configuration, that means no processing guarantee, no custom
+     *         classes or job resources
+     *
+     *     <li>no metrics after job completion
+     *
+     *     <li>no visibility in {@link #getJobs()} or in Management Center (this
+     *         will be added later)
+     *
+     *     <li>failures will be only reported to the caller and logged in the
+     *         cluster logs, but no trace of the job will remain in the cluster after
+     *         it's done
+     *
+     *     <li>{@link RestartableException} doesn't restart the job, but it will
+     *         fail
+     * </ul>
+     * <p>
+     * It substantially reduces the overhead for jobs that take milliseconds to
+     * complete.
+     * <p>
+     * A light job will not be cancelled if the client disconnects. It's
+     * potential failure will be only logged in member logs.
+     */
+    @Nonnull
+    LightJob newLightJob(Pipeline p);
+
+    /**
+     * Submits a job defined in the Core API.
+     * <p>
+     * See {@link #newLightJob(Pipeline)}.
+     */
+    @Nonnull
+    LightJob newLightJob(DAG dag);
+
+    /**
      * Returns all submitted jobs including running and completed ones.
+     * Currently does not include {@linkplain #newLightJob(Pipeline) light
+     * jobs}.
      */
     @Nonnull
     List<Job> getJobs();
 
     /**
      * Returns the job with the given id or {@code null} if no such job could
-     * be found.
+     * be found. Currently it returns {@code null} also for light jobs.
      */
     @Nullable
     Job getJob(long jobId);
@@ -207,7 +248,8 @@ public interface JetInstance {
      * Returns all jobs submitted with the given name, ordered in descending
      * order by submission time. The active job is always first. Empty list
      * will be returned if no job with the given name exists. The list includes
-     * completed jobs.
+     * completed jobs, but currently does not include {@linkplain
+     * #newLightJob(Pipeline) light jobs}.
      */
     @Nonnull
     List<Job> getJobs(@Nonnull String name);

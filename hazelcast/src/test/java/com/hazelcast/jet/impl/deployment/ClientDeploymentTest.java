@@ -35,7 +35,7 @@ public class ClientDeploymentTest extends AbstractDeploymentTest {
         Config config = new Config();
         FilteringClassLoader filteringClassLoader = new FilteringClassLoader(singletonList("deployment"), null);
         config.setClassLoader(filteringClassLoader);
-        initializeWithClient(2, config, null);
+        initializeWithClient(MEMBER_COUNT, config, null);
     }
 
     @Override

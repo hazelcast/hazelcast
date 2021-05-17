@@ -16,21 +16,22 @@
 
 package com.hazelcast.internal.networking;
 
+import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.Data;
 
 /**
- * Represents a payload to can be written to a {@link Channel}
- *
+ * Represents a payload that can be written to a {@link Channel}.
+ * <p>
  * There are different types of OutboundFrame:
  * <ol>
  * <li>Packet: for member to member and old-client to member communication</li>
- * <li>TextMessage: for memcached and rest communication</li>
+ * <li>TextMessage: for memcached and REST communication</li>
  * <li>ClientMessage: for the new client to member communication</li>
  * </ol>
- *
- * Till so far, all communication over a single connection, will be of a single
- * Frame-class. E.g. member to member only uses Packets.
- *
+ * <p>
+ * Currently, all communication over a single connection is of a single
+ * subclass. E.g. member to member only uses {@link Packet}.
+ * <p>
  * There is no need for an InboundFrame interface.
  *
  * @see Data
@@ -39,12 +40,12 @@ import com.hazelcast.internal.serialization.Data;
 public interface OutboundFrame {
 
     /**
-     * Checks if this Frame is urgent.
-     *
+     * Checks if this OutboundFrame is urgent.
+     * <p>
      * Frames that are urgent, have priority above regular frames. This is useful
-     * to implement System Operations so that they can be send faster than regular
+     * to implement system operations so that they can be sent faster than regular
      * operations; especially when the system is under load you want these operations
-     * have precedence.
+     * tp have precedence.
      *
      * @return true if urgent, false otherwise.
      */
