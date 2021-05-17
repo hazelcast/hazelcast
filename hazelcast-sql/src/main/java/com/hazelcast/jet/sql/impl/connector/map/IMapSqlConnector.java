@@ -241,7 +241,7 @@ public class IMapSqlConnector implements SqlConnector {
 
         SqlNodeList keyFields = new SqlNodeList(SqlParserPos.ZERO);
         keyFields.add(table.getFields().stream()
-                .map(field -> (MapTableField) field)
+                .map(MapTableField.class::cast)
                 .filter(field -> field.getPath().equals(QueryPath.KEY_PATH))
                 .map(field -> new SqlIdentifier(field.getName(), SqlParserPos.ZERO))
                 .findAny()

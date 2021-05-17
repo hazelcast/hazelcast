@@ -17,18 +17,13 @@
 package com.hazelcast.jet.sql;
 
 import com.hazelcast.map.IMap;
-import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.impl.SqlErrorCode;
+import com.hazelcast.sql.SqlResult;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.Serializable;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 public class SqlDeleteQueriesTest extends SqlTestSupport {
     @BeforeClass
@@ -39,48 +34,63 @@ public class SqlDeleteQueriesTest extends SqlTestSupport {
     @Test
     public void deleteBySingleKey() {
         put(1);
-        checkUpdateCount("delete from test_map where __key = 1", 1);
+        checkUpdateCount("delete from test_map where __key = 1", 0);
+        assertMapDoesNotContainKey(1);
+
         put(1);
-        checkUpdateCount("delete from test_map where 1 = __key", 1);
+        checkUpdateCount("delete from test_map where 1 = __key", 0);
+        assertMapDoesNotContainKey(1);
+
         put(1);
         checkUpdateCount("delete from test_map where 2 = __key", 0);
+        assertMapContainsKey(1);
+
+        put(1, 1);
+        checkUpdateCount("delete from test_map where __key = this", 0);
+        assertMapDoesNotContainKey(1);
     }
 
     @Test
-    public void fails_whenThereIsNoKeyInPredicate() {
-        put(1);
-        checkError("delete from test_map where this = 1", "DELETE query has to contain __key = <const value> predicate");
-        checkError("delete from test_map where 1 = this", "DELETE query has to contain __key = <const value> predicate");
-        checkError("delete from test_map where __key = this", "DELETE query has to contain __key = <const value> predicate");
+    public void deleteWithoutKeyInPredicate() {
+        put(1, 1);
+        checkUpdateCount("delete from test_map where this = 1", 0);
+        assertMapDoesNotContainKey(1);
+
+        put(1, 1);
+        checkUpdateCount("delete from test_map where 1 = this", 0);
+        assertMapDoesNotContainKey(1);
 
         put(1, new Person("name", 18));
-        checkError("delete from test_map where name = 'name' and age = 18", "DELETE query has to contain __key = <const value> predicate");
+        checkUpdateCount("delete from test_map where name = 'name' and age = 18", 0);
+        assertMapDoesNotContainKey(1);
     }
 
     @Test
     public void deleteByKey_andAnotherFields() {
-        IMap<Integer, Person> map = instance().getMap("people");
-        map.clear();
-        map.put(1, new Person("name1", 18));
+        put(1, new Person("name1", 18));
+        checkUpdateCount("delete from test_map where __key = 1 and age = 18", 0);
+        assertMapDoesNotContainKey(1);
 
-        checkUpdateCount("delete from people where __key = 1 and age = 18", 1);
-
-        map.put(1, new Person("name1", 18));
-        checkUpdateCount("delete from people where __key = 1 and age = 50", 0);
+        put(1, new Person("name1", 18));
+        checkUpdateCount("delete from test_map where __key = 1 and age = 50", 0);
+        assertMapContainsKey(1);
     }
 
     @Test
     public void deleteWithDisjunctionPredicate_whenOnlyKeysInPredicate() {
         put(1);
         put(2);
-        checkError("delete from test_map where __key = 1 or __key = 2", "Complex DELETE queries unsupported");
+        checkUpdateCount("delete from test_map where __key = 1 or __key = 2", 0);
+        assertMapDoesNotContainKey(1);
+        assertMapDoesNotContainKey(2);
     }
 
     @Test
     public void deleteThatDoesNotCheckKeyForEquality_fails() {
         put(10);
 
-        checkError("delete from test_map where __key > 1", "GREATER_THAN predicate is not supported for DELETE queries");
+        checkUpdateCount("delete from test_map where __key > 1", 0);
+        assertMapDoesNotContainKey(10);
     }
 
     @Test
@@ -88,26 +98,35 @@ public class SqlDeleteQueriesTest extends SqlTestSupport {
         put(1);
 
         checkUpdateCount("delete from test_map where __key = 1 and __key = 2", 0);
+        assertMapContainsKey(1);
     }
 
-    private void checkError(String sql, String expectedErrorMessage) {
-        try {
-            instance().getSql().execute(sql);
+    @Test
+    public void explicitMapping() {
+        String name = randomName();
+        execute(
+                "create mapping " + name + " (\n"
+                        + "__key INT,\n"
+                        + "this INT\n"
+                        + ")\n"
+                        + "TYPE imap\n"
+                        + "OPTIONS (\n"
+                        + "'keyFormat' = 'int',\n"
+                        + "'valueFormat' = 'int'\n"
+                        + ")"
+        );
+        instance().getMap(name).put(1, 1);
+        assertMapContainsKey(name, 1);
+        execute("delete from " + name + " where __key = 1");
+        assertMapDoesNotContainKey(name, 1);
+    }
 
-            fail("Must fail");
-        } catch (HazelcastSqlException e) {
-            assertNotNull(e.getMessage());
-            assertTrue(
-                    "\nExpected: " + expectedErrorMessage + "\nActual: " + e.getMessage(),
-                    e.getMessage().contains(expectedErrorMessage)
-            );
-
-            assertEquals(e.getCode() + ": " + e.getMessage(), SqlErrorCode.GENERIC, e.getCode());
-        }
+    private SqlResult execute(String sql) {
+        return instance().getSql().execute(sql);
     }
 
     private void checkUpdateCount(String sql, int expected) {
-        assertThat(instance().getSql().execute(sql).updateCount()).isEqualTo(expected);
+        assertThat(execute(sql).updateCount()).isEqualTo(expected);
     }
 
     private void put(Object key, Object value) {
@@ -118,6 +137,24 @@ public class SqlDeleteQueriesTest extends SqlTestSupport {
 
     private void put(Object key) {
         put(key, key);
+    }
+
+    private void assertMapDoesNotContainKey(int key) {
+        assertMapDoesNotContainKey("test_map", key);
+    }
+
+    private void assertMapDoesNotContainKey(String mapName, int key) {
+        IMap<Object, Object> test_map = instance().getMap(mapName);
+        assertThat(test_map.containsKey(key)).isFalse();
+    }
+
+    private void assertMapContainsKey(int key) {
+        assertMapContainsKey("test_map", key);
+    }
+
+    private void assertMapContainsKey(String mapName, int key) {
+        IMap<Object, Object> test_map = instance().getMap(mapName);
+        assertThat(test_map.containsKey(key)).isTrue();
     }
 
     public static class Person implements Serializable {
