@@ -189,13 +189,14 @@ public final class Hazelcast {
      * Returns either a local Hazelcast instance or a "bootstrapped" Hazelcast
      * client for a remote Hazelcast cluster, depending on the context. The main
      * goal of this factory method is to simplify submitting a Jet job to a remote
-     * cluster while also making it convenient to test on the local machine.
+     * Hazelcast cluster while also making it convenient to test on the local
+     * machine.
      * <p>
-     * When you submit a job to a Jet instance that runs locally in your JVM,
-     * it will have all the dependency classes available. However, when you
-     * take the same job to a remote Jet cluster, you'll often find that it
-     * fails with a {@code ClassNotFoundException} because the remote cluster
-     * doesn't have all the classes you use in the job.
+     * When you submit a job to a Hazelcast instance that runs locally in your
+     * JVM, it will have all the dependency classes available. However, when
+     * you take the same job to a remote Hazelcast cluster, you'll often find
+     * that it fails with a {@code ClassNotFoundException} because the remote
+     * cluster doesn't have all the classes you use in the job.
      * <p>
      * Normally you would have to explicitly add all the dependency classes to
      * the {@link JobConfig#addClass(Class[]) JobConfig}, either one by one or
@@ -220,16 +221,16 @@ public final class Hazelcast {
      * <p>
      * To use this feature, follow these steps:
      * <ol><li>
-     *     Write your {@code main()} method and your Jet code the usual way, making
+     *     Write your {@code main()} method and your code the usual way, making
      *     sure you use this method (instead of {@link HazelcastClient#newHazelcastClient()})
      *     to acquire a Hazelcast client instance.
      * <li>
-     *     Create a runnable JAR (e.g. {@code jetjob.jar}) with your entry point
+     *     Create a runnable JAR (e.g. {@code hz-job.jar}) with your entry point
      *     declared as the {@code Main-Class} in {@code MANIFEST.MF}. The JAR should
-     *     include all dependencies required to run it (except the Jet classes
+     *     include all dependencies required to run it (except the Hazelcast classes
      *     &mdash; these are already available on the cluster classpath).
      * <li>
-     *     Submit the job by writing {@code hazelcast submit jet-job.jar} on
+     *     Submit the job by writing {@code hazelcast submit hz-job.jar} on
      *     the command line. This assumes you have downloaded the Hazelcast
      *     distribution package and its {@code bin} directory is on your system
      *     path. The Hazelcast client will use the configuration file {@code
