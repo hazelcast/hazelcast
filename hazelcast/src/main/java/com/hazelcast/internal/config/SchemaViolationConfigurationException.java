@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.config;
+package com.hazelcast.internal.config;
+
+import com.hazelcast.config.InvalidConfigurationException;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.config.SchemaViolationConfigurationException;
 import com.hazelcast.internal.config.YamlConfigSchemaValidator;
 import com.hazelcast.internal.yaml.YamlDomBuilder;
 import com.hazelcast.internal.yaml.YamlMapping;
