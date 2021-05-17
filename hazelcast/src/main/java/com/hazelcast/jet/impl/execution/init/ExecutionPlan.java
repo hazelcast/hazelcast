@@ -77,9 +77,9 @@ import java.util.stream.Stream;
 import static com.hazelcast.internal.util.concurrent.ConcurrentConveyor.concurrentConveyor;
 import static com.hazelcast.jet.config.EdgeConfig.DEFAULT_QUEUE_SIZE;
 import static com.hazelcast.jet.core.Edge.DISTRIBUTE_TO_ALL;
+import static com.hazelcast.jet.impl.LightMasterContext.LIGHT_JOB_CONFIG;
 import static com.hazelcast.jet.impl.execution.OutboundCollector.compositeCollector;
 import static com.hazelcast.jet.impl.execution.TaskletExecutionService.TASKLET_INIT_CLOSE_EXECUTOR_NAME;
-import static com.hazelcast.jet.impl.LightMasterContext.LIGHT_JOB_CONFIG;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.ImdgUtil.getMemberConnection;
 import static com.hazelcast.jet.impl.util.ImdgUtil.readList;
@@ -182,17 +182,17 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             // create StoreSnapshotTasklet and the queues to it
             ConcurrentConveyor<Object> ssConveyor = null;
             if (snapshotContext.processingGuarantee() != ProcessingGuarantee.NONE) {
-            @SuppressWarnings("unchecked")
-            QueuedPipe<Object>[] snapshotQueues = new QueuedPipe[vertex.localParallelism()];
-            Arrays.setAll(snapshotQueues, i -> new OneToOneConcurrentArrayQueue<>(SNAPSHOT_QUEUE_SIZE));
+                @SuppressWarnings("unchecked")
+                QueuedPipe<Object>[] snapshotQueues = new QueuedPipe[vertex.localParallelism()];
+                Arrays.setAll(snapshotQueues, i -> new OneToOneConcurrentArrayQueue<>(SNAPSHOT_QUEUE_SIZE));
                 ssConveyor = ConcurrentConveyor.concurrentConveyor(null, snapshotQueues);
-            ILogger storeSnapshotLogger = prefixedLogger(nodeEngine.getLogger(StoreSnapshotTasklet.class), jobPrefix);
-            StoreSnapshotTasklet ssTasklet = new StoreSnapshotTasklet(snapshotContext,
-                    ConcurrentInboundEdgeStream.create(ssConveyor, 0, 0, true, jobPrefix + "/ssFrom", null),
-                    new AsyncSnapshotWriterImpl(nodeEngine, snapshotContext, vertex.name(), memberIndex, memberCount,
-                            jobSerializationService),
-                    storeSnapshotLogger, vertex.name(), higherPriorityVertices.contains(vertex.vertexId()));
-            tasklets.add(ssTasklet);
+                ILogger storeSnapshotLogger = prefixedLogger(nodeEngine.getLogger(StoreSnapshotTasklet.class), jobPrefix);
+                StoreSnapshotTasklet ssTasklet = new StoreSnapshotTasklet(snapshotContext,
+                        ConcurrentInboundEdgeStream.create(ssConveyor, 0, 0, true, jobPrefix + "/ssFrom", null),
+                        new AsyncSnapshotWriterImpl(nodeEngine, snapshotContext, vertex.name(), memberIndex, memberCount,
+                                jobSerializationService),
+                        storeSnapshotLogger, vertex.name(), higherPriorityVertices.contains(vertex.vertexId()));
+                tasklets.add(ssTasklet);
             }
 
             int localProcessorIdx = 0;
@@ -295,7 +295,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         }
         out.writeBoolean(isLightJob);
         if (!isLightJob) {
-        out.writeObject(jobConfig);
+            out.writeObject(jobConfig);
         }
         out.writeInt(memberIndex);
         out.writeInt(memberCount);

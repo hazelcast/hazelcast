@@ -107,7 +107,7 @@ public final class ExecutionPlanBuilder {
                 if (!isLightJob) {
                     // We avoid the check for light jobs - the user will get the error anyway, but maybe with less information.
                     // And we can recommend the user to use normal job to have more checks.
-                checkSerializable(processorSupplier, "ProcessorSupplier in vertex '" + vertex.getName() + '\'');
+                    checkSerializable(processorSupplier, "ProcessorSupplier in vertex '" + vertex.getName() + '\'');
                 }
                 final VertexDef vertexDef = new VertexDef(vertexId, vertex.getName(), processorSupplier, localParallelism);
                 vertexDef.addInboundEdges(inbound);
@@ -133,7 +133,7 @@ public final class ExecutionPlanBuilder {
         for (Edge edge : edges) {
             list.add(new EdgeDef(edge, edge.getConfig() == null ? defaultEdgeConfig : edge.getConfig(),
                     oppositeVtxId.apply(edge), isJobDistributed));
-    }
+        }
         return list;
     }
 

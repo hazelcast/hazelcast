@@ -72,7 +72,6 @@ public final class Contexts {
         private final int memberCount;
         private final boolean isLightJob;
 
-        @SuppressWarnings("checkstyle:ParameterNumber")
         MetaSupplierCtx(
                 JetInstance jetInstance,
                 long jobId,
