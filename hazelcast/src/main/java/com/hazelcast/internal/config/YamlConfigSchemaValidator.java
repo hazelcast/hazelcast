@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.config;
 
-import com.hazelcast.config.SchemaViolationConfigurationException;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.internal.yaml.YamlToJsonConverter;
