@@ -67,7 +67,9 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
             }
 
             if (!SqlOperator.class.isAssignableFrom(field.getType())
-                    || field.getName().equals("DESC")) {
+                    || field.getName().equals("DESC")
+                    || field.getName().equals("NULLS_FIRST")
+                    || field.getName().equals("NULLS_LAST")) {
                 continue;
             }
 

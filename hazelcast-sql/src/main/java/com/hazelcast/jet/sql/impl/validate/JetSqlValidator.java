@@ -111,8 +111,13 @@ public class JetSqlValidator extends HazelcastSqlValidator {
         if (containsGroupingOrAggregation(select) && isInfiniteRows(select)) {
             throw newValidationError(select, RESOURCE.streamingAggregationsNotSupported());
         }
+    }
 
-        if (containsSorting(select) && isInfiniteRows(select)) {
+    @Override
+    protected void validateOrderList(SqlSelect select) {
+        super.validateOrderList(select);
+
+        if (select.hasOrderBy() && isInfiniteRows(select)) {
             throw newValidationError(select, RESOURCE.streamingSortingNotSupported());
         }
     }
