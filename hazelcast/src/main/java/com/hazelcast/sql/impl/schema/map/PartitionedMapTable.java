@@ -17,11 +17,13 @@
 package com.hazelcast.sql.impl.schema.map;
 
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableStatistics;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -33,6 +35,7 @@ public class PartitionedMapTable extends AbstractMapTable {
 
     private final List<MapTableIndex> indexes;
     private final boolean hd;
+    private final List<QueryPath> scanFieldPaths = new ArrayList<>(getFieldCount());
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     public PartitionedMapTable(
@@ -62,6 +65,11 @@ public class PartitionedMapTable extends AbstractMapTable {
 
         this.indexes = indexes;
         this.hd = hd;
+
+        for (int i = 0; i < getFieldCount(); i++) {
+            MapTableField field = getField(i);
+            scanFieldPaths.add(field.getPath());
+        }
     }
 
     public PartitionedMapTable(String name, QueryException exception) {
@@ -78,17 +86,17 @@ public class PartitionedMapTable extends AbstractMapTable {
         }
 
         return new PartitionedMapPlanObjectKey(
-            getSchemaName(),
-            getSqlName(),
-            getMapName(),
-            getFields(),
-            getConflictingSchemas(),
-            getKeyDescriptor(),
-            getValueDescriptor(),
-            getKeyJetMetadata(),
-            getValueJetMetadata(),
-            getIndexes(),
-            isHd()
+                getSchemaName(),
+                getSqlName(),
+                getMapName(),
+                getFields(),
+                getConflictingSchemas(),
+                getKeyDescriptor(),
+                getValueDescriptor(),
+                getKeyJetMetadata(),
+                getValueJetMetadata(),
+                getIndexes(),
+                isHd()
         );
     }
 
@@ -97,6 +105,11 @@ public class PartitionedMapTable extends AbstractMapTable {
 
         return indexes != null ? indexes : Collections.emptyList();
     }
+
+    public List<QueryPath> getScanFieldPaths() {
+        return scanFieldPaths;
+    }
+
 
     public boolean isHd() {
         return hd;

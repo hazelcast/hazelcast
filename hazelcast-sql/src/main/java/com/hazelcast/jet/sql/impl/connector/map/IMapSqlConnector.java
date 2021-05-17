@@ -37,8 +37,6 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
-import com.hazelcast.sql.impl.plan.node.JetMapScanMetadata;
-import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
@@ -48,7 +46,6 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -159,34 +156,6 @@ public class IMapSqlConnector implements SqlConnector {
     }
 
     @Override
-    public boolean supportsFullScanReader() {
-        return true;
-    }
-
-    @Nonnull
-    @Override
-    public Vertex fullScanReader(
-            @Nonnull DAG dag,
-            @Nonnull Table table0,
-            @Nullable Expression<Boolean> filter,
-            @Nonnull List<Expression<?>> projection) {
-        PartitionedMapTable table = (PartitionedMapTable) table0;
-        PlanNodeSchema schemaBefore = getScanSchemaBeforeProject(table);
-
-        JetMapScanMetadata mapScanMetadata = new JetMapScanMetadata(
-                table.getMapName(),
-                table.getKeyDescriptor(),
-                table.getValueDescriptor(),
-                getScanFieldPaths(table),
-                schemaBefore.getTypes(),
-                projection,
-                filter
-        );
-
-        return dag.newUniqueVertex(table.toString(), OnHeapMapScanP.onHeapMapScanP(mapScanMetadata));
-    }
-
-    @Override
     public boolean supportsSink() {
         return true;
     }
@@ -230,29 +199,4 @@ public class IMapSqlConnector implements SqlConnector {
     private static String toString(PartitionedMapTable table) {
         return TYPE_NAME + "[" + table.getSchemaName() + "." + table.getSqlName() + "]";
     }
-
-    private static List<QueryPath> getScanFieldPaths(PartitionedMapTable table) {
-        List<QueryPath> res = new ArrayList<>(table.getFieldCount());
-
-        for (int i = 0; i < table.getFieldCount(); i++) {
-            MapTableField field = table.getField(i);
-
-            res.add(field.getPath());
-        }
-
-        return res;
-    }
-
-    private static PlanNodeSchema getScanSchemaBeforeProject(PartitionedMapTable table) {
-        List<QueryDataType> types = new ArrayList<>(table.getFieldCount());
-
-        for (int i = 0; i < table.getFieldCount(); i++) {
-            MapTableField field = table.getField(i);
-
-            types.add(field.getType());
-        }
-
-        return new PlanNodeSchema(types);
-    }
-
 }
