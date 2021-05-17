@@ -40,10 +40,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ENDPOINT_MANAGER_ACCEPTED_SOCKET_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ENDPOINT_MANAGER_ACTIVE_COUNT;
@@ -121,7 +123,7 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
         final ConcurrentHashMap<Address, TcpServerConnectionErrorHandler> errorHandlers = new ConcurrentHashMap<>(100);
         final int index;
 
-        private final Set<Address> connectionsInProgress = newSetFromMap(new ConcurrentHashMap<>());
+        private final Map<Address, Future<Void>> connectionsInProgress = new ConcurrentHashMap<>();
         private final ConcurrentHashMap<Address, TcpServerConnection> connectionMap = new ConcurrentHashMap<>(100);
 
         Plane(int index) {
@@ -184,15 +186,22 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
         }
 
         public boolean hasConnectionInProgress(Address address) {
-            return connectionsInProgress.contains(address);
+            return connectionsInProgress.containsKey(address);
         }
 
-        public boolean addConnectionInProgress(Address address) {
-            return connectionsInProgress.add(address);
+        public Future<Void> getconnectionInProgress(Address address) {
+            return connectionsInProgress.get(address);
+        }
+
+        public void addConnectionInProgressIfAbsent(
+                Address address,
+                Function<? super Address, ? extends Future<Void>> mappingFn
+        ) {
+            connectionsInProgress.computeIfAbsent(address, mappingFn);
         }
 
         public boolean removeConnectionInProgress(Address address) {
-            return connectionsInProgress.remove(address);
+            return connectionsInProgress.remove(address) != null;
         }
 
         public void clearConnectionsInProgress() {

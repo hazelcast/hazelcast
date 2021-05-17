@@ -93,8 +93,7 @@ public final class ExecutionPlanBuilder {
             ILogger logger = prefixedLogger(nodeEngine.getLogger(metaSupplier.getClass()), prefix);
             try {
                 metaSupplier.init(new MetaSupplierCtx(instance, jobId, executionId, jobConfig, logger,
-                        vertex.getName(), localParallelism, totalParallelism, clusterSize,
-                        jobConfig.getProcessingGuarantee()));
+                        vertex.getName(), localParallelism, totalParallelism, clusterSize));
             } catch (Exception e) {
                 throw sneakyThrow(e);
             }
