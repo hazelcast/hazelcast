@@ -74,7 +74,8 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static com.hazelcast.cluster.impl.MemberImpl.NA_MEMBER_LIST_JOIN_VERSION;
@@ -88,6 +89,7 @@ import static com.hazelcast.internal.util.Preconditions.checkFalse;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static java.lang.String.format;
+
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 
@@ -118,11 +120,21 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     private final ClusterStateManager clusterStateManager;
     private final ClusterHeartbeatManager clusterHeartbeatManager;
     private final ReentrantLock lock = new ReentrantLock();
-    private final AtomicBoolean joined = new AtomicBoolean(false);
+    private final AtomicReference<JoinHolder> joined =
+            new AtomicReference<>(new JoinHolder(false));
 
     private volatile UUID clusterId;
     private volatile Address masterAddress;
     private volatile MemberImpl localMember;
+
+    private static class JoinHolder {
+        private final CountDownLatch latch = new CountDownLatch(1);
+        private final boolean isJoined;
+
+        JoinHolder(boolean isJoined) {
+            this.isJoined = isJoined;
+        }
+    }
 
     public ClusterServiceImpl(Node node, MemberImpl localMember) {
         this.node = node;
@@ -673,6 +685,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
             logger.fine("Setting master address to " + master);
         }
         masterAddress = master;
+        joined.getAndUpdate(holder -> new JoinHolder(holder.isJoined)).latch.countDown();
     }
 
     @Override
@@ -702,12 +715,12 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     // should be called under lock
     void setJoined(boolean val) {
         assert lock.isHeldByCurrentThread() : "Called without holding cluster service lock!";
-        joined.set(val);
+        joined.getAndUpdate(holder -> new JoinHolder(val)).latch.countDown();
     }
 
     @Override
     public boolean isJoined() {
-        return joined.get();
+        return joined.get().isJoined;
     }
 
     @Probe(name = CLUSTER_METRIC_CLUSTER_SERVICE_SIZE)
@@ -1095,5 +1108,15 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     @Override
     public String toString() {
         return "ClusterService" + "{address=" + getThisAddress() + '}';
+    }
+
+    /**
+     *
+     * @param millis
+     * @return true is cluster has been joined, false if timed out
+     * @throws InterruptedException
+     */
+    public boolean blockOnJoin(long millis) throws InterruptedException {
+        return joined.get().latch.await(millis, TimeUnit.MILLISECONDS);
     }
 }

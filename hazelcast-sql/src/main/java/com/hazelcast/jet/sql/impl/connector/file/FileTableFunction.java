@@ -20,102 +20,76 @@ import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.sql.impl.schema.JetDynamicTableFunction;
 import com.hazelcast.jet.sql.impl.schema.JetTableFunctionParameter;
 import com.hazelcast.jet.sql.impl.schema.MappingField;
-import com.hazelcast.jet.sql.impl.schema.UnknownStatistic;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.jet.sql.impl.validate.operators.HazelcastOperandTypeInference;
+import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
+import com.hazelcast.sql.impl.calcite.validate.operators.ReplaceUnknownOperandTypeInference;
 import com.hazelcast.sql.impl.schema.Table;
-import org.apache.calcite.schema.FunctionParameter;
+import org.apache.calcite.sql.SqlOperandCountRange;
+import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import org.apache.calcite.sql.type.SqlTypeName;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.jet.sql.impl.connector.SqlConnector.AVRO_FORMAT;
-import static com.hazelcast.jet.sql.impl.connector.SqlConnector.CSV_FORMAT;
-import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JSON_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_FORMAT;
-import static com.hazelcast.jet.sql.impl.connector.SqlConnector.PARQUET_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.file.FileSqlConnector.OPTION_GLOB;
 import static com.hazelcast.jet.sql.impl.connector.file.FileSqlConnector.OPTION_OPTIONS;
 import static com.hazelcast.jet.sql.impl.connector.file.FileSqlConnector.OPTION_PATH;
 import static com.hazelcast.jet.sql.impl.connector.file.FileSqlConnector.OPTION_SHARED_FILE_SYSTEM;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
+import static org.apache.calcite.sql.type.SqlTypeName.ANY;
 
 public final class FileTableFunction extends JetDynamicTableFunction {
 
-    public static final FileTableFunction CSV = new FileTableFunction(CSV_FORMAT, asList(
-            new JetTableFunctionParameter(0, OPTION_PATH, SqlTypeName.VARCHAR, true),
-            new JetTableFunctionParameter(1, OPTION_GLOB, SqlTypeName.VARCHAR, false),
-            new JetTableFunctionParameter(2, OPTION_SHARED_FILE_SYSTEM, SqlTypeName.VARCHAR, false),
-            new JetTableFunctionParameter(3, OPTION_OPTIONS, SqlTypeName.MAP, false)
-    ));
-
-    public static final FileTableFunction JSON = new FileTableFunction(JSON_FORMAT, asList(
-            new JetTableFunctionParameter(0, OPTION_PATH, SqlTypeName.VARCHAR, true),
-            new JetTableFunctionParameter(1, OPTION_GLOB, SqlTypeName.VARCHAR, false),
-            new JetTableFunctionParameter(2, OPTION_SHARED_FILE_SYSTEM, SqlTypeName.VARCHAR, false),
-            new JetTableFunctionParameter(3, OPTION_OPTIONS, SqlTypeName.MAP, false)
-    ));
-
-    public static final FileTableFunction AVRO = new FileTableFunction(AVRO_FORMAT, asList(
-            new JetTableFunctionParameter(0, OPTION_PATH, SqlTypeName.VARCHAR, true),
-            new JetTableFunctionParameter(1, OPTION_GLOB, SqlTypeName.VARCHAR, false),
-            new JetTableFunctionParameter(2, OPTION_SHARED_FILE_SYSTEM, SqlTypeName.VARCHAR, false),
-            new JetTableFunctionParameter(3, OPTION_OPTIONS, SqlTypeName.MAP, false)
-    ));
-
-    public static final FileTableFunction PARQUET = new FileTableFunction(PARQUET_FORMAT, asList(
-            new JetTableFunctionParameter(0, OPTION_PATH, SqlTypeName.VARCHAR, true),
-            new JetTableFunctionParameter(1, OPTION_GLOB, SqlTypeName.VARCHAR, false),
-            new JetTableFunctionParameter(2, OPTION_SHARED_FILE_SYSTEM, SqlTypeName.VARCHAR, false),
-            new JetTableFunctionParameter(3, OPTION_OPTIONS, SqlTypeName.MAP, false)
-    ));
-
     private static final String SCHEMA_NAME_FILES = "files";
+    private static final List<JetTableFunctionParameter> PARAMETERS = asList(
+            new JetTableFunctionParameter(0, OPTION_PATH, SqlTypeName.VARCHAR, TypedOperandChecker.VARCHAR),
+            new JetTableFunctionParameter(1, OPTION_GLOB, SqlTypeName.VARCHAR, TypedOperandChecker.VARCHAR),
+            new JetTableFunctionParameter(2, OPTION_SHARED_FILE_SYSTEM, SqlTypeName.VARCHAR, TypedOperandChecker.VARCHAR),
+            new JetTableFunctionParameter(3, OPTION_OPTIONS, SqlTypeName.MAP, TypedOperandChecker.MAP)
+    );
 
-    private final String format;
-    private final List<FunctionParameter> parameters;
-
-    private FileTableFunction(String format, List<FunctionParameter> parameters) {
-        super(FileSqlConnector.INSTANCE);
-
-        this.format = format;
-        this.parameters = parameters;
+    public FileTableFunction(String name, String format) {
+        super(
+                name,
+                PARAMETERS,
+                arguments -> toTable(arguments, format),
+                new HazelcastOperandTypeInference(PARAMETERS, new ReplaceUnknownOperandTypeInference(ANY)),
+                FileSqlConnector.INSTANCE
+        );
     }
 
     @Override
-    public List<FunctionParameter> getParameters() {
-        return parameters;
+    public SqlOperandCountRange getOperandCountRange() {
+        return SqlOperandCountRanges.between(1, PARAMETERS.size());
     }
 
-    @Override
-    protected HazelcastTable toTable(List<Object> arguments) {
-        Map<String, Object> options = toOptions(arguments);
+    private static Table toTable(List<Object> arguments, String format) {
+        Map<String, Object> options = toOptions(arguments, format);
         List<MappingField> fields = FileSqlConnector.resolveAndValidateFields(options, emptyList());
-        Table table = FileSqlConnector.createTable(SCHEMA_NAME_FILES, randomName(), options, fields);
-
-        return new HazelcastTable(table, UnknownStatistic.INSTANCE);
+        return FileSqlConnector.createTable(SCHEMA_NAME_FILES, randomName(), options, fields);
     }
 
     /**
      * Takes a list of function arguments and converts it to equivalent options
      * that would be used if the file was declared using DDL.
      */
-    private Map<String, Object> toOptions(List<Object> arguments) {
-        assert arguments.size() == parameters.size();
+    private static Map<String, Object> toOptions(List<Object> arguments, String format) {
+        assert arguments.size() == PARAMETERS.size();
 
         Map<String, Object> options = new HashMap<>();
         options.put(OPTION_FORMAT, format);
         for (int i = 0; i < arguments.size(); i++) {
             if (arguments.get(i) != null) {
-                options.put(parameters.get(i).getName(), arguments.get(i));
+                options.put(PARAMETERS.get(i).name(), arguments.get(i));
             }
         }
         return options;
     }
 
     private static String randomName() {
-        return "file_" + UuidUtil.newUnsecureUuidString().replace('-', '_');
+        return SCHEMA_NAME_FILES + "_" + UuidUtil.newUnsecureUuidString().replace('-', '_');
     }
 }

@@ -79,12 +79,12 @@ public class ClientTestSupport extends HazelcastTestSupport {
         ((TestClientRegistry.MockTcpClientConnectionManager) connectionManager).unblockTo(address);
     }
 
-    protected HazelcastClientInstanceImpl getHazelcastClientInstanceImpl(HazelcastInstance client) {
+    protected static HazelcastClientInstanceImpl getHazelcastClientInstanceImpl(HazelcastInstance client) {
         HazelcastClientProxy clientProxy = (HazelcastClientProxy) client;
         return clientProxy.client;
     }
 
-    protected void makeSureDisconnectedFromServer(final HazelcastInstance client, UUID memberUUID) {
+    public static void makeSureDisconnectedFromServer(final HazelcastInstance client, UUID memberUUID) {
         assertTrueEventually(() -> {
             ClientConnectionManager connectionManager = getHazelcastClientInstanceImpl(client).getConnectionManager();
             assertNull(connectionManager.getConnection(memberUUID));

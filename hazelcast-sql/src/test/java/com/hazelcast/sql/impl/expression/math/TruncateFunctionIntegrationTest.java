@@ -31,7 +31,7 @@ import com.hazelcast.sql.support.expressions.ExpressionValue.ByteVal;
 import com.hazelcast.sql.support.expressions.ExpressionValue.IntegerVal;
 import com.hazelcast.sql.support.expressions.ExpressionValue.LongVal;
 import com.hazelcast.sql.support.expressions.ExpressionValue.ShortVal;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -61,7 +61,7 @@ import static com.hazelcast.sql.support.expressions.ExpressionValue.BigDecimalVa
 import static com.hazelcast.sql.support.expressions.ExpressionValue.DoubleVal;
 import static com.hazelcast.sql.support.expressions.ExpressionValue.FloatVal;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class TruncateFunctionIntegrationTest extends ExpressionTestSupport {
     @Test

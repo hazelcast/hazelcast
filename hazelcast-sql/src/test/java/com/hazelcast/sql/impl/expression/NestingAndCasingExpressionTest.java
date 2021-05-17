@@ -18,16 +18,18 @@ package com.hazelcast.sql.impl.expression;
 
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.sql.SqlOperator;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -43,10 +45,10 @@ import static junit.framework.TestCase.fail;
  * <p>
  * Also ensures that function names are case-insensitive.
  */
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
-    @Override
+    @Before
     public void before0() {
         put(1);
     }
@@ -109,6 +111,16 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
     @Test
     public void test_NOT() {
         check(sql("(NOT(?)) || (NOT(?))"), true, true);
+    }
+
+    @Test
+    public void test_IN() {
+        check(sql("(1 IN (1)) || (1 IN (1)) "));
+    }
+
+    @Test
+    public void test_NOT_IN() {
+        check(sql("(1 NOT IN (2)) || (1 NOT IN (2))"));
     }
 
     @Test
@@ -407,9 +419,41 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
                 "xyz", "x", "X", "xyz", "y", "Y");
     }
 
+    @Test
     public void test_POSITION() {
         check(sql("POSITION(? IN ?) || POSITION(? IN ?)"),
                 "y", "xyz", "z", "xyz");
+    }
+
+    @Test
+    public void test_BETWEEN_ASYMMETRIC() {
+        check(sqlWithWhere("BETWEEN ? AND ? "), SqlColumnType.INTEGER, 1, 1);
+    }
+
+    @Test
+    public void test_NOT_BETWEEN_ASYMMETRIC() {
+        check(sqlWithWhere("NOT BETWEEN ? AND ? "), SqlColumnType.INTEGER, 2, 2);
+    }
+
+    @Test
+    public void test_BETWEEN_SYMMETRIC() {
+        check(sqlWithWhere("BETWEEN SYMMETRIC ? AND ? "), SqlColumnType.INTEGER, 1, 1);
+    }
+
+    @Test
+    public void test_NOT_BETWEEN_SYMMETRIC() {
+        check(sqlWithWhere("NOT BETWEEN SYMMETRIC ? AND ? "), SqlColumnType.INTEGER, 2, 2);
+    }
+
+    @Test
+    public void test_CASE() {
+        check(sql("CASE WHEN ? THEN ? END || CASE WHEN ? THEN ? END"), true, "foo", true, "bar");
+    }
+
+    @Test
+    public void test_EXTRACT() {
+        check(sql("EXTRACT(MONTH FROM ?) || EXTRACT(MONTH FROM ?)"),
+                LocalDateTime.now(), LocalDateTime.now());
     }
 
     private void check(String sql, Object... params) {
@@ -417,7 +461,17 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
         checkValue0(sql.toLowerCase(), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, params);
     }
 
+    private void check(String sql, SqlColumnType type, Object... params) {
+        checkValue0(sql, type, SKIP_VALUE_CHECK, params);
+        checkValue0(sql.toLowerCase(), type, SKIP_VALUE_CHECK, params);
+    }
+
     private String sql(String expression) {
         return "SELECT " + expression + " FROM map";
     }
+
+    private String sqlWithWhere(String expression) {
+        return "SELECT this FROM map WHERE this " + expression;
+    }
+
 }

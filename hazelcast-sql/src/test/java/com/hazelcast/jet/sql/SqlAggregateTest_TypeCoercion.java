@@ -106,7 +106,7 @@ public class SqlAggregateTest_TypeCoercion extends SqlTestSupport {
         assertThatThrownBy(() -> sqlService.execute("select sum(\"timestamp\") from allTypesTable"))
                 .hasMessageContaining("Cannot apply 'SUM' function to [TIMESTAMP]");
         assertThatThrownBy(() -> sqlService.execute("select sum(\"timestampTz\") from allTypesTable"))
-                .hasMessageContaining("Cannot apply 'SUM' function to [TIMESTAMP_WITH_TIME_ZONE]");
+                .hasMessageContaining("Cannot apply 'SUM' function to [TIMESTAMP WITH TIME ZONE]");
         assertThatThrownBy(() -> sqlService.execute("select sum(\"object\") from allTypesTable"))
                 .hasMessageContaining("Cannot apply 'SUM' function to [OBJECT]");
     }
@@ -147,7 +147,7 @@ public class SqlAggregateTest_TypeCoercion extends SqlTestSupport {
         assertThatThrownBy(() -> sqlService.execute("select avg(\"timestamp\") from allTypesTable"))
                 .hasMessageContaining("Cannot apply 'AVG' function to [TIMESTAMP]");
         assertThatThrownBy(() -> sqlService.execute("select avg(\"timestampTz\") from allTypesTable"))
-                .hasMessageContaining("Cannot apply 'AVG' function to [TIMESTAMP_WITH_TIME_ZONE]");
+                .hasMessageContaining("Cannot apply 'AVG' function to [TIMESTAMP WITH TIME ZONE]");
         assertThatThrownBy(() -> sqlService.execute("select avg(\"object\") from allTypesTable"))
                 .hasMessageContaining("Cannot apply 'AVG' function to [OBJECT]");
     }

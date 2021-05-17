@@ -39,54 +39,48 @@ public final class BinaryOperatorOperandTypeInference implements SqlOperandTypeI
         assert operandTypes.length == 2;
         assert binding.getOperandCount() == 2;
 
-        // Check if we have parameters. If yes, we will upcast integer literals to BIGINT as explained below
         boolean hasParameters = binding.operands().stream().anyMatch((operand) -> operand.getKind() == SqlKind.DYNAMIC_PARAM);
 
-        int unknownTypeOperandIndex = -1;
+        int knownTypeOperandIndex = -1;
         RelDataType knownType = null;
 
         for (int i = 0; i < binding.getOperandCount(); i++) {
-            RelDataType operandType = binding.getOperandType(i);
+            operandTypes[i] = binding.getOperandType(i);
 
-            if (operandType.getSqlTypeName() == SqlTypeName.NULL) {
-                // Will resolve operand type at this index later.
-                unknownTypeOperandIndex = i;
-            } else {
-                if (hasParameters && toHazelcastType(operandType.getSqlTypeName()).getTypeFamily().isNumericInteger()) {
+            if (!operandTypes[i].equals(binding.getValidator().getUnknownType())) {
+                if (hasParameters && toHazelcastType(operandTypes[i].getSqlTypeName()).getTypeFamily().isNumericInteger()) {
                     // If we are here, the operands are a parameter and a numeric expression.
-                    // We upcast the type of the numeric expression to BIGINT, so that an expression `1 > ?` is resolved to
+                    // We widen the type of the numeric expression to BIGINT, so that an expression `1 > ?` is resolved to
                     // `(BIGINT)1 > (BIGINT)?` rather than `(TINYINT)1 > (TINYINT)?`
                     RelDataType newOperandType = createType(
                             binding.getTypeFactory(),
                             SqlTypeName.BIGINT,
-                            operandType.isNullable()
+                            operandTypes[i].isNullable()
                     );
 
-                    operandType = newOperandType;
+                    operandTypes[i] = newOperandType;
                 }
 
-                operandTypes[i] = operandType;
-
-                if (knownType == null) {
-                    knownType = operandType;
+                if (knownType == null || knownType.getSqlTypeName() == SqlTypeName.NULL) {
+                    knownType = operandTypes[i];
+                    knownTypeOperandIndex = i;
                 }
             }
         }
 
-        // If we have [UNKNOWN, UNKNOWN] operands, throw a signature error, since we cannot deduce the return type
-        if (knownType == null) {
+        // If we have [UNKNOWN, UNKNOWN] or [NULL, UNKNOWN] operands, throw a signature error,
+        // since we cannot deduce the return type
+        if (knownType == null || knownType.getSqlTypeName() == SqlTypeName.NULL && hasParameters) {
             throw new HazelcastCallBinding(binding).newValidationSignatureError();
         }
 
-        // If there is an operand with an unresolved type, set it to the known type.
-        if (unknownTypeOperandIndex != -1) {
-            if (SqlTypeName.INTERVAL_TYPES.contains(knownType.getSqlTypeName())) {
-                // If there is an interval on the one side, assume that the other side is a timestamp,
-                // because this is the only viable overload.
-                operandTypes[unknownTypeOperandIndex] = createType(binding.getTypeFactory(), SqlTypeName.TIMESTAMP, true);
-            } else {
-                operandTypes[unknownTypeOperandIndex] = knownType;
-            }
+        if (SqlTypeName.INTERVAL_TYPES.contains(knownType.getSqlTypeName())
+                && operandTypes[1 - knownTypeOperandIndex].getSqlTypeName() == SqlTypeName.NULL) {
+            // If there is an interval on the one side and NULL on the other, assume that the other side is a TIMESTAMP,
+            // because this is the only viable overload.
+            operandTypes[1 - knownTypeOperandIndex] = createType(binding.getTypeFactory(), SqlTypeName.TIMESTAMP, true);
+        } else {
+            operandTypes[1 - knownTypeOperandIndex] = knownType;
         }
     }
 }

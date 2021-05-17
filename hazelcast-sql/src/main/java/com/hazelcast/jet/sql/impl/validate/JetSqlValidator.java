@@ -19,13 +19,11 @@ package com.hazelcast.jet.sql.impl.validate;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateJob;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
-import com.hazelcast.jet.sql.impl.schema.JetSqlUserDefinedTableFunction;
 import com.hazelcast.jet.sql.impl.schema.JetTableFunction;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.schema.TableFunction;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlInsert;
@@ -40,6 +38,8 @@ import org.apache.calcite.sql.validate.SqlValidatorCatalogReader;
 import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.sql.validate.SqlValidatorTable;
 
+import java.util.List;
+
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 import static com.hazelcast.jet.sql.impl.validate.ValidatorResource.RESOURCE;
 import static org.apache.calcite.sql.SqlKind.AGGREGATE;
@@ -53,9 +53,10 @@ public class JetSqlValidator extends HazelcastSqlValidator {
     public JetSqlValidator(
             SqlValidatorCatalogReader catalogReader,
             HazelcastTypeFactory typeFactory,
-            SqlConformance conformance
+            SqlConformance conformance,
+            List<Object> arguments
     ) {
-        super(JetSqlOperatorTable.instance(), catalogReader, typeFactory, conformance);
+        super(JetSqlOperatorTable.instance(), catalogReader, typeFactory, conformance, arguments);
     }
 
     @Override
@@ -157,12 +158,6 @@ public class JetSqlValidator extends HazelcastSqlValidator {
                 SqlOperator operator = call.getOperator();
                 if (operator instanceof JetTableFunction) {
                     if (((JetTableFunction) operator).isStream()) {
-                        found = true;
-                        return null;
-                    }
-                } else if (operator instanceof JetSqlUserDefinedTableFunction) {
-                    TableFunction function = ((JetSqlUserDefinedTableFunction) operator).getFunction();
-                    if (((JetTableFunction) function).isStream()) {
                         found = true;
                         return null;
                     }

@@ -40,11 +40,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.function.Function;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ENDPOINT_MANAGER_ACCEPTED_SOCKET_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ENDPOINT_MANAGER_ACTIVE_COUNT;
@@ -122,7 +124,7 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
         final ConcurrentHashMap<Address, TcpServerConnectionErrorHandler> errorHandlers = new ConcurrentHashMap<>(100);
         final int index;
 
-        private final Set<Address> connectionsInProgress = newSetFromMap(new ConcurrentHashMap<>());
+        private final Map<Address, Future<Void>> connectionsInProgress = new ConcurrentHashMap<>();
         private final ConcurrentHashMap<Address, TcpServerConnection> connectionMap = new ConcurrentHashMap<>(100);
 
         Plane(int index) {
@@ -192,15 +194,22 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
         }
 
         public boolean hasConnectionInProgress(Address address) {
-            return connectionsInProgress.contains(address);
+            return connectionsInProgress.containsKey(address);
         }
 
-        public boolean addConnectionInProgress(Address address) {
-            return connectionsInProgress.add(address);
+        public Future<Void> getconnectionInProgress(Address address) {
+            return connectionsInProgress.get(address);
+        }
+
+        public void addConnectionInProgressIfAbsent(
+                Address address,
+                Function<? super Address, ? extends Future<Void>> mappingFn
+        ) {
+            connectionsInProgress.computeIfAbsent(address, mappingFn);
         }
 
         public boolean removeConnectionInProgress(Address address) {
-            return connectionsInProgress.remove(address);
+            return connectionsInProgress.remove(address) != null;
         }
 
         public void clearConnectionsInProgress() {
@@ -267,9 +276,11 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
             if (remoteAddress == null) {
                 return;
             }
+
+            Plane plane = null;
             int planeIndex = connection.getPlaneIndex();
             if (planeIndex > -1) {
-                Plane plane = planes[connection.getPlaneIndex()];
+                plane = planes[connection.getPlaneIndex()];
                 plane.removeConnection(connection);
                 fireConnectionRemovedEvent(connection, remoteAddress);
             } else {
@@ -277,10 +288,12 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
                 // that the planeIndex was not set. Instead look for the connection
                 // by remoteAddress and connectionId over all planes and remove it wherever found.
                 boolean removed = false;
-                for (Plane plane : planes) {
-                    plane.removeConnectionInProgress(remoteAddress);
-                    // not using removeIf due to https://bugs.java.com/bugdatabase/view_bug.do?bug_id=8078645
-                    if (plane.removeConnectionsWithId(connection.getConnectionId())) {
+                for (Plane p : planes) {
+                    if (p.removeConnectionInProgress(remoteAddress)) {
+                        plane = p;
+                    }
+                    if (p.removeConnectionsWithId(connection.getConnectionId())) {
+                        plane = p;
                         removed = true;
                     }
                 }
@@ -289,11 +302,9 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
                 }
             }
 
-            if (cause != null) {
-                serverContext.onFailedConnection(remoteAddress);
-                if (!silent) {
-                    getErrorHandler(remoteAddress, connection.getPlaneIndex(), false).onError(cause);
-                }
+            serverContext.onFailedConnection(remoteAddress);
+            if (!silent && plane != null) {
+                getErrorHandler(remoteAddress, plane.errorHandlers).onError(cause);
             }
         }
     }
@@ -326,13 +337,16 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
         return false;
     }
 
-    protected TcpServerConnectionErrorHandler getErrorHandler(Address endpoint, int planeIndex, boolean reset) {
+    protected TcpServerConnectionErrorHandler getErrorHandler(Address endpoint, int planeIndex) {
         ConcurrentHashMap<Address, TcpServerConnectionErrorHandler> errorHandlers = planes[planeIndex].errorHandlers;
-        TcpServerConnectionErrorHandler handler = getOrPutIfAbsent(errorHandlers, endpoint, errorHandlerConstructor);
-        if (reset) {
-            handler.reset();
-        }
-        return handler;
+        return getErrorHandler(endpoint, errorHandlers);
+    }
+
+    private TcpServerConnectionErrorHandler getErrorHandler(
+            Address endpoint,
+            ConcurrentHashMap<Address, TcpServerConnectionErrorHandler> errorHandlers
+    ) {
+        return getOrPutIfAbsent(errorHandlers, endpoint, errorHandlerConstructor);
     }
 
     private class NetworkStatsImpl implements NetworkStats {

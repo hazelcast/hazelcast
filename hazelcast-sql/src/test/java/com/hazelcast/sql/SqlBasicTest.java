@@ -214,17 +214,26 @@ public class SqlBasicTest extends SqlTestSupport {
 
                 if (!portable) {
                     checkRowValue(SqlColumnType.DECIMAL, new BigDecimal(val.getDecimalBigIntegerVal()), row, "decimalBigIntegerVal");
-                    checkRowValue(SqlColumnType.DECIMAL, val.getDecimalVal(), row, "decimalVal");
                 }
+                checkRowValue(SqlColumnType.DECIMAL, val.getDecimalVal(), row, "decimalVal");
 
                 checkRowValue(SqlColumnType.VARCHAR, Character.toString(val.getCharVal()), row, "charVal");
                 checkRowValue(SqlColumnType.VARCHAR, val.getVarcharVal(), row, "varcharVal");
 
-                if (!portable) {
-                    checkRowValue(SqlColumnType.DATE, val.getDateVal(), row, "dateVal");
-                    checkRowValue(SqlColumnType.TIME, val.getTimeVal(), row, "timeVal");
-                    checkRowValue(SqlColumnType.TIMESTAMP, val.getTimestampVal(), row, "timestampVal");
+                checkRowValue(SqlColumnType.DATE, val.getDateVal(), row, "dateVal");
+                checkRowValue(SqlColumnType.TIME, val.getTimeVal(), row, "timeVal");
+                checkRowValue(SqlColumnType.TIMESTAMP, val.getTimestampVal(), row, "timestampVal");
+                if (portable) {
+                    checkRowValue(
+                            SqlColumnType.TIMESTAMP_WITH_TIME_ZONE,
+                            val.getTsTzOffsetDateTimeVal(),
+                            row,
+                            "tsTzOffsetDateTimeVal"
+                    );
 
+                    checkRowValue(SqlColumnType.OBJECT, ((PortablePojo) val).getPortableVal(), row, "portableVal");
+                    checkRowValue(SqlColumnType.VARCHAR, null, row, "nullVal");
+                } else {
                     checkRowValue(
                             SqlColumnType.TIMESTAMP_WITH_TIME_ZONE,
                             OffsetDateTime.ofInstant(val.getTsTzDateVal().toInstant(), ZoneId.systemDefault()),
@@ -262,11 +271,6 @@ public class SqlBasicTest extends SqlTestSupport {
 
                     checkRowValue(SqlColumnType.OBJECT, val.getObjectVal(), row, "objectVal");
                     checkRowValue(SqlColumnType.OBJECT, null, row, "nullVal");
-                }
-
-                if (portable) {
-                    checkRowValue(SqlColumnType.OBJECT, ((PortablePojo) val).getPortableVal(), row, "portableVal");
-                    checkRowValue(SqlColumnType.VARCHAR, null, row, "nullVal");
                 }
 
                 uniqueKeys.add(key0);
@@ -367,8 +371,13 @@ public class SqlBasicTest extends SqlTestSupport {
                     "bigIntVal",
                     "realVal",
                     "doubleVal",
+                    "decimalVal",
                     "charVal",
                     "varcharVal",
+                    "dateVal",
+                    "timeVal",
+                    "timestampVal",
+                    "tsTzOffsetDateTimeVal",
                     "portableVal",
                     "nullVal"
             );
@@ -411,8 +420,13 @@ public class SqlBasicTest extends SqlTestSupport {
                     SqlColumnType.BIGINT,
                     SqlColumnType.REAL,
                     SqlColumnType.DOUBLE,
+                    SqlColumnType.DECIMAL,
                     SqlColumnType.VARCHAR,
                     SqlColumnType.VARCHAR,
+                    SqlColumnType.DATE,
+                    SqlColumnType.TIME,
+                    SqlColumnType.TIMESTAMP,
+                    SqlColumnType.TIMESTAMP_WITH_TIME_ZONE,
                     SqlColumnType.OBJECT,
                     SqlColumnType.VARCHAR
             );
@@ -944,11 +958,17 @@ public class SqlBasicTest extends SqlTestSupport {
             writer.writeFloat(portableFieldName("realVal"), realVal);
             writer.writeDouble(portableFieldName("doubleVal"), doubleVal);
 
+            writer.writeDecimal(portableFieldName("decimalVal"), decimalVal);
+
             writer.writeChar(portableFieldName("charVal"), charVal);
             writer.writeString(portableFieldName("varcharVal"), varcharVal);
 
-            writer.writePortable(portableFieldName("portableVal"), portableVal);
+            writer.writeDate(portableFieldName("dateVal"), dateVal);
+            writer.writeTime(portableFieldName("timeVal"), timeVal);
+            writer.writeTimestamp(portableFieldName("timestampVal"), timestampVal);
+            writer.writeTimestampWithTimezone(portableFieldName("tsTzOffsetDateTimeVal"), tsTzOffsetDateTimeVal);
 
+            writer.writePortable(portableFieldName("portableVal"), portableVal);
             writer.writeString(portableFieldName("nullVal"), null);
         }
 
@@ -963,8 +983,15 @@ public class SqlBasicTest extends SqlTestSupport {
             realVal = reader.readFloat(portableFieldName("realVal"));
             doubleVal = reader.readDouble(portableFieldName("doubleVal"));
 
+            decimalVal = reader.readDecimal(portableFieldName("decimalVal"));
+
             charVal = reader.readChar(portableFieldName("charVal"));
             varcharVal = reader.readString(portableFieldName("varcharVal"));
+
+            dateVal = reader.readDate(portableFieldName("dateVal"));
+            timeVal = reader.readTime(portableFieldName("timeVal"));
+            timestampVal = reader.readTimestamp(portableFieldName("timestampVal"));
+            tsTzOffsetDateTimeVal = reader.readTimestampWithTimezone(portableFieldName("tsTzOffsetDateTimeVal"));
 
             portableVal = reader.readPortable(portableFieldName("portableVal"));
             nullVal = reader.readString(portableFieldName("nullVal"));

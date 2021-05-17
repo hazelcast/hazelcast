@@ -426,28 +426,38 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
         waitAllForSafeState(instances);
 
         // Make sure that all indexes contain expected partitions.
-        Map<UUID, PartitionIdSet> memberToPartitions = new HashMap<>();
-
-        Set<Partition> partitions = instances[0].getPartitionService().getPartitions();
-
-        for (Partition partition : partitions) {
-            UUID member = partition.getOwner().getUuid();
-
-            memberToPartitions.computeIfAbsent(member, (key) -> new PartitionIdSet(partitions.size()))
-                .add(partition.getPartitionId());
-        }
+        final Map<UUID, PartitionIdSet> memberToPartitions = toMemberToPartitionsMap(instances[0]);
 
         assertTrueEventually(() -> {
             for (HazelcastInstance instance : instances) {
                 InternalIndex index = ((MapProxyImpl<?, ?>) instance.getMap(mapName)).getService().getMapServiceContext()
-                    .getMapContainer(mapName).getIndexes().getIndex(INDEX_NAME);
+                        .getMapContainer(mapName).getIndexes().getIndex(INDEX_NAME);
 
                 assertNotNull(index);
 
                 PartitionIdSet expectedPartitions = memberToPartitions.get(instance.getCluster().getLocalMember().getUuid());
 
-                assertNotEquals(GlobalIndexPartitionTracker.STAMP_INVALID, index.getPartitionStamp(expectedPartitions));
+                // Double check: if we still see same partition distribution
+                assertEquals(memberToPartitions, toMemberToPartitionsMap(instances[0]));
+
+                assertNotEquals("MemberPartitions={size=" + expectedPartitions.size() + ", partitions=" + expectedPartitions
+                                + "}, " + index.toString(), GlobalIndexPartitionTracker.STAMP_INVALID,
+                        index.getPartitionStamp(expectedPartitions));
             }
         });
+    }
+
+    private Map<UUID, PartitionIdSet> toMemberToPartitionsMap(HazelcastInstance instance1) {
+        Map<UUID, PartitionIdSet> memberToPartitions = new HashMap<>();
+
+        Set<Partition> partitions = instance1.getPartitionService().getPartitions();
+
+        for (Partition partition : partitions) {
+            UUID member = partition.getOwner().getUuid();
+
+            memberToPartitions.computeIfAbsent(member, (key) -> new PartitionIdSet(partitions.size()))
+                    .add(partition.getPartitionId());
+        }
+        return memberToPartitions;
     }
 }

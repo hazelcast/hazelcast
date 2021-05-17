@@ -732,7 +732,6 @@ public class SqlOrderByTest extends SqlTestSupport {
         }
     }
 
-
     private void checkSelectWithOrderBy(List<String> indexAttrs, String
             sql, List<String> checkOrderFields, List<Boolean> orderDirections
     ) {
@@ -836,8 +835,13 @@ public class SqlOrderByTest extends SqlTestSupport {
                     "bigIntVal",
                     "realVal",
                     "doubleVal",
+                    "decimalVal",
                     "charVal",
                     "varcharVal",
+                    "dateVal",
+                    "timeVal",
+                    "timestampVal",
+                    "tsTzOffsetDateTimeVal",
                     "portableVal",
                     "nullVal"
             );

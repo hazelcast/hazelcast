@@ -185,7 +185,8 @@ public class SqlJobManagementTest extends SqlTestSupport {
                 "'splitBrainProtectionEnabled'='true'," +
                 "'metricsEnabled'='false'," +
                 "'initialSnapshotName'='fooSnapshot'," +
-                "'storeMetricsAfterJobCompletion'='true')" +
+                "'storeMetricsAfterJobCompletion'='true'," +
+                "'maxProcessorAccumulatedRecords'='10')" +
                 "AS SINK INTO dest SELECT v, v FROM src");
 
         JobConfig config = instance().getJob("testJob").getConfig();
@@ -196,6 +197,7 @@ public class SqlJobManagementTest extends SqlTestSupport {
         assertTrue("isSplitBrainProtectionEnabled", config.isSplitBrainProtectionEnabled());
         assertFalse("isMetricsEnabled", config.isMetricsEnabled());
         assertEquals("fooSnapshot", config.getInitialSnapshotName());
+        assertEquals(10L, config.getMaxProcessorAccumulatedRecords());
     }
 
     @Test

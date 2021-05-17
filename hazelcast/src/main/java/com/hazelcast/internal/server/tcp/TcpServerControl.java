@@ -131,7 +131,7 @@ public final class TcpServerControl {
      * Performs the processing of the handshake (sets the endpoint on the Connection, registers the connection)
      * without any spoofing or other validation checks.
      * When executed on the connection initiator side, the connection is registered on the remote address
-     * with which it was registered in {@link TcpServerConnectionManager#connectionsInProgressArray},
+     * with which it was registered in {@link TcpServerConnectionManager#planes},
      * ignoring the {@code remoteEndpoint} argument.
      *
      * @param connection           the connection that send the handshake

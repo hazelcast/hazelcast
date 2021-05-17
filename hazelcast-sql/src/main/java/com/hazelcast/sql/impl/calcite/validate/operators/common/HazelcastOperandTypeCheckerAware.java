@@ -41,7 +41,7 @@ import java.util.Arrays;
  * {@link HazelcastFunction}, {@link HazelcastPrefixOperator}, {@link HazelcastPostfixOperator},
  * {@link HazelcastBinaryOperator}, {@link HazelcastSpecialOperator}.
  */
-interface HazelcastOperandTypeCheckerAware {
+public interface HazelcastOperandTypeCheckerAware {
     default HazelcastCallBinding prepareBinding(SqlCallBinding binding) {
         SqlOperator operator = binding.getOperator();
 
@@ -73,7 +73,7 @@ interface HazelcastOperandTypeCheckerAware {
             operandTypeInference.inferOperandTypes(binding, binding.getValidator().getUnknownType(), operandTypes);
 
             for (int i = 0; i < binding.getOperandCount(); i++) {
-                validator.setValidatedNodeType(binding.operand(i), operandTypes[i]);
+                validator.setValidatedNodeType(binding.getCall().operand(i), operandTypes[i]);
             }
         }
 

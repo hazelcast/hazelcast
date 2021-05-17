@@ -27,20 +27,28 @@ public final class OptimizationTask {
     /** The query. */
     private final String sql;
 
+    /** Query parameter values. */
+    private final List<Object> arguments;
+
     /** The scopes for object lookup in addition to the default ones. */
     private final List<List<String>> searchPaths;
 
     /** The resolved schema. */
     private final SqlCatalog schema;
 
-    public OptimizationTask(String sql, List<List<String>> searchPaths, SqlCatalog schema) {
+    public OptimizationTask(String sql, List<Object> arguments, List<List<String>> searchPaths, SqlCatalog schema) {
         this.sql = sql;
+        this.arguments = arguments;
         this.searchPaths = searchPaths;
         this.schema = schema;
     }
 
     public String getSql() {
         return sql;
+    }
+
+    public List<Object> getArguments() {
+        return arguments;
     }
 
     public List<List<String>> getSearchPaths() {

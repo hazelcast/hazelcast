@@ -26,8 +26,6 @@ import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlDataTypeSpec;
-import org.apache.calcite.sql.SqlFunction;
-import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlInsert;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
@@ -35,6 +33,7 @@ import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.SqlUpdate;
+import org.apache.calcite.sql.SqlUserDefinedTypeNameSpec;
 import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.type.SqlTypeFamily;
@@ -46,6 +45,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import static com.hazelcast.sql.impl.type.QueryDataType.OBJECT;
+import static org.apache.calcite.sql.type.SqlTypeName.ANY;
 import static org.apache.calcite.sql.type.SqlTypeName.NULL;
 import static org.apache.calcite.util.Static.RESOURCE;
 
@@ -85,15 +85,19 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
                     SqlParserPos.ZERO
             );
         } else {
-            targetTypeSpec = SqlTypeUtil.convertTypeToSpec(targetType);
+            if (targetType.getSqlTypeName() == ANY) {
+                // without this the subsequent call to UnsupportedOperationVerifier will fail with "we do not support ANY"
+                targetTypeSpec =
+                        new SqlDataTypeSpec(new SqlUserDefinedTypeNameSpec("OBJECT", SqlParserPos.ZERO), SqlParserPos.ZERO)
+                                .withNullable(targetType.isNullable());
+            } else {
+                targetTypeSpec = SqlTypeUtil.convertTypeToSpec(targetType);
+            }
         }
 
         SqlNode cast = cast(node, targetTypeSpec);
-
         replaceFn.accept(cast);
-
         validator.deriveType(scope, cast);
-
         return true;
     }
 
@@ -111,11 +115,6 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
         } else {
             return HazelcastSqlOperatorTable.CAST.createCall(SqlParserPos.ZERO, node, targetTypeSpec);
         }
-    }
-
-    @Override
-    protected boolean coerceColumnType(SqlValidatorScope scope, SqlNodeList nodeList, int index, RelDataType targetType) {
-        throw new UnsupportedOperationException("Should not be called");
     }
 
     private boolean requiresCast(SqlValidatorScope scope, SqlNode node, RelDataType to) {
@@ -179,12 +178,15 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
         }
     }
 
-    private boolean rowTypeElementCoercion(
+    public boolean rowTypeElementCoercion(
             SqlValidatorScope scope,
             SqlNode rowElement,
             RelDataType targetType,
             Consumer<SqlNode> replaceFn
     ) {
+        if (targetType.equals(scope.getValidator().getUnknownType())) {
+            return false;
+        }
         RelDataType sourceType = validator.deriveType(scope, rowElement);
 
         QueryDataType sourceHzType = HazelcastTypeUtils.toHazelcastType(sourceType.getSqlTypeName());
@@ -197,7 +199,8 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
 
         boolean valid = sourceAndTargetAreNumeric(targetHzType, sourceHzType)
                 || sourceAndTargetAreTemporalAndSourceCanBeConvertedToTarget(targetHzType, sourceHzType)
-                || targetIsTemporalAndSourceIsVarcharLiteral(targetHzType, sourceHzType, rowElement);
+                || targetIsTemporalAndSourceIsVarcharLiteral(targetHzType, sourceHzType, rowElement)
+                || sourceHzType.getTypeFamily() == QueryDataTypeFamily.NULL;
 
         if (!valid) {
             // Types cannot be converted to each other, fail to coerce
@@ -233,43 +236,12 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
     }
 
     @Override
-    public boolean inOperationCoercion(SqlCallBinding binding) {
-        throw new UnsupportedOperationException("Should not be called");
-    }
-
-    @Override
     public boolean builtinFunctionCoercion(
             SqlCallBinding binding,
             List<RelDataType> operandTypes,
             List<SqlTypeFamily> expectedFamilies
     ) {
         throw new UnsupportedOperationException("Should not be called");
-    }
-
-    @Override
-    public boolean userDefinedFunctionCoercion(SqlValidatorScope scope, SqlCall call, SqlFunction function) {
-        // the code below is copied from superclass implementation, added here to ensure that we never rely on Calcite's
-        // coercion logic, but instead provide our own, to fully control operator behavior
-        final List<RelDataType> paramTypes = function.getParamTypes();
-        assert paramTypes != null;
-        boolean coerced = false;
-        for (int i = 0; i < call.operandCount(); i++) {
-            SqlNode operand = call.operand(i);
-            if (operand.getKind() == SqlKind.ARGUMENT_ASSIGNMENT) {
-                final List<SqlNode> operandList = ((SqlCall) operand).getOperandList();
-                String name = ((SqlIdentifier) operandList.get(1)).getSimple();
-                int formalIndex = function.getParamNames().indexOf(name);
-                if (formalIndex < 0) {
-                    return false;
-                }
-                // Column list operand type is not supported now.
-                coerced = coerceOperandType(scope, (SqlCall) operand, 0,
-                        paramTypes.get(formalIndex)) || coerced;
-            } else {
-                coerced = coerceOperandType(scope, call, i, paramTypes.get(i)) || coerced;
-            }
-        }
-        return coerced;
     }
 
     @Override

@@ -28,7 +28,6 @@ import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -149,19 +148,6 @@ public class SqlStatementTest extends SqlTestSupport {
 
         another = query.copy().setSchema("schema");
         checkEquals(query, another, false);
-    }
-
-    @Test
-    public void testToString() {
-        SqlStatement query = create().setSchema("schema").setParameters(Arrays.asList(1, 2)).setTimeoutMillis(3L).setCursorBufferSize(4);
-
-        String string = query.toString();
-
-        assertTrue(string.contains("schema="));
-        assertTrue(string.contains("sql="));
-        assertTrue(string.contains("parameters="));
-        assertTrue(string.contains("timeout="));
-        assertTrue(string.contains("cursorBufferSize="));
     }
 
     private static SqlStatement create() {

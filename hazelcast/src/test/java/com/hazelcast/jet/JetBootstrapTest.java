@@ -14,21 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.type;
+package com.hazelcast.jet;
 
-import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
-public final class QueryDataTypeUtils {
+@Category(ParallelJVMTest.class)
+public class JetBootstrapTest {
 
-    private QueryDataTypeUtils() {
-    }
-
-    public static String sqlTypeName(QueryDataType type) {
-        if (type.getTypeFamily() == QueryDataTypeFamily.INTEGER) {
-            return "INT";
-        } else {
-            return type.getTypeFamily().name().replace('_', ' ');
-        }
+    @Test
+    public void bootstrappedInstance() {
+        JetInstance instance = Jet.bootstrappedInstance();
+        instance.shutdown();
     }
 }

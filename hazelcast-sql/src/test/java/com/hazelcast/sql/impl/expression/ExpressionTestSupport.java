@@ -17,7 +17,11 @@
 package com.hazelcast.sql.impl.expression;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.Job;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnType;
@@ -27,7 +31,8 @@ import com.hazelcast.sql.support.expressions.ExpressionBiValue;
 import com.hazelcast.sql.support.expressions.ExpressionValue;
 import junit.framework.TestCase;
 import org.junit.After;
-import org.junit.Before;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -36,11 +41,16 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
+import java.util.stream.Collectors;
 
+import static com.hazelcast.jet.Util.idToString;
+import static com.hazelcast.jet.core.JetTestSupport.ditchJob;
+import static java.util.stream.Collectors.joining;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -48,6 +58,7 @@ import static org.junit.Assert.fail;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 public abstract class ExpressionTestSupport extends SqlTestSupport {
+    private static final ILogger SUPPORT_LOGGER = Logger.getLogger(ExpressionTestSupport.class);
 
     public static final Character CHAR_VAL = 'f';
     public static final String STRING_VAL = "foo";
@@ -67,27 +78,42 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
     public static final ExpressionValue OBJECT_VAL = new ExpressionValue.ObjectVal();
 
     protected static final Object SKIP_VALUE_CHECK = new Object();
-    protected HazelcastInstance member;
+    protected static HazelcastInstance member;
 
-    private final TestHazelcastFactory factory = new TestHazelcastFactory();
-    protected IMap map;
+    private static final TestHazelcastFactory factory = new TestHazelcastFactory();
+    protected static IMap map;
 
-    @Before
-    public void before() {
+    @BeforeClass
+    public static void beforeClass() {
         member = factory.newHazelcastInstance();
-
         map = member.getMap("map");
-
-        before0();
-    }
-
-    protected void before0() {
-        // No-op
     }
 
     @After
-    public void after() {
-        factory.shutdownAll();
+    public void supportAfter() {
+        if (member == null) {
+            return;
+        }
+        // after each test ditch all jobs and objects
+        List<Job> jobs = member.getJetInstance().getJobs();
+        SUPPORT_LOGGER.info("Ditching " + jobs.size() + " jobs in ExpressionTestSupport.@After: "
+                + jobs.stream().map(j -> idToString(j.getId())).collect(joining(", ", "[", "]")));
+        for (Job job : jobs) {
+            ditchJob(job, member);
+        }
+        Collection<DistributedObject> objects = member.getDistributedObjects();
+        SUPPORT_LOGGER.info("Destroying " + objects.size()
+                + " distributed objects in SimpleTestInClusterSupport.@After: "
+                + objects.stream().map(o -> o.getServiceName() + "/" + o.getName())
+                .collect(Collectors.joining(", ", "[", "]")));
+        for (DistributedObject o : objects) {
+            o.destroy();
+        }
+    }
+
+    @AfterClass
+    public static void after() {
+        factory.terminateAll();
     }
 
     protected void put(Object value) {
@@ -105,15 +131,11 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
         if (values == null || values.length == 0) {
             return;
         }
-
         Map<Integer, Object> entries = new HashMap<>();
-
         int key = 0;
-
         for (Object value : values) {
             entries.put(key++, value);
         }
-
         putAll(entries);
     }
 
@@ -136,6 +158,18 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
         checkValue0(sql, expectedType, expectedResult, params);
     }
 
+    /**
+     * Execute a query, assert that it returns exactly 1 row and 1 column. Assert
+     * the type of the result and optionally the result value.
+     *
+     * @param sql            the input query
+     * @param expectedType   type of the returned value
+     * @param expectedResult expected result value. If it's {@link #SKIP_VALUE_CHECK},
+     *                       don't assert the value
+     * @param params         query parameters
+     *
+     * @return the result value
+     */
     protected Object checkValue0(
             String sql,
             SqlColumnType expectedType,
@@ -196,7 +230,7 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
         TestCase.assertNotNull(columnTypes);
 
         StringJoiner joiner = new StringJoiner(", ");
-        Arrays.stream(columnTypes).forEach((columnType) -> joiner.add(columnType.name()));
+        Arrays.stream(columnTypes).forEach((columnType) -> joiner.add(columnType.toString()));
 
         return "Cannot apply '" + functionName + "' function to [" + joiner + "] (consider adding an explicit CAST)";
     }

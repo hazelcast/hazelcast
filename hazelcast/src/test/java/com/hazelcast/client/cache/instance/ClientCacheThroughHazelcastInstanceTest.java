@@ -31,7 +31,10 @@ import org.junit.runner.RunWith;
 
 import javax.cache.spi.CachingProvider;
 
+import java.util.UUID;
+
 import static com.hazelcast.cache.CacheTestSupport.createClientCachingProvider;
+import static com.hazelcast.client.test.ClientTestSupport.makeSureDisconnectedFromServer;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -83,7 +86,9 @@ public class ClientCacheThroughHazelcastInstanceTest extends CacheThroughHazelca
     @Override
     protected void shutdownOwnerInstance(HazelcastInstance instance) {
         if (ownerInstance != null) {
+            UUID memberUuid = ownerInstance.getLocalEndpoint().getUuid();
             ownerInstance.shutdown();
+            makeSureDisconnectedFromServer(instance, memberUuid);
         } else {
             throw new IllegalStateException("");
         }

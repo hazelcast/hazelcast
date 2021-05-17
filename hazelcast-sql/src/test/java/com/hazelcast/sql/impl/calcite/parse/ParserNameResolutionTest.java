@@ -16,9 +16,9 @@
 
 package com.hazelcast.sql.impl.calcite.parse;
 
-import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryUtils;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.calcite.HazelcastSqlBackend;
 import com.hazelcast.sql.impl.calcite.OptimizerContext;
 import com.hazelcast.sql.impl.calcite.TestMapTable;
@@ -42,6 +42,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
+import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -188,7 +189,7 @@ public class ParserNameResolutionTest {
         List<TableResolver> tableResolvers = Arrays.asList(resolverWithoutSearchPath, resolverWithSearchPath);
 
         List<List<String>> additionalSearchPaths = additionalSearchPath != null
-                ? Collections.singletonList(Arrays.asList(CATALOG, additionalSearchPath)) : Collections.emptyList();
+                ? Collections.singletonList(Arrays.asList(CATALOG, additionalSearchPath)) : emptyList();
 
         List<List<String>> searchPaths = QueryUtils.prepareSearchPaths(
                 additionalSearchPaths,
@@ -198,6 +199,7 @@ public class ParserNameResolutionTest {
         return OptimizerContext.create(
                 new SqlCatalog(tableResolvers),
                 searchPaths,
+                emptyList(),
                 1,
                 new HazelcastSqlBackend(null),
                 null
