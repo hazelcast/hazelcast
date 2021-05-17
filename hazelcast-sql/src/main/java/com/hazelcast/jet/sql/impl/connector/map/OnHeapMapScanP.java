@@ -40,7 +40,6 @@ import com.hazelcast.sql.impl.plan.node.JetMapScanMetadata;
 import com.hazelcast.sql.impl.row.HeapRow;
 
 import javax.annotation.Nonnull;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -63,7 +62,7 @@ import static java.util.stream.Collectors.toList;
  * it just returns all map entries which it can read.
  */
 public class OnHeapMapScanP extends AbstractProcessor {
-    private static int DEFAULT_ORDINAL = -1;
+    private static final int defaultOrdinal = -1;
 
     protected IMapTraverser traverser;
     protected Object[] pendingItems;
@@ -106,7 +105,7 @@ public class OnHeapMapScanP extends AbstractProcessor {
             if (items.length == 0) {
                 return false;
             }
-            if (!tryEmit(DEFAULT_ORDINAL, items)) {
+            if (!tryEmit(defaultOrdinal, items)) {
                 pendingItems = items;
                 return false;
             }
