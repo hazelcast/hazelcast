@@ -35,6 +35,7 @@
 
         <maven-artifact.version>3.6.3</maven-artifact.version>
         <hazelcast-hibernate5.version>2.0.0</hazelcast-hibernate5.version>
+        <org.springframework.version>5.3.4</org.springframework.version>
     </properties>
 
     <dependencies>

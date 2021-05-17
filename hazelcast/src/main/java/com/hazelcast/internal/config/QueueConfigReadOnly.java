@@ -19,8 +19,11 @@ package com.hazelcast.internal.config;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.MergePolicyConfig;
+import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
+import com.hazelcast.config.WanReplicationRef;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -116,5 +119,15 @@ public class QueueConfigReadOnly extends QueueConfig {
     @Override
     public QueueConfig setPriorityComparatorClassName(@Nullable String priorityComparatorClassName) {
         return super.setPriorityComparatorClassName(priorityComparatorClassName);
+    }
+
+    @Override
+    public QueueConfig setMerkleTreeConfig(@NotNull MerkleTreeConfig merkleTreeConfig) {
+        throw new UnsupportedOperationException("This config is read-only queue: " + getName());
+    }
+
+    @Override
+    public QueueConfig setWanReplicationRef(WanReplicationRef wanReplicationRef) {
+        throw new UnsupportedOperationException("This config is read-only queue: " + getName());
     }
 }

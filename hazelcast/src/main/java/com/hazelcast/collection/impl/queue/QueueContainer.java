@@ -20,6 +20,7 @@ import com.hazelcast.collection.impl.txnqueue.TxQueueItem;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.ItemEventType;
 import com.hazelcast.internal.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.serialization.Data;
@@ -115,6 +116,12 @@ public class QueueContainer implements IdentifiedDataSerializable {
         this.pollWaitNotifyKey = new QueueWaitNotifyKey(name, "poll");
         this.offerWaitNotifyKey = new QueueWaitNotifyKey(name, "offer");
         setConfig(config, nodeEngine, service);
+
+    }
+
+    // overridden in ee
+    public void publishWanEvent(ItemEventType eventType, Data data, boolean primaryReplica) {
+        // Intentionally empty.
     }
 
     /**

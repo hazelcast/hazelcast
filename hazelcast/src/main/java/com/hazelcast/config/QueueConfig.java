@@ -75,6 +75,10 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Ver
     private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
     private String priorityComparatorClassName;
 
+    // TODO add these 2 fields to hash/string/equals methods
+    private WanReplicationRef wanReplicationRef;
+    private MerkleTreeConfig merkleTreeConfig = new MerkleTreeConfig();
+
     public QueueConfig() {
     }
 
@@ -95,6 +99,8 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Ver
         this.queueStoreConfig = config.queueStoreConfig != null ? new QueueStoreConfig(config.queueStoreConfig) : null;
         this.listenerConfigs = new ArrayList<>(config.getItemListenerConfigs());
         this.priorityComparatorClassName = config.priorityComparatorClassName;
+        this.wanReplicationRef = config.wanReplicationRef != null ? new WanReplicationRef(config.wanReplicationRef) : null;
+        this.merkleTreeConfig = new MerkleTreeConfig(config.merkleTreeConfig);
     }
 
     /**
@@ -206,7 +212,8 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Ver
      *
      * @return the QueueStore configuration
      */
-    public @Nullable QueueStoreConfig getQueueStoreConfig() {
+    public @Nullable
+    QueueStoreConfig getQueueStoreConfig() {
         return queueStoreConfig;
     }
 
@@ -275,7 +282,8 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Ver
      *
      * @return the list of item listener configurations for this queue
      */
-    public @Nonnull List<ItemListenerConfig> getItemListenerConfigs() {
+    public @Nonnull
+    List<ItemListenerConfig> getItemListenerConfigs() {
         if (listenerConfigs == null) {
             listenerConfigs = new ArrayList<>();
         }
@@ -298,7 +306,8 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Ver
      *
      * @return the split brain protection name
      */
-    public @Nullable String getSplitBrainProtectionName() {
+    public @Nullable
+    String getSplitBrainProtectionName() {
         return splitBrainProtectionName;
     }
 
@@ -318,7 +327,8 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Ver
      *
      * @return the {@link MergePolicyConfig} for this queue
      */
-    public @Nonnull MergePolicyConfig getMergePolicyConfig() {
+    public @Nonnull
+    MergePolicyConfig getMergePolicyConfig() {
         return mergePolicyConfig;
     }
 
@@ -351,7 +361,8 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Ver
      * If this value is non-null, then Hazelcast will ignore the queue store
      * {@link QueueStoreConfig#STORE_MEMORY_LIMIT} configuration value.
      */
-    public @Nullable String getPriorityComparatorClassName() {
+    public @Nullable
+    String getPriorityComparatorClassName() {
         return priorityComparatorClassName;
     }
 
@@ -455,5 +466,42 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Ver
         return Objects.hash(name, getItemListenerConfigs(), backupCount, asyncBackupCount, getMaxSize(), emptyQueueTtl,
                 queueStoreConfig, statisticsEnabled, splitBrainProtectionName, mergePolicyConfig,
                 priorityComparatorClassName);
+    }
+
+    public WanReplicationRef getWanReplicationRef() {
+        return wanReplicationRef;
+    }
+
+    /**
+     * Sets the WAN target replication reference.
+     *
+     * @param wanReplicationRef the WAN target replication reference
+     * @return the current queue config instance
+     */
+    public QueueConfig setWanReplicationRef(WanReplicationRef wanReplicationRef) {
+        this.wanReplicationRef = wanReplicationRef;
+        return this;
+    }
+
+
+    /**
+     * Gets the {@code MerkleTreeConfig} for this {@code QueueConfig}
+     *
+     * @return merkle tree config
+     */
+    @Nonnull
+    public MerkleTreeConfig getMerkleTreeConfig() {
+        return merkleTreeConfig;
+    }
+
+    /**
+     * Sets the {@code MerkleTreeConfig} for this {@code QueueConfig}
+     *
+     * @param merkleTreeConfig merkle tree config
+     * @return this {@code QueueConfig} instance
+     */
+    public QueueConfig setMerkleTreeConfig(@Nonnull MerkleTreeConfig merkleTreeConfig) {
+        this.merkleTreeConfig = checkNotNull(merkleTreeConfig, "MerkleTreeConfig cannot be null");
+        return this;
     }
 }

@@ -106,6 +106,9 @@ public abstract class QueueOperation extends AbstractNamedOperation
             QueueEvent event = new QueueEvent(name, filter.isIncludeValue() ? data : null, eventType, thisAddress);
             eventService.publishEvent(getServiceName(), registration, event, name.hashCode());
         }
+
+        // TODO write backup replica handling code parts
+        getContainer().publishWanEvent(eventType, data, true);
     }
 
     protected QueueService getQueueService() {
@@ -120,7 +123,7 @@ public abstract class QueueOperation extends AbstractNamedOperation
     @Override
     public TenantControl getTenantControl() {
         return getNodeEngine().getTenantControlService()
-                              .getTenantControl(QueueService.SERVICE_NAME, name);
+                .getTenantControl(QueueService.SERVICE_NAME, name);
     }
 
     @Override

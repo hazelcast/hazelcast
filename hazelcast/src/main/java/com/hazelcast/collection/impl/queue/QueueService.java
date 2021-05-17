@@ -105,6 +105,8 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
 
     private static final Object NULL_OBJECT = new Object();
 
+    protected final NodeEngine nodeEngine;
+
     private final ConcurrentMap<String, QueueContainer> containerMap = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, LocalQueueStatsImpl> statsMap;
     private final ConstructorFunction<String, LocalQueueStatsImpl> localQueueStatsConstructorFunction =
@@ -122,7 +124,6 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
                 }
             };
 
-    private final NodeEngine nodeEngine;
     private final SerializationService serializationService;
     private final IPartitionService partitionService;
     private final ILogger logger;
@@ -172,7 +173,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
             return container;
         }
 
-        container = new QueueContainer(name, nodeEngine.getConfig().findQueueConfig(name), nodeEngine, this);
+        container = newContainer(name);
         QueueContainer existing = containerMap.putIfAbsent(name, container);
         if (existing != null) {
             container = existing;
@@ -181,6 +182,10 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
             container.getStore().instrument(nodeEngine);
         }
         return container;
+    }
+
+    protected QueueContainer newContainer(String name) {
+        return new QueueContainer(name, nodeEngine.getConfig().findQueueConfig(name), nodeEngine, this);
     }
 
     public QueueContainer getExistingContainerOrNull(String name) {

@@ -145,7 +145,7 @@ public final class ServiceManagerImpl implements ServiceManager {
         logger.finest("Registering default services...");
         registerService(MapService.SERVICE_NAME, createService(MapService.class));
         registerService(LockSupportService.SERVICE_NAME, new LockSupportServiceImpl(nodeEngine));
-        registerService(QueueService.SERVICE_NAME, new QueueService(nodeEngine));
+        registerService(QueueService.SERVICE_NAME, createService(QueueService.class));
         registerService(TopicService.SERVICE_NAME, new TopicService());
         registerService(ReliableTopicService.SERVICE_NAME, new ReliableTopicService(nodeEngine));
         registerService(MultiMapService.SERVICE_NAME, new MultiMapService(nodeEngine));

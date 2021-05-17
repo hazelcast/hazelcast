@@ -34,9 +34,10 @@ public class QueueItem implements IdentifiedDataSerializable, Comparable<QueueIt
 
     protected long itemId;
     protected Data serializedObject;
-    protected Object deserializedObject;
-    protected final long creationTime;
-    protected QueueContainer container;
+
+    protected transient Object deserializedObject;
+    protected transient final long creationTime;
+    protected transient QueueContainer container;
 
     public QueueItem() {
         this.creationTime = Clock.currentTimeMillis();
