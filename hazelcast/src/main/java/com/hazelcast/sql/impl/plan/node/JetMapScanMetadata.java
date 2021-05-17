@@ -16,11 +16,17 @@
 
 package com.hazelcast.sql.impl.plan.node;
 
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
@@ -28,7 +34,7 @@ import java.util.Objects;
 /**
  * POJO that contains all specific information to scan a partitioned map by Jet processor.
  */
-public class JetMapScanMetadata implements Serializable {
+public class JetMapScanMetadata implements IdentifiedDataSerializable, Serializable {
 
     protected String mapName;
     protected QueryTargetDescriptor keyDescriptor;
@@ -125,5 +131,37 @@ public class JetMapScanMetadata implements Serializable {
     public String toString() {
         return getClass().getSimpleName() + "{mapName=" + mapName + ", fieldPaths=" + fieldPaths
                 + ", projects=" + projections + ", filter=" + filter + '}';
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeString(mapName);
+        out.writeObject(keyDescriptor);
+        out.writeObject(valueDescriptor);
+        SerializationUtil.writeList(fieldPaths, out);
+        SerializationUtil.writeList(fieldTypes, out);
+        SerializationUtil.writeList(projections, out);
+        out.writeObject(filter);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        mapName = in.readString();
+        keyDescriptor = in.readObject();
+        valueDescriptor = in.readObject();
+        fieldPaths = SerializationUtil.readList(in);
+        fieldTypes = SerializationUtil.readList(in);
+        projections = SerializationUtil.readList(in);
+        filter = in.readObject();
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SqlDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return SqlDataSerializerHook.JET_MAP_SCAN_METADATA;
     }
 }
