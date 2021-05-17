@@ -90,6 +90,10 @@ public class LightMasterContext {
         jobIdString = idToString(jobId);
     }
 
+    public long getJobId() {
+        return jobId;
+    }
+
     public CompletableFuture<Void> start() {
         MembersView membersView = getMembersView();
         if (logger.isFineEnabled()) {

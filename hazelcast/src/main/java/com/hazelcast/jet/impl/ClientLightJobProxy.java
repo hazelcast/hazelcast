@@ -16,11 +16,10 @@
 
 package com.hazelcast.jet.impl;
 
-import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
-import com.hazelcast.jet.LightJob;
+import com.hazelcast.jet.BasicJob;
 import com.hazelcast.jet.impl.client.protocol.codec.JetCancelLightJobCodec;
 import com.hazelcast.jet.impl.util.NonCompletableFuture;
 
@@ -28,17 +27,18 @@ import javax.annotation.Nonnull;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-public class ClientLightJobProxy implements LightJob {
+public class ClientLightJobProxy implements BasicJob {
 
-    private final HazelcastClientInstanceImpl client;
+    private final JetClientInstanceImpl client;
     private final UUID coordinatorUuid;
     private final long jobId;
     private final NonCompletableFuture future;
 
-    ClientLightJobProxy(HazelcastClientInstanceImpl client, UUID coordinatorUuid, long jobId, ClientInvocationFuture future) {
+    ClientLightJobProxy(JetClientInstanceImpl client, UUID coordinatorUuid, long jobId, ClientInvocationFuture future) {
         this.client = client;
         this.coordinatorUuid = coordinatorUuid;
         this.jobId = jobId;
+        // TODO [viliam] handle null future
         this.future = new NonCompletableFuture(future);
     }
 
@@ -55,7 +55,7 @@ public class ClientLightJobProxy implements LightJob {
     @Override
     public void cancel() {
         ClientMessage message = JetCancelLightJobCodec.encodeRequest(jobId);
-        ClientInvocation invocation = new ClientInvocation(client, message, null, coordinatorUuid);
+        ClientInvocation invocation = new ClientInvocation(client.getHazelcastClient(), message, null, coordinatorUuid);
         invocation.invoke().join();
     }
 }

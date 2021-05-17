@@ -20,7 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.LightJob;
+import com.hazelcast.jet.BasicJob;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.DummyStatefulP;
@@ -86,7 +86,7 @@ public class OperationLossTest extends SimpleTestInClusterSupport {
         Vertex v2 = dag.newVertex("v2", mapP(identity())).localParallelism(1);
         dag.edge(between(v1, v2).distributed());
 
-        LightJob job = instance().newLightJob(dag);
+        BasicJob job = instance().newLightJob(dag);
         // we assert that the PMS is initialized, but the PS isn't
         JobExecutionService jobExecutionService = getNodeEngineImpl(instances()[1])
                 .<JetService>getService(JetService.SERVICE_NAME)
@@ -172,7 +172,7 @@ public class OperationLossTest extends SimpleTestInClusterSupport {
         Vertex source = dag.newVertex("source", () -> new NoOutputSourceP()).localParallelism(1);
         Vertex sink = dag.newVertex("sink", DiagnosticProcessors.writeLoggerP());
         dag.edge(between(source, sink).distributed());
-        LightJob job = useLightJob ? instance().newLightJob(dag) : instance().newJob(dag);
+        BasicJob job = useLightJob ? instance().newLightJob(dag) : instance().newJob(dag);
         assertTrueEventually(() -> assertEquals(2, NoOutputSourceP.initCount.get()));
 
         Connection connection = ImdgUtil.getMemberConnection(getNodeEngineImpl(instance()), getAddress(instances()[1]));
@@ -219,7 +219,7 @@ public class OperationLossTest extends SimpleTestInClusterSupport {
     public void lightJob_when_terminateExecutionOperationLost_then_jobTerminates() {
         DAG dag = new DAG();
         dag.newVertex("v", () -> new MockP().streaming());
-        LightJob job = instance().newLightJob(dag);
+        BasicJob job = instance().newLightJob(dag);
 
         // When
         PacketFiltersUtil.dropOperationsFrom(instance().getHazelcastInstance(), JetInitDataSerializerHook.FACTORY_ID,

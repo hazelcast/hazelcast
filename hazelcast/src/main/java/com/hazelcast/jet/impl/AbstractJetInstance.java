@@ -23,7 +23,7 @@ import com.hazelcast.jet.JetCacheManager;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobAlreadyExistsException;
-import com.hazelcast.jet.LightJob;
+import com.hazelcast.jet.BasicJob;
 import com.hazelcast.jet.Observable;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
@@ -136,25 +136,22 @@ public abstract class AbstractJetInstance implements JetInstance {
     }
 
     @Nonnull @Override
-    public LightJob newLightJob(Pipeline pipeline) {
+    public BasicJob newLightJob(Pipeline pipeline) {
         return newLightJobInt(pipeline);
     }
 
     @Nonnull @Override
-    public LightJob newLightJob(DAG dag) {
+    public BasicJob newLightJob(DAG dag) {
         return newLightJobInt(dag);
     }
 
     @Nonnull
-    protected abstract LightJob newLightJobInt(Object jobDefinition);
+    protected abstract BasicJob newLightJobInt(Object jobDefinition);
 
     @Override
-    public Job getJob(long jobId) {
+    public BasicJob getJobById(long jobId) {
         try {
-            Job job = newJobProxy(jobId);
-            // get the status for the side-effect of throwing an exception if the jobId is invalid
-            job.getStatus();
-            return job;
+            return newJobProxy(jobId);
         } catch (Throwable t) {
             if (peel(t) instanceof JobNotFoundException) {
                 return null;
@@ -165,7 +162,7 @@ public abstract class AbstractJetInstance implements JetInstance {
 
     @Nonnull @Override
     public List<Job> getJobs(@Nonnull String name) {
-        return toList(getJobIdsByName(name), this::newJobProxy);
+        return toList(getJobIdsByName(name), jobId -> (Job) newJobProxy(jobId));
     }
 
     @Nonnull @Override
@@ -248,7 +245,7 @@ public abstract class AbstractJetInstance implements JetInstance {
 
     public abstract ILogger getLogger();
 
-    public abstract Job newJobProxy(long jobId);
+    public abstract BasicJob newJobProxy(long jobId);
 
     public abstract Job newJobProxy(long jobId, Object jobDefinition, JobConfig config);
 

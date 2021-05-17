@@ -217,32 +217,66 @@ public interface JetInstance {
      * <p>
      * A light job will not be cancelled if the client disconnects. It's
      * potential failure will be only logged in member logs.
+     *
+     * @since 5.0
      */
     @Nonnull
-    LightJob newLightJob(Pipeline p);
+    BasicJob newLightJob(Pipeline p);
 
     /**
      * Submits a job defined in the Core API.
      * <p>
      * See {@link #newLightJob(Pipeline)}.
+     *
+     * @since 5.0
      */
     @Nonnull
-    LightJob newLightJob(DAG dag);
+    BasicJob newLightJob(DAG dag);
 
     /**
      * Returns all submitted jobs including running and completed ones.
-     * Currently does not include {@linkplain #newLightJob(Pipeline) light
-     * jobs}.
+     *
+     * @deprecated Use {@link #getAllJobs()}, the result of this method doesn't
+     * contain {@linkplain #newLightJob(Pipeline) light jobs}.
      */
     @Nonnull
-    List<Job> getJobs();
+    default List<Job> getJobs() {
+        return getAllJobs().stream()
+                .filter(j -> j instanceof Job)
+                .map(j -> (Job) j)
+                .collect(toList());
+    }
+
+    /**
+     * Returns all submitted jobs including running and completed ones. Does
+     * not include completed {@linkplain #newLightJob(Pipeline) light jobs}.
+     *
+     * @since 5.0
+     */
+    @Nonnull
+    List<BasicJob> getAllJobs();
 
     /**
      * Returns the job with the given id or {@code null} if no such job could
-     * be found. Currently it returns {@code null} also for light jobs.
+     * be found.
+     *
+     * @deprecated Use {@link #getJobById(long)}, this method always returns
+     * {@code null} for {@linkplain #newLightJob(Pipeline) light jobs}.
      */
     @Nullable
-    Job getJob(long jobId);
+    default Job getJob(long jobId) {
+        BasicJob basicJob = getJobById(jobId);
+        return basicJob instanceof Job ? (Job) basicJob : null;
+    }
+
+    /**
+     * Returns the job with the given id or {@code null} if no such job could
+     * be found.
+     *
+     * @since 5.0
+     */
+    @Nullable
+    BasicJob getJobById(long jobId);
 
     /**
      * Returns all jobs submitted with the given name, ordered in descending

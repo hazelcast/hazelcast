@@ -90,7 +90,6 @@ import static java.util.Comparator.comparing;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static java.util.stream.Collectors.toList;
 
 public class JobRepository {
 
@@ -524,13 +523,6 @@ public class JobRepository {
         return (System.currentTimeMillis() - creationTime) >= resourcesExpirationMillis;
     }
 
-    Set<Long> getAllJobIds() {
-        Set<Long> ids = new HashSet<>();
-        ids.addAll(jobRecordsMap().keySet());
-        ids.addAll(jobResultsMap().keySet());
-        return ids;
-    }
-
     public Collection<JobRecord> getJobRecords() {
         return jobRecordsMap().values();
     }
@@ -576,13 +568,14 @@ public class JobRepository {
         return jobMetrics.get().get(jobId);
     }
 
-    Collection<JobResult> getJobResults() {
-        return jobResults.get().values();
-    }
-
-    List<JobResult> getJobResults(String name) {
-        return jobResults.get().values(new FilterJobResultByNamePredicate(name)).stream()
-                         .sorted(comparing(JobResult::getCreationTime).reversed()).collect(toList());
+    /**
+     * Returns job results for jobs with the given name, or all job results, if
+     * the given name is null.
+     */
+    Collection<JobResult> getJobResults(@Nullable String name) {
+        return name != null
+                ? jobResults.get().values(new FilterJobResultByNamePredicate(name))
+                : jobResults.get().values();
     }
 
     /**

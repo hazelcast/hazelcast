@@ -41,11 +41,13 @@ import com.hazelcast.jet.core.JobSuspensionCause;
 import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.core.metrics.MetricNames;
 import com.hazelcast.jet.core.metrics.MetricTags;
+import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.exception.EnteringPassiveClusterStateException;
 import com.hazelcast.jet.impl.execution.DoneItem;
 import com.hazelcast.jet.impl.metrics.RawJobMetrics;
 import com.hazelcast.jet.impl.observer.ObservableImpl;
 import com.hazelcast.jet.impl.observer.WrappedThrowable;
+import com.hazelcast.jet.impl.operation.GetJobIdsOperation.GetJobIdsResult;
 import com.hazelcast.jet.impl.operation.NotifyMemberShutdownOperation;
 import com.hazelcast.jet.impl.pipeline.PipelineImpl;
 import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
@@ -65,7 +67,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -95,8 +96,10 @@ import static com.hazelcast.jet.core.JobStatus.COMPLETING;
 import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
+import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
 import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
+import static com.hazelcast.jet.impl.operation.GetJobIdsOperation.ALL_JOBS;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
@@ -419,38 +422,58 @@ public class JobCoordinationService {
         mc.requestTermination();
     }
 
-    public CompletableFuture<List<Long>> getAllJobIds() {
-        assertIsMaster("Cannot query list of job ids on non-master node");
-
-        return submitToCoordinatorThread(() -> {
-            Set<Long> jobIds = new HashSet<>(jobRepository.getAllJobIds());
-            jobIds.addAll(masterContexts.keySet());
-            return new ArrayList<>(jobIds);
-        });
-    }
-
     /**
      * Return the job IDs of jobs with the given name, sorted by
      * {active/completed, creation time}, active & newest first.
      */
-    public CompletableFuture<List<Long>> getJobIds(@Nonnull String name) {
-        assertIsMaster("Cannot query list of job ids on non-master node");
+    public CompletableFuture<GetJobIdsResult> getJobIds(@Nullable String onlyName, long onlyJobId) {
+        if (onlyName != null) {
+            assertIsMaster("Cannot query list of job ids by name on non-master node");
+        }
 
         return submitToCoordinatorThread(() -> {
-            Map<Long, Long> jobs = new HashMap<>();
-            for (MasterContext ctx : masterContexts.values()) {
-                if (name.equals(ctx.jobConfig().getName())) {
-                    jobs.put(ctx.jobId(), Long.MAX_VALUE);
+            UUID localMemberId = nodeEngine.getLocalMember().getUuid();
+
+            if (onlyJobId != ALL_JOBS) {
+                if (masterContexts.get(onlyJobId) != null) {
+                    return new GetJobIdsResult(onlyJobId, null);
+                }
+                if (lightMasterContexts.get(onlyJobId) != null || jobRepository.getJobResult(onlyJobId) != null) {
+                    return new GetJobIdsResult(onlyJobId, localMemberId);
+                }
+                return GetJobIdsResult.EMPTY;
+            }
+
+            List<Tuple2<Long, UUID>> result = new ArrayList<>();
+
+            // add light jobs - only if no name is requested, light jobs can't have a name
+            if (onlyName == null) {
+                for (LightMasterContext ctx : lightMasterContexts.values()) {
+                    result.add(tuple2(ctx.getJobId(), localMemberId));
                 }
             }
 
-            jobRepository.getJobResults(name)
-                         .forEach(jobResult -> jobs.put(jobResult.getJobId(), jobResult.getCreationTime()));
+            // add normal jobs - only on master
+            if (isMaster()) {
+                // we need to collect to a map where the jobId is the key first, to eliminate possible duplicates
+                // in JobResult and also to be able to sort from newest to oldest
+                Map<Long, Long> jobs = new HashMap<>();
+                for (MasterContext ctx : masterContexts.values()) {
+                    if (onlyName == null || onlyName.equals(ctx.jobConfig().getName())) {
+                        jobs.put(ctx.jobId(), Long.MAX_VALUE);
+                    }
+                }
 
-            return jobs.entrySet().stream()
-                       .sorted(comparing(Entry<Long, Long>::getValue).reversed())
-                       .map(Entry::getKey)
-                       .collect(toList());
+                for (JobResult jobResult : jobRepository.getJobResults(onlyName)) {
+                    jobs.put(jobResult.getJobId(), jobResult.getCreationTime());
+                }
+
+                jobs.entrySet().stream()
+                        .sorted(comparing(Entry<Long, Long>::getValue).reversed())
+                        .forEach(entry -> result.add(tuple2(entry.getKey(), null)));
+            }
+
+            return new GetJobIdsResult(result);
         });
     }
 
@@ -561,7 +584,7 @@ public class JobCoordinationService {
             jobRepository.getJobRecords().stream().map(this::getJobSummary).forEach(s -> jobs.put(s.getJobId(), s));
 
             // completed jobs
-            jobRepository.getJobResults().stream()
+            jobRepository.getJobResults(null).stream()
                          .map(r -> new JobSummary(
                                  r.getJobId(), r.getJobNameOrId(), r.getJobStatus(), r.getCreationTime(),
                                  r.getCompletionTime(), r.getFailureText())

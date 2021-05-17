@@ -23,10 +23,14 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * A handle to a submitted job. See {@link
- * JetInstance#newLightJob(Pipeline)}.
+ * A handle to a submitted job with basic functionality, i.e. for the part
+ * of functionality supported by {@linkplain
+ * JetInstance#newLightJob(Pipeline) light jobs}. See also {@link Job}
+ * class.
+ *
+ * @since 5.0
  */
-public interface LightJob {
+public interface BasicJob {
 
     /**
      * Returns the ID of this job.

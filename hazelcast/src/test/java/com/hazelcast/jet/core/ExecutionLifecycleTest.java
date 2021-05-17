@@ -25,7 +25,7 @@ import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.LightJob;
+import com.hazelcast.jet.BasicJob;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.ListSource;
@@ -137,7 +137,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         DAG dag = new DAG().vertex(new Vertex("test", new MockPMS(() -> new MockPS(MockP::new, MEMBER_COUNT))));
 
         // When
-        LightJob job = newJob(dag);
+        BasicJob job = newJob(dag);
         job.join();
 
         // Then
@@ -154,7 +154,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         Vertex v2 = dag.newVertex("v2", () -> new NoOutputSourceP());
         dag.edge(between(v1, v2));
 
-        LightJob job = newJob(dag);
+        BasicJob job = newJob(dag);
         assertTrueEventually(this::assertPClosedWithoutError);
         NoOutputSourceP.proceedLatch.countDown();
         job.join();
@@ -168,7 +168,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
                 new MockPMS(() -> new MockPS(MockP::new, MEMBER_COUNT)).setInitError(MOCK_ERROR)));
 
         // When
-        LightJob job = runJobExpectFailure(dag, false);
+        BasicJob job = runJobExpectFailure(dag, false);
 
         // Then
         assertPmsClosedWithError();
@@ -184,7 +184,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         dagGood.newVertex("good", () -> new NoOutputSourceP());
 
         // When
-        LightJob jobGood = newJob(dagGood);
+        BasicJob jobGood = newJob(dagGood);
         NoOutputSourceP.executionStarted.await();
         runJobExpectFailure(dagFaulty, false);
 
@@ -201,7 +201,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
                 new MockPMS(() -> new MockPS(MockP::new, MEMBER_COUNT)).setGetError(MOCK_ERROR)));
 
         // When
-        LightJob job = runJobExpectFailure(dag, false);
+        BasicJob job = runJobExpectFailure(dag, false);
 
         // Then
         assertPmsClosedWithError();
@@ -215,7 +215,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
                 new MockPMS(() -> new MockPS(MockP::new, MEMBER_COUNT)).setCloseError(MOCK_ERROR)));
 
         // When
-        LightJob job = newJob(dag);
+        BasicJob job = newJob(dag);
         job.join();
 
         // Then
@@ -232,7 +232,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
                 new MockPMS(() -> new MockPS(MockP::new, MEMBER_COUNT).setInitError(MOCK_ERROR))));
 
         // When
-        LightJob job = runJobExpectFailure(dag, false);
+        BasicJob job = runJobExpectFailure(dag, false);
 
         // Then
         assertPsClosedWithError();
@@ -247,7 +247,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
                 new MockPMS(() -> new MockPS(MockP::new, MEMBER_COUNT).setGetError(MOCK_ERROR))));
 
         // When
-        LightJob job = runJobExpectFailure(dag, false);
+        BasicJob job = runJobExpectFailure(dag, false);
 
         // Then
         assertPsClosedWithError();
@@ -284,7 +284,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
                 new MockPMS(() -> new MockPS(MockP::new, MEMBER_COUNT).setCloseError(MOCK_ERROR))));
 
         // When
-        LightJob job = newJob(dag);
+        BasicJob job = newJob(dag);
         job.join();
 
         // Then
@@ -302,7 +302,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
                 new MockPMS(() -> new MockPS(() -> new MockP().setInitError(MOCK_ERROR), MEMBER_COUNT)));
 
         // When
-        LightJob job = runJobExpectFailure(dag, false);
+        BasicJob job = runJobExpectFailure(dag, false);
 
         // Then
         assertPClosedWithError();
@@ -321,7 +321,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         dag.edge(between(source, process));
 
         // When
-        LightJob job = runJobExpectFailure(dag, false);
+        BasicJob job = runJobExpectFailure(dag, false);
 
         // Then
         assertPClosedWithError();
@@ -338,7 +338,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
                 new MockPMS(() -> new MockPS(() -> new MockP().setCompleteError(MOCK_ERROR), MEMBER_COUNT)));
 
         // When
-        LightJob job = runJobExpectFailure(dag, false);
+        BasicJob job = runJobExpectFailure(dag, false);
 
         // Then
         assertPClosedWithError();
@@ -355,7 +355,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
                 new MockP().nonCooperative().setCompleteError(MOCK_ERROR), MEMBER_COUNT)));
 
         // When
-        LightJob job = runJobExpectFailure(dag, false);
+        BasicJob job = runJobExpectFailure(dag, false);
 
         // Then
         assertPClosedWithError();
@@ -372,7 +372,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
                 new MockP().nonCooperative().streaming().setOnSnapshotCompleteError(MOCK_ERROR), MEMBER_COUNT)));
 
         // When
-        LightJob job = runJobExpectFailure(dag, true);
+        BasicJob job = runJobExpectFailure(dag, true);
         assertTrue("onSnapshotCompleted not called", MockP.onSnapshotCompletedCalled);
 
         // Then
@@ -390,7 +390,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
                 new MockP().nonCooperative().streaming().setSaveToSnapshotError(MOCK_ERROR), MEMBER_COUNT)));
 
         // When
-        LightJob job = runJobExpectFailure(dag, true);
+        BasicJob job = runJobExpectFailure(dag, true);
         assertTrue("saveToSnapshot not called", MockP.saveToSnapshotCalled);
 
         // Then
@@ -408,7 +408,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
                 new MockPMS(() -> new MockPS(() -> new MockP().setCloseError(MOCK_ERROR), MEMBER_COUNT)));
 
         // When
-        LightJob job = newJob(dag);
+        BasicJob job = newJob(dag);
         job.join();
 
         // Then
@@ -425,7 +425,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
                 new MockPMS(() -> new MockPS(NoOutputSourceP::new, MEMBER_COUNT))));
 
         // When
-        LightJob job = newJob(dag);
+        BasicJob job = newJob(dag);
         NoOutputSourceP.executionStarted.await();
         cancelAndJoin(job);
         assertTrueEventually(() -> {
@@ -480,7 +480,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         DAG dag = new DAG().vertex(new Vertex("test",
                 new MockPS(() -> new NoOutputSourceP(10_000), MEMBER_COUNT)));
 
-        LightJob job = newJob(dag);
+        BasicJob job = newJob(dag);
         assertOpenEventually(NoOutputSourceP.executionStarted);
 
         // When
@@ -549,7 +549,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         expectedException.expectMessage("fake.Class");
 
         // When
-        LightJob job = newJob(instance, dag, null);
+        BasicJob job = newJob(instance, dag, null);
         try {
             job.join();
         } catch (Throwable e) {
@@ -562,7 +562,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         DAG dag = new DAG();
         // When
         dag.newVertex("v", new PmsProducingNonSerializablePs());
-        LightJob job = newJob(dag);
+        BasicJob job = newJob(dag);
 
         // Then
         assertThatThrownBy(() -> job.join())
@@ -642,7 +642,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
                 (FunctionEx<? super Address, ? extends ProcessorSupplier>)
                         address -> new NotSerializable_DataSerializable_ProcessorSupplier()));
 
-        LightJob job = newJob(dag);
+        BasicJob job = newJob(dag);
         Exception e = assertThrows(Exception.class, () -> job.join());
         assertContains(e.getMessage(), "Failed to serialize");
     }
@@ -686,11 +686,11 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         }
     }
 
-    private LightJob newJob(DAG dag) {
+    private BasicJob newJob(DAG dag) {
         return newJob(instance(), dag, null);
     }
 
-    private LightJob newJob(JetInstance instance, DAG dag, JobConfig config) {
+    private BasicJob newJob(JetInstance instance, DAG dag, JobConfig config) {
         if (config != null) {
             assumeFalse(useLightJob); // light jobs don't support config
             return instance.newJob(dag, config);
@@ -699,8 +699,8 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         }
     }
 
-    private LightJob runJobExpectFailure(@Nonnull DAG dag, boolean snapshotting) {
-        LightJob job = null;
+    private BasicJob runJobExpectFailure(@Nonnull DAG dag, boolean snapshotting) {
+        BasicJob job = null;
         assumeTrue(!snapshotting || !useLightJob); // snapshotting not supported for light jobs
         try {
             JobConfig config = null;
@@ -775,7 +775,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         throw new AssertionError("None of expected exceptions caught. Expected: " + Arrays.toString(expected), caught);
     }
 
-    private void assertJobSucceeded(LightJob job) {
+    private void assertJobSucceeded(BasicJob job) {
         assertTrue(job.getFuture().isDone());
         job.join();
         if (job instanceof Job) {
@@ -785,7 +785,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         }
     }
 
-    private void assertJobFailed(LightJob job, Throwable expected) {
+    private void assertJobFailed(BasicJob job, Throwable expected) {
         assertTrue(job.getFuture().isDone());
         try {
             job.join();

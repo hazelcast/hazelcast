@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.cluster.Address;
-import com.hazelcast.jet.LightJob;
+import com.hazelcast.jet.BasicJob;
 import com.hazelcast.jet.impl.operation.CancelLightJobOperation;
 import com.hazelcast.jet.impl.util.NonCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -25,7 +25,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.concurrent.CompletableFuture;
 
-public class LightJobProxy implements LightJob {
+public class LightJobProxy implements BasicJob {
 
     private final NodeEngine nodeEngine;
     private final long jobId;

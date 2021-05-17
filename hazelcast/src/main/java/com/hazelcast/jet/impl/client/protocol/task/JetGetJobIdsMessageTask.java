@@ -19,13 +19,16 @@ package com.hazelcast.jet.impl.client.protocol.task;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobIdsCodec;
-import com.hazelcast.jet.impl.operation.GetJobIdsOperation;
+import com.hazelcast.jet.impl.operation.GetJobIdsOperation.GetJobIdsResult;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
-import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
-public class JetGetJobIdsMessageTask extends AbstractJetMessageTask<Void, List<Long>> {
+import static java.util.concurrent.CompletableFuture.completedFuture;
+
+public class JetGetJobIdsMessageTask extends AbstractJetMessageTask<Void, Data> {
 
     JetGetJobIdsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection,
@@ -34,8 +37,15 @@ public class JetGetJobIdsMessageTask extends AbstractJetMessageTask<Void, List<L
     }
 
     @Override
+    protected CompletableFuture<Object> processInternal() {
+        // TODO [viliam] send to all members and merge the results
+        return completedFuture(GetJobIdsResult.EMPTY);
+    }
+
+    @Override
+    // TODO [viliam] remove this method
     protected Operation prepareOperation() {
-        return new GetJobIdsOperation();
+        return null;
     }
 
     @Override

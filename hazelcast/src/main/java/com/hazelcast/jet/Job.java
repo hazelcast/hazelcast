@@ -30,12 +30,13 @@ import javax.annotation.Nullable;
 import java.util.concurrent.CancellationException;
 
 /**
- * A Jet computation job created by submitting a {@link DAG} or {@link
- * Pipeline}. Once submitted, Jet starts executing the job automatically.
+ * A handle to Jet computation job created by submitting a {@link DAG} or
+ * {@link Pipeline} to the cluster. See {@link JetInstance} for methods to
+ * submit jobs and to get handles to existing jobs.
  *
  * @since 3.0
  */
-public interface Job extends LightJob {
+public interface Job extends BasicJob {
 
     /**
      * Returns the configuration this job was submitted with. Changes made to the

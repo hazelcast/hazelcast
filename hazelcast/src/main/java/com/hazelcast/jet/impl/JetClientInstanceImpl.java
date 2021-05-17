@@ -25,26 +25,29 @@ import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.jet.BasicJob;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.LightJob;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.client.protocol.codec.JetExistsDistributedObjectCodec;
-import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobIdsByNameCodec;
 import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobIdsCodec;
 import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobSummaryListCodec;
 import com.hazelcast.jet.impl.client.protocol.codec.JetSubmitLightJobCodec;
+import com.hazelcast.jet.impl.operation.GetJobIdsOperation.GetJobIdsResult;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.AbstractList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
 
+import static com.hazelcast.jet.impl.operation.GetJobIdsOperation.ALL_JOBS;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
-import static com.hazelcast.jet.impl.util.Util.toList;
 
 /**
  * Client-side {@code JetInstance} implementation
@@ -63,7 +66,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
     }
 
     @Nonnull @Override
-    public LightJob newLightJobInt(Object jobDefinition) {
+    public BasicJob newLightJobInt(Object jobDefinition) {
         Data jobDefinitionSerialized = serializationService.toData(jobDefinition);
         long jobId = newJobId();
         ClientMessage message = JetSubmitLightJobCodec.encodeRequest(jobId, jobDefinitionSerialized);
@@ -81,7 +84,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
         ClientInvocation invocation = new ClientInvocation(client, message, null, coordinatorUuid);
 
         ClientInvocationFuture future = invocation.invoke();
-        return new ClientLightJobProxy(client, coordinatorUuid, jobId, future);
+        return new ClientLightJobProxy(this, coordinatorUuid, jobId, future);
     }
 
     @Nonnull @Override
@@ -89,12 +92,26 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
         throw new UnsupportedOperationException("Jet Configuration is not available on the client");
     }
 
-    @Nonnull
-    @Override
-    public List<Job> getJobs() {
-        return invokeRequestOnMasterAndDecodeResponse(JetGetJobIdsCodec.encodeRequest(), resp -> {
-            List<Long> jobs = JetGetJobIdsCodec.decodeResponse(resp);
-            return toList(jobs, jobId -> new ClientJobProxy(this, jobId));
+    @Nonnull @Override
+    public List<BasicJob> getAllJobs() {
+        GetJobIdsResult response = getJobIdsInternal(null, ALL_JOBS);
+        List<BasicJob> result = new ArrayList<>(response.getJobIds().length);
+        long[] jobIds = response.getJobIds();
+        for (int i = 0; i < jobIds.length; i++) {
+            long jobId = response.getJobIds()[i];
+            UUID uuid = response.getCoordinators()[i];
+            result.add(uuid != null
+                    ? new ClientLightJobProxy(this, uuid, jobId, null)
+                    : new ClientJobProxy(this, jobId));
+        }
+
+        return result;
+    }
+
+    private GetJobIdsResult getJobIdsInternal(@Nullable String onlyName, long onlyJobId) {
+        return invokeRequestOnMasterAndDecodeResponse(JetGetJobIdsCodec.encodeRequest(onlyName, onlyJobId), resp -> {
+            Data responseSerialized = JetGetJobIdsCodec.decodeResponse(resp).response;
+            return serializationService.toObject(responseSerialized);
         });
     }
 
@@ -129,8 +146,18 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
 
     @Override
     public List<Long> getJobIdsByName(String name) {
-        return invokeRequestOnMasterAndDecodeResponse(JetGetJobIdsByNameCodec.encodeRequest(name),
-                response -> JetGetJobIdsByNameCodec.decodeResponse(response));
+        long[] jobIds = getJobIdsInternal(name, ALL_JOBS).getJobIds();
+        return new AbstractList<Long>() {
+            @Override
+            public Long get(int index) {
+                return jobIds[index];
+            }
+
+            @Override
+            public int size() {
+                return jobIds.length;
+            }
+        };
     }
 
     @Override

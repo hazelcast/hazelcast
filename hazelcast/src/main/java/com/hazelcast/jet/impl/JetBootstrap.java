@@ -28,7 +28,7 @@ import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetCacheManager;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.LightJob;
+import com.hazelcast.jet.BasicJob;
 import com.hazelcast.jet.Observable;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
@@ -345,7 +345,7 @@ public final class JetBootstrap {
         }
 
         @Nonnull @Override
-        public LightJob newLightJobInt(Object jobDefinition) {
+        public BasicJob newLightJobInt(Object jobDefinition) {
             return instance.newLightJobInt(jobDefinition);
         }
 
@@ -363,13 +363,13 @@ public final class JetBootstrap {
         }
 
         @Nonnull @Override
-        public List<Job> getJobs() {
-            return instance.getJobs();
+        public List<BasicJob> getAllJobs() {
+            return instance.getAllJobs();
         }
 
         @Override
-        public Job getJob(long jobId) {
-            return instance.getJob(jobId);
+        public BasicJob getJobById(long jobId) {
+            return instance.getJobById(jobId);
         }
 
         @Nonnull @Override
@@ -423,7 +423,7 @@ public final class JetBootstrap {
         }
 
         @Override
-        public Job newJobProxy(long jobId) {
+        public BasicJob newJobProxy(long jobId) {
             return instance.newJobProxy(jobId);
         }
 
