@@ -26,6 +26,8 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.ConstantPredicateExpression;
+import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.FunctionalPredicateExpression;
 import com.hazelcast.sql.impl.expression.math.MultiplyFunction;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
@@ -141,9 +143,18 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
     @Test
     public void test_whenFilterExistsAndNoProjection() {
         IMap<Integer, String> map = instance().getMap(randomMapName());
+        List<Object[]> expected = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
             map.put(i, "value-" + i);
+            if (i % 2 == 0) {
+                expected.add(new Object[]{i, "value-" + i});
+            }
         }
+
+        Expression<Boolean> filter = new FunctionalPredicateExpression(row -> {
+            int value = row.get(0);
+            return value % 2 == 0;
+        });
 
         JetMapScanMetadata scanMetadata = new JetMapScanMetadata(
                 map.getName(),
@@ -155,7 +166,7 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
                         ColumnExpression.create(0, INT),
                         ColumnExpression.create(1, VARCHAR)
                 ),
-                new ConstantPredicateExpression(false)
+                filter
         );
 
         TestSupport
@@ -164,7 +175,7 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
                 .disableSnapshots()
                 .disableProgressAssertion()
-                .expectOutput(emptyList());
+                .expectOutput(expected);
     }
 
     @Test
