@@ -97,22 +97,6 @@ public class SqlPrimitiveTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_select() {
-        HazelcastInstance hazelcastInstance = instance().getHazelcastInstance();
-        String name = randomName();
-        IMap<Integer, String> map = hazelcastInstance.getMap(name);
-
-        map.put(0, "a");
-        map.put(1, "b");
-        map.put(2, "c");
-
-        SqlResult rows = sqlService.execute("SELECT * FROM " + name);
-        System.out.println(rows);
-        assertRowsAnyOrder("SELECT * FROM " + name,
-                Arrays.asList(new Row(0, "a"), new Row(1, "b"), new Row(2, "c")));
-    }
-
-    @Test
     public void test_insertValues() {
         String name = randomName();
         sqlService.execute(javaSerializableMapDdl(name, Integer.class, String.class));
