@@ -84,7 +84,7 @@ public class InstanceConfig {
 ```yaml
   jet:
     instance:
-      max-processor-accumulated-records: 100
+      max-processor-accumulated-records: 1000000000
 ```
 
 <!--XML-->
@@ -92,7 +92,7 @@ public class InstanceConfig {
 ```xml
   <jet>
     <instance>
-      <max-processor-accumulated-records>100</max-processor-accumulated-records>
+      <max-processor-accumulated-records>1000000000</max-processor-accumulated-records>
     </instance>
   </jet>
 ```
