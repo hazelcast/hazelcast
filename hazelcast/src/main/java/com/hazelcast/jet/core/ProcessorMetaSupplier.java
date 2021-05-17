@@ -487,6 +487,12 @@ public interface ProcessorMetaSupplier extends Serializable {
         ProcessingGuarantee processingGuarantee();
 
         /**
+         * Returns the maximum number of records that can be accumulated by any
+         * single {@link Processor}.
+         */
+        long maxProcessorAccumulatedRecords();
+
+        /**
          * Returns if this job runs as a light job, see {@link
          * JetInstance#newLightJob(Pipeline)}.
          */

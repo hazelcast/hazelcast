@@ -45,6 +45,7 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
     private int localParallelism = 1;
     private String vertexName = "testVertex";
     private ProcessingGuarantee processingGuarantee = NONE;
+    private long maxProcessorAccumulatedRecords = Long.MAX_VALUE;
     private boolean isLightJob;
 
     @Nonnull @Override
@@ -181,6 +182,15 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
     public TestProcessorMetaSupplierContext setProcessingGuarantee(@Nonnull ProcessingGuarantee processingGuarantee) {
         this.processingGuarantee = processingGuarantee;
         return this;
+    }
+
+    @Override
+    public long maxProcessorAccumulatedRecords() {
+        return maxProcessorAccumulatedRecords;
+    }
+
+    public void setMaxProcessorAccumulatedRecords(long maxProcessorAccumulatedRecords) {
+        this.maxProcessorAccumulatedRecords = maxProcessorAccumulatedRecords;
     }
 
     @Override

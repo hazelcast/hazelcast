@@ -182,17 +182,17 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             // create StoreSnapshotTasklet and the queues to it
             ConcurrentConveyor<Object> ssConveyor = null;
             if (snapshotContext.processingGuarantee() != ProcessingGuarantee.NONE) {
-                @SuppressWarnings("unchecked")
-                QueuedPipe<Object>[] snapshotQueues = new QueuedPipe[vertex.localParallelism()];
-                Arrays.setAll(snapshotQueues, i -> new OneToOneConcurrentArrayQueue<>(SNAPSHOT_QUEUE_SIZE));
+            @SuppressWarnings("unchecked")
+            QueuedPipe<Object>[] snapshotQueues = new QueuedPipe[vertex.localParallelism()];
+            Arrays.setAll(snapshotQueues, i -> new OneToOneConcurrentArrayQueue<>(SNAPSHOT_QUEUE_SIZE));
                 ssConveyor = ConcurrentConveyor.concurrentConveyor(null, snapshotQueues);
-                ILogger storeSnapshotLogger = prefixedLogger(nodeEngine.getLogger(StoreSnapshotTasklet.class), jobPrefix);
-                StoreSnapshotTasklet ssTasklet = new StoreSnapshotTasklet(snapshotContext,
-                        ConcurrentInboundEdgeStream.create(ssConveyor, 0, 0, true, jobPrefix + "/ssFrom", null),
-                        new AsyncSnapshotWriterImpl(nodeEngine, snapshotContext, vertex.name(), memberIndex, memberCount,
-                                jobSerializationService),
-                        storeSnapshotLogger, vertex.name(), higherPriorityVertices.contains(vertex.vertexId()));
-                tasklets.add(ssTasklet);
+            ILogger storeSnapshotLogger = prefixedLogger(nodeEngine.getLogger(StoreSnapshotTasklet.class), jobPrefix);
+            StoreSnapshotTasklet ssTasklet = new StoreSnapshotTasklet(snapshotContext,
+                    ConcurrentInboundEdgeStream.create(ssConveyor, 0, 0, true, jobPrefix + "/ssFrom", null),
+                    new AsyncSnapshotWriterImpl(nodeEngine, snapshotContext, vertex.name(), memberIndex, memberCount,
+                            jobSerializationService),
+                    storeSnapshotLogger, vertex.name(), higherPriorityVertices.contains(vertex.vertexId()));
+            tasklets.add(ssTasklet);
             }
 
             int localProcessorIdx = 0;
@@ -209,7 +209,6 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                         vertex.name(),
                         localProcessorIdx,
                         globalProcessorIndex,
-                        jobConfig.getProcessingGuarantee(),
                         isLightJob,
                         vertex.localParallelism(),
                         memberIndex,
@@ -296,7 +295,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         }
         out.writeBoolean(isLightJob);
         if (!isLightJob) {
-            out.writeObject(jobConfig);
+        out.writeObject(jobConfig);
         }
         out.writeInt(memberIndex);
         out.writeInt(memberCount);
@@ -340,7 +339,6 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                         vertex.localParallelism() * memberCount,
                         memberIndex,
                         memberCount,
-                        jobConfig.getProcessingGuarantee(),
                         isLightJob,
                         tempDirectories,
                         jobSerializationService

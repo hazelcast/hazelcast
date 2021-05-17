@@ -70,7 +70,6 @@ public final class Contexts {
         private final int localParallelism;
         private final int totalParallelism;
         private final int memberCount;
-        private final ProcessingGuarantee processingGuarantee;
         private final boolean isLightJob;
 
         @SuppressWarnings("checkstyle:ParameterNumber")
@@ -84,7 +83,6 @@ public final class Contexts {
                 int localParallelism,
                 int totalParallelism,
                 int memberCount,
-                ProcessingGuarantee processingGuarantee,
                 boolean isLightJob
         ) {
             this.jetInstance = jetInstance;
@@ -96,7 +94,6 @@ public final class Contexts {
             this.totalParallelism = totalParallelism;
             this.localParallelism = localParallelism;
             this.memberCount = memberCount;
-            this.processingGuarantee = processingGuarantee;
             this.isLightJob = isLightJob;
         }
 
@@ -147,7 +144,15 @@ public final class Contexts {
 
         @Override
         public ProcessingGuarantee processingGuarantee() {
-            return processingGuarantee;
+            return jobConfig.getProcessingGuarantee();
+        }
+
+        @Override
+        public long maxProcessorAccumulatedRecords() {
+            long jobMaxProcessorAccumulatedRecords = jobConfig.getMaxProcessorAccumulatedRecords();
+            return jobMaxProcessorAccumulatedRecords > -1
+                    ? jobMaxProcessorAccumulatedRecords
+                    : jetInstance.getConfig().getInstanceConfig().getMaxProcessorAccumulatedRecords();
         }
 
         @Override
@@ -174,13 +179,12 @@ public final class Contexts {
                 int totalParallelism,
                 int memberIndex,
                 int memberCount,
-                ProcessingGuarantee processingGuarantee,
                 boolean isLightJob,
                 ConcurrentHashMap<String, File> tempDirectories,
                 InternalSerializationService serializationService
         ) {
             super(jetInstance, jobId, executionId, jobConfig, logger, vertexName, localParallelism, totalParallelism,
-                    memberCount, processingGuarantee, isLightJob);
+                    memberCount, isLightJob);
             this.memberIndex = memberIndex;
             this.tempDirectories = tempDirectories;
             this.serializationService = serializationService;
@@ -303,7 +307,6 @@ public final class Contexts {
                        String vertexName,
                        int localProcessorIndex,
                        int globalProcessorIndex,
-                       ProcessingGuarantee processingGuarantee,
                        boolean isLightJob,
                        int localParallelism,
                        int memberIndex,
@@ -311,7 +314,7 @@ public final class Contexts {
                        ConcurrentHashMap<String, File> tempDirectories,
                        InternalSerializationService serializationService) {
             super(instance, jobId, executionId, jobConfig, logger, vertexName, localParallelism,
-                    memberCount * localParallelism, memberIndex, memberCount, processingGuarantee,
+                    memberCount * localParallelism, memberIndex, memberCount,
                     isLightJob, tempDirectories, serializationService);
             this.localProcessorIndex = localProcessorIndex;
             this.globalProcessorIndex = globalProcessorIndex;
