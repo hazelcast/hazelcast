@@ -33,6 +33,7 @@ import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.jruby.RubyProcess.Sys;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -41,12 +42,14 @@ import org.junit.experimental.categories.Category;
 
 import javax.annotation.Nonnull;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
@@ -260,6 +263,25 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
         }
 
         job.join();
+    }
+
+    @Test
+    public void test_rollByDateHour() throws Exception {
+        Pipeline p = Pipeline.create();
+        p.readFrom(TestSources.items(rangeIterable(1, 10)))
+                .writeTo(Sinks.filesBuilder(directory.toString())
+                        .rollByDate("yyyy-MM-dd.HH")
+                        .build());
+        instance().newJob(p).join();
+
+        String expectedNamePattern = "\\d{4}-\\d{2}-\\d{2}\\.\\d{2}-0$";
+        long numberOfFilesWithExpectedPattern =
+                Stream.of(new File(directory.toString()).listFiles())
+                        .filter(f -> f.getName().matches(expectedNamePattern))
+                        .count();
+
+        assertEquals(1, numberOfFilesWithExpectedPattern);
+        checkFileContents(1, 10, false, false, true);
     }
 
     @Test
