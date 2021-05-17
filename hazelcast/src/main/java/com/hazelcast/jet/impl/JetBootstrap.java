@@ -44,7 +44,7 @@ public final class JetBootstrap {
      * automatically shut down once the {@code main()} method of the JAR returns.
      */
     @Nonnull
-    public static synchronized JetInstance getInstance() {
+    public static JetInstance getInstance() {
         return HazelcastBootstrap.getInstance().getJetInstance();
     }
 }

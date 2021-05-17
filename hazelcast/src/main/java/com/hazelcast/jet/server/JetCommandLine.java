@@ -332,7 +332,7 @@ public class JetCommandLine implements Runnable {
         targetsMixin.replace(targets);
 
         HazelcastBootstrap.executeJar(
-                () -> uncheckCall(() -> HazelcastClient.newHazelcastClient(getClientConfig(false))),
+                () -> getJetClient(false).getHazelcastInstance(),
                 file.getAbsolutePath(), snapshotName, name, mainClass, params);
     }
 

@@ -541,8 +541,8 @@ public class JetCommandLineTest extends JetTestSupport {
     public void testTargetsClusterNameOptional() {
         String target = "127.0.0.1:5701,127.0.0.1:5702";
 
-        testTargetsCommandCluster("jet", "list-jobs", "-t", target);
-        testTargetsCommandCluster("jet", "-t", target, "list-jobs");
+        testTargetsCommandCluster("dev", "list-jobs", "-t", target);
+        testTargetsCommandCluster("dev", "-t", target, "list-jobs");
     }
 
     private void testTargetsCommand(String... args) {
