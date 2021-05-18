@@ -152,6 +152,17 @@ public class MembershipManager {
         memberMapRef.set(MemberMap.singleton(thisMember));
     }
 
+    public MemberImpl getMember(List<Address> addresses) {
+        assert addresses != null && !addresses.isEmpty() : "Address required!";
+        for (Address address : addresses) {
+            MemberImpl member = getMember(address);
+            if (member != null) {
+                return member;
+            }
+        }
+        return null;
+    }
+
     public MemberImpl getMember(Address address) {
         assert address != null : "Address required!";
         MemberMap memberMap = memberMapRef.get();
@@ -529,17 +540,17 @@ public class MembershipManager {
         return true;
     }
 
-    void handleExplicitSuspicionTrigger(Address caller, int callerMemberListVersion,
+    void handleExplicitSuspicionTrigger(List<Address> callerAliases, int callerMemberListVersion,
             MembersViewMetadata suspectedMembersViewMetadata) {
         clusterServiceLock.lock();
         try {
             Address masterAddress = clusterService.getMasterAddress();
             int memberListVersion = getMemberListVersion();
 
-            if (!(masterAddress.equals(caller) && memberListVersion == callerMemberListVersion)) {
+            if (callerAliases.stream().noneMatch(masterAddress::equals) || memberListVersion != callerMemberListVersion) {
                 if (logger.isFineEnabled()) {
                     logger.fine("Ignoring explicit suspicion trigger for " + suspectedMembersViewMetadata
-                            + ". Caller: " + caller + ", caller member list version: " + callerMemberListVersion
+                            + ". Caller: " + callerAliases.get(0) + ", caller member list version: " + callerMemberListVersion
                             + ", known master: " + masterAddress + ", local member list version: " + memberListVersion);
                 }
 
@@ -552,23 +563,23 @@ public class MembershipManager {
         }
     }
 
-    void handleExplicitSuspicion(MembersViewMetadata expectedMembersViewMetadata, Address suspectedAddress) {
+    void handleExplicitSuspicion(MembersViewMetadata expectedMembersViewMetadata, List<Address> suspectedAddresses) {
         clusterServiceLock.lock();
         try {
             MembersViewMetadata localMembersViewMetadata = createLocalMembersViewMetadata();
             if (!localMembersViewMetadata.equals(expectedMembersViewMetadata)) {
                 if (logger.isFineEnabled()) {
-                    logger.fine("Ignoring explicit suspicion of " + suspectedAddress
+                    logger.fine("Ignoring explicit suspicion of " + suspectedAddresses.get(0)
                             + ". Expected: " + expectedMembersViewMetadata + ", Local: " + localMembersViewMetadata);
                 }
 
                 return;
             }
 
-            MemberImpl suspectedMember = getMember(suspectedAddress);
+            MemberImpl suspectedMember = getMember(suspectedAddresses);
             if (suspectedMember == null) {
                 if (logger.isFineEnabled()) {
-                    logger.fine("No need for explicit suspicion, " + suspectedAddress + " is not a member.");
+                    logger.fine("No need for explicit suspicion, " + suspectedAddresses.get(0) + " is not a member.");
                 }
 
                 return;

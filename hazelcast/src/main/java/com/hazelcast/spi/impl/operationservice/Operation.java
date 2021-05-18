@@ -39,6 +39,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -428,15 +429,19 @@ public abstract class Operation implements DataSerializable, Tenantable {
     }
 
     public final List<Address> getAllKnownAliases(Address caller) {
-        List<Address> addresses = new ArrayList<>();
-        addresses.add(caller);
         if (connection instanceof TcpServerConnection) {
+            List<Address> addresses = new ArrayList<>();
+            addresses.add(caller);
+
             TcpServerConnection tcpServerConnection = (TcpServerConnection) connection;
             TcpServerConnectionManager tcpServerConnectionManager = tcpServerConnection.getConnectionManager();
             Set<Address> aliases = tcpServerConnectionManager.getKnownAliases(tcpServerConnection);
             addresses.addAll(aliases.stream().filter(a -> !a.equals(caller)).collect(Collectors.toSet()));
+
+            return addresses;
+        } else {
+            return Collections.singletonList(caller);
         }
-        return addresses;
     }
 
     public final Address getCallerAddress() {

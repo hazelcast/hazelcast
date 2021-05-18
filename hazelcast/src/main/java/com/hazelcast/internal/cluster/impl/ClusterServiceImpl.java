@@ -73,8 +73,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -89,7 +89,6 @@ import static com.hazelcast.internal.util.Preconditions.checkFalse;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static java.lang.String.format;
-
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 
@@ -185,13 +184,16 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         membershipManager.sendMembershipEvents(Collections.emptySet(), singleton(getLocalMember()), false);
     }
 
-    public void handleExplicitSuspicion(MembersViewMetadata expectedMembersViewMetadata, Address suspectedAddress) {
-        membershipManager.handleExplicitSuspicion(expectedMembersViewMetadata, suspectedAddress);
+    public void handleExplicitSuspicion(
+            MembersViewMetadata expectedMembersViewMetadata,
+            List<Address> suspectedAddresses
+    ) {
+        membershipManager.handleExplicitSuspicion(expectedMembersViewMetadata, suspectedAddresses);
     }
 
-    public void handleExplicitSuspicionTrigger(Address caller, int callerMemberListVersion,
+    public void handleExplicitSuspicionTrigger(List<Address> callerAliases, int callerMemberListVersion,
                                                MembersViewMetadata suspectedMembersViewMetadata) {
-        membershipManager.handleExplicitSuspicionTrigger(caller, callerMemberListVersion, suspectedMembersViewMetadata);
+        membershipManager.handleExplicitSuspicionTrigger(callerAliases, callerMemberListVersion, suspectedMembersViewMetadata);
     }
 
     public void suspectMember(Member suspectedMember, String reason, boolean destroyConnection) {
