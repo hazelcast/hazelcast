@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl.connector.map;
 
 import com.hazelcast.cluster.Address;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.jet.Traverser;
@@ -36,7 +35,6 @@ import com.hazelcast.sql.impl.exec.scan.MapScanRow;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.predicate.TernaryLogic;
 import com.hazelcast.sql.impl.plan.node.MapScanMetadata;
-import com.hazelcast.sql.impl.row.HeapRow;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -61,24 +59,21 @@ import static java.util.stream.Collectors.toList;
  * it just returns all map entries which it can read.
  */
 public final class OnHeapMapScanP extends AbstractProcessor {
-    protected IMapTraverser traverser;
-    private final HazelcastInstance hazelcastInstance;
+    private IMapTraverser traverser;
     private final MapScanMetadata mapScanMetadata;
     private final List<Integer> partitions;
 
     private OnHeapMapScanP(
-            @Nonnull HazelcastInstance hazelcastInstance,
             @Nonnull MapScanMetadata mapScanMetadata,
             @Nonnull List<Integer> partitions
     ) {
-        this.hazelcastInstance = hazelcastInstance;
         this.mapScanMetadata = mapScanMetadata;
         this.partitions = partitions;
     }
 
     @Override
     protected void init(@Nonnull Context context) throws Exception {
-        NodeEngine nodeEngine = ((HazelcastInstanceImpl) hazelcastInstance).node.nodeEngine;
+        NodeEngine nodeEngine = ((HazelcastInstanceImpl) context.jetInstance().getHazelcastInstance()).node.nodeEngine;
 
         traverser = new IMapTraverser(
                 nodeEngine,
@@ -99,7 +94,7 @@ public final class OnHeapMapScanP extends AbstractProcessor {
         private final KeyValueIterator iteratorExec;
 
         private final SimpleExpressionEvalContext ctx;
-        private MapScanRow row;
+        private final MapScanRow row;
 
         IMapTraverser(
                 @Nonnull final NodeEngine nodeEngine,
@@ -129,14 +124,14 @@ public final class OnHeapMapScanP extends AbstractProcessor {
         @Override
         public Object[] next() {
             while (iteratorExec.tryAdvance()) {
-                Object[] rows = prepareRow(
+                Object[] row = prepareRow(
                         iteratorExec.getKey(),
                         iteratorExec.getKeyData(),
                         iteratorExec.getValue(),
                         iteratorExec.getValueData()
                 );
-                if (rows != null) {
-                    return rows;
+                if (row != null) {
+                    return row;
                 }
             }
             return null;
@@ -153,22 +148,21 @@ public final class OnHeapMapScanP extends AbstractProcessor {
          * @param rawValueData value as data, might be null
          * @return Row that is ready for processing by parent operators or {@code null} if the row hasn't passed the filter.
          */
-        protected Object[] prepareRow(Object rawKey, Data rawKeyData, Object rawValue, Data rawValueData) {
-            row.setKeyValue(rawKey, rawKeyData, rawValue, rawValueData);
+        private Object[] prepareRow(Object rawKey, Data rawKeyData, Object rawValue, Data rawValueData) {
+            this.row.setKeyValue(rawKey, rawKeyData, rawValue, rawValueData);
 
             // Filter.
-            if (filter != null && TernaryLogic.isNotTrue(filter.evalTop(row, ctx))) {
+            if (filter != null && TernaryLogic.isNotTrue(filter.evalTop(this.row, ctx))) {
                 return null;
             }
 
-            HeapRow heapRow = new HeapRow(projections.size());
+            Object[] row = new Object[projections.size()];
 
             for (int j = 0; j < projections.size(); j++) {
-                Object projectRes = evaluate(projections.get(j), row, ctx);
-                heapRow.set(j, projectRes);
+                row[j] = evaluate(projections.get(j), this.row, ctx);
             }
 
-            return heapRow.getValues();
+            return row;
         }
     }
 
@@ -208,16 +202,10 @@ public final class OnHeapMapScanP extends AbstractProcessor {
     public static final class OnHeapMapScanSupplier implements ProcessorSupplier {
         private final MapScanMetadata mapScanMetadata;
         private final List<Integer> memberPartitions;
-        private HazelcastInstance hazelcastInstance;
 
         private OnHeapMapScanSupplier(MapScanMetadata mapScanMetadata, List<Integer> memberPartitions) {
             this.mapScanMetadata = mapScanMetadata;
             this.memberPartitions = memberPartitions;
-        }
-
-        @Override
-        public void init(@Nonnull Context context) throws Exception {
-            this.hazelcastInstance = context.jetInstance().getHazelcastInstance();
         }
 
         @Nonnull
@@ -225,7 +213,7 @@ public final class OnHeapMapScanP extends AbstractProcessor {
         public List<Processor> get(int count) {
             return distributeObjects(count, memberPartitions).values().stream()
                     .map(partitions ->
-                            new OnHeapMapScanP(hazelcastInstance, mapScanMetadata, partitions))
+                            new OnHeapMapScanP(mapScanMetadata, partitions))
                     .collect(toList());
         }
     }
