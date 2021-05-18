@@ -17,13 +17,16 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.LightJob;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.operation.GetJobIdsByNameOperation;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation;
+import com.hazelcast.jet.impl.operation.SubmitLightJobOperation;
 import com.hazelcast.jet.impl.util.ImdgUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
@@ -32,8 +35,11 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import javax.annotation.Nonnull;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
+import java.util.concurrent.ThreadLocalRandom;
 
+import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static java.util.stream.Collectors.toList;
 
@@ -53,6 +59,27 @@ public class JetInstanceImpl extends AbstractJetInstance {
     @Nonnull @Override
     public JetConfig getConfig() {
         return config;
+    }
+
+    @Nonnull @Override
+    protected LightJob newLightJobInt(Object jobDefinition) {
+        Address coordinatorAddress;
+        if (nodeEngine.getLocalMember().isLiteMember()) {
+            // on lite member forward the request to a random member
+            Member[] members = nodeEngine.getClusterService().getMembers(DATA_MEMBER_SELECTOR).toArray(new Member[0]);
+            coordinatorAddress = members[ThreadLocalRandom.current().nextInt(members.length)].getAddress();
+        } else {
+            coordinatorAddress = nodeEngine.getThisAddress();
+        }
+
+        long jobId = newJobId();
+        SubmitLightJobOperation operation = new SubmitLightJobOperation(jobId, jobDefinition);
+        CompletableFuture<Void> future = nodeEngine
+                .getOperationService()
+                .createInvocationBuilder(JetService.SERVICE_NAME, operation, coordinatorAddress)
+                .invoke();
+
+        return new LightJobProxy(nodeEngine, jobId, coordinatorAddress, future);
     }
 
     @Nonnull @Override

@@ -17,9 +17,11 @@
 package com.hazelcast.jet.impl.memory;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.aggregate.AggregateOperations;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.pipeline.BatchStage;
 import com.hazelcast.jet.pipeline.JoinClause;
 import com.hazelcast.jet.pipeline.Pipeline;
@@ -128,6 +130,63 @@ public class MemoryManagementTest extends SimpleTestInClusterSupport {
                 .writeTo(noop());
 
         assertThatThrownBy(() -> instance().newJob(pipeline).join())
+                .hasMessageContaining("Exception thrown to prevent an OutOfMemoryError on this Hazelcast instance");
+    }
+
+    @Test
+    public void when_maxAccumulatedRecordsCountIsNotExceededWhileTransforming_then_succeeds() {
+        Pipeline pipeline = Pipeline.create();
+        pipeline.readFrom(TestSources.items(list(MAX_PROCESSOR_ACCUMULATED_RECORDS)))
+                .mapStateful(() -> 1, (s, i) -> i)
+                .writeTo(assertOrdered(list(MAX_PROCESSOR_ACCUMULATED_RECORDS)));
+
+        instance().newJob(pipeline).join();
+    }
+
+    @Test
+    public void when_maxAccumulatedRecordsCountIsExceededWhileTransforming_then_throws() {
+        Pipeline pipeline = Pipeline.create();
+        pipeline.readFrom(TestSources.items(list(MAX_PROCESSOR_ACCUMULATED_RECORDS + 1)))
+                .groupingKey(FunctionEx.identity())
+                .mapStateful(() -> 1, (a, k, i) -> i)
+                .writeTo(noop());
+
+        assertThatThrownBy(() -> instance().newJob(pipeline).join())
+                .hasMessageContaining("Exception thrown to prevent an OutOfMemoryError on this Hazelcast instance");
+    }
+
+    @Test
+    public void when_maxAccumulatedRecordsCountIsNotExceededWhileDistinct_then_succeeds() {
+        Pipeline pipeline = Pipeline.create();
+        pipeline.readFrom(TestSources.items(list(MAX_PROCESSOR_ACCUMULATED_RECORDS)))
+                .distinct()
+                .writeTo(assertOrdered(list(MAX_PROCESSOR_ACCUMULATED_RECORDS)));
+
+        instance().newJob(pipeline).join();
+    }
+
+    @Test
+    public void when_maxAccumulatedRecordsCountIsExceededWhileDistinct_then_throws() {
+        Pipeline pipeline = Pipeline.create();
+        pipeline.readFrom(TestSources.items(list(MAX_PROCESSOR_ACCUMULATED_RECORDS + 1)))
+                .distinct()
+                .writeTo(noop());
+
+        assertThatThrownBy(() -> instance().newJob(pipeline).join())
+                .hasMessageContaining("Exception thrown to prevent an OutOfMemoryError on this Hazelcast instance");
+    }
+
+    @Test
+    public void test_jobConfigurationHasPrecedenceOverInstanceOne() {
+        Pipeline pipeline = Pipeline.create();
+        pipeline.readFrom(TestSources.items(list(MAX_PROCESSOR_ACCUMULATED_RECORDS)))
+                .groupingKey(wholeItem())
+                .aggregate(counting())
+                .writeTo(noop());
+
+        JobConfig jobConfig = new JobConfig().setMaxProcessorAccumulatedRecords(MAX_PROCESSOR_ACCUMULATED_RECORDS - 1);
+
+        assertThatThrownBy(() -> instance().newJob(pipeline, jobConfig).join())
                 .hasMessageContaining("Exception thrown to prevent an OutOfMemoryError on this Hazelcast instance");
     }
 

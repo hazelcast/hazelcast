@@ -50,7 +50,7 @@ import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
  * Contains Hazelcast XML Configuration helper methods and variables.
  */
 @SuppressWarnings("checkstyle:methodcount")
-public abstract class AbstractXmlConfigHelper {
+public abstract class AbstractXmlConfigHelper extends AbstractConfigBuilder {
 
     private static final ILogger LOGGER = Logger.getLogger(AbstractXmlConfigHelper.class);
 

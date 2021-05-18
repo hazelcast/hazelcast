@@ -22,6 +22,7 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.logging.ILogger;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import java.io.File;
@@ -75,6 +76,11 @@ public class TestProcessorSupplierContext
     @Nonnull @Override
     public TestProcessorSupplierContext setProcessingGuarantee(@Nonnull ProcessingGuarantee processingGuarantee) {
         return (TestProcessorSupplierContext) super.setProcessingGuarantee(processingGuarantee);
+    }
+
+    @NotNull @Override
+    public TestProcessorSupplierContext setIsLightJob(boolean isLightJob) {
+        return (TestProcessorSupplierContext) super.setIsLightJob(isLightJob);
     }
 
     @Override

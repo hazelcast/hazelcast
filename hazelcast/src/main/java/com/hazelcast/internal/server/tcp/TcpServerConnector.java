@@ -34,6 +34,7 @@ import java.net.UnknownHostException;
 import java.nio.channels.SocketChannel;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.concurrent.Future;
 import java.util.logging.Level;
 
 import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_CLIENT_BIND;
@@ -72,9 +73,9 @@ class TcpServerConnector {
         this.planeCount = connectionManager.planeCount;
     }
 
-    void asyncConnect(Address address, boolean silent, int planeIndex) {
+    Future<Void> asyncConnect(Address address, boolean silent, int planeIndex) {
         serverContext.shouldConnectTo(address);
-        serverContext.executeAsync(new ConnectTask(address, silent, planeIndex));
+        return serverContext.submitAsync(new ConnectTask(address, silent, planeIndex));
     }
 
     private boolean useAnyOutboundPort() {

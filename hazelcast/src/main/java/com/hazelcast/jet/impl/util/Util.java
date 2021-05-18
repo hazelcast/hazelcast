@@ -77,7 +77,6 @@ import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
-import static com.hazelcast.jet.impl.util.Util.toLocalTime;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static java.lang.Math.abs;
 import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
@@ -636,11 +635,10 @@ public final class Util {
         }
 
         return row0 -> {
-            String[] inputRow = row0;
             String[] projectedRow = new String[simpleFieldMap.length];
             for (int i = 0; i < simpleFieldMap.length; i++) {
                 if (simpleFieldMap[i] >= 0) {
-                    projectedRow[i] = inputRow[simpleFieldMap[i]];
+                    projectedRow[i] = row0[simpleFieldMap[i]];
                 }
             }
             return projectedRow;

@@ -23,10 +23,12 @@ import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.BroadcastKey;
+import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ResettableSingletonTraverser;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.datamodel.TimestampedItem;
 import com.hazelcast.jet.function.TriFunction;
+import com.hazelcast.jet.impl.memory.AccumulationLimitExceededException;
 import com.hazelcast.jet.impl.util.Util;
 
 import javax.annotation.Nonnull;
@@ -72,6 +74,8 @@ public class TransformStatefulP<T, K, S, R> extends AbstractProcessor {
     private Traverser<? extends Entry<?, ?>> snapshotTraverser;
     private boolean inComplete;
 
+    private long maxEntries;
+
     public TransformStatefulP(
             long ttl,
             @Nonnull Function<? super T, ? extends K> keyFn,
@@ -89,6 +93,11 @@ public class TransformStatefulP<T, K, S, R> extends AbstractProcessor {
     }
 
     @Override
+    protected void init(@Nonnull Processor.Context context) throws Exception {
+        maxEntries = context.maxProcessorAccumulatedRecords();
+    }
+
+    @Override
     @SuppressWarnings("unchecked")
     protected boolean tryProcess(int ordinal, @Nonnull Object item) {
         return flatMapper.tryProcess((T) item);
@@ -103,7 +112,13 @@ public class TransformStatefulP<T, K, S, R> extends AbstractProcessor {
             return Traversers.empty();
         }
         K key = keyFn.apply(event);
-        TimestampedItem<S> tsAndState = keyToState.computeIfAbsent(key, createIfAbsentFn);
+        TimestampedItem<S> tsAndState = keyToState.computeIfAbsent(key, (k) -> {
+            if (keyToState.size() == maxEntries) {
+                throw new AccumulationLimitExceededException();
+            }
+
+            return createIfAbsentFn.apply(k);
+        });
         tsAndState.setTimestamp(max(tsAndState.timestamp(), timestamp));
         S state = tsAndState.item();
         return statefulFlatMapFn.apply(state, key, event);

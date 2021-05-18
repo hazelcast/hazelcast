@@ -1,0 +1,26 @@
+{
+  "instance": {
+    "hazelcast": {
+      "set": {
+        "my-set": {
+          "statistics-enabled": false,
+          "backup-count": 1,
+          "async-backup-count": 0,
+          "max-size": 10,
+          "item-listeners": [
+            {
+              "class-name": "com.hazelcast.examples.ItemListener",
+              "include-value": true
+            }
+          ],
+          "split-brain-protection-ref": "splitBrainProtectionRuleWithThreeNodes",
+          "merge-policy": {
+            "batch-size": 100,
+            "class-name": "PutIfAbsentMergePolicy"
+          }
+        }
+      }
+    }
+  },
+  "error": null
+}

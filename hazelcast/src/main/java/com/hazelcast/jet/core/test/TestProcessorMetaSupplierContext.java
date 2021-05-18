@@ -46,6 +46,7 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
     private String vertexName = "testVertex";
     private ProcessingGuarantee processingGuarantee = NONE;
     private long maxProcessorAccumulatedRecords = Long.MAX_VALUE;
+    private boolean isLightJob;
 
     @Nonnull @Override
     public JetInstance jetInstance() {
@@ -190,5 +191,19 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
 
     public void setMaxProcessorAccumulatedRecords(long maxProcessorAccumulatedRecords) {
         this.maxProcessorAccumulatedRecords = maxProcessorAccumulatedRecords;
+    }
+
+    @Override
+    public boolean isLightJob() {
+        return isLightJob;
+    }
+
+    /**
+     * Sets the isLightJob flag.
+     */
+    @Nonnull
+    public TestProcessorMetaSupplierContext setIsLightJob(boolean isLightJob) {
+        this.isLightJob = isLightJob;
+        return this;
     }
 }

@@ -19,10 +19,10 @@ package com.hazelcast.config;
 import com.hazelcast.internal.config.ConfigSections;
 import com.hazelcast.internal.config.MemberDomConfigProcessor;
 import com.hazelcast.internal.config.XmlConfigLocator;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.annotation.PrivateApi;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -36,7 +36,6 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.Properties;
 
-import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_VERSION;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
@@ -178,12 +177,6 @@ public class XmlConfigBuilder extends AbstractXmlConfigBuilder implements Config
             throw new InvalidConfigurationException("Invalid root element in xml configuration!"
                     + " Expected: <" + ConfigSections.HAZELCAST.getName() + ">, Actual: <" + rootNodeName + ">.");
         }
-    }
-
-    private boolean shouldValidateTheSchema() {
-        // in case of overridden Hazelcast version there may be no schema with that version
-        // (this feature is used only in Simulator testing)
-        return System.getProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION) == null;
     }
 
     @Override
