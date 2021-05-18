@@ -57,10 +57,6 @@ public final class ColumnExpression<T> implements Expression<T>, IdentifiedDataS
         return new ColumnExpression<>(index, canonicalType);
     }
 
-    public int getIndex() {
-        return index;
-    }
-
     @Override
     public T evalTop(Row row, ExpressionEvalContext context) {
         return row.get(index);
@@ -131,10 +127,5 @@ public final class ColumnExpression<T> implements Expression<T>, IdentifiedDataS
         ColumnExpression<?> that = (ColumnExpression<?>) o;
 
         return index == that.index && type.equals(that.type);
-    }
-
-    @Override
-    public String toString() {
-        return "ColumnExpression{index=" + index + ", type=" + type + '}';
     }
 }

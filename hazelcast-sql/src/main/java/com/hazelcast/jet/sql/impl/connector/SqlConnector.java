@@ -329,6 +329,9 @@ public interface SqlConnector {
         throw new UnsupportedOperationException("Sink not supported for " + typeName());
     }
 
+    /**
+     * Returns the supplier for the delete processor.
+     */
     @Nonnull
     default Vertex deleteProcessor(@Nonnull DAG dag, @Nonnull Table table) {
         throw new UnsupportedOperationException("DELETE not supported for " + typeName());

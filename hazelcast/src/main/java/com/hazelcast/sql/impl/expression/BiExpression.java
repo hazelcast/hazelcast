@@ -39,14 +39,6 @@ public abstract class BiExpression<T> implements Expression<T> {
         this.operand2 = operand2;
     }
 
-    public Expression<?> getOperand1() {
-        return operand1;
-    }
-
-    public Expression<?> getOperand2() {
-        return operand2;
-    }
-
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(operand1);
