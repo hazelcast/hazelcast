@@ -21,12 +21,11 @@ import com.hazelcast.jet.sql.impl.JetPlan.AlterJobPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.CreateJobPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.CreateMappingPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.CreateSnapshotPlan;
-import com.hazelcast.jet.sql.impl.JetPlan.DeletePlan;
+import com.hazelcast.jet.sql.impl.JetPlan.DmlPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropJobPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropMappingPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropSnapshotPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.SelectPlan;
-import com.hazelcast.jet.sql.impl.JetPlan.SinkPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.ShowStatementPlan;
 import com.hazelcast.jet.sql.impl.calcite.parser.JetSqlParser;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
@@ -75,6 +74,7 @@ import org.apache.calcite.prepare.Prepare.CatalogReader;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelShuttleImpl;
 import org.apache.calcite.rel.core.TableModify;
+import org.apache.calcite.rel.core.TableModify.Operation;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.parser.SqlParserImplFactory;
@@ -215,7 +215,7 @@ class JetSqlBackend implements SqlBackend {
         QueryParseResult dmlParseResult =
                 new QueryParseResult(source, parseResult.getParameterMetadata(), parseResult.getValidator(), this, false);
         QueryConvertResult dmlConvertedResult = context.convert(dmlParseResult);
-        SinkPlan dmlPlan = sinkPlan(
+        DmlPlan dmlPlan = sinkPlan(
                 parseResult.getParameterMetadata(),
                 dmlConvertedResult.getRel(),
                 context
@@ -256,7 +256,7 @@ class JetSqlBackend implements SqlBackend {
         return new ShowStatementPlan(planKey, sqlNode.getTarget(), planExecutor);
     }
 
-    private SinkPlan sinkPlan(
+    private DmlPlan sinkPlan(
             QueryParameterMetadata parameterMetadata,
             RelNode rel,
             OptimizerContext context
@@ -269,7 +269,8 @@ class JetSqlBackend implements SqlBackend {
         List<Permission> permissions = extractPermissions(physicalRel);
 
         CreateDagVisitor visitor = traverseRel(physicalRel, localAddress, parameterMetadata);
-        return new SinkPlan(null, parameterMetadata, visitor.getObjectKeys(), visitor.getDag(), planExecutor, permissions);
+        return new DmlPlan(Operation.INSERT, null, parameterMetadata, visitor.getObjectKeys(), visitor.getDag(), planExecutor,
+                permissions);
     }
 
     private JetPlan toPlan(
@@ -285,16 +286,11 @@ class JetSqlBackend implements SqlBackend {
         Address localAddress = nodeEngine.getThisAddress();
         List<Permission> permissions = extractPermissions(physicalRel);
 
-        boolean isInsert = physicalRel instanceof TableModify && ((TableModify) physicalRel).isInsert();
-        boolean isDelete = physicalRel instanceof TableModify && ((TableModify) physicalRel).isDelete();
-
-        if (isDelete) {
+        if (physicalRel instanceof TableModify) {
             CreateDagVisitor result = traverseRel(physicalRel, localAddress, parameterMetadata);
-            return new DeletePlan(planKey, parameterMetadata, result.getDag(), planExecutor);
-        } else if (isInsert) {
-            CreateDagVisitor result = traverseRel(physicalRel, localAddress, parameterMetadata);
-            return new SinkPlan(planKey, parameterMetadata, result.getObjectKeys(), result.getDag(), planExecutor,
-                    permissions);
+            Operation operation = ((TableModify) physicalRel).getOperation();
+            return new DmlPlan(operation, planKey, parameterMetadata, result.getObjectKeys(), result.getDag(),
+                    planExecutor, permissions);
         } else {
             CreateDagVisitor result =
                     traverseRel(new JetRootRel(physicalRel, localAddress), localAddress, parameterMetadata);

@@ -31,6 +31,8 @@ import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.optimizer.PlanKey;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.security.SqlSecurityContext;
+import org.apache.calcite.rel.core.TableModify;
+import org.apache.calcite.rel.core.TableModify.Operation;
 
 import java.security.Permission;
 import java.util.List;
@@ -158,18 +160,19 @@ abstract class JetPlan extends SqlPlan {
     static class CreateJobPlan extends JetPlan {
         private final JobConfig jobConfig;
         private final boolean ifNotExists;
-        private final SinkPlan dmlPlan;
+        private final DmlPlan dmlPlan;
         private final JetPlanExecutor planExecutor;
 
         CreateJobPlan(
                 PlanKey planKey,
                 JobConfig jobConfig,
                 boolean ifNotExists,
-                SinkPlan dmlPlan,
+                DmlPlan dmlPlan,
                 JetPlanExecutor planExecutor
         ) {
             super(planKey);
 
+            assert dmlPlan.operation == Operation.INSERT : dmlPlan.operation;
             this.jobConfig = jobConfig;
             this.ifNotExists = ifNotExists;
             this.dmlPlan = dmlPlan;
@@ -184,7 +187,7 @@ abstract class JetPlan extends SqlPlan {
             return ifNotExists;
         }
 
-        SinkPlan getExecutionPlan() {
+        DmlPlan getExecutionPlan() {
             return dmlPlan;
         }
 
@@ -478,66 +481,6 @@ abstract class JetPlan extends SqlPlan {
         }
     }
 
-    static class SinkPlan extends JetPlan {
-        private final Set<PlanObjectKey> objectKeys;
-        private final QueryParameterMetadata parameterMetadata;
-        private final DAG dag;
-        private final JetPlanExecutor planExecutor;
-        private final List<Permission> permissions;
-
-        SinkPlan(
-                PlanKey planKey,
-                QueryParameterMetadata parameterMetadata,
-                Set<PlanObjectKey> objectKeys,
-                DAG dag,
-                JetPlanExecutor planExecutor,
-                List<Permission> permissions
-        ) {
-            super(planKey);
-
-            this.objectKeys = objectKeys;
-            this.parameterMetadata = parameterMetadata;
-            this.dag = dag;
-            this.planExecutor = planExecutor;
-            this.permissions = permissions;
-        }
-
-        QueryParameterMetadata getParameterMetadata() {
-            return parameterMetadata;
-        }
-
-        DAG getDag() {
-            return dag;
-        }
-
-        @Override
-        public boolean isCacheable() {
-            return !objectKeys.contains(PlanObjectKey.NON_CACHEABLE_OBJECT_KEY);
-        }
-
-        @Override
-        public boolean isPlanValid(PlanCheckContext context) {
-            return context.isValid(objectKeys);
-        }
-
-        @Override
-        public void checkPermissions(SqlSecurityContext context) {
-            for (Permission permission : permissions) {
-                context.checkPermission(permission);
-            }
-        }
-
-        @Override
-        public boolean producesRows() {
-            return false;
-        }
-
-        @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments) {
-            return planExecutor.execute(this, queryId, arguments);
-        }
-    }
-
     static class SelectPlan extends JetPlan {
         private final Set<PlanObjectKey> objectKeys;
         private final QueryParameterMetadata parameterMetadata;
@@ -618,44 +561,56 @@ abstract class JetPlan extends SqlPlan {
         }
     }
 
-    static class DeletePlan extends JetPlan {
+    static class DmlPlan extends JetPlan {
+        private final TableModify.Operation operation;
+        private final Set<PlanObjectKey> objectKeys;
         private final QueryParameterMetadata parameterMetadata;
         private final DAG dag;
         private final JetPlanExecutor planExecutor;
+        private final List<Permission> permissions;
 
-        DeletePlan(PlanKey planKey, QueryParameterMetadata parameterMetadata, DAG dag, JetPlanExecutor planExecutor) {
+        DmlPlan(
+                TableModify.Operation operation,
+                PlanKey planKey,
+                QueryParameterMetadata parameterMetadata,
+                Set<PlanObjectKey> objectKeys,
+                DAG dag,
+                JetPlanExecutor planExecutor,
+                List<Permission> permissions
+        ) {
             super(planKey);
+
+            this.operation = operation;
+            this.objectKeys = objectKeys;
             this.parameterMetadata = parameterMetadata;
             this.dag = dag;
             this.planExecutor = planExecutor;
+            this.permissions = permissions;
         }
 
-        public DAG getDag() {
-            return dag;
-        }
-
-        public QueryParameterMetadata getParameterMetadata() {
+        QueryParameterMetadata getParameterMetadata() {
             return parameterMetadata;
         }
 
-        @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments) {
-            return planExecutor.execute(this, queryId, arguments);
+        DAG getDag() {
+            return dag;
         }
 
         @Override
         public boolean isCacheable() {
-            return false;
+            return !objectKeys.contains(PlanObjectKey.NON_CACHEABLE_OBJECT_KEY);
         }
 
         @Override
         public boolean isPlanValid(PlanCheckContext context) {
-            return true;
+            return context.isValid(objectKeys);
         }
 
         @Override
         public void checkPermissions(SqlSecurityContext context) {
-
+            for (Permission permission : permissions) {
+                context.checkPermission(permission);
+            }
         }
 
         @Override
@@ -663,5 +618,9 @@ abstract class JetPlan extends SqlPlan {
             return false;
         }
 
+        @Override
+        public SqlResult execute(QueryId queryId, List<Object> arguments) {
+            return planExecutor.execute(this, queryId, arguments);
+        }
     }
 }

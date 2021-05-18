@@ -22,8 +22,8 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.impl.AbstractJetInstance;
 import com.hazelcast.jet.sql.impl.JetPlan.CreateMappingPlan;
+import com.hazelcast.jet.sql.impl.JetPlan.DmlPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropMappingPlan;
-import com.hazelcast.jet.sql.impl.JetPlan.SinkPlan;
 import com.hazelcast.jet.sql.impl.schema.Mapping;
 import com.hazelcast.jet.sql.impl.schema.MappingCatalog;
 import com.hazelcast.sql.SqlResult;
@@ -33,6 +33,7 @@ import com.hazelcast.sql.impl.QueryResultProducer;
 import com.hazelcast.sql.impl.optimizer.PlanKey;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
+import org.apache.calcite.rel.core.TableModify.Operation;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -119,7 +120,8 @@ public class JetPlanExecutorTest {
     public void test_insertExecution() {
         // given
         QueryId queryId = QueryId.create(UuidUtil.newSecureUUID());
-        SinkPlan plan = new SinkPlan(
+        DmlPlan plan = new DmlPlan(
+                Operation.INSERT,
                 planKey(),
                 QueryParameterMetadata.EMPTY,
                 emptySet(),
