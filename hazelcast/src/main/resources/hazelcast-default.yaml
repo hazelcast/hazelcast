@@ -186,40 +186,40 @@ hazelcast:
         # Integer.MAX_VALUE. Default is 0.
         size: 0
 
-        # While recovering from split-brain (network partitioning),
-        # map entries in the small cluster will merge into the bigger cluster
-        # based on the policy set here. When an entry merge into the
-        # cluster, there might an existing entry with the same key already.
-        # Values of these entries might be different for that same key.
-        # Which value should be set for the key? Conflict is resolved by
-        # the policy set here. Default policy is PutIfAbsentMapMergePolicy
-        #
-        # There are built-in merge policies such as
-        # com.hazelcast.spi.merge.PassThroughMergePolicy; entry will be overwritten if merging entry exists for the key.
-        # com.hazelcast.spi.merge.PutIfAbsentMergePolicy ; entry will be added if the merging entry doesn't exist in the cluster.
-        # com.hazelcast.spi.merge.HigherHitsMergePolicy ; entry with the higher hits wins.
-        # com.hazelcast.spi.merge.LatestUpdateMergePolicy ; entry with the latest update wins.
-        merge-policy:
-          batch-size: 100
-          class-name: com.hazelcast.spi.merge.PutIfAbsentMergePolicy
+      # While recovering from split-brain (network partitioning),
+      # map entries in the small cluster will merge into the bigger cluster
+      # based on the policy set here. When an entry merge into the
+      # cluster, there might an existing entry with the same key already.
+      # Values of these entries might be different for that same key.
+      # Which value should be set for the key? Conflict is resolved by
+      # the policy set here. Default policy is PutIfAbsentMapMergePolicy
+      #
+      # There are built-in merge policies such as
+      # com.hazelcast.spi.merge.PassThroughMergePolicy; entry will be overwritten if merging entry exists for the key.
+      # com.hazelcast.spi.merge.PutIfAbsentMergePolicy ; entry will be added if the merging entry doesn't exist in the cluster.
+      # com.hazelcast.spi.merge.HigherHitsMergePolicy ; entry with the higher hits wins.
+      # com.hazelcast.spi.merge.LatestUpdateMergePolicy ; entry with the latest update wins.
+      merge-policy:
+        batch-size: 100
+        class-name: com.hazelcast.spi.merge.PutIfAbsentMergePolicy
 
-        # Control caching of de-serialized values. Caching makes query evaluation faster, but it cost memory.
-        # Possible Values:
-        #              NEVER: Never cache deserialized object
-        #              INDEX-ONLY: Caches values only when they are inserted into an index.
-        #              ALWAYS: Always cache deserialized values.
-        cache-deserialized-values: INDEX-ONLY
+      # Control caching of de-serialized values. Caching makes query evaluation faster, but it cost memory.
+      # Possible Values:
+      #              NEVER: Never cache deserialized object
+      #              INDEX-ONLY: Caches values only when they are inserted into an index.
+      #              ALWAYS: Always cache deserialized values.
+      cache-deserialized-values: INDEX-ONLY
 
-        # Whether map level statistical information (total
-        # hits, memory-cost etc.) should be gathered and stored.
-        statistics-enabled: true
+      # Whether map level statistical information (total
+      # hits, memory-cost etc.) should be gathered and stored.
+      statistics-enabled: true
 
-        # Whether statistical information (hits, creation
-        # time, last access time etc.) should be gathered
-        # and stored. You have to enable this if you plan to
-        # implement a custom eviction policy, out-of-the-box
-        # eviction policies work regardless of this setting.
-        per-entry-stats-enabled: false
+      # Whether statistical information (hits, creation
+      # time, last access time etc.) should be gathered
+      # and stored. You have to enable this if you plan to
+      # implement a custom eviction policy, out-of-the-box
+      # eviction policies work regardless of this setting.
+      per-entry-stats-enabled: false
 
   multimap:
     default:
