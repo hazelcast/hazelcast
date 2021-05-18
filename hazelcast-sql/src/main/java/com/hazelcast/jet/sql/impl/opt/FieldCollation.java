@@ -23,7 +23,7 @@ import org.apache.calcite.rel.RelFieldCollation.NullDirection;
 import java.io.Serializable;
 
 /**
- * Serializable wrapper class for {@link org.apache.calcite.rel.RelFieldCollation}
+ * Serializable equivalent of {@link RelFieldCollation}.
  */
 public class FieldCollation implements Serializable {
     private final int index;
