@@ -208,11 +208,6 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_OPERATORS.add(JetSqlOperatorTable.JSON_FILE);
         SUPPORTED_OPERATORS.add(JetSqlOperatorTable.AVRO_FILE);
         SUPPORTED_OPERATORS.add(JetSqlOperatorTable.PARQUET_FILE);
-
-        // Ordering
-        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.DESC);
-        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.NULLS_FIRST);
-        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.NULLS_LAST);
     }
 
     private UnsupportedOperationVisitor() {

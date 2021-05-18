@@ -197,8 +197,6 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
     public static final SqlFunction EXTRACT = HazelcastExtractFunction.INSTANCE;
 
     public static final SqlPostfixOperator DESC = HazelcastDescOperator.DESC;
-    public static final SqlPostfixOperator NULLS_FIRST = HazelcastDescOperator.NULLS_FIRST;
-    public static final SqlPostfixOperator NULLS_LAST = HazelcastDescOperator.NULLS_LAST;
 
     //#endregion
 

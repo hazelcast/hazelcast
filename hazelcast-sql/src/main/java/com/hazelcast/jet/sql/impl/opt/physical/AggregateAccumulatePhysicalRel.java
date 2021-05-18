@@ -36,7 +36,6 @@ public class AggregateAccumulatePhysicalRel extends SingleRel implements Physica
             RelTraitSet traits,
             RelNode input,
             AggregateOperation<?, Object[]> aggrOp
-
     ) {
         super(cluster, traits, input);
 

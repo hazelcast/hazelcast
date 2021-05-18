@@ -117,6 +117,19 @@ public class ParserOperationsTest {
     }
 
     @Test
+    public void testUnsupportedNullsFirstLast() {
+        checkFailure(
+                "SELECT a, b FROM t ORDER BY a DESC NULLS FIRST",
+                "Function 'NULLS FIRST' does not exist"
+        );
+
+        checkFailure(
+                "SELECT a, b FROM t ORDER BY a DESC NULLS LAST",
+                "Function 'NULLS LAST' does not exist"
+        );
+    }
+
+    @Test
     public void testUnsupportedGroupBy() {
         checkFailure(
                 "SELECT a FROM t GROUP BY a",

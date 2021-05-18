@@ -209,7 +209,6 @@ public class SqlSortTest extends SqlTestSupport {
         assertThatThrownBy(() -> sqlService.execute("SELECT * FROM TABLE(GENERATE_STREAM(1)) ORDER BY 1"))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageContaining("Sorting is not supported for a streaming query");
-
     }
 
     private static String createTable(String[]... values) {

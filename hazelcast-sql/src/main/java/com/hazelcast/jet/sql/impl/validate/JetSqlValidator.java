@@ -140,10 +140,6 @@ public class JetSqlValidator extends HazelcastSqlValidator {
         return false;
     }
 
-    private boolean containsSorting(SqlSelect select) {
-        return select.getOrderList() != null && select.getOrderList().size() > 0;
-    }
-
     /**
      * Goes over all the referenced tables in the given {@link SqlNode}
      * and returns true if any of them uses a streaming connector.

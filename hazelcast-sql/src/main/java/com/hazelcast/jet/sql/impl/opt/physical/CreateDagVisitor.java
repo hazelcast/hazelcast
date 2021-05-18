@@ -33,6 +33,7 @@ import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
@@ -41,6 +42,7 @@ import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.SingleRel;
 
 import javax.annotation.Nullable;
 import java.util.HashSet;
@@ -56,6 +58,7 @@ import static com.hazelcast.jet.core.processor.Processors.filterUsingServiceP;
 import static com.hazelcast.jet.core.processor.Processors.mapUsingServiceP;
 import static com.hazelcast.jet.core.processor.Processors.sortP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.convenientSourceP;
+import static com.hazelcast.jet.impl.util.Util.getJetInstance;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 import static com.hazelcast.jet.sql.impl.processors.RootResultConsumerSink.rootResultConsumerSink;
 import static java.util.Collections.singletonList;
@@ -64,11 +67,13 @@ public class CreateDagVisitor {
 
     private final DAG dag = new DAG();
     private final Set<PlanObjectKey> objectKeys = new HashSet<>();
+    private final NodeEngine nodeEngine;
     private final Address localMemberAddress;
     private final QueryParameterMetadata parameterMetadata;
 
-    public CreateDagVisitor(Address localMemberAddress, QueryParameterMetadata parameterMetadata) {
-        this.localMemberAddress = localMemberAddress;
+    public CreateDagVisitor(NodeEngine nodeEngine, QueryParameterMetadata parameterMetadata) {
+        this.nodeEngine = nodeEngine;
+        this.localMemberAddress = nodeEngine.getLocalMember().getAddress();
         this.parameterMetadata = parameterMetadata;
     }
 
@@ -114,7 +119,7 @@ public class CreateDagVisitor {
                 ServiceFactories.nonSharedService(ctx ->
                         ExpressionUtil.filterFn(filter, SimpleExpressionEvalContext.from(ctx))),
                 (BiPredicateEx<Predicate<Object[]>, Object[]>) Predicate::test));
-        connectInput(rel.getInput(), vertex, null);
+        connectInputPreserveCollation(rel, vertex);
         return vertex;
     }
 
@@ -122,8 +127,7 @@ public class CreateDagVisitor {
         Vertex vertex = dag.newUniqueVertex("Sort",
                 ProcessorMetaSupplier.forceTotalParallelismOne(
                         ProcessorSupplier.of(
-                                sortP(ExpressionUtil.comparisonFn(rel.getCollations())
-                                )
+                                sortP(ExpressionUtil.comparisonFn(rel.getCollations()))
                         ),
                         localMemberAddress
                 )
@@ -143,12 +147,7 @@ public class CreateDagVisitor {
                 (BiFunctionEx<Function<Object[], Object[]>, Object[], Object[]>) Function::apply
         ));
 
-        Vertex input = connectInput(rel.getInput(), vertex, null);
-
-        if (rel.getTraitSet().getCollation().getFieldCollations().size() > 0) {
-            vertex.localParallelism(input.determineLocalParallelism(Vertex.LOCAL_PARALLELISM_USE_DEFAULT));
-        }
-
+        connectInputPreserveCollation(rel, vertex);
         return vertex;
     }
 
@@ -172,7 +171,7 @@ public class CreateDagVisitor {
         Vertex vertex = dag.newUniqueVertex(
                 "Accumulate",
                 Processors.accumulateP(aggregateOperation)
-        );
+        ).localParallelism(1);
         connectInput(rel.getInput(), vertex, null);
         return vertex;
     }
@@ -289,6 +288,7 @@ public class CreateDagVisitor {
      * create an edge from the input vertex into {@code thisVertex}.
      *
      * @param configureEdgeFn optional function to configure the edge
+     * @return the input vertex
      */
     private Vertex connectInput(
             RelNode inputRel,
@@ -302,6 +302,29 @@ public class CreateDagVisitor {
         }
         dag.edge(edge);
         return inputVertex;
+    }
+
+    /**
+     * Same as {@link #connectInput(RelNode, Vertex, Consumer)}, but used for
+     * vertices normally connected by an unicast or isolated edge, depending on
+     * whether the {@code rel} has collation fields.
+     *
+     * @param rel The rel to connect to input
+     * @param vertex The vertex for {@code rel}
+     */
+    private void connectInputPreserveCollation(SingleRel rel, Vertex vertex) {
+        boolean preserveCollation = rel.getTraitSet().getCollation().getFieldCollations().size() > 0;
+        Vertex inputVertex = connectInput(rel.getInput(), vertex,
+                preserveCollation ? Edge::isolated : null);
+
+        if (preserveCollation) {
+            int cooperativeThreadCount = getJetInstance(nodeEngine).getConfig().getInstanceConfig().getCooperativeThreadCount();
+            int explicitLP = inputVertex.determineLocalParallelism(cooperativeThreadCount);
+            // It's not strictly necessary to set the LP to the input, but we do it to ensure that the two
+            // vertices indeed have the same LP
+            inputVertex.determineLocalParallelism(explicitLP);
+            vertex.localParallelism(explicitLP);
+        }
     }
 
     private void collectObjectKeys(Table table) {
