@@ -18,7 +18,6 @@ package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
-import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 
 import java.util.concurrent.CompletableFuture;
 
