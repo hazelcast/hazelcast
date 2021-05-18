@@ -28,6 +28,7 @@ import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetCacheManager;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.LightJob;
 import com.hazelcast.jet.Observable;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
@@ -81,7 +82,7 @@ import static com.hazelcast.spi.properties.ClusterProperty.LOGGING_TYPE;
  * load and use its classes. However, from within a running {@code main()}
  * method it is not trivial to find out the filename of the JAR containing
  * it.
- **/
+ */
 public final class JetBootstrap {
 
     // supplier should be set only once
@@ -246,7 +247,7 @@ public final class JetBootstrap {
         join.getKubernetesConfig().setEnabled(false);
         join.getEurekaConfig().setEnabled(false);
         join.setDiscoveryConfig(new DiscoveryConfig());
-        return Hazelcast.getOrCreateHazelcastInstance(config).getJetInstance();
+        return Hazelcast.newHazelcastInstance(config).getJetInstance();
     }
 
     public static void configureLogging() {
@@ -341,6 +342,11 @@ public final class JetBootstrap {
         private Job remember(@Nonnull Job job) {
             submittedJobs.add(job);
             return job;
+        }
+
+        @Nonnull @Override
+        public LightJob newLightJobInt(Object jobDefinition) {
+            return instance.newLightJobInt(jobDefinition);
         }
 
         private JobConfig updateJobConfig(@Nonnull JobConfig config) {

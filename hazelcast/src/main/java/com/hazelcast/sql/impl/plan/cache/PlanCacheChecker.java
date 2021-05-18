@@ -32,7 +32,7 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Periodically checks plans for validity.
+ * Checks plans for validity.
  */
 public class PlanCacheChecker {
 
@@ -44,6 +44,7 @@ public class PlanCacheChecker {
         this.nodeEngine = nodeEngine;
         this.planCache = planCache;
         this.tableResolvers = tableResolvers;
+        this.tableResolvers.forEach(tableResolver -> tableResolver.registerListener(this::check));
     }
 
     public void check() {

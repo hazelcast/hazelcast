@@ -26,11 +26,14 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.LightJob;
 import com.hazelcast.jet.function.RunnableEx;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.JobExecutionRecord;
 import com.hazelcast.jet.impl.JobExecutionService;
 import com.hazelcast.jet.impl.JobRepository;
+import com.hazelcast.jet.impl.pipeline.transform.BatchSourceTransform;
+import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.IMap;
@@ -48,6 +51,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Future;
@@ -185,10 +189,25 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
         JobExecutionService service = getNodeEngineImpl(instance)
                 .<JetService>getService(JetService.SERVICE_NAME)
                 .getJobExecutionService();
+        long nullSince = Long.MIN_VALUE;
         do {
             assertJobStatusEventually(job, RUNNING);
             // executionId can be null if the execution just terminated
             executionId = service.getExecutionIdForJobId(job.getId());
+            if (executionId == null) {
+                if (nullSince == Long.MIN_VALUE) {
+                    nullSince = System.nanoTime();
+                } else {
+                    if (NANOSECONDS.toSeconds(System.nanoTime() - nullSince) > 10) {
+                        // Because we check the execution ID, make sure the execution is running on
+                        // the given instance. E.g. a job with a non-distributed source and no
+                        // distributed edge will complete on all but one members immediately.
+                        throw new RuntimeException("The executionId is null for 10 secs - is the job running on all members?");
+                    }
+                }
+            } else {
+                nullSince = Long.MIN_VALUE;
+            }
         } while (executionId == null || executionId.equals(ignoredExecutionId));
         return executionId;
     }
@@ -279,6 +298,10 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
                 + snapshotId[0] + ", previous id=" + originalSnapshotId + ")");
     }
 
+    public void cleanUpCluster(JetInstance... instances) {
+        cleanUpCluster(Arrays.stream(instances).map(i -> i.getHazelcastInstance()).toArray(HazelcastInstance[]::new));
+    }
+
     /**
      * Clean up the cluster and make it ready to run a next test. If we fail
      * to, shut it down so that next tests don't run on a messed-up cluster.
@@ -286,13 +309,17 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
      * @param instances cluster instances, must contain at least
      *                            one instance
      */
-    public void cleanUpCluster(JetInstance ... instances) {
-        for (Job job : instances[0].getJobs()) {
+    public void cleanUpCluster(HazelcastInstance ... instances) {
+        for (Job job : instances[0].getJetInstance().getJobs()) {
             ditchJob(job, instances);
         }
-        for (DistributedObject o : instances[0].getHazelcastInstance().getDistributedObjects()) {
+        for (DistributedObject o : instances[0].getDistributedObjects()) {
             o.destroy();
         }
+    }
+
+    public static void ditchJob(@Nonnull Job job, @Nonnull JetInstance... instancesToShutDown) {
+        ditchJob(job, Arrays.stream(instancesToShutDown).map(i -> i.getHazelcastInstance()).toArray(HazelcastInstance[]::new));
     }
 
     /**
@@ -300,7 +327,7 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
      * will ignore if it's not running. If the cancellation fails, it will
      * retry.
      */
-    public void ditchJob(@Nonnull Job job, @Nonnull JetInstance... instancesToShutDown) {
+    public static void ditchJob(@Nonnull Job job, @Nonnull HazelcastInstance... instancesToShutDown) {
         int numAttempts;
         for (numAttempts = 0; numAttempts < 10; numAttempts++) {
             JobStatus status = null;
@@ -333,8 +360,8 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
         }
         // if we got here, 10 attempts to cancel the job have failed. Cluster is in bad shape probably, shut it down
         try {
-            for (JetInstance instance : instancesToShutDown) {
-                instance.getHazelcastInstance().getLifecycleService().terminate();
+            for (HazelcastInstance instance : instancesToShutDown) {
+                instance.getLifecycleService().terminate();
             }
         } catch (Exception e) {
             // ignore, proceed to throwing RuntimeException
@@ -344,10 +371,10 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
     }
 
     /**
-     * Cancel the job and wait until it cancels using Job.join(), ignoring the
+     * Cancel the job and wait until it cancels using LightJob.join(), ignoring the
      * CancellationException.
      */
-    public static void cancelAndJoin(@Nonnull Job job) {
+    public static void cancelAndJoin(@Nonnull LightJob job) {
         job.cancel();
         try {
             job.join();
@@ -360,5 +387,9 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
         assertEquals(String.format("Expected collection: `%s`, actual collection: `%s`", expected, actual),
                 expected.size(), actual.size());
         assertContainsAll(expected, actual);
+    }
+
+    public static <T> ProcessorMetaSupplier processorFromPipelineSource(BatchSource<T> source) {
+        return ((BatchSourceTransform<T>) source).metaSupplier;
     }
 }

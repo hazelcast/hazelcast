@@ -1,0 +1,19 @@
+{
+  "instance": {
+    "hazelcast": {
+      "native-memory": {
+        "enabled": true,
+        "allocator-type": "POOLED",
+        "size": {
+          "unit": "MEGABYTES",
+          "value": 256
+        },
+        "min-block-size": 16,
+        "page-size": 4194304,
+        "metadata-space-percentage": 12.5,
+        "persistent-memory-directory": "/mnt/optane"
+      }
+    }
+  },
+  "error": null
+}

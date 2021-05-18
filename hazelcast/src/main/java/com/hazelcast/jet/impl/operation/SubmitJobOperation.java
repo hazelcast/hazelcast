@@ -28,21 +28,21 @@ import java.util.concurrent.CompletableFuture;
 public class SubmitJobOperation extends AsyncJobOperation {
 
     // force serialization of fields to avoid sharing of the mutable instances if submitted to the master member
-    private Data dag;
+    private Data jobDefinition;
     private Data config;
 
     public SubmitJobOperation() {
     }
 
-    public SubmitJobOperation(long jobId, Data dag, Data config) {
+    public SubmitJobOperation(long jobId, Data jobDefinition, Data config) {
         super(jobId);
-        this.dag = dag;
+        this.jobDefinition = jobDefinition;
         this.config = config;
     }
 
     @Override
     public CompletableFuture<Void> doRun() {
-        return getJobCoordinationService().submitJob(jobId(), dag, config);
+        return getJobCoordinationService().submitJob(jobId(), jobDefinition, config);
     }
 
     @Override
@@ -53,14 +53,14 @@ public class SubmitJobOperation extends AsyncJobOperation {
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        IOUtil.writeData(out, dag);
+        IOUtil.writeData(out, jobDefinition);
         IOUtil.writeData(out, config);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        dag = IOUtil.readData(in);
+        jobDefinition = IOUtil.readData(in);
         config = IOUtil.readData(in);
     }
 }

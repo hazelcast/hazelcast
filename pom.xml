@@ -30,11 +30,9 @@
 
     <modules>
         <module>hazelcast</module>
-        <module>hazelcast-jet-sql</module>
         <module>hazelcast-spring</module>
         <module>hazelcast-spring-tests</module>
         <module>hazelcast-build-utils</module>
-        <module>hazelcast-sql-core</module>
         <module>hazelcast-sql</module>
         <module>hazelcast-all</module>
     </modules>
@@ -86,6 +84,8 @@
         <maven.os.plugin.version>1.6.2</maven.os.plugin.version>
         <maven.protobuf.plugin.version>0.6.1</maven.protobuf.plugin.version>
         <maven.resources.plugin.version>3.2.0</maven.resources.plugin.version>
+        <owasp.dependency-check.version>6.1.5</owasp.dependency-check.version>
+        <maven.dependency.plugin.version>3.1.2</maven.dependency.plugin.version>
 
         <!-- External Hazelcast modules -->
         <hazelcast.aws.version>3.3</hazelcast.aws.version>
@@ -102,7 +102,7 @@
         <guava.version>30.1.1-jre</guava.version>
         <hadoop.version>3.3.0</hadoop.version>
         <jackson.version>2.12.1</jackson.version>
-        <jline.version>3.16.0</jline.version>
+        <jline.version>3.19.0</jline.version>
         <jms.api.version>2.0.1</jms.api.version>
         <jsr107.api.version>1.1.1</jsr107.api.version> <!-- JCache -->
         <jsr250.api.version>1.2</jsr250.api.version> <!-- javax.annotations -->
@@ -115,10 +115,10 @@
         <osgi.version>4.2.0</osgi.version>
         <parquet.version>1.12.0</parquet.version>
         <picocli.version>3.9.0</picocli.version>
-        <prometheus.version>0.13.0</prometheus.version>
+        <prometheus.version>0.14.0</prometheus.version>
         <protobuf.version>3.13.0</protobuf.version>
         <scala.version>2.12</scala.version>
-        <slf4j.api.version>1.7.30</slf4j.api.version>
+        <slf4j.version>1.7.30</slf4j.version>
         <spring.version>4.3.0.RELEASE</spring.version>
         <snakeyaml.version>1.26</snakeyaml.version>
         <snakeyaml.engine.version>2.1</snakeyaml.engine.version>
@@ -407,6 +407,18 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.owasp</groupId>
+                <artifactId>dependency-check-maven</artifactId>
+                <version>${owasp.dependency-check.version}</version>
+                <configuration>
+                    <format>ALL</format>
+                    <skipProvidedScope>true</skipProvidedScope>
+                    <nodeAuditAnalyzerEnabled>false</nodeAuditAnalyzerEnabled>
+                    <failBuildOnCVSS>10</failBuildOnCVSS>
+                    <suppressionFiles>owasp-check-suppressions.xml</suppressionFiles>
+                </configuration>
             </plugin>
         </plugins>
         <pluginManagement>
@@ -1336,7 +1348,7 @@
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
-                <version>${slf4j.api.version}</version>
+                <version>${slf4j.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>

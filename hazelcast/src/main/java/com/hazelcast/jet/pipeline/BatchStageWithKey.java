@@ -23,6 +23,7 @@ import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.aggregate.AggregateOperation2;
 import com.hazelcast.jet.aggregate.AggregateOperation3;
+import com.hazelcast.jet.config.InstanceConfig;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
@@ -59,6 +60,10 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      * to the grouping key (no two items which map to the same key will be on
      * the output). There is no guarantee which one of the items with the same
      * key it will emit.
+     * <p>
+     * This operation is subject to memory limits. See {@link
+     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * information.
      *
      * @return the newly attached stage
      */
@@ -167,6 +172,10 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      *         .groupingKey(Person::getLastName)
      *         .aggregate(AggregateOperations.counting());
      * }</pre>
+     * <p>
+     * This operation is subject to memory limits. See {@link
+     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * information.
      *
      * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
      * @param aggrOp the aggregate operation to perform
@@ -201,6 +210,10 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      * stage0.aggregate2(aggrOp0, stage1, aggrOp1)} because it offers a simpler
      * API. Use this variant only when your aggregate operation must combine
      * the input streams into the same accumulator.
+     * <p>
+     * This operation is subject to memory limits. See {@link
+     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * information.
      *
      * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
      * @param aggrOp the aggregate operation to perform
@@ -233,6 +246,10 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      *                 AggregateOperations.counting()
      *         );
      * }</pre>
+     * <p>
+     * This operation is subject to memory limits. See {@link
+     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * information.
      *
      * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
      *
@@ -283,8 +300,13 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      * stage0.aggregate2(aggrOp0, stage1, aggrOp1, stage2, aggrOp2)} because it
      * offers a simpler API. Use this variant only when your aggregate
      * operation must combine the input streams into the same accumulator.
+     * <p>
+     * This operation is subject to memory limits. See {@link
+     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * information.
      *
      * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
+     *
      * @param aggrOp the aggregate operation to perform
      * @param <T1> type of items in {@code stage1}
      * @param <T2> type of items in {@code stage2}
@@ -320,6 +342,10 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      *                 AggregateOperations.counting()
      *         );
      * }</pre>
+     * <p>
+     * This operation is subject to memory limits. See {@link
+     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * information.
      *
      * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
      *
@@ -386,6 +412,10 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      *         e.getValue().get(tag0), e.getValue().get(tag1), e.getValue().get(tag2))
      * );
      *}</pre>
+     * <p>
+     * This operation is subject to memory limits. See {@link
+     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * information.
      */
     @Nonnull
     default <R0> GroupAggregateBuilder<K, R0> aggregateBuilder(
@@ -443,6 +473,10 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      *         .andCombine(HashSet::addAll)
      *         .andFinish(HashSet::size));
      * }</pre>
+     * <p>
+     * This operation is subject to memory limits. See {@link
+     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * information.
      */
     @Nonnull
     default GroupAggregateBuilder1<T, K> aggregateBuilder() {

@@ -52,34 +52,97 @@ import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR_CHARACTER;
 
 /**
  * Utility methods for SQL data types.
+ * <p>
+ * Length descriptions are generated using https://github.com/openjdk/jol.
  */
 public final class QueryDataTypeUtils {
-    /** 12 (hdr) + 12 (fields) + 12 (arr) + 4 (arr len) + 16 (eight chars) */
-    public static final int TYPE_LEN_VARCHAR = 12 + 4 + 8 + 12 + 4 + 16;
+    /**
+     * java.lang.String footprint:
+     * COUNT       AVG       SUM   DESCRIPTION
+     *     1        32        32   [C
+     *     1        24        24   java.lang.String
+     *     2                  56   (total)
+     */
+    public static final int TYPE_LEN_VARCHAR = 56;
 
-    /** 12 (hdr) + 28 (fields + padding) + 12 (int hdr) + 28 (int fields) + (12 arr hdr) + 4 (arr len) + 8 (eight digits). */
-    public static final int TYPE_LEN_DECIMAL = 12 + 28 + 12 + 28 + 12 + 4 + 8;
+    /**
+     * java.math.BigDecimal footprint:
+     * COUNT       AVG       SUM   DESCRIPTION
+     *     1        32        32   [I
+     *     1        40        40   java.math.BigDecimal
+     *     1        40        40   java.math.BigInteger
+     *     3                 112   (total)
+     */
+    public static final int TYPE_LEN_DECIMAL = 112;
 
-    /** 12 (hdr) + 12 (fields + padding). */
-    public static final int TYPE_LEN_TIME = 12 + 12;
+    /**
+     * java.time.LocalTime footprint:
+     * COUNT       AVG       SUM   DESCRIPTION
+     *     1        24        24   java.time.LocalTime
+     *     1                  24   (total)
+     */
+    public static final int TYPE_LEN_TIME = 24;
 
-    /** 12 (hdr) + 12 (fields + padding). */
-    public static final int TYPE_LEN_DATE = 12 + 12;
+    /**
+     * java.time.LocalDate footprint:
+     * COUNT       AVG       SUM   DESCRIPTION
+     *     1        24        24   java.time.LocalDate
+     *     1                  24   (total)
+     */
+    public static final int TYPE_LEN_DATE = 24;
 
-    /** 12 (hdr) + 20 (fields + padding) + date + time. */
-    public static final int TYPE_LEN_TIMESTAMP = 12 + 20 + TYPE_LEN_TIME + TYPE_LEN_DATE;
+    /**
+     * java.time.LocalDateTime footprint:
+     * COUNT       AVG       SUM   DESCRIPTION
+     *     1        24        24   java.time.LocalDate
+     *     1        24        24   java.time.LocalDateTime
+     *     1        24        24   java.time.LocalTime
+     *     3                  72   (total)
+     */
+    public static final int TYPE_LEN_TIMESTAMP = 72;
 
-    /** 12 (hdr) + 20 (fields + padding) + timestamp + 12 (offset hdr) + 12 (offset fields). */
-    public static final int TYPE_LEN_TIMESTAMP_WITH_TIME_ZONE = 12 + 20 + TYPE_LEN_TIMESTAMP + 12 + 12;
+    /**
+     * java.time.OffsetDateTime footprint:
+     * COUNT       AVG       SUM   DESCRIPTION
+     *     1        24        24   [C
+     *     1        24        24   java.lang.String
+     *     1        24        24   java.time.LocalDate
+     *     1        24        24   java.time.LocalDateTime
+     *     1        24        24   java.time.LocalTime
+     *     1        24        24   java.time.OffsetDateTime
+     *     1        24        24   java.time.ZoneOffset
+     *     7                 168   (total)
+     */
+    public static final int TYPE_LEN_TIMESTAMP_WITH_TIME_ZONE = 168;
+
+    /**
+     * com.hazelcast.sql.impl.type.SqlYearMonthInterval footprint:
+     * COUNT       AVG       SUM   DESCRIPTION
+     *     1        16        16   com.hazelcast.sql.impl.type.SqlYearMonthInterval
+     *     1                  16   (total)
+     */
+    public static final int TYPE_LEN_INTERVAL_YEAR_MONTH = 16;
+
+    /**
+     * com.hazelcast.sql.impl.type.SqlDaySecondInterval footprint:
+     * COUNT       AVG       SUM   DESCRIPTION
+     *     1        24        24   com.hazelcast.sql.impl.type.SqlDaySecondInterval
+     *     1                  24   (total)
+     */
+    public static final int TYPE_LEN_INTERVAL_DAY_SECOND = 24;
+
+    /**
+     * java.util.HashMap footprint:
+     * COUNT       AVG       SUM   DESCRIPTION
+     *     1        48        48   java.util.HashMap
+     *     1                  48   (total)
+     *
+     * Empty map.
+     */
+    public static final int TYPE_LEN_MAP = 48;
 
     /** 12 (hdr) + 36 (arbitrary content). */
     public static final int TYPE_LEN_OBJECT = 12 + 36;
-
-    /** 12 (hdr) + 4 (fields). */
-    public static final int TYPE_LEN_INTERVAL_YEAR_MONTH = 12 + 4;
-
-    /** 12 (hdr) + 12 (fields and padding). */
-    public static final int TYPE_LEN_INTERVAL_DAY_SECOND = 12 + 12;
 
     // With a non-zero value we avoid weird zero-cost columns. Technically, it
     // still costs a single reference now, but reference cost is not taken into
@@ -103,6 +166,7 @@ public final class QueryDataTypeUtils {
     public static final int PRECEDENCE_OBJECT = 1400;
     public static final int PRECEDENCE_INTERVAL_YEAR_MONTH = 10;
     public static final int PRECEDENCE_INTERVAL_DAY_SECOND = 20;
+    public static final int PRECEDENCE_MAP = 30;
 
     private QueryDataTypeUtils() {
         // No-op.

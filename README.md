@@ -10,9 +10,16 @@
 
 ----
 
-Hazelcast is an open-source distributed in-memory data store and
-computation platform. It provides a wide variety of distributed data
-structures and concurrency primitives, including:
+Hazelcast is a distributed in-memory data store and computation
+platform that's fault tolerant and easy to scale up or down.
+
+As an in-memory data store, Hazelcast gives you faster access to your
+data by storing it in memory. With more accessible data, you can
+leverage Hazelcast to process huge amounts of real-time events or
+static datasets with consistently low latency.
+
+To help you take advantage of all these features, Hazelcast comes with
+the following built-in data structures:
 
 * a distributed, partitioned and queryable in-memory key-value store
   implementation, called `IMap`
@@ -23,7 +30,7 @@ structures and concurrency primitives, including:
   based counter, called `PNCounter`
 * a cardinality estimator based on [`HyperLogLog`](https://en.wikipedia.org/wiki/HyperLogLog).
 
-Additionally, Hazelcast includes a production-ready
+Also, Hazelcast includes a production-ready
 [Raft](https://en.wikipedia.org/wiki/Raft_(computer_science))
 implementation which allows implementation of _linearizable_ constructs
 such as:
@@ -36,12 +43,28 @@ Hazelcast data structures are in-memory, highly optimized and offer very
 low latencies. For a single `get` or `put` operation on an `IMap`, you
 can typically expect a round-trip-time of under _100 microseconds_.
 
+Additionally, Hazelcast provides a distributed batch and stream
+processing engine named Jet. It provides a Java API to build stream and
+batch processing applications through the use of a dataflow programming
+model. You can use it to process large volumes of real-time events or
+huge batches of static datasets. To give a sense of scale, a single node
+of Hazelcast has been proven to
+[aggregate 10 million events per second](https://jet-start.sh/blog/2020/08/05/gc-tuning-for-jet)
+with latency under 10 milliseconds.
+
+<img src="images/latency.png"/>
+
+Jet enables Hazelcast to import/export data from/to a very wide variety
+of data sources such as Apache Kafka, Kinesis, Local Files (Text, Avro,
+JSON), JDBC, JMS, Elasticsearch, Apache Hadoop (Azure Data Lake, S3, GCS)
+and much more.
+
 It's very simple to form a cluster with Hazelcast, you can easily do it
 on your computer by just starting several instances. The instances will
 discover each other and form a cluster. There aren't any dependencies on
 any external systems.
 
-Hazelcast automatically replicates data across the cluster and you are
+Hazelcast automatically replicates data across the cluster, and you are
 able to seamlessly tolerate failures and add additional capacity to
 the cluster when needed.
 
@@ -103,13 +126,6 @@ for in-depth documentation about Hazelcast features.
 ## Code Samples
 
 See [Hazelcast Code Samples](https://github.com/hazelcast/hazelcast-code-samples)
-
-## Hazelcast Jet
-
-[Hazelcast Jet](https://jet-start.sh) is a distributed batch and stream
-processing framework based on Hazelcast. It can be used to import/export
-data from/to Hazelcast using a very wide variety of data sources
-including Hadoop, S3, Apache Kafka, Elasticsearch, JDBC and JMS.
 
 ## Get Help
 
@@ -180,15 +196,19 @@ mvn clean validate
 
 ## License
 
-Hazelcast is available under the Apache 2 License. Please see the
-[Licensing section](http://docs.hazelcast.org/docs/latest-dev/manual/html-single/index.html#licensing)
-for more information.
+Source code in this repository is covered by one of two licenses:
+ 1. [Apache License 2.0](http://docs.hazelcast.org/docs/latest-dev/manual/html-single/index.html#licensing)
+ 2. [Hazelcast Community
+    License](http://hazelcast.com/hazelcast-community-license)
+
+The default license throughout the repository is Apache License 2.0
+unless the header specifies another license.
 
 ## Acknowledgments
 [![](https://www.yourkit.com/images/yklogo.png)](http://www.yourkit.com/)
 
 Thanks to [YourKit](http://www.yourkit.com/) for supporting open source software by providing us a free license 
-for their Java profiler  
+for their Java profiler.
 
 ## Copyright
 

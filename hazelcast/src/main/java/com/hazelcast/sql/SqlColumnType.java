@@ -119,4 +119,9 @@ public enum SqlColumnType {
     public Class<?> getValueClass() {
         return valueClass;
     }
+
+    @Override
+    public String toString() {
+        return name().replace('_', ' ');
+    }
 }

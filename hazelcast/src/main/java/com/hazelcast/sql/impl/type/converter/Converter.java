@@ -63,6 +63,7 @@ public abstract class Converter implements Serializable {
     protected static final int ID_NULL = 20;
     protected static final int ID_INTERVAL_YEAR_MONTH = 21;
     protected static final int ID_INTERVAL_DAY_SECOND = 22;
+    protected static final int ID_MAP = 23;
 
     private final int id;
     private final QueryDataTypeFamily typeFamily;

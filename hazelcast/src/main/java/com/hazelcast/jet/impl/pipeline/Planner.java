@@ -203,14 +203,23 @@ public class Planner {
 
         FunctionEx trailingMapFn = mergeMapFunctions(chain.subList(lastFlatMap, chain.size()));
         String name = chain.stream().map(Transform::name).collect(Collectors.joining(", ", "fused(", ")"));
+        Transform fused;
         if (flatMapFn == null) {
-            return new MapTransform(name, chain.get(0).upstream().get(0), trailingMapFn);
+            fused = new MapTransform(name, chain.get(0).upstream().get(0), trailingMapFn);
         } else {
             if (trailingMapFn != null) {
                 flatMapFn = flatMapFn.andThen(t -> t.map(trailingMapFn));
             }
-            return new FlatMapTransform(name, chain.get(0).upstream().get(0), flatMapFn);
+            fused = new FlatMapTransform(name, chain.get(0).upstream().get(0), flatMapFn);
         }
+        // if the first stage of the chain is rebalanced, then we set
+        // the rebalance flag of the created fused stage. Only consider
+        // the case when first element of the chain is rebalanced
+        // because there isn't any other case. If any stage in the
+        // middle includes rebalance, then those stages are not fused
+        // by findFusableChain().
+        fused.setRebalanceInput(0, chain.get(0).shouldRebalanceInput(0));
+        return fused;
     }
 
     @SuppressWarnings("rawtypes")

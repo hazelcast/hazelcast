@@ -23,6 +23,7 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
+import com.hazelcast.jet.impl.execution.ExecutionContext.SenderReceiverKey;
 import com.hazelcast.jet.impl.execution.ReceiverTasklet;
 import com.hazelcast.jet.impl.execution.SenderTasklet;
 import com.hazelcast.jet.impl.serialization.MemoryReader;
@@ -31,28 +32,25 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.concurrent.ScheduledFuture;
 
 import static com.hazelcast.internal.nio.Packet.FLAG_JET_FLOW_CONTROL;
 import static com.hazelcast.internal.nio.Packet.FLAG_URGENT;
-import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.ImdgUtil.createObjectDataInput;
 import static com.hazelcast.jet.impl.util.ImdgUtil.createObjectDataOutput;
 import static com.hazelcast.jet.impl.util.ImdgUtil.getMemberConnection;
-import static com.hazelcast.jet.impl.util.ImdgUtil.getRemoteMembers;
-import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public class Networking {
 
-    private static final int PACKET_HEADER_SIZE = 16;
+    public static final int PACKET_HEADER_SIZE = 16;
     private static final int FLOW_PACKET_INITIAL_SIZE = 128;
-
-    private static final byte[] EMPTY_BYTES = new byte[0];
+    private static final int TERMINAL_VERTEX_ID = -1;
+    private static final long TERMINAL_EXECUTION_ID = Long.MIN_VALUE;
 
     private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
@@ -87,17 +85,13 @@ public class Networking {
 
     private void handleStreamPacket(Packet packet) {
         byte[] payload = packet.toByteArray();
-        int offset = 0;
 
-        long executionId = memoryReader.readLong(payload, offset);
-        offset += Long.BYTES;
-        int vertexId = memoryReader.readInt(payload, offset);
-        offset += Integer.BYTES;
-        int ordinal = memoryReader.readInt(payload, offset);
-        offset += Integer.BYTES;
+        long executionId = memoryReader.readLong(payload, 0);
+        int vertexId = memoryReader.readInt(payload, Long.BYTES);
+        int ordinal = memoryReader.readInt(payload, Long.BYTES + Integer.BYTES);
 
-        ExecutionContext executionContext = jobExecutionService.getExecutionContext(executionId);
-        executionContext.handlePacket(vertexId, ordinal, packet.getConn().getRemoteAddress(), payload, offset);
+        ExecutionContext executionContext = jobExecutionService.getOrCreateExecutionContext(executionId);
+        executionContext.handlePacket(vertexId, ordinal, packet.getConn().getRemoteAddress(), payload);
     }
 
     public static byte[] createStreamPacketHeader(NodeEngine nodeEngine,
@@ -114,101 +108,103 @@ public class Networking {
 
     private void broadcastFlowControlPacket() {
         try {
-            getRemoteMembers(nodeEngine).forEach(member -> uncheckRun(() -> {
-                Connection conn = getMemberConnection(nodeEngine, member);
-                final byte[] packetBuf = createFlowControlPacket(member, conn);
-                if (packetBuf.length == 0) {
-                    return;
-                }
+            final Map<Address, byte[]> packets = createFlowControlPacket();
+
+            for (Entry<Address, byte[]> en : packets.entrySet()) {
+                Connection conn = getMemberConnection(nodeEngine, en.getKey());
                 if (conn != null) {
-                    conn.write(new Packet(packetBuf)
+                    conn.write(new Packet(en.getValue())
                             .setPacketType(Packet.Type.JET)
                             .raiseFlags(FLAG_URGENT | FLAG_JET_FLOW_CONTROL));
                 }
-            }));
+            }
         } catch (Throwable t) {
             logger.severe("Flow-control packet broadcast failed", t);
         }
     }
 
-    private byte[] createFlowControlPacket(Address member, Connection expectedConnection) throws IOException {
-        try (BufferObjectDataOutput output = createObjectDataOutput(nodeEngine, lastFlowPacketSize)) {
-            boolean hasData = false;
-            Map<Long, ExecutionContext> executionContexts = jobExecutionService.getExecutionContextsFor(member);
-            output.writeInt(executionContexts.size());
-            for (Entry<Long, ExecutionContext> executionIdAndCtx : executionContexts.entrySet()) {
-                output.writeLong(executionIdAndCtx.getKey());
-                // dest vertex id --> dest ordinal --> sender addr --> receiver tasklet
-                Map<Integer, Map<Integer, Map<Address, ReceiverTasklet>>> receiverMap =
-                        executionIdAndCtx.getValue().receiverMap();
-                output.writeInt(receiverMap.values().stream().mapToInt(Map::size).sum());
-                for (Entry<Integer, Map<Integer, Map<Address, ReceiverTasklet>>> e1 : receiverMap.entrySet()) {
-                    int vertexId = e1.getKey();
-                    Map<Integer, Map<Address, ReceiverTasklet>> ordinalToMemberToTasklet = e1.getValue();
-                    for (Entry<Integer, Map<Address, ReceiverTasklet>> e2 : ordinalToMemberToTasklet.entrySet()) {
-                        int ordinal = e2.getKey();
-                        Map<Address, ReceiverTasklet> memberToTasklet = e2.getValue();
-                        output.writeInt(vertexId);
-                        output.writeInt(ordinal);
-                        ReceiverTasklet receiverTasklet = memberToTasklet.get(member);
-                        output.writeInt(receiverTasklet.updateAndGetSendSeqLimitCompressed(expectedConnection));
-                        hasData = true;
-                    }
-                }
-            }
-            if (hasData) {
-                byte[] payload = output.toByteArray();
-                lastFlowPacketSize = payload.length;
-                return payload;
-            } else {
-                return EMPTY_BYTES;
+    private Map<Address, byte[]> createFlowControlPacket() throws IOException {
+        class MemberData {
+            final BufferObjectDataOutput output = createObjectDataOutput(nodeEngine, lastFlowPacketSize);
+            final Connection memberConnection;
+            Long startedExecutionId;
+
+            MemberData(Address address) {
+                memberConnection = getMemberConnection(nodeEngine, address);
             }
         }
+
+        Map<Address, MemberData> res = new HashMap<>();
+        for (ExecutionContext execCtx : jobExecutionService.getExecutionContexts()) {
+            Map<SenderReceiverKey, ReceiverTasklet> receiverMap = execCtx.receiverMap();
+            if (receiverMap == null) {
+                continue;
+            }
+            for (Entry<SenderReceiverKey, ReceiverTasklet> en : receiverMap.entrySet()) {
+                assert !en.getKey().address.equals(nodeEngine.getThisAddress());
+                MemberData md = res.computeIfAbsent(en.getKey().address, address -> new MemberData(address));
+                if (md.startedExecutionId == null) {
+                    md.startedExecutionId = execCtx.executionId();
+                    md.output.writeLong(md.startedExecutionId);
+                }
+                assert en.getKey().vertexId != TERMINAL_VERTEX_ID;
+                md.output.writeInt(en.getKey().vertexId);
+                md.output.writeInt(en.getKey().ordinal);
+                md.output.writeInt(en.getValue().updateAndGetSendSeqLimitCompressed(md.memberConnection));
+            }
+            for (MemberData md : res.values()) {
+                if (md.startedExecutionId != null) {
+                    // write a mark to terminate values for an execution
+                    md.output.writeInt(TERMINAL_VERTEX_ID);
+                    md.startedExecutionId = null;
+                }
+            }
+        }
+        for (MemberData md : res.values()) {
+            assert md.output.position() > 0;
+            // write a mark to terminate all executions
+            // Execution IDs are generated using Flake ID generator and those are >0 normally, we
+            // use MIN_VALUE as a terminator.
+            md.output.writeLong(TERMINAL_EXECUTION_ID);
+        }
+
+        // finalize the packets
+        int maxSize = 0;
+        for (Entry<Address, MemberData> entry : res.entrySet()) {
+            byte[] data = entry.getValue().output.toByteArray();
+            // we break type safety to avoid creating a new map, we replace the values to a different type in place
+            @SuppressWarnings({"unchecked", "rawtypes"})
+            Entry<Address, byte[]> entry1 = (Entry) entry;
+            entry1.setValue(data);
+            if (data.length > maxSize) {
+                maxSize = data.length;
+            }
+        }
+        lastFlowPacketSize = maxSize;
+        return (Map) res;
     }
 
     private void handleFlowControlPacket(Address fromAddr, byte[] packet) throws IOException {
         try (BufferObjectDataInput input = createObjectDataInput(nodeEngine, packet)) {
-            final int executionCtxCount = input.readInt();
-            for (int j = 0; j < executionCtxCount; j++) {
+            for (;;) {
                 final long executionId = input.readLong();
-                final Map<Integer, Map<Integer, Map<Address, SenderTasklet>>> senderMap
-                        = jobExecutionService.getSenderMap(executionId);
-
-                if (senderMap == null) {
-                    logMissingExeCtx(executionId);
-                    continue;
+                if (executionId == TERMINAL_EXECUTION_ID) {
+                    break;
                 }
-                final int flowCtlMsgCount = input.readInt();
-                for (int k = 0; k < flowCtlMsgCount; k++) {
-                    int destVertexId = input.readInt();
-                    int destOrdinal = input.readInt();
-                    int sendSeqLimitCompressed = input.readInt();
-                    final SenderTasklet t = Optional.ofNullable(senderMap.get(destVertexId))
-                                                    .map(ordinalMap -> ordinalMap.get(destOrdinal))
-                                                    .map(addrMap -> addrMap.get(fromAddr))
-                                                    .orElse(null);
-                    if (t == null) {
-                        logMissingSenderTasklet(destVertexId, destOrdinal);
-                        return;
+                final Map<SenderReceiverKey, SenderTasklet> senderMap = jobExecutionService.getSenderMap(executionId);
+                for (;;) {
+                    final int vertexId = input.readInt();
+                    if (vertexId == TERMINAL_VERTEX_ID) {
+                        break;
                     }
-                    t.setSendSeqLimitCompressed(sendSeqLimitCompressed);
+                    int ordinal = input.readInt();
+                    int sendSeqLimitCompressed = input.readInt();
+                    final SenderTasklet t;
+                    if (senderMap != null && (t = senderMap.get(new SenderReceiverKey(vertexId, ordinal, fromAddr))) != null) {
+                        t.setSendSeqLimitCompressed(sendSeqLimitCompressed);
+                    }
                 }
             }
-        }
-    }
-
-    private void logMissingExeCtx(long executionId) {
-        if (logger.isFinestEnabled()) {
-            logger.finest("Ignoring flow control message applying to non-existent execution context "
-                    + idToString(executionId));
-        }
-    }
-
-    private void logMissingSenderTasklet(int destVertexId, int destOrdinal) {
-        if (logger.isFinestEnabled()) {
-            logger.finest(String.format(
-                    "Ignoring flow control message applying to non-existent sender tasklet (%d, %d)",
-                    destVertexId, destOrdinal));
         }
     }
 }

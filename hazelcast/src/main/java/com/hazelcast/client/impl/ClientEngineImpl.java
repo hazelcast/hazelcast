@@ -304,14 +304,21 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
             return false;
         }
 
-        endpointManager.registerEndpoint(endpoint);
-
         ServerConnection conn = endpoint.getConnection();
-        if (conn != null) {
-            InetSocketAddress socketAddress = conn.getRemoteSocketAddress();
-            //socket address can be null if connection closed before bind
-            if (socketAddress != null) {
-                conn.setRemoteAddress(new Address(socketAddress));
+        InetSocketAddress socketAddress = conn.getRemoteSocketAddress();
+        //socket address can be null if connection closed before bind
+        if (socketAddress != null) {
+            conn.setRemoteAddress(new Address(socketAddress));
+        }
+
+        if (endpointManager.registerEndpoint(endpoint)) {
+            // remote address can be null if connection closed before bind.
+            // On such a case, `ClientEngine#connectionRemoved` will not be called for this connection since
+            // we did not register the connection.
+            // Endpoint removal logic(inside `ClientEngine#connectionRemoved`) will not be able to run, instead endpoint
+            // will be cleaned up by ClientHearbeatMonitor#cleanupEndpointsWithDeadConnections later.
+            if (conn.getRemoteAddress() != null) {
+                node.getServer().getConnectionManager(CLIENT).register(conn.getRemoteAddress(), conn);
             }
         }
 
@@ -516,8 +523,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     }
 
     @Override
-    public boolean deregisterBackupListener(UUID clientUUID) {
-        return backupListeners.remove(clientUUID) != null;
+    public boolean deregisterBackupListener(UUID clientUUID, Consumer<Long> backupListener) {
+        return backupListeners.remove(clientUUID, backupListener);
     }
 
     public Map<UUID, Consumer<Long>> getBackupListeners() {

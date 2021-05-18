@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl;
 
 import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.client.impl.ClientEngineImpl;
+import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.metrics.impl.MetricsService;
 import com.hazelcast.internal.nio.Packet;
@@ -122,11 +123,15 @@ public class JetService implements ManagedService, MembershipAwareService, LiveO
         networking = new Networking(engine, jobExecutionService, config.getInstanceConfig().getFlowControlPeriodMs());
 
         ClientEngine clientEngine = engine.getService(ClientEngineImpl.SERVICE_NAME);
-        ExceptionUtil.registerJetExceptions(clientEngine.getExceptionFactory());
-
+        ClientExceptionFactory clientExceptionFactory = clientEngine.getExceptionFactory();
+        if (clientExceptionFactory != null) {
+            ExceptionUtil.registerJetExceptions(clientExceptionFactory);
+        } else {
+            logger.fine("Jet exceptions are not registered to the ClientExceptionFactory" +
+                    " since the ClientExceptionFactory is not accessible.");
+        }
         logger.info("Setting number of cooperative threads and default parallelism to "
                 + config.getInstanceConfig().getCooperativeThreadCount());
-
         if (sqlCoreBackend != null) {
             try {
                 Method initJetInstanceMethod = sqlCoreBackend.getClass().getMethod("init", AbstractJetInstance.class);
@@ -138,8 +143,8 @@ public class JetService implements ManagedService, MembershipAwareService, LiveO
     }
 
     /**
-     * Tells master to gracefully shut terminate jobs on this member. Blocks
-     * until all are down.
+     * Tells master to gracefully terminate jobs on this member. Blocks until
+     * all are down.
      */
     public void shutDownJobs() {
         if (shutdownFuture.compareAndSet(null, new CompletableFuture<>())) {
@@ -148,8 +153,10 @@ public class JetService implements ManagedService, MembershipAwareService, LiveO
         try {
             CompletableFuture<Void> future = shutdownFuture.get();
             future.get(SHUTDOWN_JOBS_MAX_WAIT_SECONDS, SECONDS);
-            assert jobExecutionService.numberOfExecutions() == 0
-                    : "numberOfExecutions should be zero, but is " + jobExecutionService.numberOfExecutions();
+            // Note that at this point there can still be executions running - those for light jobs
+            // or those created automatically after a packet was received.
+            // They are all non-fault-tolerant or contain only the packets, that will be dropped
+            // when this member actually shuts down.
         } catch (Exception e) {
             logger.severe("Shutdown jobs timeout", e);
         }
@@ -303,5 +310,9 @@ public class JetService implements ManagedService, MembershipAwareService, LiveO
     @Nullable
     public JetSqlCoreBackend getSqlCoreBackend() {
         return sqlCoreBackend;
+    }
+
+    public TaskletExecutionService getTaskletExecutionService() {
+        return taskletExecutionService;
     }
 }

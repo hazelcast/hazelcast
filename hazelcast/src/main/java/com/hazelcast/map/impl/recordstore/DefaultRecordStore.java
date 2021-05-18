@@ -511,7 +511,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             value = record.getValue();
             mapDataStore.flush(key, value, backup);
             mutationObserver.onEvictRecord(key, record);
-            key = removeKeyFromExpirySystem(key);
+            removeKeyFromExpirySystem(key);
             storage.removeRecord(key, record);
             if (!backup) {
                 mapServiceContext.interceptRemove(interceptorRegistry, value);
@@ -520,10 +520,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return value;
     }
 
-    private Data removeKeyFromExpirySystem(Data key) {
-        Data backingDataKeyFormat = storage.toBackingDataKeyFormat(key);
-        expirySystem.removeKeyFromExpirySystem(backingDataKeyFormat);
-        return backingDataKeyFormat;
+    private void removeKeyFromExpirySystem(Data key) {
+        expirySystem.removeKeyFromExpirySystem(key);
     }
 
     @Override

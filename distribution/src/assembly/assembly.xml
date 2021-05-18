@@ -27,7 +27,7 @@
                 <include>com.hazelcast:hazelcast-all</include>
                 <include>com.hazelcast:hazelcast-spring</include>
                 <include>com.hazelcast.jet:hazelcast-jet</include>
-                <include>com.hazelcast.jet:hazelcast-jet-sql</include>
+                <include>com.hazelcast:hazelcast-sql</include>
                 <include>org.apache.logging.log4j:*</include>
                 <include>org.slf4j:*</include>
             </includes>

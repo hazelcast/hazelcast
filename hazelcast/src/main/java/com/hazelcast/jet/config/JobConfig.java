@@ -20,9 +20,14 @@ import com.hazelcast.config.MetricsConfig;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.JetException;
+import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.Job;
 import com.hazelcast.jet.annotation.EvolvingApi;
+import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.jet.impl.util.ReflectionUtils.Resources;
+import com.hazelcast.jet.pipeline.ServiceFactory;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -45,6 +50,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static com.hazelcast.jet.config.ResourceType.CLASS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -65,10 +71,12 @@ public class JobConfig implements IdentifiedDataSerializable {
     private boolean splitBrainProtectionEnabled;
     private boolean enableMetrics = true;
     private boolean storeMetricsAfterJobCompletion;
+    private long maxProcessorAccumulatedRecords = -1;
     // Note: new options in JobConfig must also be added to `SqlCreateJob`
 
     private Map<String, ResourceConfig> resourceConfigs = new LinkedHashMap<>();
     private Map<String, String> serializerConfigs = new HashMap<>();
+    private Map<String, Object> arguments = new HashMap<>();
     private JobClassLoaderFactory classLoaderFactory;
     private String initialSnapshotName;
 
@@ -1007,6 +1015,36 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
+     * Associates the specified value with the specified key. The mapping
+     * will be available to the job while it's executing in the Jet cluster.
+     *
+     * @param key key with which the specified value is to be associated
+     * @param value value to be associated with the specified key
+     * @return {@code this} instance for fluent API
+     *
+     * @since 5.0
+     */
+    @Nonnull
+    public JobConfig setArgument(String key, Object value) {
+        arguments.put(key, value);
+        return this;
+    }
+
+    /**
+     * Returns the value to which the specified key is mapped, or null if there is
+     * no mapping for the key.
+     *
+     * @param key the key whose associated value is to be returned
+     *
+     * @since 5.0
+     */
+    @Nullable
+    @SuppressWarnings("unchecked")
+    public <T> T getArgument(String key) {
+        return (T) arguments.get(key);
+    }
+
+    /**
      * Sets a custom {@link JobClassLoaderFactory} that will be used to load job
      * classes and resources on Jet members.
      *
@@ -1115,6 +1153,36 @@ public class JobConfig implements IdentifiedDataSerializable {
         return this;
     }
 
+    /**
+     * Returns the maximum number of records that can be accumulated by any single
+     * {@link Processor} instance in the context of the job.
+     *
+     * @since 5.0
+     */
+    public long getMaxProcessorAccumulatedRecords() {
+        return maxProcessorAccumulatedRecords;
+    }
+
+    /**
+     * Sets the maximum number of records that can be accumulated by any single
+     * {@link Processor} instance in the context of the job.
+     * <p>
+     * For more info see {@link InstanceConfig#setMaxProcessorAccumulatedRecords(long)}.
+     * <p>
+     * If set, it has precedence over {@link InstanceConfig}'s one.
+     * <p>
+     * The default value is {@code -1} - in that case {@link InstanceConfig}'s value
+     * is used.
+     *
+     * @since 5.0
+     */
+    public JobConfig setMaxProcessorAccumulatedRecords(long maxProcessorAccumulatedRecords) {
+        checkTrue(maxProcessorAccumulatedRecords > 0 || maxProcessorAccumulatedRecords == -1,
+                "maxProcessorAccumulatedRecords must be a positive number or -1");
+        this.maxProcessorAccumulatedRecords = maxProcessorAccumulatedRecords;
+        return this;
+    }
+
     @Override
     public int getFactoryId() {
         return JetConfigDataSerializerHook.FACTORY_ID;
@@ -1127,7 +1195,7 @@ public class JobConfig implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeObject(processingGuarantee);
         out.writeLong(snapshotIntervalMillis);
         out.writeBoolean(autoScaling);
@@ -1135,15 +1203,17 @@ public class JobConfig implements IdentifiedDataSerializable {
         out.writeBoolean(splitBrainProtectionEnabled);
         SerializationUtil.writeMap(resourceConfigs, out);
         out.writeObject(serializerConfigs);
+        out.writeObject(arguments);
         out.writeObject(classLoaderFactory);
-        out.writeUTF(initialSnapshotName);
+        out.writeString(initialSnapshotName);
         out.writeBoolean(enableMetrics);
         out.writeBoolean(storeMetricsAfterJobCompletion);
+        out.writeLong(maxProcessorAccumulatedRecords);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         processingGuarantee = in.readObject();
         snapshotIntervalMillis = in.readLong();
         autoScaling = in.readBoolean();
@@ -1151,10 +1221,12 @@ public class JobConfig implements IdentifiedDataSerializable {
         splitBrainProtectionEnabled = in.readBoolean();
         resourceConfigs = SerializationUtil.readMap(in);
         serializerConfigs = in.readObject();
+        arguments = in.readObject();
         classLoaderFactory = in.readObject();
-        initialSnapshotName = in.readUTF();
+        initialSnapshotName = in.readString();
         enableMetrics = in.readBoolean();
         storeMetricsAfterJobCompletion = in.readBoolean();
+        maxProcessorAccumulatedRecords = in.readLong();
     }
 
     @Override
@@ -1166,23 +1238,27 @@ public class JobConfig implements IdentifiedDataSerializable {
             return false;
         }
         JobConfig jobConfig = (JobConfig) o;
-        return snapshotIntervalMillis == jobConfig.snapshotIntervalMillis && autoScaling == jobConfig.autoScaling
+        return snapshotIntervalMillis == jobConfig.snapshotIntervalMillis
+                && autoScaling == jobConfig.autoScaling
                 && suspendOnFailure == jobConfig.suspendOnFailure
                 && splitBrainProtectionEnabled == jobConfig.splitBrainProtectionEnabled
                 && enableMetrics == jobConfig.enableMetrics
                 && storeMetricsAfterJobCompletion == jobConfig.storeMetricsAfterJobCompletion
-                && Objects.equals(name, jobConfig.name) && processingGuarantee == jobConfig.processingGuarantee
+                && Objects.equals(name, jobConfig.name)
+                && processingGuarantee == jobConfig.processingGuarantee
                 && Objects.equals(resourceConfigs, jobConfig.resourceConfigs)
                 && Objects.equals(serializerConfigs, jobConfig.serializerConfigs)
+                && Objects.equals(arguments, jobConfig.arguments)
                 && Objects.equals(classLoaderFactory, jobConfig.classLoaderFactory)
-                && Objects.equals(initialSnapshotName, jobConfig.initialSnapshotName);
+                && Objects.equals(initialSnapshotName, jobConfig.initialSnapshotName)
+                && maxProcessorAccumulatedRecords == jobConfig.maxProcessorAccumulatedRecords;
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(name, processingGuarantee, snapshotIntervalMillis, autoScaling, suspendOnFailure,
                 splitBrainProtectionEnabled, enableMetrics, storeMetricsAfterJobCompletion, resourceConfigs,
-                serializerConfigs, classLoaderFactory, initialSnapshotName);
+                serializerConfigs, arguments, classLoaderFactory, initialSnapshotName, maxProcessorAccumulatedRecords);
     }
 
     @Override
@@ -1192,7 +1268,8 @@ public class JobConfig implements IdentifiedDataSerializable {
                 ", splitBrainProtectionEnabled=" + splitBrainProtectionEnabled + ", enableMetrics=" + enableMetrics +
                 ", storeMetricsAfterJobCompletion=" + storeMetricsAfterJobCompletion +
                 ", resourceConfigs=" + resourceConfigs + ", serializerConfigs=" + serializerConfigs +
-                ", classLoaderFactory=" + classLoaderFactory + ", initialSnapshotName=" + initialSnapshotName + "}";
+                ", arguments=" + arguments + ", classLoaderFactory=" + classLoaderFactory +
+                ", initialSnapshotName=" + initialSnapshotName + ", maxProcessorAccumulatedRecords=" +
+                maxProcessorAccumulatedRecords + "}";
     }
-
 }

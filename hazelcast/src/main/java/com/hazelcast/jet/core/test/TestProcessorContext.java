@@ -18,6 +18,7 @@ package com.hazelcast.jet.core.test;
 
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.logging.ILogger;
@@ -83,6 +84,11 @@ public class TestProcessorContext extends TestProcessorSupplierContext implement
     }
 
     @Nonnull @Override
+    public TestProcessorContext setJobConfig(@Nonnull JobConfig jobConfig) {
+        return (TestProcessorContext) super.setJobConfig(jobConfig);
+    }
+
+    @Nonnull @Override
     public TestProcessorContext setTotalParallelism(int totalParallelism) {
         return (TestProcessorContext) super.setTotalParallelism(totalParallelism);
     }
@@ -100,6 +106,11 @@ public class TestProcessorContext extends TestProcessorSupplierContext implement
     @Nonnull @Override
     public TestProcessorContext setProcessingGuarantee(@Nonnull ProcessingGuarantee processingGuarantee) {
         return (TestProcessorContext) super.setProcessingGuarantee(processingGuarantee);
+    }
+
+    @Nonnull @Override
+    public TestProcessorContext setIsLightJob(boolean isLightJob) {
+        return (TestProcessorContext) super.setIsLightJob(isLightJob);
     }
 
     @Nonnull @Override

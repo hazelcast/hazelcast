@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.expression.predicate;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -31,13 +30,14 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class TernaryLogicTest {
 
     private static final Row ROW = new MockRow();
-    private static final ExpressionEvalContext CONTEXT = new MockExpressionEvalContext();
+    private static final ExpressionEvalContext CONTEXT = mock(ExpressionEvalContext.class);
     private static final Expression<Boolean> FALSE = new MockBooleanExpression(false);
     private static final Expression<Boolean> TRUE = new MockBooleanExpression(true);
     private static final Expression<Boolean> NULL = new MockBooleanExpression(null);
@@ -150,18 +150,6 @@ public class TernaryLogicTest {
             throw new UnsupportedOperationException();
         }
 
-    }
-
-    private static class MockExpressionEvalContext implements ExpressionEvalContext {
-        @Override
-        public Object getArgument(int index) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public InternalSerializationService getSerializationService() {
-            throw new UnsupportedOperationException();
-        }
     }
 
     private static class MockBooleanExpression implements Expression<Boolean> {

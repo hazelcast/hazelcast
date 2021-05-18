@@ -91,7 +91,7 @@ public interface Outbox {
      * Otherwise the key will be distributed according to default partitioning
      * and only a single processor instance will receive the key.
      * <p>
-     * This method may only be called from the {@link
+     * This method must only be called from the {@link
      * Processor#saveToSnapshot()} or {@link Processor#snapshotCommitPrepare()}
      * methods.
      * <p>

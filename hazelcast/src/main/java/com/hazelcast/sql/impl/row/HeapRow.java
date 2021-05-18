@@ -56,8 +56,6 @@ public class HeapRow implements Row, IdentifiedDataSerializable {
     @SuppressWarnings("unchecked")
     @Override
     public <T> T get(int index) {
-        assert index >= 0 && index < values.length;
-
         return (T) values[index];
     }
 
@@ -67,8 +65,6 @@ public class HeapRow implements Row, IdentifiedDataSerializable {
     }
 
     public void set(int index, Object val) {
-        assert index >= 0 && index < values.length;
-
         values[index] = val;
     }
 

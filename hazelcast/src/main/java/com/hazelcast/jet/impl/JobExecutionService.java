@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
@@ -27,6 +28,8 @@ import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.collectors.MetricsCollector;
+import com.hazelcast.internal.metrics.impl.MetricsCompressor;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.jet.Util;
@@ -35,33 +38,50 @@ import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.core.metrics.MetricNames;
 import com.hazelcast.jet.core.metrics.MetricTags;
 import com.hazelcast.jet.impl.deployment.JetClassLoader;
+import com.hazelcast.jet.impl.exception.ExecutionNotFoundException;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
+import com.hazelcast.jet.impl.execution.ExecutionContext.SenderReceiverKey;
 import com.hazelcast.jet.impl.execution.SenderTasklet;
 import com.hazelcast.jet.impl.execution.TaskletExecutionService;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.metrics.RawJobMetrics;
+import com.hazelcast.jet.impl.operation.CheckLightJobsOperation;
+import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 
 import javax.annotation.Nonnull;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.function.Supplier;
+import java.util.concurrent.ScheduledFuture;
+import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 import static com.hazelcast.jet.Util.idToString;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.jobIdAndExecutionId;
 import static java.util.Collections.newSetFromMap;
-import static java.util.stream.Collectors.toMap;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toSet;
 
 /**
@@ -69,6 +89,21 @@ import static java.util.stream.Collectors.toSet;
  * operations from coordinator are handled here.
  */
 public class JobExecutionService implements DynamicMetricsProvider {
+
+    /**
+     * A timeout after which we cancel a light job that doesn't receive InitOp
+     * from the coordinator. {@link ExecutionContext} can be created in
+     * response to data packet received for that execution, but it doesn't know
+     * the coordinator. Therefore the checker cannot confirm with the
+     * coordinator if it still exists. We terminate these jobs after a timeout.
+     * However, the timeout has to be long enough because if the job happens to
+     * be initialized later, we'll lose data and we won't eve detect it. It can
+     * also happen that we lose a DONE_ITEM and the job will get stuck, though
+     * that's better than incorrect results.
+     */
+    private static final long UNINITIALIZED_CONTEXT_MAX_AGE_NS = MINUTES.toNanos(5);
+
+    private final Object mutex = new Object();
 
     private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
@@ -91,6 +126,10 @@ public class JobExecutionService implements DynamicMetricsProvider {
     @Probe(name = MetricNames.JOB_EXECUTIONS_COMPLETED)
     private final Counter executionCompleted = MwCounter.newMwCounter();
 
+    private final Function<? super Long, ? extends ExecutionContext> newLightJobExecutionContextFunction;
+
+    private final ScheduledFuture<?> lightExecutionsCheckerFuture;
+
     JobExecutionService(NodeEngineImpl nodeEngine, TaskletExecutionService taskletExecutionService,
                         JobRepository jobRepository) {
         this.nodeEngine = nodeEngine;
@@ -98,11 +137,16 @@ public class JobExecutionService implements DynamicMetricsProvider {
         this.taskletExecutionService = taskletExecutionService;
         this.jobRepository = jobRepository;
 
+        newLightJobExecutionContextFunction = execId -> new ExecutionContext(nodeEngine, execId, execId, true);
+
         // register metrics
         MetricsRegistry registry = nodeEngine.getMetricsRegistry();
         MetricDescriptor descriptor = registry.newMetricDescriptor()
                 .withTag(MetricTags.MODULE, "jet");
         registry.registerStaticMetrics(descriptor, this);
+
+        this.lightExecutionsCheckerFuture = nodeEngine.getExecutionService().scheduleWithRepetition(
+                this::checkLightExecutions, 0, 1, SECONDS);
     }
 
     public Long getExecutionIdForJobId(long jobId) {
@@ -128,67 +172,113 @@ public class JobExecutionService implements DynamicMetricsProvider {
         return executionContexts.get(executionId);
     }
 
-    Map<Long, ExecutionContext> getExecutionContextsFor(Address member) {
-        return executionContexts.entrySet().stream()
-                         .filter(entry -> entry.getValue().hasParticipant(member))
-                         .collect(toMap(Entry::getKey, Entry::getValue));
+    /**
+     * Gets the execution context or creates it, if it doesn't exist. If
+     * we're creating it, we assume it's for a light job and that the
+     * jobId == executionId.
+     * <p>
+     * We can also end up here for a non-light job in this scenario:<ul>
+     *     <li>job runs on 2 members. The master requests termination.
+     *     <li>execution on member A terminates and is removed from
+     *         executionContexts
+     *     <li>member A receives a packet from member B (because it was in transit
+     *         or simply because the execution on member B might terminate a little
+     *         later)
+     *     <li>ExecutionContext is recreated.
+     * </ul>
+     *
+     * We ignore this as we assume that we'll never receive the
+     * StartExecutionOperation. The improperly-created ExecutionContext will be
+     * removed after a timeout in {@link #checkLightExecutions()} because it
+     * will never be initialized.
+     */
+    public ExecutionContext getOrCreateExecutionContext(long executionId) {
+        return executionContexts.computeIfAbsent(executionId, newLightJobExecutionContextFunction);
     }
 
-    Map<Integer, Map<Integer, Map<Address, SenderTasklet>>> getSenderMap(long executionId) {
+    Collection<ExecutionContext> getExecutionContexts() {
+        return executionContexts.values();
+    }
+
+    Map<SenderReceiverKey, SenderTasklet> getSenderMap(long executionId) {
         ExecutionContext ctx = executionContexts.get(executionId);
         return ctx != null ? ctx.senderMap() : null;
     }
 
-    public synchronized void shutdown() {
-        cancelAllExecutions("Node is shutting down", HazelcastInstanceNotActiveException::new);
+    public void shutdown() {
+        lightExecutionsCheckerFuture.cancel(false);
+        synchronized (mutex) {
+            cancelAllExecutions("Node is shutting down");
+        }
     }
 
     public void reset() {
-        cancelAllExecutions("reset", TopologyChangedException::new);
+        cancelAllExecutions("reset");
     }
 
     /**
      * Cancels all ongoing executions using the given failure supplier.
      */
-    private void cancelAllExecutions(String reason, Supplier<RuntimeException> exceptionSupplier) {
-        executionContexts.values().forEach(exeCtx -> {
-            String message = String.format("Completing %s locally. Reason: %s",
-                    exeCtx.jobNameAndExecutionId(),
-                    reason);
-            cancelAndComplete(exeCtx, message, exceptionSupplier.get());
-        });
+    public void cancelAllExecutions(String reason) {
+        for (ExecutionContext exeCtx : executionContexts.values()) {
+            LoggingUtil.logFine(logger, "Completing %s locally. Reason: %s",
+                    exeCtx.jobNameAndExecutionId(), reason);
+            terminateExecution0(exeCtx, null);
+        }
     }
 
     /**
-     * Cancels executions that contain the left address as the coordinator or a
+     * Cancels executions that contain the leaving address as the coordinator or a
      * job participant
      */
     void onMemberRemoved(Address address) {
         executionContexts.values().stream()
              // note that coordinator might not be a participant (in case it is a lite member)
-             .filter(exeCtx -> exeCtx.coordinator().equals(address) || exeCtx.hasParticipant(address))
+             .filter(exeCtx -> exeCtx.coordinator() != null
+                     && (exeCtx.coordinator().equals(address) || exeCtx.hasParticipant(address)))
              .forEach(exeCtx -> {
-                 String message = String.format("Completing %s locally. Reason: Member %s left the cluster",
-                         exeCtx.jobNameAndExecutionId(),
-                         address);
-                 cancelAndComplete(exeCtx, message, new TopologyChangedException("Topology has been changed."));
+                 LoggingUtil.logFine(logger, "Completing %s locally. Reason: Member %s left the cluster",
+                         exeCtx.jobNameAndExecutionId(), address);
+                 terminateExecution0(exeCtx, null);
              });
     }
 
-    /**
-     * Cancel job execution and complete execution without waiting for coordinator
-     * to send CompleteOperation.
-     */
-    private void cancelAndComplete(ExecutionContext exeCtx, String message, Throwable t) {
-        try {
-            exeCtx.terminateExecution(null).whenComplete(withTryCatch(logger, (r, e) -> {
-                long executionId = exeCtx.executionId();
-                logger.fine(message);
-                completeExecution(executionId, t);
-            }));
-        } catch (Throwable e) {
-            logger.severe(String.format("Local cancellation of %s failed", exeCtx.jobNameAndExecutionId()), e);
+    public CompletableFuture<RawJobMetrics> runLightJob(
+            long jobId,
+            long executionId,
+            Address coordinator,
+            int coordinatorMemberListVersion,
+            Set<MemberInfo> participants,
+            ExecutionPlan plan
+    ) {
+        assert executionId == jobId : "executionId(" + idToString(executionId) + ") != jobId(" + idToString(jobId) + ")";
+        verifyClusterInformation(jobId, executionId, coordinator, coordinatorMemberListVersion, participants);
+        failIfNotRunning();
+
+        ExecutionContext execCtx;
+        synchronized (mutex) {
+            addExecutionContextJobId(jobId, executionId, coordinator);
+            execCtx = executionContexts.computeIfAbsent(executionId,
+                    x -> new ExecutionContext(nodeEngine, jobId, executionId, true));
         }
+
+        Set<Address> addresses = participants.stream().map(MemberInfo::getAddress).collect(toSet());
+        ClassLoader jobCl = getClassLoader(plan.getJobConfig(), jobId);
+        try {
+            doWithClassLoader(jobCl, () -> execCtx.initialize(coordinator, addresses, plan));
+        } catch (Throwable e) {
+            completeExecution(execCtx, new CancellationException());
+            throw e;
+        }
+
+        // initial log entry with all of jobId, jobName, executionId
+        if (logger.isFineEnabled()) {
+            logger.fine("Execution plan for light job ID=" + idToString(jobId)
+                    + ", jobName=" + (execCtx.jobName() != null ? '\'' + execCtx.jobName() + '\'' : "null")
+                    + ", executionId=" + idToString(executionId) + " initialized, will start the job");
+        }
+
+        return beginExecution0(execCtx, false);
     }
 
     /**
@@ -206,13 +296,35 @@ public class JobExecutionService implements DynamicMetricsProvider {
      *     init execution is retried.
      * </li></ul>
      */
-    public synchronized void initExecution(
+    public void initExecution(
             long jobId, long executionId, Address coordinator, int coordinatorMemberListVersion,
             Set<MemberInfo> participants, ExecutionPlan plan
     ) {
+        assertIsMaster(jobId, executionId, coordinator);
         verifyClusterInformation(jobId, executionId, coordinator, coordinatorMemberListVersion, participants);
         failIfNotRunning();
 
+        ExecutionContext execCtx;
+        synchronized (mutex) {
+            addExecutionContextJobId(jobId, executionId, coordinator);
+            execCtx = new ExecutionContext(nodeEngine, jobId, executionId, false);
+            ExecutionContext oldContext = executionContexts.put(executionId, execCtx);
+            if (oldContext != null) {
+                throw new RuntimeException("Duplicate ExecutionContext for execution " + Util.idToString(executionId));
+            }
+        }
+
+        Set<Address> addresses = participants.stream().map(MemberInfo::getAddress).collect(toSet());
+        ClassLoader jobCl = getClassLoader(plan.getJobConfig(), jobId);
+        doWithClassLoader(jobCl, () -> execCtx.initialize(coordinator, addresses, plan));
+
+        // initial log entry with all of jobId, jobName, executionId
+        logger.info("Execution plan for jobId=" + idToString(jobId)
+                + ", jobName=" + (execCtx.jobName() != null ? '\'' + execCtx.jobName() + '\'' : "null")
+                + ", executionId=" + idToString(executionId) + " initialized");
+    }
+
+    private void addExecutionContextJobId(long jobId, long executionId, Address coordinator) {
         if (!executionContextJobIds.add(jobId)) {
             ExecutionContext current = executionContexts.get(executionId);
             if (current != null) {
@@ -222,36 +334,21 @@ public class JobExecutionService implements DynamicMetricsProvider {
             }
 
             // search contexts for one with different executionId, but same jobId
-            executionContexts.values().stream()
-                             .filter(e -> e.jobId() == jobId)
-                             .forEach(e -> logger.fine(String.format(
-                                     "Execution context for job %s for coordinator %s already exists"
-                                             + " with local execution %s for coordinator %s",
-                                     idToString(jobId), coordinator, idToString(e.executionId()),
-                                     e.coordinator())));
+            if (logger.isFineEnabled()) {
+                executionContexts.values().stream()
+                                 .filter(e -> e.jobId() == jobId)
+                                 .forEach(e -> logger.fine(String.format(
+                                         "Execution context for job %s for coordinator %s already exists"
+                                                 + " with local execution %s for coordinator %s",
+                                         idToString(jobId), coordinator, idToString(e.executionId()),
+                                         e.coordinator())));
+            }
 
             throw new RetryableHazelcastException();
         }
-
-        Set<Address> addresses = participants.stream().map(MemberInfo::getAddress).collect(toSet());
-        ExecutionContext execCtx = new ExecutionContext(nodeEngine, taskletExecutionService,
-                jobId, executionId, coordinator, addresses);
-        try {
-            ClassLoader jobCl = getClassLoader(plan.getJobConfig(), jobId);
-            doWithClassLoader(jobCl, () -> execCtx.initialize(plan));
-        } finally {
-            ExecutionContext oldContext = executionContexts.put(executionId, execCtx);
-            assert oldContext == null : "Duplicate ExecutionContext for execution " + Util.idToString(executionId);
-        }
-
-        // initial log entry with all of jobId, jobName, executionId
-        logger.info("Execution plan for jobId=" + idToString(jobId)
-                + ", jobName=" + (execCtx.jobName() != null ? '\'' + execCtx.jobName() + '\'' : "null")
-                + ", executionId=" + idToString(executionId) + " initialized");
     }
 
-    private void verifyClusterInformation(long jobId, long executionId, Address coordinator,
-                                          int coordinatorMemberListVersion, Set<MemberInfo> participants) {
+    private void assertIsMaster(long jobId, long executionId, Address coordinator) {
         Address masterAddress = nodeEngine.getMasterAddress();
         if (!coordinator.equals(masterAddress)) {
             failIfNotRunning();
@@ -260,7 +357,11 @@ public class JobExecutionService implements DynamicMetricsProvider {
                     "Coordinator %s cannot initialize %s. Reason: it is not the master, the master is %s",
                     coordinator, jobIdAndExecutionId(jobId, executionId), masterAddress));
         }
+    }
 
+    private void verifyClusterInformation(long jobId, long executionId, Address coordinator,
+                                          int coordinatorMemberListVersion, Set<MemberInfo> participants) {
+        Address masterAddress = nodeEngine.getMasterAddress();
         ClusterServiceImpl clusterService = (ClusterServiceImpl) nodeEngine.getClusterService();
         MembershipManager membershipManager = clusterService.getMembershipManager();
         int localMemberListVersion = membershipManager.getMemberListVersion();
@@ -308,6 +409,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
         }
     }
 
+    @Nonnull
     public ExecutionContext assertExecutionContext(Address callerAddress, long jobId, long executionId,
                                                    String callerOpName) {
         Address masterAddress = nodeEngine.getMasterAddress();
@@ -323,7 +425,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
 
         ExecutionContext executionContext = executionContexts.get(executionId);
         if (executionContext == null) {
-            throw new TopologyChangedException(String.format(
+            throw new ExecutionNotFoundException(String.format(
                     "%s not found for coordinator %s for '%s'",
                     jobIdAndExecutionId(jobId, executionId), callerAddress, callerOpName));
         } else if (!(executionContext.coordinator().equals(callerAddress) && executionContext.jobId() == jobId)) {
@@ -336,31 +438,22 @@ public class JobExecutionService implements DynamicMetricsProvider {
         return executionContext;
     }
 
-    public void beforeCompleteExecution(long executionId) {
-        ExecutionContext executionContext = executionContexts.get(executionId);
-        if (executionContext != null) {
-            executionContext.setCompletionTime();
-        }
-    }
-
     /**
      * Completes and cleans up execution of the given job
      */
-    public void completeExecution(long executionId, Throwable error) {
-        ExecutionContext executionContext = executionContexts.remove(executionId);
-        if (executionContext != null) {
-            JetClassLoader removedClassLoader = classLoaders.remove(executionContext.jobId());
-            try {
-                doWithClassLoader(removedClassLoader, () ->
-                    executionContext.completeExecution(error));
-            } finally {
-                executionCompleted.inc();
+    public void completeExecution(@Nonnull ExecutionContext executionContext, Throwable error) {
+        executionContexts.remove(executionContext.executionId());
+        JetClassLoader removedClassLoader = classLoaders.remove(executionContext.jobId());
+        try {
+            doWithClassLoader(removedClassLoader, () -> executionContext.completeExecution(error));
+        } finally {
+            executionCompleted.inc();
+            // the class loader might not have been initialized if the job failed before that
+            if (removedClassLoader != null) {
                 removedClassLoader.shutdown();
-                executionContextJobIds.remove(executionContext.jobId());
-                logger.fine("Completed execution of " + executionContext.jobNameAndExecutionId());
             }
-        } else {
-            logger.fine("Execution " + idToString(executionId) + " not found for completion");
+            executionContextJobIds.remove(executionContext.jobId());
+            logger.fine("Completed execution of " + executionContext.jobNameAndExecutionId());
         }
     }
 
@@ -371,26 +464,45 @@ public class JobExecutionService implements DynamicMetricsProvider {
         }
     }
 
-    public CompletableFuture<Void> beginExecution(Address coordinator, long jobId, long executionId) {
-        ExecutionContext execCtx = assertExecutionContext(coordinator, jobId, executionId, "ExecuteJobOperation");
+    public CompletableFuture<RawJobMetrics> beginExecution(
+            Address coordinator,
+            long jobId,
+            long executionId,
+            boolean collectMetrics
+    ) {
+        ExecutionContext execCtx = assertExecutionContext(coordinator, jobId, executionId, "StartExecutionOperation");
+        assert !execCtx.isLightJob() : "StartExecutionOperation received for a light job " + idToString(jobId);
         logger.info("Start execution of " + execCtx.jobNameAndExecutionId() + " from coordinator " + coordinator);
-        executionStarted.inc();
-        CompletableFuture<Void> future = execCtx.beginExecution();
-        future.whenComplete(withTryCatch(logger, (i, e) -> {
-            if (e instanceof CancellationException) {
-                logger.fine("Execution of " + execCtx.jobNameAndExecutionId() + " was cancelled");
-            } else if (e != null) {
-                logger.fine("Execution of " + execCtx.jobNameAndExecutionId()
-                        + " completed with failure", e);
-            } else {
-                logger.fine("Execution of " + execCtx.jobNameAndExecutionId() + " completed");
-            }
-        }));
-        return future;
+        return beginExecution0(execCtx, collectMetrics);
     }
 
-    int numberOfExecutions() {
-        return executionContexts.size();
+    public CompletableFuture<RawJobMetrics> beginExecution0(ExecutionContext execCtx, boolean collectMetrics) {
+        executionStarted.inc();
+        return execCtx.beginExecution(taskletExecutionService)
+                .thenApply(r -> {
+                    RawJobMetrics terminalMetrics;
+                    if (collectMetrics) {
+                        JobMetricsCollector metricsRenderer =
+                                new JobMetricsCollector(execCtx.executionId(), nodeEngine.getLocalMember(), logger);
+                        nodeEngine.getMetricsRegistry().collect(metricsRenderer);
+                        terminalMetrics = metricsRenderer.getMetrics();
+                    } else {
+                        terminalMetrics = null;
+                    }
+                    return terminalMetrics;
+                })
+                .whenComplete(withTryCatch(logger, (i, e) -> {
+                    completeExecution(execCtx, peel(e));
+
+                    if (e instanceof CancellationException) {
+                        logger.fine("Execution of " + execCtx.jobNameAndExecutionId() + " was cancelled");
+                    } else if (e != null) {
+                        logger.fine("Execution of " + execCtx.jobNameAndExecutionId()
+                                + " completed with failure", e);
+                    } else {
+                        logger.fine("Execution of " + execCtx.jobNameAndExecutionId() + " completed");
+                    }
+                }));
     }
 
     @Override
@@ -402,6 +514,169 @@ public class JobExecutionService implements DynamicMetricsProvider {
         } catch (Throwable t) {
             logger.warning("Dynamic metric collection failed", t);
             throw t;
+        }
+    }
+
+    /**
+     * See javadoc at {@link CheckLightJobsOperation}.
+     */
+    private void checkLightExecutions() {
+        try {
+            long uninitializedContextThreshold = System.nanoTime() - UNINITIALIZED_CONTEXT_MAX_AGE_NS;
+            Map<Address, List<Long>> executionsPerMember = new HashMap<>();
+            for (ExecutionContext ctx : executionContexts.values()) {
+                if (!ctx.isLightJob()) {
+                    continue;
+                }
+                Address coordinator = ctx.coordinator();
+                if (coordinator != null) {
+                    executionsPerMember
+                            .computeIfAbsent(coordinator, k -> new ArrayList<>())
+                            .add(ctx.executionId());
+                } else {
+                    if (uninitializedContextThreshold <= ctx.getCreatedOn()) {
+                        LoggingUtil.logFine(logger, "Terminating light job %s because it wasn't initialized during %d seconds",
+                                idToString(ctx.executionId()), NANOSECONDS.toSeconds(UNINITIALIZED_CONTEXT_MAX_AGE_NS));
+                        terminateExecution0(ctx, TerminationMode.CANCEL_FORCEFUL);
+                    }
+                }
+            }
+
+            for (Entry<Address, List<Long>> en : executionsPerMember.entrySet()) {
+                long[] executionIds = en.getValue().stream().mapToLong(Long::longValue).toArray();
+                Operation op = new CheckLightJobsOperation(executionIds);
+                InvocationFuture<long[]> future = nodeEngine.getOperationService()
+                        .createInvocationBuilder(JetService.SERVICE_NAME, op, en.getKey())
+                        .invoke();
+                future.whenComplete((r, t) -> {
+                    if (t instanceof TargetNotMemberException) {
+                        // if the target isn't a member, then all executions are unknown
+                        r = executionIds;
+                    } else if (t != null) {
+                        logger.warning("Failed to check light job state with coordinator " + en.getKey() + ": " + t, t);
+                        return;
+                    }
+                    assert r != null;
+                    for (long executionId : r) {
+                        ExecutionContext execCtx = executionContexts.get(executionId);
+                        if (execCtx != null) {
+                            logger.fine("Terminating light job " + idToString(executionId)
+                                    + " because the coordinator doesn't know it");
+                            terminateExecution0(execCtx, TerminationMode.CANCEL_FORCEFUL);
+                        }
+                    }
+                });
+            }
+        } catch (Throwable e) {
+            logger.severe("Failed to query live light executions: " + e, e);
+        }
+    }
+
+    public void terminateExecution(long jobId, long executionId, Address callerAddress, TerminationMode mode) {
+        failIfNotRunning();
+
+        ExecutionContext executionContext = executionContexts.get(executionId);
+        if (executionContext == null) {
+            // If this happens after the execution terminated locally, ignore.
+            // If this happens before the execution was initialized locally, that means it's a light
+            // job. We ignore too and rely on the CheckLightJobsOperation.
+            return;
+        }
+        if (!executionContext.isLightJob()) {
+            Address masterAddress = nodeEngine.getMasterAddress();
+            if (!callerAddress.equals(masterAddress)) {
+                failIfNotRunning();
+
+                throw new IllegalStateException(String.format(
+                        "Caller %s cannot do '%s' for terminateExecution: it is not the master, the master is %s",
+                        callerAddress, jobIdAndExecutionId(jobId, executionId), masterAddress));
+            }
+        }
+        Address coordinator = executionContext.coordinator();
+        if (coordinator == null) {
+            // This can happen if ExecutionContext was created after a received data packet,
+            // either before the initialization or after a completion.
+            // The TerminateOp is always sent after InitOp on coordinator, but it can happen that it's handled
+            // first on the target member.
+            // We ignore this and rely on the CheckLightJobsOperation to clean up.
+            // It can't happen for normal jobs
+            assert executionContext.isLightJob() : "null coordinator for non-light job";
+        } else if (!coordinator.equals(callerAddress)) {
+            throw new IllegalStateException(String.format(
+                    "%s, originally from coordinator %s, cannot do 'terminateExecution' by coordinator %s and execution %s",
+                    executionContext.jobNameAndExecutionId(), coordinator, callerAddress, idToString(executionId)));
+        }
+        terminateExecution0(executionContext, mode);
+    }
+
+    public void terminateExecution0(ExecutionContext executionContext, TerminationMode mode) {
+        if (!executionContext.terminateExecution(mode)) {
+            // If the execution was terminated before it began, call completeExecution now.
+            // Otherwise, if the execution was already begun, this method will be called when the tasklets complete.
+            logger.fine(executionContext.jobNameAndExecutionId()
+                    + " calling completeExecution because execution terminated before it started");
+            completeExecution(executionContext, new CancellationException());
+        }
+    }
+
+    // for test
+    public void waitAllExecutionsTerminated() {
+        for (ExecutionContext ctx : executionContexts.values()) {
+            try {
+                ctx.getExecutionFuture().join();
+            } catch (Throwable ignored) {
+            }
+        }
+    }
+
+    private static class JobMetricsCollector implements MetricsCollector {
+
+        private final Long executionId;
+        private final MetricsCompressor compressor;
+        private final ILogger logger;
+        private final UnaryOperator<MetricDescriptor> addPrefixFn;
+
+        JobMetricsCollector(long executionId, @Nonnull Member member, @Nonnull ILogger logger) {
+            Objects.requireNonNull(member, "member");
+            this.logger = Objects.requireNonNull(logger, "logger");
+
+            this.executionId = executionId;
+            this.addPrefixFn = JobMetricsUtil.addMemberPrefixFn(member);
+            this.compressor = new MetricsCompressor();
+        }
+
+        @Override
+        public void collectLong(MetricDescriptor descriptor, long value) {
+            System.out.println("bbb: " + descriptor + ", v=" + value);
+            Long executionId = JobMetricsUtil.getExecutionIdFromMetricsDescriptor(descriptor);
+            if (this.executionId.equals(executionId)) {
+                System.out.println("taken");
+                compressor.addLong(addPrefixFn.apply(descriptor), value);
+            }
+        }
+
+        @Override
+        public void collectDouble(MetricDescriptor descriptor, double value) {
+            Long executionId = JobMetricsUtil.getExecutionIdFromMetricsDescriptor(descriptor);
+            if (this.executionId.equals(executionId)) {
+                compressor.addDouble(addPrefixFn.apply(descriptor), value);
+            }
+        }
+
+        @Override
+        public void collectException(MetricDescriptor descriptor, Exception e) {
+            Long executionId = JobMetricsUtil.getExecutionIdFromMetricsDescriptor(descriptor);
+            if (this.executionId.equals(executionId)) {
+                logger.warning("Exception when rendering job metrics: " + e, e);
+            }
+        }
+
+        @Override
+        public void collectNoValue(MetricDescriptor descriptor) { }
+
+        @Nonnull
+        public RawJobMetrics getMetrics() {
+            return RawJobMetrics.of(compressor.getBlobAndReset());
         }
     }
 }

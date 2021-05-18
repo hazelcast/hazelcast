@@ -121,6 +121,7 @@
               files="com[\\/]hazelcast[\\/]config[\\/]MapConfig"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]config[\\/]SerializationConfig"/>
     <suppress checks="FileLength" files="com[\\/]hazelcast[\\/]internal[\\/]config[\\/]MemberDomConfigProcessor"/>
+    <suppress checks="MagicNumber" files="com[\\/]hazelcast[\\/]internal[\\/]config[\\/]override[\\/]ExternalConfigurationOverride"/>
 
     <!-- YAML -->
     <suppress checks="BooleanExpressionComplexity" files="com[\\/]hazelcast[\\/]internal[\\/]yaml[\\/]YamlUtil"/>
@@ -390,4 +391,5 @@
 
     <suppress checks="Javadoc|Name|MagicNumber|VisibilityModifier" files="[\\/]src[\\/]test[\\/]java[\\/]com[\\/]hazelcast[\\/]jet"/>
 
+    <suppress checks="" files="target[\\/]generated-sources"/>
 </suppressions>

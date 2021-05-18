@@ -18,9 +18,11 @@ package com.hazelcast.jet.core.test;
 
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.logging.ILogger;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import java.io.File;
@@ -52,6 +54,11 @@ public class TestProcessorSupplierContext
     }
 
     @Nonnull @Override
+    public TestProcessorSupplierContext setJobConfig(@Nonnull JobConfig jobConfig) {
+        return (TestProcessorSupplierContext) super.setJobConfig(jobConfig);
+    }
+
+    @Nonnull @Override
     public TestProcessorSupplierContext setVertexName(@Nonnull String vertexName) {
         return (TestProcessorSupplierContext) super.setVertexName(vertexName);
     }
@@ -69,6 +76,11 @@ public class TestProcessorSupplierContext
     @Nonnull @Override
     public TestProcessorSupplierContext setProcessingGuarantee(@Nonnull ProcessingGuarantee processingGuarantee) {
         return (TestProcessorSupplierContext) super.setProcessingGuarantee(processingGuarantee);
+    }
+
+    @NotNull @Override
+    public TestProcessorSupplierContext setIsLightJob(boolean isLightJob) {
+        return (TestProcessorSupplierContext) super.setIsLightJob(isLightJob);
     }
 
     @Override
