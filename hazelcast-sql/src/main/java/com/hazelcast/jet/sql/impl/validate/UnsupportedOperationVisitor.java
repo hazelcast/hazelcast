@@ -33,7 +33,6 @@ import org.apache.calcite.sql.JoinType;
 import org.apache.calcite.sql.SqlBasicTypeNameSpec;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlDataTypeSpec;
-import org.apache.calcite.sql.SqlDelete;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlJoin;
 import org.apache.calcite.sql.SqlKind;
@@ -341,15 +340,11 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
                 processOtherDdl(call);
                 break;
             case DELETE:
-                processDelete((SqlDelete) call);
                 break;
 
             default:
                 throw unsupported(call, kind);
         }
-    }
-
-    private void processDelete(SqlDelete call) {
     }
 
     private void processSelect(SqlSelect select) {
