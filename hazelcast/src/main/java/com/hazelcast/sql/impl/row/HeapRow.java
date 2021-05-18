@@ -59,10 +59,6 @@ public class HeapRow implements Row, IdentifiedDataSerializable {
         return (T) values[index];
     }
 
-    public Object[] getValues() {
-        return values;
-    }
-
     @Override
     public int getColumnCount() {
         return values.length;
