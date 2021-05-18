@@ -17,7 +17,10 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.cache.ICache;
+import com.hazelcast.jet.pipeline.JournalInitialPosition;
 import com.hazelcast.jet.pipeline.Pipeline;
+import com.hazelcast.jet.pipeline.Sinks;
+import com.hazelcast.jet.pipeline.Sources;
 
 /**
  * {@code JetCacheManager} is the entry point to access JSR-107 (JCache) caches

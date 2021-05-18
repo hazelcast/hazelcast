@@ -17,6 +17,8 @@
 package com.hazelcast.jet.core.metrics;
 
 import com.hazelcast.internal.metrics.ProbeUnit;
+import com.hazelcast.jet.Util;
+import com.hazelcast.jet.core.Processor;
 
 /**
  * Metric descriptors are formed from a comma separated list of {@code
