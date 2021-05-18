@@ -20,6 +20,7 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateJob;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
 import com.hazelcast.jet.sql.impl.schema.JetTableFunction;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
@@ -215,6 +216,9 @@ public class JetSqlValidator extends HazelcastSqlValidator {
         // to work. We need to feed primary keys to the delete processor so that it can directly delete the records.
         // Therefore we use the primary key for the select list.
         SqlNodeList selectList = connector.getPrimaryKey(table);
+        if (selectList.size() == 0) {
+            throw QueryException.error("Cannot DELETE from " + call.getTargetTable() + ": it doesn't have a primary key");
+        }
 
         if (call.getAlias() != null) {
           sourceTable =

@@ -131,11 +131,6 @@ public class IMapSqlConnector implements SqlConnector {
         );
     }
 
-    @Override
-    public boolean supportsFullScanReader() {
-        return true;
-    }
-
     @Nonnull @Override
     public Vertex fullScanReader(
             @Nonnull DAG dag,
@@ -167,11 +162,6 @@ public class IMapSqlConnector implements SqlConnector {
         return vEnd;
     }
 
-    @Override
-    public boolean supportsNestedLoopReader() {
-        return true;
-    }
-
     @Nonnull @Override
     public VertexWithInputConfig nestedLoopReader(
             @Nonnull DAG dag,
@@ -196,13 +186,8 @@ public class IMapSqlConnector implements SqlConnector {
     }
 
     @Override
-    public boolean supportsSink() {
+    public boolean requiresSink() {
         return true;
-    }
-
-    @Override
-    public boolean supportsInsert() {
-        return false;
     }
 
     @Nonnull @Override
@@ -258,6 +243,7 @@ public class IMapSqlConnector implements SqlConnector {
 
         return dag.newUniqueVertex(
                 toString(table),
+                // TODO do a simpler, specialized deleting-only processor
                 updateMapP(table.getMapName(), (FunctionEx<Object[], Object>) row -> {
                     assert row.length == 1;
                     return row[0];

@@ -339,6 +339,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
             case OTHER_DDL:
                 processOtherDdl(call);
                 break;
+
             case DELETE:
                 break;
 
