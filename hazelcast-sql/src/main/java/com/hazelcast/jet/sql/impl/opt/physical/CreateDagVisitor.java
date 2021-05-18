@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.BiPredicateEx;
+import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.aggregate.AggregateOperation;
@@ -55,6 +56,7 @@ import java.util.function.Predicate;
 import static com.hazelcast.function.Functions.entryKey;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.Processors.filterUsingServiceP;
+import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static com.hazelcast.jet.core.processor.Processors.mapUsingServiceP;
 import static com.hazelcast.jet.core.processor.Processors.sortP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.convenientSourceP;
@@ -124,18 +126,33 @@ public class CreateDagVisitor {
     }
 
     public Vertex onSort(SortPhysicalRel rel) {
-        Vertex vertex = dag.newUniqueVertex("Sort",
+        ComparatorEx<?> comparator = ExpressionUtil.comparisonFn(rel.getCollations());
+
+        Vertex sortVertex = dag.newUniqueVertex("Sort",
+                ProcessorMetaSupplier.of(
+                        sortP(comparator)
+                )
+        );
+        connectInput(rel.getInput(), sortVertex, null);
+
+        Vertex combineVertex = dag.newUniqueVertex("SortCombine",
                 ProcessorMetaSupplier.forceTotalParallelismOne(
                         ProcessorSupplier.of(
-                                sortP(ExpressionUtil.comparisonFn(rel.getCollations()))
+                                mapP(FunctionEx.identity())
                         ),
                         localMemberAddress
                 )
         );
+        connectInput(
+                sortVertex,
+                combineVertex,
+                edge -> edge
+                        .ordered(comparator)
+                        .distributeTo(localMemberAddress)
+                        .allToOne("")
+        );
 
-        connectInput(rel.getInput(), vertex, edge -> edge.distributeTo(localMemberAddress).allToOne(""));
-
-        return vertex;
+        return combineVertex;
     }
 
     public Vertex onProject(ProjectPhysicalRel rel) {
@@ -296,12 +313,25 @@ public class CreateDagVisitor {
             @Nullable Consumer<Edge> configureEdgeFn
     ) {
         Vertex inputVertex = ((PhysicalRel) inputRel).accept(this);
+        connectInput(inputVertex, thisVertex, configureEdgeFn);
+        return inputVertex;
+    }
+
+    /**
+     * Creates an edge from {@code inputVertex} into {@code thisVertex}
+     *
+     * @param configureEdgeFn optional function to configure the edge
+     */
+    private void connectInput(
+            Vertex inputVertex,
+            Vertex thisVertex,
+            @Nullable Consumer<Edge> configureEdgeFn
+    ) {
         Edge edge = between(inputVertex, thisVertex);
         if (configureEdgeFn != null) {
             configureEdgeFn.accept(edge);
         }
         dag.edge(edge);
-        return inputVertex;
     }
 
     /**
