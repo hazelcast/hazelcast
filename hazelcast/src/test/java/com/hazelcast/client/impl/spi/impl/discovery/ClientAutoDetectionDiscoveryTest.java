@@ -35,6 +35,7 @@ public class ClientAutoDetectionDiscoveryTest extends HazelcastTestSupport {
 
     @After
     public void tearDown() {
+        HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 
