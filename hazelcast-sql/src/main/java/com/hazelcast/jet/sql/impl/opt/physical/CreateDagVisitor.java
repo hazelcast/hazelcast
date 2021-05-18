@@ -143,12 +143,12 @@ public class CreateDagVisitor {
                 (BiFunctionEx<Function<Object[], Object[]>, Object[], Object[]>) Function::apply
         ));
 
-        Consumer<Edge> edgeConfig = null;
+        Vertex input = connectInput(rel.getInput(), vertex, null);
+
         if (rel.getTraitSet().getCollation().getFieldCollations().size() > 0) {
-            edgeConfig = edge -> edge.distributeTo(localMemberAddress).allToOne("");
+            vertex.localParallelism(input.determineLocalParallelism(Vertex.LOCAL_PARALLELISM_USE_DEFAULT));
         }
 
-        connectInput(rel.getInput(), vertex, edgeConfig);
         return vertex;
     }
 
@@ -290,7 +290,7 @@ public class CreateDagVisitor {
      *
      * @param configureEdgeFn optional function to configure the edge
      */
-    private void connectInput(
+    private Vertex connectInput(
             RelNode inputRel,
             Vertex thisVertex,
             @Nullable Consumer<Edge> configureEdgeFn
@@ -301,6 +301,7 @@ public class CreateDagVisitor {
             configureEdgeFn.accept(edge);
         }
         dag.edge(edge);
+        return inputVertex;
     }
 
     private void collectObjectKeys(Table table) {
