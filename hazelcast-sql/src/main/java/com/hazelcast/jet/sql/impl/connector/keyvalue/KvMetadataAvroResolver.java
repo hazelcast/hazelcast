@@ -37,8 +37,8 @@ import java.util.Map.Entry;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.AVRO_FORMAT;
-import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolvers.extractFields;
-import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolvers.maybeAddDefaultField;
+import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.extractFields;
+import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.maybeAddDefaultField;
 
 public final class KvMetadataAvroResolver implements KvMetadataResolver {
 
@@ -95,8 +95,8 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
 
             fields.add(new MapTableField(name, type, false, path));
         }
-
         maybeAddDefaultField(isKey, resolvedFields, fields);
+
         return new KvMetadata(
                 fields,
                 AvroQueryTargetDescriptor.INSTANCE,

@@ -72,6 +72,24 @@ public class KvMetadataResolversTest {
     }
 
     @Test
+    @Parameters({
+            "__key",
+            "this"
+    })
+    public void when_renamedExternalName_then_throws(String fieldName) {
+        MappingField field = new MappingField(fieldName, QueryDataType.INT, "renamed");
+        assertThatThrownBy(() -> resolvers.resolveAndValidateFields(singletonList(field), emptyMap(), nodeEngine))
+                .hasMessage("Cannot rename field: " + fieldName);
+    }
+
+    @Test
+    public void when_invalidExternalName_then_throws() {
+        MappingField field = new MappingField("field_name", QueryDataType.INT, "invalid_prefix.name");
+        assertThatThrownBy(() -> resolvers.resolveAndValidateFields(singletonList(field), emptyMap(), nodeEngine))
+                .hasMessage("Invalid external name: " + "invalid_prefix.name");
+    }
+
+    @Test
     public void test_resolveAndValidateFields() {
         Map<String, String> options = ImmutableMap.of(
                 OPTION_KEY_FORMAT, JAVA_FORMAT,

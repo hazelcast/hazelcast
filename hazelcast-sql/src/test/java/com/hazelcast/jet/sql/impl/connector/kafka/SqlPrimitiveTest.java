@@ -35,7 +35,6 @@ import java.util.Map;
 
 import static com.hazelcast.jet.core.TestUtil.createMap;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
-import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JSON_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS;
@@ -420,9 +419,9 @@ public class SqlPrimitiveTest extends SqlTestSupport {
 
     @Test
     public void test_noValueFormat() {
-        String topicName = randomName();
         assertThatThrownBy(
-                () -> sqlService.execute("CREATE MAPPING " + topicName + " TYPE " + KafkaSqlConnector.TYPE_NAME + " "
+                () -> sqlService.execute("CREATE MAPPING kafka "
+                        + "TYPE " + KafkaSqlConnector.TYPE_NAME + " "
                         + "OPTIONS ("
                         + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + "',"
                         + '\'' + OPTION_KEY_CLASS + "'='" + String.class.getName() + "'"
@@ -441,43 +440,44 @@ public class SqlPrimitiveTest extends SqlTestSupport {
     }
 
     private void test_multipleFieldsForPrimitive(String fieldName) {
-        String mapName = randomName();
         assertThatThrownBy(
-                () -> sqlService.execute("CREATE MAPPING " + mapName + "("
+                () -> sqlService.execute("CREATE MAPPING kafka ("
                         + fieldName + " INT"
                         + ", field INT EXTERNAL NAME \"" + fieldName + ".field\""
                         + ") TYPE " + KafkaSqlConnector.TYPE_NAME
                         + " OPTIONS ("
-                        + '\'' + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + "',"
-                        + '\'' + OPTION_VALUE_CLASS + "'='" + Integer.class.getName() + "',"
-                        + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + "',"
-                        + '\'' + OPTION_KEY_CLASS + "'='" + Integer.class.getName() + "'"
+                        + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + '\''
+                        + ", '" + OPTION_KEY_CLASS + "'='" + Integer.class.getName() + '\''
+                        + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + '\''
+                        + ", '" + OPTION_VALUE_CLASS + "'='" + Integer.class.getName() + '\''
                         + ")")
         ).hasMessage("The field '" + fieldName + "' is of type INTEGER, you can't map '" + fieldName + ".field' too");
     }
 
     @Test
-    public void test_valueFieldMappedUnderTopLevelKeyName() {
-        String name = createRandomTopic();
-        sqlService.execute("CREATE MAPPING " + name + "(\n"
-                + "__key BIGINT EXTERNAL NAME id\n"
-                + ", field BIGINT\n"
-                + ')' + "TYPE " + KafkaSqlConnector.TYPE_NAME + " \n"
-                + "OPTIONS (\n"
-                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + "'\n"
-                + ", '" + OPTION_KEY_CLASS + "'='" + Integer.class.getName() + "'\n"
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + JSON_FORMAT + "'\n"
-                + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + "'\n"
+    public void test_renameTopLevelField_key() {
+        test_renameTopLevelField("__key");
+    }
+
+    @Test
+    public void test_renameTopLevelField_value() {
+        test_renameTopLevelField("this");
+    }
+
+    private void test_renameTopLevelField(String fieldName) {
+        assertThatThrownBy(() -> sqlService.execute("CREATE MAPPING kafka ("
+                + fieldName + " INT EXTERNAL NAME renamed"
+                + ')'
+                + "TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
+                + "OPTIONS ("
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_KEY_CLASS + "'='" + Integer.class.getName() + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_VALUE_CLASS + "'='" + Integer.class.getName() + '\''
+                + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
                 + ", 'auto.offset.reset'='earliest'"
                 + ")"
-        );
-
-        kafkaTestSupport.produce(name, 1, "{\"id\":123,\"field\":456}");
-
-        assertRowsEventuallyInAnyOrder(
-                "select __key, field from " + name,
-                singletonList(new Row(123L, 456L))
-        );
+        )).hasMessageContaining("Cannot rename field: " + fieldName);
     }
 
     private static String createRandomTopic() {

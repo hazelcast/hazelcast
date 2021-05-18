@@ -36,8 +36,8 @@ import java.util.Map.Entry;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JSON_FORMAT;
-import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolvers.extractFields;
-import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolvers.maybeAddDefaultField;
+import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.extractFields;
+import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.maybeAddDefaultField;
 
 final class MetadataJsonResolver implements KvMetadataResolver {
 
@@ -94,8 +94,8 @@ final class MetadataJsonResolver implements KvMetadataResolver {
 
             fields.add(new MapTableField(name, type, false, path));
         }
-
         maybeAddDefaultField(isKey, resolvedFields, fields);
+
         return new KvMetadata(
                 fields,
                 HazelcastJsonQueryTargetDescriptor.INSTANCE,

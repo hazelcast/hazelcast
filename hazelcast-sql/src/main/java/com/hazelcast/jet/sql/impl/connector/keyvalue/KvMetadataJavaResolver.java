@@ -43,8 +43,8 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
-import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolvers.extractFields;
-import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolvers.maybeAddDefaultField;
+import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.extractFields;
+import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.maybeAddDefaultField;
 import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
 import static java.util.Collections.emptyList;
@@ -99,18 +99,12 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
 
         QueryPath path = isKey ? QueryPath.KEY_PATH : QueryPath.VALUE_PATH;
 
-        MappingField mappingField = userFieldsByPath.get(path);
-        if (mappingField != null && !type.getTypeFamily().equals(mappingField.type().getTypeFamily())) {
-            throw QueryException.error("Mismatch between declared and resolved type for field '"
-                    + mappingField.name() + "'");
-        }
-        String name = mappingField == null ? (isKey ? KEY : VALUE) : mappingField.name();
-        if (mappingField == null && userFields.stream().anyMatch(f -> f.name().equals(name))) {
-            // The user didn't specify the column himself, but he specified some other column under
-            // the name we would like to specify our column - we can't resolve any columns
-            return emptyList();
+        MappingField userField = userFieldsByPath.get(path);
+        if (userField != null && !type.getTypeFamily().equals(userField.type().getTypeFamily())) {
+            throw QueryException.error("Mismatch between declared and resolved type for field '" + userField.name() + "'");
         }
 
+        String name = userField == null ? (isKey ? KEY : VALUE) : userField.name();
         MappingField field = new MappingField(name, type, path.toString());
 
         for (MappingField mf : userFieldsByPath.values()) {
@@ -138,10 +132,10 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
                 QueryPath path = new QueryPath(classField.getKey(), isKey);
                 QueryDataType type = QueryDataTypeUtils.resolveTypeForClass(classField.getValue());
 
-                MappingField mappingField = userFieldsByPath.get(path);
-                if (mappingField != null && !type.getTypeFamily().equals(mappingField.type().getTypeFamily())) {
+                MappingField userField = userFieldsByPath.get(path);
+                if (userField != null && !type.getTypeFamily().equals(userField.type().getTypeFamily())) {
                     throw QueryException.error("Mismatch between declared and resolved type for field '"
-                            + mappingField.name() + "'. Declared: " + mappingField.type().getTypeFamily()
+                            + userField.name() + "'. Declared: " + userField.type().getTypeFamily()
                             + ", resolved: " + type.getTypeFamily());
                 }
             }
@@ -180,22 +174,22 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
             Class<?> clazz
     ) {
         QueryDataType type = QueryDataTypeUtils.resolveTypeForClass(clazz);
-        Map<QueryPath, MappingField> externalFieldsByPath = extractFields(resolvedFields, isKey);
+        Map<QueryPath, MappingField> fields = extractFields(resolvedFields, isKey);
 
         if (type != QueryDataType.OBJECT) {
-            return resolvePrimitiveMetadata(isKey, externalFieldsByPath);
+            return resolvePrimitiveMetadata(isKey, fields);
         } else {
-            return resolveObjectMetadata(isKey, resolvedFields, externalFieldsByPath, clazz);
+            return resolveObjectMetadata(isKey, resolvedFields, fields, clazz);
         }
     }
 
-    private KvMetadata resolvePrimitiveMetadata(boolean isKey, Map<QueryPath, MappingField> externalFieldsByPath) {
+    private KvMetadata resolvePrimitiveMetadata(boolean isKey, Map<QueryPath, MappingField> fields) {
         QueryPath path = isKey ? QueryPath.KEY_PATH : QueryPath.VALUE_PATH;
-        MappingField mappingField = externalFieldsByPath.get(path);
+        MappingField field = fields.get(path);
 
         return new KvMetadata(
-                mappingField != null
-                        ? singletonList(new MapTableField(mappingField.name(), mappingField.type(), false, path))
+                field != null
+                        ? singletonList(new MapTableField(field.name(), field.type(), false, path))
                         : emptyList(),
                 GenericQueryTargetDescriptor.DEFAULT,
                 PrimitiveUpsertTargetDescriptor.INSTANCE
@@ -222,8 +216,8 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
                 typeNamesByPaths.put(path.getPath(), typesByNames.get(path.getPath()).getName());
             }
         }
-
         maybeAddDefaultField(isKey, resolvedFields, fields);
+
         return new KvMetadata(
                 fields,
                 GenericQueryTargetDescriptor.DEFAULT,

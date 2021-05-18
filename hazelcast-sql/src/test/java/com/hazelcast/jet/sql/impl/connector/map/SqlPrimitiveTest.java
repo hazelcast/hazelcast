@@ -234,24 +234,24 @@ public class SqlPrimitiveTest extends SqlTestSupport {
 
     @Test
     public void test_noValueFormat() {
-        String mapName = randomName();
         assertThatThrownBy(
-                () -> sqlService.execute("CREATE MAPPING " + mapName + " TYPE " + IMapSqlConnector.TYPE_NAME + " "
+                () -> sqlService.execute("CREATE MAPPING map "
+                        + "TYPE " + IMapSqlConnector.TYPE_NAME + " "
                         + "OPTIONS ("
-                        + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + "',"
-                        + '\'' + OPTION_KEY_CLASS + "'='" + Integer.class.getName() + "'"
+                        + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + '\''
+                        + ", '" + OPTION_KEY_CLASS + "'='" + Integer.class.getName() + '\''
                         + ")")
         ).hasMessage("Missing 'valueFormat' option");
     }
 
     @Test
     public void test_noKeyFormat() {
-        String mapName = randomName();
         assertThatThrownBy(
-                () -> sqlService.execute("CREATE MAPPING " + mapName + " TYPE " + IMapSqlConnector.TYPE_NAME + " "
+                () -> sqlService.execute("CREATE MAPPING map "
+                        + "TYPE " + IMapSqlConnector.TYPE_NAME + " "
                         + "OPTIONS ("
-                        + '\'' + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + "',"
-                        + '\'' + OPTION_VALUE_CLASS + "'='" + String.class.getName() + "'"
+                        + '\'' + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + '\''
+                        + ", '" + OPTION_VALUE_CLASS + "'='" + String.class.getName() + '\''
                         + ")")
         ).hasMessage("Missing 'keyFormat' option");
     }
@@ -287,20 +287,43 @@ public class SqlPrimitiveTest extends SqlTestSupport {
     }
 
     private void test_multipleFieldsForPrimitive(String fieldName) {
-        String mapName = randomName();
         assertThatThrownBy(
-                () -> sqlService.execute("CREATE MAPPING " + mapName + "("
+                () -> sqlService.execute("CREATE MAPPING map ("
                         + fieldName + " INT"
                         + ", field INT EXTERNAL NAME \"" + fieldName + ".field\""
                         + ") TYPE " + IMapSqlConnector.TYPE_NAME
                         + " OPTIONS ("
-                        + '\'' + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + "',"
-                        + '\'' + OPTION_VALUE_CLASS + "'='" + Integer.class.getName() + "',"
-                        + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + "',"
-                        + '\'' + OPTION_KEY_CLASS + "'='" + Integer.class.getName() + "'"
+                        + '\'' + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + '\''
+                        + ", '" + OPTION_VALUE_CLASS + "'='" + Integer.class.getName() + '\''
+                        + ", '" + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + '\''
+                        + ", '" + OPTION_KEY_CLASS + "'='" + Integer.class.getName() + '\''
                         + ")"))
                 .hasMessage(
                         "The field '" + fieldName + "' is of type INTEGER, you can't map '" + fieldName + ".field' too");
+    }
+
+    @Test
+    public void test_renameTopLevelField_key() {
+        test_renameTopLevelField("__key");
+    }
+
+    @Test
+    public void test_renameTopLevelField_value() {
+        test_renameTopLevelField("this");
+    }
+
+    private void test_renameTopLevelField(String fieldName) {
+        assertThatThrownBy(() -> sqlService.execute("CREATE MAPPING map ("
+                + fieldName + " INT EXTERNAL NAME renamed"
+                + ')'
+                + "TYPE " + IMapSqlConnector.TYPE_NAME + ' '
+                + "OPTIONS ("
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_KEY_CLASS + "'='" + Integer.class.getName() + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_VALUE_CLASS + "'='" + Integer.class.getName() + '\''
+                + ")"
+        )).hasMessageContaining("Cannot rename field: " + fieldName);
     }
 
     @Test

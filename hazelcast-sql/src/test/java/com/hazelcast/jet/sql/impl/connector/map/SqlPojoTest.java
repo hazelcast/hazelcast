@@ -423,6 +423,20 @@ public class SqlPojoTest extends SqlTestSupport {
                 .hasMessageContaining("Invalid external name: this.owner.name");
     }
 
+    @Test
+    public void when_noFieldsResolved_then_wholeValueMapped() {
+        String name = randomName();
+
+        sqlService.execute(javaSerializableMapDdl(name, Object.class, Object.class));
+
+        Person key = new Person(1, "foo");
+        Person value = new Person(2, "bar");
+        instance().getMap(name).put(key, value);
+
+        assertRowsAnyOrder("SELECT __key, this FROM " + name,
+                singletonList(new Row(key, value)));
+    }
+
     public static class ClassInitialValue implements Serializable {
 
         public Integer field = 42;
