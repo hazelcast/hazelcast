@@ -42,6 +42,7 @@ import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.jet.JetCacheManager;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.LightJob;
 import com.hazelcast.jet.Observable;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
@@ -549,7 +550,6 @@ public final class HazelcastBootstrap {
 
     }
 
-
     private static class BootstrappedJetProxy extends AbstractJetInstance {
         private final AbstractJetInstance jet;
         private final String jar;
@@ -603,6 +603,11 @@ public final class HazelcastBootstrap {
         @Nonnull @Override
         public Job newJobIfAbsent(@Nonnull Pipeline pipeline, @Nonnull JobConfig config) {
             return remember(jet.newJobIfAbsent(pipeline, updateJobConfig(config)));
+        }
+
+        @Nonnull @Override
+        public LightJob newLightJobInt(Object jobDefinition) {
+            return jet.newLightJobInt(jobDefinition);
         }
 
         @Nonnull @Override
