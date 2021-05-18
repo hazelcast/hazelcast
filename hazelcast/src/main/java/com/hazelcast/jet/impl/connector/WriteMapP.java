@@ -21,13 +21,16 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.impl.connector.HazelcastWriters.ArrayMap;
+import com.hazelcast.jet.impl.serialization.DelegatingSerializationService;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
 import com.hazelcast.partition.PartitioningStrategy;
 
 import javax.annotation.Nonnull;
@@ -42,11 +45,11 @@ public final class WriteMapP<T, K, V> extends AsyncHazelcastWriterP {
 
     private final String mapName;
     private final SerializationService serializationService;
-    private final ArrayMap<Data, Data> buffer = new ArrayMap<>(EdgeConfig.DEFAULT_QUEUE_SIZE);
     private final FunctionEx<? super T, ? extends K> toKeyFn;
     private final FunctionEx<? super T, ? extends V> toValueFn;
 
-    private IMap<Data, Data> map;
+    private ArrayMap<Object, Object> buffer;
+    private IMap<Object, Object> map;
     private Consumer<T> addToBuffer;
 
     private WriteMapP(
@@ -62,13 +65,27 @@ public final class WriteMapP<T, K, V> extends AsyncHazelcastWriterP {
         this.serializationService = serializationService;
         this.toKeyFn = toKeyFn;
         this.toValueFn = toValueFn;
+
+        resetBuffer();
     }
 
     @Override
     public void init(@Nonnull Outbox outbox, @Nonnull Context context) {
         map = instance().getMap(mapName);
 
-        if (map instanceof MapProxyImpl) {
+        boolean hasCustomSerializers = serializationService instanceof DelegatingSerializationService
+                && ((DelegatingSerializationService) serializationService).hasAddedSerializers();
+        boolean hasNearCache = map instanceof NearCachedMapProxyImpl;
+        if (hasNearCache && hasCustomSerializers) {
+            // To invalidate NearCache, the `putAll` method would need a deserialized key. It can't deserialize
+            // because it doesn't know the job-specific serializers.
+            // See https://github.com/hazelcast/hazelcast-jet/issues/3046
+            throw new JetException("Writing into IMap with both near cache and custom serializers not supported");
+        }
+
+        if (!hasCustomSerializers) {
+            addToBuffer = item -> buffer.add(new SimpleEntry<>(key(item), value(item)));
+        } else if (map instanceof MapProxyImpl) {
             PartitioningStrategy<?> partitionStrategy = ((MapProxyImpl<K, V>) map).getPartitionStrategy();
             addToBuffer = item -> {
                 Data key = serializationService.toData(key(item), partitionStrategy);
@@ -116,8 +133,12 @@ public final class WriteMapP<T, K, V> extends AsyncHazelcastWriterP {
             return false;
         }
         setCallback(map.putAllAsync(buffer));
-        buffer.clear();
+        resetBuffer();
         return true;
+    }
+
+    private void resetBuffer() {
+        buffer = new ArrayMap<>(EdgeConfig.DEFAULT_QUEUE_SIZE);
     }
 
     public static class Supplier<T, K, V> extends AbstractHazelcastConnectorSupplier {
