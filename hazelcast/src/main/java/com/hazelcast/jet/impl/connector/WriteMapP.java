@@ -73,7 +73,8 @@ public final class WriteMapP<T, K, V> extends AsyncHazelcastWriterP {
     public void init(@Nonnull Outbox outbox, @Nonnull Context context) {
         map = instance().getMap(mapName);
 
-        boolean hasCustomSerializers = ((DelegatingSerializationService) serializationService).hasAddedSerializers();
+        boolean hasCustomSerializers = serializationService instanceof DelegatingSerializationService
+                && ((DelegatingSerializationService) serializationService).hasAddedSerializers();
         boolean hasNearCache = map instanceof NearCachedMapProxyImpl;
         if (hasNearCache && hasCustomSerializers) {
             // To invalidate NearCache, the `putAll` method would need a deserialized key. It can't deserialize
