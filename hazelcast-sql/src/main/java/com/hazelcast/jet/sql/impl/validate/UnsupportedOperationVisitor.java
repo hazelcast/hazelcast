@@ -327,6 +327,9 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
                 processSelect((SqlSelect) call);
                 break;
 
+            case UPDATE:
+                break;
+
             case JOIN:
                 processJoin((SqlJoin) call);
                 break;

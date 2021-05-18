@@ -80,6 +80,8 @@ public final class LogicalRules {
                 // Insert rules
                 InsertLogicalRule.INSTANCE,
 
+                UpdateLogicalRule.INSTANCE,
+
                 // Miscellaneous
                 PruneEmptyRules.PROJECT_INSTANCE,
                 PruneEmptyRules.FILTER_INSTANCE,
