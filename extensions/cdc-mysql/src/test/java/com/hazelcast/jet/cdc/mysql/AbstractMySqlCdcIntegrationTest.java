@@ -27,6 +27,7 @@ import org.junit.Rule;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.testcontainers.containers.MySQLContainer;
+import org.testcontainers.utility.DockerImageName;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -38,7 +39,9 @@ import static org.testcontainers.containers.MySQLContainer.MYSQL_PORT;
 @RunWith(HazelcastSerialClassRunner.class)
 public abstract class AbstractMySqlCdcIntegrationTest extends AbstractCdcIntegrationTest {
 
-    public static final String DOCKER_IMAGE = "debezium/example-mysql:1.3";
+    public static final DockerImageName DOCKER_IMAGE = DockerImageName.parse("debezium/example-mysql:1.3")
+            .asCompatibleSubstituteFor("mysql");
+
     @Rule
     public MySQLContainer<?> mysql = namedTestContainer(
             new MySQLContainer<>(DOCKER_IMAGE)
