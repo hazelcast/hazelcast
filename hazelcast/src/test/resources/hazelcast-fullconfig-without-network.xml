@@ -330,11 +330,11 @@
             <max-idle-seconds>0</max-idle-seconds>
             <invalidate-on-change>true</invalidate-on-change>
             <cache-local-entries>false</cache-local-entries>
-            <eviction eviction-policy="LRU" size="10000"/>
+            <eviction eviction-policy="LFU" size="10000"/>
         </near-cache>
 
         <wan-replication-ref name="my-wan-cluster">
-            <merge-policy-class-name>hz.PASS_THROUGH</merge-policy-class-name>
+            <merge-policy-class-name>PassThroughMergePolicy</merge-policy-class-name>
             <filters>
                 <filter-impl>com.example.WanTestFilter1</filter-impl>
                 <filter-impl>com.example.WanTestFilter2</filter-impl>
@@ -517,8 +517,8 @@
         <write-through>true</write-through>
         <cache-loader-factory class-name="com.example.cache.MyCacheLoaderFactory"/>
         <cache-writer-factory class-name="com.example.cache.MyCacheWriterFactory"/>
-        <expiry-policy-factory class-name="com.example.cache.MyExpirePolicyFactory">
-            <timed-expiry-policy-factory expiry-policy-type="ETERNAL" duration-amount="123" time-unit="MICROSECONDS"/>
+        <expiry-policy-factory>
+            <timed-expiry-policy-factory expiry-policy-type="TOUCHED" duration-amount="123" time-unit="MICROSECONDS"/>
         </expiry-policy-factory>
 
         <cache-entry-listeners>
@@ -537,7 +537,7 @@
         <eviction comparator-class-name="DummyClass" eviction-policy="LRU"
                   max-size-policy="ENTRY_COUNT" size="50"/>
         <wan-replication-ref name="my-wan-cluster">
-            <merge-policy-class-name>hz.PASS_THROUGH</merge-policy-class-name>
+            <merge-policy-class-name>PassThroughMergePolicy</merge-policy-class-name>
             <filters>
                 <filter-impl>com.example.WanTestFilter1</filter-impl>
                 <filter-impl>com.example.WanTestFilter2</filter-impl>
@@ -614,7 +614,7 @@
 
     <native-memory allocator-type="STANDARD" enabled="true">
         <size unit="MEGABYTES" value="256"/>
-        <min-block-size>123</min-block-size>
+        <min-block-size>128</min-block-size>
         <page-size>123</page-size>
         <metadata-space-percentage>12.5</metadata-space-percentage>
         <persistent-memory enabled="true" mode="MOUNTED">

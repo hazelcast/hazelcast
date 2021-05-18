@@ -1,0 +1,14 @@
+{
+  "instance": {
+    "hazelcast": {
+      "import": [null]
+    }
+  },
+  "error": {
+    "schemaLocation": "#/definitions/Import/items",
+    "pointerToViolation": "#/hazelcast/import/0",
+    "causingExceptions": [],
+    "keyword": "type",
+    "message": "expected type: String, found: Null"
+  }
+}

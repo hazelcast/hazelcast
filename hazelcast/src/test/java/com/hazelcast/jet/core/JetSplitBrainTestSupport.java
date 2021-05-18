@@ -69,6 +69,7 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
      * are initialized with the other brain's addresses being blacklisted.
      */
     private boolean unblacklistHint;
+    protected Config config;
 
     @Before
     public final void setUpInternals() {
@@ -105,7 +106,7 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
         checkPositive(firstSubClusterSize, "invalid first sub cluster size: " + firstSubClusterSize);
         checkPositive(secondSubClusterSize, "invalid second sub cluster size: " + secondSubClusterSize);
 
-        Config config = createConfig();
+        config = createConfig();
         int clusterSize = firstSubClusterSize + secondSubClusterSize;
         JetInstance[] instances = startInitialCluster(config, clusterSize);
 

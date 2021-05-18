@@ -1,0 +1,19 @@
+{
+  "instance": {
+    "hazelcast": {
+      "flake-id-generator": {
+        "my-fig": {
+          "prefetch-count": 100,
+          "prefetch-validity-millis": 600000,
+          "epoch-start": 1514764800000,
+          "node-id-offset": 0,
+          "bits-sequence": 6,
+          "bits-node-id": 16,
+          "allowed-future-millis": 15000,
+          "statistics-enabled": true
+        }
+      }
+    }
+  },
+  "error": null
+}

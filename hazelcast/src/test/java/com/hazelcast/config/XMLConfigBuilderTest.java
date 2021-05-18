@@ -1640,8 +1640,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + HAZELCAST_END_TAG;
     }
 
-    @Override
-    protected Config buildConfig(String xml) {
+    protected static Config buildConfig(String xml) {
         ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
         XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
         return configBuilder.build();
@@ -3856,4 +3855,5 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
         return new InMemoryXmlConfig(xml);
     }
+
 }

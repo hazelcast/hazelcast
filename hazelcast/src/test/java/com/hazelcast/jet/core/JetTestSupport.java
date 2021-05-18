@@ -26,11 +26,14 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.LightJob;
 import com.hazelcast.jet.function.RunnableEx;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.JobExecutionRecord;
 import com.hazelcast.jet.impl.JobExecutionService;
 import com.hazelcast.jet.impl.JobRepository;
+import com.hazelcast.jet.impl.pipeline.transform.BatchSourceTransform;
+import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.IMap;
@@ -186,10 +189,25 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
         JobExecutionService service = getNodeEngineImpl(instance)
                 .<JetService>getService(JetService.SERVICE_NAME)
                 .getJobExecutionService();
+        long nullSince = Long.MIN_VALUE;
         do {
             assertJobStatusEventually(job, RUNNING);
             // executionId can be null if the execution just terminated
             executionId = service.getExecutionIdForJobId(job.getId());
+            if (executionId == null) {
+                if (nullSince == Long.MIN_VALUE) {
+                    nullSince = System.nanoTime();
+                } else {
+                    if (NANOSECONDS.toSeconds(System.nanoTime() - nullSince) > 10) {
+                        // Because we check the execution ID, make sure the execution is running on
+                        // the given instance. E.g. a job with a non-distributed source and no
+                        // distributed edge will complete on all but one members immediately.
+                        throw new RuntimeException("The executionId is null for 10 secs - is the job running on all members?");
+                    }
+                }
+            } else {
+                nullSince = Long.MIN_VALUE;
+            }
         } while (executionId == null || executionId.equals(ignoredExecutionId));
         return executionId;
     }
@@ -353,10 +371,10 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
     }
 
     /**
-     * Cancel the job and wait until it cancels using Job.join(), ignoring the
+     * Cancel the job and wait until it cancels using LightJob.join(), ignoring the
      * CancellationException.
      */
-    public static void cancelAndJoin(@Nonnull Job job) {
+    public static void cancelAndJoin(@Nonnull LightJob job) {
         job.cancel();
         try {
             job.join();
@@ -369,5 +387,9 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
         assertEquals(String.format("Expected collection: `%s`, actual collection: `%s`", expected, actual),
                 expected.size(), actual.size());
         assertContainsAll(expected, actual);
+    }
+
+    public static <T> ProcessorMetaSupplier processorFromPipelineSource(BatchSource<T> source) {
+        return ((BatchSourceTransform<T>) source).metaSupplier;
     }
 }

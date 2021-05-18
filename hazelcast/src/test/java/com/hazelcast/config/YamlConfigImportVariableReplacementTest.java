@@ -578,10 +578,10 @@ public class YamlConfigImportVariableReplacementTest extends AbstractConfigImpor
 
         String path = helper.givenConfigFileInWorkDir("foo.bar", importedYaml).getAbsolutePath();
 
-        String yaml = ""
-                + "import:\n"
-                + "  - " + "${file}\n"
-                + "instance-name: my-instance";
+        String yaml = "hazelcast:\n"
+                + "  import:\n"
+                + "    - " + "${file}\n"
+                + "  instance-name: my-instance";
         Config config = buildConfig(yaml, "file", path);
         assertEquals("my-instance", config.getInstanceName());
         assertEquals("value1", config.getProperty("prop1"));

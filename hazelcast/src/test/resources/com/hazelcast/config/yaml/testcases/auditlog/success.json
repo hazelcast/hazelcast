@@ -1,0 +1,14 @@
+{
+  "instance": {
+    "hazelcast": {
+      "auditlog": {
+        "enabled": true,
+        "factory-class-name": "MyFactory",
+        "properties": {
+          "key": "value"
+        }
+      }
+    }
+  },
+  "error": null
+}

@@ -42,8 +42,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
 import javax.annotation.Nonnull;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Function;
@@ -53,7 +51,6 @@ import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.core.metrics.JobMetrics_BatchTest.JOB_CONFIG_WITH_METRICS;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
-import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -119,26 +116,6 @@ public class JobMetrics_MiscTest extends TestInClusterSupport {
     }
 
     @Test
-    public void when_jobFailedBeforeStarted_then_minimalMetrics() {
-        DAG dag = new DAG();
-        RuntimeException expected = new RuntimeException("foo");
-        // Job will fail in ProcessorSupplier.init method, which is called before InitExecutionOp is
-        // sent. That is before any member ever knew of the job.
-        dag.newVertex("v1", new MockPS(MockP::new, 1).setInitError(expected));
-
-        Job job = jet().newJob(dag, JOB_CONFIG_WITH_METRICS);
-        try {
-            job.join();
-            fail("job didn't fail");
-        } catch (Exception e) {
-            assertContains(e.toString(), expected.toString());
-        }
-
-        assertEquals(new HashSet<>(Arrays.asList(MetricNames.EXECUTION_START_TIME, MetricNames.EXECUTION_COMPLETION_TIME)),
-                        job.getMetrics().metrics());
-    }
-
-    @Test
     public void when_jobNotYetRunning_then_emptyMetrics() {
         DAG dag = new DAG();
         BlockingInInitMetaSupplier.latch = new CountDownLatch(1);
@@ -166,42 +143,6 @@ public class JobMetrics_MiscTest extends TestInClusterSupport {
         assertJobHasMetrics(job, true);
         // If there would be multiple metrics with the same name, then an
         // assertion error would be thrown when merging them.
-    }
-
-    @Test
-    public void when_jobSuspended_then_lastExecutionMetricsReturned() throws Throwable {
-        DAG dag = new DAG();
-        Vertex v1 = dag.newVertex("v1", TestProcessors.MockP::new);
-        Vertex v2 = dag.newVertex("v2", (SupplierEx<Processor>) TestProcessors.NoOutputSourceP::new);
-        dag.edge(between(v1, v2));
-
-        //init
-        Job job = jet().newJob(dag, JOB_CONFIG_WITH_METRICS);
-
-        //when
-        TestProcessors.NoOutputSourceP.executionStarted.await();
-        //then
-        assertJobStatusEventually(job, JobStatus.RUNNING);
-        assertTrueEventually(() -> assertJobHasMetrics(job, false));
-
-        //when
-        job.suspend();
-        //then
-        assertJobStatusEventually(job, SUSPENDED);
-        assertTrueEventually(() -> assertJobHasMetrics(job, false));
-
-        //when
-        job.resume();
-        //then
-        assertJobStatusEventually(job, RUNNING);
-        assertTrueEventually(() -> assertJobHasMetrics(job, false));
-
-        //when
-        TestProcessors.NoOutputSourceP.proceedLatch.countDown();
-        job.join();
-        //then
-        assertJobStatusEventually(job, JobStatus.COMPLETED);
-        assertJobHasMetrics(job, true);
     }
 
     @Test
@@ -261,22 +202,6 @@ public class JobMetrics_MiscTest extends TestInClusterSupport {
         TestProcessors.NoOutputSourceP.proceedLatch.countDown();
         job.join();
         assertJobStatusEventually(job, JobStatus.COMPLETED);
-        assertJobHasMetrics(job, true);
-    }
-
-    @Test
-    public void when_jobFailed_then_MetricsReturned() {
-        DAG dag = new DAG();
-        RuntimeException e = new RuntimeException("mock error");
-        Vertex source = dag.newVertex("source", TestProcessors.ListSource.supplier(singletonList(1)));
-        Vertex process = dag.newVertex(
-                "faulty",
-                new TestProcessors.MockPMS(() ->
-                        new TestProcessors.MockPS(() -> new TestProcessors.MockP().setProcessError(e), MEMBER_COUNT)));
-        dag.edge(between(source, process));
-
-        Job job = runJobExpectFailure(dag, e);
-        assertJobStatusEventually(job, JobStatus.FAILED);
         assertJobHasMetrics(job, true);
     }
 

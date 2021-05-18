@@ -848,7 +848,7 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void assertContains(String actual, String expected) {
-        if (!actual.contains(expected)) {
+        if (actual == null || !actual.contains(expected)) {
             fail(format("'%s' didn't contain expected '%s'", actual, expected));
         }
     }

@@ -271,3 +271,36 @@ methods:
           nullable: false
           since: 2.0
           doc: ''
+  - id: 15
+    name: submitLightJob
+    since: 2.3
+    doc: ''
+    request:
+      retryable: true
+      partitionIdentifier: -1
+      params:
+        - name: jobId
+          type: long
+          nullable: false
+          since: 2.3
+          doc: ''
+        - name: dag
+          type: Data
+          nullable: false
+          since: 2.3
+          doc: ''
+    response: {}
+  - id: 16
+    name: cancelLightJob
+    since: 2.3
+    doc: ''
+    request:
+      retryable: true
+      partitionIdentifier: -1
+      params:
+        - name: jobId
+          type: long
+          nullable: false
+          since: 2.3
+          doc: ''
+    response: {}

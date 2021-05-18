@@ -246,8 +246,6 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     @Test
     public abstract void testCachePartitionLostListenerConfigReadOnly();
 
-    protected abstract Config buildConfig(String xml);
-
     @Test
     public abstract void readMulticastConfig();
 

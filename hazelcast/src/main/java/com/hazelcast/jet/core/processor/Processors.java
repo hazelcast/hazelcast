@@ -18,7 +18,6 @@ package com.hazelcast.jet.core.processor;
 
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.BiPredicateEx;
-import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
 import com.hazelcast.function.SupplierEx;
@@ -30,14 +29,11 @@ import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.EventTimePolicy;
-import com.hazelcast.jet.core.Inbox;
-import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.ResettableSingletonTraverser;
 import com.hazelcast.jet.core.SlidingWindowPolicy;
 import com.hazelcast.jet.core.TimestampKind;
-import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.function.KeyedWindowResultFunction;
 import com.hazelcast.jet.datamodel.KeyedWindowResult;
 import com.hazelcast.jet.function.TriFunction;
@@ -46,6 +42,7 @@ import com.hazelcast.jet.impl.processor.AsyncTransformUsingServiceOrderedP;
 import com.hazelcast.jet.impl.processor.AsyncTransformUsingServiceUnorderedP;
 import com.hazelcast.jet.impl.processor.GroupP;
 import com.hazelcast.jet.impl.processor.InsertWatermarksP;
+import com.hazelcast.jet.impl.processor.NoopP;
 import com.hazelcast.jet.impl.processor.SessionWindowP;
 import com.hazelcast.jet.impl.processor.SlidingWindowP;
 import com.hazelcast.jet.impl.processor.SortP;
@@ -994,31 +991,6 @@ public final class Processors {
      */
     @Nonnull
     public static SupplierEx<Processor> noopP() {
-        return NoopP::new;
-    }
-
-    /** A no-operation processor. See {@link #noopP()} */
-    private static class NoopP implements Processor {
-        private Outbox outbox;
-
-        @Override
-        public void init(@Nonnull Outbox outbox, @Nonnull Context context) throws Exception {
-            this.outbox = outbox;
-        }
-
-        @Override
-        public void process(int ordinal, @Nonnull Inbox inbox) {
-            inbox.drain(ConsumerEx.noop());
-        }
-
-        @Override
-        public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
-            return outbox.offer(watermark);
-        }
-
-        @Override
-        public void restoreFromSnapshot(@Nonnull Inbox inbox) {
-            inbox.drain(ConsumerEx.noop());
-        }
+        return new NoopP.NoopPSupplier();
     }
 }
