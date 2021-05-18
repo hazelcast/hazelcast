@@ -588,6 +588,10 @@ abstract class JetPlan extends SqlPlan {
             this.permissions = permissions;
         }
 
+        public Operation getOperation() {
+            return operation;
+        }
+
         QueryParameterMetadata getParameterMetadata() {
             return parameterMetadata;
         }

@@ -215,17 +215,21 @@ class JetSqlBackend implements SqlBackend {
         QueryParseResult dmlParseResult =
                 new QueryParseResult(source, parseResult.getParameterMetadata(), parseResult.getValidator(), this, false);
         QueryConvertResult dmlConvertedResult = context.convert(dmlParseResult);
-        DmlPlan dmlPlan = sinkPlan(
+        JetPlan dmlPlan = toPlan(
+                null,
                 parseResult.getParameterMetadata(),
                 dmlConvertedResult.getRel(),
-                context
+                dmlConvertedResult.getFieldNames(),
+                context,
+                dmlParseResult.isInfiniteRows()
         );
+        assert dmlPlan instanceof DmlPlan && ((DmlPlan) dmlPlan).getOperation() == Operation.INSERT;
 
         return new CreateJobPlan(
                 planKey,
                 sqlCreateJob.jobConfig(),
                 sqlCreateJob.ifNotExists(),
-                dmlPlan,
+                (DmlPlan) dmlPlan,
                 planExecutor
         );
     }
@@ -254,23 +258,6 @@ class JetSqlBackend implements SqlBackend {
 
     private SqlPlan toShowStatementPlan(PlanKey planKey, SqlShowStatement sqlNode) {
         return new ShowStatementPlan(planKey, sqlNode.getTarget(), planExecutor);
-    }
-
-    private DmlPlan sinkPlan(
-            QueryParameterMetadata parameterMetadata,
-            RelNode rel,
-            OptimizerContext context
-    ) {
-        PhysicalRel physicalRel = optimize(parameterMetadata, rel, context);
-
-        assert physicalRel instanceof TableModify;
-
-        Address localAddress = nodeEngine.getThisAddress();
-        List<Permission> permissions = extractPermissions(physicalRel);
-
-        CreateDagVisitor visitor = traverseRel(physicalRel, localAddress, parameterMetadata);
-        return new DmlPlan(Operation.INSERT, null, parameterMetadata, visitor.getObjectKeys(), visitor.getDag(), planExecutor,
-                permissions);
     }
 
     private JetPlan toPlan(
