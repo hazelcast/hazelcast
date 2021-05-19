@@ -40,10 +40,20 @@ public final class SchemaWriter implements CompactWriter {
     }
 
     public Schema build() {
+        List<FieldDescriptor> booleanFieldsList = fieldDefinitionMap.values().stream()
+                .filter(fieldDescriptor -> fieldDescriptor.getType().equals(FieldType.BOOLEAN))
+                .collect(Collectors.toList());
+        int offset = 0;
+        for (FieldDescriptor fieldDefinition : booleanFieldsList) {
+            fieldDefinition.setOffset(offset);
+            offset += 1;
+        }
+        offset = offset == 0 ? 0 : (offset / Byte.SIZE) + 1;
+
         List<FieldDescriptor> definiteSizedList = fieldDefinitionMap.values().stream()
                 .filter(fieldDescriptor -> fieldDescriptor.getType().hasDefiniteSize())
+                .filter(fieldDescriptor -> !fieldDescriptor.getType().equals(FieldType.BOOLEAN))
                 .sorted(Comparator.comparingInt(o -> o.getType().getTypeSize())).collect(Collectors.toList());
-        int offset = 0;
         for (FieldDescriptor fieldDefinition : definiteSizedList) {
             fieldDefinition.setOffset(offset);
             offset += fieldDefinition.getType().getTypeSize();

@@ -33,6 +33,7 @@ import java.time.OffsetDateTime;
 import java.util.Collection;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
+import static com.hazelcast.internal.nio.Bits.NULL_ARRAY_LENGTH;
 import static com.hazelcast.nio.serialization.FieldType.BOOLEAN;
 import static com.hazelcast.nio.serialization.FieldType.BOOLEAN_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.BYTE;
@@ -79,10 +80,17 @@ public class DefaultCompactWriter implements CompactWriter {
         this.serializer = serializer;
         this.out = out;
         this.schema = schema;
-        this.fieldPositions = new int[schema.getNumberOfVariableLengthFields()];
-        offset = out.position() + INT_SIZE_IN_BYTES;
-        //skip for length and primitives
-        out.writeZeroBytes(schema.getPrimitivesLength() + INT_SIZE_IN_BYTES);
+        if (schema.getNumberOfVariableLengthFields() != 0) {
+            this.fieldPositions = new int[schema.getNumberOfVariableLengthFields()];
+            offset = out.position() + INT_SIZE_IN_BYTES;
+            //skip for length and primitives
+            out.writeZeroBytes(schema.getPrimitivesLength() + INT_SIZE_IN_BYTES);
+        } else {
+            this.fieldPositions = null;
+            offset = out.position();
+            //skip for  primitives
+            out.writeZeroBytes(schema.getPrimitivesLength());
+        }
         this.includeSchemaOnBinary = includeSchemaOnBinary;
         if (isDebug) {
             System.out.println("DEBUG WRITE " + schema.getTypeName() + "  offset  " + offset + " " + out);
@@ -97,6 +105,10 @@ public class DefaultCompactWriter implements CompactWriter {
 
     public void end() {
         try {
+            if (schema.getNumberOfVariableLengthFields() == 0) {
+                //There are no var length
+                return;
+            }
             for (int i = fieldPositions.length - 1; i >= 0; i--) {
                 out.writeInt(fieldPositions[i]);
             }
@@ -135,9 +147,13 @@ public class DefaultCompactWriter implements CompactWriter {
 
     @Override
     public void writeBoolean(String fieldName, boolean value) {
-        int position = getFixedLengthFieldPosition(fieldName, BOOLEAN);
+        FieldDescriptor fieldDefinition = checkFieldDefinition(fieldName, BOOLEAN);
+        int offsetInBits = fieldDefinition.getOffset();
+        int offsetInBytes = offsetInBits == 0 ? 0 : (offsetInBits / Byte.SIZE);
+        int writeOffset = offsetInBytes + offset;
+        int booleanOffsetWithinLastByte = offsetInBits % Byte.SIZE;
         try {
-            out.writeBoolean(position, value);
+            out.writeBooleanBit(writeOffset, booleanOffsetWithinLastByte, value);
         } catch (IOException e) {
             throw illegalStateException(e);
         }
@@ -290,7 +306,7 @@ public class DefaultCompactWriter implements CompactWriter {
 
     @Override
     public void writeBooleanArray(String fieldName, boolean[] values) {
-        writeVariableLength(fieldName, BOOLEAN_ARRAY, values, ObjectDataOutput::writeBooleanArray);
+        writeVariableLength(fieldName, BOOLEAN_ARRAY, values, DefaultCompactWriter::writeBooleanBits);
     }
 
     @Override
@@ -487,6 +503,25 @@ public class DefaultCompactWriter implements CompactWriter {
         out.writeInt(value.length);
         for (OffsetDateTime offsetDateTime : value) {
             IOUtil.writeOffsetDateTime(out, offsetDateTime);
+        }
+    }
+
+    static void writeBooleanBits(BufferObjectDataOutput out, boolean[] booleans) throws IOException {
+        int len = (booleans != null) ? booleans.length : NULL_ARRAY_LENGTH;
+        out.writeInt(len);
+        int position = out.position();
+        if (len > 0) {
+            int index = 0;
+            out.writeZeroBytes(1);
+            for (boolean v : booleans) {
+                if (index == Byte.SIZE) {
+                    index = 0;
+                    out.writeZeroBytes(1);
+                    position++;
+                }
+                out.writeBooleanBit(position, index, v);
+                index++;
+            }
         }
     }
 

@@ -30,6 +30,7 @@ import com.hazelcast.nio.serialization.compact.CompactWriter;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import example.serialization.BitsDTO;
 import example.serialization.EmployeeDTO;
 import example.serialization.EmployeeGroup;
 import example.serialization.EmployeeWithSerializerDTO;
@@ -139,6 +140,30 @@ public class CompactStreamSerializerTest {
         Object object = serializationService.toObject(data);
         EmployerDTO o = (EmployerDTO) object;
         assertEquals(employerDTO, o);
+    }
+
+    @Test
+    public void testBits() {
+        SerializationService serializationService = new DefaultSerializationServiceBuilder()
+                .setSchemaService(schemaService).build();
+
+        BitsDTO bitsDTO = new BitsDTO();
+        bitsDTO.a = true;
+        bitsDTO.h = true;
+        bitsDTO.booleans = new boolean[8];
+        bitsDTO.booleans[0] = true;
+        bitsDTO.booleans[4] = true;
+
+
+        Data data = serializationService.toData(bitsDTO);
+
+        // hash(4) + typeid(4) + schemaId(8) + (4 byte length) + (2 bytes for 9 bits) +
+        // (4 byte length of byte array) + (1 byte for booleans array of 8 bits) + (4 byte offset bytes)
+        assertEquals(31, data.toByteArray().length);
+
+        Object object = serializationService.toObject(data);
+        BitsDTO o = (BitsDTO) object;
+        assertEquals(bitsDTO, o);
     }
 
 
