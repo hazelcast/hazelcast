@@ -120,7 +120,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
     }
 
     // overridden in ee
-    public void publishWanEvent(ItemEventType eventType, Data data, boolean primaryReplica) {
+    public void publishWanEvent(ItemEventType eventType, long itemId, Data data, boolean primaryReplica) {
         // Intentionally empty.
     }
 

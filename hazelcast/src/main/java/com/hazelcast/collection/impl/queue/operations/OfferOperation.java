@@ -66,7 +66,7 @@ public final class OfferOperation extends QueueBackupAwareOperation
         LocalQueueStatsImpl stats = getQueueService().getLocalQueueStatsImpl(name);
         if (Boolean.TRUE.equals(response)) {
             stats.incrementOffers();
-            publishEvent(ItemEventType.ADDED, data);
+            publishEvent(ItemEventType.ADDED, itemId, data);
         } else {
             stats.incrementRejectedOffers();
         }

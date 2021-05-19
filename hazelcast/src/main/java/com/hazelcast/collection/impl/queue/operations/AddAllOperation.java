@@ -21,13 +21,13 @@ import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.internal.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.spi.impl.operationservice.Notifier;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
-import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -66,8 +66,8 @@ public class AddAllOperation extends QueueBackupAwareOperation implements Notifi
         LocalQueueStatsImpl stats = getQueueService().getLocalQueueStatsImpl(name);
         stats.incrementOtherOperations();
         if (Boolean.TRUE.equals(response)) {
-            for (Data data : dataList) {
-                publishEvent(ItemEventType.ADDED, data);
+            for (Map.Entry<Long, Data> entry : dataMap.entrySet()) {
+                publishEvent(ItemEventType.ADDED, entry.getKey(), entry.getValue());
             }
         }
     }

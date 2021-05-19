@@ -59,7 +59,7 @@ public class RemoveOperation extends QueueBackupAwareOperation implements Notifi
         LocalQueueStatsImpl stats = getQueueService().getLocalQueueStatsImpl(name);
         stats.incrementOtherOperations();
         if (itemId != -1) {
-            publishEvent(ItemEventType.REMOVED, data);
+            publishEvent(ItemEventType.REMOVED, itemId, data);
         }
     }
 

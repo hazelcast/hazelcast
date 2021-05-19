@@ -53,15 +53,15 @@ public class DrainOperation extends QueueBackupAwareOperation implements Notifie
     public void run() throws Exception {
         QueueContainer queueContainer = getContainer();
         dataMap = queueContainer.drain(maxSize);
-        response = new SerializableList(new ArrayList<Data>(dataMap.values()));
+        response = new SerializableList(new ArrayList<>(dataMap.values()));
     }
 
     @Override
     public void afterRun() throws Exception {
         LocalQueueStatsImpl stats = getQueueService().getLocalQueueStatsImpl(name);
         stats.incrementOtherOperations();
-        for (Data data : dataMap.values()) {
-            publishEvent(ItemEventType.REMOVED, data);
+        for (Map.Entry<Long, Data> entry : dataMap.entrySet()) {
+            publishEvent(ItemEventType.REMOVED, entry.getKey(), entry.getValue());
         }
     }
 

@@ -32,6 +32,8 @@ public enum ItemEventType {
 
     private int type;
 
+    private static final ItemEventType[] VALUES = values();
+
     ItemEventType(final int type) {
         this.type = type;
     }
@@ -41,7 +43,7 @@ public enum ItemEventType {
     }
 
     public static ItemEventType getByType(final int eventType) {
-        for (ItemEventType entryEventType : values()) {
+        for (ItemEventType entryEventType : VALUES) {
             if (entryEventType.type == eventType) {
                 return entryEventType;
             }

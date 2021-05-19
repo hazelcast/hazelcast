@@ -21,10 +21,10 @@ import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.internal.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.spi.impl.operationservice.Notifier;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
-import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import java.util.Map;
 
@@ -53,8 +53,9 @@ public class ClearOperation extends QueueBackupAwareOperation implements Notifie
     public void afterRun() throws Exception {
         LocalQueueStatsImpl stats = getQueueService().getLocalQueueStatsImpl(name);
         stats.incrementOtherOperations();
-        for (Data data : dataMap.values()) {
-            publishEvent(ItemEventType.REMOVED, data);
+
+        for (Map.Entry<Long, Data> entry : dataMap.entrySet()) {
+            publishEvent(ItemEventType.REMOVED, entry.getKey(), entry.getValue());
         }
     }
 

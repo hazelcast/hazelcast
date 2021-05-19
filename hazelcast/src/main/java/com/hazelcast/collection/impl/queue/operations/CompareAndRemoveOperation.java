@@ -64,8 +64,8 @@ public class CompareAndRemoveOperation extends QueueBackupAwareOperation impleme
         LocalQueueStatsImpl stats = getQueueService().getLocalQueueStatsImpl(name);
         stats.incrementOtherOperations();
         if (hasListener()) {
-            for (Data data : dataMap.values()) {
-                publishEvent(ItemEventType.REMOVED, data);
+            for (Map.Entry<Long, Data> entry : dataMap.entrySet()) {
+                publishEvent(ItemEventType.REMOVED, entry.getKey(), entry.getValue());
             }
         }
     }

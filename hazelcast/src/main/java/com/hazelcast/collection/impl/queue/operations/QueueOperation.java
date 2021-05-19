@@ -97,7 +97,7 @@ public abstract class QueueOperation extends AbstractNamedOperation
         return registrations.size() > 0;
     }
 
-    public void publishEvent(ItemEventType eventType, Data data) {
+    public void publishEvent(ItemEventType eventType, long itemId, Data data) {
         EventService eventService = getNodeEngine().getEventService();
         Collection<EventRegistration> registrations = eventService.getRegistrations(getServiceName(), name);
         Address thisAddress = getNodeEngine().getThisAddress();
@@ -108,7 +108,7 @@ public abstract class QueueOperation extends AbstractNamedOperation
         }
 
         // TODO write backup replica handling code parts
-        getContainer().publishWanEvent(eventType, data, true);
+        getContainer().publishWanEvent(eventType, itemId, data, true);
     }
 
     protected QueueService getQueueService() {

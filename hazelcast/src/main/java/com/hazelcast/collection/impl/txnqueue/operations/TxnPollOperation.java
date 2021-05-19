@@ -21,10 +21,10 @@ import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.internal.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.spi.impl.operationservice.Notifier;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
-import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 /**
  * Poll operation for the transactional queue.
@@ -54,7 +54,7 @@ public class TxnPollOperation extends BaseTxnQueueOperation implements Notifier,
             queueStats.incrementEmptyPolls();
         } else {
             queueStats.incrementPolls();
-            publishEvent(ItemEventType.REMOVED, data);
+            publishEvent(ItemEventType.REMOVED, getItemId(), data);
         }
     }
 

@@ -21,13 +21,13 @@ import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.internal.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.spi.impl.operationservice.Notifier;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
-import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.transaction.TransactionalQueue;
 
 import java.io.IOException;
@@ -62,7 +62,7 @@ public class TxnOfferOperation extends BaseTxnQueueOperation implements Notifier
         LocalQueueStatsImpl queueStats = getQueueService().getLocalQueueStatsImpl(name);
         if (Boolean.TRUE.equals(response)) {
             queueStats.incrementOffers();
-            publishEvent(ItemEventType.ADDED, data);
+            publishEvent(ItemEventType.ADDED, getItemId(), data);
         } else {
             queueStats.incrementRejectedOffers();
         }

@@ -57,7 +57,7 @@ public final class PollOperation extends QueueBackupAwareOperation
         LocalQueueStatsImpl stats = getQueueService().getLocalQueueStatsImpl(name);
         if (response != null) {
             stats.incrementPolls();
-            publishEvent(ItemEventType.REMOVED, item.getSerializedObject());
+            publishEvent(ItemEventType.REMOVED, item.getItemId(), item.getSerializedObject());
         } else {
             stats.incrementEmptyPolls();
         }
