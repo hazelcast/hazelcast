@@ -61,9 +61,13 @@ import static java.util.stream.Collectors.toList;
  * it just returns all map entries which it can read.
  */
 public final class OnHeapMapScanP extends AbstractProcessor {
+    private static final int MAX_ROWS_SCANNED = 10_000;
+
     private final MapScanMetadata mapScanMetadata;
     private final List<Integer> partitions;
     private IMapTraverser traverser;
+    private boolean done;
+    private int remainingBatch;
 
     private OnHeapMapScanP(
             @Nonnull MapScanMetadata mapScanMetadata,
@@ -87,10 +91,11 @@ public final class OnHeapMapScanP extends AbstractProcessor {
 
     @Override
     public boolean complete() {
-        return emitFromTraverser(traverser);
+        remainingBatch = MAX_ROWS_SCANNED;
+        return emitFromTraverser(traverser) && done;
     }
 
-    private static class IMapTraverser implements Traverser<Object[]> {
+    private class IMapTraverser implements Traverser<Object[]> {
         private final KeyValueIterator iterator;
         private final Expression<Boolean> filter;
         private final List<Expression<?>> projections;
@@ -123,6 +128,10 @@ public final class OnHeapMapScanP extends AbstractProcessor {
         @Override
         public Object[] next() {
             while (iterator.tryAdvance()) {
+                if (--remainingBatch == 0) {
+                    // limit the number of rows scanned in one call to not break the cooperative contract
+                    return null;
+                }
                 Object[] row = prepareRow(
                         iterator.getKey(),
                         iterator.getKeyData(),
@@ -133,6 +142,7 @@ public final class OnHeapMapScanP extends AbstractProcessor {
                     return row;
                 }
             }
+            done = true;
             return null;
         }
 

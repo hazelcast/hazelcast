@@ -58,6 +58,7 @@ import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 
 @RunWith(Parameterized.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -218,6 +219,37 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
                         )
                 ),
                 new ConstantPredicateExpression(true)
+        );
+
+        TestSupport
+                .verifyProcessor(adaptSupplier(OnHeapMapScanP.onHeapMapScanP(scanMetadata)))
+                .jetInstance(instance())
+                .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
+                .outputChecker(LENIENT_SAME_ITEMS_ANY_ORDER)
+                .disableSnapshots()
+                .disableProgressAssertion()
+                .expectOutput(expected);
+    }
+
+    @Test
+    public void test_filterMatchingOneRow() {
+        for (int i = 0; i < count; i++) {
+            map.put(i, "value-" + i);
+        }
+        map.put(-1, "value--1");
+        List<Object[]> expected = singletonList(new Object[]{-1, "value--1"});
+
+        MapScanMetadata scanMetadata = new MapScanMetadata(
+                map.getName(),
+                GenericQueryTargetDescriptor.DEFAULT,
+                GenericQueryTargetDescriptor.DEFAULT,
+                Arrays.asList(QueryPath.KEY_PATH, valuePath("this")),
+                Arrays.asList(QueryDataType.INT, VARCHAR),
+                asList(
+                        ColumnExpression.create(0, INT),
+                        ColumnExpression.create(1, VARCHAR)
+                ),
+                new FunctionalPredicateExpression(row -> (int) row.get(0) == -1)
         );
 
         TestSupport
