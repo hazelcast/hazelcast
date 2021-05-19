@@ -209,41 +209,41 @@ public class MembershipManager {
     /**
      * Sends the current member list to the {@code target}. Called on the master node.
      *
-     * @param target the destination for the member update operation
+     * @param callerAliases all known addresses of the destination for the member update operation
      */
-    public void sendMemberListToMember(Address target) {
+    public void sendMemberListToMember(List<Address> callerAliases) {
         clusterServiceLock.lock();
         try {
             if (!clusterService.isMaster() || !clusterService.isJoined()) {
                 if (logger.isFineEnabled()) {
-                    logger.fine("Cannot publish member list to " + target + ". Is-master: "
+                    logger.fine("Cannot publish member list to " + callerAliases.get(0) + ". Is-master: "
                             + clusterService.isMaster() + ", joined: " + clusterService.isJoined());
                 }
 
                 return;
             }
-            if (clusterService.getThisAddress().equals(target)) {
+            if (callerAliases.stream().anyMatch(clusterService.getThisAddress()::equals)) {
                 return;
             }
 
             MemberMap memberMap = memberMapRef.get();
-            MemberImpl member = memberMap.getMember(target);
+            MemberImpl member = memberMap.getMember(callerAliases);
             if (member == null) {
                 if (logger.isFineEnabled()) {
-                    logger.fine("Not member: " + target + ", cannot send member list.");
+                    logger.fine("Not member: " + callerAliases.get(0) + ", cannot send member list.");
                 }
 
                 return;
             }
 
             if (logger.isFineEnabled()) {
-                logger.fine("Sending member list to member: " + target + " " + memberListString());
+                logger.fine("Sending member list to member: " + callerAliases.get(0) + " " + memberListString());
             }
 
             MembersUpdateOp op = new MembersUpdateOp(member.getUuid(), memberMap.toMembersView(),
                     clusterService.getClusterTime(), null, false);
             op.setCallerUuid(clusterService.getThisUuid());
-            nodeEngine.getOperationService().send(op, target);
+            nodeEngine.getOperationService().send(op, member.getAddress());
         } finally {
             clusterServiceLock.unlock();
         }
@@ -1155,15 +1155,15 @@ public class MembershipManager {
         }
     }
 
-    public MembersView promoteToDataMember(Address address, UUID uuid) {
+    public MembersView promoteToDataMember(List<Address> addresses, UUID uuid) {
         clusterServiceLock.lock();
         try {
             ensureLiteMemberPromotionIsAllowed();
 
             MemberMap memberMap = getMemberMap();
-            MemberImpl member = memberMap.getMember(address, uuid);
+            MemberImpl member = memberMap.getMember(addresses, uuid);
             if (member == null) {
-                throw new IllegalStateException(uuid + "/" + address + " is not a member!");
+                throw new IllegalStateException(uuid + "/" + addresses.get(0) + " is not a member!");
             }
 
             if (!member.isLiteMember()) {

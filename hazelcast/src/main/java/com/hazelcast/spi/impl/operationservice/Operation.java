@@ -429,19 +429,27 @@ public abstract class Operation implements DataSerializable, Tenantable {
     }
 
     public final List<Address> getAllKnownAliases(Address caller) {
-        if (connection instanceof TcpServerConnection) {
-            List<Address> addresses = new ArrayList<>();
-            addresses.add(caller);
+        if (caller == null) {
+            return Collections.emptyList();
+        }
 
+        if (connection instanceof TcpServerConnection) {
             TcpServerConnection tcpServerConnection = (TcpServerConnection) connection;
             TcpServerConnectionManager tcpServerConnectionManager = tcpServerConnection.getConnectionManager();
             Set<Address> aliases = tcpServerConnectionManager.getKnownAliases(tcpServerConnection);
-            addresses.addAll(aliases.stream().filter(a -> !a.equals(caller)).collect(Collectors.toSet()));
+            if (aliases.size() == 1) {
+                assert aliases.iterator().next().equals(caller);
+                //optimization to avoid full blown array list creation
+                return Collections.singletonList(caller);
+            }
 
+            List<Address> addresses = new ArrayList<>();
+            addresses.add(caller);
+            addresses.addAll(aliases.stream().filter(a -> !a.equals(caller)).collect(Collectors.toSet()));
             return addresses;
-        } else {
-            return Collections.singletonList(caller);
         }
+
+        return Collections.singletonList(caller);
     }
 
     public final Address getCallerAddress() {
