@@ -65,7 +65,7 @@ public class SyncStateOperation
 
         if (partitionId >= 0) {
             Address partitionOwner = getNodeEngine().getPartitionService().getPartitionOwner(partitionId);
-            shouldRun = shouldRun || getCallerAddress().equals(partitionOwner);
+            shouldRun = shouldRun || getAllKnownAliases(getCallerAddress()).stream().anyMatch(partitionOwner::equals);
         }
 
         if (shouldRun) {

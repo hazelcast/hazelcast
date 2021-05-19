@@ -36,6 +36,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.util.List;
 import java.util.Objects;
 import java.util.function.UnaryOperator;
 
@@ -64,14 +65,14 @@ public class CompleteExecutionOperation extends Operation implements IdentifiedD
         ILogger logger = getLogger();
         JetService service = getService();
 
-        Address callerAddress = getCallerAddress();
-        logger.fine("Completing execution " + idToString(executionId) + " from caller " + callerAddress
+        List<Address> callerAliases = getAllKnownAliases(getCallerAddress());
+        logger.fine("Completing execution " + idToString(executionId) + " from caller " + callerAliases.get(0)
                 + ", error=" + error);
 
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         Address masterAddress = getNodeEngine().getMasterAddress();
-        if (!callerAddress.equals(masterAddress)) {
-            throw new IllegalStateException("Caller " + callerAddress + " cannot complete execution "
+        if (callerAliases.stream().noneMatch(masterAddress::equals)) {
+            throw new IllegalStateException("Caller " + callerAliases.get(0) + " cannot complete execution "
                     + idToString(executionId) + " because it is not master. Master is: " + masterAddress);
         }
 

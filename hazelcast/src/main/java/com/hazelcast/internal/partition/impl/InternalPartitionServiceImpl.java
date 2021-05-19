@@ -604,7 +604,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
             return false;
         }
 
-        if (!validateSenderIsMaster(sender, "partition table update")) {
+        if (!validateSenderIsMaster(Collections.singletonList(sender), "partition table update")) {
             return false;
         }
 
@@ -614,20 +614,20 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
         return applyNewPartitionTable(partitionState.getPartitions(), partitionState.getCompletedMigrations(), sender);
     }
 
-    private boolean validateSenderIsMaster(Address sender, String messageType) {
+    private boolean validateSenderIsMaster(List<Address> senderAliases, String messageType) {
         Address thisAddress = node.getThisAddress();
-        if (thisAddress.equals(latestMaster) && !thisAddress.equals(sender)) {
-            logger.warning("This is the master node and received " + messageType + " from " + sender
+        if (thisAddress.equals(latestMaster) && senderAliases.stream().noneMatch(thisAddress::equals)) {
+            logger.warning("This is the master node and received " + messageType + " from " + senderAliases.get(0)
                     + ". Ignoring incoming state! ");
             return false;
         } else {
-            if (!isMemberMaster(sender)) {
-                if (node.clusterService.getMember(sender) == null) {
+            if (!isMemberMaster(senderAliases)) {
+                if (node.clusterService.getMember(senderAliases) == null) {
                     logger.severe("Received " + messageType + " from an unknown member!"
-                            + " => Sender: " + sender + "! ");
+                            + " => Sender: " + senderAliases.get(0) + "! ");
                 } else {
                     logger.warning("Received " + messageType + ", but its sender doesn't seem to be master!"
-                            + " => Sender: " + sender + "! (Ignore if master node has changed recently.)");
+                            + " => Sender: " + senderAliases.get(0) + "! (Ignore if master node has changed recently.)");
                 }
                 return false;
             }
@@ -777,8 +777,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
     }
 
     @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
-    public boolean applyCompletedMigrations(Collection<MigrationInfo> migrations, Address sender) {
-        if (!validateSenderIsMaster(sender, "completed migrations")) {
+    public boolean applyCompletedMigrations(Collection<MigrationInfo> migrations, List<Address> senderAliases) {
+        if (!validateSenderIsMaster(senderAliases, "completed migrations")) {
             return false;
         }
         lock.lock();
@@ -803,7 +803,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
                 if (migration.getFinalPartitionVersion() <= currentVersion) {
                     if (logger.isFinestEnabled()) {
                         logger.finest("Already applied " + migration + ". Local version: " + currentVersion
-                                + ", Commit version: " + migration.getFinalPartitionVersion() + " Master: " + sender);
+                                + ", Commit version: " + migration.getFinalPartitionVersion()
+                                + " Master: " + senderAliases.get(0));
                     }
                     continue;
                 }
@@ -811,7 +812,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
                 if (migration.getInitialPartitionVersion() != currentVersion) {
                     logger.warning("Cannot apply migration commit: " + migration + ". Expected version: "
                             + migration.getInitialPartitionVersion() + ", current version: " + currentVersion
-                            + ", final version: " + migration.getFinalPartitionVersion() + ", Master: " + sender);
+                            + ", final version: " + migration.getFinalPartitionVersion() + ", Master: " + senderAliases.get(0));
                     appliedAllMigrations = false;
                     break;
                 }
@@ -1247,7 +1248,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
      * Last known master is updated under partition service lock,
      * when the former master leaves the cluster.
      */
-    public boolean isMemberMaster(Address address) {
+    private boolean isMemberMaster(Address address) {
         if (address == null) {
             return false;
         }
@@ -1264,10 +1265,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
     }
 
     @SuppressWarnings("checkstyle:npathcomplexity")
-    public boolean commitMigrationOnDestination(MigrationInfo migration, Address sender) {
+    public boolean commitMigrationOnDestination(MigrationInfo migration, List<Address> senderAliases) {
         lock.lock();
         try {
-            if (!validateSenderIsMaster(sender, "migration commit")) {
+            if (!validateSenderIsMaster(senderAliases, "migration commit")) {
                 return false;
             }
 
@@ -1278,20 +1279,21 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
 
             if (finalVersion == currentVersion) {
                 if (logger.isFineEnabled()) {
-                    logger.fine("Already applied migration commit. Version: " + currentVersion + ", Master: " + sender);
+                    logger.fine("Already applied migration commit. Version: " + currentVersion
+                            + ", Master: " + senderAliases.get(0));
                 }
                 return true;
             }
             if (finalVersion < currentVersion) {
                 if (logger.isFineEnabled()) {
                     logger.fine("Already applied migration commit. Local version: " + currentVersion
-                            + ", Master version: " + finalVersion + " Master: " + sender);
+                            + ", Master version: " + finalVersion + " Master: " + senderAliases.get(0));
                 }
                 return false;
             }
             if (initialVersion != currentVersion) {
                 throw new IllegalStateException("Invalid migration commit! Expected version: " + initialVersion
-                        + ", current version: " + currentVersion + ", Master: " + sender);
+                        + ", current version: " + currentVersion + ", Master: " + senderAliases.get(0));
             }
 
             MigrationInfo activeMigration = migrationManager.getActiveMigration(migration.getPartitionId());
