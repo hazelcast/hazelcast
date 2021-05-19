@@ -36,7 +36,10 @@ public interface FieldTypeBasedOperations {
         return readObject(genericRecord, fieldName);
     }
 
-    Object readIndexed(InternalGenericRecord record, String fieldName, int index);
+    default Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
+        throw new UnsupportedOperationException("Not an array type. Does not support read with an index");
+    }
+
 
     default int hashCode(GenericRecord record, String fieldName) {
         return Objects.hashCode(readInSerializedForm(record, fieldName));

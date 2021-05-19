@@ -94,13 +94,20 @@ public class DefaultCompactReader extends CompactGenericRecord implements Intern
         this.associatedClass = associatedClass;
         this.schemaIncludedInBinary = schemaIncludedInBinary;
         try {
-            int length = in.readInt();
-            offset = in.position();
-            finalPosition = length + offset;
-            in.position(finalPosition);
-            if (isDebug) {
-                System.out.println("DEBUG READ " + schema.getTypeName() + " finalPosition " + finalPosition
-                        + " offset " + offset + " length " + length);
+            if (schema.getNumberOfVariableLengthFields() != 0) {
+                int length = in.readInt();
+                offset = in.position();
+                finalPosition = length + offset;
+                //set the position to final so that the next one to read something from `in` can start from
+                //correct position
+                in.position(finalPosition);
+                if (isDebug) {
+                    System.out.println("DEBUG READ " + schema.getTypeName() + " finalPosition " + finalPosition
+                            + " offset " + offset + " length " + length);
+                }
+            } else {
+                offset = in.position();
+                finalPosition = offset + schema.getPrimitivesLength();
             }
         } catch (IOException e) {
             throw illegalStateException(e);
@@ -247,7 +254,14 @@ public class DefaultCompactReader extends CompactGenericRecord implements Intern
     @Override
     public boolean getBoolean(@Nonnull String fieldName) {
         try {
-            return in.readBoolean(readPrimitivePosition(fieldName, BOOLEAN));
+            FieldDescriptor fd = getFieldDefinition(fieldName, BOOLEAN);
+            int booleanOffset = fd.getOffset();
+            int booleanOffsetInBytes = booleanOffset == 0 ? 0 : (booleanOffset / Byte.SIZE);
+            int booleanOffsetWithinLastByte = booleanOffset % Byte.SIZE;
+            int getOffset = booleanOffsetInBytes + offset;
+            byte lastByte = in.readByte(getOffset);
+            boolean result = ((lastByte >>> booleanOffsetWithinLastByte) & 1) != 0;
+            return result;
         } catch (IOException e) {
             throw illegalStateException(e);
         }
@@ -408,7 +422,7 @@ public class DefaultCompactReader extends CompactGenericRecord implements Intern
 
     @Override
     public boolean[] getBooleanArray(@Nonnull String fieldName) {
-        return getVariableLength(fieldName, BOOLEAN_ARRAY, ObjectDataInput::readBooleanArray);
+        return getVariableLength(fieldName, BOOLEAN_ARRAY, DefaultCompactReader::readBooleanBits);
     }
 
     @Override
@@ -633,7 +647,7 @@ public class DefaultCompactReader extends CompactGenericRecord implements Intern
 
     @Nonnull
     protected FieldDescriptor getFieldDefinition(@Nonnull String fieldName, FieldType fieldType) {
-        FieldDescriptor fd = (FieldDescriptor) schema.getField(fieldName);
+        FieldDescriptor fd = schema.getField(fieldName);
         if (fd == null) {
             throw throwUnknownFieldException(fieldName);
         }
@@ -679,7 +693,22 @@ public class DefaultCompactReader extends CompactGenericRecord implements Intern
     }
 
     public Boolean getBooleanFromArray(@Nonnull String fieldName, int index) {
-        return getFixedSizeFromArray(fieldName, BOOLEAN_ARRAY, ObjectDataInput::readBoolean, index);
+        int position = getPosition(fieldName, BOOLEAN_ARRAY);
+        if (position == NULL_POSITION || doesNotHaveIndex(position, index)) {
+            return null;
+        }
+        int currentPos = in.position();
+        try {
+            int booleanOffsetInBytes = index == 0 ? 0 : (index / Byte.SIZE);
+            int booleanOffsetWithinLastByte = index % Byte.SIZE;
+            byte b = in.readByte(INT_SIZE_IN_BYTES + position + booleanOffsetInBytes);
+            boolean result = ((b >>> booleanOffsetWithinLastByte) & 1) != 0;
+            return result;
+        } catch (IOException e) {
+            throw illegalStateException(e);
+        } finally {
+            in.position(currentPos);
+        }
     }
 
     public Character getCharFromArray(@Nonnull String fieldName, int index) {
@@ -855,6 +884,28 @@ public class DefaultCompactReader extends CompactGenericRecord implements Intern
         return new OffsetDateTime[0];
     }
 
+    static boolean[] readBooleanBits(BufferObjectDataInput input) throws IOException {
+        int len = input.readInt();
+        if (len == NULL_ARRAY_LENGTH) {
+            return null;
+        }
+        if (len == 0) {
+            return new boolean[0];
+        }
+        boolean[] values = new boolean[len];
+        int index = 0;
+        byte currentByte = input.readByte();
+        for (int i = 0; i < len; i++) {
+            if (index == Byte.SIZE) {
+                index = 0;
+                currentByte = input.readByte();
+            }
+            boolean result = ((currentByte >>> index) & 1) != 0;
+            index++;
+            values[i] = result;
+        }
+        return values;
+    }
 
     @Override
     public String toString() {

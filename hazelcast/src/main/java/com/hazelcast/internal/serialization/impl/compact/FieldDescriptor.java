@@ -57,6 +57,7 @@ public class FieldDescriptor {
 
     /**
      * @return the offset to read  the primitive field from. If field is not primitive returns -1
+     * for boolean field offset is in bits, for the others it is in bytes
      */
     public int getOffset() {
         return offset;

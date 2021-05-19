@@ -28,7 +28,7 @@ import java.util.Arrays;
  */
 public enum FieldOperations {
 
-    PORTABLE(new SingleFieldTypeBasedOperations() {
+    PORTABLE(new FieldTypeBasedOperations() {
         @Override
         public Object readObject(GenericRecord genericRecord, String fieldName) {
             return ((InternalGenericRecord) genericRecord).getObject(fieldName);
@@ -44,7 +44,7 @@ public enum FieldOperations {
             writer.writeGenericRecord(fieldName, genericRecord.getGenericRecord(fieldName));
         }
     }),
-    BYTE(new SingleFieldTypeBasedOperations() {
+    BYTE(new FieldTypeBasedOperations() {
         @Override
         public Byte readObject(GenericRecord genericRecord, String fieldName) {
             return genericRecord.getByte(fieldName);
@@ -55,7 +55,7 @@ public enum FieldOperations {
             writer.writeByte(fieldName, genericRecord.getByte(fieldName));
         }
     }),
-    BOOLEAN(new SingleFieldTypeBasedOperations() {
+    BOOLEAN(new FieldTypeBasedOperations() {
         @Override
         public Boolean readObject(GenericRecord genericRecord, String fieldName) {
             return genericRecord.getBoolean(fieldName);
@@ -66,7 +66,7 @@ public enum FieldOperations {
             writer.writeBoolean(fieldName, genericRecord.getBoolean(fieldName));
         }
     }),
-    CHAR(new SingleFieldTypeBasedOperations() {
+    CHAR(new FieldTypeBasedOperations() {
         @Override
         public Character readObject(GenericRecord genericRecord, String fieldName) {
             return genericRecord.getChar(fieldName);
@@ -77,7 +77,7 @@ public enum FieldOperations {
             writer.writeChar(fieldName, genericRecord.getChar(fieldName));
         }
     }),
-    SHORT(new SingleFieldTypeBasedOperations() {
+    SHORT(new FieldTypeBasedOperations() {
         @Override
         public Short readObject(GenericRecord genericRecord, String fieldName) {
             return genericRecord.getShort(fieldName);
@@ -88,7 +88,7 @@ public enum FieldOperations {
             writer.writeShort(fieldName, genericRecord.getShort(fieldName));
         }
     }),
-    INT(new SingleFieldTypeBasedOperations() {
+    INT(new FieldTypeBasedOperations() {
         @Override
         public Integer readObject(GenericRecord genericRecord, String fieldName) {
             return genericRecord.getInt(fieldName);
@@ -99,7 +99,7 @@ public enum FieldOperations {
             writer.writeInt(fieldName, genericRecord.getInt(fieldName));
         }
     }),
-    LONG(new SingleFieldTypeBasedOperations() {
+    LONG(new FieldTypeBasedOperations() {
         @Override
         public Long readObject(GenericRecord genericRecord, String fieldName) {
             return genericRecord.getLong(fieldName);
@@ -110,7 +110,7 @@ public enum FieldOperations {
             writer.writeLong(fieldName, genericRecord.getLong(fieldName));
         }
     }),
-    FLOAT(new SingleFieldTypeBasedOperations() {
+    FLOAT(new FieldTypeBasedOperations() {
         @Override
         public Float readObject(GenericRecord genericRecord, String fieldName) {
             return genericRecord.getFloat(fieldName);
@@ -121,7 +121,7 @@ public enum FieldOperations {
             writer.writeFloat(fieldName, genericRecord.getFloat(fieldName));
         }
     }),
-    DOUBLE(new SingleFieldTypeBasedOperations() {
+    DOUBLE(new FieldTypeBasedOperations() {
         @Override
         public Double readObject(GenericRecord genericRecord, String fieldName) {
             return genericRecord.getDouble(fieldName);
@@ -132,7 +132,7 @@ public enum FieldOperations {
             writer.writeDouble(fieldName, genericRecord.getDouble(fieldName));
         }
     }),
-    UTF(new SingleFieldTypeBasedOperations() {
+    UTF(new FieldTypeBasedOperations() {
         @Override
         public Object readObject(GenericRecord genericRecord, String fieldName) {
             return genericRecord.getString(fieldName);
@@ -359,7 +359,7 @@ public enum FieldOperations {
             writer.writeStringArray(fieldName, record.getStringArray(fieldName));
         }
     }),
-    DECIMAL(new SingleFieldTypeBasedOperations() {
+    DECIMAL(new FieldTypeBasedOperations() {
         @Override
         public Object readObject(GenericRecord genericRecord, String fieldName) {
             return genericRecord.getDecimal(fieldName);
@@ -391,7 +391,7 @@ public enum FieldOperations {
             writer.writeDecimalArray(fieldName, record.getDecimalArray(fieldName));
         }
     }),
-    LOCAL_TIME(new SingleFieldTypeBasedOperations() {
+    LOCAL_TIME(new FieldTypeBasedOperations() {
         @Override
         public Object readObject(GenericRecord genericRecord, String fieldName) {
             return genericRecord.getTime(fieldName);
@@ -423,7 +423,7 @@ public enum FieldOperations {
             writer.writeTimeArray(fieldName, record.getTimeArray(fieldName));
         }
     }),
-    LOCAL_DATE(new SingleFieldTypeBasedOperations() {
+    LOCAL_DATE(new FieldTypeBasedOperations() {
         @Override
         public Object readObject(GenericRecord genericRecord, String fieldName) {
             return genericRecord.getDate(fieldName);
@@ -455,7 +455,7 @@ public enum FieldOperations {
             writer.writeDateArray(fieldName, record.getDateArray(fieldName));
         }
     }),
-    LOCAL_DATE_TIME(new SingleFieldTypeBasedOperations() {
+    LOCAL_DATE_TIME(new FieldTypeBasedOperations() {
         @Override
         public Object readObject(GenericRecord genericRecord, String fieldName) {
             return genericRecord.getTimestamp(fieldName);
@@ -487,7 +487,7 @@ public enum FieldOperations {
             writer.writeTimestampArray(fieldName, record.getTimestampArray(fieldName));
         }
     }),
-    OFFSET_DATE_TIME(new SingleFieldTypeBasedOperations() {
+    OFFSET_DATE_TIME(new FieldTypeBasedOperations() {
         @Override
         public Object readObject(GenericRecord genericRecord, String fieldName) {
             return genericRecord.getTimestampWithTimezone(fieldName);
@@ -519,7 +519,7 @@ public enum FieldOperations {
             writer.writeTimestampWithTimezoneArray(fieldName, record.getTimestampWithTimezoneArray(fieldName));
         }
     }),
-    COMPOSED(new SingleFieldTypeBasedOperations() {
+    COMPOSED(new FieldTypeBasedOperations() {
         @Override
         public Object readObject(GenericRecord genericRecord, String fieldName) {
             return ((InternalGenericRecord) genericRecord).getObject(fieldName);
