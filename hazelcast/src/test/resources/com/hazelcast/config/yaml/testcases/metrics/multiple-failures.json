@@ -1,0 +1,45 @@
+{
+  "instance": {
+    "hazelcast": {
+      "metrics": {
+        "disabled": true,
+        "management-center": {
+          "enabled": false,
+          "retention-seconds": -5
+        },
+        "jmx": {
+          "enabled": false
+        },
+        "collection-frequency-seconds": 10.5
+      }
+    }
+  },
+  "error": {
+    "schemaLocation": "#/definitions/Metrics",
+    "pointerToViolation": "#/hazelcast/metrics",
+    "causingExceptions": [
+      {
+        "schemaLocation": "#/definitions/Metrics",
+        "pointerToViolation": "#/hazelcast/metrics",
+        "causingExceptions": [],
+        "keyword": "additionalProperties",
+        "message": "extraneous key [disabled] is not permitted"
+      },
+      {
+        "schemaLocation": "#/definitions/Metrics/properties/management-center/properties/retention-seconds",
+        "pointerToViolation": "#/hazelcast/metrics/management-center/retention-seconds",
+        "causingExceptions": [],
+        "keyword": "minimum",
+        "message": "-5 is not greater or equal to 1"
+      },
+      {
+        "schemaLocation": "#/definitions/Metrics/properties/collection-frequency-seconds",
+        "pointerToViolation": "#/hazelcast/metrics/collection-frequency-seconds",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Integer, found: BigDecimal"
+      }
+    ],
+    "message": "3 schema violations found"
+  }
+}

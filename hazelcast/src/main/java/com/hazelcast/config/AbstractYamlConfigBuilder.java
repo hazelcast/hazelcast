@@ -57,7 +57,7 @@ import static com.hazelcast.internal.yaml.YamlUtil.isSequence;
 /**
  * Contains logic for replacing system variables in the YAML file and importing YAML files from different locations.
  */
-public abstract class AbstractYamlConfigBuilder {
+public abstract class AbstractYamlConfigBuilder extends AbstractConfigBuilder {
     private final Set<String> currentlyImportedFiles = new HashSet<>();
     private Properties properties = System.getProperties();
 

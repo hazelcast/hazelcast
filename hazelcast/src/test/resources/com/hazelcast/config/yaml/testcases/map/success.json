@@ -1,0 +1,175 @@
+{
+  "instance": {
+    "hazelcast": {
+      "map": {
+        "default": {
+          "in-memory-format": "BINARY",
+          "metadata-policy": "CREATE_ON_UPDATE",
+          "statistics-enabled": true,
+          "cache-deserialized-values": "ALWAYS",
+          "backup-count": 1,
+          "async-backup-count": 0,
+          "time-to-live-seconds": 0,
+          "max-idle-seconds": 0,
+          "eviction": {
+            "eviction-policy": "NONE",
+            "max-size-policy": "PER_NODE",
+            "size": 0
+          },
+          "merge-policy": {
+            "batch-size": 100,
+            "class-name": "PutIfAbsentMergePolicy"
+          },
+          "read-backup-data": false,
+          "hot-restart": {
+            "enabled": false,
+            "fsync": false
+          },
+          "event-journal": {
+            "enabled": false,
+            "capacity": 10000,
+            "time-to-live-seconds": 0
+          },
+          "merkle-tree": {
+            "enabled": false,
+            "depth": 10
+          },
+          "map-store": {
+            "enabled": true,
+            "initial-mode": "LAZY",
+            "class-name": "com.hazelcast.examples.DummyStore",
+            "write-delay-seconds": 60,
+            "write-batch-size": 1000,
+            "write-coalescing": true,
+            "properties": {
+              "jdbc_url": "my.jdbc.com"
+            }
+          },
+          "near-cache": {
+            "name": "near-cache-name",
+            "time-to-live-seconds": 0,
+            "max-idle-seconds": 60,
+            "invalidate-on-change": true,
+            "in-memory-format": "BINARY",
+            "cache-local-entries": false,
+            "eviction": {
+              "size": 1000,
+              "max-size-policy": "ENTRY_COUNT",
+              "eviction-policy": "LFU"
+            },
+            "serialize-keys": true
+          },
+          "wan-replication-ref": {
+            "my-wan-cluster-batch": {
+              "merge-policy-class-name": "PassThroughMergePolicy",
+              "filters": [
+                "com.example.SampleFilter",
+                "com.example.SampleFilter2"
+              ],
+              "republishing-enabled": false
+            }
+          },
+          "indexes": [
+            {
+              "type": "HASH",
+              "attributes": [
+                "name"
+              ]
+            },
+            {
+              "attributes": [
+                "age"
+              ]
+            },
+            {
+              "type": "HASH",
+              "attributes": [
+                "name",
+                "age"
+              ]
+            },
+            {
+              "attributes": [
+                "age",
+                "name"
+              ]
+            },
+            {
+              "type": "BITMAP",
+              "attributes": [
+                "age"
+              ]
+            },
+            {
+              "type": "BITMAP",
+              "attributes": [
+                "name"
+              ],
+              "bitmap-index-options": {
+                "unique-key": "id",
+                "unique-key-transformation": "RAW"
+              }
+            }
+          ],
+          "attributes": {
+            "currency": {
+              "extractor-class-name": "com.bank.CurrencyExtractor"
+            }
+          },
+          "entry-listeners": [
+            {
+              "class-name": "com.your-package.MyEntryListener",
+              "include-value": false,
+              "local": false
+            }
+          ],
+          "partition-lost-listeners": [
+            "com.your-package.YourPartitionLostListener"
+          ],
+          "split-brain-protection-ref": "splitBrainProtectionRuleWithThreeNodes",
+          "query-caches": {
+            "myContQueryCache": {
+              "include-value": true,
+              "predicate": {
+                "class-name": "com.hazelcast.examples.ExamplePredicate"
+              },
+              "entry-listeners": [
+                {
+                  "class-name": "..."
+                }
+              ],
+              "in-memory-format": "BINARY",
+              "populate": true,
+              "coalesce": false,
+              "delay-seconds": 3,
+              "batch-size": 2,
+              "buffer-size": 32,
+              "eviction": {
+                "size": 1000,
+                "max-size-policy": "ENTRY_COUNT",
+                "eviction-policy": "LFU"
+              },
+              "indexes": [
+                {
+                  "attributes": [
+                    "name"
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        "map-with-sql-query-cache": {
+          "query-caches": {
+            "mySqlQueryCache": {
+              "predicate": {
+                "sql": "a  = 2"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "error": null
+}

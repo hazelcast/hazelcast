@@ -1,0 +1,10 @@
+{
+  "instance": {
+    "hazelcast": {
+      "lite-member": {
+        "enabled": true
+      }
+    }
+  },
+  "error": null
+}

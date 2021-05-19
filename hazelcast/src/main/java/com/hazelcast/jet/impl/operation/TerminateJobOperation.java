@@ -28,6 +28,8 @@ import java.util.concurrent.CompletableFuture;
  * Operation sent from client to coordinator member to terminate particular
  * job. See also {@link TerminateExecutionOperation}, which is sent from
  * coordinator to members to terminate execution.
+ * <p>
+ * Not used for light jobs, see {@link CancelLightJobOperation}.
  */
 public class TerminateJobOperation extends AsyncJobOperation {
 

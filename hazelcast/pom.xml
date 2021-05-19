@@ -135,6 +135,8 @@
                                     !com.fasterxml.jackson.*,
                                     !org.snakeyaml.*,
                                     !io.github.classgraph.*,
+                                    !org.everit.json.*,
+                                    !org.json.*,
                                     sun.misc;resolution:=optional,
                                     javax.cache;resolution:=optional,
                                     javax.cache.*;resolution:=optional,
@@ -253,6 +255,9 @@
                                     <include>com.fasterxml.jackson.dataformat:jackson-dataformat-csv</include>
                                     <include>org.snakeyaml:snakeyaml-engine</include>
                                     <include>io.github.classgraph:classgraph</include>
+                                    <include>com.github.erosb:everit-json-schema</include>
+                                    <include>com.damnhandy:handy-uri-templates</include>
+                                    <include>org.json:json</include>
                                 </includes>
                             </artifactSet>
                             <relocations>
@@ -279,6 +284,18 @@
                                     <pattern>nonapi.io.github.classgraph</pattern>
                                     <shadedPattern>${relocation.root}.nonapi.io.github.classgraph</shadedPattern>
                                 </relocation>
+                                <relocation>
+                                    <pattern>org.everit.json.schema</pattern>
+                                    <shadedPattern>${relocation.root}.org.everit.json.schema</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>com.damnhandy.uri.template</pattern>
+                                    <shadedPattern>${relocation.root}.com.damnhandy.uri.template</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.json</pattern>
+                                    <shadedPattern>${relocation.root}.org.json</shadedPattern>
+                                </relocation>
                             </relocations>
                             <transformers>
                                 <transformer
@@ -299,6 +316,12 @@
                                 </filter>
                                 <filter>
                                     <artifact>io.github.classgraph:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>com.github.erosb:*</artifact>
                                     <excludes>
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                     </excludes>
@@ -405,6 +428,18 @@
             <groupId>io.github.classgraph</groupId>
             <artifactId>classgraph</artifactId>
             <version>${classgraph.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.github.erosb</groupId>
+            <artifactId>everit-json-schema</artifactId>
+            <version>1.12.2</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.re2j</groupId>
+                    <artifactId>re2j</artifactId>
+                </exclusion>
+            </exclusions>
             <scope>compile</scope>
         </dependency>
 

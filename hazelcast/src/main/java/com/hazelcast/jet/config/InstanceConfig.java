@@ -19,6 +19,7 @@ package com.hazelcast.jet.config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.core.Processor;
 
 import javax.annotation.Nonnull;
 
@@ -44,13 +45,22 @@ public class InstanceConfig {
      */
     public static final int DEFAULT_BACKUP_COUNT = MapConfig.DEFAULT_BACKUP_COUNT;
 
+    /**
+     * The default value of the {@link #setScaleUpDelayMillis(long) scale up delay}.
+     */
     private static final long SCALE_UP_DELAY_MILLIS_DEFAULT = SECONDS.toMillis(10);
+
+    /**
+     * The default value of the {@link #setMaxProcessorAccumulatedRecords(long) max processor accumulated records}.
+     */
+    private static final long MAX_PROCESSOR_ACCUMULATED_RECORDS = Long.MAX_VALUE;
 
     private int cooperativeThreadCount = RuntimeAvailableProcessors.get();
     private int flowControlPeriodMs = DEFAULT_FLOW_CONTROL_PERIOD_MS;
     private int backupCount = DEFAULT_BACKUP_COUNT;
     private long scaleUpDelayMillis = SCALE_UP_DELAY_MILLIS_DEFAULT;
     private boolean losslessRestartEnabled;
+    private long maxProcessorAccumulatedRecords = MAX_PROCESSOR_ACCUMULATED_RECORDS;
 
     /**
      * Sets the number of threads each cluster member will use to execute Jet
@@ -178,6 +188,52 @@ public class InstanceConfig {
         return this;
     }
 
+    /**
+     * Sets the maximum number of records that can be accumulated by any single
+     * {@link Processor} instance.
+     * <p>
+     * Operations like grouping, sorting or joining require certain amount of
+     * records to be accumulated before they can proceed. You can set this option
+     * to reduce the probability of {@link OutOfMemoryError}.
+     * <p>
+     * This option applies to each {@link Processor} instance separately, hence the
+     * effective limit of records accumulated by each cluster member is influenced
+     * by the vertex's {@code localParallelism} and the number of jobs in the cluster.
+     * <p>
+     * Currently, {@code maxProcessorAccumulatedRecords} limits:
+     * <ul><li>
+     *     number of items sorted by the sort operation
+     * </li><li>
+     *     number of distinct keys accumulated by aggregation operations
+     * </li><li>
+     *     number of entries in the hash-join lookup tables
+     * </li><li>
+     *     number of entries in stateful transforms
+     * </li><li>
+     *     number of distinct items in distinct operation
+     * </li></ul>
+     * <p>
+     * Note: the limit does not apply to streaming aggregations.
+     * <p>
+     * The default value is {@link Long#MAX_VALUE}.
+     *
+     * @since 5.0
+     */
+    public void setMaxProcessorAccumulatedRecords(long maxProcessorAccumulatedRecords) {
+        checkPositive(maxProcessorAccumulatedRecords, "maxProcessorAccumulatedRecords must be a positive number");
+        this.maxProcessorAccumulatedRecords = maxProcessorAccumulatedRecords;
+    }
+
+    /**
+     * Returns the maximum number of records that can be accumulated by any single
+     * {@link Processor} instance.
+     *
+     * @since 5.0
+     */
+    public long getMaxProcessorAccumulatedRecords() {
+        return maxProcessorAccumulatedRecords;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -201,6 +257,9 @@ public class InstanceConfig {
         if (scaleUpDelayMillis != that.scaleUpDelayMillis) {
             return false;
         }
+        if (maxProcessorAccumulatedRecords != that.maxProcessorAccumulatedRecords) {
+            return false;
+        }
         return losslessRestartEnabled == that.losslessRestartEnabled;
     }
 
@@ -211,6 +270,7 @@ public class InstanceConfig {
         result = 31 * result + backupCount;
         result = 31 * result + (int) (scaleUpDelayMillis ^ (scaleUpDelayMillis >>> 32));
         result = 31 * result + (losslessRestartEnabled ? 1 : 0);
+        result = 31 * result + (int) (maxProcessorAccumulatedRecords ^ (maxProcessorAccumulatedRecords >>> 32));
         return result;
     }
 }

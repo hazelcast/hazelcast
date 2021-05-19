@@ -24,11 +24,11 @@ import static com.hazelcast.internal.nio.PacketIOHelper.HEADER_SIZE;
 
 /**
  * A Packet is a piece of data sent over the wire. The Packet is used for member to member communication.
- *
+ * <p>
  * The Packet extends HeapData instead of wrapping it. From a design point of view this is often
  * not the preferred solution (prefer composition over inheritance), but in this case that
  * would mean more object litter.
- *
+ * <p>
  * Since the Packet isn't used throughout the system, this design choice is visible locally.
  */
 // Declaration order suppressed due to private static int FLAG_TYPEx declarations

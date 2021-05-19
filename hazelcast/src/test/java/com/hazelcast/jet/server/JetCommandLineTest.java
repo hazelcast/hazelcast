@@ -541,8 +541,8 @@ public class JetCommandLineTest extends JetTestSupport {
     public void testTargetsClusterNameOptional() {
         String target = "127.0.0.1:5701,127.0.0.1:5702";
 
-        testTargetsCommandCluster("jet", "list-jobs", "-t", target);
-        testTargetsCommandCluster("jet", "-t", target, "list-jobs");
+        testTargetsCommandCluster("dev", "list-jobs", "-t", target);
+        testTargetsCommandCluster("dev", "-t", target, "list-jobs");
     }
 
     private void testTargetsCommand(String... args) {
@@ -581,8 +581,8 @@ public class JetCommandLineTest extends JetTestSupport {
 
     @Test
     public void when_targets_and_configuration_together_then_targets_is_applied() {
-        ClientConfig config = testTargetsCommandCluster("jet",
-                "--targets", "jet@127.0.0.1:5701,127.0.0.1:5702",
+        ClientConfig config = testTargetsCommandCluster("my-cluster",
+                "--targets", "my-cluster@127.0.0.1:5701,127.0.0.1:5702",
                 "-f", yamlConfiguration.toString(),
                 "list-jobs");
 
@@ -591,8 +591,8 @@ public class JetCommandLineTest extends JetTestSupport {
 
     @Test
     public void test_targets_and_xml_configuration_together() {
-        ClientConfig config = testTargetsCommandCluster("jet",
-                "--targets", "jet@127.0.0.1:5701,127.0.0.1:5702",
+        ClientConfig config = testTargetsCommandCluster("my-cluster",
+                "--targets", "my-cluster@127.0.0.1:5701,127.0.0.1:5702",
                 "-f", xmlConfiguration.toString(),
                 "list-jobs");
 
@@ -601,10 +601,10 @@ public class JetCommandLineTest extends JetTestSupport {
 
     @Test
     public void test_targets_after_command_and_configuration_together() {
-        ClientConfig config = testTargetsCommandCluster("jet",
+        ClientConfig config = testTargetsCommandCluster("my-cluster",
                 "-f", yamlConfiguration.toString(),
                 "list-jobs",
-                "--targets", "jet@127.0.0.1:5701,127.0.0.1:5702"
+                "--targets", "my-cluster@127.0.0.1:5701,127.0.0.1:5702"
         );
 
         assertThat(config.getLabels()).contains("yaml-label");
@@ -621,9 +621,9 @@ public class JetCommandLineTest extends JetTestSupport {
                     cpConfigLocation,
                     StandardCopyOption.REPLACE_EXISTING);
 
-            ClientConfig config = testTargetsCommandCluster("jet",
+            ClientConfig config = testTargetsCommandCluster("my-cluster",
                     "list-jobs",
-                    "--targets", "jet@127.0.0.1:5701,127.0.0.1:5702"
+                    "--targets", "my-cluster@127.0.0.1:5701,127.0.0.1:5702"
             );
 
             assertThat(config.getLabels()).contains("yaml-label");

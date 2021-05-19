@@ -1,0 +1,30 @@
+{
+  "instance": {
+    "hazelcast": {
+      "lite-member": {
+        "disabled": false
+      }
+    }
+  },
+  "error": {
+    "schemaLocation": "#/definitions/LiteMember",
+    "pointerToViolation": "#/hazelcast/lite-member",
+    "causingExceptions": [
+      {
+        "schemaLocation": "#/definitions/LiteMember",
+        "pointerToViolation": "#/hazelcast/lite-member",
+        "causingExceptions": [],
+        "keyword": "additionalProperties",
+        "message": "extraneous key [disabled] is not permitted"
+      },
+      {
+        "schemaLocation": "#/definitions/LiteMember",
+        "pointerToViolation": "#/hazelcast/lite-member",
+        "causingExceptions": [],
+        "keyword": "required",
+        "message": "required key [enabled] not found"
+      }
+    ],
+    "message": "2 schema violations found"
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "instance": {
+    "hazelcast": {
+      "security": {
+        "member-authentication": {
+          "realm": null
+        },
+        "client-authentication": [],
+        "client-permission-policy": {
+          "properties": false 
+        }
+      }
+    }
+  },
+  "error": {
+    "schemaLocation": "#/definitions/Security",
+    "pointerToViolation": "#/hazelcast/security",
+    "causingExceptions": [
+      {
+        "schemaLocation": "#/definitions/ClassNameWithProps",
+        "pointerToViolation": "#/hazelcast/security/client-permission-policy",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/ClassNameWithProps",
+            "pointerToViolation": "#/hazelcast/security/client-permission-policy",
+            "causingExceptions": [],
+            "keyword": "required",
+            "message": "required key [class-name] not found"
+          },
+          {
+            "schemaLocation": "#/definitions/ClassNameWithProps/properties/properties",
+            "pointerToViolation": "#/hazelcast/security/client-permission-policy/properties",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: JSONObject, found: Boolean"
+          }
+        ],
+        "message": "2 schema violations found"
+      },
+      {
+        "schemaLocation": "#/definitions/Security/properties/client-authentication",
+        "pointerToViolation": "#/hazelcast/security/client-authentication",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: JSONObject, found: JSONArray"
+      },
+      {
+        "schemaLocation": "#/definitions/Security/properties/member-authentication/properties/realm",
+        "pointerToViolation": "#/hazelcast/security/member-authentication/realm",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: String, found: Null"
+      }
+    ],
+    "message": "4 schema violations found"
+  }
+}
