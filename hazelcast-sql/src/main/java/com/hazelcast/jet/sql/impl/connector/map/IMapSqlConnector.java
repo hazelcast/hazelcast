@@ -52,7 +52,7 @@ import org.apache.calcite.sql.parser.SqlParserPos;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Arrays;
+import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -258,12 +258,31 @@ public class IMapSqlConnector implements SqlConnector {
 
     @Nonnull
     @Override
-    public Vertex updateProcessor(@Nonnull DAG dag, @Nonnull Table table0) {
+    public Vertex updateProcessor(
+            @Nonnull DAG dag,
+            @Nonnull Table table0,
+            @Nonnull int[] updateColumnIndexes) {
+
         PartitionedMapTable table = (PartitionedMapTable) table0;
 
         return dag.newUniqueVertex(
                 toString(table),
-                updateMapP(table.getMapName(), (FunctionEx<Object[], Object>) row -> row[0], (oldValue, row) -> row[1]));
+                updateMapP(table.getMapName(), (FunctionEx<Object[], Object>) row -> row[0], (oldValue, row) -> {
+                    if (updateColumnIndexes.length == 0) {
+                        return row[1];
+                    } else {
+                        Class<?> valueClass = oldValue.getClass();
+                        Field[] fields = valueClass.getFields();
+                        int i = 0;
+                        for (int index : updateColumnIndexes) {
+                            Object value = row[i + 1];
+                            Field field = fields[index];
+                            field.setAccessible(true);
+                            field.set(oldValue, value);
+                        }
+                        return oldValue;
+                    }
+                }));
     }
 
     private static String toString(PartitionedMapTable table) {

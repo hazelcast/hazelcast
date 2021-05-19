@@ -24,6 +24,7 @@ import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import com.hazelcast.sql.impl.schema.Table;
+import com.hazelcast.sql.impl.schema.TableField;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlIdentifier;
@@ -45,6 +46,7 @@ import org.apache.calcite.sql.validate.SqlValidatorTable;
 import org.apache.calcite.sql.validate.SqlValidatorUtil;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 import static com.hazelcast.jet.sql.impl.validate.ValidatorResource.RESOURCE;
@@ -213,13 +215,16 @@ public class JetSqlValidator extends HazelcastSqlValidator {
         SqlConnector connector = getJetSqlConnector(table);
 
         SqlNodeList selectList = connector.getPrimaryKey(table);
-        int ordinal = 0;
-        for (SqlNode exp : call.getSourceExpressionList()) {
-            // Force unique aliases to avoid a duplicate for Y with
-            // SET X=Y
+
+        List<String> columns = table.getFields().stream().map(TableField::getName).collect(Collectors.toList());
+        SqlNodeList sourceExpressionList = call.getSourceExpressionList();
+        SqlNodeList targetColumns = call.getTargetColumnList();
+        for (int i = 0; i < sourceExpressionList.size(); i++) {
+            SqlNode expr = sourceExpressionList.get(i);
+            SqlNode column = targetColumns.get(i);
+            int ordinal = columns.indexOf(column.toString());
             String alias = SqlUtil.deriveAliasFromOrdinal(ordinal);
-            selectList.add(SqlValidatorUtil.addAlias(exp, alias));
-            ++ordinal;
+            selectList.add(SqlValidatorUtil.addAlias(expr, alias));
         }
 
         if (call.getAlias() != null) {

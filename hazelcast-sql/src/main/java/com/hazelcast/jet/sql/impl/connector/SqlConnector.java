@@ -346,7 +346,8 @@ public interface SqlConnector {
     @Nonnull
     default Vertex updateProcessor(
             @Nonnull DAG dag,
-            @Nonnull Table table) {
+            @Nonnull Table table,
+            @Nonnull int[] updateColumnIndexes) {
         throw new UnsupportedOperationException("Update not supported for " + typeName());
     }
 

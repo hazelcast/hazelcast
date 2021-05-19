@@ -19,10 +19,10 @@ package com.hazelcast.jet.sql;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlResult;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -42,12 +42,11 @@ public class SqlUpdateTest extends SqlTestSupport {
     }
 
     @Test
-    @Ignore
     public void updateBySingleKey_fieldInBetween() {
         IMap<Object, Object> testMap = instance().getMap("test_map");
+
         testMap.put(1, new Value(100, 200, 300));
         checkUpdateCount("update test_map set field2 = cast(100 as integer) where __key = 1", 0);
-
         assertThat(testMap.get(1)).isEqualTo(new Value(100, 100, 300));
     }
 
@@ -68,6 +67,32 @@ public class SqlUpdateTest extends SqlTestSupport {
             this.field1 = field1;
             this.field2 = field2;
             this.field3 = field3;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            Value value = (Value) o;
+            return field1 == value.field1 && field2 == value.field2 && field3 == value.field3;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(field1, field2, field3);
+        }
+
+        @Override
+        public String toString() {
+            return "Value{" +
+                    "field1=" + field1 +
+                    ", field2=" + field2 +
+                    ", field3=" + field3 +
+                    '}';
         }
     }
 }
