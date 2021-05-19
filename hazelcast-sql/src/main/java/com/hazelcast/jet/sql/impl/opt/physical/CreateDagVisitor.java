@@ -141,10 +141,13 @@ public class CreateDagVisitor {
     public Vertex onSort(SortPhysicalRel rel) {
         ComparatorEx<?> comparator = ExpressionUtil.comparisonFn(rel.getCollations());
 
+        // Use 2-Phase sort for maximum parallelism
+        // First, construct processors for local sorting
         Vertex sortVertex = dag.newUniqueVertex("Sort",
                 ProcessorMetaSupplier.of(sortP(comparator)));
         connectInput(rel.getInput(), sortVertex, null);
 
+        // Then, combine the locally sorted inputs while preserving the ordering
         Vertex combineVertex = dag.newUniqueVertex("SortCombine",
                 ProcessorMetaSupplier.forceTotalParallelismOne(
                         ProcessorSupplier.of(mapP(FunctionEx.identity())),
