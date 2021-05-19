@@ -51,6 +51,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.function.BiPredicate;
 
+import static com.hazelcast.jet.TestContextSupport.adaptSupplier;
 import static com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
 import static com.hazelcast.sql.impl.SqlTestSupport.valuePath;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
@@ -58,7 +59,6 @@ import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 
-@SuppressWarnings("rawtypes")
 @RunWith(Parameterized.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
@@ -68,11 +68,12 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
         return asList(500, 25_000);
     }
 
-    @Parameterized.Parameter(0)
+    @Parameterized.Parameter()
     public int count;
 
     private IMap<Integer, String> map;
 
+    @SuppressWarnings("unchecked")
     public static final BiPredicate<List<?>, List<?>> LENIENT_SAME_ITEMS_ANY_ORDER =
             (expected, actual) -> {
                 if (expected.size() != actual.size()) { // shortcut
@@ -113,7 +114,7 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
         );
 
         TestSupport
-                .verifyProcessor(OnHeapMapScanP.onHeapMapScanP(scanMetadata))
+                .verifyProcessor(adaptSupplier(OnHeapMapScanP.onHeapMapScanP(scanMetadata)))
                 .jetInstance(instance())
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
                 .disableSnapshots()
@@ -143,7 +144,7 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
         );
 
         TestSupport
-                .verifyProcessor(OnHeapMapScanP.onHeapMapScanP(scanMetadata))
+                .verifyProcessor(adaptSupplier(OnHeapMapScanP.onHeapMapScanP(scanMetadata)))
                 .jetInstance(instance())
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
                 .outputChecker(LENIENT_SAME_ITEMS_ANY_ORDER)
@@ -182,7 +183,7 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
         );
 
         TestSupport
-                .verifyProcessor(OnHeapMapScanP.onHeapMapScanP(scanMetadata))
+                .verifyProcessor(adaptSupplier(OnHeapMapScanP.onHeapMapScanP(scanMetadata)))
                 .jetInstance(instance())
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
                 .outputChecker(LENIENT_SAME_ITEMS_ANY_ORDER)
@@ -220,7 +221,7 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
         );
 
         TestSupport
-                .verifyProcessor(OnHeapMapScanP.onHeapMapScanP(scanMetadata))
+                .verifyProcessor(adaptSupplier(OnHeapMapScanP.onHeapMapScanP(scanMetadata)))
                 .jetInstance(instance())
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
                 .outputChecker(LENIENT_SAME_ITEMS_ANY_ORDER)
@@ -229,12 +230,17 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
                 .expectOutput(expected);
     }
 
-    static class Person implements DataSerializable {
+    private static class Person implements DataSerializable {
         private String name;
         private int age;
 
+        @SuppressWarnings("unused")
         Person() {
-            // no op.
+        }
+
+        Person(String name, int age) {
+            this.name = name;
+            this.age = age;
         }
 
         public String getName() {
@@ -243,11 +249,6 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
 
         public int getAge() {
             return age;
-        }
-
-        Person(String name, int age) {
-            this.name = name;
-            this.age = age;
         }
 
         @Override
