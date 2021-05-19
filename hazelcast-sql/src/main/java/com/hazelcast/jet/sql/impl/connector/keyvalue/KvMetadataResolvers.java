@@ -86,9 +86,15 @@ public class KvMetadataResolvers {
 
             String externalName = field.externalName();
             if (externalName == null) {
-                externalName = VALUE_PREFIX + name;
+                if (name.equals(KEY) || name.equals(VALUE)) {
+                    externalName = name;
+                } else {
+                    externalName = VALUE_PREFIX + name;
+                }
                 field.setExternalName(name);
-            } else if ((name.equals(KEY) && !externalName.equals(KEY))
+            }
+
+            if ((name.equals(KEY) && !externalName.equals(KEY))
                     || (name.equals(VALUE) && !externalName.equals(VALUE))) {
                 throw QueryException.error("Cannot rename field: " + name);
             }
