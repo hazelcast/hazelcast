@@ -125,21 +125,29 @@ public class CreateDagVisitor {
         return vertex;
     }
 
+    public Vertex onProject(ProjectPhysicalRel rel) {
+        List<Expression<?>> projection = rel.projection(parameterMetadata);
+
+        Vertex vertex = dag.newUniqueVertex("Project", mapUsingServiceP(
+                ServiceFactories.nonSharedService(ctx ->
+                        ExpressionUtil.projectionFn(projection, SimpleExpressionEvalContext.from(ctx))),
+                (BiFunctionEx<Function<Object[], Object[]>, Object[], Object[]>) Function::apply
+        ));
+
+        connectInputPreserveCollation(rel, vertex);
+        return vertex;
+    }
+
     public Vertex onSort(SortPhysicalRel rel) {
         ComparatorEx<?> comparator = ExpressionUtil.comparisonFn(rel.getCollations());
 
         Vertex sortVertex = dag.newUniqueVertex("Sort",
-                ProcessorMetaSupplier.of(
-                        sortP(comparator)
-                )
-        );
+                ProcessorMetaSupplier.of(sortP(comparator)));
         connectInput(rel.getInput(), sortVertex, null);
 
         Vertex combineVertex = dag.newUniqueVertex("SortCombine",
                 ProcessorMetaSupplier.forceTotalParallelismOne(
-                        ProcessorSupplier.of(
-                                mapP(FunctionEx.identity())
-                        ),
+                        ProcessorSupplier.of(mapP(FunctionEx.identity())),
                         localMemberAddress
                 )
         );
@@ -153,19 +161,6 @@ public class CreateDagVisitor {
         );
 
         return combineVertex;
-    }
-
-    public Vertex onProject(ProjectPhysicalRel rel) {
-        List<Expression<?>> projection = rel.projection(parameterMetadata);
-
-        Vertex vertex = dag.newUniqueVertex("Project", mapUsingServiceP(
-                ServiceFactories.nonSharedService(ctx ->
-                        ExpressionUtil.projectionFn(projection, SimpleExpressionEvalContext.from(ctx))),
-                (BiFunctionEx<Function<Object[], Object[]>, Object[], Object[]>) Function::apply
-        ));
-
-        connectInputPreserveCollation(rel, vertex);
-        return vertex;
     }
 
     public Vertex onAggregate(AggregatePhysicalRel rel) {
