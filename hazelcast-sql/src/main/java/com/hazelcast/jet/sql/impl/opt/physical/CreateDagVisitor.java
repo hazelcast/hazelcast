@@ -151,14 +151,11 @@ public class CreateDagVisitor {
                         localMemberAddress
                 )
         );
-        connectInput(
-                sortVertex,
-                combineVertex,
-                edge -> edge
-                        .ordered(comparator)
-                        .distributeTo(localMemberAddress)
-                        .allToOne("")
-        );
+        Edge edge = between(sortVertex, combineVertex)
+                .ordered(comparator)
+                .distributeTo(localMemberAddress)
+                .allToOne("");
+        dag.edge(edge);
 
         return combineVertex;
     }
@@ -183,7 +180,7 @@ public class CreateDagVisitor {
         Vertex vertex = dag.newUniqueVertex(
                 "Accumulate",
                 Processors.accumulateP(aggregateOperation)
-        ).localParallelism(1);
+        );
         connectInput(rel.getInput(), vertex, null);
         return vertex;
     }
@@ -308,25 +305,12 @@ public class CreateDagVisitor {
             @Nullable Consumer<Edge> configureEdgeFn
     ) {
         Vertex inputVertex = ((PhysicalRel) inputRel).accept(this);
-        connectInput(inputVertex, thisVertex, configureEdgeFn);
-        return inputVertex;
-    }
-
-    /**
-     * Creates an edge from {@code inputVertex} into {@code thisVertex}
-     *
-     * @param configureEdgeFn optional function to configure the edge
-     */
-    private void connectInput(
-            Vertex inputVertex,
-            Vertex thisVertex,
-            @Nullable Consumer<Edge> configureEdgeFn
-    ) {
         Edge edge = between(inputVertex, thisVertex);
         if (configureEdgeFn != null) {
             configureEdgeFn.accept(edge);
         }
         dag.edge(edge);
+        return inputVertex;
     }
 
     /**
