@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl.processors;
 
 import com.hazelcast.cluster.Address;
-import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
@@ -27,6 +26,7 @@ import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.sql.impl.JetQueryResultProducer;
 import com.hazelcast.jet.sql.impl.JetSqlCoreBackendImpl;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.impl.JetSqlCoreBackend;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -37,6 +37,7 @@ import javax.annotation.Nonnull;
 import java.util.concurrent.CancellationException;
 
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelismOne;
+import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.sql.impl.SqlErrorCode.CANCELLED_BY_USER;
 
 public final class RootResultConsumerSink implements Processor {
@@ -51,8 +52,8 @@ public final class RootResultConsumerSink implements Processor {
 
     @Override
     public void init(@Nonnull Outbox outbox, @Nonnull Context context) {
-        HazelcastInstanceImpl hzInst = (HazelcastInstanceImpl) context.jetInstance().getHazelcastInstance();
-        JetSqlCoreBackendImpl jetSqlCoreBackend = hzInst.node.nodeEngine.getService(JetSqlCoreBackend.SERVICE_NAME);
+        NodeEngineImpl nodeEngine = getNodeEngine(context.jetInstance());
+        JetSqlCoreBackendImpl jetSqlCoreBackend = nodeEngine.getService(JetSqlCoreBackend.SERVICE_NAME);
         rootResultConsumer = jetSqlCoreBackend.getResultConsumerRegistry().remove(context.jobId());
         assert rootResultConsumer != null;
 
