@@ -131,7 +131,7 @@ public final class TcpServerControl {
      * Performs the processing of the handshake (sets the endpoint on the Connection, registers the connection)
      * without any spoofing or other validation checks.
      * When executed on the connection initiator side, the connection is registered on the remote address
-     * with which it was registered in {@link TcpServerConnectionManager#connectionsInProgressArray},
+     * with which it was registered in {@link TcpServerConnectionManager#planes},
      * ignoring the {@code remoteEndpoint} argument.
      *
      * @param connection           the connection that send the handshake
@@ -146,7 +146,7 @@ public final class TcpServerControl {
                                        Collection<Address> remoteAddressAliases,
                                        MemberHandshake handshake) {
         final Address remoteAddress = new Address(connection.getRemoteSocketAddress());
-        if (connectionManager.planes[handshake.getPlaneIndex()].connectionsInProgress.containsKey(remoteAddress)) {
+        if (connectionManager.planes[handshake.getPlaneIndex()].hasConnectionInProgress(remoteAddress)) {
             // this is the connection initiator side --> register the connection under the address that was requested
             remoteEndpoint = remoteAddress;
         }
@@ -181,13 +181,13 @@ public final class TcpServerControl {
                     logger.finest("Registering connection " + connection + " to address alias " + remoteAddressAlias
                             + " planeIndex:" + handshake.getPlaneIndex());
                 }
-                connectionManager.planes[handshake.getPlaneIndex()].connectionMap.putIfAbsent(remoteAddressAlias, connection);
+                connectionManager.planes[handshake.getPlaneIndex()].putConnectionIfAbsent(remoteAddressAlias, connection);
             }
         }
     }
 
     private boolean checkAlreadyConnected(TcpServerConnection connection, Address remoteEndPoint, int planeIndex) {
-        Connection existingConnection = connectionManager.planes[planeIndex].connectionMap.get(remoteEndPoint);
+        Connection existingConnection = connectionManager.planes[planeIndex].getConnection(remoteEndPoint);
         if (existingConnection != null && existingConnection.isAlive()) {
             if (existingConnection != connection) {
                 if (logger.isFinestEnabled()) {

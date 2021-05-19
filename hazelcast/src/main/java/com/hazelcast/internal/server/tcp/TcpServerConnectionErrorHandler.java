@@ -55,11 +55,12 @@ class TcpServerConnectionErrorHandler {
         }
     }
 
-    synchronized void reset() {
+    synchronized TcpServerConnectionErrorHandler reset() {
         String resetMessage = "Resetting connection monitor for endpoint " + endPoint;
         logger.finest(resetMessage);
         faults = 0;
         lastFaultTime = 0L;
+        return this;
     }
 
     private String getCauseDescription(Throwable cause) {
