@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl;
 
-import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.config.JobConfig;
@@ -51,6 +50,7 @@ import java.util.Objects;
 import java.util.concurrent.CancellationException;
 import java.util.stream.Stream;
 
+import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
 import static java.util.Collections.singletonList;
 
@@ -169,8 +169,7 @@ class JetPlanExecutor {
             rows = catalog.getMappingNames().stream();
         } else {
             assert plan.getShowTarget() == ShowStatementTarget.JOBS;
-            JetService jetService = ((HazelcastInstanceImpl) jetInstance.getHazelcastInstance()).node.nodeEngine
-                    .getService(JetService.SERVICE_NAME);
+            JetService jetService = getNodeEngine(jetInstance).getService(JetService.SERVICE_NAME);
             rows = jetService.getJobRepository().getJobRecords().stream()
                     .map(record -> record.getConfig().getName())
                     .filter(Objects::nonNull);
