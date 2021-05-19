@@ -25,6 +25,19 @@ import java.util.concurrent.CompletableFuture;
  */
 public class NonCompletableFuture extends CompletableFuture<Void> {
 
+    public NonCompletableFuture() {
+    }
+
+    public NonCompletableFuture(CompletableFuture<?> chainedFuture) {
+        chainedFuture.whenComplete((r, t) -> {
+            if (t != null) {
+                internalCompleteExceptionally(t);
+            } else {
+                internalComplete();
+            }
+        });
+    }
+
     @Override
     public boolean completeExceptionally(Throwable ex) {
         throw new UnsupportedOperationException("This future can't be completed by an outside caller");

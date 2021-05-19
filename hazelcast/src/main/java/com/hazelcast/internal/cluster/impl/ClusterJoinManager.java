@@ -228,7 +228,7 @@ public class ClusterJoinManager {
      * @param joinMessage the {@link JoinMessage} received from another node.
      * @return {@code true} if packet version of join message matches this node's packet version and configurations
      * are found to be compatible, otherwise {@code false}.
-     * @throws Exception in case any exception occurred while checking compatibilty
+     * @throws Exception in case any exception occurred while checking compatibility
      * @see ConfigCheck
      */
     public boolean validateJoinMessage(JoinMessage joinMessage) {

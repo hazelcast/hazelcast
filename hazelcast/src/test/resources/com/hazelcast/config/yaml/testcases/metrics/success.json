@@ -1,0 +1,18 @@
+{
+  "instance": {
+    "hazelcast": {
+      "metrics": {
+        "enabled": false,
+        "management-center": {
+          "enabled": false,
+          "retention-seconds": 30
+        },
+        "jmx": {
+          "enabled": false
+        },
+        "collection-frequency-seconds": 10
+      }
+    }
+  },
+  "error": null
+}

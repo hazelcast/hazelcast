@@ -54,25 +54,23 @@ public interface ProcessorSupplier extends Serializable {
     Collection<? extends Processor> get(int count);
 
     /**
-     * Called after the execution has finished on all members - successfully or
-     * not. This method will be called after {@link Processor#close} has been
-     * called on all <em>available</em> members.
-     * <p>
-     * If the execution was <em>aborted</em> due to a member leaving the
-     * cluster, it is called immediately (but not before {@link
-     * Processor#close} for local processors). In this case, it can happen
-     * that the job is still running on some other member (but not on this
-     * member).
+     * Called after the execution has finished on this member - successfully or
+     * not. The execution might still be running on other members. This method
+     * will be called after {@link Processor#close} has been called on all
+     * processors running on this member for this job.
      * <p>
      * If this method throws an exception, it will be logged and ignored; it
      * won't be reported as a job failure.
      * <p>
      * Note: this method can be called even if {@link #init(Context) init()} or
-     * {@link #get(int) get()} were not called yet in case the job fails during
-     * the init phase.
+     * {@link #get(int) get()} methods were not called in case the job fails
+     * during the init phase.
      *
      * @param error the exception (if any) that caused the job to fail;
-     *              {@code null} in the case of successful job completion
+     *              {@code null} in the case of successful job completion.
+     *              Note that it might not be the actual error that caused the job
+     *              to fail - it can be several other exceptions. We only guarantee
+     *              that it's non-null if the job didn't complete successfully.
      */
     default void close(@Nullable Throwable error) throws Exception {
     }

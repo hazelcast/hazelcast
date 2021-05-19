@@ -98,7 +98,7 @@ public final class TestContextSupport {
                 NodeEngine nodeEngine = ((HazelcastInstanceImpl) c.jetInstance().getHazelcastInstance()).node.nodeEngine;
                 context = new ProcCtx(c.jetInstance(), c.jobId(), c.executionId(), c.jobConfig(),
                         c.logger(), c.vertexName(), 1, 1,
-                        c.localParallelism(), 1, c.memberCount(), new ConcurrentHashMap<>(),
+                        c.isLightJob(), c.localParallelism(), 1, c.memberCount(), new ConcurrentHashMap<>(),
                         (InternalSerializationService) nodeEngine.getSerializationService());
             }
             delegate.init(context);
@@ -119,8 +119,8 @@ public final class TestContextSupport {
                 NodeEngine nodeEngine = ((HazelcastInstanceImpl) c.jetInstance().getHazelcastInstance()).node.nodeEngine;
                 context = new ProcCtx(c.jetInstance(), c.jobId(), c.executionId(), c.jobConfig(),
                         c.logger(), c.vertexName(), c.localProcessorIndex(), c.globalProcessorIndex(),
-                        c.localParallelism(), c.memberIndex(), c.memberCount(), new ConcurrentHashMap<>(),
-                        (InternalSerializationService) nodeEngine.getSerializationService());
+                        c.isLightJob(), c.localParallelism(), c.memberIndex(), c.memberCount(),
+                        new ConcurrentHashMap<>(), (InternalSerializationService) nodeEngine.getSerializationService());
             }
             return context;
         }
