@@ -51,7 +51,6 @@ import java.util.List;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readList;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeList;
-import static java.util.Collections.singletonList;
 
 abstract class BaseMigrationOperation extends AbstractPartitionOperation
         implements MigrationCycleOperation, PartitionAwareOperation, Versioned {
@@ -111,7 +110,7 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
             return;
         }
         InternalPartitionServiceImpl partitionService = getService();
-        if (!partitionService.applyCompletedMigrations(completedMigrations, singletonList(migrationInfo.getMaster()))) {
+        if (!partitionService.applyCompletedMigrations(completedMigrations, migrationInfo.getMaster())) {
             throw new PartitionStateVersionMismatchException("Failed to apply completed migrations! Migration: " + migrationInfo);
         }
         if (partitionService.getMigrationManager().isFinalizingMigrationRegistered(migrationInfo.getPartitionId())) {
@@ -153,12 +152,11 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
             throw new IllegalStateException("Migration initiator is not master node! => " + toString());
         }
 
-        if (!service.isMemberMaster(getAllKnownAliases(migrationInfo.getMaster()))) {
+        if (!service.isMemberMaster(migrationInfo.getMaster())) {
             throw new RetryableHazelcastException("Migration initiator is not the master node known by migration system!");
         }
 
-        if (getMigrationParticipantType() == MigrationParticipant.SOURCE
-                && !service.isMemberMaster(getAllKnownAliases(getCallerAddress()))) {
+        if (getMigrationParticipantType() == MigrationParticipant.SOURCE && !service.isMemberMaster(getCallerAddress())) {
             throw new IllegalStateException("Caller is not master node! => " + toString());
         }
     }

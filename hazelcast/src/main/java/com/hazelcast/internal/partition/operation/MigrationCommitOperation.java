@@ -64,7 +64,7 @@ public class MigrationCommitOperation extends AbstractPartitionOperation impleme
         }
 
         InternalPartitionServiceImpl service = getService();
-        success = service.commitMigrationOnDestination(migration, getAllKnownAliases(getCallerAddress()));
+        success = service.commitMigrationOnDestination(migration, getCallerAddress());
     }
 
     @Override

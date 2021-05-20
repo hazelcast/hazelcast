@@ -55,7 +55,7 @@ public class PublishCompletedMigrationsOperation extends AbstractPartitionOperat
     @Override
     public void run() {
         InternalPartitionServiceImpl service = getService();
-        success = service.applyCompletedMigrations(completedMigrations, getAllKnownAliases(getCallerAddress()));
+        success = service.applyCompletedMigrations(completedMigrations, getCallerAddress());
     }
 
     @Override
