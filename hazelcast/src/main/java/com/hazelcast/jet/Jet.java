@@ -19,13 +19,13 @@ package com.hazelcast.jet;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.impl.JetBootstrap;
 
 import javax.annotation.Nonnull;
 
 /**
  * Entry point to the Jet product.
  *
+ * @since 3.0
  * @deprecated After 5.0 merge of Hazelcast products (IMDG and Jet into single
  * Hazelcast product), use the {@link Hazelcast} class as the entry point.
  */
@@ -101,6 +101,7 @@ public final class Jet {
      * }
      * </pre>
      *
+     * @since 4.0
      * @deprecated since 5.0
      * Please use {@link Hazelcast#bootstrappedInstance()} and then get
      * {@link JetInstance} from the created {@link HazelcastInstance}
@@ -109,6 +110,6 @@ public final class Jet {
     @Nonnull
     @Deprecated
     public static JetInstance bootstrappedInstance() {
-        return JetBootstrap.getInstance();
+        return Hazelcast.bootstrappedInstance().getJetInstance();
     }
 }
