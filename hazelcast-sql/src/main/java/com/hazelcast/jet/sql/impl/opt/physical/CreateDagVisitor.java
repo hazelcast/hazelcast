@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.BiPredicateEx;
+import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.aggregate.AggregateOperation;
@@ -33,6 +34,7 @@ import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
@@ -41,6 +43,7 @@ import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.SingleRel;
 
 import javax.annotation.Nullable;
 import java.util.HashSet;
@@ -53,8 +56,11 @@ import java.util.function.Predicate;
 import static com.hazelcast.function.Functions.entryKey;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.Processors.filterUsingServiceP;
+import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static com.hazelcast.jet.core.processor.Processors.mapUsingServiceP;
+import static com.hazelcast.jet.core.processor.Processors.sortP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.convenientSourceP;
+import static com.hazelcast.jet.impl.util.Util.getJetInstance;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 import static com.hazelcast.jet.sql.impl.processors.RootResultConsumerSink.rootResultConsumerSink;
 import static java.util.Collections.singletonList;
@@ -63,11 +69,13 @@ public class CreateDagVisitor {
 
     private final DAG dag = new DAG();
     private final Set<PlanObjectKey> objectKeys = new HashSet<>();
+    private final NodeEngine nodeEngine;
     private final Address localMemberAddress;
     private final QueryParameterMetadata parameterMetadata;
 
-    public CreateDagVisitor(Address localMemberAddress, QueryParameterMetadata parameterMetadata) {
-        this.localMemberAddress = localMemberAddress;
+    public CreateDagVisitor(NodeEngine nodeEngine, QueryParameterMetadata parameterMetadata) {
+        this.nodeEngine = nodeEngine;
+        this.localMemberAddress = nodeEngine.getLocalMember().getAddress();
         this.parameterMetadata = parameterMetadata;
     }
 
@@ -120,7 +128,7 @@ public class CreateDagVisitor {
                 ServiceFactories.nonSharedService(ctx ->
                         ExpressionUtil.filterFn(filter, SimpleExpressionEvalContext.from(ctx))),
                 (BiPredicateEx<Predicate<Object[]>, Object[]>) Predicate::test));
-        connectInput(rel.getInput(), vertex, null);
+        connectInputPreserveCollation(rel, vertex);
         return vertex;
     }
 
@@ -133,8 +141,33 @@ public class CreateDagVisitor {
                 (BiFunctionEx<Function<Object[], Object[]>, Object[], Object[]>) Function::apply
         ));
 
-        connectInput(rel.getInput(), vertex, null);
+        connectInputPreserveCollation(rel, vertex);
         return vertex;
+    }
+
+    public Vertex onSort(SortPhysicalRel rel) {
+        ComparatorEx<?> comparator = ExpressionUtil.comparisonFn(rel.getCollations());
+
+        // Use 2-Phase sort for maximum parallelism
+        // First, construct processors for local sorting
+        Vertex sortVertex = dag.newUniqueVertex("Sort",
+                ProcessorMetaSupplier.of(sortP(comparator)));
+        connectInput(rel.getInput(), sortVertex, null);
+
+        // Then, combine the locally sorted inputs while preserving the ordering
+        Vertex combineVertex = dag.newUniqueVertex("SortCombine",
+                ProcessorMetaSupplier.forceTotalParallelismOne(
+                        ProcessorSupplier.of(mapP(FunctionEx.identity())),
+                        localMemberAddress
+                )
+        );
+        Edge edge = between(sortVertex, combineVertex)
+                .ordered(comparator)
+                .distributeTo(localMemberAddress)
+                .allToOne("");
+        dag.edge(edge);
+
+        return combineVertex;
     }
 
     public Vertex onAggregate(AggregatePhysicalRel rel) {
@@ -229,29 +262,30 @@ public class CreateDagVisitor {
     }
 
     public Vertex onRoot(JetRootRel rootRel) {
-        Vertex vertex;
         RelNode input = rootRel.getInput();
+        Expression<?> fetch;
+
         if (input instanceof SortPhysicalRel) {
             SortPhysicalRel sortRel = (SortPhysicalRel) input;
             assert sortRel.offset == null : "Offset is not supported";
-            assert sortRel.collation.getFieldCollations().isEmpty() : "Collation is not supported";
 
-            Expression<?> fetch = sortRel.fetch(parameterMetadata);
+            if (sortRel.fetch == null) {
+                fetch = ConstantExpression.create(Long.MAX_VALUE, QueryDataType.BIGINT);
+            } else {
+                fetch = sortRel.fetch(parameterMetadata);
+            }
 
-            vertex = dag.newUniqueVertex(
-                    "ClientSink",
-                    rootResultConsumerSink(rootRel.getInitiatorAddress(), fetch)
-            );
-            input = sortRel.getInput();
+            if (sortRel.collation.getFieldCollations().isEmpty()) {
+                input = sortRel.getInput();
+            }
         } else {
-            vertex = dag.newUniqueVertex(
-                    "ClientSink",
-                    rootResultConsumerSink(
-                            rootRel.getInitiatorAddress(),
-                            ConstantExpression.create(Long.MAX_VALUE, QueryDataType.BIGINT)
-                    )
-            );
+            fetch = ConstantExpression.create(Long.MAX_VALUE, QueryDataType.BIGINT);
         }
+
+        Vertex vertex = dag.newUniqueVertex(
+                "ClientSink",
+                rootResultConsumerSink(rootRel.getInitiatorAddress(), fetch)
+        );
 
         // We use distribute-to-one edge to send all the items to the initiator member.
         // Such edge has to be partitioned, but the sink is LP=1 anyway, so we can use
@@ -273,8 +307,9 @@ public class CreateDagVisitor {
      * create an edge from the input vertex into {@code thisVertex}.
      *
      * @param configureEdgeFn optional function to configure the edge
+     * @return the input vertex
      */
-    private void connectInput(
+    private Vertex connectInput(
             RelNode inputRel,
             Vertex thisVertex,
             @Nullable Consumer<Edge> configureEdgeFn
@@ -285,6 +320,30 @@ public class CreateDagVisitor {
             configureEdgeFn.accept(edge);
         }
         dag.edge(edge);
+        return inputVertex;
+    }
+
+    /**
+     * Same as {@link #connectInput(RelNode, Vertex, Consumer)}, but used for
+     * vertices normally connected by an unicast or isolated edge, depending on
+     * whether the {@code rel} has collation fields.
+     *
+     * @param rel The rel to connect to input
+     * @param vertex The vertex for {@code rel}
+     */
+    private void connectInputPreserveCollation(SingleRel rel, Vertex vertex) {
+        boolean preserveCollation = rel.getTraitSet().getCollation().getFieldCollations().size() > 0;
+        Vertex inputVertex = connectInput(rel.getInput(), vertex,
+                preserveCollation ? Edge::isolated : null);
+
+        if (preserveCollation) {
+            int cooperativeThreadCount = getJetInstance(nodeEngine).getConfig().getInstanceConfig().getCooperativeThreadCount();
+            int explicitLP = inputVertex.determineLocalParallelism(cooperativeThreadCount);
+            // It's not strictly necessary to set the LP to the input, but we do it to ensure that the two
+            // vertices indeed have the same LP
+            inputVertex.determineLocalParallelism(explicitLP);
+            vertex.localParallelism(explicitLP);
+        }
     }
 
     private void collectObjectKeys(Table table) {

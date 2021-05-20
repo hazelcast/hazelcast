@@ -274,13 +274,13 @@ class JetSqlBackend implements SqlBackend {
         List<Permission> permissions = extractPermissions(physicalRel);
 
         if (physicalRel instanceof TableModify) {
-            CreateDagVisitor result = traverseRel(physicalRel, localAddress, parameterMetadata);
+            CreateDagVisitor result = traverseRel(physicalRel, parameterMetadata);
             Operation operation = ((TableModify) physicalRel).getOperation();
             return new DmlPlan(operation, planKey, parameterMetadata, result.getObjectKeys(), result.getDag(),
                     planExecutor, permissions);
         } else {
             CreateDagVisitor result =
-                    traverseRel(new JetRootRel(physicalRel, localAddress), localAddress, parameterMetadata);
+                    traverseRel(new JetRootRel(physicalRel, localAddress), parameterMetadata);
             SqlRowMetadata rowMetadata = createRowMetadata(fieldNames, physicalRel.schema(parameterMetadata).getTypes());
             return new SelectPlan(planKey, parameterMetadata, result.getObjectKeys(), result.getDag(), isInfiniteRows,
                     rowMetadata, planExecutor, permissions);
@@ -371,10 +371,9 @@ class JetSqlBackend implements SqlBackend {
 
     private CreateDagVisitor traverseRel(
             PhysicalRel physicalRel,
-            Address localAddress,
             QueryParameterMetadata parameterMetadata
     ) {
-        CreateDagVisitor visitor = new CreateDagVisitor(localAddress, parameterMetadata);
+        CreateDagVisitor visitor = new CreateDagVisitor(this.nodeEngine, parameterMetadata);
         physicalRel.accept(visitor);
         return visitor;
     }
