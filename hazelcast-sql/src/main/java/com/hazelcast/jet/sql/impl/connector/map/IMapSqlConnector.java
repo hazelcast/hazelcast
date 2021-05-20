@@ -17,13 +17,20 @@
 package com.hazelcast.jet.sql.impl.connector.map;
 
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationServiceAware;
+import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.core.processor.SourceProcessors;
+import com.hazelcast.jet.pipeline.ServiceFactories;
+import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
+import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadata;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataJavaResolver;
@@ -32,12 +39,20 @@ import com.hazelcast.jet.sql.impl.connector.keyvalue.KvProcessors;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
 import com.hazelcast.jet.sql.impl.schema.MappingField;
+import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.projection.Projection;
+import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
@@ -52,12 +67,18 @@ import org.apache.calcite.sql.parser.SqlParserPos;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.lang.reflect.Field;
+import java.io.IOException;
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.core.Edge.between;
+import static com.hazelcast.jet.core.Edge.from;
+import static com.hazelcast.jet.core.processor.Processors.mapUsingServiceP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.updateMapP;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.estimatePartitionedMapRowCount;
 import static java.util.stream.Collectors.toList;
@@ -265,27 +286,112 @@ public class IMapSqlConnector implements SqlConnector {
 
         PartitionedMapTable table = (PartitionedMapTable) table0;
 
-        return dag.newUniqueVertex(
+        List<TableField> fields = table.getFields();
+        QueryPath[] paths = fields.stream().map(field -> ((MapTableField) field).getPath()).toArray(QueryPath[]::new);
+        QueryDataType[] types = fields.stream().map(TableField::getType).toArray(QueryDataType[]::new);
+        List<Expression<?>> projection = IntStream.range(0, fields.size()).mapToObj(index -> ColumnExpression.create(index, types[index])).collect(toList());
+
+        KvRowProjector.Supplier supplier = KvRowProjector.supplier(
+                paths, types,
+                table.getKeyDescriptor(),
+                table.getValueDescriptor(),
+                null,
+                projection);
+
+        Vertex rowUpdater = dag.newUniqueVertex(
                 toString(table),
-                updateMapP(table.getMapName(), (FunctionEx<Object[], Object>) row -> row[0], (oldValue, row) -> {
-                    if (updateColumnIndexes.length == 0) {
-                        return row[1];
-                    } else {
-                        Class<?> valueClass = oldValue.getClass();
-                        Field[] fields = valueClass.getFields();
-                        int i = 0;
-                        for (int index : updateColumnIndexes) {
-                            Object value = row[i + 1];
-                            Field field = fields[index];
-                            field.setAccessible(true);
-                            field.set(oldValue, value);
-                        }
-                        return oldValue;
-                    }
+                updateMapP(table.getMapName(), (FunctionEx<Object[], Object>) row -> row[0], (FunctionEx<Object[], EntryProcessor<Object, Object, Object>>) row0 -> {
+
+//                    Object[] row =
+//                    if (updateColumnIndexes.length == 0) {
+//                        oldValue[0] = row0[1];
+//                    } else {
+//                        int i = 0;
+//                        for (int index : updateColumnIndexes) {
+//                            oldValue[index] = row0[i + 1];
+//                            i++;
+//                        }
+//                    }
+//                    return oldValue;
                 }));
+
+        dag.edge(between(rowProjector, rowUpdater).isolated());
+
+        Vertex rowToEntry = dag.newUniqueVertex(
+                "Collect(" + toString(table) + ")",
+                KvProcessors.entryProjector(
+                        paths,
+                        types,
+                        (UpsertTargetDescriptor) table.getKeyJetMetadata(),
+                        (UpsertTargetDescriptor) table.getValueJetMetadata()
+                )
+        );
+
+        dag.edge(between(rowUpdater, rowToEntry).isolated());
+
+        return rowProjector;
     }
 
     private static String toString(PartitionedMapTable table) {
         return TYPE_NAME + "[" + table.getSchemaName() + "." + table.getSqlName() + "]";
+    }
+
+    private static class UpdateProcessor extends AbstractProcessor {
+
+    }
+
+    private static class ProjectorEntryProcessor
+            implements EntryProcessor<Object, Object, Object>, DataSerializable, SerializationServiceAware {
+        private KvRowProjector.Supplier rightRowProjectorSupplier;
+        private List<Object> arguments;
+        private Object[] updates;
+
+        private transient ExpressionEvalContext evalContext;
+        private transient Extractors extractors;
+
+        @SuppressWarnings("unused")
+        public ProjectorEntryProcessor() {
+        }
+
+        private ProjectorEntryProcessor(KvRowProjector.Supplier rightRowProjectorSupplier, ExpressionEvalContext evalContext, Object[] updates) {
+            this.rightRowProjectorSupplier = rightRowProjectorSupplier;
+            this.evalContext = evalContext;
+            this.arguments = evalContext.getArguments();
+            this.updates = updates;
+        }
+
+        @Override
+        public void setSerializationService(SerializationService serializationService) {
+            this.evalContext =
+                    new SimpleExpressionEvalContext(arguments, (InternalSerializationService) serializationService);
+            this.extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeObject(rightRowProjectorSupplier);
+            out.writeObject(arguments);
+            out.writeInt(updates.length);
+            for (Object update : updates) {
+                out.writeObject(update);
+            }
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            rightRowProjectorSupplier = in.readObject();
+            arguments = in.readObject();
+            int len = in.readInt();
+            updates = new Object[len];
+            for (int i = 0; i < len; i++) {
+                updates[i] = in.readObject();
+            }
+        }
+
+        @Override
+        public Object process(Map.Entry<Object, Object> entry) {
+            Object[] project = rightRowProjectorSupplier.get(evalContext, extractors).project(entry);
+            return null;
+        }
     }
 }
