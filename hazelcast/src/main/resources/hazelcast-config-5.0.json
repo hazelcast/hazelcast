@@ -3773,6 +3773,11 @@
               "type": "boolean",
               "default": false,
               "description": "Sets whether lossless job restart is enabled for the node. With lossless restart you can restart the whole cluster without losing the jobs and their state. The feature is implemented on top of the Hot Restart feature of Hazelcast which persists the data to disk. If enabled, you have to also configure Hot Restart. Note: the snapshots exported using `Job#exportSnapshot` will also have Hot Restart storage enabled. Feature is disabled by default. If you enable this option in open-source, the member will fail to start, you need Enterprise to run it and obtain a license from Hazelcast."
+            },
+            "max-processor-accumulated-records": {
+              "type": "integer",
+              "default": 9223372036854775807,
+              "description": "Specifies the maximum number of records that can be accumulated by any single processor instance. Operations like grouping, sorting or joining require certain amount of records to be accumulated before they can proceed. You can set this option to reduce the probability of `OutOfMemoryError`. It applies to each processor instance separately, hence the effective limit of records accumulated by each cluster member is influenced by the vertex's `localParallelism` and the number of jobs in the cluster. Currently, this option limits: number of items sorted by the sort operation, number of distinct keys accumulated by aggregation operations, number of entries in each hash-join lookup table, number of entries in stateful transforms and number of distinct items in distinct operation. The limit does not apply to streaming aggregations."
             }
           },
           "description": "General configuration options pertaining to a Jet instance."
