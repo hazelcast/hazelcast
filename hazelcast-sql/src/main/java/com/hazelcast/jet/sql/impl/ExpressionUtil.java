@@ -16,13 +16,17 @@
 
 package com.hazelcast.jet.sql.impl;
 
+import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.jet.sql.impl.opt.FieldCollation;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.Row;
+import org.apache.calcite.rel.RelFieldCollation.Direction;
+import org.apache.calcite.rel.RelFieldCollation.NullDirection;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -68,6 +72,63 @@ public final class ExpressionUtil {
         return values -> {
             Row row = new HeapRow(values);
             return Boolean.TRUE.equals(evaluate(predicate, row, context));
+        };
+    }
+
+    public static ComparatorEx<Object[]> comparisonFn(
+            @Nonnull List<FieldCollation> fieldCollationList
+    ) {
+        return (Object[] row1, Object[] row2) -> {
+            // Comparison of row values:
+            // - Compare the rows according to field collations starting from left to right.
+            // - If one of the field comparison returns the non-zero value, then return it.
+            // - Otherwise, the rows are equal according to field collations, then return 0.
+            for (FieldCollation fieldCollation : fieldCollationList) {
+                // For each collation:
+                // - Get collation index and use it to fetch values from the rows.
+                // - Get direction (ASCENDING, DESCENDING) and null direction
+                //   (NULLS FIRST, NULLS LAST). If no null direction is given, then
+                //   it will be inferred from the direction. Since NULL is sorted as
+                //   the +Inf, ASCENDING implies NULL LAST whereas DESCENDING implies
+                //   NULLS FIRST.
+                // - Comparison of field values:
+                //   - If both of them are NULL, then return 0.
+                //   - Otherwise, if one of them is NULL, then return:
+                //     - null direction value if LHS is NULL.
+                //     - or negative null direction if RHS is NULL.
+                //   - If none of them is NULL, then:
+                //     - If direction is ASCENDING, then return the comparison result.
+                //     - If direction is DESCENDING, return the negation of comparison result.
+                int index = fieldCollation.getIndex();
+
+                Comparable o1 = (Comparable) row1[index];
+                Object o2 = row2[index];
+
+                Direction direction = fieldCollation.getDirection();
+
+                NullDirection nullDirection = fieldCollation.getNullDirection();
+                if (nullDirection == null) {
+                    nullDirection = direction.defaultNullDirection();
+                }
+
+                int result;
+                if (o1 == null && o2 == null) {
+                    result = 0;
+                } else if (o1 == null) {
+                    result = nullDirection.nullComparison;
+                } else if (o2 == null) {
+                    result = -nullDirection.nullComparison;
+                } else {
+                    result = o1.compareTo(o2);
+                    result = direction.isDescending() ? -result : result;
+                }
+
+                if (result != 0) {
+                    return result;
+                }
+
+            }
+            return 0;
         };
     }
 
