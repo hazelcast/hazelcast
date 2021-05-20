@@ -491,7 +491,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
                     }
                     return terminalMetrics;
                 })
-                .whenComplete(withTryCatch(logger, (i, e) -> {
+                .whenCompleteAsync(withTryCatch(logger, (i, e) -> {
                     completeExecution(execCtx, peel(e));
 
                     if (e instanceof CancellationException) {
