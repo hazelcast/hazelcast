@@ -491,6 +491,19 @@ public class JetCommandLineTest extends JetTestSupport {
     }
 
     @Test
+    public void test_submit_with_JetBootstrap() throws IOException {
+        Path testJarWithJetBootstrap = Files.createTempFile("testjob-with-jet-bootstrap-", ".jar");
+        IOUtil.copy(JetCommandLineTest.class.getResourceAsStream("testjob-with-jet-bootstrap.jar"),
+                testJarWithJetBootstrap.toFile());
+        run("submit", testJarWithJetBootstrap.toString());
+        assertTrueEventually(() -> assertEquals(1, jet.getJobs().size()));
+        Job job = jet.getJobs().get(0);
+        assertJobStatusEventually(job, JobStatus.RUNNING);
+        assertNull(job.getName());
+        IOUtil.deleteQuietly(testJarWithJetBootstrap.toFile());
+    }
+
+    @Test
     public void testTargetsMixin() {
         String target = "foobar@127.0.0.1:5701,127.0.0.1:5702";
 
