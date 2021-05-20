@@ -17,6 +17,7 @@
 package com.hazelcast.jet.aggregate;
 
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.datamodel.ItemsByTag;
 import com.hazelcast.jet.datamodel.Tag;
 
