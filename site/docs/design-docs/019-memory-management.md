@@ -65,24 +65,44 @@ it if it turns out that current solution is not enough.
 
 Allow configuring `maxProcessorAccumulatedRecords` for the member:
 
+<!--DOCUSAURUS_CODE_TABS-->
+
+<!--Java-->
+
 ```java
 public class InstanceConfig {
-    // ...
-  
+
       public void setMaxProcessorAccumulatedRecords(long maxProcessorAccumulatedRecords) {
         checkPositive(maxProcessorAccumulatedRecords, "maxProcessorAccumulatedRecords must be a positive number");
         this.maxProcessorAccumulatedRecords = maxProcessorAccumulatedRecords;
     }
-
-    // ...
 }
 ```
+
+<!--YAML-->
+
+```yaml
+  jet:
+    instance:
+      max-processor-accumulated-records: 1000000000
+```
+
+<!--XML-->
+
+```xml
+  <jet>
+    <instance>
+      <max-processor-accumulated-records>1000000000</max-processor-accumulated-records>
+    </instance>
+  </jet>
+```
+
+<!--END_DOCUSAURUS_CODE_TABS-->
 
 as well as for the job:
 
 ```java
 public class JobConfig implements IdentifiedDataSerializable {
-    // ...
 
     public JobConfig setMaxProcessorAccumulatedRecords(long maxProcessorAccumulatedRecords) {
         checkTrue(maxProcessorAccumulatedRecords > 0 || maxProcessorAccumulatedRecords == -1,
@@ -90,8 +110,6 @@ public class JobConfig implements IdentifiedDataSerializable {
         this.maxProcessorAccumulatedRecords = maxProcessorAccumulatedRecords;
         return this;
     }
-  
-    // ...
 }
 ```
 

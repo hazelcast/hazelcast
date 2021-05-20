@@ -196,7 +196,7 @@ public class MemberHandshakeHandlerTest {
             for (Address address : expectedAddresses) {
                 boolean found = false;
                 for (TcpServerConnectionManager.Plane plane : planes) {
-                    if (plane.connectionMap.containsKey(address)) {
+                    if (plane.getConnection((address)) != null) {
                         found = true;
                         break;
                     }

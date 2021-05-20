@@ -84,7 +84,8 @@ public class IMapSqlConnector implements SqlConnector {
         return false;
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull Map<String, String> options,
@@ -93,7 +94,8 @@ public class IMapSqlConnector implements SqlConnector {
         return METADATA_RESOLVERS.resolveAndValidateFields(userFields, options, nodeEngine);
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
@@ -162,7 +164,8 @@ public class IMapSqlConnector implements SqlConnector {
         return vEnd;
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public VertexWithInputConfig nestedLoopReader(
             @Nonnull DAG dag,
             @Nonnull Table table0,
@@ -190,7 +193,8 @@ public class IMapSqlConnector implements SqlConnector {
         return true;
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public Vertex sink(
             @Nonnull DAG dag,
             @Nonnull Table table0
