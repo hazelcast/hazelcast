@@ -111,7 +111,7 @@ import static com.hazelcast.spi.properties.ClusterProperty.LOGGING_TYPE;
  * contains all the code needed to submit a job to a running Hazelcast cluster.
  * The main issue with achieving this is that the JAR must be attached as a
  * resource to the job being submitted, so the Hazelcast cluster will be able
- * toload and use its classes. However, from within a running {@code main()}
+ * to load and use its classes. However, from within a running {@code main()}
  * method it is not trivial to find out the filename of the JAR containing
  * it.
  **/
