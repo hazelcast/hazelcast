@@ -245,8 +245,7 @@ public final class Hazelcast {
      * public class CustomJetJob {
      *   public static void main(String[] args) {
      *     HazelcastInstance hz = Hazelcast.bootstrappedInstance();
-     *     JetInstance jet = hz.getJetInstance();
-     *     jet.newJob(buildPipeline()).join();
+     *     hz.getJet().newJob(buildPipeline()).join();
      *   }
      *
      *   public static Pipeline createPipeline() {
