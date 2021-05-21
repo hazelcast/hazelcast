@@ -99,7 +99,7 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl> {
 
     @Override
     protected CompletableFuture<Void> invokeJoinJob() {
-        return invokeOp(new JoinSubmittedJobOperation(getId()));
+        return invokeOp(new JoinSubmittedJobOperation(getId(), false));
     }
 
     @Override

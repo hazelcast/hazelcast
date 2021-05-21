@@ -24,7 +24,7 @@ import com.hazelcast.jet.impl.operation.JoinSubmittedJobOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 public class JetJoinSubmittedJobMessageTask
-        extends AbstractJetMessageTask<Long, Void> {
+        extends AbstractJetMessageTask<JetJoinSubmittedJobCodec.RequestParameters, Void> {
     protected JetJoinSubmittedJobMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection,
                 JetJoinSubmittedJobCodec::decodeRequest,
@@ -33,7 +33,7 @@ public class JetJoinSubmittedJobMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new JoinSubmittedJobOperation(parameters);
+        return new JoinSubmittedJobOperation(parameters.jobId, parameters.useLightJob);
     }
 
     @Override
