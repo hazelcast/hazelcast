@@ -207,10 +207,14 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
     @Override
     public void beforeStart() {
         if (jetExtension != null) {
-            systemLogger.info("Jet extension is enabled.");
+            // Add configurations for the internal jet distributed objects,
+            // compatible with V4.2
+            // It can block RU4_2 only if there are existing configurations
+            // with the same name as the jet's internal objects.
+            // For this case, recommend disabling Jet.
             jetExtension.beforeStart();
         } else {
-            systemLogger.info("Jet extension is disabled.");
+            systemLogger.info("Jet extension is disabled with \"hazelcast.jet.disabled\" property.");
         }
     }
 
@@ -497,6 +501,9 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
     public void onClusterVersionChange(Version newVersion) {
         if (!node.getVersion().asVersion().isEqualTo(newVersion)) {
             systemLogger.info("Cluster version set to " + newVersion);
+        }
+        if (jetExtension != null) {
+            jetExtension.onClusterVersionChange(newVersion);
         }
         ServiceManager serviceManager = node.getNodeEngine().getServiceManager();
         List<ClusterVersionListener> listeners = serviceManager.getServices(ClusterVersionListener.class);

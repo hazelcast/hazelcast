@@ -84,6 +84,7 @@
         <maven.os.plugin.version>1.6.2</maven.os.plugin.version>
         <maven.protobuf.plugin.version>0.6.1</maven.protobuf.plugin.version>
         <maven.resources.plugin.version>3.2.0</maven.resources.plugin.version>
+        <owasp.dependency-check.version>6.1.5</owasp.dependency-check.version>
         <maven.dependency.plugin.version>3.1.2</maven.dependency.plugin.version>
 
         <!-- External Hazelcast modules -->
@@ -139,7 +140,7 @@
         <mockito.version>3.6.0</mockito.version>
         <powermock.version>2.0.9</powermock.version>
         <reflections.version>0.9.10</reflections.version>
-        <testcontainers.version>1.14.3</testcontainers.version>
+        <testcontainers.version>1.15.3</testcontainers.version>
         <zookeeper.version>3.5.8</zookeeper.version>
 
         <sonar.jacoco.jar>${basedir}/lib/jacocoagent.jar</sonar.jacoco.jar>
@@ -229,6 +230,7 @@
                     <include>**/*.xml</include>
                     <include>**/*.yaml</include>
                     <include>**/*.xsd</include>
+                    <include>**/hazelcast-config-*.json</include>
                     <include>**/*.handlers</include>
                     <include>**/*.schemas</include>
                 </includes>
@@ -405,6 +407,18 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.owasp</groupId>
+                <artifactId>dependency-check-maven</artifactId>
+                <version>${owasp.dependency-check.version}</version>
+                <configuration>
+                    <format>ALL</format>
+                    <skipProvidedScope>true</skipProvidedScope>
+                    <nodeAuditAnalyzerEnabled>false</nodeAuditAnalyzerEnabled>
+                    <failBuildOnCVSS>10</failBuildOnCVSS>
+                    <suppressionFiles>owasp-check-suppressions.xml</suppressionFiles>
+                </configuration>
             </plugin>
         </plugins>
         <pluginManagement>

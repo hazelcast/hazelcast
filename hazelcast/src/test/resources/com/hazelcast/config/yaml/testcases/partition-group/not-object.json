@@ -1,0 +1,14 @@
+{
+  "instance": {
+    "hazelcast": {
+      "partition-group": 2
+    }
+  },
+  "error": {
+    "schemaLocation": "#/definitions/PartitionGroup",
+    "pointerToViolation": "#/hazelcast/partition-group",
+    "causingExceptions": [],
+    "keyword": "type",
+    "message": "expected type: JSONObject, found: Integer"
+  }
+}

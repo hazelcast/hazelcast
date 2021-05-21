@@ -78,17 +78,17 @@ public class PartitionedMapTable extends AbstractMapTable {
         }
 
         return new PartitionedMapPlanObjectKey(
-            getSchemaName(),
-            getSqlName(),
-            getMapName(),
-            getFields(),
-            getConflictingSchemas(),
-            getKeyDescriptor(),
-            getValueDescriptor(),
-            getKeyJetMetadata(),
-            getValueJetMetadata(),
-            getIndexes(),
-            isHd()
+                getSchemaName(),
+                getSqlName(),
+                getMapName(),
+                getFields(),
+                getConflictingSchemas(),
+                getKeyDescriptor(),
+                getValueDescriptor(),
+                getKeyJetMetadata(),
+                getValueJetMetadata(),
+                getIndexes(),
+                isHd()
         );
     }
 

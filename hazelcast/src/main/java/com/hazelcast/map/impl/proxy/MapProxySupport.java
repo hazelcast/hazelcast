@@ -1004,7 +1004,13 @@ abstract class MapProxySupport<K, V>
                     resultFuture.completeExceptionally(t);
                 }
                 if (counter.decrementAndGet() == 0) {
-                    finalizePutAll(map);
+                    try {
+                        // don't ignore errors here, see https://github.com/hazelcast/hazelcast-jet/issues/3046
+                        finalizePutAll(map);
+                    } catch (Throwable e) {
+                        resultFuture.completeExceptionally(e);
+                        return;
+                    }
                     if (!resultFuture.isDone()) {
                         resultFuture.complete(null);
                     }

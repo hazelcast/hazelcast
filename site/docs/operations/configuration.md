@@ -115,7 +115,8 @@ String yaml = ""
    + "    flow-control-period: 50\n"
    + "    backup-count: 2\n"
    + "    scale-up-delay-millis: 5000\n"
-   + "    lossless-restart-enabled: true\n";
+   + "    lossless-restart-enabled: true\n"
+   + "    max-processor-accumulated-records: 1000000000\n";
 
 JetConfig jetConfig = JetConfig.loadYamlFromString(yaml);
 JetInstance jet = Jet.newJetInstance(jetConfig);
@@ -157,6 +158,7 @@ below:
 |instance/backup-count|1|The number of synchronous backups to configure on the IMap that Jet needs internally to store job metadata and snapshots. The maximum allowed value is 6.|
 |instance/scale-up-delay-millis|10,000|The delay after which the auto-scaled jobs restart if a new member joins the cluster. It has no effect on jobs with auto scaling disabled.|
 |instance/lossless-restart-enabled|false|Specifies whether the Lossless Cluster Restart feature is enabled. With this feature, you can restart the whole cluster without losing the jobs and their state. It is implemented on top of Hazelcast IMDG's Hot Restart Persistence feature, which persists the data to disk. You need to have the Hazelcast Jet Enterprise edition and configure Hazelcast IMDG's Hot Restart Persistence to use this feature. The default value is `false`, i.e., disabled.|
+|instance/max-processor-accumulated-records|`Long.MAX_VALUE`|Specifies the maximum number of records that can be accumulated by any single processor instance. Operations like grouping, sorting or joining require certain amount of records to be accumulated before they can proceed. You can set this option to reduce the probability of `OutOfMemoryError`. It applies to each processor instance separately, hence the effective limit of records accumulated by each cluster member is influenced by the vertex's `localParallelism` and the number of jobs in the cluster. Currently, this option limits: number of items sorted by the sort operation, number of distinct keys accumulated by aggregation operations, number of entries in each hash-join lookup table, number of entries in stateful transforms and number of distinct items in distinct operation. The limit does not apply to streaming aggregations.|
 
 ## List of configuration properties
 

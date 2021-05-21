@@ -166,7 +166,7 @@ public class PositionFunctionIntegrationTest extends ExpressionTestSupport {
                     fail("did not throw exception");
                 })
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageEndingWith(expectedError);
+                .hasMessageContaining(expectedError);
     }
 
     private String sql(Object text, Object search) {

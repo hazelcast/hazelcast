@@ -322,7 +322,7 @@ public class SqlCsvTest extends SqlTestSupport {
         );
 
         assertThatThrownBy(() -> sqlService.execute("SELECT * FROM " + name).iterator().hasNext())
-                .hasMessageEndingWith("Cannot parse VARCHAR value to INTEGER");
+                .hasMessageContaining("Cannot parse VARCHAR value to INTEGER");
     }
 
     @Test
