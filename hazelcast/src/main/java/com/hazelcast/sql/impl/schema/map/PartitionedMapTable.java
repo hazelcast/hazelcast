@@ -103,12 +103,7 @@ public class PartitionedMapTable extends AbstractMapTable {
     }
 
     public List<QueryPath> fieldPaths() {
-        final List<QueryPath> scanFieldPaths = new ArrayList<>(getFieldCount());
-        for (int i = 0; i < getFieldCount(); i++) {
-            MapTableField field = getField(i);
-            scanFieldPaths.add(field.getPath());
-        }
-        return scanFieldPaths;
+        return getFields().stream().map(field -> ((MapTableField) field).getPath()).collect(Collectors.toList());
     }
 
     public List<QueryDataType> types() {

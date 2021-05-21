@@ -55,7 +55,6 @@ public class SqlSelectTest extends SqlTestSupport {
     }
 
     @Test
-    @Ignore
     public void test_basicSelect() {
         HazelcastInstance hazelcastInstance = instance().getHazelcastInstance();
         String name = randomName();
@@ -67,7 +66,6 @@ public class SqlSelectTest extends SqlTestSupport {
     }
 
     @Test
-    @Ignore
     public void test_selectWithEqFilter() {
         HazelcastInstance hazelcastInstance = instance().getHazelcastInstance();
         String name = randomName();
@@ -80,7 +78,6 @@ public class SqlSelectTest extends SqlTestSupport {
     }
 
     @Test
-    @Ignore
     public void test_selectWithEvenNumbersFilter() {
         HazelcastInstance hazelcastInstance = instance().getHazelcastInstance();
         String name = randomName();
@@ -95,7 +92,6 @@ public class SqlSelectTest extends SqlTestSupport {
     }
 
     @Test
-    @Ignore
     public void test_selectWithProjection() {
         final int thisProjection = 1;
         HazelcastInstance hazelcastInstance = instance().getHazelcastInstance();
