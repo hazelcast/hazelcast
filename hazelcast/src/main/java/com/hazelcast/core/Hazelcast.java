@@ -248,7 +248,7 @@ public final class Hazelcast {
      *     hz.getJet().newJob(buildPipeline()).join();
      *   }
      *
-     *   public static Pipeline createPipeline() {
+     *   public static Pipeline buildPipeline() {
      *       // ...
      *   }
      * }
