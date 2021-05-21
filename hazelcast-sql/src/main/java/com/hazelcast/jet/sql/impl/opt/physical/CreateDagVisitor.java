@@ -32,13 +32,20 @@ import com.hazelcast.jet.pipeline.ServiceFactories;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
+import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
+import com.hazelcast.jet.sql.impl.connector.map.UpdateProcessor;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.Table;
+import com.hazelcast.sql.impl.schema.TableField;
+import com.hazelcast.sql.impl.schema.map.MapTableField;
+import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.RelNode;
 
@@ -49,6 +56,8 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static com.hazelcast.function.Functions.entryKey;
 import static com.hazelcast.jet.core.Edge.between;
@@ -90,10 +99,42 @@ public class CreateDagVisitor {
     }
 
     public Vertex onUpdate(UpdatePhysicalRel rel) {
-        Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
-        Vertex vertex = getJetSqlConnector(table).updateProcessor(dag, table, rel.updateColumnIndexes());
-        connectInput(rel.getInput(), vertex, null);
-        return vertex;
+        Table table0 = rel.getTable().unwrap(HazelcastTable.class).getTarget();
+
+        collectObjectKeys(table0);
+
+        Vertex sink = getJetSqlConnector(table0).sink(dag, table0);
+
+        PartitionedMapTable table = (PartitionedMapTable) table0;
+
+        List<TableField> fields = table.getFields();
+        if (fields.size() > 2) {
+            fields = fields.stream().filter(field -> !QueryPath.VALUE.equals(field.getName())).collect(Collectors.toList());
+        }
+        QueryPath[] paths = fields.stream().map(field -> ((MapTableField) field).getPath()).toArray(QueryPath[]::new);
+        QueryDataType[] types = fields.stream().map(TableField::getType).toArray(QueryDataType[]::new);
+        List<Expression<?>> projection = IntStream.range(0, fields.size())
+                .mapToObj(index -> ColumnExpression.create(index, types[index]))
+                .collect(Collectors.toList());
+
+        KvRowProjector.Supplier supplier = KvRowProjector.supplier(
+                paths,
+                types,
+                table.getKeyDescriptor(),
+                table.getValueDescriptor(),
+                null,
+                projection);
+
+        String mapName = table.getSqlName();
+        int[] updateColumns = rel.updateColumnIndexes();
+
+
+        Vertex update = dag.newUniqueVertex("Update", UpdateProcessor.metaSupplier(mapName, supplier, updateColumns));
+        connectInput(rel.getInput(), update, null);
+
+        Edge edge = between(update, sink);
+        dag.edge(edge);
+        return sink;
     }
 
     public Vertex onInsert(InsertPhysicalRel rel) {

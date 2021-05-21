@@ -18,10 +18,8 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
-import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
-import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import com.hazelcast.sql.impl.schema.Table;
@@ -32,11 +30,8 @@ import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.prepare.Prepare;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.TableModify;
-import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -83,8 +78,8 @@ public class UpdatePhysicalRel extends TableModify implements PhysicalRel {
             Table table = getTable().unwrap(HazelcastTable.class).getTarget();
             List<String> collect = table.getFields()
                     .stream()
-                    .filter(field -> !QueryPath.KEY.equals(field.getName()) && !QueryPath.VALUE.equals(field.getName()))
                     .map(TableField::getName)
+                    .filter(name -> !QueryPath.VALUE.equals(name))
                     .collect(Collectors.toList());
             int[] indexes = new int[updateColumnList.size()];
             for (int i = 0; i < updateColumnList.size(); i++) {

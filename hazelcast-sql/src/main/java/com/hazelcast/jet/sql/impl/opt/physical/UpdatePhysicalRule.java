@@ -26,7 +26,7 @@ import org.apache.calcite.rel.core.TableModify;
 import static com.hazelcast.jet.sql.impl.opt.JetConventions.LOGICAL;
 import static com.hazelcast.jet.sql.impl.opt.JetConventions.PHYSICAL;
 
-class UpdatePhysicalRule extends ConverterRule {
+final class UpdatePhysicalRule extends ConverterRule {
 
     static final RelOptRule INSTANCE = new UpdatePhysicalRule();
 

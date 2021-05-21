@@ -24,6 +24,10 @@ import org.junit.Test;
 import java.io.Serializable;
 import java.util.Objects;
 
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class SqlUpdateTest extends SqlTestSupport {
@@ -50,6 +54,27 @@ public class SqlUpdateTest extends SqlTestSupport {
         assertThat(testMap.get(1)).isEqualTo(new Value(100, 100, 300));
     }
 
+    @Test
+    public void explicitMapping() {
+        execute(
+                "create mapping test_map (\n"
+                        + "field1 INT,\n"
+                        + "field2 INT,\n"
+                        + "field3 INT\n"
+                        + ") type imap\n"
+                        + "OPTIONS (\n"
+                        + '\'' + OPTION_KEY_FORMAT + "'='int',\n"
+                        + '\'' + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + "',\n"
+                        + '\'' + OPTION_VALUE_CLASS + "'='" + Value.class.getName() + "'\n"
+                        + ")"
+        );
+
+        IMap<Object, Object> testMap = instance().getMap("test_map");
+        testMap.put(1, new Value(100, 200, 300));
+        checkUpdateCount("update test_map set field2 = cast(100 as integer) where __key = 1", 0);
+        assertThat(testMap.get(1)).isEqualTo(new Value(100, 100, 300));
+    }
+
     private void checkUpdateCount(String sql, int expected) {
         assertThat(execute(sql).updateCount()).isEqualTo(expected);
     }
@@ -58,10 +83,13 @@ public class SqlUpdateTest extends SqlTestSupport {
         return instance().getSql().execute(sql);
     }
 
-    private static class Value implements Serializable {
+    public static class Value implements Serializable {
         public int field1;
         public int field2;
         public int field3;
+
+        public Value() {
+        }
 
         public Value(int field1, int field2, int field3) {
             this.field1 = field1;
