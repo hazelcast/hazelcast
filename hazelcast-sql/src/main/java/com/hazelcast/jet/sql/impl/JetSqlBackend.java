@@ -284,12 +284,12 @@ class JetSqlBackend implements SqlBackend {
         List<Permission> permissions = extractPermissions(physicalRel);
 
         if (isInsert) {
-            Tuple2<DAG, Set<PlanObjectKey>> result = createDag(physicalRel, localAddress, parameterMetadata);
+            Tuple2<DAG, Set<PlanObjectKey>> result = createDag(physicalRel, parameterMetadata);
             return new SelectOrSinkPlan(planKey, parameterMetadata, result.f1(), result.f0(), isInfiniteRows, true,
                     null, planExecutor, permissions);
         } else {
             Tuple2<DAG, Set<PlanObjectKey>> result =
-                    createDag(new JetRootRel(physicalRel, localAddress), localAddress, parameterMetadata);
+                    createDag(new JetRootRel(physicalRel, localAddress), parameterMetadata);
             SqlRowMetadata rowMetadata = createRowMetadata(fieldNames, physicalRel.schema(parameterMetadata).getTypes());
             return new SelectOrSinkPlan(planKey, parameterMetadata, result.f1(), result.f0(), isInfiniteRows, false,
                     rowMetadata, planExecutor, permissions);
@@ -369,10 +369,9 @@ class JetSqlBackend implements SqlBackend {
 
     private Tuple2<DAG, Set<PlanObjectKey>> createDag(
             PhysicalRel physicalRel,
-            Address localAddress,
             QueryParameterMetadata parameterMetadata
     ) {
-        CreateDagVisitor visitor = new CreateDagVisitor(localAddress, parameterMetadata);
+        CreateDagVisitor visitor = new CreateDagVisitor(this.nodeEngine, parameterMetadata);
         physicalRel.accept(visitor);
         return Tuple2.tuple2(visitor.getDag(), visitor.getObjectKeys());
     }

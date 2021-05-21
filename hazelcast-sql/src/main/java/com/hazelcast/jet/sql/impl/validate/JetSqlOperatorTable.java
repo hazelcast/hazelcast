@@ -31,11 +31,13 @@ import com.hazelcast.jet.sql.impl.validate.operators.HazelcastCollectionTableOpe
 import com.hazelcast.jet.sql.impl.validate.operators.HazelcastMapValueConstructor;
 import com.hazelcast.jet.sql.impl.validate.operators.HazelcastRowOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.HazelcastValuesOperator;
+import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastDescOperator;
 import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperator;
+import org.apache.calcite.sql.SqlPostfixOperator;
 import org.apache.calcite.sql.SqlSpecialOperator;
 import org.apache.calcite.sql.SqlSyntax;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
@@ -72,6 +74,9 @@ public final class JetSqlOperatorTable extends ReflectiveSqlOperatorTable {
     public static final SqlFunction JSON_FILE = new FileTableFunction("JSON_FILE", JsonFileFormat.FORMAT_JSON);
     public static final SqlFunction AVRO_FILE = new FileTableFunction("AVRO_FILE", AvroFileFormat.FORMAT_AVRO);
     public static final SqlFunction PARQUET_FILE = new FileTableFunction("PARQUET_FILE", ParquetFileFormat.FORMAT_PARQUET);
+
+    public static final SqlPostfixOperator NULLS_FIRST = HazelcastDescOperator.NULLS_FIRST;
+    public static final SqlPostfixOperator NULLS_LAST = HazelcastDescOperator.NULLS_LAST;
 
     private static final JetSqlOperatorTable INSTANCE = new JetSqlOperatorTable();
 

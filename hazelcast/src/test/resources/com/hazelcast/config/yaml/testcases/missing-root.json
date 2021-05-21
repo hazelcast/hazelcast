@@ -1,0 +1,11 @@
+{
+  "instance": {
+  },
+  "error": {
+    "schemaLocation": "#",
+    "pointerToViolation": "#",
+    "causingExceptions": [],
+    "keyword": "required",
+    "message": "required key [hazelcast] not found"
+  }
+}

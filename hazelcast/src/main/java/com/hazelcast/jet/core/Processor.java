@@ -18,6 +18,7 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.RestartableException;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.logging.ILogger;
 
