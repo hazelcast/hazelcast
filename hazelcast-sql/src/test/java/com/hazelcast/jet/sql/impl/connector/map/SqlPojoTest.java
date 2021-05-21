@@ -36,6 +36,7 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.Map;
+import java.util.Objects;
 
 import static com.hazelcast.jet.core.TestUtil.createMap;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
@@ -437,8 +438,47 @@ public class SqlPojoTest extends SqlTestSupport {
                 singletonList(new Row(key, value)));
     }
 
+    @Test
+    public void when_keyHasKeyField_then_fieldIsSkipped() {
+        String name = randomName();
+        sqlService.execute(javaSerializableMapDdl(name, ClassWithKey.class, Integer.class));
+
+        instance().getMap(name).put(new ClassWithKey(), 0);
+
+        assertRowsAnyOrder(
+                "SELECT * FROM " + name,
+                singletonList(new Row(0))
+        );
+        assertRowsAnyOrder(
+                "SELECT __key, this FROM " + name,
+                singletonList(new Row(new ClassWithKey(), 0))
+        );
+    }
+
     public static class ClassInitialValue implements Serializable {
 
         public Integer field = 42;
+    }
+
+    public static class ClassWithKey implements Serializable {
+
+        public int __key;
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            ClassWithKey that = (ClassWithKey) o;
+            return __key == that.__key;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(__key);
+        }
     }
 }

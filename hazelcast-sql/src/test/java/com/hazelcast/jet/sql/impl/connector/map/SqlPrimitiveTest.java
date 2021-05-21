@@ -157,29 +157,49 @@ public class SqlPrimitiveTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_fieldsMapping() {
-        String name = randomName();
-        sqlService.execute("CREATE MAPPING " + name + " ("
+    public void test_renameKey() {
+        assertThatThrownBy(() -> sqlService.execute("CREATE MAPPING map ("
                 + "id INT EXTERNAL NAME __key"
+                + ", this VARCHAR"
+                + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
+                + "OPTIONS ("
+                + '\'' + OPTION_KEY_FORMAT + "'='int'"
+                + ", '" + OPTION_VALUE_FORMAT + "'='varchar'"
+                + ")"
+        )).hasMessageContaining("Cannot rename field: '__key'");
+
+        assertThatThrownBy(() -> sqlService.execute("CREATE MAPPING map ("
+                + "__key INT EXTERNAL NAME renamed"
+                + ", this VARCHAR"
+                + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
+                + "OPTIONS ("
+                + '\'' + OPTION_KEY_FORMAT + "'='int'"
+                + ", '" + OPTION_VALUE_FORMAT + "'='varchar'"
+                + ")"
+        )).hasMessageContaining("Cannot rename field: '__key'");
+    }
+
+    @Test
+    public void test_renameThis() {
+        assertThatThrownBy(() -> sqlService.execute("CREATE MAPPING map ("
+                + "__key INT"
                 + ", name VARCHAR EXTERNAL NAME this"
                 + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ("
-                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + '\''
-                + ", '" + OPTION_KEY_CLASS + "'='" + Integer.class.getName() + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + '\''
-                + ", '" + OPTION_VALUE_CLASS + "'='" + String.class.getName() + '\''
+                + '\'' + OPTION_KEY_FORMAT + "'='int'"
+                + ", '" + OPTION_VALUE_FORMAT + "'='varchar'"
                 + ")"
-        );
+        )).hasMessageContaining("Cannot rename field: 'this'");
 
-        assertMapEventually(
-                name,
-                "SINK INTO " + name + " (id, name) VALUES (2, 'value-2')",
-                createMap(2, "value-2")
-        );
-        assertRowsAnyOrder(
-                "SELECT * FROM " + name,
-                singletonList(new Row(2, "value-2"))
-        );
+        assertThatThrownBy(() -> sqlService.execute("CREATE MAPPING map ("
+                + "__key INT"
+                + ", this VARCHAR EXTERNAL NAME renamed"
+                + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
+                + "OPTIONS ("
+                + '\'' + OPTION_KEY_FORMAT + "'='int'"
+                + ", '" + OPTION_VALUE_FORMAT + "'='varchar'"
+                + ")"
+        )).hasMessageContaining("Cannot rename field: 'this'");
     }
 
     @Test
@@ -233,27 +253,46 @@ public class SqlPrimitiveTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_noValueFormat() {
-        assertThatThrownBy(
-                () -> sqlService.execute("CREATE MAPPING map "
-                        + "TYPE " + IMapSqlConnector.TYPE_NAME + " "
-                        + "OPTIONS ("
-                        + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + '\''
-                        + ", '" + OPTION_KEY_CLASS + "'='" + Integer.class.getName() + '\''
-                        + ")")
-        ).hasMessage("Missing 'valueFormat' option");
+    public void test_explicitKeyAndThisWithExternalNames() {
+        String mapName = randomName();
+        sqlService.execute("CREATE MAPPING " + mapName + '('
+                + "__key INT EXTERNAL NAME __key"
+                + ", this VARCHAR EXTERNAL NAME this"
+                + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
+                + "OPTIONS ( "
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_KEY_CLASS + "'='" + Integer.class.getName() + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_VALUE_CLASS + "'='" + String.class.getName() + '\''
+                + ")"
+        );
+
+        sqlService.execute("SINK INTO " + mapName + " VALUES(42, 'foo')");
+
+        assertRowsAnyOrder("SELECT * FROM " + mapName,
+                singletonList(new Row(42, "foo")));
     }
 
     @Test
     public void test_noKeyFormat() {
-        assertThatThrownBy(
-                () -> sqlService.execute("CREATE MAPPING map "
-                        + "TYPE " + IMapSqlConnector.TYPE_NAME + " "
-                        + "OPTIONS ("
-                        + '\'' + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + '\''
-                        + ", '" + OPTION_VALUE_CLASS + "'='" + String.class.getName() + '\''
-                        + ")")
-        ).hasMessage("Missing 'keyFormat' option");
+        assertThatThrownBy(() -> sqlService.execute("CREATE MAPPING map "
+                + "TYPE " + IMapSqlConnector.TYPE_NAME + " "
+                + "OPTIONS ("
+                + '\'' + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_VALUE_CLASS + "'='" + String.class.getName() + '\''
+                + ")"
+        )).hasMessage("Missing 'keyFormat' option");
+    }
+
+    @Test
+    public void test_noValueFormat() {
+        assertThatThrownBy(() -> sqlService.execute("CREATE MAPPING map "
+                + "TYPE " + IMapSqlConnector.TYPE_NAME + " "
+                + "OPTIONS ("
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_KEY_CLASS + "'='" + Integer.class.getName() + '\''
+                + ")"
+        )).hasMessage("Missing 'valueFormat' option");
     }
 
     @Test
@@ -300,30 +339,6 @@ public class SqlPrimitiveTest extends SqlTestSupport {
                         + ")"))
                 .hasMessage(
                         "The field '" + fieldName + "' is of type INTEGER, you can't map '" + fieldName + ".field' too");
-    }
-
-    @Test
-    public void test_renameTopLevelField_key() {
-        test_renameTopLevelField("__key");
-    }
-
-    @Test
-    public void test_renameTopLevelField_value() {
-        test_renameTopLevelField("this");
-    }
-
-    private void test_renameTopLevelField(String fieldName) {
-        assertThatThrownBy(() -> sqlService.execute("CREATE MAPPING map ("
-                + fieldName + " INT EXTERNAL NAME renamed"
-                + ')'
-                + "TYPE " + IMapSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ("
-                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + '\''
-                + ", '" + OPTION_KEY_CLASS + "'='" + Integer.class.getName() + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + '\''
-                + ", '" + OPTION_VALUE_CLASS + "'='" + Integer.class.getName() + '\''
-                + ")"
-        )).hasMessageContaining("Cannot rename field: " + fieldName);
     }
 
     @Test

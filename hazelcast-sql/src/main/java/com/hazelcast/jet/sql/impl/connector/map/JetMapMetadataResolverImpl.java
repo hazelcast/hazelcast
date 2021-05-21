@@ -26,6 +26,7 @@ import javax.annotation.Nonnull;
 import java.util.List;
 
 import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.toList;
 
 public final class JetMapMetadataResolverImpl implements JetMapMetadataResolver {
 
@@ -36,14 +37,16 @@ public final class JetMapMetadataResolverImpl implements JetMapMetadataResolver 
 
     @Override
     public Object resolveClass(Class<?> clazz, boolean key) {
-        List<MappingField> mappingFields = KvMetadataJavaResolver.INSTANCE.resolveFields(key, emptyList(), clazz);
+        List<MappingField> mappingFields = KvMetadataJavaResolver.INSTANCE.resolveFields(key, emptyList(), clazz)
+                .collect(toList());
         KvMetadata metadata = KvMetadataJavaResolver.INSTANCE.resolveMetadata(key, mappingFields, clazz);
         return metadata.getUpsertTargetDescriptor();
     }
 
     @Override
     public Object resolvePortable(@Nonnull ClassDefinition classDef, boolean key) {
-        List<MappingField> mappingFields = MetadataPortableResolver.INSTANCE.resolveFields(key, classDef);
+        List<MappingField> mappingFields = MetadataPortableResolver.INSTANCE.resolveFields(key, classDef)
+                .collect(toList());
         KvMetadata metadata = MetadataPortableResolver.INSTANCE.resolveMetadata(key, mappingFields, classDef);
         return metadata.getUpsertTargetDescriptor();
     }

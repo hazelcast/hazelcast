@@ -36,6 +36,7 @@ import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE_PREFIX;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Stream.concat;
 
@@ -96,7 +97,7 @@ public class KvMetadataResolvers {
 
             if ((name.equals(KEY) && !externalName.equals(KEY))
                     || (name.equals(VALUE) && !externalName.equals(VALUE))) {
-                throw QueryException.error("Cannot rename field: " + name);
+                throw QueryException.error("Cannot rename field: '" + name + '\'');
             }
 
             if (!EXT_NAME_PATTERN.matcher(externalName).matches()) {
@@ -105,9 +106,13 @@ public class KvMetadataResolvers {
         }
 
         List<MappingField> keyFields = findMetadataResolver(options, true)
-                .resolveAndValidateFields(true, userFields, options, ss);
+                .resolveAndValidateFields(true, userFields, options, ss)
+                .filter(field -> !field.name().equals(KEY) || field.externalName().equals(KEY))
+                .collect(toList());
         List<MappingField> valueFields = findMetadataResolver(options, false)
-                .resolveAndValidateFields(false, userFields, options, ss);
+                .resolveAndValidateFields(false, userFields, options, ss)
+                .filter(field -> !field.name().equals(VALUE) || field.externalName().equals(VALUE))
+                .collect(toList());
 
         Map<String, MappingField> fields = concat(keyFields.stream(), valueFields.stream())
                 .collect(LinkedHashMap::new, (map, field) -> map.putIfAbsent(field.name(), field), Map::putAll);

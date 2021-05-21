@@ -76,15 +76,15 @@ public class KvMetadataResolversTest {
             "__key",
             "this"
     })
-    public void when_renamedExternalName_then_throws(String fieldName) {
-        MappingField field = new MappingField(fieldName, QueryDataType.INT, "renamed");
+    public void when_renamedKeyOrThis_then_throws(String fieldName) {
+        MappingField field = field(fieldName, QueryDataType.INT, "renamed");
         assertThatThrownBy(() -> resolvers.resolveAndValidateFields(singletonList(field), emptyMap(), nodeEngine))
-                .hasMessage("Cannot rename field: " + fieldName);
+                .hasMessage("Cannot rename field: '" + fieldName + '\'');
     }
 
     @Test
     public void when_invalidExternalName_then_throws() {
-        MappingField field = new MappingField("field_name", QueryDataType.INT, "invalid_prefix.name");
+        MappingField field = field("field_name", QueryDataType.INT, "invalid_prefix.name");
         assertThatThrownBy(() -> resolvers.resolveAndValidateFields(singletonList(field), emptyMap(), nodeEngine))
                 .hasMessage("Invalid external name: " + "invalid_prefix.name");
     }
@@ -96,9 +96,9 @@ public class KvMetadataResolversTest {
                 OPTION_VALUE_FORMAT, JAVA_FORMAT
         );
         given(resolver.resolveAndValidateFields(true, emptyList(), options, ss))
-                .willReturn(singletonList(field("__key", QueryDataType.INT)));
+                .willReturn(Stream.of(field("__key", QueryDataType.INT)));
         given(resolver.resolveAndValidateFields(false, emptyList(), options, ss))
-                .willReturn(singletonList(field("this", QueryDataType.VARCHAR)));
+                .willReturn(Stream.of(field("this", QueryDataType.VARCHAR)));
 
         List<MappingField> fields = resolvers.resolveAndValidateFields(emptyList(), options, nodeEngine);
 
@@ -109,19 +109,44 @@ public class KvMetadataResolversTest {
     }
 
     @Test
+    public void when_keyOrThisNameIsUsed_then_itIsFilteredOut() {
+        Map<String, String> options = ImmutableMap.of(
+                OPTION_KEY_FORMAT, JAVA_FORMAT,
+                OPTION_VALUE_FORMAT, JAVA_FORMAT
+        );
+        given(resolver.resolveAndValidateFields(true, emptyList(), options, ss))
+                .willReturn(Stream.of(
+                        field("__key", QueryDataType.INT, "__key.name"),
+                        field("keyField", QueryDataType.INT, "__key.__keyField")
+                ));
+        given(resolver.resolveAndValidateFields(false, emptyList(), options, ss))
+                .willReturn(Stream.of(
+                        field("this", QueryDataType.VARCHAR, "this.name"),
+                        field("thisField", QueryDataType.VARCHAR, "this.thisField")
+                ));
+
+        List<MappingField> fields = resolvers.resolveAndValidateFields(emptyList(), options, nodeEngine);
+
+        assertThat(fields).containsExactly(
+                field("keyField", QueryDataType.INT, "__key.__keyField"),
+                field("thisField", QueryDataType.VARCHAR, "this.thisField")
+        );
+    }
+
+    @Test
     public void when_keyClashesWithValue_then_keyIsChosen() {
         Map<String, String> options = ImmutableMap.of(
                 OPTION_KEY_FORMAT, JAVA_FORMAT,
                 OPTION_VALUE_FORMAT, JAVA_FORMAT
         );
         given(resolver.resolveAndValidateFields(true, emptyList(), options, ss))
-                .willReturn(singletonList(field("field", QueryDataType.INT)));
+                .willReturn(Stream.of(field("field", QueryDataType.INT, "__key.field")));
         given(resolver.resolveAndValidateFields(false, emptyList(), options, ss))
-                .willReturn(singletonList(field("field", QueryDataType.VARCHAR)));
+                .willReturn(Stream.of(field("field", QueryDataType.VARCHAR, "this.field")));
 
         List<MappingField> fields = resolvers.resolveAndValidateFields(emptyList(), options, nodeEngine);
 
-        assertThat(fields).containsExactly(field("field", QueryDataType.INT));
+        assertThat(fields).containsExactly(field("field", QueryDataType.INT, "__key.field"));
     }
 
     @Test
@@ -131,13 +156,12 @@ public class KvMetadataResolversTest {
                 OPTION_VALUE_FORMAT, JAVA_FORMAT
         );
         given(resolver.resolveAndValidateFields(true, emptyList(), options, ss))
-                .willReturn(emptyList());
+                .willReturn(Stream.empty());
         given(resolver.resolveAndValidateFields(false, emptyList(), options, ss))
-                .willReturn(singletonList(field("this", QueryDataType.INT)));
+                .willReturn(Stream.of(field("this", QueryDataType.INT)));
 
         List<MappingField> fields = resolvers.resolveAndValidateFields(emptyList(), options, nodeEngine);
-        assertThat(fields)
-                .isEqualTo(singletonList(new MappingField("this", QueryDataType.INT, null)));
+        assertThat(fields).containsExactly(field("this", QueryDataType.INT));
     }
 
     @Test
@@ -147,13 +171,12 @@ public class KvMetadataResolversTest {
                 OPTION_VALUE_FORMAT, JAVA_FORMAT
         );
         given(resolver.resolveAndValidateFields(true, emptyList(), options, ss))
-                .willReturn(singletonList(field("__key", QueryDataType.INT)));
+                .willReturn(Stream.of(field("__key", QueryDataType.INT)));
         given(resolver.resolveAndValidateFields(false, emptyList(), options, ss))
-                .willReturn(emptyList());
+                .willReturn(Stream.empty());
 
         List<MappingField> fields = resolvers.resolveAndValidateFields(emptyList(), options, nodeEngine);
-        assertThat(fields)
-                .isEqualTo(singletonList(new MappingField("__key", QueryDataType.INT, null)));
+        assertThat(fields).containsExactly(field("__key", QueryDataType.INT));
     }
 
     @Test
@@ -163,9 +186,9 @@ public class KvMetadataResolversTest {
                 OPTION_VALUE_FORMAT, JAVA_FORMAT
         );
         given(resolver.resolveAndValidateFields(true, emptyList(), options, ss))
-                .willReturn(emptyList());
+                .willReturn(Stream.empty());
         given(resolver.resolveAndValidateFields(false, emptyList(), options, ss))
-                .willReturn(emptyList());
+                .willReturn(Stream.empty());
 
         assertThatThrownBy(() -> resolvers.resolveAndValidateFields(emptyList(), options, nodeEngine))
                 .isInstanceOf(QueryException.class)
@@ -207,6 +230,10 @@ public class KvMetadataResolversTest {
     }
 
     private static MappingField field(String name, QueryDataType type) {
-        return new MappingField(name, type);
+        return field(name, type, name);
+    }
+
+    private static MappingField field(String name, QueryDataType type, String externalName) {
+        return new MappingField(name, type, externalName);
     }
 }

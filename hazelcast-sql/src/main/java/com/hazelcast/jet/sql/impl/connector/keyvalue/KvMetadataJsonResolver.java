@@ -27,7 +27,6 @@ import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -50,7 +49,7 @@ public final class KvMetadataJsonResolver implements KvMetadataResolver {
     }
 
     @Override
-    public List<MappingField> resolveAndValidateFields(
+    public Stream<MappingField> resolveAndValidateFields(
             boolean isKey,
             List<MappingField> userFields,
             Map<String, String> options,
@@ -60,19 +59,14 @@ public final class KvMetadataJsonResolver implements KvMetadataResolver {
             throw QueryException.error("Column list is required for JSON format");
         }
 
-        Map<QueryPath, MappingField> userFieldsByPath = extractFields(userFields, isKey);
-
-        Map<String, MappingField> fields = new LinkedHashMap<>();
-        for (Entry<QueryPath, MappingField> entry : userFieldsByPath.entrySet()) {
-            QueryPath path = entry.getKey();
-            if (path.getPath() == null) {
-                throw QueryException.error("Cannot use the '" + path + "' field with JSON serialization");
-            }
-            MappingField field = entry.getValue();
-
-            fields.putIfAbsent(field.name(), field);
-        }
-        return new ArrayList<>(fields.values());
+        return extractFields(userFields, isKey).entrySet().stream()
+                .map(entry -> {
+                    QueryPath path = entry.getKey();
+                    if (path.getPath() == null) {
+                        throw QueryException.error("Cannot use the '" + path + "' field with JSON serialization");
+                    }
+                    return entry.getValue();
+                });
     }
 
     @Override
@@ -82,10 +76,10 @@ public final class KvMetadataJsonResolver implements KvMetadataResolver {
             Map<String, String> options,
             InternalSerializationService serializationService
     ) {
-        Map<QueryPath, MappingField> externalFieldsByPath = extractFields(resolvedFields, isKey);
+        Map<QueryPath, MappingField> fieldsByPath = extractFields(resolvedFields, isKey);
 
         List<TableField> fields = new ArrayList<>();
-        for (Entry<QueryPath, MappingField> entry : externalFieldsByPath.entrySet()) {
+        for (Entry<QueryPath, MappingField> entry : fieldsByPath.entrySet()) {
             QueryPath path = entry.getKey();
             QueryDataType type = entry.getValue().type();
             String name = entry.getValue().name();

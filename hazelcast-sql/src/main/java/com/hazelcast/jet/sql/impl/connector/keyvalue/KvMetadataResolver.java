@@ -41,7 +41,7 @@ public interface KvMetadataResolver {
 
     Stream<String> supportedFormats();
 
-    List<MappingField> resolveAndValidateFields(
+    Stream<MappingField> resolveAndValidateFields(
             boolean isKey,
             List<MappingField> userFields,
             Map<String, String> options,
@@ -74,10 +74,9 @@ public interface KvMetadataResolver {
             @Nonnull List<MappingField> resolvedFields,
             @Nonnull List<TableField> tableFields
     ) {
-        // Add the default `__key` or `this` field as hidden, if present neither in the external
-        // names, nor in the field names
+        // Add the default `__key` or `this` field as hidden, if not present in the field names
         String fieldName = isKey ? KEY : VALUE;
-        if (resolvedFields.stream().noneMatch(f -> f.externalName().equals(fieldName) || f.name().equals(fieldName))) {
+        if (resolvedFields.stream().noneMatch(field -> field.name().equals(fieldName))) {
             tableFields.add(new MapTableField(fieldName, QueryDataType.OBJECT, true, QueryPath.create(fieldName)));
         }
     }

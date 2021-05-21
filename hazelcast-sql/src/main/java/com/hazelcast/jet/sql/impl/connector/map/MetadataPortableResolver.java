@@ -62,7 +62,7 @@ final class MetadataPortableResolver implements KvMetadataResolver {
     }
 
     @Override
-    public List<MappingField> resolveAndValidateFields(
+    public Stream<MappingField> resolveAndValidateFields(
             boolean isKey,
             List<MappingField> userFields,
             Map<String, String> options,
@@ -77,18 +77,17 @@ final class MetadataPortableResolver implements KvMetadataResolver {
                 : resolveAndValidateFields(isKey, userFieldsByPath, classDefinition);
     }
 
-    List<MappingField> resolveFields(boolean isKey, ClassDefinition clazz) {
-        List<MappingField> fields = new ArrayList<>();
-        for (String name : clazz.getFieldNames()) {
-            QueryPath path = new QueryPath(name, isKey);
-            QueryDataType type = resolvePortableType(clazz.getFieldType(name));
+    Stream<MappingField> resolveFields(boolean isKey, ClassDefinition clazz) {
+        return clazz.getFieldNames().stream()
+                .map(name -> {
+                    QueryPath path = new QueryPath(name, isKey);
+                    QueryDataType type = resolvePortableType(clazz.getFieldType(name));
 
-            fields.add(new MappingField(name, type, path.toString()));
-        }
-        return fields;
+                    return new MappingField(name, type, path.toString());
+                });
     }
 
-    private static List<MappingField> resolveAndValidateFields(
+    private static Stream<MappingField> resolveAndValidateFields(
             boolean isKey,
             Map<QueryPath, MappingField> userFieldsByPath,
             ClassDefinition clazz
@@ -97,12 +96,12 @@ final class MetadataPortableResolver implements KvMetadataResolver {
             QueryPath path = new QueryPath(name, isKey);
             QueryDataType type = resolvePortableType(clazz.getFieldType(name));
 
-            MappingField mappingField = userFieldsByPath.get(path);
-            if (mappingField != null && !type.getTypeFamily().equals(mappingField.type().getTypeFamily())) {
-                throw QueryException.error("Mismatch between declared and resolved type: " + mappingField.name());
+            MappingField userField = userFieldsByPath.get(path);
+            if (userField != null && !type.getTypeFamily().equals(userField.type().getTypeFamily())) {
+                throw QueryException.error("Mismatch between declared and resolved type: " + userField.name());
             }
         }
-        return new ArrayList<>(userFieldsByPath.values());
+        return userFieldsByPath.values().stream();
     }
 
     @SuppressWarnings("checkstyle:ReturnCount")
