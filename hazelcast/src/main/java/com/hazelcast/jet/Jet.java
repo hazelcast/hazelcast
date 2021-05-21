@@ -120,7 +120,7 @@ public final class Jet {
     /**
      * Creates a member of the Jet cluster with the configuration loaded from
      * default location.
-     * @deprecated see {@linkplain Hazelcast#newHazelcastInstance()}
+     * @deprecated Use {@link Hazelcast#newHazelcastInstance().getJet()} instead.
      */
     @Deprecated
     @Nonnull
