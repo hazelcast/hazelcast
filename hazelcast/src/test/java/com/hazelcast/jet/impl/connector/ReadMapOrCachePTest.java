@@ -18,6 +18,9 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
+import com.hazelcast.jet.core.AbstractProcessor;
+import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.map.IMap;
@@ -25,17 +28,24 @@ import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.jetbrains.annotations.NotNull;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import static com.hazelcast.jet.TestContextSupport.adaptSupplier;
 import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.core.Edge.between;
 import static java.util.Collections.emptyList;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ReadMapOrCachePTest extends SimpleTestInClusterSupport {
@@ -96,6 +106,45 @@ public class ReadMapOrCachePTest extends SimpleTestInClusterSupport {
     }
 
     @Test
+    public void test_largeMap() {
+        IMap<Integer, Integer> map = instance().getMap(randomMapName());
+        Map<Integer, Integer> tmpMap = new HashMap<>();
+        int numItems = 500_000;
+        for (Integer i = 0; i < numItems; i++) {
+            tmpMap.put(i, i);
+            if (tmpMap.size() == 10_000) {
+                map.putAll(tmpMap);
+                tmpMap.clear();
+            }
+        }
+
+        CheckItemsP.received = new BitSet(numItems);
+
+        DAG dag = new DAG();
+        Vertex src = dag.newVertex("src", SourceProcessors.readMapP(map.getName()));
+        Vertex dest = dag.newVertex("dest", CheckItemsP::new).localParallelism(1);
+        dag.edge(between(src, dest));
+
+        instance().newJob(dag).join();
+        assertEquals(numItems, CheckItemsP.received.cardinality());
+        assertEquals(numItems, CheckItemsP.received.length());
+
+        map.destroy();
+    }
+
+    private static final class CheckItemsP extends AbstractProcessor {
+        static BitSet received;
+        @Override
+        protected boolean tryProcess0(@NotNull Object item) {
+            @SuppressWarnings("unchecked")
+            int value = ((Entry<Integer, Integer>) item).getValue();
+            assertFalse(received.get(value));
+            received.set(value);
+            return true;
+        }
+    }
+
+    @Test
     public void test_whenProjectedToObjectWithNoEquals() {
         // test for https://github.com/hazelcast/hazelcast-jet/issues/2448
         IMap<Integer, Object[]> map = instance().getMap(randomMapName());
@@ -113,6 +162,6 @@ public class ReadMapOrCachePTest extends SimpleTestInClusterSupport {
     }
 
     private static <I, O> Projection<I, O> toProjection(FunctionEx<I, O> projectionFn) {
-        return (Projection<I, O>) projectionFn::apply;
+        return projectionFn::apply;
     }
 }

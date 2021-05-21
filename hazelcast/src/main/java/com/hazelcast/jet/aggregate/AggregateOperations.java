@@ -40,6 +40,10 @@ import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.impl.aggregate.AggregateOpAggregator;
+import com.hazelcast.jet.pipeline.BatchStage;
+import com.hazelcast.jet.pipeline.BatchStageWithKey;
+import com.hazelcast.jet.pipeline.GeneralStage;
+import com.hazelcast.jet.pipeline.StageWithWindow;
 import com.hazelcast.map.IMap;
 
 import javax.annotation.Nonnull;

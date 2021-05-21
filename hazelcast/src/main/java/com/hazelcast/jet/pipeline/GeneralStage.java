@@ -25,6 +25,7 @@ import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
+import com.hazelcast.jet.config.InstanceConfig;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
@@ -764,6 +765,10 @@ public interface GeneralStage<T> extends Stage {
      *     (user, country) -> user.setCountry(country)
      * )
      * }</pre>
+     * <p>
+     * This operation is subject to memory limits. See {@link
+     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * information.
      *
      * @param stage1        the stage to hash-join with this one
      * @param joinClause1   specifies how to join the two streams
@@ -807,6 +812,10 @@ public interface GeneralStage<T> extends Stage {
      * This method is similar to {@link #hashJoin} method, but it guarantees
      * that both input items will be not-null. Nulls will be filtered out
      * before reaching {@code #mapToOutputFn}.
+     * <p>
+     * This operation is subject to memory limits. See {@link
+     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * information.
      *
      * @param stage1        the stage to hash-join with this one
      * @param joinClause1   specifies how to join the two streams
@@ -849,6 +858,10 @@ public interface GeneralStage<T> extends Stage {
      *     (user, country, company) -> user.setCountry(country).setCompany(company)
      * )
      * }</pre>
+     * <p>
+     * This operation is subject to memory limits. See {@link
+     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * information.
      *
      * @param stage1        the first stage to join
      * @param joinClause1   specifies how to join with {@code stage1}
@@ -896,6 +909,10 @@ public interface GeneralStage<T> extends Stage {
      *     (user, country, company) -> user.setCountry(country).setCompany(company)
      * )
      * }</pre>
+     * <p>
+     * This operation is subject to memory limits. See {@link
+     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * information.
      *
      * <p>
      * This method is similar to {@link #hashJoin2} method, but it guarantees
@@ -953,6 +970,10 @@ public interface GeneralStage<T> extends Stage {
      * StreamStage<User> joined = builder.build((user, itemsByTag) ->
      *         user.setCountry(itemsByTag.get(tCountry)).setCompany(itemsByTag.get(tCompany)));
      * }</pre>
+     * <p>
+     * This operation is subject to memory limits. See {@link
+     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * information.
      *
      * @return the newly attached stage
      */

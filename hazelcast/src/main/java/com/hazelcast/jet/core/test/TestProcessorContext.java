@@ -109,6 +109,11 @@ public class TestProcessorContext extends TestProcessorSupplierContext implement
     }
 
     @Nonnull @Override
+    public TestProcessorContext setIsLightJob(boolean isLightJob) {
+        return (TestProcessorContext) super.setIsLightJob(isLightJob);
+    }
+
+    @Nonnull @Override
     public TestProcessorContext setManagedContext(@Nonnull ManagedContext managedContext) {
         return (TestProcessorContext) super.setManagedContext(managedContext);
     }

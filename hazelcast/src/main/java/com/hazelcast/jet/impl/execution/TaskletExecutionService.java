@@ -446,7 +446,7 @@ public class TaskletExecutionService {
             this.completionLatch = new AtomicInteger(taskletCount);
             cancellationFuture.whenComplete(withTryCatch(logger, (r, e) -> {
                 if (e == null) {
-                    e = new IllegalStateException("cancellationFuture should be completed exceptionally");
+                    e = new IllegalStateException("cancellationFuture must be completed exceptionally");
                 }
                 exception(e);
                 // Don't interrupt the threads. We require that they do not block for too long,

@@ -28,7 +28,7 @@ import org.apache.calcite.rex.RexNode;
 import java.util.List;
 
 /**
- * Exchange which merges sorted input streams from several nodes into a a single sorted stream on a single node.
+ * Exchange which merges sorted input streams from several nodes into a single sorted stream on a single node.
  * <p>
  * Traits:
  * <ul>

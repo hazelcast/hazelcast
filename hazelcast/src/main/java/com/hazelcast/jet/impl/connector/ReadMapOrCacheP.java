@@ -200,13 +200,13 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
             partitionReadCount--;
 
             IterationPointer[] pointers = reader.toNextPointer(result);
+            currentBatch = reader.toRecordSet(result);
             if (isDone(pointers)) {
                 numCompletedPartitions++;
             } else {
                 assert !currentBatch.isEmpty() : "empty but not terminal batch";
             }
 
-            currentBatch = reader.toRecordSet(result);
             currentBatchPosition = 0;
             readPointers[currentPartitionIndex] = pointers;
 

@@ -177,14 +177,14 @@ public class SnapshotContext {
         return lastPhase1Successful;
     }
 
-    ProcessingGuarantee processingGuarantee() {
+    public ProcessingGuarantee processingGuarantee() {
         return guarantee;
     }
 
     synchronized void initTaskletCount(int numPTasklets, int numSsTasklets, int numPrioritySsTasklets) {
         assert this.numSsTasklets == Integer.MIN_VALUE && this.numPTasklets == Integer.MIN_VALUE
                 : "Tasklet count already set";
-        assert numSsTasklets >= 1
+        assert numSsTasklets >= 0
                 && numPrioritySsTasklets >= 0
                 && numSsTasklets >= numPrioritySsTasklets
                 && numPTasklets >= numSsTasklets

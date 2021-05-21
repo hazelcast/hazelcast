@@ -172,6 +172,10 @@ public class DelegatingSerializationService extends AbstractSerializationService
                 + "or between clients and members.");
     }
 
+    public boolean hasAddedSerializers() {
+        return !serializersByClass.isEmpty();
+    }
+
     @Override
     public void dispose() {
         active = false;

@@ -92,11 +92,11 @@ public interface Cluster {
     Member getLocalMember();
 
     /**
-     * Promotes local lite member to data member.
-     * When this method returns both {@link #getLocalMember()} and {@link #getMembers()}
-     * reflects the promotion.
+     * Promotes the local lite member to a data member.
+     * When this method returns, both {@link #getLocalMember()} and {@link #getMembers()}
+     * reflect the promotion.
      *
-     * @throws IllegalStateException when member is not a lite member or mastership claim in progress
+     * @throws IllegalStateException when member is not a lite member or mastership claim is in progress
      *                               or local member cannot be identified as a member of the cluster
      *                               or cluster state doesn't allow migrations/repartitioning
      * @since 3.9

@@ -1,0 +1,51 @@
+{
+  "instance": {
+    "hazelcast": {
+      "pn-counter": {
+        "my-pn-counter": {
+          "replica-count": 2147483648,
+          "split-brain-protection-ref": [
+            1
+          ],
+          "statistics-enabled": 0,
+          "some-other-property": "Undefined string"
+        }
+      }
+    }
+  },
+  "error": {
+    "schemaLocation": "#/definitions/PNCounter/additionalProperties",
+    "pointerToViolation": "#/hazelcast/pn-counter/my-pn-counter",
+    "causingExceptions": [
+      {
+        "schemaLocation": "#/definitions/PNCounter/additionalProperties",
+        "pointerToViolation": "#/hazelcast/pn-counter/my-pn-counter",
+        "causingExceptions": [],
+        "keyword": "additionalProperties",
+        "message": "extraneous key [some-other-property] is not permitted"
+      },
+      {
+        "schemaLocation": "#/definitions/PNCounter/additionalProperties/properties/replica-count",
+        "pointerToViolation": "#/hazelcast/pn-counter/my-pn-counter/replica-count",
+        "causingExceptions": [],
+        "keyword": "maximum",
+        "message": "2147483648 is not less or equal to 2147483647"
+      },
+      {
+        "schemaLocation": "#/definitions/PNCounter/additionalProperties/properties/split-brain-protection-ref",
+        "pointerToViolation": "#/hazelcast/pn-counter/my-pn-counter/split-brain-protection-ref",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: String, found: JSONArray"
+      },
+      {
+        "schemaLocation": "#/definitions/PNCounter/additionalProperties/properties/statistics-enabled",
+        "pointerToViolation": "#/hazelcast/pn-counter/my-pn-counter/statistics-enabled",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Boolean, found: Integer"
+      }
+    ],
+    "message": "4 schema violations found"
+  }
+}
