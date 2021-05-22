@@ -58,9 +58,9 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.Util.memoizeConcurrent;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-public class JetService implements ManagedService, MembershipAwareService, LiveOperationsTracker {
+public class JetServiceBackend implements ManagedService, MembershipAwareService, LiveOperationsTracker {
 
-    public static final String SERVICE_NAME = "hz:impl:jetService";
+    public static final String SERVICE_NAME = "hz:impl:jetServiceBackend";
     public static final int MAX_PARALLEL_ASYNC_OPS = 1000;
 
     private static final int NOTIFY_MEMBER_SHUTDOWN_DELAY = 5;
@@ -86,7 +86,7 @@ public class JetService implements ManagedService, MembershipAwareService, LiveO
     @Nullable
     private final JetSqlCoreBackend sqlCoreBackend;
 
-    public JetService(Node node) {
+    public JetServiceBackend(Node node) {
         this.logger = node.getLogger(getClass());
         this.liveOperationRegistry = new LiveOperationRegistry();
         this.config = node.getConfig().getJetConfig();
@@ -165,7 +165,7 @@ public class JetService implements ManagedService, MembershipAwareService, LiveO
     private void notifyMasterWeAreShuttingDown(CompletableFuture<Void> future) {
         Operation op = new NotifyMemberShutdownOperation();
         nodeEngine.getOperationService()
-                  .invokeOnTarget(JetService.SERVICE_NAME, op, nodeEngine.getClusterService().getMasterAddress())
+                  .invokeOnTarget(JetServiceBackend.SERVICE_NAME, op, nodeEngine.getClusterService().getMasterAddress())
                   .whenCompleteAsync((response, throwable) -> {
                       if (throwable != null) {
                           logger.warning("Failed to notify master member that this member is shutting down," +

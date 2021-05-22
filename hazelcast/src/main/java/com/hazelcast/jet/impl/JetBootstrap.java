@@ -247,7 +247,7 @@ public final class JetBootstrap {
         join.getKubernetesConfig().setEnabled(false);
         join.getEurekaConfig().setEnabled(false);
         join.setDiscoveryConfig(new DiscoveryConfig());
-        return Hazelcast.newHazelcastInstance(config).getJetInstance();
+        return (JetInstance) Hazelcast.newHazelcastInstance(config).getJet();
     }
 
     public static void configureLogging() {

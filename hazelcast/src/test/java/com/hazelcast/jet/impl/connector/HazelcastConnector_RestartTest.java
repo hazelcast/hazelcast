@@ -21,7 +21,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.JetTestSupport;
-import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobExecutionService;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
 import com.hazelcast.jet.pipeline.Pipeline;
@@ -80,14 +80,14 @@ public class HazelcastConnector_RestartTest extends JetTestSupport {
     }
 
     private Long executionId(JetInstance instance, Job job) {
-        JetService jetService = getNodeEngineImpl(instance).getService(JetService.SERVICE_NAME);
-        JobExecutionService executionService = jetService.getJobExecutionService();
+        JetServiceBackend jetServiceBackend = getNodeEngineImpl(instance1).getService(JetServiceBackend.SERVICE_NAME);
+        JobExecutionService executionService = jetServiceBackend.getJobExecutionService();
         return executionService.getExecutionIdForJobId(job.getId());
     }
 
     private void waitExecutionDoneOnMember(JetInstance instance, long executionId) {
-        JetService jetService = getNodeEngineImpl(instance).getService(JetService.SERVICE_NAME);
-        JobExecutionService executionService = jetService.getJobExecutionService();
+        JetServiceBackend jetServiceBackend = getNodeEngineImpl(instance).getService(JetServiceBackend.SERVICE_NAME);
+        JobExecutionService executionService = jetServiceBackend.getJobExecutionService();
         ExecutionContext execCtx = executionService.getExecutionContext(executionId);
         assertTrueEventually(() -> assertTrue(execCtx == null || execCtx.getExecutionFuture().isDone()));
     }

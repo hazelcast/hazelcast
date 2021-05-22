@@ -128,8 +128,8 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl> {
 
     private JobStateSnapshot doExportSnapshot(String name, boolean cancelJob) {
         try {
-            JetService jetService = container().getService(JetService.SERVICE_NAME);
-            Operation operation = jetService.createExportSnapshotOperation(getId(), name, cancelJob);
+            JetServiceBackend jetServiceBackend = container().getService(JetServiceBackend.SERVICE_NAME);
+            Operation operation = jetServiceBackend.createExportSnapshotOperation(getId(), name, cancelJob);
             invokeOp(operation).get();
         } catch (Exception e) {
             throw rethrow(e);
@@ -182,7 +182,7 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl> {
     private <T> CompletableFuture<T> invokeOp(Operation op) {
         return container()
                 .getOperationService()
-                .createInvocationBuilder(JetService.SERVICE_NAME, op, masterAddress())
+                .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, op, masterAddress())
                 .invoke();
     }
 

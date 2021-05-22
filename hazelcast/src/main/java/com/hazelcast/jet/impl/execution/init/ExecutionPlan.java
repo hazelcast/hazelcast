@@ -32,7 +32,7 @@ import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.Edge.RoutingPolicy;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.execution.ConcurrentInboundEdgeStream;
 import com.hazelcast.jet.impl.execution.ConveyorCollector;
 import com.hazelcast.jet.impl.execution.ConveyorCollectorWithPartition;
@@ -321,7 +321,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     private void initProcSuppliers(long jobId,
                                    ConcurrentHashMap<String, File> tempDirectories,
                                    InternalSerializationService jobSerializationService) {
-        JetService service = nodeEngine.getService(JetService.SERVICE_NAME);
+        JetServiceBackend service = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
 
         for (VertexDef vertex : vertices) {
             ProcessorSupplier supplier = vertex.processorSupplier();
@@ -648,7 +648,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     }
 
     private JetConfig getConfig() {
-        JetService service = nodeEngine.getService(JetService.SERVICE_NAME);
+        JetServiceBackend service = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
         return service.getJetInstance().getConfig();
     }
 

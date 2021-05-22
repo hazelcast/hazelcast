@@ -25,7 +25,7 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.jet.core.processor.SinkProcessors;
-import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.map.MapStore;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -191,8 +191,8 @@ public class GracefulShutdownTest extends JetTestSupport {
                 .setSnapshotIntervalMillis(2000));
 
         // wait for the first snapshot
-        JetService jetService = getNode(instances[0]).nodeEngine.getService(JetService.SERVICE_NAME);
-        JobRepository jobRepository = jetService.getJobCoordinationService().jobRepository();
+        JetServiceBackend jetServiceBackend = getNode(instances[0]).nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
+        JobRepository jobRepository = jetServiceBackend.getJobCoordinationService().jobRepository();
         assertJobStatusEventually(job, RUNNING);
         assertTrueEventually(() -> assertTrue(
                 jobRepository.getJobExecutionRecord(job.getId()).dataMapIndex() >= 0));

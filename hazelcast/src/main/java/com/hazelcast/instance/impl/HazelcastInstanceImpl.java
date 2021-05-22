@@ -48,7 +48,7 @@ import com.hazelcast.internal.crdt.pncounter.PNCounterService;
 import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.internal.memory.MemoryStats;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.JetService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.IMap;
@@ -419,7 +419,7 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
 
     @Nonnull
     @Override
-    public JetInstance getJetInstance() {
+    public JetService getJet() {
         return node.getNodeExtension().getJetInstance();
     }
 

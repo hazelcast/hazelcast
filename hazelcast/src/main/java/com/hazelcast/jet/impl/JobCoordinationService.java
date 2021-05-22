@@ -127,7 +127,7 @@ public class JobCoordinationService {
     private static final int MIN_JOB_SCAN_PERIOD_MILLIS = 100;
 
     private final NodeEngineImpl nodeEngine;
-    private final JetService jetService;
+    private final JetServiceBackend jetServiceBackend;
     private final JetConfig config;
     private final ILogger logger;
     private final JobRepository jobRepository;
@@ -157,10 +157,10 @@ public class JobCoordinationService {
     private long maxJobScanPeriodInMillis;
 
     JobCoordinationService(
-            NodeEngineImpl nodeEngine, JetService jetService, JetConfig config, JobRepository jobRepository
+            NodeEngineImpl nodeEngine, JetServiceBackend jetServiceBackend, JetConfig config, JobRepository jobRepository
     ) {
         this.nodeEngine = nodeEngine;
-        this.jetService = jetService;
+        this.jetServiceBackend = jetServiceBackend;
         this.config = config;
         this.logger = nodeEngine.getLogger(getClass());
         this.jobRepository = jobRepository;
@@ -612,8 +612,8 @@ public class JobCoordinationService {
         return masterContexts.get(jobId);
     }
 
-    JetService getJetService() {
-        return jetService;
+    JetServiceBackend getJetServiceBackend() {
+        return jetServiceBackend;
     }
 
     boolean shouldStartJobs() {
@@ -902,7 +902,7 @@ public class JobCoordinationService {
     }
 
     private Object deserializeJobDefinition(long jobId, JobConfig jobConfig, Data jobDefinitionData) {
-        ClassLoader classLoader = jetService.getJobExecutionService().getClassLoader(jobConfig, jobId);
+        ClassLoader classLoader = jetServiceBackend.getJobExecutionService().getClassLoader(jobConfig, jobId);
         return deserializeWithCustomClassLoader(nodeEngine().getSerializationService(), classLoader, jobDefinitionData);
     }
 

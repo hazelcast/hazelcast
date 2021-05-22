@@ -96,7 +96,7 @@ import com.hazelcast.internal.util.phonehome.PhoneHome;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.MemberSocketInterceptor;
@@ -162,7 +162,7 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
         checkPersistenceAllowed();
         createAndSetPhoneHome();
         if (!jetDisabled(node)) {
-            jetExtension = new JetExtension(node, createService(JetService.class));
+            jetExtension = new JetExtension(node, createService(JetServiceBackend.class));
         }
     }
 
@@ -358,8 +358,8 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
             return (T) new CacheService();
         } else if (MapService.class.isAssignableFrom(clazz)) {
             return createMapService();
-        } else if (JetService.class.isAssignableFrom(clazz)) {
-            return (T) new JetService(node);
+        } else if (JetServiceBackend.class.isAssignableFrom(clazz)) {
+            return (T) new JetServiceBackend(node);
         }
 
         throw new IllegalArgumentException("Unknown service class: " + clazz);

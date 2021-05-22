@@ -100,7 +100,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
         join.getTcpIpConfig().setEnabled(true).addMember("127.0.0.1");
 
         for (int i = 0; i < NODE_COUNT; i++) {
-            instance = Hazelcast.newHazelcastInstance(config).getJetInstance();
+            instance = (JetInstance) Hazelcast.newHazelcastInstance(config).getJet();
         }
         logger = instance.getHazelcastInstance().getLoggingService().getLogger(WordCountTest.class);
         generateMockInput();

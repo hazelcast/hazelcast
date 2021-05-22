@@ -27,7 +27,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.core.JetTestSupport;
-import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.execution.SnapshotContext;
 import com.hazelcast.jet.impl.util.AsyncSnapshotWriterImpl.CustomByteArrayOutputStream;
 import com.hazelcast.jet.impl.util.AsyncSnapshotWriterImpl.SnapshotDataKey;
@@ -217,7 +217,7 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
     public void when_cannotAutoFlush_then_offerReturnsFalse() {
         // When
         // artificially increase number of async ops so that the writer cannot proceed
-        writer.numConcurrentAsyncOps.set(JetService.MAX_PARALLEL_ASYNC_OPS);
+        writer.numConcurrentAsyncOps.set(JetServiceBackend.MAX_PARALLEL_ASYNC_OPS);
         Entry<Data, Data> entry = entry(serialize("k"), serialize("v"));
         int entriesInChunk =
                 (writer.usableChunkCapacity - writer.serializedByteArrayHeader.length) / serializedLength(entry);
@@ -238,7 +238,7 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
     public void when_cannotFlushRemaining_then_returnsFalse() {
         // When
         // artificially increase number of async ops so that the writer cannot proceed
-        writer.numConcurrentAsyncOps.set(JetService.MAX_PARALLEL_ASYNC_OPS);
+        writer.numConcurrentAsyncOps.set(JetServiceBackend.MAX_PARALLEL_ASYNC_OPS);
         Entry<Data, Data> entry1 = entry(serialize("k"), serialize("v"));
         Entry<Data, Data> entry2 = entry(serialize("kk"), serialize("vv"));
         assertTrue(writer.offer(entry1));

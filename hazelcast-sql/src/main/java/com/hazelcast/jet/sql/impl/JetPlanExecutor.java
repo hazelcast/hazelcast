@@ -20,7 +20,7 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.AbstractJetInstance;
-import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.sql.impl.JetPlan.AlterJobPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.CreateJobPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.CreateMappingPlan;
@@ -169,8 +169,8 @@ class JetPlanExecutor {
             rows = catalog.getMappingNames().stream();
         } else {
             assert plan.getShowTarget() == ShowStatementTarget.JOBS;
-            JetService jetService = getNodeEngine(jetInstance).getService(JetService.SERVICE_NAME);
-            rows = jetService.getJobRepository().getJobRecords().stream()
+            JetServiceBackend jetServiceBackend = getNodeEngine(jetInstance).getService(JetServiceBackend.SERVICE_NAME);
+            rows = jetServiceBackend.getJobRepository().getJobRecords().stream()
                     .map(record -> record.getConfig().getName())
                     .filter(Objects::nonNull);
         }

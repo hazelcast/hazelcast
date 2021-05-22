@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.cluster.Address;
-import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobExecutionService;
 import com.hazelcast.jet.impl.TerminationMode;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
@@ -52,7 +52,7 @@ public class TerminateExecutionOperation extends AbstractJobOperation {
 
     @Override
     public void run() {
-        JetService service = getService();
+        JetServiceBackend service = getService();
         JobExecutionService executionService = service.getJobExecutionService();
         Address callerAddress = getCallerAddress();
         executionService.terminateExecution(jobId(), executionId, callerAddress, mode);

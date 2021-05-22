@@ -67,7 +67,7 @@ public class OrderedProcessingMergingStagesTest extends JetTestSupport implement
 
     @BeforeClass
     public static void setupClass() {
-        jet = Hazelcast.newHazelcastInstance(smallInstanceConfig()).getJetInstance();
+        jet = (JetInstance) Hazelcast.newHazelcastInstance(smallInstanceConfig()).getJet();
     }
 
     @Before

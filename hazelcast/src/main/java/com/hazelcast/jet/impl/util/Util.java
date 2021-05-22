@@ -28,7 +28,7 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.function.RunnableEx;
 import com.hazelcast.jet.impl.JetEvent;
-import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -138,7 +138,7 @@ public final class Util {
     }
 
     public static JetInstance getJetInstance(NodeEngine nodeEngine) {
-        return nodeEngine.<JetService>getService(JetService.SERVICE_NAME).getJetInstance();
+        return nodeEngine.<JetServiceBackend>getService(JetServiceBackend.SERVICE_NAME).getJetInstance();
     }
 
     public static long addClamped(long a, long b) {

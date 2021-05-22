@@ -16,7 +16,15 @@
 
 package com.hazelcast.jet;
 
+import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientFailoverConfig;
+import com.hazelcast.config.Config;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.JetBootstrap;
 
@@ -27,6 +35,7 @@ import javax.annotation.Nonnull;
  *
  * @since 3.0
  */
+@Deprecated
 public final class Jet {
 
     private Jet() {
@@ -68,7 +77,7 @@ public final class Jet {
      * To use this feature, follow these steps:
      * <ol><li>
      *     Write your {@code main()} method and your Jet code the usual way, making
-     *     sure you use this method (instead of {@link HazelcastInstance#getJetInstance()})
+     *     sure you use this method (instead of {@link HazelcastInstance#getJet()})
      *     to acquire a Jet client instance.
      * <li>
      *     Create a runnable JAR (e.g. {@code jetjob.jar}) with your entry point
@@ -100,9 +109,91 @@ public final class Jet {
      * </pre>
      *
      * @since 4.0
+     * @deprecated
      */
+    @Deprecated
     @Nonnull
     public static JetInstance bootstrappedInstance() {
         return JetBootstrap.getInstance();
     }
+
+    /**
+     * Creates a member of the Jet cluster with the configuration loaded from
+     * default location.
+     * @deprecated see {@linkplain Hazelcast#newHazelcastInstance()}
+     */
+    @Deprecated
+    @Nonnull
+    public static JetInstance newJetInstance() {
+        return (JetInstance) Hazelcast.newHazelcastInstance().getJet();
+    }
+
+    /**
+     * Creates a member of the Jet cluster with the given configuration.
+     * @deprecated see {@linkplain Hazelcast#newHazelcastInstance(Config)} ()}
+     */
+    @Deprecated
+    @Nonnull
+    public static JetInstance newJetInstance(@Nonnull JetConfig config) {
+        Preconditions.checkNotNull(config, "config");
+        Config hzConfig = new Config();
+        return (JetInstance) Hazelcast.newHazelcastInstance(hzConfig).getJet();
+    }
+
+    /**
+     * Creates a Jet client with the default configuration.
+     */
+    @Deprecated
+    @Nonnull
+    public static JetInstance newJetClient() {
+        return (JetInstance) HazelcastClient.newHazelcastClient().getJet();
+    }
+
+    /**
+     * Creates a Jet client with the given Hazelcast client configuration.
+     * <p>
+     */
+    @Deprecated
+    @Nonnull
+    public static JetInstance newJetClient(@Nonnull ClientConfig config) {
+        Preconditions.checkNotNull(config, "config");
+        return (JetInstance) HazelcastClient.newHazelcastClient(config).getJet();
+    }
+
+    /**
+     * Creates a Jet client with cluster failover capability. Client will try to connect
+     * to alternative clusters according to the supplied {@link ClientFailoverConfig}
+     * when it disconnects from a cluster.
+     */
+    @Deprecated
+    @Nonnull
+    public static JetInstance newJetFailoverClient(@Nonnull ClientFailoverConfig config) {
+        Preconditions.checkNotNull(config, "config");
+        return (JetInstance) HazelcastClient.newHazelcastFailoverClient(config).getJet();
+    }
+
+    /**
+     * Creates a Jet client with cluster failover capability. The client will
+     * try to connect to alternative clusters as specified in the resolved {@link
+     * ClientFailoverConfig} when it disconnects from a cluster.
+     * <p>
+     * The failover configuration is loaded using the following resolution mechanism:
+     * <ol>
+     * <li>System property {@code hazelcast.client.failover.config} is checked. If found,
+     * and begins with {@code classpath:}, then a classpath resource is loaded, otherwise
+     * it will be loaded from the file system. The configuration can be either an XML or a YAML
+     * file, distinguished by the suffix of the provided file</li>
+     * <li>{@code hazelcast-client-failover.xml} is checked on in the working dir</li>
+     * <li>{@code hazelcast-client-failover.xml} is checked on the classpath</li>
+     * <li>{@code hazelcast-client-failover.yaml} is checked on the working dir</li>
+     * <li>{@code hazelcast-client-failover.yaml} is checked on the classpath</li>
+     * <li>If none are available, then a {@link HazelcastException} is thrown</li>
+     * </ol>
+     */
+    @Deprecated
+    @Nonnull
+    public static JetInstance newJetFailoverClient() {
+        return (JetInstance) HazelcastClient.newHazelcastFailoverClient().getJet();
+    }
+
 }

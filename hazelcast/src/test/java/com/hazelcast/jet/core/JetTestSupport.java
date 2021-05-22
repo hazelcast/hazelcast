@@ -28,7 +28,7 @@ import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.LightJob;
 import com.hazelcast.jet.function.RunnableEx;
-import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobExecutionRecord;
 import com.hazelcast.jet.impl.JobExecutionService;
 import com.hazelcast.jet.impl.JobRepository;
@@ -187,7 +187,7 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
     public static long assertJobRunningEventually(JetInstance instance, Job job, Long ignoredExecutionId) {
         Long executionId;
         JobExecutionService service = getNodeEngineImpl(instance)
-                .<JetService>getService(JetService.SERVICE_NAME)
+                .<JetServiceBackend>getService(JetServiceBackend.SERVICE_NAME)
                 .getJobExecutionService();
         long nullSince = Long.MIN_VALUE;
         do {
@@ -222,8 +222,8 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
         HazelcastTestSupport.assertClusterSizeEventually(size, jetInstance.getHazelcastInstance());
     }
 
-    public static JetService getJetService(JetInstance jetInstance) {
-        return getNodeEngineImpl(jetInstance).getService(JetService.SERVICE_NAME);
+    public static JetServiceBackend getJetService(JetInstance jetInstance) {
+        return getNodeEngineImpl(jetInstance).getService(JetServiceBackend.SERVICE_NAME);
     }
 
     public static HazelcastInstance hz(JetInstance instance) {
@@ -310,7 +310,7 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
      *                            one instance
      */
     public void cleanUpCluster(HazelcastInstance ... instances) {
-        for (Job job : instances[0].getJetInstance().getJobs()) {
+        for (Job job : instances[0].getJet().getJobs()) {
             ditchJob(job, instances);
         }
         for (DistributedObject o : instances[0].getDistributedObjects()) {

@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
@@ -34,7 +34,7 @@ public class GetJobConfigOperation extends AbstractJobOperation implements Allow
 
     @Override
     public void run() {
-        JetService service = getService();
+        JetServiceBackend service = getService();
         response = service.getJobConfig(jobId());
     }
 

@@ -36,6 +36,7 @@ import com.hazelcast.jet.pipeline.Sources;
  *
  * @since 3.0
  */
+@Deprecated
 public interface JetCacheManager {
 
     /**
