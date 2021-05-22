@@ -202,6 +202,9 @@ public class JobCoordinationService {
                             + jobResult);
                     return;
                 }
+                if (!config.isResourceUploadEnabled() && !jobConfig.getResourceConfigs().isEmpty()) {
+                    throw new JetException("Resource upload is disabled and JobConfig contains resources");
+                }
 
                 int quorumSize = jobConfig.isSplitBrainProtectionEnabled() ? getQuorumSize() : 0;
                 Object jobDefinition = deserializeJobDefinition(jobId, jobConfig, serializedJobDefinition);

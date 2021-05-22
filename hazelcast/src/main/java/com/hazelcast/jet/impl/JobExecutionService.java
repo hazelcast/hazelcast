@@ -116,7 +116,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
 
     public ClassLoader getClassLoader(JobConfig config, long jobId) {
         JetConfig jetConfig = nodeEngine.getConfig().getJetConfig();
-        if (!jetConfig.isUploadResources()) {
+        if (!jetConfig.isResourceUploadEnabled()) {
             return parentClassLoader(config);
         }
         return classLoaders.computeIfAbsent(jobId,

@@ -30,7 +30,7 @@ public class JetConfig {
     private InstanceConfig instanceConfig = new InstanceConfig();
     private EdgeConfig defaultEdgeConfig = new EdgeConfig();
     private boolean enabled = true;
-    private boolean uploadResources;
+    private boolean resourceUploadEnabled;
 
     /**
      * Creates a new, empty {@code JetConfig} with the default configuration.
@@ -57,15 +57,15 @@ public class JetConfig {
     /**
      * Returns if uploading resources when submitting the job enabled
      */
-    public boolean isUploadResources() {
-        return uploadResources;
+    public boolean isResourceUploadEnabled() {
+        return resourceUploadEnabled;
     }
 
     /**
      * Sets if uploading resources when submitting the job enabled
      */
-    public JetConfig setUploadResources(boolean uploadResources) {
-        this.uploadResources = uploadResources;
+    public JetConfig setResourceUploadEnabled(boolean resourceUploadEnabled) {
+        this.resourceUploadEnabled = resourceUploadEnabled;
         return this;
     }
 
@@ -117,6 +117,12 @@ public class JetConfig {
 
         JetConfig jetConfig = (JetConfig) o;
 
+        if (enabled != jetConfig.enabled) {
+            return false;
+        }
+        if (resourceUploadEnabled != jetConfig.resourceUploadEnabled) {
+            return false;
+        }
         if (!instanceConfig.equals(jetConfig.instanceConfig)) {
             return false;
         }
@@ -127,6 +133,8 @@ public class JetConfig {
     public int hashCode() {
         int result = instanceConfig.hashCode();
         result = 31 * result + defaultEdgeConfig.hashCode();
+        result = 31 * result + (enabled ? 1 : 0);
+        result = 31 * result + (resourceUploadEnabled ? 1 : 0);
         return result;
     }
 }

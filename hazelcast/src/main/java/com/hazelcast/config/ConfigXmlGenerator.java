@@ -1635,7 +1635,7 @@ public class ConfigXmlGenerator {
         JetConfig jetConfig = config.getJetConfig();
         InstanceConfig instanceConfig = jetConfig.getInstanceConfig();
         EdgeConfig edgeConfig = jetConfig.getDefaultEdgeConfig();
-        gen.open("jet")
+        gen.open("jet", "enabled", jetConfig.isEnabled(), "resource-upload-enabled", jetConfig.isResourceUploadEnabled())
                 .open("instance")
                     .node("cooperative-thread-count", instanceConfig.getCooperativeThreadCount())
                     .node("flow-control-period", instanceConfig.getFlowControlPeriodMs())

@@ -2898,6 +2898,19 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     private void handleJet(Node node) {
         JetConfig jetConfig = config.getJetConfig();
+
+        NamedNodeMap attributes = node.getAttributes();
+        for (int a = 0; a < attributes.getLength(); a++) {
+            Node attribute = attributes.item(a);
+            if (matches("enabled", attribute.getNodeName())) {
+                boolean enabled = getBooleanValue(getAttribute(node, "enabled"));
+                jetConfig.setEnabled(enabled);
+            } else if (matches("resource-upload-enabled", attribute.getNodeName())) {
+                boolean resourceUploadEnabled = getBooleanValue(getAttribute(node, "resource-upload-enabled"));
+                jetConfig.setResourceUploadEnabled(resourceUploadEnabled);
+            }
+        }
+
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
             if (matches("instance", nodeName)) {
