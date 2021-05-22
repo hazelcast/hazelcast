@@ -24,7 +24,7 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * A handle to a submitted job. See {@link
- * JetInstance#newLightJob(Pipeline)}.
+ * JetService#newLightJob(Pipeline)}.
  */
 public interface LightJob {
 

@@ -35,6 +35,7 @@ import com.hazelcast.jet.pipeline.Sources;
  * to operate on {@link JetInstance} when JCache is not on the classpath.
  *
  * @since 3.0
+ * @deprecated since 5.0
  */
 @Deprecated
 public interface JetCacheManager {
