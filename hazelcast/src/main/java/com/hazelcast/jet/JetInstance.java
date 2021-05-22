@@ -18,17 +18,22 @@ package com.hazelcast.jet;
 
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.collection.IList;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.function.Observer;
+import com.hazelcast.jet.impl.AbstractJetInstance;
+import com.hazelcast.jet.impl.JobRepository;
+import com.hazelcast.jet.impl.SnapshotValidationRecord;
 import com.hazelcast.jet.pipeline.GeneralStage;
 import com.hazelcast.jet.pipeline.JournalInitialPosition;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.map.IMap;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.spi.annotation.Beta;
@@ -36,19 +41,35 @@ import com.hazelcast.sql.SqlService;
 import com.hazelcast.topic.ITopic;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Collection;
+
+import static com.hazelcast.jet.impl.JobRepository.exportedSnapshotMapName;
+import static java.util.stream.Collectors.toList;
 
 
 /**
  * Represents either an instance of a Jet server node or a Jet client
  * instance that connects to a remote cluster.
- * @since 3.0
+ * @since Jet 3.0
+ * @deprecated since 5.0
  */
 @Deprecated
 public interface JetInstance extends JetService {
 
     /**
+     * Returns the underlying Hazelcast IMDG instance used by Jet. It will
+     * be either a server node or a client, depending on the type of this
+     * {@code JetInstance}.
+     * @deprecated since 5.0
+     */
+    @Nonnull
+    @Deprecated
+    HazelcastInstance getHazelcastInstance();
+
+    /**
      * Returns the name of the Jet instance.
+     * @deprecated since
      */
     @Nonnull
     @Deprecated
@@ -60,6 +81,45 @@ public interface JetInstance extends JetService {
     @Nonnull
     @Deprecated
     Cluster getCluster();
+
+    /**
+     * Returns the {@link JobStateSnapshot} object representing an exported
+     * snapshot with the given name. Returns {@code null} if no such snapshot
+     * exists.
+     */
+    @Nullable
+    @Override
+    @Deprecated
+    default JobStateSnapshot getJobStateSnapshot(@Nonnull String name) {
+        String mapName = exportedSnapshotMapName(name);
+        if (!((AbstractJetInstance) this).existsDistributedObject(MapService.SERVICE_NAME, mapName)) {
+            return null;
+        }
+        IMap<Object, Object> map = getHazelcastInstance().getMap(mapName);
+        Object validationRecord = map.get(SnapshotValidationRecord.KEY);
+        if (validationRecord instanceof SnapshotValidationRecord) {
+            // update the cache - for robustness. For example after the map was copied
+            getHazelcastInstance().getMap(JobRepository.EXPORTED_SNAPSHOTS_DETAIL_CACHE).set(name, validationRecord);
+            return new JobStateSnapshot(getHazelcastInstance(), name, (SnapshotValidationRecord) validationRecord);
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Returns the collection of exported job state snapshots stored in the
+     * cluster.
+     */
+    @Nonnull
+    @Override
+    @Deprecated
+    default Collection<JobStateSnapshot> getJobStateSnapshots() {
+        return getHazelcastInstance().getMap(JobRepository.EXPORTED_SNAPSHOTS_DETAIL_CACHE)
+                .entrySet().stream()
+                .map(entry -> new JobStateSnapshot(getHazelcastInstance(), (String) entry.getKey(),
+                        (SnapshotValidationRecord) entry.getValue()))
+                .collect(toList());
+    }
 
     /**
      * Returns the Hazelcast SQL service.
