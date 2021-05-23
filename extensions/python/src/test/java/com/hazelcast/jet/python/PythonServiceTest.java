@@ -15,6 +15,7 @@
  */
 package com.hazelcast.jet.python;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.pipeline.BatchStage;
 import com.hazelcast.jet.pipeline.Pipeline;
@@ -63,7 +64,9 @@ public class PythonServiceTest extends SimpleTestInClusterSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        initialize(2, null);
+        Config config = smallInstanceConfig();
+        config.getJetConfig().setResourceUploadEnabled(true);
+        initialize(2, config);
         assumeThatNoWindowsOS();
     }
 
