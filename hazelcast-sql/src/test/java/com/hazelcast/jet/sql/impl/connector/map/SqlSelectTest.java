@@ -22,7 +22,6 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -55,7 +54,6 @@ public class SqlSelectTest extends SqlTestSupport {
     }
 
     @Test
-    @Ignore
     public void test_basicSelect() {
         HazelcastInstance hazelcastInstance = instance().getHazelcastInstance();
         String name = randomName();
@@ -67,7 +65,6 @@ public class SqlSelectTest extends SqlTestSupport {
     }
 
     @Test
-    @Ignore
     public void test_selectWithEqFilter() {
         HazelcastInstance hazelcastInstance = instance().getHazelcastInstance();
         String name = randomName();
@@ -80,7 +77,6 @@ public class SqlSelectTest extends SqlTestSupport {
     }
 
     @Test
-    @Ignore
     public void test_selectWithEvenNumbersFilter() {
         HazelcastInstance hazelcastInstance = instance().getHazelcastInstance();
         String name = randomName();
@@ -95,7 +91,6 @@ public class SqlSelectTest extends SqlTestSupport {
     }
 
     @Test
-    @Ignore
     public void test_selectWithProjection() {
         final int thisProjection = 1;
         HazelcastInstance hazelcastInstance = instance().getHazelcastInstance();

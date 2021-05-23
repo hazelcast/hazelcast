@@ -62,10 +62,9 @@ final class FullScanPhysicalRule extends ConverterRule {
     public void onMatch(RelOptRuleCall call) {
         RelNode rel = call.rel(0);
         if (rel.getTraitSet().contains(getInTrait())) {
-            call.transformTo(convert(rel));
-
             PartitionedMapTable table = (PartitionedMapTable) getTableUnwrapped(rel.getTable());
             if (table.getIndexes().isEmpty()) {
+                call.transformTo(convert(rel));
                 return;
             }
 
@@ -80,11 +79,6 @@ final class FullScanPhysicalRule extends ConverterRule {
             for (RelNode transform : transforms) {
                 call.transformTo(transform);
             }
-
-            /*
-               java.lang.AssertionError: Relational expression rel#65:IMapIndexScanPhysicalRel#65 has calling-convention LOGICAL
-               but does not implement the required interface 'interface jet.sql.impl.opt.logical.LogicalRel' of that convention
-             */
         }
     }
 

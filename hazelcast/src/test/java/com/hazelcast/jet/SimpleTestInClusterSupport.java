@@ -84,9 +84,9 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
         if (instances == null) {
             return;
         }
-        for (JetInstance inst : instances) {
-            PacketFiltersUtil.resetPacketFiltersFrom(inst.getHazelcastInstance());
-        }
+//        for (JetInstance inst : instances) {
+//            PacketFiltersUtil.resetPacketFiltersFrom(inst.getHazelcastInstance());
+//        }
         // after each test ditch all jobs and objects
         List<Job> jobs = instances[0].getJobs();
         SUPPORT_LOGGER.info("Ditching " + jobs.size() + " jobs in SimpleTestInClusterSupport.@After: " +

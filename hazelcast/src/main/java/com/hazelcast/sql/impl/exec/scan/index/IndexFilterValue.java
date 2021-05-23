@@ -29,6 +29,7 @@ import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.Row;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -45,7 +46,7 @@ import java.util.List;
  * {1/false, 2/false}. While for the condition "WHERE a=1 AND b IS NULL", the filter would be {1/false, null/true}.
  */
 @SuppressWarnings("rawtypes")
-public class IndexFilterValue implements IdentifiedDataSerializable {
+public class IndexFilterValue implements IdentifiedDataSerializable, Serializable {
 
     private List<Expression> components;
     private List<Boolean> allowNulls;

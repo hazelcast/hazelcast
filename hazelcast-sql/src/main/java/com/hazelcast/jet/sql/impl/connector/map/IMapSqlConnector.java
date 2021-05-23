@@ -212,7 +212,10 @@ public class IMapSqlConnector implements SqlConnector {
                 rel.getAscs()
         );
 
-        return dag.newUniqueVertex(table.toString(), OnHeapMapScanP.onHeapMapScanP(indexScanMetadata));
+        return dag.newUniqueVertex(
+                "Index(" + table.getMapName() + ")",
+                OnHeapMapIndexScanP.onHeapMapIndexScanP(indexScanMetadata)
+        );
     }
 
     @Override

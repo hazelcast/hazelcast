@@ -36,7 +36,7 @@ import java.security.Permission;
 import java.util.List;
 import java.util.Set;
 
-abstract class JetPlan extends SqlPlan {
+public abstract class JetPlan extends SqlPlan {
 
     protected JetPlan(PlanKey planKey) {
         super(planKey);
@@ -478,7 +478,7 @@ abstract class JetPlan extends SqlPlan {
         }
     }
 
-    static class SelectOrSinkPlan extends JetPlan {
+    public static class SelectOrSinkPlan extends JetPlan {
         private final Set<PlanObjectKey> objectKeys;
         private final QueryParameterMetadata parameterMetadata;
         private final DAG dag;
@@ -515,7 +515,7 @@ abstract class JetPlan extends SqlPlan {
             return parameterMetadata;
         }
 
-        DAG getDag() {
+        public DAG getDag() {
             return dag;
         }
 
