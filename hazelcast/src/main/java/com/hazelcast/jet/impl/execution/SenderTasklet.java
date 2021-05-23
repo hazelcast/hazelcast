@@ -78,7 +78,7 @@ public class SenderTasklet implements Tasklet {
 
     // Written by HZ networking thread, read by Jet thread
     private volatile int sendSeqLimitCompressed;
-    private Predicate<Object> addToInboxFunction = inbox::add;
+    private final Predicate<Object> addToInboxFunction = inbox::add;
 
     public SenderTasklet(
             InboundEdgeStream inboundEdgeStream,

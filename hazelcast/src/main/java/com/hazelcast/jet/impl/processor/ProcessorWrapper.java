@@ -78,8 +78,9 @@ public abstract class ProcessorWrapper implements Processor, DynamicMetricsProvi
             String prefix = prefix(c.jobConfig().getName(), c.jobId(), c.vertexName(), c.globalProcessorIndex());
             ILogger newLogger = prefixedLogger(loggingService.getLogger(wrapped.getClass()), prefix);
             context = new ProcCtx(c.jetInstance(), c.jobId(), c.executionId(), c.jobConfig(),
-                    newLogger, c.vertexName(), c.localProcessorIndex(), c.globalProcessorIndex(), c.processingGuarantee(),
-                    c.localParallelism(), c.memberIndex(), c.memberCount(), c.tempDirectories(), c.serializationService());
+                    newLogger, c.vertexName(), c.localProcessorIndex(), c.globalProcessorIndex(),
+                    c.isLightJob(), c.localParallelism(), c.memberIndex(), c.memberCount(), c.tempDirectories(),
+                    c.serializationService());
         }
         return context;
     }

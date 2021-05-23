@@ -1642,6 +1642,7 @@ public class ConfigXmlGenerator {
                     .node("backup-count", instanceConfig.getBackupCount())
                     .node("scale-up-delay-millis", instanceConfig.getScaleUpDelayMillis())
                     .node("lossless-restart-enabled", instanceConfig.isLosslessRestartEnabled())
+                    .node("max-processor-accumulated-records", instanceConfig.getMaxProcessorAccumulatedRecords())
                 .close()
                 .open("edge-defaults")
                     .node("queue-size", edgeConfig.getQueueSize())

@@ -62,6 +62,7 @@ import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -131,6 +132,7 @@ public class JobCoordinationService {
     private final ILogger logger;
     private final JobRepository jobRepository;
     private final ConcurrentMap<Long, MasterContext> masterContexts = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Long, LightMasterContext> lightMasterContexts = new ConcurrentHashMap<>();
     private final ConcurrentMap<UUID, CompletableFuture<Void>> membersShuttingDown = new ConcurrentHashMap<>();
     /**
      * Map of {memberUuid; removeTime}.
@@ -269,6 +271,28 @@ public class JobCoordinationService {
         return res;
     }
 
+    public CompletableFuture<Void> submitLightJob(long jobId, Object jobDefinition) {
+        DAG dag;
+        if (jobDefinition instanceof DAG) {
+            dag = (DAG) jobDefinition;
+        } else {
+            int coopThreadCount = config.getInstanceConfig().getCooperativeThreadCount();
+            dag = ((PipelineImpl) jobDefinition).toDag(new Context() {
+                @Override public int defaultLocalParallelism() {
+                    return coopThreadCount;
+                }
+            });
+        }
+        LightMasterContext mc = new LightMasterContext(nodeEngine, dag, jobId);
+        LightMasterContext oldContext = lightMasterContexts.put(jobId, mc);
+        assert oldContext == null : "duplicate jobId";
+        return mc.start()
+                .whenComplete((t, r) -> {
+                    LightMasterContext removed = lightMasterContexts.remove(jobId);
+                    assert removed != null : "LMC not found";
+                });
+    }
+
     private static Set<String> ownedObservables(DAG dag) {
         return StreamSupport.stream(Spliterators.spliteratorUnknownSize(dag.iterator(), 0), false)
                 .map(vertex -> vertex.getMetaSupplier().getTags().get(ObservableImpl.OWNED_OBSERVABLE))
@@ -387,6 +411,15 @@ public class JobCoordinationService {
                             + terminationMode);
                 }
         );
+    }
+
+    public void terminateLightJob(long jobId) {
+        LightMasterContext mc = lightMasterContexts.get(jobId);
+        if (mc == null) {
+            // job must have terminated already
+            return;
+        }
+        mc.requestTermination();
     }
 
     public CompletableFuture<List<Long>> getAllJobIds() {
@@ -1084,5 +1117,16 @@ public class JobCoordinationService {
                 logger.severe("Failed to complete observable '" + observable + "': " + e, e);
             }
         }
+    }
+
+    /**
+     * From the given list of execution IDs returns those which are unknown to
+     * this coordinator.
+     */
+    public long[] findUnknownExecutions(long[] executionIds) {
+        return Arrays.stream(executionIds).filter(key -> {
+            LightMasterContext lmc = lightMasterContexts.get(key);
+            return lmc == null || lmc.isCancelled();
+        }).toArray();
     }
 }

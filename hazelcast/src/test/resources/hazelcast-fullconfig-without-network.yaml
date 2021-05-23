@@ -64,7 +64,6 @@ hazelcast:
             consistency-check-strategy: MERKLE_TREES
 
         istanbul:
-          class-name: com.hazelcast.wan.custom.WanPublisher
           queue-full-behavior: THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE
           initial-publisher-state: STOPPED
           queue-capacity: 12345
@@ -307,16 +306,17 @@ hazelcast:
       # Proper eviction configuration example for NATIVE in-memory format :
       #    `<eviction max-size-policy="USED_NATIVE_MEMORY_SIZE" eviction-policy="LFU" size="60"/>`
       near-cache:
-        max-size: 10000
         time-to-live-seconds: 0
         max-idle-seconds: 0
-        eviction-policy: LFU
+        eviction:
+          size: 10000
+          eviction-policy: LFU
         invalidate-on-change: true
         cache-local-entries: false
 
       wan-replication-ref:
         my-wan-cluster:
-          merge-policy-class-name: hz.PASS_THROUGH
+          merge-policy-class-name: PassThroughMergePolicy
           filters:
             - com.example.WanTestFilter1
             - com.example.WanTestFilter2
@@ -493,9 +493,9 @@ hazelcast:
       cache-writer-factory:
         class-name: com.example.cache.MyCacheWriterFactory
       expiry-policy-factory:
-        class-name: com.example.cache.MyExpirePolicyFactory
+#        class-name: com.example.cache.MyExpirePolicyFactory
         timed-expiry-policy-factory:
-          expiry-policy-type: ETERNAL
+          expiry-policy-type: TOUCHED
           duration-amount: 123
           time-unit: MICROSECONDS
 
@@ -520,7 +520,7 @@ hazelcast:
         size: 50
       wan-replication-ref:
         name: my-wan-cluster
-        merge-policy-class-name: hz.PASS_THROUGH
+        merge-policy-class-name: PassThroughMergePolicy
         filters:
           - com.example.WanTestFilter1
           - com.example.WanTestFilter2
@@ -597,7 +597,7 @@ hazelcast:
     size:
       unit: MEGABYTES
       value: 256
-    min-block-size: 123
+    min-block-size: 128
     page-size: 123
     metadata-space-percentage: 12.5
     persistent-memory:

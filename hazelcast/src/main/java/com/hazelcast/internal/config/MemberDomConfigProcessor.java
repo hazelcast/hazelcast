@@ -2939,6 +2939,9 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                         getLongValue("scale-up-delay-millis", getTextContent(child)));
             } else if (matches("lossless-restart-enabled", nodeName)) {
                 instanceConfig.setLosslessRestartEnabled(getBooleanValue(getTextContent(child)));
+            } else if (matches("max-processor-accumulated-records", nodeName)) {
+                instanceConfig.setMaxProcessorAccumulatedRecords(
+                        getLongValue("max-processor-accumulated-records", getTextContent(child)));
             }
         }
     }

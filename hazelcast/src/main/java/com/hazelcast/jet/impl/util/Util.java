@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.util;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.EdgeConfig;
@@ -31,6 +32,7 @@ import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
@@ -77,7 +79,6 @@ import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
-import static com.hazelcast.jet.impl.util.Util.toLocalTime;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static java.lang.Math.abs;
 import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
@@ -636,14 +637,17 @@ public final class Util {
         }
 
         return row0 -> {
-            String[] inputRow = row0;
             String[] projectedRow = new String[simpleFieldMap.length];
             for (int i = 0; i < simpleFieldMap.length; i++) {
                 if (simpleFieldMap[i] >= 0) {
-                    projectedRow[i] = inputRow[simpleFieldMap[i]];
+                    projectedRow[i] = row0[simpleFieldMap[i]];
                 }
             }
             return projectedRow;
         };
+    }
+
+    public static NodeEngineImpl getNodeEngine(JetInstance instance) {
+        return ((HazelcastInstanceImpl) instance.getHazelcastInstance()).node.nodeEngine;
     }
 }

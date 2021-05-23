@@ -18,6 +18,7 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.RestartableException;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.logging.ILogger;
 
@@ -441,8 +442,8 @@ public interface Processor {
      * true}, that is before the job is finished. The job might still be
      * running other processors.
      * <p>
-     * Even if this processor is cooperative, this method is allowed to do
-     * blocking operations.
+     * See {@link #closeIsCooperative()} regarding the cooperative behavior of
+     * this method.
      * <p>
      * If this method throws an exception, it is logged but it won't be
      * reported as a job failure or cause the job to fail.
@@ -450,6 +451,17 @@ public interface Processor {
      * The default implementation does nothing.
      */
     default void close() throws Exception {
+    }
+
+    /**
+     * Returns {@code true} if the {@link #close()} method of this processor is
+     * cooperative. If it's not, the call to the {@code close()} method is
+     * off-loaded to another thread.
+     * <p>
+     * This flag is ignored for non-cooperative processors.
+     */
+    default boolean closeIsCooperative() {
+        return false;
     }
 
     /**

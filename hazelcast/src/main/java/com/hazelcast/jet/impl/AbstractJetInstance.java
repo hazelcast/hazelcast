@@ -23,6 +23,7 @@ import com.hazelcast.jet.JetCacheManager;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobAlreadyExistsException;
+import com.hazelcast.jet.LightJob;
 import com.hazelcast.jet.Observable;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
@@ -133,6 +134,19 @@ public abstract class AbstractJetInstance implements JetInstance {
     public Job newJobIfAbsent(@Nonnull Pipeline pipeline, @Nonnull JobConfig config) {
         return newJobIfAbsent((Object) pipeline, config);
     }
+
+    @Nonnull @Override
+    public LightJob newLightJob(Pipeline pipeline) {
+        return newLightJobInt(pipeline);
+    }
+
+    @Nonnull @Override
+    public LightJob newLightJob(DAG dag) {
+        return newLightJobInt(dag);
+    }
+
+    @Nonnull
+    protected abstract LightJob newLightJobInt(Object jobDefinition);
 
     @Override
     public Job getJob(long jobId) {

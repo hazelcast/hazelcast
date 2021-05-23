@@ -54,6 +54,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
@@ -200,13 +201,13 @@ public class TcpServerContext implements ServerContext {
     @Override
     public void onFailedConnection(final Address address) {
         ClusterService clusterService = node.clusterService;
-        if (!clusterService.isJoined()) {
-            node.getJoiner().blacklist(address, false);
-        } else {
+        if (clusterService.isJoined()) {
             if (clusterService.getMember(address) != null) {
                 nodeEngine.getExecutionService().schedule(ExecutionService.IO_EXECUTOR, new ReconnectionTask(address),
                         getConnectionMonitorInterval(), TimeUnit.MILLISECONDS);
             }
+        } else {
+            node.getJoiner().blacklist(address, false);
         }
     }
 
@@ -265,8 +266,9 @@ public class TcpServerContext implements ServerContext {
     }
 
     @Override
-    public void executeAsync(final Runnable runnable) {
-        nodeEngine.getExecutionService().execute(ExecutionService.IO_EXECUTOR, runnable);
+    @SuppressWarnings("unchecked")
+    public Future<Void> submitAsync(final Runnable runnable) {
+        return (Future<Void>) nodeEngine.getExecutionService().submit(ExecutionService.IO_EXECUTOR, runnable);
     }
 
     @Override

@@ -64,7 +64,10 @@ public class HazelcastConnector_RestartTest extends JetTestSupport {
         Job job = instance1.newJob(p);
         assertTrueEventually(() -> assertTrue("no output to sink", sinkList.size() > 0), 10);
 
-        long executionId = executionId(job);
+        Long executionId = executionId(instance1, job);
+        if (executionId == null) {
+            executionId = executionId(instance2, job);
+        }
         instance2.shutdown();
 
         // Then - assert that the job stopped producing output
@@ -76,8 +79,8 @@ public class HazelcastConnector_RestartTest extends JetTestSupport {
                 assertTrue("no output after migration completed", sinkList.size() > sizeAfterShutdown), 20);
     }
 
-    private long executionId(Job job) {
-        JetService jetService = getNodeEngineImpl(instance1).getService(JetService.SERVICE_NAME);
+    private Long executionId(JetInstance instance, Job job) {
+        JetService jetService = getNodeEngineImpl(instance).getService(JetService.SERVICE_NAME);
         JobExecutionService executionService = jetService.getJobExecutionService();
         return executionService.getExecutionIdForJobId(job.getId());
     }
