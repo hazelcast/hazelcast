@@ -32,7 +32,7 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.client.protocol.codec.JetExistsDistributedObjectCodec;
 import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobIdsCodec;
 import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobSummaryListCodec;
-import com.hazelcast.jet.impl.client.protocol.codec.JetSubmitLightJobCodec;
+import com.hazelcast.jet.impl.client.protocol.codec.JetSubmitJobCodec;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation.GetJobIdsResult;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
@@ -69,7 +69,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
     public BasicJob newLightJobInt(Object jobDefinition) {
         Data jobDefinitionSerialized = serializationService.toData(jobDefinition);
         long jobId = newJobId();
-        ClientMessage message = JetSubmitLightJobCodec.encodeRequest(jobId, jobDefinitionSerialized);
+        ClientMessage message = JetSubmitJobCodec.encodeRequest(jobId, jobDefinitionSerialized, null, true);
 
         // find random non-lite member
         Member[] members = client.getCluster().getMembers().toArray(new Member[0]);

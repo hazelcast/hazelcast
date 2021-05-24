@@ -33,7 +33,8 @@ public class JetTerminateJobMessageTask extends AbstractJetMessageTask<JetTermin
 
     @Override
     protected Operation prepareOperation() {
-        return new TerminateJobOperation(parameters.jobId, TerminationMode.values()[parameters.terminateMode]);
+        return new TerminateJobOperation(parameters.jobId, TerminationMode.values()[parameters.terminateMode],
+                parameters.isLightJob);
     }
 
     @Override
