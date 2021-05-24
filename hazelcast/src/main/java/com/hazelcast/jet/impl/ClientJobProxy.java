@@ -94,7 +94,7 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
     @Override
     public JobMetrics getMetrics() {
         return callAndRetryIfTargetNotFound(()  -> {
-            ClientMessage request = JetGetJobMetricsCodec.encodeRequest(getId());
+            ClientMessage request = JetGetJobMetricsCodec.encodeRequest(getId(), false);
             ClientMessage response = invocation(request, masterUuid()).invoke().get();
             Data metricsData = JetGetJobMetricsCodec.decodeResponse(response);
             return toJobMetrics(serializationService().toObject(metricsData));
@@ -156,7 +156,7 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
     @Override
     protected long doGetJobSubmissionTime() {
         return callAndRetryIfTargetNotFound(() -> {
-            ClientMessage request = JetGetJobSubmissionTimeCodec.encodeRequest(getId());
+            ClientMessage request = JetGetJobSubmissionTimeCodec.encodeRequest(getId(), false);
             ClientMessage response = invocation(request, masterUuid()).invoke().get();
             return JetGetJobSubmissionTimeCodec.decodeResponse(response);
         });

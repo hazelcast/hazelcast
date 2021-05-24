@@ -536,7 +536,11 @@ public class JobCoordinationService {
      * Returns the latest metrics for a job or fails with {@link JobNotFoundException}
      * if the requested job is not found.
      */
-    public CompletableFuture<List<RawJobMetrics>> getJobMetrics(long jobId) {
+    public CompletableFuture<List<RawJobMetrics>> getJobMetrics(long jobId, boolean isLightJob) {
+        if (isLightJob) {
+            throw new UnsupportedOperationException("TODO"); // TODO [viliam]
+        }
+
         CompletableFuture<List<RawJobMetrics>> cf = new CompletableFuture<>();
         runWithJob(jobId,
                 mc -> mc.jobContext().collectMetrics(cf),
@@ -553,7 +557,10 @@ public class JobCoordinationService {
      * Returns the job submission time or fails with {@link JobNotFoundException}
      * if the requested job is not found.
      */
-    public CompletableFuture<Long> getJobSubmissionTime(long jobId) {
+    public CompletableFuture<Long> getJobSubmissionTime(long jobId, boolean isLightJob) {
+        if (isLightJob) {
+            throw new UnsupportedOperationException("TODO"); // TODO [viliam]
+        }
         return callWithJob(jobId,
                 mc -> mc.jobRecord().getCreationTime(),
                 JobResult::getCreationTime,

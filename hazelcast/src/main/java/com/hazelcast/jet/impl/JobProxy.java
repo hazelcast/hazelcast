@@ -85,7 +85,7 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl> {
     @Nonnull @Override
     public JobMetrics getMetrics() {
         try {
-            List<RawJobMetrics> shards = this.<List<RawJobMetrics>>invokeOp(new GetJobMetricsOperation(getId())).get();
+            List<RawJobMetrics> shards = this.<List<RawJobMetrics>>invokeOp(new GetJobMetricsOperation(getId(), false)).get();
             return toJobMetrics(shards);
         } catch (Throwable t) {
             throw rethrow(t);
@@ -140,7 +140,7 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl> {
     @Override
     protected long doGetJobSubmissionTime() {
         try {
-            return this.<Long>invokeOp(new GetJobSubmissionTimeOperation(getId())).get();
+            return this.<Long>invokeOp(new GetJobSubmissionTimeOperation(getId(), false)).get();
         } catch (Throwable t) {
             throw rethrow(t);
         }

@@ -33,7 +33,7 @@ public class JetJoinSubmittedJobMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new JoinSubmittedJobOperation(parameters.jobId, parameters.useLightJob);
+        return new JoinSubmittedJobOperation(parameters.jobId, parameters.isLightJob);
     }
 
     @Override

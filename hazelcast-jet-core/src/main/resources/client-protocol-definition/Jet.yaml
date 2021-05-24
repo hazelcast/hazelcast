@@ -254,6 +254,11 @@ methods:
           nullable: false
           since: 2.0
           doc: ''
+        - name: isLightJob
+          type: boolean
+          nullable: false
+          since: 2.3
+          doc: ''
     response:
       params:
         - name: response

@@ -25,7 +25,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 public class JetGetJobMetricsMessageTask
-        extends AbstractJetMessageTask<Long, Data> {
+        extends AbstractJetMessageTask<JetGetJobMetricsCodec.RequestParameters, Data> {
 
     JetGetJobMetricsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection,
@@ -40,7 +40,7 @@ public class JetGetJobMetricsMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new GetJobMetricsOperation(parameters);
+        return new GetJobMetricsOperation(parameters.jobId, parameters.isLightJob);
     }
 
     @Override

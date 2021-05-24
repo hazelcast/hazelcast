@@ -116,7 +116,9 @@ public interface Job extends BasicJob {
      *
      * @throws CancellationException if the job was cancelled
      */
-    void join();
+    default void join() {
+        BasicJob.super.join();
+    }
 
     /**
      * Gracefully stops the current execution and schedules a new execution
