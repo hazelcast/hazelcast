@@ -38,7 +38,7 @@
         <maven.compiler.plugin.version>2.5.1</maven.compiler.plugin.version>
         <maven.source.plugin.version>2.2.1</maven.source.plugin.version>
         <maven.gpg.plugin.version>3.0.1</maven.gpg.plugin.version>
-        <maven.javadoc.plugin.version>3.2.0</maven.javadoc.plugin.version>
+        <maven.javadoc.plugin.version>3.3.0</maven.javadoc.plugin.version>
 
         <maven.surefire.plugin.version>2.22.2</maven.surefire.plugin.version>
         <maven.checkstyle.plugin.version>3.1.2</maven.checkstyle.plugin.version>
