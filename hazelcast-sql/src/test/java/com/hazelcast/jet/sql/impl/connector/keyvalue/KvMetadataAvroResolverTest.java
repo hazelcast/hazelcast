@@ -28,7 +28,7 @@ import junitparams.Parameters;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.util.List;
+import java.util.stream.Stream;
 
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataAvroResolver.INSTANCE;
 import static java.util.Arrays.asList;
@@ -46,7 +46,7 @@ public class KvMetadataAvroResolverTest {
             "false, this"
     })
     public void test_resolveFields(boolean key, String prefix) {
-        List<MappingField> fields = INSTANCE.resolveAndValidateFields(
+        Stream<MappingField> fields = INSTANCE.resolveAndValidateFields(
                 key,
                 singletonList(field("field", QueryDataType.INT, prefix + ".field")),
                 emptyMap(),
