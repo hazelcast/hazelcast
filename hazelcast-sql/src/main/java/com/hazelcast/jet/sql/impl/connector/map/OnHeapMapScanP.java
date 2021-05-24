@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector.map;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
@@ -44,7 +45,6 @@ import java.util.Set;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.impl.util.Util.distributeObjects;
-import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.jet.sql.impl.ExpressionUtil.evaluate;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
@@ -79,7 +79,7 @@ public final class OnHeapMapScanP extends AbstractProcessor {
 
     @Override
     protected void init(@Nonnull Context context) throws Exception {
-        NodeEngine nodeEngine = getNodeEngine(context.jetInstance());
+        NodeEngine nodeEngine = ((HazelcastInstanceImpl) context.hazelcastInstance()).node.getNodeEngine();
 
         traverser = new IMapTraverser(
                 nodeEngine,
@@ -189,7 +189,7 @@ public final class OnHeapMapScanP extends AbstractProcessor {
 
         @Override
         public void init(@Nonnull Context context) throws Exception {
-            this.partitionService = context.jetInstance().getHazelcastInstance().getPartitionService();
+            this.partitionService = context.hazelcastInstance().getPartitionService();
         }
 
         @Nonnull

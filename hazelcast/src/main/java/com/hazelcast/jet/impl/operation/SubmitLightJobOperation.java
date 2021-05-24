@@ -38,7 +38,7 @@ public class SubmitLightJobOperation extends AsyncJobOperation {
     @Override
     protected CompletableFuture<Void> doRun() {
         assert !getNodeEngine().getLocalMember().isLiteMember() : "light job submitted to a lite member";
-        return getJetService().getJobCoordinationService().submitLightJob(jobId(), jobDefinition);
+        return getJetServiceBackend().getJobCoordinationService().submitLightJob(jobId(), jobDefinition);
     }
 
     @Override

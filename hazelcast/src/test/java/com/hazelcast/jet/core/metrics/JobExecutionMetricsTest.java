@@ -100,7 +100,7 @@ public class JobExecutionMetricsTest extends SimpleTestInClusterSupport {
                 .setSnapshotIntervalMillis(50);
         Job job = instance().newJob(snapshotPipeline(), jobConfig);
 
-        JobRepository jr = new JobRepository(instance());
+        JobRepository jr = new JobRepository(instance().getHazelcastInstance());
         waitForFirstSnapshot(jr, job.getId(), 20, false);
 
         JobMetricsChecker jobChecker = new JobMetricsChecker(job);

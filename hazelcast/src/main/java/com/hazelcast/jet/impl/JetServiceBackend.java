@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.metrics.impl.MetricsService;
 import com.hazelcast.internal.nio.Packet;
@@ -27,7 +28,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.internal.services.MembershipAwareService;
 import com.hazelcast.internal.services.MembershipServiceEvent;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobNotFoundException;
@@ -70,9 +71,10 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     private final ILogger logger;
     private final LiveOperationRegistry liveOperationRegistry;
     private final AtomicReference<CompletableFuture<Void>> shutdownFuture = new AtomicReference<>();
-    private final JetConfig config;
+    private final JetConfig jetConfig;
 
-    private AbstractJetInstance jetInstance;
+    private HazelcastInstance hazelcastInstance;
+    private JetService jet;
     private Networking networking;
     private TaskletExecutionService taskletExecutionService;
     private JobRepository jobRepository;
@@ -89,7 +91,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     public JetServiceBackend(Node node) {
         this.logger = node.getLogger(getClass());
         this.liveOperationRegistry = new LiveOperationRegistry();
-        this.config = node.getConfig().getJetConfig();
+        this.jetConfig = node.getConfig().getJetConfig();
 
         JetSqlCoreBackend sqlCoreBackend;
         try {
@@ -107,11 +109,14 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     @Override
     public void init(NodeEngine engine, Properties hzProperties) {
         this.nodeEngine = (NodeEngineImpl) engine;
-        this.jetInstance = new JetInstanceImpl(nodeEngine.getNode().hazelcastInstance, config);
+
+        this.hazelcastInstance = engine.getHazelcastInstance();
+        // TODO: Replace it with JetServiceImpl
+        this.jet = new JetInstanceImpl(nodeEngine.getNode().hazelcastInstance, jetConfig);
         taskletExecutionService = new TaskletExecutionService(
-                nodeEngine, config.getInstanceConfig().getCooperativeThreadCount(), nodeEngine.getProperties()
+                nodeEngine, jetConfig.getInstanceConfig().getCooperativeThreadCount(), nodeEngine.getProperties()
         );
-        jobRepository = new JobRepository(jetInstance);
+        jobRepository = new JobRepository(hazelcastInstance);
 
         jobExecutionService = new JobExecutionService(nodeEngine, taskletExecutionService, jobRepository);
         jobCoordinationService = createJobCoordinationService();
@@ -120,7 +125,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         metricsService.registerPublisher(nodeEngine -> new JobMetricsPublisher(jobExecutionService,
                 nodeEngine.getLocalMember()));
         nodeEngine.getMetricsRegistry().registerDynamicMetricsProvider(jobExecutionService);
-        networking = new Networking(engine, jobExecutionService, config.getInstanceConfig().getFlowControlPeriodMs());
+        networking = new Networking(engine, jobExecutionService, jetConfig.getInstanceConfig().getFlowControlPeriodMs());
 
         ClientEngine clientEngine = engine.getService(ClientEngineImpl.SERVICE_NAME);
         ClientExceptionFactory clientExceptionFactory = clientEngine.getExceptionFactory();
@@ -131,11 +136,11 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
                     " since the ClientExceptionFactory is not accessible.");
         }
         logger.info("Setting number of cooperative threads and default parallelism to "
-                + config.getInstanceConfig().getCooperativeThreadCount());
+                + jetConfig.getInstanceConfig().getCooperativeThreadCount());
         if (sqlCoreBackend != null) {
             try {
-                Method initJetInstanceMethod = sqlCoreBackend.getClass().getMethod("init", AbstractJetInstance.class);
-                initJetInstanceMethod.invoke(sqlCoreBackend, jetInstance);
+                Method initJetInstanceMethod = sqlCoreBackend.getClass().getMethod("init", HazelcastInstance.class);
+                initJetInstanceMethod.invoke(sqlCoreBackend, hazelcastInstance);
             } catch (ReflectiveOperationException e) {
                 throw new RuntimeException(e);
             }
@@ -194,7 +199,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     }
 
     JobCoordinationService createJobCoordinationService() {
-        return new JobCoordinationService(nodeEngine, this, config, jobRepository);
+        return new JobCoordinationService(nodeEngine, this, jetConfig, jobRepository);
     }
 
     public InternalSerializationService createSerializationService(Map<String, String> serializerConfigs) {
@@ -207,8 +212,8 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         throw new UnsupportedOperationException("You need Hazelcast Jet Enterprise to use this feature");
     }
 
-    public JetInstance getJetInstance() {
-        return jetInstance;
+    public JetService getJet() {
+        return hazelcastInstance.getJet();
     }
 
     public LiveOperationRegistry getLiveOperationRegistry() {
@@ -223,8 +228,8 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         return nodeEngine;
     }
 
-    public JetConfig getConfig() {
-        return config;
+    public JetConfig getJetConfig() {
+        return jetConfig;
     }
 
     public JobCoordinationService getJobCoordinationService() {

@@ -469,7 +469,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         executionContext.terminateExecution(null);
 
         // When
-        CompletableFuture<Void> future = executionContext.beginExecution(jetService.getTaskletExecutionService());
+        CompletableFuture<Void> future = executionContext.beginExecution(jetServiceBackend.getTaskletExecutionService());
 
         // Then
         expectedException.expect(CancellationException.class);

@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.core.test;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
@@ -36,8 +37,7 @@ import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
 public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.Context {
 
     protected ILogger logger;
-
-    private JetInstance jetInstance;
+    private HazelcastInstance instance;
     private long jobId = 1;
     private long executionId = 1;
     private JobConfig jobConfig = new JobConfig();
@@ -49,16 +49,22 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
     private boolean isLightJob;
 
     @Nonnull @Override
+    public HazelcastInstance hazelcastInstance() {
+        return instance;
+    }
+
+    @Nonnull @Override
+    @Deprecated
     public JetInstance jetInstance() {
-        return jetInstance;
+        return (JetInstance) instance.getJet();
     }
 
     /**
-     * Sets the jet instance.
+     * Sets the Hazelcast instance.
      */
     @Nonnull
-    public TestProcessorMetaSupplierContext setJetInstance(@Nonnull JetInstance jetInstance) {
-        this.jetInstance = jetInstance;
+    public TestProcessorMetaSupplierContext setHazelcastInstance(@Nonnull HazelcastInstance instance) {
+        this.instance = instance;
         return this;
     }
 

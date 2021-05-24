@@ -76,7 +76,7 @@ public class JetInstanceImpl extends AbstractJetInstance {
         SubmitLightJobOperation operation = new SubmitLightJobOperation(jobId, jobDefinition);
         CompletableFuture<Void> future = nodeEngine
                 .getOperationService()
-                .createInvocationBuilder(JetService.SERVICE_NAME, operation, coordinatorAddress)
+                .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, operation, coordinatorAddress)
                 .invoke();
 
         return new LightJobProxy(nodeEngine, jobId, coordinatorAddress, future);

@@ -98,7 +98,7 @@ public class StreamEventJournalP_WmCoalescingTest extends JetTestSupport {
                    .disableProgressAssertion()
                    .runUntilOutputMatches(60_000, 100)
                    .disableSnapshots()
-                   .jetInstance(instance)
+                   .hazelcastInstance(instance.getHazelcastInstance())
                    .expectOutput(asList(wm(10), 10, 10));
     }
 
@@ -124,7 +124,7 @@ public class StreamEventJournalP_WmCoalescingTest extends JetTestSupport {
                    .disableProgressAssertion()
                    .runUntilOutputMatches(60_000, 100)
                    .disableSnapshots()
-                   .jetInstance(instance)
+                   .hazelcastInstance(instance.getHazelcastInstance())
                    .outputChecker((e, a) -> new HashSet<>(e).equals(new HashSet<>(a)))
                    .expectOutput(asList(11, wm(11)));
 
@@ -137,7 +137,7 @@ public class StreamEventJournalP_WmCoalescingTest extends JetTestSupport {
                    .disableProgressAssertion()
                    .runUntilOutputMatches(60_000, 100)
                    .disableSnapshots()
-                   .jetInstance(instance)
+                   .hazelcastInstance(instance.getHazelcastInstance())
                    .expectOutput(singletonList(IDLE_MESSAGE));
     }
 
@@ -158,7 +158,7 @@ public class StreamEventJournalP_WmCoalescingTest extends JetTestSupport {
         Processor processor = createSupplier(asList(0, 1), 2000).get();
         TestOutbox outbox = new TestOutbox(1024);
         Queue<Object> outbox0 = outbox.queue(0);
-        processor.init(outbox, new TestProcessorContext().setJetInstance(instance));
+        processor.init(outbox, new TestProcessorContext().setHazelcastInstance(instance.getHazelcastInstance()));
 
         assertTrueEventually(() -> {
             processor.complete();
@@ -182,7 +182,7 @@ public class StreamEventJournalP_WmCoalescingTest extends JetTestSupport {
                    .disableProgressAssertion()
                    .runUntilOutputMatches(60_000, 100)
                    .disableSnapshots()
-                   .jetInstance(instance)
+                   .hazelcastInstance(instance.getHazelcastInstance())
                    .expectOutput(asList(wm(13), 13, IDLE_MESSAGE));
     }
 

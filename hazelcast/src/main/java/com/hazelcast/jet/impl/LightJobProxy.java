@@ -52,7 +52,7 @@ public class LightJobProxy implements LightJob {
     public void cancel() {
         CancelLightJobOperation operation = new CancelLightJobOperation(jobId);
         nodeEngine.getOperationService()
-                .createInvocationBuilder(JetService.SERVICE_NAME, operation, coordinatorAddress)
+                .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, operation, coordinatorAddress)
                 .invoke()
                 .join();
     }

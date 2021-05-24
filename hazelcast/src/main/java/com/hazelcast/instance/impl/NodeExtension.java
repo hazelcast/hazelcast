@@ -33,12 +33,11 @@ import com.hazelcast.internal.memory.MemoryStats;
 import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.util.ByteArrayProcessor;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.JetService;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.SecurityService;
@@ -134,8 +133,11 @@ public interface NodeExtension {
      * Returns <tt>MemberSocketInterceptor</tt> for this <tt>Node</tt> if available,
      * otherwise returns null.
      *
+     * @param endpointQualifier an endpoint qualifier that identifies
+     *                         groups of network connections sharing a
+     *                         common ProtocolType and the same network
+     *                         settings
      * @return MemberSocketInterceptor
-     * @param endpointQualifier
      */
     MemberSocketInterceptor getSocketInterceptor(EndpointQualifier endpointQualifier);
 
@@ -146,7 +148,7 @@ public interface NodeExtension {
      * can be returned. This is the first item in the chain.
      *
      * @param connection tcp-ip connection
-     * @param serverContext  ServerContext
+     * @param context a server context
      * @return the created InboundHandler.
      */
     InboundHandler[] createInboundHandlers(EndpointQualifier qualifier, ServerConnection connection, ServerContext context);
@@ -194,7 +196,7 @@ public interface NodeExtension {
 
      /**
       * Executed on the master node before allowing a new member to join from
-      * {@link com.hazelcast.internal.cluster.impl.ClusterJoinManager#handleJoinRequest(JoinRequest, Connection)}.
+      * {@link com.hazelcast.internal.cluster.impl.ClusterJoinManager#handleJoinRequest(JoinRequest, ServerConnection)}.
       * Implementation should check if the {@code JoinMessage} should be allowed to proceed, otherwise throw an exception
       * with a message explaining rejection reason.
       */
@@ -347,7 +349,7 @@ public interface NodeExtension {
     CPPersistenceService getCPPersistenceService();
 
     /**
-     * Returns the JetInstance.
+     * Returns the JetService.
      */
-    JetInstance getJetInstance();
+    JetService getJet();
 }

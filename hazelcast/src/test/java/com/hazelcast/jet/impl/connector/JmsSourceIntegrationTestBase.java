@@ -220,7 +220,7 @@ public abstract class JmsSourceIntegrationTestBase extends SimpleTestInClusterSu
 
         Job job = instance().newJob(p, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE).setSnapshotIntervalMillis(10));
         assertJobStatusEventually(job, RUNNING);
-        JobRepository jr = new JobRepository(instance());
+        JobRepository jr = new JobRepository(instance().getHazelcastInstance());
         waitForFirstSnapshot(jr, job.getId(), 5, true);
         assertTrueAllTheTime(() -> assertEquals(RUNNING, job.getStatus()), 1);
     }
@@ -352,7 +352,7 @@ public abstract class JmsSourceIntegrationTestBase extends SimpleTestInClusterSu
         });
 
         int iteration = 0;
-        JobRepository jr = new JobRepository(instance());
+        JobRepository jr = new JobRepository(instance().getHazelcastInstance());
         waitForFirstSnapshot(jr, job.getId(), 20, true);
         while (!producerFuture.isDone()) {
             Thread.sleep(ThreadLocalRandom.current().nextInt(200));

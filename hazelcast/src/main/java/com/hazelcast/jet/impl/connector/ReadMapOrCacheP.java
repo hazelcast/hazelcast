@@ -277,7 +277,7 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
 
         @Override
         public void init(@Nonnull ProcessorMetaSupplier.Context context) {
-            Set<Partition> partitions = context.jetInstance().getHazelcastInstance().getPartitionService().getPartitions();
+            Set<Partition> partitions = context.hazelcastInstance().getPartitionService().getPartitions();
             addrToPartitions = partitions.stream()
                                          .collect(groupingBy(
                                                  partition -> partition.getOwner().getAddress(),
@@ -316,7 +316,7 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
 
         @Override
         public void init(@Nonnull Context context) {
-            hzInstance = (HazelcastInstanceImpl) context.jetInstance().getHazelcastInstance();
+            hzInstance = (HazelcastInstanceImpl) context.hazelcastInstance();
             serializationService = ((ProcSupplierCtx) context).serializationService();
         }
 

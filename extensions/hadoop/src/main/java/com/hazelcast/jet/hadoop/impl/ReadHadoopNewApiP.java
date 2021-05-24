@@ -190,7 +190,7 @@ public final class ReadHadoopNewApiP<K, V, R> extends AbstractProcessor {
                 List<InputSplit> splits = getSplits(configuration);
                 IndexedInputSplit[] indexedInputSplits = new IndexedInputSplit[splits.size()];
                 Arrays.setAll(indexedInputSplits, i -> new IndexedInputSplit(i, splits.get(i)));
-                Address[] addresses = context.jetInstance().getCluster().getMembers()
+                Address[] addresses = context.hazelcastInstance().getCluster().getMembers()
                         .stream()
                         .map(Member::getAddress)
                         .toArray(Address[]::new);

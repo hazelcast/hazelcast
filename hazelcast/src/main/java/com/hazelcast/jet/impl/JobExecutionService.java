@@ -546,7 +546,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
                 long[] executionIds = en.getValue().stream().mapToLong(Long::longValue).toArray();
                 Operation op = new CheckLightJobsOperation(executionIds);
                 InvocationFuture<long[]> future = nodeEngine.getOperationService()
-                        .createInvocationBuilder(JetService.SERVICE_NAME, op, en.getKey())
+                        .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, op, en.getKey())
                         .invoke();
                 future.whenComplete((r, t) -> {
                     if (t instanceof TargetNotMemberException) {

@@ -95,8 +95,8 @@ public final class TestContextSupport {
         public void init(@Nonnull Context context) throws Exception {
             if (context instanceof TestProcessorSupplierContext) {
                 TestProcessorSupplierContext c = (TestProcessorSupplierContext) context;
-                NodeEngine nodeEngine = ((HazelcastInstanceImpl) c.jetInstance().getHazelcastInstance()).node.nodeEngine;
-                context = new ProcCtx(c.jetInstance(), c.jobId(), c.executionId(), c.jobConfig(),
+                NodeEngine nodeEngine = ((HazelcastInstanceImpl) c.hazelcastInstance()).node.nodeEngine;
+                context = new ProcCtx(c.hazelcastInstance(), c.jobId(), c.executionId(), c.jobConfig(),
                         c.logger(), c.vertexName(), 1, 1,
                         c.isLightJob(), c.localParallelism(), 1, c.memberCount(), new ConcurrentHashMap<>(),
                         (InternalSerializationService) nodeEngine.getSerializationService());
@@ -116,8 +116,8 @@ public final class TestContextSupport {
             context = super.initContext(context);
             if (context instanceof TestProcessorContext) {
                 TestProcessorContext c = (TestProcessorContext) context;
-                NodeEngine nodeEngine = ((HazelcastInstanceImpl) c.jetInstance().getHazelcastInstance()).node.nodeEngine;
-                context = new ProcCtx(c.jetInstance(), c.jobId(), c.executionId(), c.jobConfig(),
+                NodeEngine nodeEngine = ((HazelcastInstanceImpl) c.hazelcastInstance()).node.nodeEngine;
+                context = new ProcCtx(c.hazelcastInstance(), c.jobId(), c.executionId(), c.jobConfig(),
                         c.logger(), c.vertexName(), c.localProcessorIndex(), c.globalProcessorIndex(),
                         c.isLightJob(), c.localParallelism(), c.memberIndex(), c.memberCount(),
                         new ConcurrentHashMap<>(), (InternalSerializationService) nodeEngine.getSerializationService());

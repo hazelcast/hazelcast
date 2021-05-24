@@ -73,12 +73,12 @@ public class ElasticSourcePMetaSupplier<T> implements ProcessorMetaSupplier {
 
             if (configuration.isCoLocatedReadingEnabled()) {
                 Set<Address> addresses = context
-                        .jetInstance().getCluster().getMembers().stream()
+                        .hazelcastInstance().getCluster().getMembers().stream()
                         .map(Member::getAddress)
                         .collect(toSet());
                 assignedShards = assignShards(shards, addresses);
             } else {
-                ownerAddress = context.jetInstance().getHazelcastInstance().getPartitionService()
+                ownerAddress = context.hazelcastInstance().getPartitionService()
                                       .getPartition(context.jobId()).getOwner().getAddress();
                 assignedShards = emptyMap();
             }

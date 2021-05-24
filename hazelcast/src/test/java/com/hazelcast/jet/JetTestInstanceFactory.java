@@ -113,7 +113,7 @@ public class JetTestInstanceFactory {
         return factory.getAllHazelcastInstances().stream()
                       .map(Accessors::getNodeEngineImpl)
                       .map(node -> node.<JetServiceBackend>getService(JetServiceBackend.SERVICE_NAME))
-                      .map(JetServiceBackend::getJetInstance)
+                      .map(jetServiceBackend -> (JetInstance) jetServiceBackend.getJet())
                       .toArray(JetInstance[]::new);
     }
 

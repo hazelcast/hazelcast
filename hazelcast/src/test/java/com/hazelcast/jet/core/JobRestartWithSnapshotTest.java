@@ -202,7 +202,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         config.setSnapshotIntervalMillis(1200);
         Job job = instance1.newJob(dag, config);
 
-        JobRepository jobRepository = new JobRepository(instance1);
+        JobRepository jobRepository = new JobRepository(instance1.getHazelcastInstance());
         int timeout = (int) (MILLISECONDS.toSeconds(config.getSnapshotIntervalMillis() * 3) + 8);
 
         waitForFirstSnapshot(jobRepository, job.getId(), timeout, false);
@@ -280,7 +280,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         config.setProcessingGuarantee(EXACTLY_ONCE);
         config.setSnapshotIntervalMillis(0);
         Job job = instance1.newJob(dag, config);
-        JobRepository repository = new JobRepository(instance1);
+        JobRepository repository = new JobRepository(instance1.getHazelcastInstance());
 
         // the first snapshot should succeed
         assertTrueEventually(() -> {

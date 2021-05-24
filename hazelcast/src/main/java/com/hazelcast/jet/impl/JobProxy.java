@@ -48,7 +48,6 @@ import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.jet.impl.JobMetricsUtil.toJobMetrics;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
-import static com.hazelcast.jet.impl.util.Util.getJetInstance;
 
 /**
  * {@link Job} proxy on member.
@@ -127,14 +126,14 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl> {
     }
 
     private JobStateSnapshot doExportSnapshot(String name, boolean cancelJob) {
+        JetServiceBackend jetServiceBackend = container().getService(JetServiceBackend.SERVICE_NAME);
         try {
-            JetServiceBackend jetServiceBackend = container().getService(JetServiceBackend.SERVICE_NAME);
             Operation operation = jetServiceBackend.createExportSnapshotOperation(getId(), name, cancelJob);
             invokeOp(operation).get();
         } catch (Exception e) {
             throw rethrow(e);
         }
-        return getJetInstance(container()).getJobStateSnapshot(name);
+        return jetServiceBackend.getJet().getJobStateSnapshot(name);
     }
 
     @Override

@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.processors;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
@@ -37,7 +38,6 @@ import javax.annotation.Nonnull;
 import java.util.concurrent.CancellationException;
 
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelismOne;
-import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.sql.impl.SqlErrorCode.CANCELLED_BY_USER;
 
 public final class RootResultConsumerSink implements Processor {
@@ -52,7 +52,7 @@ public final class RootResultConsumerSink implements Processor {
 
     @Override
     public void init(@Nonnull Outbox outbox, @Nonnull Context context) {
-        NodeEngineImpl nodeEngine = getNodeEngine(context.jetInstance());
+        NodeEngineImpl nodeEngine = ((HazelcastInstanceImpl) context.hazelcastInstance()).node.getNodeEngine();
         JetSqlCoreBackendImpl jetSqlCoreBackend = nodeEngine.getService(JetSqlCoreBackend.SERVICE_NAME);
         rootResultConsumer = jetSqlCoreBackend.getResultConsumerRegistry().remove(context.jobId());
         assert rootResultConsumer != null;

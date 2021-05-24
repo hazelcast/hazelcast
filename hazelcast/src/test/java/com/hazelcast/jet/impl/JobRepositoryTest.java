@@ -16,11 +16,12 @@
 
 package com.hazelcast.jet.impl;
 
+import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
@@ -33,6 +34,7 @@ import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -62,16 +64,16 @@ public class JobRepositoryTest extends JetTestSupport {
     private static final int MAX_JOB_RESULTS_COUNT = 2;
 
     private final JobConfig jobConfig = new JobConfig();
-    private JetInstance instance;
+    private HazelcastInstance hzInstance;
     private JobRepository jobRepository;
 
     @Before
     public void setup() {
-        Config config = new Config();
+        Config config = smallInstanceConfig();
         config.setProperty(JOB_RESULTS_MAX_SIZE.getName(), Integer.toString(MAX_JOB_RESULTS_COUNT));
 
-        instance = createJetMember(config);
-        jobRepository = new JobRepository(instance);
+        hzInstance = createHazelcastInstance(config);
+        jobRepository = new JobRepository(hzInstance);
         jobRepository.setResourcesExpirationMillis(RESOURCES_EXPIRATION_TIME_MILLIS);
 
         TestProcessors.reset(2);
@@ -166,7 +168,7 @@ public class JobRepositoryTest extends JetTestSupport {
             jobRepository.uploadJobResources(jobRepository.newJobId(), jobConfig);
             fail();
         } catch (JetException e) {
-            Collection<DistributedObject> objects = instance.getHazelcastInstance().getDistributedObjects();
+            Collection<DistributedObject> objects = hzInstance.getDistributedObjects();
             assertTrue(objects.stream().noneMatch(o -> o.getName().startsWith(JobRepository.RESOURCES_MAP_NAME_PREFIX)));
         }
     }
@@ -177,12 +179,12 @@ public class JobRepositoryTest extends JetTestSupport {
 
     @Test
     public void test_getJobRecordFromClient() {
-        JetInstance client = createJetClient();
+        HazelcastInstance client = HazelcastClient.newHazelcastClient();
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.streamFromProcessor("source", ProcessorMetaSupplier.of(() -> new NoOutputSourceP())))
          .withoutTimestamps()
          .writeTo(Sinks.logger());
-        Job job = instance.newJob(p, new JobConfig()
+        Job job = hzInstance.getJet().newJob(p, new JobConfig()
             .setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE)
             .setSnapshotIntervalMillis(100));
         JobRepository jobRepository = new JobRepository(client);
@@ -197,15 +199,15 @@ public class JobRepositoryTest extends JetTestSupport {
 
         // create max+1 jobs
         for (int i = 0; i < MAX_JOB_RESULTS_COUNT + 1; i++) {
-            instance.newJob(dag).join();
+            hzInstance.getJet().newJob(dag).join();
         }
 
-        jobRepository.cleanup(getNodeEngineImpl(instance));
+        jobRepository.cleanup(Accessors.getNodeEngineImpl(hzInstance));
         assertEquals(MAX_JOB_RESULTS_COUNT, jobRepository.getJobResults().size());
     }
 
     private void cleanup() {
-        jobRepository.cleanup(getNodeEngineImpl(instance));
+        jobRepository.cleanup(Accessors.getNodeEngineImpl(hzInstance));
     }
 
     private long uploadResourcesForNewJob() {
@@ -216,7 +218,7 @@ public class JobRepositoryTest extends JetTestSupport {
     private Data createDagData() {
         DAG dag = new DAG();
         dag.newVertex("v", () -> new TestProcessors.MockP().streaming());
-        return getNodeEngineImpl(instance).toData(dag);
+        return Accessors.getNodeEngineImpl(hzInstance).toData(dag);
     }
 
     private JobRecord createJobRecord(long jobId, Data dag) {

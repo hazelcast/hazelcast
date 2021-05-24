@@ -95,7 +95,7 @@ import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.internal.util.phonehome.PhoneHome;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.internal.util.UuidUtil;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
@@ -657,11 +657,11 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
     }
 
     @Override
-    public JetInstance getJetInstance() {
+    public JetService getJet() {
         if (jetExtension == null) {
             throw new IllegalArgumentException("Jet is disabled");
         }
-        return jetExtension.getJetInstance();
+        return jetExtension.getJet();
     }
 
     @Override

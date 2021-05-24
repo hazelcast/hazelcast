@@ -22,7 +22,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.nio.Packet;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.operation.PrepareForPassiveClusterOperation;
@@ -154,9 +154,9 @@ public class JetExtension {
         return extensionServices;
     }
 
-    public JetInstance getJetInstance() {
+    public JetService getJet() {
         if (activated) {
-            return jetServiceBackend.getJetInstance();
+            return jetServiceBackend.getJet();
         } else {
             throw new IllegalArgumentException("Jet is disabled because the current cluster version is less than 5.0");
         }

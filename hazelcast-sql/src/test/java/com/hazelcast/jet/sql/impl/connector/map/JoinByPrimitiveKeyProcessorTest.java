@@ -165,7 +165,7 @@ public class JoinByPrimitiveKeyProcessorTest extends SqlTestSupport {
                 .verifyProcessor(adaptSupplier(processor))
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
                 .input(input)
-                .jetInstance(instance())
+                .hazelcastInstance(instance().getHazelcastInstance())
                 .outputChecker(SqlTestSupport::compareRowLists)
                 .disableProgressAssertion()
                 .expectOutput(output);

@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.execution.init;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.partition.IPartitionService;
@@ -25,7 +26,6 @@ import com.hazelcast.internal.util.concurrent.ConcurrentConveyor;
 import com.hazelcast.internal.util.concurrent.OneToOneConcurrentArrayQueue;
 import com.hazelcast.internal.util.concurrent.QueuedPipe;
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
@@ -86,7 +86,6 @@ import static com.hazelcast.jet.impl.util.ImdgUtil.readList;
 import static com.hazelcast.jet.impl.util.ImdgUtil.writeList;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefix;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefixedLogger;
-import static com.hazelcast.jet.impl.util.Util.getJetInstance;
 import static com.hazelcast.jet.impl.util.Util.memoize;
 import static com.hazelcast.jet.impl.util.Util.toList;
 import static java.util.stream.Collectors.toList;
@@ -170,7 +169,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         initDag(jobSerializationService);
 
         this.ptionArrgmt = new PartitionArrangement(partitionOwners, nodeEngine.getThisAddress());
-        JetInstance instance = getJetInstance(nodeEngine);
+        HazelcastInstance hazelcastInstance = nodeEngine.getHazelcastInstance();
         Set<Integer> higherPriorityVertices = VertexDef.getHigherPriorityVertices(vertices);
         for (Address destAddr : remoteMembers.get()) {
             memberConnections.put(destAddr, getMemberConnection(nodeEngine, destAddr));
@@ -201,7 +200,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                 String processorPrefix = prefix(jobConfig.getName(), jobId, vertex.name(), globalProcessorIndex);
                 ILogger logger = prefixedLogger(nodeEngine.getLogger(processor.getClass()), processorPrefix);
                 ProcCtx context = new ProcCtx(
-                        instance,
+                        hazelcastInstance,
                         jobId,
                         executionId,
                         getJobConfig(),
@@ -329,7 +328,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             ILogger logger = prefixedLogger(nodeEngine.getLogger(supplier.getClass()), prefix);
             try {
                 supplier.init(new ProcSupplierCtx(
-                        service.getJetInstance(),
+                        nodeEngine.getHazelcastInstance(),
                         jobId,
                         executionId,
                         jobConfig,
@@ -638,7 +637,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                            ReceiverTasklet receiverTasklet = new ReceiverTasklet(
                                    collector, jobSerializationService,
                                    edge.getConfig().getReceiveWindowMultiplier(),
-                                   getConfig().getInstanceConfig().getFlowControlPeriodMs(),
+                                   getJetConfig().getInstanceConfig().getFlowControlPeriodMs(),
                                    nodeEngine.getLoggingService(), addr, edge.destOrdinal(), edge.destVertex().name(),
                                    memberConnections.get(addr), jobPrefix);
                            addrToTasklet.put(addr, receiverTasklet);
@@ -647,9 +646,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                    });
     }
 
-    private JetConfig getConfig() {
-        JetServiceBackend service = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
-        return service.getJetInstance().getConfig();
+    private JetConfig getJetConfig() {
+        return nodeEngine.getConfig().getJetConfig();
     }
 
     private List<InboundEdgeStream> createInboundEdgeStreams(VertexDef srcVertex, int localProcessorIdx,

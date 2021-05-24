@@ -40,7 +40,7 @@ public class PostponedSnapshotTest extends PostponedSnapshotTestBase {
         Job job = startJob(100);
 
         latches.set(0, 1);
-        JobRepository jr = new JobRepository(instance);
+        JobRepository jr = new JobRepository(instance.getHazelcastInstance());
         assertTrueEventually(() ->
                 assertTrue(jr.getJobExecutionRecord(job.getId()).dataMapIndex() != NO_SNAPSHOT));
 

@@ -308,7 +308,7 @@ public interface ProcessorMetaSupplier extends Serializable {
                                     + "supports only total parallelism of 1. Local parallelism must be 1.");
                 }
                 String key = StringPartitioningStrategy.getPartitionKey(partitionKey);
-                ownerAddress = context.jetInstance().getHazelcastInstance().getPartitionService()
+                ownerAddress = context.hazelcastInstance().getPartitionService()
                                       .getPartition(key).getOwner().getAddress();
             }
 
@@ -348,6 +348,7 @@ public interface ProcessorMetaSupplier extends Serializable {
             @Nonnull ProcessorSupplier supplier,
             @Nonnull Address memberAddress
     ) {
+
         /**
          * A meta-supplier that will only use the given {@code ProcessorSupplier}
          * on a node with given {@link Address}.
@@ -419,13 +420,14 @@ public interface ProcessorMetaSupplier extends Serializable {
          * @since 5.0
          */
         @Nonnull
-        HazelcastInstance instance();
+        HazelcastInstance hazelcastInstance();
 
         /**
          * Returns the current Jet instance.
-         * @deprecated since 5.0
+         * @deprecated since 5.0, use {@link Context#hazelcastInstance} instead.
          */
         @Nonnull
+        @Deprecated
         JetInstance jetInstance();
 
         /**

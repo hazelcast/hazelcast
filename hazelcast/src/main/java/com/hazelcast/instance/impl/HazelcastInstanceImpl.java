@@ -420,7 +420,7 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
     @Nonnull
     @Override
     public JetService getJet() {
-        return node.getNodeExtension().getJetInstance();
+        return node.getNodeExtension().getJet();
     }
 
     @Override

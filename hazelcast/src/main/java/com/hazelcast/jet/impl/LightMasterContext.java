@@ -156,7 +156,7 @@ public class LightMasterContext {
                 // CheckLightJobsOperation.
                 TerminateExecutionOperation op = new TerminateExecutionOperation(jobId, jobId, CANCEL_FORCEFUL);
                 nodeEngine.getOperationService()
-                        .createInvocationBuilder(JetService.SERVICE_NAME, op, memberInfo.getAddress())
+                        .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, op, memberInfo.getAddress())
                         .invoke();
             }
         }
@@ -195,7 +195,7 @@ public class LightMasterContext {
             AtomicInteger remainingCount
     ) {
         InvocationFuture<Object> future = nodeEngine.getOperationService()
-                                                    .createInvocationBuilder(JetService.SERVICE_NAME, op, address)
+                                                    .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, op, address)
                                                     .invoke();
 
         future.whenComplete((r, throwable) -> {

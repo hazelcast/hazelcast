@@ -17,9 +17,9 @@
 package com.hazelcast.jet.impl.util;
 
 import com.hazelcast.cluster.Address;
-import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
@@ -32,7 +32,6 @@ import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
@@ -137,8 +136,8 @@ public final class Util {
         return true;
     }
 
-    public static JetInstance getJetInstance(NodeEngine nodeEngine) {
-        return nodeEngine.<JetServiceBackend>getService(JetServiceBackend.SERVICE_NAME).getJetInstance();
+    public static JetService getJet(NodeEngine nodeEngine) {
+        return nodeEngine.<JetServiceBackend>getService(JetServiceBackend.SERVICE_NAME).getJet();
     }
 
     public static long addClamped(long a, long b) {
@@ -428,7 +427,7 @@ public final class Util {
     }
 
     @SuppressWarnings("WeakerAccess")  // used in jet-enterprise
-    public static CompletableFuture<Void> copyMapUsingJob(JetInstance instance, int queueSize,
+    public static CompletableFuture<Void> copyMapUsingJob(HazelcastInstance instance, int queueSize,
                                                           String sourceMap, String targetMap) {
         DAG dag = new DAG();
         Vertex source = dag.newVertex("readMap(" + sourceMap + ')', readMapP(sourceMap));
@@ -436,7 +435,7 @@ public final class Util {
         dag.edge(between(source, sink).setConfig(new EdgeConfig().setQueueSize(queueSize)));
         JobConfig jobConfig = new JobConfig()
                 .setName("copy-" + sourceMap + "-to-" + targetMap);
-        return instance.newJob(dag, jobConfig).getFuture();
+        return instance.getJet().newJob(dag, jobConfig).getFuture();
     }
 
     /**
@@ -647,7 +646,4 @@ public final class Util {
         };
     }
 
-    public static NodeEngineImpl getNodeEngine(JetInstance instance) {
-        return ((HazelcastInstanceImpl) instance.getHazelcastInstance()).node.nodeEngine;
-    }
 }
