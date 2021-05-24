@@ -16,10 +16,14 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
+import com.hazelcast.instance.impl.HazelcastBootstrap;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
+import com.hazelcast.jet.config.JobConfig;
 
+import javax.annotation.Nonnull;
 import java.util.Set;
 
 /**
@@ -179,6 +183,82 @@ public final class Hazelcast {
      */
     public static Set<HazelcastInstance> getAllHazelcastInstances() {
         return HazelcastInstanceFactory.getAllHazelcastInstances();
+    }
+
+    /**
+     * Returns either a local Hazelcast instance or a "bootstrapped" Hazelcast
+     * client for a remote Hazelcast cluster, depending on the context. The main
+     * goal of this factory method is to simplify submitting a Jet job to a remote
+     * Hazelcast cluster while also making it convenient to test on the local
+     * machine.
+     * <p>
+     * When you submit a job to a Hazelcast instance that runs locally in your
+     * JVM, it will have all the dependency classes available. However, when
+     * you take the same job to a remote Hazelcast cluster, you'll often find
+     * that it fails with a {@code ClassNotFoundException} because the remote
+     * cluster doesn't have all the classes you use in the job.
+     * <p>
+     * Normally you would have to explicitly add all the dependency classes to
+     * the {@link JobConfig#addClass(Class[]) JobConfig}, either one by one or
+     * packaged into a JAR. If you're submitting a job using the command-line
+     * tool {@code hazelcast submit}, the JAR to attach is the same JAR that
+     * contains the code that submits the job.
+     * <p>
+     * This factory takes all of the above into account in order to provide a
+     * smoother experience:
+     * <ul><li>
+     *     When not called from {@code hazelcast submit}, it returns a local {@code
+     *     HazelcastInstance}, either by creating a new one or looking up a cached one.
+     *     The instance won't join any cluster.
+     * <li>
+     *     When called from {@code hazelcast submit}, it returns a "bootstrapped"
+     *     instance of Hazelcast client that automatically attaches the JAR to all jobs
+     *     you submit using it.
+     * </ul>
+     * With these semantics in place it's simple to write code that works both
+     * in your local development/testing environment (using a local Hazelcast
+     * instance) and in production (using the remote cluster).
+     * <p>
+     * To use this feature, follow these steps:
+     * <ol><li>
+     *     Write your {@code main()} method and your code the usual way, making
+     *     sure you use this method (instead of {@link HazelcastClient#newHazelcastClient()})
+     *     to acquire a Hazelcast client instance.
+     * <li>
+     *     Create a runnable JAR (e.g. {@code jet-job.jar}) with your entry point
+     *     declared as the {@code Main-Class} in {@code MANIFEST.MF}. The JAR should
+     *     include all dependencies required to run it (except the Hazelcast classes
+     *     &mdash; these are already available on the cluster classpath).
+     * <li>
+     *     Submit the job by writing {@code hazelcast submit hz-job.jar} on
+     *     the command line. This assumes you have downloaded the Hazelcast
+     *     distribution package and its {@code bin} directory is on your system
+     *     path. The Hazelcast client will use the configuration file {@code
+     *     <distro_root>/config/hazelcast-client.yaml}. Adjust that file as
+     *     needed.
+     * <li>
+     *     The same code will work if you run it directly from your IDE. In this
+     *     case it will create a local Hazelcast instance for itself to run on.
+     * </ol>
+     * For example, you can write a class like this:
+     * <pre>
+     * public class CustomJetJob {
+     *   public static void main(String[] args) {
+     *     HazelcastInstance hz = Hazelcast.bootstrappedInstance();
+     *     hz.getJet().newJob(buildPipeline()).join();
+     *   }
+     *
+     *   public static Pipeline buildPipeline() {
+     *       // ...
+     *   }
+     * }
+     * </pre>
+     *
+     * @since 5.0
+     */
+    @Nonnull
+    public static HazelcastInstance bootstrappedInstance() {
+        return HazelcastBootstrap.getInstance();
     }
 
     /**

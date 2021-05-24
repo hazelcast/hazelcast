@@ -115,6 +115,11 @@ public class SamplingNodeExtension implements NodeExtension {
     }
 
     @Override
+    public void afterShutdown() {
+        nodeExtension.afterShutdown();
+    }
+
+    @Override
     public SecurityContext getSecurityContext() {
         return nodeExtension.getSecurityContext();
     }

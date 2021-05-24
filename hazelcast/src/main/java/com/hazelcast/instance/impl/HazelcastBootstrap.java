@@ -14,17 +14,31 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl;
+package com.hazelcast.instance.impl;
 
+import com.hazelcast.cardinality.CardinalityEstimator;
+import com.hazelcast.client.ClientService;
 import com.hazelcast.cluster.Cluster;
+import com.hazelcast.cluster.Endpoint;
 import com.hazelcast.collection.IList;
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.collection.ISet;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.JoinConfig;
+import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ICacheManager;
+import com.hazelcast.core.IExecutorService;
+import com.hazelcast.core.LifecycleService;
+import com.hazelcast.cp.CPSubsystem;
+import com.hazelcast.crdt.pncounter.PNCounter;
+import com.hazelcast.durableexecutor.DurableExecutorService;
+import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.internal.util.StringUtil;
-import com.hazelcast.jet.Jet;
+
 import com.hazelcast.jet.JetCacheManager;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
@@ -34,14 +48,29 @@ import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JobStatus;
+import com.hazelcast.jet.impl.AbstractJetInstance;
 import com.hazelcast.jet.impl.util.ConcurrentMemoizingSupplier;
 import com.hazelcast.jet.impl.util.JetConsoleLogHandler;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.IMap;
+import com.hazelcast.multimap.MultiMap;
+import com.hazelcast.partition.PartitionService;
 import com.hazelcast.replicatedmap.ReplicatedMap;
+import com.hazelcast.ringbuffer.Ringbuffer;
+import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
+import com.hazelcast.sql.SqlService;
 import com.hazelcast.topic.ITopic;
+import com.hazelcast.transaction.HazelcastXAResource;
+import com.hazelcast.transaction.TransactionContext;
+import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.transaction.TransactionOptions;
+import com.hazelcast.transaction.TransactionalTask;
+
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -55,6 +84,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
@@ -64,6 +94,8 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.stream.Collectors;
+import java.util.UUID;
+
 
 import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
 import static com.hazelcast.jet.core.JobStatus.STARTING;
@@ -72,42 +104,42 @@ import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static com.hazelcast.spi.properties.ClusterProperty.LOGGING_TYPE;
 
 /**
- * This class shouldn't be directly used, instead see {@link Jet#bootstrappedInstance()}
+ * This class shouldn't be directly used, instead see {@link Hazelcast#bootstrappedInstance()}
  * for the replacement and docs.
  * <p>
  * A helper class that allows one to create a standalone runnable JAR which
- * contains all the code needed to submit a job to a running Jet cluster.
+ * contains all the code needed to submit a job to a running Hazelcast cluster.
  * The main issue with achieving this is that the JAR must be attached as a
- * resource to the job being submitted, so the Jet cluster will be able to
- * load and use its classes. However, from within a running {@code main()}
+ * resource to the job being submitted, so the Hazelcast cluster will be able
+ * to load and use its classes. However, from within a running {@code main()}
  * method it is not trivial to find out the filename of the JAR containing
  * it.
- */
-public final class JetBootstrap {
+ **/
+public final class HazelcastBootstrap {
 
     // supplier should be set only once
-    private static ConcurrentMemoizingSupplier<BootstrappedJetProxy> supplier;
+    private static ConcurrentMemoizingSupplier<BootstrappedInstanceProxy> supplier;
 
     private static final ILogger LOGGER = Logger.getLogger(Hazelcast.class.getName());
     private static final AtomicBoolean LOGGING_CONFIGURED = new AtomicBoolean(false);
     private static final int JOB_START_CHECK_INTERVAL_MILLIS = 1_000;
     private static final EnumSet<JobStatus> STARTUP_STATUSES = EnumSet.of(NOT_RUNNING, STARTING);
 
-    private JetBootstrap() {
+    private HazelcastBootstrap() {
     }
 
-    public static synchronized void executeJar(@Nonnull Supplier<JetInstance> supplierOfJet,
-                           @Nonnull String jar, @Nullable String snapshotName,
-                           @Nullable String jobName, @Nullable String mainClass, @Nonnull List<String> args
+    public static synchronized void executeJar(@Nonnull Supplier<HazelcastInstance> supplierOfInstance,
+                                               @Nonnull String jar, @Nullable String snapshotName,
+                                               @Nullable String jobName, @Nullable String mainClass, @Nonnull List<String> args
     ) throws Exception {
         if (supplier != null) {
             throw new IllegalStateException(
-                    "Supplier of JetInstance was already set. This method should not" +
-                    " be called outside the Jet command line.");
+                    "Supplier of HazelcastInstance was already set. This method should not"
+                            + " be called outside the Hazelcast command line.");
         }
 
         supplier = new ConcurrentMemoizingSupplier<>(() ->
-                new BootstrappedJetProxy(supplierOfJet.get(), jar, snapshotName, jobName)
+                new BootstrappedInstanceProxy(supplierOfInstance.get(), jar, snapshotName, jobName)
         );
         try (JarFile jarFile = new JarFile(jar)) {
             if (StringUtil.isNullOrEmpty(mainClass)) {
@@ -123,7 +155,7 @@ public final class JetBootstrap {
             URL jarUrl = new URL("file:///" + jar);
             URLClassLoader classLoader = AccessController.doPrivileged(
                     (PrivilegedAction<URLClassLoader>) () ->
-                            new URLClassLoader(new URL[]{jarUrl}, JetBootstrap.class.getClassLoader())
+                            new URLClassLoader(new URL[]{jarUrl}, HazelcastBootstrap.class.getClassLoader())
             );
 
             Class<?> clazz = loadMainClass(classLoader, mainClass);
@@ -139,7 +171,7 @@ public final class JetBootstrap {
             main.invoke(null, (Object) jobArgs);
             awaitJobsStarted();
         } finally {
-            JetInstance remembered = JetBootstrap.supplier.remembered();
+            HazelcastInstance remembered = HazelcastBootstrap.supplier.remembered();
             if (remembered != null) {
                 try {
                     remembered.shutdown();
@@ -148,12 +180,12 @@ public final class JetBootstrap {
                     t.printStackTrace();
                 }
             }
-            JetBootstrap.supplier = null;
+            HazelcastBootstrap.supplier = null;
         }
     }
 
     private static void awaitJobsStarted() {
-        List<Job> submittedJobs = JetBootstrap.supplier.get().submittedJobs();
+        List<Job> submittedJobs = ((BootstrappedJetProxy) HazelcastBootstrap.supplier.get().getJetInstance()).submittedJobs();
         int submittedCount = submittedJobs.size();
         if (submittedCount == 0) {
             System.out.println("The JAR didn't submit any jobs.");
@@ -163,8 +195,8 @@ public final class JetBootstrap {
         while (true) {
             uncheckRun(() -> Thread.sleep(JOB_START_CHECK_INTERVAL_MILLIS));
             List<Job> startedJobs = submittedJobs.stream()
-                .filter(job -> !STARTUP_STATUSES.contains(job.getStatus()))
-                .collect(Collectors.toList());
+                    .filter(job -> !STARTUP_STATUSES.contains(job.getStatus()))
+                    .collect(Collectors.toList());
 
             submittedJobs = submittedJobs.stream()
                     .filter(job -> !startedJobs.contains(job))
@@ -216,21 +248,21 @@ public final class JetBootstrap {
     }
 
     /**
-     * Returns the bootstrapped {@code JetInstance}. The instance will be
+     * Returns the bootstrapped {@code HazelcastInstance}. The instance will be
      * automatically shut down once the {@code main()} method of the JAR returns.
      */
     @Nonnull
-    public static synchronized JetInstance getInstance() {
+    public static synchronized HazelcastInstance getInstance() {
         if (supplier == null) {
-            supplier = new ConcurrentMemoizingSupplier<>(() -> new BootstrappedJetProxy(createStandaloneInstance()));
+            supplier = new ConcurrentMemoizingSupplier<>(() -> new BootstrappedInstanceProxy(createStandaloneInstance()));
         }
         return supplier.get();
     }
 
-    private static JetInstance createStandaloneInstance() {
+    private static HazelcastInstance createStandaloneInstance() {
         configureLogging();
-        LOGGER.info("Bootstrapped instance requested but application wasn't called from jet submit script. " +
-                "Creating a standalone Jet instance instead.");
+        LOGGER.info("Bootstrapped instance requested but application wasn't called from hazelcast submit script. "
+                + "Creating a standalone Hazelcast instance instead.");
         Config config = Config.load();
 
         // turn off all discovery to make sure node doesn't join any existing cluster
@@ -247,7 +279,7 @@ public final class JetBootstrap {
         join.getKubernetesConfig().setEnabled(false);
         join.getEurekaConfig().setEnabled(false);
         join.setDiscoveryConfig(new DiscoveryConfig());
-        return (JetInstance) Hazelcast.newHazelcastInstance(config).getJet();
+        return Hazelcast.newHazelcastInstance(config);
     }
 
     public static void configureLogging() {
@@ -266,30 +298,273 @@ public final class JetBootstrap {
                     }
                 }
             } catch (Exception e) {
-                System.err.println("Error configuring java.util.logging for Jet: " + e);
+                System.err.println("Error configuring java.util.logging for Hazelcast: " + e);
             }
         }
     }
 
+    @SuppressWarnings({"checkstyle:methodcount"})
+    private static class BootstrappedInstanceProxy implements HazelcastInstance {
+        private final HazelcastInstance instance;
+        private final JetInstance jetProxy;
+
+        BootstrappedInstanceProxy(@Nonnull HazelcastInstance instance) {
+            this(instance, null, null, null);
+        }
+
+        BootstrappedInstanceProxy(
+                @Nonnull HazelcastInstance instance,
+                @Nullable String jar,
+                @Nullable String snapshotName,
+                @Nullable String jobName
+        ) {
+            this.instance = instance;
+            this.jetProxy = new BootstrappedJetProxy(instance.getJetInstance(), jar, snapshotName, jobName);
+        }
+
+        @Nonnull
+        @Override
+        public String getName() {
+            return instance.getName();
+        }
+
+        @Nonnull
+        @Override
+        public <K, V> IMap<K, V> getMap(@Nonnull String name) {
+            return instance.getMap(name);
+        }
+
+        @Nonnull
+        @Override
+        public <E> IQueue<E> getQueue(@Nonnull String name) {
+            return instance.getQueue(name);
+        }
+
+        @Nonnull
+        @Override
+        public <E> ITopic<E> getTopic(@Nonnull String name) {
+            return instance.getTopic(name);
+        }
+
+        @Nonnull
+        @Override
+        public <E> ITopic<E> getReliableTopic(@Nonnull String name) {
+            return instance.getReliableTopic(name);
+        }
+
+        @Nonnull
+        @Override
+        public <E> ISet<E> getSet(@Nonnull String name) {
+            return instance.getSet(name);
+        }
+
+        @Nonnull
+        @Override
+        public <E> IList<E> getList(@Nonnull String name) {
+            return instance.getList(name);
+        }
+
+        @Nonnull
+        @Override
+        public <K, V> MultiMap<K, V> getMultiMap(@Nonnull String name) {
+            return instance.getMultiMap(name);
+        }
+
+        @Nonnull
+        @Override
+        public <E> Ringbuffer<E> getRingbuffer(@Nonnull String name) {
+            return instance.getRingbuffer(name);
+        }
+
+        @Nonnull
+        @Override
+        public IExecutorService getExecutorService(@Nonnull String name) {
+            return instance.getExecutorService(name);
+        }
+
+        @Nonnull
+        @Override
+        public DurableExecutorService getDurableExecutorService(@Nonnull String name) {
+            return instance.getDurableExecutorService(name);
+        }
+
+        @Override
+        public <T> T executeTransaction(@Nonnull TransactionalTask<T> task) throws TransactionException {
+            return instance.executeTransaction(task);
+        }
+
+        @Override
+        public <T> T executeTransaction(@Nonnull TransactionOptions options,
+                                        @Nonnull TransactionalTask<T> task) throws TransactionException {
+            return instance.executeTransaction(options, task);
+        }
+
+        @Override
+        public TransactionContext newTransactionContext() {
+            return instance.newTransactionContext();
+        }
+
+        @Override
+        public TransactionContext newTransactionContext(@Nonnull TransactionOptions options) {
+            return instance.newTransactionContext(options);
+        }
+
+        @Nonnull
+        @Override
+        public FlakeIdGenerator getFlakeIdGenerator(@Nonnull String name) {
+            return instance.getFlakeIdGenerator(name);
+        }
+
+        @Nonnull
+        @Override
+        public <K, V> ReplicatedMap<K, V> getReplicatedMap(@Nonnull String name) {
+            return instance.getReplicatedMap(name);
+        }
+
+        @Override
+        public ICacheManager getCacheManager() {
+            return instance.getCacheManager();
+        }
+
+        @Nonnull
+        @Override
+        public Cluster getCluster() {
+            return instance.getCluster();
+        }
+
+        @NotNull
+        @Override
+        public Endpoint getLocalEndpoint() {
+            return instance.getLocalEndpoint();
+        }
+
+        @Override
+        public Collection<DistributedObject> getDistributedObjects() {
+            return instance.getDistributedObjects();
+        }
+
+        @Nonnull
+        @Override
+        public Config getConfig() {
+            return instance.getConfig();
+        }
+
+        @Nonnull
+        @Override
+        public PartitionService getPartitionService() {
+            return instance.getPartitionService();
+        }
+
+        @Nonnull
+        @Override
+        public SplitBrainProtectionService getSplitBrainProtectionService() {
+            return instance.getSplitBrainProtectionService();
+        }
+
+        @Nonnull
+        @Override
+        public ClientService getClientService() {
+            return instance.getClientService();
+        }
+
+        @Nonnull
+        @Override
+        public LoggingService getLoggingService() {
+            return instance.getLoggingService();
+        }
+
+        @Nonnull
+        @Override
+        public LifecycleService getLifecycleService() {
+            return instance.getLifecycleService();
+        }
+
+        @Nonnull
+        @Override
+        public <T extends DistributedObject> T getDistributedObject(@Nonnull String serviceName, @Nonnull String name) {
+            return instance.getDistributedObject(serviceName, name);
+        }
+
+        @Override
+        public UUID addDistributedObjectListener(@Nonnull DistributedObjectListener distributedObjectListener) {
+            return instance.addDistributedObjectListener(distributedObjectListener);
+        }
+
+        @Override
+        public boolean removeDistributedObjectListener(@Nonnull UUID registrationId) {
+            return instance.removeDistributedObjectListener(registrationId);
+        }
+
+        @Nonnull
+        @Override
+        public ConcurrentMap<String, Object> getUserContext() {
+            return instance.getUserContext();
+        }
+
+        @Nonnull
+        @Override
+        public HazelcastXAResource getXAResource() {
+            return instance.getXAResource();
+        }
+
+        @Nonnull
+        @Override
+        public CardinalityEstimator getCardinalityEstimator(@Nonnull String name) {
+            return instance.getCardinalityEstimator(name);
+        }
+
+        @Nonnull
+        @Override
+        public PNCounter getPNCounter(@Nonnull String name) {
+            return instance.getPNCounter(name);
+        }
+
+        @Nonnull
+        @Override
+        public IScheduledExecutorService getScheduledExecutorService(@Nonnull String name) {
+            return instance.getScheduledExecutorService(name);
+        }
+
+        @Nonnull
+        @Override
+        public CPSubsystem getCPSubsystem() {
+            return instance.getCPSubsystem();
+        }
+
+        @Nonnull
+        @Override
+        public SqlService getSql() {
+            return instance.getSql();
+        }
+
+        @Nonnull
+        @Override
+        public JetInstance getJetInstance() {
+            return jetProxy;
+        }
+
+        @Override
+        public void shutdown() {
+            getLifecycleService().shutdown();
+        }
+
+    }
+
     private static class BootstrappedJetProxy extends AbstractJetInstance {
-        private final AbstractJetInstance instance;
+        private final AbstractJetInstance jet;
         private final String jar;
         private final String snapshotName;
         private final String jobName;
         private final Collection<Job> submittedJobs = new CopyOnWriteArrayList<>();
 
-        BootstrappedJetProxy(@Nonnull JetInstance hazelcastInstance) {
-            this(hazelcastInstance, null, null, null);
-        }
-
         BootstrappedJetProxy(
-                @Nonnull JetInstance instance,
+                @Nonnull JetInstance jet,
                 @Nullable String jar,
                 @Nullable String snapshotName,
                 @Nullable String jobName
         ) {
-            super(instance.getHazelcastInstance());
-            this.instance = (AbstractJetInstance) instance;
+            super(jet.getHazelcastInstance());
+            this.jet = (AbstractJetInstance) jet;
             this.jar = jar;
             this.snapshotName = snapshotName;
             this.jobName = jobName;
@@ -297,42 +572,47 @@ public final class JetBootstrap {
 
         @Nonnull @Override
         public String getName() {
-            return instance.getName();
+            return jet.getName();
         }
 
         @Nonnull @Override
         public HazelcastInstance getHazelcastInstance() {
-            return instance.getHazelcastInstance();
+            return jet.getHazelcastInstance();
         }
 
         @Nonnull @Override
         public Cluster getCluster() {
-            return instance.getCluster();
+            return jet.getCluster();
         }
 
         @Nonnull @Override
         public JetConfig getConfig() {
-            return instance.getConfig();
+            return jet.getConfig();
         }
 
         @Nonnull @Override
         public Job newJob(@Nonnull Pipeline pipeline, @Nonnull JobConfig config) {
-            return remember(instance.newJob(pipeline, updateJobConfig(config)));
+            return remember(jet.newJob(pipeline, updateJobConfig(config)));
         }
 
         @Nonnull @Override
         public Job newJob(@Nonnull DAG dag, @Nonnull JobConfig config) {
-            return remember(instance.newJob(dag, updateJobConfig(config)));
+            return remember(jet.newJob(dag, updateJobConfig(config)));
         }
 
         @Nonnull @Override
         public Job newJobIfAbsent(@Nonnull Pipeline pipeline, @Nonnull JobConfig config) {
-            return remember(instance.newJobIfAbsent(pipeline, updateJobConfig(config)));
+            return remember(jet.newJobIfAbsent(pipeline, updateJobConfig(config)));
+        }
+
+        @Nonnull @Override
+        public LightJob newLightJobInt(Object jobDefinition) {
+            return jet.newLightJobInt(jobDefinition);
         }
 
         @Nonnull @Override
         public Job newJobIfAbsent(@Nonnull DAG dag, @Nonnull JobConfig config) {
-            return remember(instance.newJobIfAbsent(dag, updateJobConfig(config)));
+            return remember(jet.newJobIfAbsent(dag, updateJobConfig(config)));
         }
 
         List<Job> submittedJobs() {
@@ -342,11 +622,6 @@ public final class JetBootstrap {
         private Job remember(@Nonnull Job job) {
             submittedJobs.add(job);
             return job;
-        }
-
-        @Nonnull @Override
-        public LightJob newLightJobInt(Object jobDefinition) {
-            return instance.newLightJobInt(jobDefinition);
         }
 
         private JobConfig updateJobConfig(@Nonnull JobConfig config) {
@@ -364,77 +639,77 @@ public final class JetBootstrap {
 
         @Nonnull @Override
         public List<Job> getJobs() {
-            return instance.getJobs();
+            return jet.getJobs();
         }
 
         @Override
         public Job getJob(long jobId) {
-            return instance.getJob(jobId);
+            return jet.getJob(jobId);
         }
 
         @Nonnull @Override
         public List<Job> getJobs(@Nonnull String name) {
-            return instance.getJobs(name);
+            return jet.getJobs(name);
         }
 
         @Nonnull @Override
         public <K, V> IMap<K, V> getMap(@Nonnull String name) {
-            return instance.getMap(name);
+            return jet.getMap(name);
         }
 
         @Nonnull @Override
         public <K, V> ReplicatedMap<K, V> getReplicatedMap(@Nonnull String name) {
-            return instance.getReplicatedMap(name);
+            return jet.getReplicatedMap(name);
         }
 
         @Nonnull @Override
         public JetCacheManager getCacheManager() {
-            return instance.getCacheManager();
+            return jet.getCacheManager();
         }
 
         @Nonnull @Override
         public <E> IList<E> getList(@Nonnull String name) {
-            return instance.getList(name);
+            return jet.getList(name);
         }
 
         @Nonnull @Override
         public <T> ITopic<T> getReliableTopic(@Nonnull String name) {
-            return instance.getReliableTopic(name);
+            return jet.getReliableTopic(name);
         }
 
         @Nonnull @Override
         public <T> Observable<T> getObservable(@Nonnull String name) {
-            return instance.getObservable(name);
+            return jet.getObservable(name);
         }
 
         @Override
         public void shutdown() {
-            instance.shutdown();
+            jet.shutdown();
         }
 
         @Override
         public boolean existsDistributedObject(@Nonnull String serviceName, @Nonnull String objectName) {
-            return instance.existsDistributedObject(serviceName, objectName);
+            return jet.existsDistributedObject(serviceName, objectName);
         }
 
         @Override
         public ILogger getLogger() {
-            return instance.getLogger();
+            return jet.getLogger();
         }
 
         @Override
         public Job newJobProxy(long jobId) {
-            return instance.newJobProxy(jobId);
+            return jet.newJobProxy(jobId);
         }
 
         @Override
         public Job newJobProxy(long jobId, Object jobDefinition, JobConfig config) {
-            return instance.newJobProxy(jobId, jobDefinition, config);
+            return jet.newJobProxy(jobId, jobDefinition, config);
         }
 
         @Override
         public List<Long> getJobIdsByName(String name) {
-            return instance.getJobIdsByName(name);
+            return jet.getJobIdsByName(name);
         }
     }
 }

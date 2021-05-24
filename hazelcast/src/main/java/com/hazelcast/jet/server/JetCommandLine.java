@@ -31,6 +31,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.instance.BuildInfo;
+import com.hazelcast.instance.impl.HazelcastBootstrap;
 import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetInstance;
@@ -39,7 +40,6 @@ import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.core.JobStatus;
-import com.hazelcast.jet.impl.JetBootstrap;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.jet.impl.JobSummary;
 import com.hazelcast.jet.server.JetCommandLine.HazelcastVersionProvider;
@@ -199,7 +199,7 @@ public class JetCommandLine implements Runnable {
                             .style(AttributedStyle.BOLD.foreground(SECONDARY_COLOR)).append("%M%P > ").toAnsi())
                     .variable(LineReader.INDENTATION, 2)
                     .option(LineReader.Option.DISABLE_EVENT_EXPANSION, true)
-                    .appName("hazelcast-jet-sql")
+                    .appName("hazelcast-sql")
                     .build();
 
             AtomicReference<SqlResult> activeSqlResult = new AtomicReference<>();
@@ -331,8 +331,9 @@ public class JetCommandLine implements Runnable {
 
         targetsMixin.replace(targets);
 
-        JetBootstrap.executeJar(() -> getJetClient(false), file.getAbsolutePath(),
-                snapshotName, name, mainClass, params);
+        HazelcastBootstrap.executeJar(
+                () -> getJetClient(false).getHazelcastInstance(),
+                file.getAbsolutePath(), snapshotName, name, mainClass, params);
     }
 
     @Command(description = "Suspends a running job")
@@ -647,7 +648,7 @@ public class JetCommandLine implements Runnable {
     }
 
     private void configureLogging() {
-        JetBootstrap.configureLogging();
+        HazelcastBootstrap.configureLogging();
         Level logLevel = Level.WARNING;
         if (verbosity.isVerbose) {
             println("Verbose mode is on, setting logging level to INFO");

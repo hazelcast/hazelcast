@@ -223,7 +223,7 @@ public class SqlJsonTest extends SqlTestSupport {
     @Test
     public void when_createMappingNoColumns_then_fail() {
         assertThatThrownBy(() ->
-                sqlService.execute("CREATE MAPPING " + randomName() + ' '
+                sqlService.execute("CREATE MAPPING kafka "
                         + "TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
                         + "OPTIONS ('valueFormat'='json')"))
                 .hasMessage("Column list is required for JSON format");
@@ -240,9 +240,8 @@ public class SqlJsonTest extends SqlTestSupport {
     }
 
     private void when_explicitTopLevelField_then_fail(String field, String otherField) {
-        String name = randomName();
         assertThatThrownBy(() ->
-                sqlService.execute("CREATE MAPPING " + name + " ("
+                sqlService.execute("CREATE MAPPING kafka ("
                         + field + " VARCHAR"
                         + ", f VARCHAR EXTERNAL NAME \"" + otherField + ".f\""
                         + ") TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
@@ -254,29 +253,6 @@ public class SqlJsonTest extends SqlTestSupport {
                         + ")"))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessage("Cannot use the '" + field + "' field with JSON serialization");
-    }
-
-    @Test
-    public void test_valueFieldMappedUnderTopLevelKeyName() {
-        String name = createRandomTopic();
-        sqlService.execute("CREATE MAPPING " + name + "(\n"
-                + "__key BIGINT EXTERNAL NAME id\n"
-                + ", field BIGINT\n"
-                + ')' + "TYPE " + KafkaSqlConnector.TYPE_NAME + " \n"
-                + "OPTIONS (\n"
-                + '\'' + OPTION_KEY_FORMAT + "'='" + JSON_FORMAT + "'\n"
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + JSON_FORMAT + "'\n"
-                + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + "'\n"
-                + ", 'auto.offset.reset'='earliest'"
-                + ")"
-        );
-
-        kafkaTestSupport.produce(name, "{}", "{\"id\":123,\"field\":456}");
-
-        assertRowsEventuallyInAnyOrder(
-                "select __key, field from " + name,
-                singletonList(new Row(123L, 456L))
-        );
     }
 
     @Test

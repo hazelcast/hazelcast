@@ -28,16 +28,20 @@ import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.map.MapStore;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -57,14 +61,27 @@ import static java.util.concurrent.TimeUnit.HOURS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(Parameterized.class)
 @Category({SlowTest.class, ParallelJVMTest.class})
+@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 public class GracefulShutdownTest extends JetTestSupport {
 
     private static final int NODE_COUNT = 2;
 
     private JetInstance[] instances;
     private JetInstance client;
+
+    /**
+     * If {@code true} shutdown HazelcastInstance otherwise shutdown
+     * JetInstance. See {@link #shutdown(JetInstance)}.
+     */
+    @Parameter
+    public boolean shutdownHazelcastInstance;
+
+    @Parameters(name = "shutdownHazelcastInstance: {0}")
+    public static Collection<Boolean> shutdownFns() {
+        return Arrays.asList(true, false);
+    }
 
     @Before
     public void setup() {
@@ -113,7 +130,7 @@ public class GracefulShutdownTest extends JetTestSupport {
 
         // When
         logger.info("Shutting down instance...");
-        instances[shutDownInstance].shutdown();
+        shutdown(instances[shutDownInstance]);
         logger.info("Joining job...");
         job.join();
         logger.info("Joined");
@@ -149,7 +166,7 @@ public class GracefulShutdownTest extends JetTestSupport {
         dag.newVertex("v", (SupplierEx<Processor>) NoOutputSourceP::new);
         Job job = instances[0].newJob(dag);
         assertJobStatusEventually(job, JobStatus.RUNNING, 10);
-        Future future = spawn(liteMember::shutdown);
+        Future future = spawn(() -> shutdown(liteMember));
         assertTrueAllTheTime(() -> assertEquals(RUNNING, job.getStatus()), 5);
         future.get();
     }
@@ -163,7 +180,7 @@ public class GracefulShutdownTest extends JetTestSupport {
         Future future = spawn(() -> {
             JetInstance nonParticipatingMember = createJetMember();
             sleepSeconds(1);
-            nonParticipatingMember.shutdown();
+            shutdown(nonParticipatingMember);
         });
         assertTrueAllTheTime(() -> assertEquals(RUNNING, job.getStatus()), 5);
         future.get();
@@ -173,8 +190,8 @@ public class GracefulShutdownTest extends JetTestSupport {
     public void when_shutdownGracefulWhileRestartGraceful_then_restartsFromTerminalSnapshot() throws Exception {
         MapConfig mapConfig = new MapConfig(JobRepository.SNAPSHOT_DATA_MAP_PREFIX + "*");
         mapConfig.getMapStoreConfig()
-                 .setClassName(BlockingMapStore.class.getName())
-                 .setEnabled(true);
+                .setClassName(BlockingMapStore.class.getName())
+                .setEnabled(true);
         Config config = instances[0].getHazelcastInstance().getConfig();
         ((DynamicConfigurationAwareConfig) config).getStaticConfig().addMapConfig(mapConfig);
         BlockingMapStore.shouldBlock = false;
@@ -202,7 +219,7 @@ public class GracefulShutdownTest extends JetTestSupport {
         job.restart();
         assertTrueEventually(() -> assertTrue("blocking did not happen", BlockingMapStore.wasBlocked), 5);
 
-        Future shutdownFuture = spawn(() -> instances[1].shutdown());
+        Future shutdownFuture = spawn(() -> shutdown(instances[1]));
         logger.info("savedCounters=" + EmitIntegersP.savedCounters);
         int minCounter = EmitIntegersP.savedCounters.values().stream().mapToInt(Integer::intValue).min().getAsInt();
         BlockingMapStore.shouldBlock = false;
@@ -216,6 +233,14 @@ public class GracefulShutdownTest extends JetTestSupport {
         Map<Integer, Integer> expected = IntStream.range(0, numItems).boxed()
                 .collect(Collectors.toMap(Function.identity(), item -> item < minCounter ? 2 : 1));
         assertEquals(expected, actual);
+    }
+
+    private void shutdown(JetInstance jetInstance) {
+        if (shutdownHazelcastInstance) {
+            jetInstance.getHazelcastInstance().shutdown();
+        } else {
+            jetInstance.shutdown();
+        }
     }
 
     private static final class EmitIntegersP extends AbstractProcessor {

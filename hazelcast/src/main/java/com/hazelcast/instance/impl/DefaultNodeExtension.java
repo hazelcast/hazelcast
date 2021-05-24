@@ -87,14 +87,12 @@ import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.server.tcp.ChannelInitializerFunction;
 import com.hazelcast.internal.server.tcp.PacketDecoder;
 import com.hazelcast.internal.server.tcp.PacketEncoder;
-import com.hazelcast.internal.util.ByteArrayProcessor;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.JVMUtil;
 import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.internal.util.phonehome.PhoneHome;
 import com.hazelcast.internal.util.Preconditions;
-import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.logging.ILogger;
@@ -103,7 +101,6 @@ import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.security.SecurityContext;
-import com.hazelcast.security.SecurityService;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.NodeEngineImpl.JetPacketConsumer;
@@ -118,7 +115,6 @@ import com.hazelcast.wan.impl.WanReplicationServiceImpl;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -280,10 +276,6 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
     }
 
     @Override
-    public void beforeJoin() {
-    }
-
-    @Override
     public void afterStart() {
         if (jetExtension != null) {
             jetExtension.afterStart();
@@ -334,11 +326,6 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
             throw ExceptionUtil.rethrow(e);
         }
         return ss;
-    }
-
-    @Override
-    public SecurityService getSecurityService() {
-        return null;
     }
 
     protected PartitioningStrategy getPartitioningStrategy(ClassLoader configClassLoader) throws Exception {
@@ -407,14 +394,6 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
     }
 
     @Override
-    public void onThreadStart(Thread thread) {
-    }
-
-    @Override
-    public void onThreadStop(Thread thread) {
-    }
-
-    @Override
     public MemoryStats getMemoryStats() {
         return memoryStats;
     }
@@ -427,7 +406,7 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
     }
 
     @Override
-    public void shutdown() {
+    public void afterShutdown() {
         logger.info("Destroying node NodeExtension.");
         if (phoneHome != null) {
             phoneHome.shutdown();
@@ -474,10 +453,6 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
     }
 
     @Override
-    public void afterClusterStateChange(ClusterState oldState, ClusterState newState, boolean isTransient) {
-    }
-
-    @Override
     public void onPartitionStateChange() {
         ClusterViewListenerService service = node.clientEngine.getClusterListenerService();
         if (service != null) {
@@ -491,10 +466,6 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
         if (service != null) {
             service.onMemberListChange();
         }
-    }
-
-    @Override
-    public void onInitialClusterState(ClusterState initialState) {
     }
 
     @Override
@@ -545,21 +516,6 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
     @Override
     public InternalHotRestartService getInternalHotRestartService() {
         return new NoopInternalHotRestartService();
-    }
-
-    @Override
-    public UUID createMemberUuid() {
-        return UuidUtil.newUnsecureUUID();
-    }
-
-    @Override
-    public ByteArrayProcessor createMulticastInputProcessor(ServerContext serverContext) {
-        return null;
-    }
-
-    @Override
-    public ByteArrayProcessor createMulticastOutputProcessor(ServerContext serverContext) {
-        return null;
     }
 
     // obtain cluster version, if already initialized (not null)
@@ -626,16 +582,6 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
     @Override
     public void sendPhoneHome() {
         phoneHome.check();
-    }
-
-    @Override
-    public void scheduleClusterVersionAutoUpgrade() {
-        // NOP
-    }
-
-    @Override
-    public boolean isClientFailoverSupported() {
-        return false;
     }
 
     @Override
