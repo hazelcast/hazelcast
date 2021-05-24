@@ -34,8 +34,8 @@ import junitparams.Parameters;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS_ID;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS_VERSION;
@@ -59,7 +59,7 @@ public class MetadataPortableResolverTest {
             "false, this"
     })
     public void test_resolveFields(boolean key, String prefix) {
-        List<MappingField> fields = INSTANCE.resolveAndValidateFields(
+        Stream<MappingField> fields = INSTANCE.resolveAndValidateFields(
                 key,
                 singletonList(field("field", QueryDataType.INT, prefix + ".field")),
                 ImmutableMap.of(
@@ -104,7 +104,7 @@ public class MetadataPortableResolverTest {
                 (key ? OPTION_KEY_CLASS_VERSION : OPTION_VALUE_CLASS_VERSION), String.valueOf(classDefinition.getVersion())
         );
 
-        List<MappingField> fields = INSTANCE.resolveAndValidateFields(key, emptyList(), options, ss);
+        Stream<MappingField> fields = INSTANCE.resolveAndValidateFields(key, emptyList(), options, ss);
 
         assertThat(fields).containsExactly(
                 field("string", QueryDataType.VARCHAR, prefix + ".string"),
@@ -142,7 +142,7 @@ public class MetadataPortableResolverTest {
                 (key ? OPTION_KEY_CLASS_VERSION : OPTION_VALUE_CLASS_VERSION), String.valueOf(classDefinition.getVersion())
         );
 
-        List<MappingField> fields = INSTANCE.resolveAndValidateFields(
+        Stream<MappingField> fields = INSTANCE.resolveAndValidateFields(
                 key,
                 singletonList(field("renamed_field", QueryDataType.INT, prefix + ".field")),
                 options,
@@ -173,7 +173,7 @@ public class MetadataPortableResolverTest {
                 (key ? OPTION_KEY_CLASS_VERSION : OPTION_VALUE_CLASS_VERSION), String.valueOf(classDefinition.getVersion())
         );
 
-        List<MappingField> fields = INSTANCE.resolveAndValidateFields(
+        Stream<MappingField> fields = INSTANCE.resolveAndValidateFields(
                 key,
                 singletonList(field("field2", QueryDataType.VARCHAR, prefix + ".field2")),
                 options,

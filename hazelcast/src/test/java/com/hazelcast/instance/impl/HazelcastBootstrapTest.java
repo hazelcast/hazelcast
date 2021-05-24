@@ -14,8 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet;
+package com.hazelcast.instance.impl;
 
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.pipeline.Pipeline;
+import com.hazelcast.jet.pipeline.test.AssertionSinks;
+import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -23,13 +29,22 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Arrays;
+import java.util.List;
+
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class JetBootstrapTest {
+public class HazelcastBootstrapTest {
 
     @Test
     public void bootstrappedInstance() {
-        JetInstance instance = Jet.bootstrappedInstance();
-        instance.shutdown();
+        HazelcastInstance hz = Hazelcast.bootstrappedInstance();
+        JetInstance jet = hz.getJetInstance();
+        List<Integer> expected = Arrays.asList(1, 2, 3);
+        Pipeline p = Pipeline.create();
+        p.readFrom(TestSources.items(1, 2, 3))
+                .writeTo(AssertionSinks.assertAnyOrder(expected));
+        jet.newJob(p).join();
+        hz.shutdown();
     }
 }

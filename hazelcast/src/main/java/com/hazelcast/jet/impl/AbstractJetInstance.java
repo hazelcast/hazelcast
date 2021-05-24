@@ -146,7 +146,7 @@ public abstract class AbstractJetInstance implements JetInstance {
     }
 
     @Nonnull
-    protected abstract BasicJob newLightJobInt(Object jobDefinition);
+    public abstract BasicJob newLightJobInt(Object jobDefinition);
 
     @Override
     public BasicJob getJobById(long jobId) {

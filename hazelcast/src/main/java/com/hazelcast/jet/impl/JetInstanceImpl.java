@@ -68,7 +68,7 @@ public class JetInstanceImpl extends AbstractJetInstance {
     }
 
     @Nonnull @Override
-    protected BasicJob newLightJobInt(Object jobDefinition) {
+    public BasicJob newLightJobInt(Object jobDefinition) {
         Address coordinatorAddress;
         if (nodeEngine.getLocalMember().isLiteMember()) {
             // on lite member forward the request to a random member
