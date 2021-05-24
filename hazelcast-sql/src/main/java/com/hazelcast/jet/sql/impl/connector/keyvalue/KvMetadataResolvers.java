@@ -21,12 +21,7 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.schema.MappingField;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.extract.QueryPath;
-import com.hazelcast.sql.impl.schema.TableField;
-import com.hazelcast.sql.impl.schema.map.MapTableField;
-import com.hazelcast.sql.impl.type.QueryDataType;
 
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -41,6 +36,7 @@ import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE_PREFIX;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Stream.concat;
 
@@ -89,26 +85,34 @@ public class KvMetadataResolvers {
         for (MappingField field : userFields) {
             String name = field.name();
 
-            // resolve the external name, if not specified
-            String extName = field.externalName();
-            if (extName == null) {
+            String externalName = field.externalName();
+            if (externalName == null) {
                 if (name.equals(KEY) || name.equals(VALUE)) {
-                    extName = name;
+                    externalName = name;
                 } else {
-                    extName = VALUE_PREFIX + name;
+                    externalName = VALUE_PREFIX + name;
                 }
                 field.setExternalName(name);
             }
 
-            if (!EXT_NAME_PATTERN.matcher(extName).matches()) {
-                throw QueryException.error("Invalid external name: " + extName);
+            if ((name.equals(KEY) && !externalName.equals(KEY))
+                    || (name.equals(VALUE) && !externalName.equals(VALUE))) {
+                throw QueryException.error("Cannot rename field: '" + name + '\'');
+            }
+
+            if (!EXT_NAME_PATTERN.matcher(externalName).matches()) {
+                throw QueryException.error("Invalid external name: " + externalName);
             }
         }
 
         List<MappingField> keyFields = findMetadataResolver(options, true)
-                .resolveAndValidateFields(true, userFields, options, ss);
+                .resolveAndValidateFields(true, userFields, options, ss)
+                .filter(field -> !field.name().equals(KEY) || field.externalName().equals(KEY))
+                .collect(toList());
         List<MappingField> valueFields = findMetadataResolver(options, false)
-                .resolveAndValidateFields(false, userFields, options, ss);
+                .resolveAndValidateFields(false, userFields, options, ss)
+                .filter(field -> !field.name().equals(VALUE) || field.externalName().equals(VALUE))
+                .collect(toList());
 
         Map<String, MappingField> fields = concat(keyFields.stream(), valueFields.stream())
                 .collect(LinkedHashMap::new, (map, field) -> map.putIfAbsent(field.name(), field), Map::putAll);
@@ -145,32 +149,5 @@ public class KvMetadataResolvers {
             throw QueryException.error("Unsupported serialization format: " + format);
         }
         return resolver;
-    }
-
-    public static Map<QueryPath, MappingField> extractFields(List<MappingField> fields, boolean isKey) {
-        Map<QueryPath, MappingField> fieldsByPath = new LinkedHashMap<>();
-        for (MappingField field : fields) {
-            QueryPath path = QueryPath.create(field.externalName());
-            if (isKey != path.isKey()) {
-                continue;
-            }
-            if (fieldsByPath.putIfAbsent(path, field) != null) {
-                throw QueryException.error("Duplicate external name: " + path);
-            }
-        }
-        return fieldsByPath;
-    }
-
-    public static void maybeAddDefaultField(
-            boolean isKey,
-            @Nonnull List<MappingField> resolvedFields,
-            @Nonnull List<TableField> tableFields
-    ) {
-        // Add the default `__key` or `this` field as hidden, if present neither in the external
-        // names, nor in the field names
-        String fieldName = isKey ? KEY : VALUE;
-        if (resolvedFields.stream().noneMatch(f -> f.externalName().equals(fieldName) || f.name().equals(fieldName))) {
-            tableFields.add(new MapTableField(fieldName, QueryDataType.OBJECT, true, QueryPath.create(fieldName)));
-        }
     }
 }
