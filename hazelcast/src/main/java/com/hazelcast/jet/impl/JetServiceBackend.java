@@ -213,7 +213,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     }
 
     public JetService getJet() {
-        return hazelcastInstance.getJet();
+        return this.jet;
     }
 
     public LiveOperationRegistry getLiveOperationRegistry() {

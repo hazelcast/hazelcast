@@ -377,7 +377,7 @@ public interface NodeExtension {
     CPPersistenceService getCPPersistenceService();
 
     /**
-     * Returns the JetService.
+     * Returns a JetService.
      */
     JetService getJet();
 }
