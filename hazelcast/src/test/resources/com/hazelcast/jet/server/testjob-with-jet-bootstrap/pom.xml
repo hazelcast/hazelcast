@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.hazelcast.jet.testjob</groupId>
-    <artifactId>testjob</artifactId>
+    <artifactId>testjob-with-jet-bootstrap</artifactId>
     <version>1.0-SNAPSHOT</version>
 
     <properties>
