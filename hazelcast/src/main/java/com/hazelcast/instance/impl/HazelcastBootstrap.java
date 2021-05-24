@@ -606,11 +606,6 @@ public final class HazelcastBootstrap {
         }
 
         @Nonnull @Override
-        public LightJob newLightJobInt(Object jobDefinition) {
-            return jet.newLightJobInt(jobDefinition);
-        }
-
-        @Nonnull @Override
         public Job newJobIfAbsent(@Nonnull DAG dag, @Nonnull JobConfig config) {
             return remember(jet.newJobIfAbsent(dag, updateJobConfig(config)));
         }
