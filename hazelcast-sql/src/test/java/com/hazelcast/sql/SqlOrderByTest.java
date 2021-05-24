@@ -600,12 +600,11 @@ public class SqlOrderByTest extends SqlTestSupport {
     @Test
     public void testNestedFetchOffsetNotSupported() {
         String sql = "SELECT intVal FROM ( SELECT intVal FROM " + stableMapName()
-                + " FETCH FIRST 5 ROWS ONLY)";
+                + " OFFSET 1 FETCH FIRST 5 ROWS ONLY)";
 
         assertThrows(HazelcastSqlException.class, () -> assertSqlResultCount(sql, 0));
 
-        String sqlLimit = "SELECT intVal FROM ( SELECT intVal FROM " + stableMapName()
-                + " LIMIT 5)";
+        String sqlLimit = "SELECT intVal FROM ( SELECT intVal FROM " + stableMapName() + " OFFSET 1)";
 
         assertThrows(HazelcastSqlException.class, () -> assertSqlResultCount(sqlLimit, 0));
     }
