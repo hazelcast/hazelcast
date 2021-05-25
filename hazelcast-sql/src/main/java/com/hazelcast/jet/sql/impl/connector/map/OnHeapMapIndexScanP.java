@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.connector.map;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
@@ -28,8 +29,10 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.partition.Partition;
-import com.hazelcast.query.impl.GlobalIndexPartitionTracker;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -46,6 +49,7 @@ import com.hazelcast.sql.impl.plan.node.MapIndexScanMetadata;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import javax.annotation.Nonnull;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -53,6 +57,10 @@ import java.util.function.Function;
 
 import static com.hazelcast.jet.impl.util.Util.distributeObjects;
 import static com.hazelcast.jet.sql.impl.ExpressionUtil.evaluate;
+import static com.hazelcast.jet.sql.impl.JetSqlSerializerHook.F_ID;
+import static com.hazelcast.jet.sql.impl.JetSqlSerializerHook.IMAP_INDEX_SCAN_PROCESSOR;
+import static com.hazelcast.jet.sql.impl.JetSqlSerializerHook.IMAP_INDEX_SCAN_PROCESSOR_META_SUPPLIER;
+import static com.hazelcast.jet.sql.impl.JetSqlSerializerHook.IMAP_INDEX_SCAN_PROCESSOR_SUPPLIER;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
@@ -67,10 +75,15 @@ import static java.util.stream.Collectors.toList;
  * Simultaneously, usage of Traverser interface saves simplicity and cleanliness:
  * it just returns all map entries which it can read.
  */
-public final class OnHeapMapIndexScanP extends AbstractProcessor {
+
+public final class OnHeapMapIndexScanP extends AbstractProcessor implements IdentifiedDataSerializable {
     private IMapIndexTraverser traverser;
-    private final MapIndexScanMetadata indexScanMetadata;
-    private final PartitionIdSet partitions;
+    private MapIndexScanMetadata indexScanMetadata;
+    private PartitionIdSet partitions;
+
+    public OnHeapMapIndexScanP() {
+        // No-op.
+    }
 
     private OnHeapMapIndexScanP(
             @Nonnull MapIndexScanMetadata indexScanMetadata,
@@ -191,11 +204,11 @@ public final class OnHeapMapIndexScanP extends AbstractProcessor {
             }
 
             // Make sure that required partitions are indexed
-            partitionStamp = index.getPartitionStamp(this.partitions);
-
-            if (partitionStamp == GlobalIndexPartitionTracker.STAMP_INVALID) {
-                throw invalidIndexStamp();
-            }
+//            partitionStamp = index.getPartitionStamp(this.partitions);
+//
+//            if (partitionStamp == GlobalIndexPartitionTracker.STAMP_INVALID) {
+//                throw invalidIndexStamp();
+//            }
 
             return new MapIndexScanExecIterator(
                     mapContainer.getName(),
@@ -245,13 +258,47 @@ public final class OnHeapMapIndexScanP extends AbstractProcessor {
         }
     }
 
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeObject(traverser);
+        out.writeObject(indexScanMetadata);
+        out.writeInt(partitions.size());
+        for (Integer partition : partitions) {
+            out.writeInt(partition);
+        }
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        this.traverser = in.readObject();
+        this.indexScanMetadata = in.readObject();
+        int partitionsSize = in.readInt();
+        for (int i = 0; i < partitionsSize; i++) {
+            partitions.add(in.readInt());
+        }
+    }
+
+    @Override
+    public int getFactoryId() {
+        return F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return IMAP_INDEX_SCAN_PROCESSOR;
+    }
+
     public static ProcessorMetaSupplier onHeapMapIndexScanP(@Nonnull MapIndexScanMetadata indexScanMetadata) {
         return new OnHeapMapIndexScanMetaSupplier(indexScanMetadata);
     }
 
-    public static final class OnHeapMapIndexScanMetaSupplier implements ProcessorMetaSupplier {
-        private final MapIndexScanMetadata indexScanMetadata;
+    public static final class OnHeapMapIndexScanMetaSupplier implements ProcessorMetaSupplier, IdentifiedDataSerializable {
+        private MapIndexScanMetadata indexScanMetadata;
         private transient Map<Address, List<Integer>> addrToPartitions;
+
+        public OnHeapMapIndexScanMetaSupplier() {
+
+        }
 
         private OnHeapMapIndexScanMetaSupplier(@Nonnull MapIndexScanMetadata indexScanMetadata) {
             this.indexScanMetadata = indexScanMetadata;
@@ -276,11 +323,34 @@ public final class OnHeapMapIndexScanP extends AbstractProcessor {
         public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
             return address -> new OnHeapMapIndexScanSupplier(indexScanMetadata, addrToPartitions.get(address));
         }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeObject(indexScanMetadata);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            this.indexScanMetadata = in.readObject();
+        }
+
+        @Override
+        public int getFactoryId() {
+            return F_ID;
+        }
+
+        @Override
+        public int getClassId() {
+            return IMAP_INDEX_SCAN_PROCESSOR_META_SUPPLIER;
+        }
     }
 
-    public static final class OnHeapMapIndexScanSupplier implements ProcessorSupplier {
-        private final MapIndexScanMetadata indexScanMetadata;
-        private final List<Integer> memberPartitions;
+    public static final class OnHeapMapIndexScanSupplier implements ProcessorSupplier, IdentifiedDataSerializable {
+        private MapIndexScanMetadata indexScanMetadata;
+        private List<Integer> memberPartitions;
+
+        public OnHeapMapIndexScanSupplier() {
+        }
 
         private OnHeapMapIndexScanSupplier(MapIndexScanMetadata indexScanMetadata, List<Integer> memberPartitions) {
             this.indexScanMetadata = indexScanMetadata;
@@ -294,6 +364,28 @@ public final class OnHeapMapIndexScanP extends AbstractProcessor {
                     .map(partitions ->
                             new OnHeapMapIndexScanP(indexScanMetadata, new PartitionIdSet(partitions.size(), partitions)))
                     .collect(toList());
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeObject(indexScanMetadata);
+            SerializationUtil.writeList(memberPartitions, out);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            this.indexScanMetadata = in.readObject();
+            this.memberPartitions = SerializationUtil.readList(in);
+        }
+
+        @Override
+        public int getFactoryId() {
+            return F_ID;
+        }
+
+        @Override
+        public int getClassId() {
+            return IMAP_INDEX_SCAN_PROCESSOR_SUPPLIER;
         }
     }
 }

@@ -128,24 +128,24 @@ public class MapIndexScanMetadata extends MapScanMetadata {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeString(mapName);
-        out.writeObject(keyDescriptor);
-        out.writeObject(valueDescriptor);
-        SerializationUtil.writeList(fieldPaths, out);
-        SerializationUtil.writeList(fieldTypes, out);
-        SerializationUtil.writeList(projections, out);
-        out.writeObject(filter);
+        super.writeData(out);
+
+        out.writeString(indexName);
+        out.writeInt(indexComponentCount);
+        out.writeObject(indexFilter);
+        SerializationUtil.writeList(converterTypes, out);
+        SerializationUtil.writeList(ascs, out);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        mapName = in.readString();
-        keyDescriptor = in.readObject();
-        valueDescriptor = in.readObject();
-        fieldPaths = SerializationUtil.readList(in);
-        fieldTypes = SerializationUtil.readList(in);
-        projections = SerializationUtil.readList(in);
-        filter = in.readObject();
+        super.readData(in);
+
+        indexName = in.readString();
+        indexComponentCount = in.readInt();
+        indexFilter = in.readObject();
+        converterTypes = SerializationUtil.readList(in);
+        ascs = SerializationUtil.readList(in);
     }
 
     @Override
@@ -155,6 +155,6 @@ public class MapIndexScanMetadata extends MapScanMetadata {
 
     @Override
     public int getClassId() {
-        return SqlDataSerializerHook.MAP_SCAN_METADATA;
+        return SqlDataSerializerHook.MAP_INDEX_SCAN_METADATA;
     }
 }

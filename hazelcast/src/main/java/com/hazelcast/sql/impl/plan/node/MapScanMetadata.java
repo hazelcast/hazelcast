@@ -34,7 +34,7 @@ import java.util.Objects;
 /**
  * POJO that contains all specific information to scan a partitioned map by Jet processor.
  */
-public class MapScanMetadata implements IdentifiedDataSerializable, Serializable {
+public class MapScanMetadata implements IdentifiedDataSerializable {
 
     protected String mapName;
     protected QueryTargetDescriptor keyDescriptor;
