@@ -341,17 +341,6 @@ public interface SqlConnector {
     }
 
     /**
-     * Returns the supplier for the update processor.
-     */
-    @Nonnull
-    default Vertex updateProcessor(
-            @Nonnull DAG dag,
-            @Nonnull Table table,
-            @Nonnull int[] updateColumnIndexes) {
-        throw new UnsupportedOperationException("Update not supported for " + typeName());
-    }
-
-    /**
      * Definition of a vertex along with a function to configure the input
      * edge(s).
      */

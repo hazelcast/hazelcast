@@ -23,8 +23,6 @@ import com.hazelcast.jet.sql.impl.schema.JetTableFunction;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
-import com.hazelcast.sql.impl.schema.Table;
-import com.hazelcast.sql.impl.schema.TableField;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlIdentifier;
@@ -36,17 +34,13 @@ import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.SqlUpdate;
-import org.apache.calcite.sql.SqlUtil;
-import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.util.SqlBasicVisitor;
 import org.apache.calcite.sql.validate.SqlConformance;
 import org.apache.calcite.sql.validate.SqlValidatorCatalogReader;
 import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.sql.validate.SqlValidatorTable;
-import org.apache.calcite.sql.validate.SqlValidatorUtil;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 import static com.hazelcast.jet.sql.impl.validate.ValidatorResource.RESOURCE;
@@ -94,6 +88,24 @@ public class JetSqlValidator extends HazelcastSqlValidator {
         if (fetch != null) {
             deriveType(scope, fetch);
             fetch.validate(this, getEmptyScope());
+        }
+    }
+
+    @Override
+    public void validateUpdate(SqlUpdate call) {
+        super.validateUpdate(call);
+
+        SqlSelect sourceSelect = call.getSourceSelect();
+        SqlValidatorScope selectScope = getSelectScope(sourceSelect);
+        SqlNodeList sourceExpressionList = call.getSourceExpressionList();
+        // we have to expand and infer types for source expressions
+        // to overcome implicit casts during validateSelect routine
+        // that added by our SQL engine to overcome calcite bugs ¯\\_(ツ)\_/¯
+        for (int i = 0; i < sourceExpressionList.size(); i++) {
+            SqlNode node = sourceExpressionList.get(i);
+            SqlNode expand = expand(node, selectScope);
+            deriveTypeImpl(selectScope, expand);
+            sourceExpressionList.set(i, expand);
         }
     }
 
@@ -208,32 +220,17 @@ public class JetSqlValidator extends HazelcastSqlValidator {
         return isInfiniteRows;
     }
 
+    // createSourceSelectForUpdate could not be properly overridden due to bug in calcite
+    // which does not allow to have less columns then number of columns in the table that
+    // is updated
+    // One reason why our SQL engine goes this route is that SqlUpdate has two queries
+    // one is `UPDATE` and another one is `SELECT` to query dataset that has to be updated
+    // Calcite during `SELECT` validation (that we extended) adds implicit casts. `UPDATE`
+    // query is not validated and there are no these implicit  casts that is why calcite
+    // fails with error that some expression can not be type checked
+    // see JetSqlValidator#validateUpdate
     @Override
     protected SqlSelect createSourceSelectForUpdate(SqlUpdate call) {
-        SqlNode sourceTable = call.getTargetTable();
-        Table table = getCatalogReader().getTable(((SqlIdentifier) sourceTable).names).unwrap(HazelcastTable.class).getTarget();
-        SqlConnector connector = getJetSqlConnector(table);
-
-        SqlNodeList selectList = connector.getPrimaryKey(table);
-
-        List<String> columns = table.getFields().stream().map(TableField::getName).collect(Collectors.toList());
-        SqlNodeList sourceExpressionList = call.getSourceExpressionList();
-        SqlNodeList targetColumns = call.getTargetColumnList();
-        for (int i = 0; i < sourceExpressionList.size(); i++) {
-            SqlNode expr = sourceExpressionList.get(i);
-            SqlNode column = targetColumns.get(i);
-            int ordinal = columns.indexOf(column.toString());
-            String alias = SqlUtil.deriveAliasFromOrdinal(ordinal);
-            selectList.add(SqlValidatorUtil.addAlias(expr, alias));
-        }
-
-        if (call.getAlias() != null) {
-            sourceTable =
-                    SqlValidatorUtil.addAlias(
-                            sourceTable,
-                            call.getAlias().getSimple());
-        }
-        return new SqlSelect(
-                SqlParserPos.ZERO, null, selectList, sourceTable, call.getCondition(), null, null, null, null, null, null, null);
+        return super.createSourceSelectForUpdate(call);
     }
 }

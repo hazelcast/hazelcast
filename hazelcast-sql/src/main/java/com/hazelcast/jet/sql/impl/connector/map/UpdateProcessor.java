@@ -81,6 +81,7 @@ public final class UpdateProcessor extends AbstractProcessor implements DataSeri
 
     @Override
     public void process(int ordinal, @Nonnull Inbox inbox) {
+        int columnCount = mapEntryProjectorSupplier.columnCount();
         KvRowProjector kvRowProjector = mapEntryProjectorSupplier.get(evalContext, extractors);
         for (Object[] row; (row = (Object[]) inbox.peek()) != null; ) {
             inbox.remove();
@@ -89,11 +90,14 @@ public final class UpdateProcessor extends AbstractProcessor implements DataSeri
             Map.Entry<Object, Object> entry = Util.entry(key, value);
             Object[] project = kvRowProjector.project(entry);
             if (updateColumns.length == 0) {
-                project[1] = row[1];
+                // 0 - __key
+                // 1 - old this
+                // 2 - new this
+                project[1] = row[2];
             } else {
                 int i = 0;
                 for (int index : updateColumns) {
-                    project[index] = row[i + 1];
+                    project[index] = row[columnCount + i];
                     i++;
                 }
             }

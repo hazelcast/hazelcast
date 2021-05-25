@@ -46,12 +46,53 @@ public class SqlUpdateTest extends SqlTestSupport {
     }
 
     @Test
+    public void updateBySingleKey_fieldInTheBeginning() {
+        IMap<Object, Object> testMap = instance().getMap("test_map");
+
+        testMap.put(1, new Value(100, 200, 300));
+        checkUpdateCount("update test_map set field1 = cast(200 as integer) where __key = 1", 0);
+        assertThat(testMap.get(1)).isEqualTo(new Value(200, 200, 300));
+    }
+
+    @Test
     public void updateBySingleKey_fieldInBetween() {
         IMap<Object, Object> testMap = instance().getMap("test_map");
 
         testMap.put(1, new Value(100, 200, 300));
         checkUpdateCount("update test_map set field2 = cast(100 as integer) where __key = 1", 0);
         assertThat(testMap.get(1)).isEqualTo(new Value(100, 100, 300));
+    }
+
+    @Test
+    public void updateBySingleKey_fieldInTheEnd() {
+        IMap<Object, Object> testMap = instance().getMap("test_map");
+
+        testMap.put(1, new Value(100, 200, 300));
+        checkUpdateCount("update test_map set field3 = cast(400 as integer) where __key = 1", 0);
+        assertThat(testMap.get(1)).isEqualTo(new Value(100, 200, 400));
+    }
+
+    @Test
+    public void updateBySingleKey_mixedOrderOfFields() {
+        IMap<Object, Object> testMap = instance().getMap("test_map");
+
+        testMap.put(1, new Value(100, 200, 300));
+        checkUpdateCount(
+                "update test_map set\n"
+                + "field3 = cast(200 as integer),\n"
+                + "field1 = cast(400 as integer),\n"
+                + "field2 = cast(600 as integer)\n"
+                + "where __key = 1", 0);
+        assertThat(testMap.get(1)).isEqualTo(new Value(400, 600, 200));
+    }
+
+    @Test
+    public void updateBySingleKey_complexExpression() {
+        IMap<Object, Object> testMap = instance().getMap("test_map");
+
+        testMap.put(1, new Value(100, 200, 300));
+        checkUpdateCount("update test_map set field3 = cast(2 * field3 as integer) where __key = 1", 0);
+        assertThat(testMap.get(1)).isEqualTo(new Value(100, 200, 600));
     }
 
     @Test
