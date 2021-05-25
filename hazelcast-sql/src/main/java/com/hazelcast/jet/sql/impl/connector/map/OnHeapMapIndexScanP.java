@@ -243,11 +243,6 @@ public final class OnHeapMapIndexScanP extends AbstractProcessor implements Iden
         private Object[] prepareRow(Object rawKey, Data rawKeyData, Object rawValue, Data rawValueData) {
             this.row.setKeyValue(rawKey, rawKeyData, rawValue, rawValueData);
 
-            // Filter.
-            if (filter != null && TernaryLogic.isNotTrue(filter.evalTop(this.row, ctx))) {
-                return null;
-            }
-
             Object[] row = new Object[projections.size()];
 
             for (int j = 0; j < projections.size(); j++) {

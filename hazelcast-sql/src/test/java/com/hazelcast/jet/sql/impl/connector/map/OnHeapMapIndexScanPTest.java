@@ -25,8 +25,14 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.sql.impl.exec.scan.index.IndexEqualsFilter;
+import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
+import com.hazelcast.sql.impl.exec.scan.index.IndexFilterValue;
+import com.hazelcast.sql.impl.exec.scan.index.IndexRangeFilter;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.ConstantPredicateExpression;
+import com.hazelcast.sql.impl.expression.math.MultiplyFunction;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.plan.node.MapIndexScanMetadata;
@@ -45,10 +51,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.BiPredicate;
 
+import static com.hazelcast.jet.TestContextSupport.adaptSupplier;
 import static com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
 import static com.hazelcast.sql.impl.SqlTestSupport.valuePath;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
@@ -63,7 +71,7 @@ public class OnHeapMapIndexScanPTest extends SimpleTestInClusterSupport {
 
     @Parameterized.Parameters(name = "count:{0}")
     public static Collection<Integer> parameters() {
-        return asList(500, 25_000);
+        return asList(10, 25_000);
     }
 
     @Parameterized.Parameter(0)
@@ -103,7 +111,7 @@ public class OnHeapMapIndexScanPTest extends SimpleTestInClusterSupport {
         List<Object[]> expected = new ArrayList<>();
         for (int i = count; i > 0; i--) {
             map.put(i, new Person("value-" + i, i));
-            expected.add(new Object[]{(count - i), "value-" + (count - i), (count - i)});
+            expected.add(new Object[]{(count - i + 1), "value-" + (count - i + 1), (count - i + 1)});
         }
 
         IndexConfig indexConfig = new IndexConfig(IndexType.SORTED, "name");
@@ -134,7 +142,115 @@ public class OnHeapMapIndexScanPTest extends SimpleTestInClusterSupport {
         );
 
         TestSupport
-                .verifyProcessor(OnHeapMapIndexScanP.onHeapMapIndexScanP(indexScanMetadata))
+                .verifyProcessor(adaptSupplier(OnHeapMapIndexScanP.onHeapMapIndexScanP(indexScanMetadata)))
+                .jetInstance(instance())
+                .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
+                .outputChecker(LENIENT_SAME_ITEMS_ANY_ORDER)
+                .disableSnapshots()
+                .disableProgressAssertion()
+                .expectOutput(expected);
+    }
+
+    @Test
+    public void test_whenFilterExistsButNoSpecificProjection() {
+        List<Object[]> expected = new ArrayList<>();
+        for (int i = count; i > 0; i--) {
+            map.put(i, new Person("value-" + i, i));
+            if (i > count / 2) {
+                expected.add(new Object[]{(count - i + 1), "value-" + (count - i + 1), (count - i + 1)});
+            }
+        }
+
+        IndexConfig indexConfig = new IndexConfig(IndexType.SORTED, "age");
+        indexConfig.setName(randomName());
+        map.addIndex(indexConfig);
+
+        IndexFilterValue from = intValue(1, true);
+        IndexFilterValue to = intValue(count / 2, true);
+        IndexFilter filter = new IndexRangeFilter(from, true, to, true);
+//        IndexFilter filter = new IndexEqualsFilter(from);
+
+        MapScanMetadata scanMetadata = new MapScanMetadata(
+                map.getName(),
+                GenericQueryTargetDescriptor.DEFAULT,
+                GenericQueryTargetDescriptor.DEFAULT,
+                Arrays.asList(QueryPath.KEY_PATH, valuePath("this.name"), valuePath("this.age")),
+                Arrays.asList(QueryDataType.INT, VARCHAR, QueryDataType.INT),
+                asList(
+                        ColumnExpression.create(0, INT),
+                        ColumnExpression.create(1, VARCHAR),
+                        ColumnExpression.create(2, INT)
+                ),
+                new ConstantPredicateExpression(true)
+        );
+
+        MapIndexScanMetadata indexScanMetadata = new MapIndexScanMetadata(
+                scanMetadata,
+                indexConfig.getName(),
+                1,
+                filter,
+                emptyList(),
+                emptyList()
+        );
+
+        TestSupport
+                .verifyProcessor(adaptSupplier(OnHeapMapIndexScanP.onHeapMapIndexScanP(indexScanMetadata)))
+                .jetInstance(instance())
+                .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
+                .outputChecker(LENIENT_SAME_ITEMS_ANY_ORDER)
+                .disableSnapshots()
+                .disableProgressAssertion()
+                .expectOutput(expected);
+    }
+
+    @Test
+    public void test_whenFilterAndSpecificProjectionExists() {
+        List<Object[]> expected = new ArrayList<>();
+        for (int i = count; i > 0; i--) {
+            map.put(i, new Person("value-" + i, i));
+            if (i > count / 2) {
+                expected.add(new Object[]{(count - i + 1), "value-" + (count - i + 1), (count - i + 1) * 5});
+            }
+        }
+
+        IndexConfig indexConfig = new IndexConfig(IndexType.SORTED, "age");
+        indexConfig.setName(randomName());
+        map.addIndex(indexConfig);
+
+        IndexFilterValue from = intValue(1, true);
+        IndexFilterValue to = intValue(count / 2, true);
+        IndexFilter filter = new IndexRangeFilter(from, true, to, true);
+//        IndexFilter filter = new IndexEqualsFilter(from);
+
+        MapScanMetadata scanMetadata = new MapScanMetadata(
+                map.getName(),
+                GenericQueryTargetDescriptor.DEFAULT,
+                GenericQueryTargetDescriptor.DEFAULT,
+                Arrays.asList(QueryPath.KEY_PATH, valuePath("this.name"), valuePath("this.age")),
+                Arrays.asList(QueryDataType.INT, VARCHAR, QueryDataType.INT),
+                asList(
+                        ColumnExpression.create(0, INT),
+                        ColumnExpression.create(1, VARCHAR),
+                        MultiplyFunction.create(
+                                ColumnExpression.create(2, INT),
+                                ConstantExpression.create(5, INT),
+                                INT
+                        )
+                ),
+                new ConstantPredicateExpression(true)
+        );
+
+        MapIndexScanMetadata indexScanMetadata = new MapIndexScanMetadata(
+                scanMetadata,
+                indexConfig.getName(),
+                1,
+                filter,
+                emptyList(),
+                emptyList()
+        );
+
+        TestSupport
+                .verifyProcessor(adaptSupplier(OnHeapMapIndexScanP.onHeapMapIndexScanP(indexScanMetadata)))
                 .jetInstance(instance())
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
                 .outputChecker(LENIENT_SAME_ITEMS_ANY_ORDER)
@@ -176,4 +292,16 @@ public class OnHeapMapIndexScanPTest extends SimpleTestInClusterSupport {
             this.age = in.readInt();
         }
     }
+
+    private static IndexFilterValue intValue(Integer value, boolean allowNull) {
+        return new IndexFilterValue(
+                Collections.singletonList(constant(value, QueryDataType.INT)),
+                Collections.singletonList(allowNull)
+        );
+    }
+
+    private static ConstantExpression constant(Object value, QueryDataType type) {
+        return ConstantExpression.create(value, type);
+    }
+
 }
