@@ -59,7 +59,7 @@ public final class JavaClassNameResolver {
         return CLASS_NAMES_BY_FORMAT.get(format);
     }
 
-    static Stream<String> formats() {
+    public static Stream<String> formats() {
         return CLASS_NAMES_BY_FORMAT.keySet().stream();
     }
 }

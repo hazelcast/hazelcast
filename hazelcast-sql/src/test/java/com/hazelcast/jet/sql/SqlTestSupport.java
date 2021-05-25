@@ -126,7 +126,9 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
             try (SqlResult result = sqlService.execute(statement)) {
                 Iterator<SqlRow> iterator = result.iterator();
                 for (int i = 0; i < expectedRows.size() && iterator.hasNext(); i++) {
-                    rows.add(new Row(iterator.next()));
+                    Row r = new Row(iterator.next());
+                    System.out.println("RRRRR: " + r);
+                    rows.add(r);
                 }
                 future.complete(null);
             } catch (Throwable e) {

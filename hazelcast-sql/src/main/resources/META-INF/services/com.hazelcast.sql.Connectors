@@ -17,3 +17,4 @@
 com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector
 com.hazelcast.jet.sql.impl.connector.file.FileSqlConnector
 com.hazelcast.jet.sql.impl.connector.kafka.KafkaSqlConnector
+com.hazelcast.jet.sql.impl.connector.map.journal.IMapJournalConnector
