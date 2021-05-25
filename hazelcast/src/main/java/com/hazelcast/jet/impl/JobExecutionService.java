@@ -275,7 +275,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
         if (logger.isFineEnabled()) {
             logger.fine("Execution plan for light job ID=" + idToString(jobId)
                     + ", jobName=" + (execCtx.jobName() != null ? '\'' + execCtx.jobName() + '\'' : "null")
-                    + ", executionId=" + idToString(executionId) + " initialized, will start the job");
+                    + ", executionId=" + idToString(executionId) + " initialized, will start the execution");
         }
 
         return beginExecution0(execCtx, false);
@@ -534,7 +534,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
                             .computeIfAbsent(coordinator, k -> new ArrayList<>())
                             .add(ctx.executionId());
                 } else {
-                    if (uninitializedContextThreshold <= ctx.getCreatedOn()) {
+                    if (ctx.getCreatedOn() <= uninitializedContextThreshold) {
                         LoggingUtil.logFine(logger, "Terminating light job %s because it wasn't initialized during %d seconds",
                                 idToString(ctx.executionId()), NANOSECONDS.toSeconds(UNINITIALIZED_CONTEXT_MAX_AGE_NS));
                         terminateExecution0(ctx, TerminationMode.CANCEL_FORCEFUL);
