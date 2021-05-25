@@ -23,6 +23,7 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.everit.json.schema.Schema;
 import org.everit.json.schema.ValidationException;
+import org.everit.json.schema.loader.SchemaClient;
 import org.everit.json.schema.loader.SchemaLoader;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -48,39 +49,39 @@ import static org.junit.Assert.fail;
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class YamlSchemaTest {
+public abstract class AbstractYamlSchemaTest {
 
-    private static final ILogger LOGGER = Logger.getLogger(YamlSchemaTest.class);
+    private static final ILogger LOGGER = Logger.getLogger(AbstractYamlSchemaTest.class);
 
     public static final Schema SCHEMA = SchemaLoader.builder()
             .schemaJson(readJSONObject("/hazelcast-config-5.0.json"))
+            .draftV6Support()
+            .schemaClient(SchemaClient.classPathAwareClient())
             .build()
             .load().build();
-    public static final String TESTCASE_ROOT_DIR = "com/hazelcast/config/yaml/testcases/";
 
-    private static JSONObject readJSONObject(String absPath) {
-        return new JSONObject(new JSONTokener(YamlSchemaTest.class.getResourceAsStream(absPath)));
+    static JSONObject readJSONObject(String absPath) {
+        return new JSONObject(new JSONTokener(MemberYamlSchemaTest.class.getResourceAsStream(absPath)));
     }
 
-    @Parameterized.Parameters(name = "{0}")
-    public static List<Object[]> buildTestcases() {
+    protected static List<Object[]> buildTestcases(String rootDir) {
         ConfigurationBuilder configuration = new ConfigurationBuilder()
                 .setUrls(ClasspathHelper.forJavaClassPath())
                 .setScanners(new ResourcesScanner());
         Reflections reflections = new Reflections(configuration);
         return reflections.getResources(Pattern.compile(".*\\.json")).stream()
-                .filter(e -> e.startsWith(TESTCASE_ROOT_DIR))
-                .map(path -> buildArgs(path))
+                .filter(e -> e.startsWith(rootDir))
+                .map(path -> buildArgs(rootDir, path))
                 .collect(toList());
     }
 
-    private static Object[] buildArgs(String path) {
+    private static Object[] buildArgs(String rootDir, String path) {
         JSONObject testcase = readJSONObject("/" + path);
         Object error = testcase.get("error");
         if (error == JSONObject.NULL) {
             error = null;
         }
-        String testName = path.substring(TESTCASE_ROOT_DIR.length(), path.length() - 5);
+        String testName = path.substring(rootDir.length(), path.length() - 5);
         return new Object[]{testName, testcase.getJSONObject("instance"), error};
     }
 

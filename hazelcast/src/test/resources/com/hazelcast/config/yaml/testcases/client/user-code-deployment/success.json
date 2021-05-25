@@ -1,0 +1,17 @@
+{
+  "instance": {
+    "hazelcast-client": {
+      "user-code-deployment": {
+        "enabled": true,
+        "jarPaths": [
+          "/path/hello.jar",
+          "https://example.org/trustmeitissecure.jar"
+        ],
+        "classNames": [
+          "com.example.MyClass"
+        ]
+      }
+    }
+  },
+  "error": null
+}

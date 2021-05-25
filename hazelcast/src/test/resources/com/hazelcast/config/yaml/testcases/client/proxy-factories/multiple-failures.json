@@ -1,0 +1,78 @@
+{
+  "instance": {
+    "hazelcast-client": {
+      "proxy-factories": [
+        null,
+        {
+          "unknown": false,
+          "service": null,
+          "class-name": -1
+        },
+        {}
+      ]
+    }
+  },
+  "error": {
+    "schemaLocation": "#/definitions/ProxyFactories",
+    "pointerToViolation": "#/hazelcast-client/proxy-factories",
+    "causingExceptions": [
+      {
+        "schemaLocation": "#/definitions/ProxyFactories/items",
+        "pointerToViolation": "#/hazelcast-client/proxy-factories/0",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: JSONObject, found: Null"
+      },
+      {
+        "schemaLocation": "#/definitions/ProxyFactories/items",
+        "pointerToViolation": "#/hazelcast-client/proxy-factories/1",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/ProxyFactories/items",
+            "pointerToViolation": "#/hazelcast-client/proxy-factories/1",
+            "causingExceptions": [],
+            "keyword": "additionalProperties",
+            "message": "extraneous key [unknown] is not permitted"
+          },
+          {
+            "schemaLocation": "#/definitions/ProxyFactories/items/properties/class-name",
+            "pointerToViolation": "#/hazelcast-client/proxy-factories/1/class-name",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: String, found: Integer"
+          },
+          {
+            "schemaLocation": "#/definitions/ProxyFactories/items/properties/service",
+            "pointerToViolation": "#/hazelcast-client/proxy-factories/1/service",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: String, found: Null"
+          }
+        ],
+        "message": "3 schema violations found"
+      },
+      {
+        "schemaLocation": "#/definitions/ProxyFactories/items",
+        "pointerToViolation": "#/hazelcast-client/proxy-factories/2",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/ProxyFactories/items",
+            "pointerToViolation": "#/hazelcast-client/proxy-factories/2",
+            "causingExceptions": [],
+            "keyword": "required",
+            "message": "required key [class-name] not found"
+          },
+          {
+            "schemaLocation": "#/definitions/ProxyFactories/items",
+            "pointerToViolation": "#/hazelcast-client/proxy-factories/2",
+            "causingExceptions": [],
+            "keyword": "required",
+            "message": "required key [service] not found"
+          }
+        ],
+        "message": "2 schema violations found"
+      }
+    ],
+    "message": "6 schema violations found"
+  }
+}

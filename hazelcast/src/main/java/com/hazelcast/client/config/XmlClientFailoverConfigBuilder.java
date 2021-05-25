@@ -166,7 +166,9 @@ public class XmlClientFailoverConfigBuilder extends AbstractXmlConfigBuilder {
             domLevel3 = false;
         }
         process(root);
-        schemaValidation(root.getOwnerDocument());
+        if (shouldValidateTheSchema()) {
+            schemaValidation(root.getOwnerDocument());
+        }
         new ClientFailoverDomConfigProcessor(domLevel3, clientFailoverConfig).buildConfig(root);
     }
 
