@@ -39,7 +39,7 @@ public class JetGetJobIdsMessageTask extends AbstractJetMessageTask<Void, Data> 
     @Override
     protected CompletableFuture<Object> processInternal() {
         // TODO [viliam] send to all members and merge the results
-        return completedFuture(GetJobIdsResult.EMPTY);
+        return completedFuture(serializationService.toData(GetJobIdsResult.EMPTY));
     }
 
     @Override

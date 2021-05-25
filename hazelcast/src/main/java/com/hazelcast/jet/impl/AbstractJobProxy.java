@@ -40,6 +40,7 @@ import java.util.function.Supplier;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.memoizeConcurrent;
 import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
 
@@ -63,7 +64,7 @@ public abstract class AbstractJobProxy<ContainerType, MemberIdType> implements J
 
     // Flag which indicates if this proxy has sent a request to join the job result or not
     private final AtomicBoolean joinedJob = new AtomicBoolean();
-    private final BiConsumer<Void, Throwable> joinJobCallback = new JoinJobCallback();
+    private final BiConsumer<Void, Throwable> joinJobCallback;
 
     private volatile JobConfig jobConfig;
     private final Supplier<Long> submissionTimeSup = memoizeConcurrent(this::doGetJobSubmissionTime);
@@ -72,8 +73,10 @@ public abstract class AbstractJobProxy<ContainerType, MemberIdType> implements J
         this.jobId = jobId;
         this.container = container;
         this.lightJobCoordinator = lightJobCoordinator;
-        this.logger = loggingService().getLogger(Job.class);
-        this.future = new NonCompletableFuture();
+
+        logger = loggingService().getLogger(Job.class);
+        future = new NonCompletableFuture();
+        joinJobCallback = new JoinJobCallback();
     }
 
     AbstractJobProxy(ContainerType container, long jobId, boolean isLightJob, Object jobDefinition, JobConfig config) {
@@ -83,15 +86,17 @@ public abstract class AbstractJobProxy<ContainerType, MemberIdType> implements J
         this.logger = loggingService().getLogger(Job.class);
 
         try {
-            NonCompletableFuture future = doSubmitJob(jobDefinition, config);
+            NonCompletableFuture submitFuture = doSubmitJob(jobDefinition, config);
             joinedJob.set(true);
             // For light jobs, the future of the submit operation is also the job future.
             // For normal jobs, we invoke the join operation separately.
             if (isLightJob) {
-                this.future = future;
+                future = submitFuture;
+                joinJobCallback = null;
             } else {
-                future.get();
-                this.future = new NonCompletableFuture();
+                submitFuture.get();
+                future = new NonCompletableFuture();
+                joinJobCallback = new JoinJobCallback();
                 doInvokeJoinJob();
             }
         } catch (Throwable t) {
@@ -256,12 +261,12 @@ public abstract class AbstractJobProxy<ContainerType, MemberIdType> implements J
 
     private void doInvokeJoinJob() {
         invokeJoinJob()
-                .whenComplete((r, t) -> {
+                .whenComplete(withTryCatch(logger, (r, t) -> {
                     if (isLightJob() && t instanceof JobNotFoundException) {
                         throw new IllegalStateException("job already completed");
                     }
-                })
-                .whenCompleteAsync(joinJobCallback);
+                }))
+                .whenCompleteAsync(withTryCatch(logger, joinJobCallback));
     }
 
     private abstract class CallbackBase implements BiConsumer<Void, Throwable> {

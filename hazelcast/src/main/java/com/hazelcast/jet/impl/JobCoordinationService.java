@@ -469,7 +469,7 @@ public class JobCoordinationService {
 
                 jobs.entrySet().stream()
                         .sorted(comparing(Entry<Long, Long>::getValue).reversed())
-                        .forEach(entry -> result.add(tuple2(entry.getKey(), null)));
+                        .forEach(entry -> result.add(tuple2(entry.getKey(), false)));
             }
 
             return new GetJobIdsResult(result);
