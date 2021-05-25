@@ -24,7 +24,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.TreeMap;
@@ -217,11 +216,6 @@ public final class SchemaWriter implements CompactWriter {
     @Override
     public void writeTimestampWithTimezoneArray(String fieldName, OffsetDateTime[] values) {
         addField(new FieldDescriptor(fieldName, FieldType.TIMESTAMP_WITH_TIMEZONE_ARRAY));
-    }
-
-    @Override
-    public <T> void writeObjectCollection(String fieldName, Collection<T> arrayList) {
-        addField(new FieldDescriptor(fieldName, FieldType.COMPOSED_ARRAY));
     }
 
     @Override

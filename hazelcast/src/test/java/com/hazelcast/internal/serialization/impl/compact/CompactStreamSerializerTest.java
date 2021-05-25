@@ -32,7 +32,6 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import example.serialization.BitsDTO;
 import example.serialization.EmployeeDTO;
-import example.serialization.EmployeeGroup;
 import example.serialization.EmployeeWithSerializerDTO;
 import example.serialization.EmployerDTO;
 import example.serialization.NodeDTO;
@@ -58,24 +57,6 @@ public class CompactStreamSerializerTest {
     }
 
     SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
-
-    @Test
-    public void testDefaultsReflection_hasCollection() {
-        SerializationService serializationService = new DefaultSerializationServiceBuilder()
-                .setSchemaService(schemaService).build();
-
-        EmployeeDTO employeeDTO = new EmployeeDTO(30, 102310312);
-        ArrayList<EmployeeDTO> arrayList = new ArrayList<>();
-        arrayList.add(employeeDTO);
-        arrayList.add(employeeDTO);
-
-        EmployeeGroup expected = new EmployeeGroup(arrayList, 5);
-
-        Data data = serializationService.toData(expected);
-        EmployeeGroup actual = serializationService.toObject(data);
-
-        assertEquals(expected, actual);
-    }
 
     @Test
     public void testDefaultsReflection_insideCollection() {

@@ -36,7 +36,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
-import java.util.Collection;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -567,39 +566,6 @@ public class DefaultCompactReader extends CompactGenericRecord implements Intern
     @Override
     public <T> T[] getObjectArray(String fieldName, Class<T> componentType, T[] defaultValue) {
         return isFieldExists(fieldName, COMPOSED_ARRAY) ? getObjectArray(fieldName, componentType) : defaultValue;
-    }
-
-    @Override
-    public <T> Collection<T> getObjectCollection(String fieldName, Function<Integer, Collection<T>> constructor) {
-        int currentPos = in.position();
-        try {
-            int position = getPosition(fieldName, COMPOSED_ARRAY);
-            if (position == NULL_ARRAY_LENGTH) {
-                return null;
-            }
-            in.position(position);
-            int len = in.readInt();
-            Collection<T> objects = constructor.apply(len);
-            int offset = in.position();
-            for (int i = 0; i < len; i++) {
-                int pos = in.readInt(offset + i * Bits.INT_SIZE_IN_BYTES);
-                if (pos != NULL_ARRAY_LENGTH) {
-                    in.position(pos);
-                    objects.add(serializer.readObject(in, schemaIncludedInBinary));
-                }
-            }
-            return objects;
-        } catch (IOException e) {
-            throw illegalStateException(e);
-        } finally {
-            in.position(currentPos);
-        }
-    }
-
-    @Override
-    public <T> Collection<T> getObjectCollection(String fieldName, Function<Integer, Collection<T>> constructor,
-                                                 Collection<T> defaultValue) {
-        return isFieldExists(fieldName, COMPOSED_ARRAY) ? getObjectCollection(fieldName, constructor) : defaultValue;
     }
 
     protected interface Reader<R> {

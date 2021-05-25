@@ -30,7 +30,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
-import java.util.Collection;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.NULL_ARRAY_LENGTH;
@@ -448,34 +447,6 @@ public class DefaultCompactWriter implements CompactWriter {
     public void writeGenericRecordArray(String fieldName, GenericRecord[] values) {
         writeObjectArrayField(fieldName, COMPOSED_ARRAY, values,
                 (out, val) -> serializer.writeGenericRecord(out, (CompactGenericRecord) val, includeSchemaOnBinary));
-    }
-
-    @Override
-    public <T> void writeObjectCollection(String fieldName, Collection<T> values) {
-        try {
-            if (values == null) {
-                setPositionAsNull(fieldName, COMPOSED_ARRAY);
-                return;
-            }
-            setPosition(fieldName, COMPOSED_ARRAY);
-            int len = values.size();
-            out.writeInt(len);
-            int offset = out.position();
-            out.writeZeroBytes(len * INT_SIZE_IN_BYTES);
-            int i = 0;
-            for (T value : values) {
-                if (value != null) {
-                    int position = out.position();
-                    out.writeInt(offset + i * INT_SIZE_IN_BYTES, position);
-                    serializer.writeObject(out, value, includeSchemaOnBinary);
-                } else {
-                    out.writeInt(offset + i * INT_SIZE_IN_BYTES, -1);
-                }
-                i++;
-            }
-        } catch (IOException e) {
-            throw illegalStateException(e);
-        }
     }
 
     public static void writeLocalDateArray0(ObjectDataOutput out, LocalDate[] value) throws IOException {

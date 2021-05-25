@@ -21,7 +21,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
-import java.util.Collection;
 
 public interface CompactWriter {
 
@@ -84,7 +83,5 @@ public interface CompactWriter {
     <T> void writeObject(String fieldName, T value);
 
     <T> void writeObjectArray(String fieldName, T[] value);
-
-    <T> void writeObjectCollection(String fieldName, Collection<T> arrayList);
 
 }

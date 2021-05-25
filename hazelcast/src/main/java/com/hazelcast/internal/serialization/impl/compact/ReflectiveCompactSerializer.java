@@ -30,9 +30,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -426,13 +424,6 @@ public class ReflectiveCompactSerializer implements InternalCompactSerializer<Ob
                     };
                     writers[index] = (w, o) -> w.writeObjectArray(name, (Object[]) field.get(o));
                 }
-            } else if (Collection.class.isAssignableFrom(type)) {
-                readers[index] = (reader, o) -> {
-                    if (fieldExists(reader, name, COMPOSED_ARRAY)) {
-                        field.set(o, reader.getObjectCollection(name, ArrayList::new));
-                    }
-                };
-                writers[index] = (w, o) -> w.writeObjectCollection(name, (Collection<Object>) field.get(o));
             } else {
                 readers[index] = (reader, o) -> {
                     if (fieldExists(reader, name, COMPOSED)) {
