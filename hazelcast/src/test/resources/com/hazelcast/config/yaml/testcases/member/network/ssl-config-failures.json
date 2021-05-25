@@ -11,25 +11,25 @@
     }
   },
   "error": {
-    "schemaLocation": "#/definitions/Network/properties/ssl",
+    "schemaLocation": "#/definitions/SSL",
     "pointerToViolation": "#/hazelcast/network/ssl",
     "causingExceptions": [
       {
-        "schemaLocation": "#/definitions/Network/properties/ssl",
+        "schemaLocation": "#/definitions/SSL",
         "pointerToViolation": "#/hazelcast/network/ssl",
         "causingExceptions": [],
         "keyword": "additionalProperties",
         "message": "extraneous key [class-name] is not permitted"
       },
       {
-        "schemaLocation": "#/definitions/Network/properties/ssl/properties/enabled",
+        "schemaLocation": "#/definitions/SSL/properties/enabled",
         "pointerToViolation": "#/hazelcast/network/ssl/enabled",
         "causingExceptions": [],
         "keyword": "type",
         "message": "expected type: Boolean, found: String"
       },
       {
-        "schemaLocation": "#/definitions/Network/properties/ssl/properties/properties",
+        "schemaLocation": "#/definitions/SSL/properties/properties",
         "pointerToViolation": "#/hazelcast/network/ssl/properties",
         "causingExceptions": [],
         "keyword": "type",

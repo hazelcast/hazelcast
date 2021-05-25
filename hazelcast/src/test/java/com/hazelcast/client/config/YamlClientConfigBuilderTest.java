@@ -89,14 +89,6 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
         System.clearProperty("hazelcast.client.config");
     }
 
-    @Test
-    public void testNoHazelcastClientRootElement() {
-        String yaml = ""
-                + "instance-name: my-instance";
-        ClientConfig clientConfig = buildConfig(yaml);
-        assertEquals("my-instance", clientConfig.getInstanceName());
-    }
-
     @Override
     @Test(expected = HazelcastException.class)
     public void loadingThroughSystemProperty_nonExistingFile() throws IOException {
@@ -503,7 +495,7 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
                 + "  native-memory:\n"
                 + "    enabled: true\n"
                 + "    allocator-type: STANDARD\n"
-                + "    min-block-size: 42\n"
+                + "    min-block-size: 32\n"
                 + "    page-size: 24\n"
                 + "    size:\n"
                 + "      unit: BYTES\n"
@@ -515,7 +507,7 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
         NativeMemoryConfig nativeMemoryConfig = config.getNativeMemoryConfig();
         assertTrue(nativeMemoryConfig.isEnabled());
         assertEquals(NativeMemoryConfig.MemoryAllocatorType.STANDARD, nativeMemoryConfig.getAllocatorType());
-        assertEquals(42, nativeMemoryConfig.getMinBlockSize());
+        assertEquals(32, nativeMemoryConfig.getMinBlockSize());
         assertEquals(24, nativeMemoryConfig.getPageSize());
         assertEquals(MemoryUnit.BYTES, nativeMemoryConfig.getSize().getUnit());
         assertEquals(256, nativeMemoryConfig.getSize().getValue());

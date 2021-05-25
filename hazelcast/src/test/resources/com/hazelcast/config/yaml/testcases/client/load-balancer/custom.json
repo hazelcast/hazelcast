@@ -1,0 +1,11 @@
+{
+  "instance": {
+    "hazelcast-client": {
+      "load-balancer": {
+        "type": "custom",
+        "class-name": "MyLoadBalancer"
+      }
+    }
+  },
+  "error": null
+}

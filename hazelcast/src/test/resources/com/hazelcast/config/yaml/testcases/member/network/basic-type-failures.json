@@ -79,20 +79,6 @@
         "message": "expected type: Boolean, found: String"
       },
       {
-        "schemaLocation": "#/definitions/Network/properties/socket-interceptor",
-        "pointerToViolation": "#/hazelcast/network/socket-interceptor",
-        "causingExceptions": [],
-        "keyword": "type",
-        "message": "expected type: JSONObject, found: Null"
-      },
-      {
-        "schemaLocation": "#/definitions/Network/properties/ssl",
-        "pointerToViolation": "#/hazelcast/network/ssl",
-        "causingExceptions": [],
-        "keyword": "type",
-        "message": "expected type: JSONObject, found: String"
-      },
-      {
         "schemaLocation": "#/definitions/Network/properties/symmetric-encryption",
         "pointerToViolation": "#/hazelcast/network/symmetric-encryption",
         "causingExceptions": [],
@@ -127,6 +113,20 @@
         ],
         "keyword": "anyOf",
         "message": "#: no subschema matched out of the total 2 subschemas"
+      },
+      {
+        "schemaLocation": "#/definitions/SSL",
+        "pointerToViolation": "#/hazelcast/network/ssl",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: JSONObject, found: String"
+      },
+      {
+        "schemaLocation": "#/definitions/SocketInterceptor",
+        "pointerToViolation": "#/hazelcast/network/socket-interceptor",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: JSONObject, found: Null"
       }
     ],
     "message": "14 schema violations found"

@@ -1,0 +1,13 @@
+{
+  "instance": {
+    "hazelcast-client": {
+      "reliable-topic": {
+        "my-reliable-topic": {
+          "read-batch-size": 100,
+          "topic-overload-policy": "DISCARD_NEWEST"
+        }
+      }
+    }
+  },
+  "error": null
+}
