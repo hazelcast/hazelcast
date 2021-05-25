@@ -80,7 +80,7 @@ public class HazelcastConnector_RestartTest extends JetTestSupport {
     }
 
     private Long executionId(JetInstance instance, Job job) {
-        JetServiceBackend jetServiceBackend = getNodeEngineImpl(instance1).getService(JetServiceBackend.SERVICE_NAME);
+        JetServiceBackend jetServiceBackend = getNodeEngineImpl(instance).getService(JetServiceBackend.SERVICE_NAME);
         JobExecutionService executionService = jetServiceBackend.getJobExecutionService();
         return executionService.getExecutionIdForJobId(job.getId());
     }

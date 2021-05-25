@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.impl;
 
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
@@ -179,7 +178,7 @@ public class JobRepositoryTest extends JetTestSupport {
 
     @Test
     public void test_getJobRecordFromClient() {
-        HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        HazelcastInstance client = createJetClient().getHazelcastInstance();
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.streamFromProcessor("source", ProcessorMetaSupplier.of(() -> new NoOutputSourceP())))
          .withoutTimestamps()
