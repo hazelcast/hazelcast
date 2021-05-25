@@ -21,7 +21,10 @@ import com.hazelcast.client.impl.protocol.task.BlockingMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.jet.impl.client.protocol.codec.JetExportSnapshotCodec;
+import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.spi.impl.operationservice.Operation;
+
+import javax.annotation.Nullable;
 
 public class JetExportSnapshotMessageTask extends AbstractJetMessageTask<JetExportSnapshotCodec.RequestParameters, Void>
         implements BlockingMessageTask {
@@ -44,5 +47,14 @@ public class JetExportSnapshotMessageTask extends AbstractJetMessageTask<JetExpo
     @Override
     public Object[] getParameters() {
         return new Object[0];
+    }
+
+    @Nullable
+    @Override
+    public String[] actions() {
+        if (parameters.cancelJob) {
+            return new String[]{ActionConstants.ACTION_EXPORT, ActionConstants.ACTION_DESTROY};
+        }
+        return new String[]{ActionConstants.ACTION_EXPORT};
     }
 }

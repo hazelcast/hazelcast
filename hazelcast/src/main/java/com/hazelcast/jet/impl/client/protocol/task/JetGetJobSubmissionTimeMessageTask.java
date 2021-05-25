@@ -21,7 +21,10 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobSubmissionTimeCodec;
 import com.hazelcast.jet.impl.operation.GetJobSubmissionTimeOperation;
+import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.spi.impl.operationservice.Operation;
+
+import javax.annotation.Nullable;
 
 public class JetGetJobSubmissionTimeMessageTask
         extends AbstractJetMessageTask<JetGetJobSubmissionTimeCodec.RequestParameters, Long> {
@@ -45,5 +48,11 @@ public class JetGetJobSubmissionTimeMessageTask
     @Override
     public Object[] getParameters() {
         return new Object[0];
+    }
+
+    @Nullable
+    @Override
+    public String[] actions() {
+        return new String[]{ActionConstants.ACTION_READ};
     }
 }
