@@ -104,7 +104,7 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
     @Override
     protected CompletableFuture<Void> invokeSubmitJob(Data dag, JobConfig config) {
         Data configData = serializationService().toData(config);
-        ClientMessage request = JetSubmitJobCodec.encodeRequest(getId(), dag, configData);
+        ClientMessage request = JetSubmitJobCodec.encodeRequest(getId(), dag, configData, false);
         return invocation(request, masterUuid()).invoke().thenApply(c -> null);
     }
 
@@ -119,7 +119,7 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
 
     @Override
     protected CompletableFuture<Void> invokeTerminateJob(TerminationMode mode) {
-        ClientMessage request = JetTerminateJobCodec.encodeRequest(getId(), mode.ordinal());
+        ClientMessage request = JetTerminateJobCodec.encodeRequest(getId(), mode.ordinal(), false);
         return invocation(request, masterUuid()).invoke().thenApply(c -> null);
     }
 

@@ -21,12 +21,14 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.jet.LightJob;
-import com.hazelcast.jet.impl.client.protocol.codec.JetCancelLightJobCodec;
+import com.hazelcast.jet.impl.client.protocol.codec.JetTerminateJobCodec;
 import com.hazelcast.jet.impl.util.NonCompletableFuture;
 
 import javax.annotation.Nonnull;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+
+import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
 
 public class ClientLightJobProxy implements LightJob {
 
@@ -54,7 +56,7 @@ public class ClientLightJobProxy implements LightJob {
 
     @Override
     public void cancel() {
-        ClientMessage message = JetCancelLightJobCodec.encodeRequest(jobId);
+        ClientMessage message = JetTerminateJobCodec.encodeRequest(jobId, CANCEL_FORCEFUL.ordinal(), true);
         ClientInvocation invocation = new ClientInvocation(client, message, null, coordinatorUuid);
         invocation.invoke().join();
     }
