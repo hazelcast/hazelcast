@@ -20,6 +20,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.collection.IList;
 import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
@@ -57,7 +58,7 @@ import java.util.function.Function;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
-import static com.hazelcast.jet.server.JetCommandLine.runCommandLine;
+import static com.hazelcast.jet.server.HazelcastCommandLine.runCommandLine;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -66,7 +67,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class JetCommandLineTest extends JetTestSupport {
+public class HazelcastCommandLineTest extends JetTestSupport {
 
     private static final String SOURCE_NAME = "source";
     private static final String SINK_NAME = "sink";
@@ -87,18 +88,18 @@ public class JetCommandLineTest extends JetTestSupport {
     private JetInstance jet;
     private IMap<Integer, Integer> sourceMap;
     private IList<Integer> sinkList;
-    private JetInstance client;
+    private HazelcastInstance client;
 
     @BeforeClass
     public static void beforeClass() throws IOException {
         createJarFile();
-        xmlConfiguration = new File(JetCommandLineTest.class.getResource("hazelcast-client-test.xml").getPath());
-        yamlConfiguration = new File(JetCommandLineTest.class.getResource("hazelcast-client-test.yaml").getPath());
+        xmlConfiguration = new File(HazelcastCommandLineTest.class.getResource("hazelcast-client-test.xml").getPath());
+        yamlConfiguration = new File(HazelcastCommandLineTest.class.getResource("hazelcast-client-test.yaml").getPath());
     }
 
     public static void createJarFile() throws IOException {
         testJobJarFile = Files.createTempFile("testjob-", ".jar");
-        IOUtil.copy(JetCommandLineTest.class.getResourceAsStream("testjob-with-hz-bootstrap.jar"),
+        IOUtil.copy(HazelcastCommandLineTest.class.getResourceAsStream("testjob-with-hz-bootstrap.jar"),
                 testJobJarFile.toFile());
     }
 
@@ -117,7 +118,7 @@ public class JetCommandLineTest extends JetTestSupport {
         jet = createJetMember(cfg);
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setClusterName(clusterName);
-        client = createJetClient(clientConfig);
+        client = createJetClient(clientConfig).getHazelcastInstance();
         resetOut();
 
         Address address = jet.getCluster().getLocalMember().getAddress();
@@ -459,7 +460,7 @@ public class JetCommandLineTest extends JetTestSupport {
         assertTrueEventually(() -> assertEquals(1, jet.getJobs().size()));
         Job job = jet.getJobs().get(0);
         assertJobStatusEventually(job, JobStatus.RUNNING);
-        assertFalse("Instance should be shut down", client.getHazelcastInstance().getLifecycleService().isRunning());
+        assertFalse("Instance should be shut down", client.getLifecycleService().isRunning());
     }
 
     @Test
@@ -494,7 +495,7 @@ public class JetCommandLineTest extends JetTestSupport {
     @Test
     public void test_submit_with_JetBootstrap() throws IOException {
         Path testJarWithJetBootstrap = Files.createTempFile("testjob-with-jet-bootstrap-", ".jar");
-        IOUtil.copy(JetCommandLineTest.class.getResourceAsStream("testjob-with-jet-bootstrap.jar"),
+        IOUtil.copy(HazelcastCommandLineTest.class.getResourceAsStream("testjob-with-jet-bootstrap.jar"),
                 testJarWithJetBootstrap.toFile());
         run("submit", testJarWithJetBootstrap.toString());
         assertTrueEventually(() -> assertEquals(1, jet.getJobs().size()));
@@ -566,7 +567,7 @@ public class JetCommandLineTest extends JetTestSupport {
 
     private ClientConfig testTargetsCommandCluster(String expectedClusterName, String... args) {
         AtomicReference<ClientConfig> atomicConfig = new AtomicReference<>();
-        Function<ClientConfig, JetInstance> fnRunCommand = (config) -> {
+        Function<ClientConfig, HazelcastInstance> fnRunCommand = (config) -> {
             atomicConfig.set(config);
             return this.client;
         };
@@ -648,7 +649,7 @@ public class JetCommandLineTest extends JetTestSupport {
     }
 
     private void test_custom_configuration(String configFile) {
-        run(this::createJetClient, "-f", configFile, "cluster");
+        run(config -> createJetClient(config).getHazelcastInstance(), "-f", configFile, "cluster");
 
         String actual = captureOut();
         assertContains(actual, jet.getCluster().getLocalMember().getUuid().toString());
@@ -683,7 +684,7 @@ public class JetCommandLineTest extends JetTestSupport {
         runCommandLine(cfg -> client, out, err, false, args);
     }
 
-    private void run(Function<ClientConfig, JetInstance> clientFn, String... args) {
+    private void run(Function<ClientConfig, HazelcastInstance> clientFn, String... args) {
         runCommandLine(clientFn, out, err, false, args);
     }
 

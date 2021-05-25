@@ -29,12 +29,12 @@ import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.impl.HazelcastBootstrap;
 import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.Util;
@@ -42,7 +42,7 @@ import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.jet.impl.JobSummary;
-import com.hazelcast.jet.server.JetCommandLine.HazelcastVersionProvider;
+import com.hazelcast.jet.server.HazelcastCommandLine.HazelcastVersionProvider;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlColumnType;
@@ -124,14 +124,14 @@ import static java.util.concurrent.TimeUnit.SECONDS;
         sortOptions = false,
         subcommands = {HelpCommand.class}
 )
-public class JetCommandLine implements Runnable {
+public class HazelcastCommandLine implements Runnable {
 
     private static final int MAX_STR_LENGTH = 24;
     private static final int WAIT_INTERVAL_MILLIS = 100;
     private static final int PRIMARY_COLOR = AttributedStyle.YELLOW;
     private static final int SECONDARY_COLOR = 12;
 
-    private final Function<ClientConfig, JetInstance> jetClientFn;
+    private final Function<ClientConfig, HazelcastInstance> hzClientFn;
     private final PrintStream out;
     private final PrintStream err;
 
@@ -168,15 +168,15 @@ public class JetCommandLine implements Runnable {
     @Mixin(name = "verbosity")
     private Verbosity verbosity;
 
-    public JetCommandLine(Function<ClientConfig, JetInstance> jetClientFn, PrintStream out, PrintStream err) {
-        this.jetClientFn = jetClientFn;
+    public HazelcastCommandLine(Function<ClientConfig, HazelcastInstance> hzClientFn, PrintStream out, PrintStream err) {
+        this.hzClientFn = hzClientFn;
         this.out = out;
         this.err = err;
     }
 
     public static void main(String[] args) {
         runCommandLine(
-                config -> (JetInstance) HazelcastClient.newHazelcastClient(config).getJet(),
+                config -> (HazelcastInstance) HazelcastClient.newHazelcastClient(config).getJet(),
                 System.out,
                 System.err,
                 true,
@@ -332,7 +332,7 @@ public class JetCommandLine implements Runnable {
         targetsMixin.replace(targets);
 
         HazelcastBootstrap.executeJar(
-                () -> getJetClient(false).getHazelcastInstance(),
+                () -> getJetClient(false),
                 file.getAbsolutePath(), snapshotName, name, mainClass, params);
     }
 
@@ -425,7 +425,7 @@ public class JetCommandLine implements Runnable {
                     String snapshotName
     ) {
         runWithJet(targets, verbosity, false, jet -> {
-            JobStateSnapshot jobStateSnapshot = jet.getJobStateSnapshot(snapshotName);
+            JobStateSnapshot jobStateSnapshot = jet.getJet().getJobStateSnapshot(snapshotName);
             if (jobStateSnapshot == null) {
                 throw new JetException(String.format("Didn't find a snapshot named '%s'", snapshotName));
             }
@@ -490,7 +490,7 @@ public class JetCommandLine implements Runnable {
                     boolean listAll
     ) {
         runWithJet(targets, verbosity, false, jet -> {
-            JetClientInstanceImpl client = (JetClientInstanceImpl) jet;
+            JetClientInstanceImpl client = (JetClientInstanceImpl) jet.getJet();
             List<JobSummary> summaries = client.getJobSummaryList();
             String format = "%-19s %-18s %-23s %s";
             printf(format, "ID", "STATUS", "SUBMISSION TIME", "NAME");
@@ -515,7 +515,7 @@ public class JetCommandLine implements Runnable {
                     description = "Don't trim job name to fit, can break layout")
                     boolean fullJobName) {
         runWithJet(targets, verbosity, false, jet -> {
-            Collection<JobStateSnapshot> snapshots = jet.getJobStateSnapshots();
+            Collection<JobStateSnapshot> snapshots = jet.getJet().getJobStateSnapshots();
             printf("%-23s %-15s %-24s %s", "TIME", "SIZE (bytes)", "JOB NAME", "SNAPSHOT NAME");
             snapshots.stream()
                     .sorted(Comparator.comparing(JobStateSnapshot::name))
@@ -538,7 +538,7 @@ public class JetCommandLine implements Runnable {
             @Mixin(name = "targets") TargetsMixin targets
     ) {
         runWithJet(targets, verbosity, false, jet -> {
-            JetClientInstanceImpl client = (JetClientInstanceImpl) jet;
+            JetClientInstanceImpl client = (JetClientInstanceImpl) jet.getJet();
             HazelcastClientInstanceImpl hazelcastClient = client.getHazelcastClient();
             ClientClusterService clientClusterService = hazelcastClient.getClientClusterService();
             MCClusterMetadata clusterMetadata =
@@ -586,11 +586,11 @@ public class JetCommandLine implements Runnable {
     }
 
     private void runWithJet(TargetsMixin targets, Verbosity verbosity, boolean retryClusterConnectForever,
-                            ConsumerEx<JetInstance> consumer) {
+                            ConsumerEx<HazelcastInstance> consumer) {
         this.targetsMixin.replace(targets);
         this.verbosity.merge(verbosity);
         configureLogging();
-        JetInstance jet = getJetClient(retryClusterConnectForever);
+        HazelcastInstance jet = getJetClient(retryClusterConnectForever);
         try {
             consumer.accept(jet);
         } finally {
@@ -598,8 +598,8 @@ public class JetCommandLine implements Runnable {
         }
     }
 
-    private JetInstance getJetClient(boolean retryClusterConnectForever) {
-        return uncheckCall(() -> jetClientFn.apply(getClientConfig(retryClusterConnectForever)));
+    private HazelcastInstance getJetClient(boolean retryClusterConnectForever) {
+        return uncheckCall(() -> hzClientFn.apply(getClientConfig(retryClusterConnectForever)));
     }
 
     @SuppressFBWarnings(value = "DLS_DEAD_LOCAL_STORE", justification = "Generates false positive")
@@ -666,7 +666,7 @@ public class JetCommandLine implements Runnable {
     }
 
     private void executeSqlCmd(
-            JetInstance jet,
+            HazelcastInstance jet,
             String command,
             Terminal terminal,
             AtomicReference<SqlResult> activeSqlResult
@@ -716,7 +716,7 @@ public class JetCommandLine implements Runnable {
         }
     }
 
-    private String sqlStartingPrompt(JetInstance jet) {
+    private String sqlStartingPrompt(HazelcastInstance jet) {
         JetClientInstanceImpl client = (JetClientInstanceImpl) jet;
         HazelcastClientInstanceImpl hazelcastClient = client.getHazelcastClient();
         ClientClusterService clientClusterService = hazelcastClient.getClientClusterService();
@@ -738,7 +738,7 @@ public class JetCommandLine implements Runnable {
                 .toAnsi();
     }
 
-    private String helpPrompt(JetInstance jet) {
+    private String helpPrompt(HazelcastInstance jet) {
         JetClientInstanceImpl client = (JetClientInstanceImpl) jet;
         HazelcastClientInstanceImpl hazelcastClient = client.getHazelcastClient();
         ClientClusterService clientClusterService = hazelcastClient.getClientClusterService();
@@ -761,12 +761,12 @@ public class JetCommandLine implements Runnable {
     }
 
     static void runCommandLine(
-            Function<ClientConfig, JetInstance> jetClientFn,
+            Function<ClientConfig, HazelcastInstance> jetClientFn,
             PrintStream out, PrintStream err,
             boolean shouldExit,
             String[] args
     ) {
-        CommandLine cmd = new CommandLine(new JetCommandLine(jetClientFn, out, err));
+        CommandLine cmd = new CommandLine(new HazelcastCommandLine(jetClientFn, out, err));
         cmd.getSubcommands().get("submit").setStopAtPositional(true);
 
         String version = getBuildInfo().getVersion();
@@ -788,10 +788,10 @@ public class JetCommandLine implements Runnable {
         }
     }
 
-    private static Job getJob(JetInstance jet, String nameOrId) {
-        Job job = jet.getJob(nameOrId);
+    private static Job getJob(HazelcastInstance jet, String nameOrId) {
+        Job job = jet.getJet().getJob(nameOrId);
         if (job == null) {
-            job = jet.getJob(Util.idFromString(nameOrId));
+            job = jet.getJet().getJob(Util.idFromString(nameOrId));
             if (job == null) {
                 throw new JobNotFoundException("No job with name or id '" + nameOrId + "' was found");
             }
@@ -1093,7 +1093,7 @@ public class JetCommandLine implements Runnable {
             while (cmdLine.getParent() != null) {
                 cmdLine = cmdLine.getParent();
             }
-            JetCommandLine jetCmd = cmdLine.getCommand();
+            HazelcastCommandLine jetCmd = cmdLine.getCommand();
             if (jetCmd.verbosity.isVerbose) {
                 ex.printStackTrace(err());
             } else {
