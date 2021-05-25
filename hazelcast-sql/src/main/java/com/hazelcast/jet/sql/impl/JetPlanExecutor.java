@@ -199,7 +199,6 @@ class JetPlanExecutor {
             return SqlResultImpl.createUpdateCountResult(0);
         } else {
             JetQueryResultProducer queryResultProducer = new JetQueryResultProducer();
-            // TODO: Replace it with AbstractJetService
             AbstractJetInstance abstractJetInstance = (AbstractJetInstance) hazelcastInstance.getJet();
             Long jobId = abstractJetInstance.newJobId();
             Object oldValue = resultConsumerRegistry.put(jobId, queryResultProducer);

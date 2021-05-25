@@ -111,7 +111,6 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         this.nodeEngine = (NodeEngineImpl) engine;
 
         this.hazelcastInstance = engine.getHazelcastInstance();
-        // TODO: Replace it with JetServiceImpl
         this.jet = new JetInstanceImpl(nodeEngine.getNode().hazelcastInstance, jetConfig);
         taskletExecutionService = new TaskletExecutionService(
                 nodeEngine, jetConfig.getInstanceConfig().getCooperativeThreadCount(), nodeEngine.getProperties()

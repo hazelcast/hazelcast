@@ -534,7 +534,6 @@ public class JobRepository {
     }
 
     private Map<Long, JobRecord> jobRecordsMap() {
-        // TODO: Replace AbstractJetInstance with some AbstractJetService
         if (jobRecords.remembered() != null ||
                 ((AbstractJetInstance) instance.getJet()).existsDistributedObject(SERVICE_NAME, JOB_RECORDS_MAP_NAME)) {
             return jobRecords.get();
