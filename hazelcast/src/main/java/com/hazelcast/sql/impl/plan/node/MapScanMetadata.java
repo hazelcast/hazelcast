@@ -27,14 +27,13 @@ import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
 
 /**
  * POJO that contains all specific information to scan a partitioned map by Jet processor.
  */
-public class MapScanMetadata implements IdentifiedDataSerializable, Serializable {
+public class MapScanMetadata implements IdentifiedDataSerializable {
 
     protected String mapName;
     protected QueryTargetDescriptor keyDescriptor;

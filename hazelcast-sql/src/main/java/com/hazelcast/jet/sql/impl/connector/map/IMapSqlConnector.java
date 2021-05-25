@@ -136,6 +136,28 @@ public class IMapSqlConnector implements SqlConnector {
         );
     }
 
+
+    @Nonnull
+    @Override
+    public Vertex fullScanReader(
+            @Nonnull DAG dag,
+            @Nonnull Table table0,
+            @Nullable Expression<Boolean> filter,
+            @Nonnull List<Expression<?>> projection) {
+        PartitionedMapTable table = (PartitionedMapTable) table0;
+        MapScanMetadata mapScanMetadata = new MapScanMetadata(
+                table.getMapName(),
+                table.getKeyDescriptor(),
+                table.getValueDescriptor(),
+                table.fieldPaths(),
+                table.types(),
+                projection,
+                filter
+        );
+
+        return dag.newUniqueVertex(table.toString(), OnHeapMapScanP.onHeapMapScanP(mapScanMetadata));
+    }
+
     @Nonnull
     @Override
     public VertexWithInputConfig nestedLoopReader(
@@ -158,27 +180,6 @@ public class IMapSqlConnector implements SqlConnector {
                 KvRowProjector.supplier(paths, types, keyDescriptor, valueDescriptor, predicate, projections);
 
         return IMapJoiner.join(dag, name, toString(table), joinInfo, rightRowProjectorSupplier);
-    }
-
-    @Nonnull
-    @Override
-    public Vertex fullScanReader(
-            @Nonnull DAG dag,
-            @Nonnull Table table0,
-            @Nullable Expression<Boolean> filter,
-            @Nonnull List<Expression<?>> projection) {
-        PartitionedMapTable table = (PartitionedMapTable) table0;
-        MapScanMetadata mapScanMetadata = new MapScanMetadata(
-                table.getMapName(),
-                table.getKeyDescriptor(),
-                table.getValueDescriptor(),
-                table.fieldPaths(),
-                table.types(),
-                projection,
-                filter
-        );
-
-        return dag.newUniqueVertex(table.toString(), OnHeapMapScanP.onHeapMapScanP(mapScanMetadata));
     }
 
     @Override
