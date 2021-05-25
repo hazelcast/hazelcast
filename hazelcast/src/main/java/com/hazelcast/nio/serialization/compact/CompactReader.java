@@ -22,8 +22,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
-import java.util.Collection;
-import java.util.function.Function;
 
 /**
  * All read(String fieldName) methods throw HazelcastSerializationException when the related field is not found or
@@ -160,14 +158,5 @@ public interface CompactReader {
     <T> T[] getObjectArray(String fieldName, Class<T> componentType);
 
     <T> T[] getObjectArray(String fieldName, Class<T> componentType, T[] defaultValue);
-
-    /**
-     * @throws com.hazelcast.core.HazelcastException If the object is not able to be created because the related class not be
-     *                                               found in the classpath
-     */
-    <T> Collection<T> getObjectCollection(String fieldName, Function<Integer, Collection<T>> constructor);
-
-    <T> Collection<T> getObjectCollection(String fieldName, Function<Integer, Collection<T>> constructor,
-                                          Collection<T> defaultValue);
 
 }
