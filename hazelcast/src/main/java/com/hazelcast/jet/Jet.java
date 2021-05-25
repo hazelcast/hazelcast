@@ -44,8 +44,8 @@ public final class Jet {
      * @since Jet 4.0
      * @deprecated since 5.0
      * Please use {@link Hazelcast#bootstrappedInstance()} and then get
-     * {@link JetInstance} from the created {@link HazelcastInstance}
-     * by using {@link HazelcastInstance#getJet} ()}.
+     * {@link JetService} from the created {@link HazelcastInstance}
+     * by using {@link HazelcastInstance#getJet()}}.
      */
     @Nonnull
     @Deprecated
@@ -54,9 +54,10 @@ public final class Jet {
     }
 
     /**
-     * Creates a member of the Jet cluster with the configuration loaded from
-     * default location.
-     * @deprecated Use {@link Hazelcast#newHazelcastInstance()#getJet} instead.
+     * @deprecated since 5.0
+     * Please use {@link Hazelcast#newHazelcastInstance()} and then get
+     * {@link JetService} from the created {@link HazelcastInstance}
+     * by using {@link HazelcastInstance#getJet()}}.
      */
     @Deprecated
     @Nonnull
@@ -65,8 +66,10 @@ public final class Jet {
     }
 
     /**
-     * Creates a member of the Jet cluster with the given configuration.
-     * @deprecated use {@link Hazelcast#newHazelcastInstance(Config)#getJet} ()}
+     * @deprecated since 5.0
+     * Use {@link Hazelcast#newHazelcastInstance(Config)} and then get
+     * {@link JetService} from the created {@link HazelcastInstance} by
+     * using {@link HazelcastInstance#getJet()}}.
      */
     @Deprecated
     @Nonnull
@@ -77,7 +80,10 @@ public final class Jet {
     }
 
     /**
-     * @deprecated Use {@link HazelcastClient#newHazelcastClient()#getJet} instead
+     * @deprecated since 5.0
+     * Use {@link HazelcastClient#newHazelcastClient()} and then get
+     * {@link JetService} from the created {@link HazelcastInstance}
+     * client by using {@link HazelcastInstance#getJet()}}.
      */
     @Deprecated
     @Nonnull
@@ -86,9 +92,10 @@ public final class Jet {
     }
 
     /**
-     * Creates a Jet client with the given Hazelcast client configuration.
-     * @deprecated Use {@link HazelcastClient#newHazelcastClient(ClientConfig)#getJet} instead
-     * <p>
+     * @deprecated since 5.0
+     * Use {@link HazelcastClient#newHazelcastClient(ClientConfig)} and
+     * then get {@link JetService} from the created {@link
+     * HazelcastInstance} client by using {@link HazelcastInstance#getJet()}}.
      */
     @Deprecated
     @Nonnull
@@ -98,7 +105,10 @@ public final class Jet {
     }
 
     /**
-     * @deprecated Use {@link HazelcastClient#newHazelcastFailoverClient#getJet} instead
+     * @deprecated since 5.0
+     * Use {@link HazelcastClient#newHazelcastFailoverClient()} and
+     * then get {@link JetService} from the created {@link HazelcastInstance}
+     * client by using {@link HazelcastInstance#getJet()}}.
      */
     @Deprecated
     @Nonnull
@@ -107,7 +117,10 @@ public final class Jet {
     }
 
     /**
-     * @deprecated Use {@link HazelcastClient#newHazelcastFailoverClient(ClientFailoverConfig)#getJet} instead
+     * @deprecated since 5.0
+     * Use {@link HazelcastClient#newHazelcastFailoverClient(ClientFailoverConfig)}
+     * and then get {@link JetService} from the created {@link HazelcastInstance}
+     * client by using {@link HazelcastInstance#getJet()}}.
      */
     @Deprecated
     @Nonnull
