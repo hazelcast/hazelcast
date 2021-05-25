@@ -29,7 +29,7 @@ import static com.hazelcast.jet.impl.JobRepository.exportedSnapshotMapName;
  * A handle to an exported state snapshot created using {@link
  * Job#exportSnapshot(String)}.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public final class JobStateSnapshot {
 
@@ -39,13 +39,6 @@ public final class JobStateSnapshot {
 
     JobStateSnapshot(@Nonnull HazelcastInstance instance, @Nonnull String name, @Nonnull SnapshotValidationRecord record) {
         this.instance = instance;
-        this.name = name;
-        this.snapshotValidationRecord = record;
-    }
-
-    @Deprecated
-    JobStateSnapshot(@Nonnull JetInstance jet, @Nonnull String name, @Nonnull SnapshotValidationRecord record) {
-        this.instance = jet.getHazelcastInstance();
         this.name = name;
         this.snapshotValidationRecord = record;
     }
