@@ -34,7 +34,7 @@ Hazelcast repository continues its development as with a next major version.
 - the extension modules were kept under `extensions/*`, keeping the groupId and
   artifactId coordinates, this makes it easy for existing users to migrate.
 - `examples` modules were deleted, they will be merged with imdg example, which
-  are stored in a separate repository TODO new examples repository
+  are stored in a separate repository at https://github.com/hazelcast/hazelcast-code-samples/
 - `hazelcast-jet-sql` module was merged into `hazelcast-sql` module (this
   actually happened after the merge, but for users it is indistinguishable).`
 
