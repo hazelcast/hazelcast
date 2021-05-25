@@ -52,7 +52,6 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -104,7 +103,6 @@ import static org.junit.Assume.assumeTrue;
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-@Ignore // https://github.com/hazelcast/hazelcast/issues/18707
 public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
     private static final int MEMBER_COUNT = 2;
@@ -757,8 +755,11 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
     private void assertPsClosedWithError() {
         assertEquals(MEMBER_COUNT, MockPS.initCount.get());
-        assertEquals(MEMBER_COUNT, MockPS.closeCount.get());
-        assertEquals(MEMBER_COUNT, MockPS.receivedCloseErrors.size());
+        // with light jobs the init can be called on not all the members - the execution on one member
+        // can be cancelled due to the failure on the other member before it was initialized.
+        int minCount = useLightJob ? 1 : MEMBER_COUNT;
+        assertBetween("close count", MockPS.closeCount.get(), minCount, MEMBER_COUNT);
+        assertBetween("received close errors", MockPS.receivedCloseErrors.size(), minCount, MEMBER_COUNT);
 
         for (int i = 0; i < MEMBER_COUNT; i++) {
             assertOneOfExceptionsInCauses(MockPS.receivedCloseErrors.get(i),
@@ -774,7 +775,10 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     }
 
     private void assertPClosedWithError() {
-        assertEquals(MEMBER_COUNT * parallelism, MockP.closeCount.get());
+        // with light jobs the init can be called on not all the members - the execution on one member
+        // can be cancelled due to the failure on the other member before it was initialized.
+        int minCount = useLightJob ? parallelism : MEMBER_COUNT * parallelism;
+        assertBetween("close count", MockP.closeCount.get(), minCount, MEMBER_COUNT * parallelism);
     }
 
     private void assertOneOfExceptionsInCauses(Throwable caught, Throwable... expected) {
