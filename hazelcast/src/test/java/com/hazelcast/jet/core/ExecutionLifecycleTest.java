@@ -40,12 +40,14 @@ import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder;
+import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
+import com.hazelcast.test.PacketFiltersUtil;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -473,6 +475,24 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         // Then
         expectedException.expect(CancellationException.class);
         future.join();
+    }
+
+    @Test
+    public void when_executionCancelledBeforeStart_then_jobIsCancelled() {
+        // not applicable to light jobs - light jobs don't use the StartExecutionOperation
+        assumeFalse(useLightJob);
+
+        DAG dag = new DAG().vertex(new Vertex("test",
+                new MockPS(NoOutputSourceP::new, MEMBER_COUNT)));
+
+        PacketFiltersUtil.dropOperationsFrom(instance().getHazelcastInstance(), JetInitDataSerializerHook.FACTORY_ID,
+                singletonList(JetInitDataSerializerHook.START_EXECUTION_OP));
+
+        Job job = instance().newJob(dag);
+        assertJobStatusEventually(job, RUNNING); // RUNNING status is set on master before sending the StartOp
+        job.cancel();
+        assertThatThrownBy(() -> job.join())
+                .isInstanceOf(CancellationException.class);
     }
 
     @Test
