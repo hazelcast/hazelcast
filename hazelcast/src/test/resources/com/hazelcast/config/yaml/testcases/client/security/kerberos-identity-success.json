@@ -1,0 +1,18 @@
+{
+  "instance": {
+    "hazelcast-client": {
+      "security": {
+        "kerberos": {
+          "realm": "my-realm",
+          "security-realm": "my-security-realm",
+          "principal": "my-principal",
+          "keytab-file": "keytab.txt",
+          "service-name-prefix": "hz:",
+          "spn": "my-spn",
+          "use-canonical-hostname": true
+        }
+      }
+    }
+  },
+  "error": null
+}

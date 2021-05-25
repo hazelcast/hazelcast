@@ -93,7 +93,7 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl> {
 
     @Override
     protected CompletableFuture<Void> invokeSubmitJob(Data dag, JobConfig config) {
-        return invokeOp(new SubmitJobOperation(getId(), dag, serializationService().toData(config)));
+        return invokeOp(new SubmitJobOperation(getId(), dag, serializationService().toData(config), false));
     }
 
     @Override
@@ -103,7 +103,7 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl> {
 
     @Override
     protected CompletableFuture<Void> invokeTerminateJob(TerminationMode mode) {
-        return invokeOp(new TerminateJobOperation(getId(), mode));
+        return invokeOp(new TerminateJobOperation(getId(), mode, false));
     }
 
     @Override

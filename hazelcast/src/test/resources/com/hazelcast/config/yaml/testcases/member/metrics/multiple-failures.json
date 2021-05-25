@@ -1,0 +1,58 @@
+{
+  "instance": {
+    "hazelcast": {
+      "metrics": {
+        "disabled": true,
+        "management-center": {
+          "enabled": false,
+          "retention-seconds": -5
+        },
+        "jmx": {
+          "enabled": false
+        },
+        "collection-frequency-seconds": 10.5
+      }
+    }
+  },
+  "error": {
+    "schemaLocation": "#/definitions/Metrics",
+    "pointerToViolation": "#/hazelcast/metrics",
+    "causingExceptions": [{
+      "pointerToViolation": "#/hazelcast/metrics",
+      "causingExceptions": [
+        {
+          "schemaLocation": "#/definitions/BaseMetrics/properties/collection-frequency-seconds",
+          "pointerToViolation": "#/hazelcast/metrics/collection-frequency-seconds",
+          "causingExceptions": [],
+          "keyword": "type",
+          "message": "expected type: Integer, found: BigDecimal"
+        },
+        {
+          "schemaLocation": "#/definitions/Metrics/allOf/0",
+          "pointerToViolation": "#/hazelcast/metrics",
+          "causingExceptions": [
+            {
+              "schemaLocation": "#/definitions/Metrics/allOf/0/properties/management-center/properties/retention-seconds",
+              "pointerToViolation": "#/hazelcast/metrics/management-center/retention-seconds",
+              "causingExceptions": [],
+              "keyword": "minimum",
+              "message": "-5 is not greater or equal to 1"
+            },
+            {
+              "schemaLocation": "#/definitions/Metrics/allOf/0/propertyNames",
+              "pointerToViolation": "#/hazelcast/metrics/disabled",
+              "causingExceptions": [],
+              "keyword": "enum",
+              "message": "disabled is not a valid enum value"
+            }
+          ],
+          "message": "2 schema violations found"
+        }
+      ],
+      "keyword": "allOf",
+      "message": "#: only 0 subschema matches out of 2"
+    }],
+    "keyword": "allOf",
+    "message": "#: only 1 subschema matches out of 2"
+  }
+}

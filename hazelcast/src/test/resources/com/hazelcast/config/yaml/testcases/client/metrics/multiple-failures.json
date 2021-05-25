@@ -1,0 +1,72 @@
+{
+  "instance": {
+    "hazelcast-client": {
+      "metrics": {
+        "management-center": {},
+        "enabled": "On",
+        "jmx": {
+          "unknown": null,
+          "enabled": "Off"
+        },
+        "collection-frequency-seconds": "10"
+      }
+    }
+  },
+  "error": {
+    "schemaLocation": "#/definitions/ClientMetrics",
+    "pointerToViolation": "#/hazelcast-client/metrics",
+    "causingExceptions": [
+      {
+        "schemaLocation": "#/definitions/BaseMetrics",
+        "pointerToViolation": "#/hazelcast-client/metrics",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/BaseMetrics/properties/jmx",
+            "pointerToViolation": "#/hazelcast-client/metrics/jmx",
+            "causingExceptions": [
+              {
+                "schemaLocation": "#/definitions/BaseMetrics/properties/jmx",
+                "pointerToViolation": "#/hazelcast-client/metrics/jmx",
+                "causingExceptions": [],
+                "keyword": "additionalProperties",
+                "message": "extraneous key [unknown] is not permitted"
+              },
+              {
+                "schemaLocation": "#/definitions/BaseMetrics/properties/jmx/properties/enabled",
+                "pointerToViolation": "#/hazelcast-client/metrics/jmx/enabled",
+                "causingExceptions": [],
+                "keyword": "type",
+                "message": "expected type: Boolean, found: String"
+              }
+            ],
+            "message": "2 schema violations found"
+          },
+          {
+            "schemaLocation": "#/definitions/BaseMetrics/properties/collection-frequency-seconds",
+            "pointerToViolation": "#/hazelcast-client/metrics/collection-frequency-seconds",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Integer, found: String"
+          },
+          {
+            "schemaLocation": "#/definitions/BaseMetrics/properties/enabled",
+            "pointerToViolation": "#/hazelcast-client/metrics/enabled",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Boolean, found: String"
+          }
+        ],
+        "message": "4 schema violations found"
+      },
+      {
+        "schemaLocation": "#/definitions/ClientMetrics/allOf/1/propertyNames",
+        "pointerToViolation": "#/hazelcast-client/metrics/management-center",
+        "causingExceptions": [],
+        "keyword": "enum",
+        "message": "management-center is not a valid enum value"
+      }
+    ],
+    "keyword": "allOf",
+    "message": "#: only 0 subschema matches out of 2"
+  }
+}

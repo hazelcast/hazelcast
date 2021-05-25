@@ -1,0 +1,12 @@
+{
+  "instance": {
+    "hazelcast-client-failover": {
+      "clients": [
+        "your-first-hazelcast-client-configuration.yaml",
+        "your-second-hazelcast-client-configuration.yaml"
+      ],
+      "try-count": 5
+    }
+  },
+  "error": null
+}

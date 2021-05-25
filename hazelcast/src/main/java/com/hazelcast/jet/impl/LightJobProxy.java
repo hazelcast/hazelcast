@@ -18,12 +18,14 @@ package com.hazelcast.jet.impl;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.jet.LightJob;
-import com.hazelcast.jet.impl.operation.CancelLightJobOperation;
+import com.hazelcast.jet.impl.operation.TerminateJobOperation;
 import com.hazelcast.jet.impl.util.NonCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.concurrent.CompletableFuture;
+
+import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
 
 public class LightJobProxy implements LightJob {
 
@@ -50,7 +52,7 @@ public class LightJobProxy implements LightJob {
 
     @Override
     public void cancel() {
-        CancelLightJobOperation operation = new CancelLightJobOperation(jobId);
+        TerminateJobOperation operation = new TerminateJobOperation(jobId, CANCEL_FORCEFUL, true);
         nodeEngine.getOperationService()
                 .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, operation, coordinatorAddress)
                 .invoke()
