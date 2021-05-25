@@ -433,24 +433,22 @@ public class JobCoordinationService {
         }
 
         return submitToCoordinatorThread(() -> {
-            UUID localMemberId = nodeEngine.getLocalMember().getUuid();
-
             if (onlyJobId != ALL_JOBS) {
                 if (masterContexts.get(onlyJobId) != null) {
-                    return new GetJobIdsResult(onlyJobId, null);
+                    return new GetJobIdsResult(onlyJobId, false);
                 }
                 if (lightMasterContexts.get(onlyJobId) != null || jobRepository.getJobResult(onlyJobId) != null) {
-                    return new GetJobIdsResult(onlyJobId, localMemberId);
+                    return new GetJobIdsResult(onlyJobId, true);
                 }
                 return GetJobIdsResult.EMPTY;
             }
 
-            List<Tuple2<Long, UUID>> result = new ArrayList<>();
+            List<Tuple2<Long, Boolean>> result = new ArrayList<>();
 
             // add light jobs - only if no name is requested, light jobs can't have a name
             if (onlyName == null) {
                 for (LightMasterContext ctx : lightMasterContexts.values()) {
-                    result.add(tuple2(ctx.getJobId(), localMemberId));
+                    result.add(tuple2(ctx.getJobId(), true));
                 }
             }
 

@@ -205,7 +205,7 @@ public class JobRepository {
      * If the upload process fails for any reason, such as being unable to access a resource,
      * uploaded resources are cleaned up.
      */
-    long uploadJobResources(long jobId, JobConfig jobConfig) {
+    void uploadJobResources(long jobId, JobConfig jobConfig) {
         Map<String, byte[]> tmpMap = new HashMap<>();
         try {
             Supplier<IMap<String, byte[]>> jobFileStorage = Util.memoize(() -> getJobResources(jobId));
@@ -254,7 +254,6 @@ public class JobRepository {
                 throw new JetException("Job resource upload failed", e);
             }
         }
-        return jobId;
     }
 
     private Path validateAndGetDirectoryPath(ResourceConfig rc) throws URISyntaxException, IOException {

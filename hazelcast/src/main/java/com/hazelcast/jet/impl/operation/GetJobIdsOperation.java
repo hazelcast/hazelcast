@@ -23,12 +23,9 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
-import javax.annotation.Nonnull;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -54,7 +51,7 @@ public class GetJobIdsOperation extends AsyncOperation implements AllowedDuringP
         this.onlyName = onlyName;
     }
 
-    public GetJobIdsOperation(long onlyJobId) {
+    public GetJobIdsOperation(Long onlyJobId) {
         this.onlyJobId = onlyJobId;
     }
 
@@ -93,21 +90,21 @@ public class GetJobIdsOperation extends AsyncOperation implements AllowedDuringP
          * <p>
          * The indexes match those of {@link #jobIds}.
          */
-        private UUID[] coordinators;
+        private boolean[] isLightJobs;
 
-        public GetJobIdsResult(long jobId, UUID coordinator) {
+        public GetJobIdsResult(long jobId, boolean isLightJob) {
             jobIds = new long[]{jobId};
-            coordinators = new UUID[]{coordinator};
+            isLightJobs = new boolean[]{isLightJob};
         }
 
-        public GetJobIdsResult(List<Tuple2<Long, UUID>> result) {
+        public GetJobIdsResult(List<Tuple2<Long, Boolean>> result) {
             jobIds = new long[result.size()];
-            coordinators = new UUID[result.size()];
+            isLightJobs = new boolean[result.size()];
             for (int i = 0; i < result.size(); i++) {
-                Tuple2<Long, UUID> tuple = result.get(i);
+                Tuple2<Long, Boolean> tuple = result.get(i);
                 assert tuple.f0() != null && tuple.f1() != null;
                 jobIds[i] = tuple.f0();
-                coordinators[i] = tuple.f1();
+                isLightJobs[i] = tuple.f1();
             }
         }
 
@@ -115,19 +112,8 @@ public class GetJobIdsOperation extends AsyncOperation implements AllowedDuringP
             return jobIds;
         }
 
-        public UUID[] getCoordinators() {
-            return coordinators;
-        }
-
-        /**
-         * Merges {@code other} {@link GetJobIdsResult} into {@code this} instance.
-         */
-        public void merge(@Nonnull GetJobIdsResult other) {
-            int newLength = jobIds.length + other.jobIds.length;
-            jobIds = Arrays.copyOf(jobIds, newLength);
-            coordinators = Arrays.copyOf(coordinators, newLength);
-            System.arraycopy(other.jobIds, 0, jobIds, jobIds.length, other.jobIds.length);
-            System.arraycopy(other.coordinators, 0, coordinators, coordinators.length, other.coordinators.length);
+        public boolean[] getIsLightJobs() {
+            return isLightJobs;
         }
 
         @Override
@@ -142,22 +128,14 @@ public class GetJobIdsOperation extends AsyncOperation implements AllowedDuringP
 
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeInt(jobIds.length);
-            for (int i = 0; i < jobIds.length; i++) {
-                out.writeLong(jobIds[i]);
-                out.writeObject(coordinators[i]);
-            }
+            out.writeLongArray(jobIds);
+            out.writeBooleanArray(isLightJobs);
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
-            int length = in.readInt();
-            jobIds = new long[length];
-            coordinators = new UUID[length];
-            for (int i = 0; i < length; i++) {
-                jobIds[i] = in.readLong();
-                coordinators[i] = in.readObject();
-            }
+            jobIds = in.readLongArray();
+            isLightJobs = in.readBooleanArray();
         }
     }
 }

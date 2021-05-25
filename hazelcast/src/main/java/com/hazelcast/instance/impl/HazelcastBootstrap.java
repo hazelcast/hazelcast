@@ -619,11 +619,6 @@ public final class HazelcastBootstrap {
             return job;
         }
 
-        @Nonnull @Override
-        public BasicJob newLightJobInt(Object jobDefinition) {
-            return jet.newLightJobInt(jobDefinition);
-        }
-
         private JobConfig updateJobConfig(@Nonnull JobConfig config) {
             if (jar != null) {
                 config.addJar(jar);
@@ -698,13 +693,8 @@ public final class HazelcastBootstrap {
         }
 
         @Override
-        public BasicJob newJobProxy(long jobId) {
-            return jet.newJobProxy(jobId);
-        }
-
-        @Override
-        public Job newJobProxy(long jobId, Object jobDefinition, JobConfig config) {
-            return jet.newJobProxy(jobId, jobDefinition, config);
+        public BasicJob newJobProxy(long jobId, boolean isLightJob, Object jobDefinition, JobConfig config) {
+            return jet.newJobProxy(jobId, isLightJob, jobDefinition, config);
         }
 
         @Override

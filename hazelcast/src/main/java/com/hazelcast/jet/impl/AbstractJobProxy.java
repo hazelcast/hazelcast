@@ -45,11 +45,14 @@ import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
 /**
  * Base {@link Job} implementation for both client and member proxy.
  */
-public abstract class AbstractJobProxy<T> implements Job {
+public abstract class AbstractJobProxy<ContainerType, MemberIdType> implements Job {
 
     private final long jobId;
     private final ILogger logger;
-    private final T container;
+    private final ContainerType container;
+
+    /** Null for normal jobs, non-null for light jobs  */
+    protected final MemberIdType coordinatorMemberId;
 
     /**
      * Future that will be completed when we learn that the coordinator
@@ -64,14 +67,18 @@ public abstract class AbstractJobProxy<T> implements Job {
     private volatile JobConfig jobConfig;
     private final Supplier<Long> submissionTimeSup = memoizeConcurrent(this::doGetJobSubmissionTime);
 
-    AbstractJobProxy(T container, long jobId) {
+    AbstractJobProxy(ContainerType container, long jobId, MemberIdType coordinatorMemberId) {
         this.jobId = jobId;
         this.container = container;
+        this.coordinatorMemberId = coordinatorMemberId;
         this.logger = loggingService().getLogger(Job.class);
     }
 
-    AbstractJobProxy(T container, long jobId, Object jobDefinition, JobConfig config) {
-        this(container, jobId);
+    AbstractJobProxy(ContainerType container, long jobId, boolean isLightJob, Object jobDefinition, JobConfig config) {
+        this.jobId = jobId;
+        this.container = container;
+        this.coordinatorMemberId = isLightJob ? findLightJobCoordinator() : null;
+        this.logger = loggingService().getLogger(Job.class);
 
         try {
             doSubmitJob(jobDefinition, config);
@@ -87,9 +94,12 @@ public abstract class AbstractJobProxy<T> implements Job {
         return jobId;
     }
 
-    @Nonnull
-    @Override
+    @Nonnull @Override
     public JobConfig getConfig() {
+        if (coordinatorMemberId != null) {
+            throw new UnsupportedOperationException("not supported for light jobs");
+        }
+
         // The common path will use a single volatile load
         JobConfig loadResult = jobConfig;
         if (loadResult != null) {
@@ -178,6 +188,12 @@ public abstract class AbstractJobProxy<T> implements Job {
                 + "}";
     }
 
+    protected boolean isLightJob() {
+        return coordinatorMemberId != null;
+    }
+
+    protected abstract MemberIdType findLightJobCoordinator();
+
     /**
      * Submit and join job with a given DAG and config
      */
@@ -208,14 +224,15 @@ public abstract class AbstractJobProxy<T> implements Job {
 
     protected abstract boolean isRunning();
 
-    protected T container() {
+    protected ContainerType container() {
         return container;
     }
 
     private void doSubmitJob(Object jobDefinition, JobConfig config) {
         NonCompletableFuture submitFuture = new NonCompletableFuture();
         SubmitJobCallback callback = new SubmitJobCallback(submitFuture, jobDefinition, config);
-        invokeSubmitJob(serializationService().toData(jobDefinition), config).whenCompleteAsync(callback);
+        invokeSubmitJob(serializationService().toData(jobDefinition), config)
+                .whenCompleteAsync(callback);
         submitFuture.join();
     }
 

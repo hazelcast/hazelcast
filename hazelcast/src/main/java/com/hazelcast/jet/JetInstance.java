@@ -282,8 +282,8 @@ public interface JetInstance {
      * Returns all jobs submitted with the given name, ordered in descending
      * order by submission time. The active job is always first. Empty list
      * will be returned if no job with the given name exists. The list includes
-     * completed jobs, but currently does not include {@linkplain
-     * #newLightJob(Pipeline) light jobs}.
+     * completed jobs. It never includes {@linkplain #newLightJob(Pipeline)
+     * light jobs} because they can't have a name.
      */
     @Nonnull
     List<Job> getJobs(@Nonnull String name);

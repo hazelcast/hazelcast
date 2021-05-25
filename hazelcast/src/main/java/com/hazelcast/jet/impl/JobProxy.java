@@ -45,7 +45,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ThreadLocalRandom;
 
+import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.jet.impl.JobMetricsUtil.toJobMetrics;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.Util.getJetInstance;
@@ -53,14 +55,14 @@ import static com.hazelcast.jet.impl.util.Util.getJetInstance;
 /**
  * {@link Job} proxy on member.
  */
-public class JobProxy extends AbstractJobProxy<NodeEngineImpl> {
+public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
 
-    public JobProxy(NodeEngineImpl nodeEngine, long jobId) {
-        super(nodeEngine, jobId);
+    public JobProxy(NodeEngineImpl nodeEngine, long jobId, Address coordinator) {
+        super(nodeEngine, jobId, coordinator);
     }
 
-    public JobProxy(NodeEngineImpl engine, long jobId, Object jobDefinition, JobConfig config) {
-        super(engine, jobId, jobDefinition, config);
+    public JobProxy(NodeEngineImpl engine, long jobId, boolean isLightJob, Object jobDefinition, JobConfig config) {
+        super(engine, jobId, isLightJob, jobDefinition, config);
     }
 
     @Nonnull @Override
@@ -85,7 +87,7 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl> {
     @Nonnull @Override
     public JobMetrics getMetrics() {
         try {
-            List<RawJobMetrics> shards = this.<List<RawJobMetrics>>invokeOp(new GetJobMetricsOperation(getId(), false)).get();
+            List<RawJobMetrics> shards = this.<List<RawJobMetrics>>invokeOp(new GetJobMetricsOperation(getId(), isLightJob())).get();
             return toJobMetrics(shards);
         } catch (Throwable t) {
             throw rethrow(t);
@@ -93,18 +95,32 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl> {
     }
 
     @Override
+    protected Address findLightJobCoordinator() {
+        Address randomMember;
+        // if we're a lite member, forward to random data member. Otherwise use local member.
+        if (container().getLocalMember().isLiteMember()) {
+            Member[] members = container().getClusterService().getMembers(DATA_MEMBER_SELECTOR).toArray(new Member[0]);
+            randomMember = members[ThreadLocalRandom.current().nextInt(members.length)].getAddress();
+        } else {
+            randomMember = container().getThisAddress();
+        }
+        return randomMember;
+    }
+
+    @Override
     protected CompletableFuture<Void> invokeSubmitJob(Data dag, JobConfig config) {
-        return invokeOp(new SubmitJobOperation(getId(), dag, serializationService().toData(config), false));
+        return invokeOp(new SubmitJobOperation(getId(), dag, serializationService().toData(config),
+                coordinatorMemberId != null));
     }
 
     @Override
     protected CompletableFuture<Void> invokeJoinJob() {
-        return invokeOp(new JoinSubmittedJobOperation(getId(), false));
+        return invokeOp(new JoinSubmittedJobOperation(getId(), isLightJob()));
     }
 
     @Override
     protected CompletableFuture<Void> invokeTerminateJob(TerminationMode mode) {
-        return invokeOp(new TerminateJobOperation(getId(), mode, false));
+        return invokeOp(new TerminateJobOperation(getId(), mode, isLightJob()));
     }
 
     @Override
@@ -140,7 +156,7 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl> {
     @Override
     protected long doGetJobSubmissionTime() {
         try {
-            return this.<Long>invokeOp(new GetJobSubmissionTimeOperation(getId(), false)).get();
+            return this.<Long>invokeOp(new GetJobSubmissionTimeOperation(getId(), isLightJob())).get();
         } catch (Throwable t) {
             throw rethrow(t);
         }
@@ -180,9 +196,10 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl> {
     }
 
     private <T> CompletableFuture<T> invokeOp(Operation op) {
+        Address target = coordinatorMemberId != null ? coordinatorMemberId : masterAddress();
         return container()
                 .getOperationService()
-                .createInvocationBuilder(JetService.SERVICE_NAME, op, masterAddress())
+                .createInvocationBuilder(JetService.SERVICE_NAME, op, target)
                 .invoke();
     }
 

@@ -45,6 +45,7 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.locks.LockSupport;
 
 import static com.hazelcast.jet.impl.JobMetricsUtil.toJobMetrics;
@@ -55,17 +56,17 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 /**
  * {@link Job} proxy on client.
  */
-public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
+public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl, UUID> {
 
     private static final long RETRY_DELAY_NS = MILLISECONDS.toNanos(200);
     private static final long RETRY_TIME_NS = SECONDS.toNanos(60);
 
-    ClientJobProxy(JetClientInstanceImpl client, long jobId) {
-        super(client, jobId);
+    ClientJobProxy(JetClientInstanceImpl client, long jobId, UUID coordinator) {
+        super(client, jobId, coordinator);
     }
 
-    ClientJobProxy(JetClientInstanceImpl client, long jobId, Object jobDefinition, JobConfig config) {
-        super(client, jobId, jobDefinition, config);
+    ClientJobProxy(JetClientInstanceImpl client, long jobId, boolean isLightJob, Object jobDefinition, JobConfig config) {
+        super(client, jobId, isLightJob, jobDefinition, config);
     }
 
     @Nonnull
@@ -94,7 +95,7 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
     @Override
     public JobMetrics getMetrics() {
         return callAndRetryIfTargetNotFound(()  -> {
-            ClientMessage request = JetGetJobMetricsCodec.encodeRequest(getId(), false);
+            ClientMessage request = JetGetJobMetricsCodec.encodeRequest(getId(), isLightJob());
             ClientMessage response = invocation(request, masterUuid()).invoke().get();
             Data metricsData = JetGetJobMetricsCodec.decodeResponse(response);
             return toJobMetrics(serializationService().toObject(metricsData));
@@ -102,15 +103,30 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
     }
 
     @Override
+    protected UUID findLightJobCoordinator() {
+        // find random non-lite member
+        Member[] members = container().getCluster().getMembers().toArray(new Member[0]);
+        int randomMemberIndex = ThreadLocalRandom.current().nextInt(members.length);
+        for (int i = 0; i < members.length && members[randomMemberIndex].isLiteMember(); i++) {
+            randomMemberIndex++;
+            if (randomMemberIndex == members.length) {
+                randomMemberIndex = 0;
+            }
+        }
+        return members[randomMemberIndex].getUuid();
+    }
+
+    @Override
     protected CompletableFuture<Void> invokeSubmitJob(Data dag, JobConfig config) {
         Data configData = serializationService().toData(config);
-        ClientMessage request = JetSubmitJobCodec.encodeRequest(getId(), dag, configData, false);
-        return invocation(request, masterUuid()).invoke().thenApply(c -> null);
+        ClientMessage request = JetSubmitJobCodec.encodeRequest(getId(), dag, configData, isLightJob());
+        UUID target = coordinatorMemberId != null ? coordinatorMemberId : masterUuid();
+        return invocation(request, target).invoke().thenApply(c -> null);
     }
 
     @Override
     protected CompletableFuture<Void> invokeJoinJob() {
-        ClientMessage request = JetJoinSubmittedJobCodec.encodeRequest(getId(), false);
+        ClientMessage request = JetJoinSubmittedJobCodec.encodeRequest(getId(), isLightJob());
         ClientInvocation invocation = invocation(request, masterUuid());
         // this invocation should never time out, as the job may be running for a long time
         invocation.setInvocationTimeoutMillis(Long.MAX_VALUE); // 0 is not supported
@@ -119,7 +135,7 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
 
     @Override
     protected CompletableFuture<Void> invokeTerminateJob(TerminationMode mode) {
-        ClientMessage request = JetTerminateJobCodec.encodeRequest(getId(), mode.ordinal(), false);
+        ClientMessage request = JetTerminateJobCodec.encodeRequest(getId(), mode.ordinal(), isLightJob());
         return invocation(request, masterUuid()).invoke().thenApply(c -> null);
     }
 
@@ -156,7 +172,7 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
     @Override
     protected long doGetJobSubmissionTime() {
         return callAndRetryIfTargetNotFound(() -> {
-            ClientMessage request = JetGetJobSubmissionTimeCodec.encodeRequest(getId(), false);
+            ClientMessage request = JetGetJobSubmissionTimeCodec.encodeRequest(getId(), isLightJob());
             ClientMessage response = invocation(request, masterUuid()).invoke().get();
             return JetGetJobSubmissionTimeCodec.decodeResponse(response);
         });
@@ -198,8 +214,7 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl> {
 
     private ClientInvocation invocation(ClientMessage request, UUID invocationUuid) {
         return new ClientInvocation(
-                container().getHazelcastClient(), request, "jobId=" + getIdString(), invocationUuid
-        );
+                container().getHazelcastClient(), request, "jobId=" + getIdString(), invocationUuid);
     }
 
     private <T> T callAndRetryIfTargetNotFound(Callable<T> action) {
