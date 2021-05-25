@@ -371,8 +371,8 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
     }
 
     /**
-     * Cancel the job and wait until it cancels using LightJob.join(), ignoring the
-     * CancellationException.
+     * Cancel the job and wait until it cancels using {@link BasicJob#join()},
+     * ignoring the CancellationException.
      */
     public static void cancelAndJoin(@Nonnull BasicJob job) {
         job.cancel();

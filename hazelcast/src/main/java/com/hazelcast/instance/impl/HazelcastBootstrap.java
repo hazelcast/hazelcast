@@ -49,6 +49,7 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.AbstractJetInstance;
+import com.hazelcast.jet.impl.operation.GetJobIdsOperation.GetJobIdsResult;
 import com.hazelcast.jet.impl.util.ConcurrentMemoizingSupplier;
 import com.hazelcast.jet.impl.util.JetConsoleLogHandler;
 import com.hazelcast.jet.pipeline.Pipeline;
@@ -84,6 +85,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -547,11 +550,10 @@ public final class HazelcastBootstrap {
         public void shutdown() {
             getLifecycleService().shutdown();
         }
-
     }
 
-    private static class BootstrappedJetProxy extends AbstractJetInstance {
-        private final AbstractJetInstance jet;
+    private static class BootstrappedJetProxy<MemberIdType> extends AbstractJetInstance<MemberIdType> {
+        private final AbstractJetInstance<MemberIdType> jet;
         private final String jar;
         private final String snapshotName;
         private final String jobName;
@@ -564,7 +566,7 @@ public final class HazelcastBootstrap {
                 @Nullable String jobName
         ) {
             super(jet.getHazelcastInstance());
-            this.jet = (AbstractJetInstance) jet;
+            this.jet = (AbstractJetInstance<MemberIdType>) jet;
             this.jar = jar;
             this.snapshotName = snapshotName;
             this.jobName = jobName;
@@ -693,13 +695,23 @@ public final class HazelcastBootstrap {
         }
 
         @Override
+        public BasicJob newJobProxy(long jobId, MemberIdType coordinator) {
+            return jet.newJobProxy(jobId, coordinator);
+        }
+
+        @Override
         public BasicJob newJobProxy(long jobId, boolean isLightJob, Object jobDefinition, JobConfig config) {
             return jet.newJobProxy(jobId, isLightJob, jobDefinition, config);
         }
 
         @Override
-        public List<Long> getJobIdsByName(String name) {
-            return jet.getJobIdsByName(name);
+        public MemberIdType getMasterId() {
+            return jet.getMasterId();
+        }
+
+        @Override
+        public Map<MemberIdType, CompletableFuture<GetJobIdsResult>> getJobsInt(Long onlyJobId) {
+            return jet.getJobsInt(onlyJobId);
         }
     }
 }

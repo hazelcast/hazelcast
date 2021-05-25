@@ -21,28 +21,23 @@ import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectsCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
-import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.cluster.Address;
-import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.BasicJob;
+import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.client.protocol.codec.JetExistsDistributedObjectCodec;
 import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobIdsCodec;
 import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobSummaryListCodec;
-import com.hazelcast.jet.impl.client.protocol.codec.JetSubmitJobCodec;
-import com.hazelcast.jet.impl.operation.GetJobIdsOperation;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation.GetJobIdsResult;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.AbstractList;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,7 +45,6 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
-import static com.hazelcast.jet.impl.operation.GetJobIdsOperation.ALL_JOBS;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
 /**
@@ -70,34 +64,17 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
     }
 
     @Override
-    protected UUID getMasterId() {
+    public UUID getMasterId() {
         return client.getClientClusterService().getMasterMember().getUuid();
     }
 
     @Override
-    protected Map<UUID, CompletableFuture<GetJobIdsResult>> getJobsInt(Long onlyJobId) {
+    public Map<UUID, CompletableFuture<GetJobIdsResult>> getJobsInt(Long onlyJobId) {
         Map<Address, CompletableFuture<GetJobIdsResult>> futures = new HashMap<>();
-        for (Member member : getCluster().getMembers()) {
-            GetJobIdsOperation operation = new GetJobIdsOperation(onlyJobId);
-            InvocationFuture<GetJobIdsResult> future = nodeEngine
-                    .getOperationService()
-                    .createInvocationBuilder(JetService.SERVICE_NAME, operation, member.getAddress())
-                    .invoke();
-            futures.put(member.getAddress(), future);
-        }
-        return futures;
-    }
-
-    @Nonnull @Override
-    public BasicJob newLightJobInt(Object jobDefinition) {
-        Data jobDefinitionSerialized = serializationService.toData(jobDefinition);
-        long jobId = newJobId();
-        ClientMessage message = JetSubmitJobCodec.encodeRequest(jobId, jobDefinitionSerialized, null, true);
-
-        ClientInvocation invocation = new ClientInvocation(client, message, null, coordinatorUuid);
-
-        ClientInvocationFuture future = invocation.invoke();
-        return new ClientLightJobProxy(this, coordinatorUuid, jobId, future);
+        return invokeRequestOnMasterAndDecodeResponse(JetGetJobIdsCodec.encodeRequest(null, onlyJobId), resp -> {
+            Data responseSerialized = JetGetJobIdsCodec.decodeResponse(resp).response;
+            return serializationService.toObject(responseSerialized);
+        });
     }
 
     @Nonnull @Override
@@ -105,27 +82,17 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
         throw new UnsupportedOperationException("Jet Configuration is not available on the client");
     }
 
-    @Nonnull @Override
-    public List<BasicJob> getAllJobs() {
-        GetJobIdsResult response = getJobIdsInternal(null, ALL_JOBS);
-        List<BasicJob> result = new ArrayList<>(response.getJobIds().length);
-        long[] jobIds = response.getJobIds();
-        for (int i = 0; i < jobIds.length; i++) {
-            long jobId = response.getJobIds()[i];
-            UUID uuid = response.getCoordinators()[i];
-            result.add(uuid != null
-                    ? new ClientLightJobProxy(this, uuid, jobId, null)
-                    : new ClientJobProxy(this, jobId));
-        }
-
-        return result;
-    }
-
     private GetJobIdsResult getJobIdsInternal(@Nullable String onlyName, long onlyJobId) {
         return invokeRequestOnMasterAndDecodeResponse(JetGetJobIdsCodec.encodeRequest(onlyName, onlyJobId), resp -> {
             Data responseSerialized = JetGetJobIdsCodec.decodeResponse(resp).response;
             return serializationService.toObject(responseSerialized);
         });
+    }
+
+    @Nonnull @Override
+    public List<Job> getJobs(@NotNull String name) {
+        // TODO [viliam]
+        return null;
     }
 
     /**
@@ -158,22 +125,10 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
     }
 
     @Override
-    public List<Long> getJobIdsByName(String name) {
-        long[] jobIds = getJobIdsInternal(name, ALL_JOBS).getJobIds();
-        return new AbstractList<Long>() {
-            @Override
-            public Long get(int index) {
-                return jobIds[index];
-            }
-
-            @Override
-            public int size() {
-                return jobIds.length;
-            }
-        };
+    public BasicJob newJobProxy(long jobId, UUID coordinator) {
+        return new ClientJobProxy(this, jobId, coordinator);
     }
 
-    @Override
     public BasicJob newJobProxy(long jobId, boolean isLightJob, Object jobDefinition, JobConfig config) {
         return new ClientJobProxy(this, jobId, isLightJob, jobDefinition, config);
     }

@@ -23,6 +23,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.impl.util.NonCompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -52,13 +53,13 @@ public abstract class AbstractJobProxy<ContainerType, MemberIdType> implements J
     private final ContainerType container;
 
     /** Null for normal jobs, non-null for light jobs  */
-    protected final MemberIdType coordinatorMemberId;
+    protected final MemberIdType lightJobCoordinator;
 
     /**
      * Future that will be completed when we learn that the coordinator
      * completed the job, but only if {@link #joinedJob} is true.
      */
-    private final NonCompletableFuture future = new NonCompletableFuture();
+    private final NonCompletableFuture future;
 
     // Flag which indicates if this proxy has sent a request to join the job result or not
     private final AtomicBoolean joinedJob = new AtomicBoolean();
@@ -67,23 +68,32 @@ public abstract class AbstractJobProxy<ContainerType, MemberIdType> implements J
     private volatile JobConfig jobConfig;
     private final Supplier<Long> submissionTimeSup = memoizeConcurrent(this::doGetJobSubmissionTime);
 
-    AbstractJobProxy(ContainerType container, long jobId, MemberIdType coordinatorMemberId) {
+    AbstractJobProxy(ContainerType container, long jobId, MemberIdType lightJobCoordinator) {
         this.jobId = jobId;
         this.container = container;
-        this.coordinatorMemberId = coordinatorMemberId;
+        this.lightJobCoordinator = lightJobCoordinator;
         this.logger = loggingService().getLogger(Job.class);
+        this.future = new NonCompletableFuture();
     }
 
     AbstractJobProxy(ContainerType container, long jobId, boolean isLightJob, Object jobDefinition, JobConfig config) {
         this.jobId = jobId;
         this.container = container;
-        this.coordinatorMemberId = isLightJob ? findLightJobCoordinator() : null;
+        this.lightJobCoordinator = isLightJob ? findLightJobCoordinator() : null;
         this.logger = loggingService().getLogger(Job.class);
 
         try {
-            doSubmitJob(jobDefinition, config);
+            NonCompletableFuture future = doSubmitJob(jobDefinition, config);
             joinedJob.set(true);
-            doInvokeJoinJob();
+            // For light jobs, the future of the submit operation is also the job future.
+            // For normal jobs, we invoke the join operation separately.
+            if (isLightJob) {
+                this.future = future;
+            } else {
+                future.get();
+                this.future = new NonCompletableFuture();
+                doInvokeJoinJob();
+            }
         } catch (Throwable t) {
             throw rethrow(t);
         }
@@ -96,7 +106,7 @@ public abstract class AbstractJobProxy<ContainerType, MemberIdType> implements J
 
     @Nonnull @Override
     public JobConfig getConfig() {
-        if (coordinatorMemberId != null) {
+        if (lightJobCoordinator != null) {
             throw new UnsupportedOperationException("not supported for light jobs");
         }
 
@@ -188,8 +198,9 @@ public abstract class AbstractJobProxy<ContainerType, MemberIdType> implements J
                 + "}";
     }
 
-    protected boolean isLightJob() {
-        return coordinatorMemberId != null;
+    @Override
+    public boolean isLightJob() {
+        return lightJobCoordinator != null;
     }
 
     protected abstract MemberIdType findLightJobCoordinator();
@@ -228,12 +239,12 @@ public abstract class AbstractJobProxy<ContainerType, MemberIdType> implements J
         return container;
     }
 
-    private void doSubmitJob(Object jobDefinition, JobConfig config) {
+    private NonCompletableFuture doSubmitJob(Object jobDefinition, JobConfig config) {
         NonCompletableFuture submitFuture = new NonCompletableFuture();
         SubmitJobCallback callback = new SubmitJobCallback(submitFuture, jobDefinition, config);
         invokeSubmitJob(serializationService().toData(jobDefinition), config)
                 .whenCompleteAsync(callback);
-        submitFuture.join();
+        return submitFuture;
     }
 
     private boolean isRestartable(Throwable t) {
@@ -244,7 +255,13 @@ public abstract class AbstractJobProxy<ContainerType, MemberIdType> implements J
     }
 
     private void doInvokeJoinJob() {
-        invokeJoinJob().whenCompleteAsync(joinJobCallback);
+        invokeJoinJob()
+                .whenComplete((r, t) -> {
+                    if (isLightJob() && t instanceof JobNotFoundException) {
+                        throw new IllegalStateException("job already completed");
+                    }
+                })
+                .whenCompleteAsync(joinJobCallback);
     }
 
     private abstract class CallbackBase implements BiConsumer<Void, Throwable> {
@@ -284,7 +301,7 @@ public abstract class AbstractJobProxy<ContainerType, MemberIdType> implements J
             } catch (IllegalStateException e) {
                 // job data will be cleaned up eventually by the coordinator
                 String msg = operationName() + " failed for job " + idAndName() + " because the cluster " +
-                        "is performing  split-brain merge and the coordinator is not known";
+                        "is performing split-brain merge and the coordinator is not known";
                 logger.warning(msg, t);
                 future.internalCompleteExceptionally(new CancellationException(msg));
                 return;

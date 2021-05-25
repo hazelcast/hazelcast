@@ -186,9 +186,9 @@ public abstract class AbstractJetInstance<MemberIdType> implements JetInstance {
         }
     }
 
-    protected abstract MemberIdType getMasterId();
+    public abstract MemberIdType getMasterId();
 
-    protected abstract Map<MemberIdType, CompletableFuture<GetJobIdsResult>> getJobsInt(Long onlyJobId);
+    public abstract Map<MemberIdType, CompletableFuture<GetJobIdsResult>> getJobsInt(Long onlyJobId);
     
     @Override
     public BasicJob getJobById(long jobId) {

@@ -31,6 +31,7 @@ import com.hazelcast.jet.impl.connector.WriteFileP;
 import com.hazelcast.jet.impl.operation.CheckLightJobsOperation;
 import com.hazelcast.jet.impl.operation.GetJobConfigOperation;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation;
+import com.hazelcast.jet.impl.operation.GetJobIdsOperation.GetJobIdsResult;
 import com.hazelcast.jet.impl.operation.GetJobMetricsOperation;
 import com.hazelcast.jet.impl.operation.GetJobStatusOperation;
 import com.hazelcast.jet.impl.operation.GetJobSubmissionTimeOperation;
@@ -80,7 +81,7 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
     public static final int UPDATE_JOB_EXECUTION_RECORD_EP = 16;
     public static final int TERMINATE_EXECUTION_OP = 17;
     public static final int FILTER_JOB_RESULT_BY_NAME = 18;
-    public static final int GET_JOB_IDS_RESPONSE = 19;
+    public static final int GET_JOB_IDS_RESULT = 19;
     public static final int GET_JOB_SUBMISSION_TIME_OP = 20;
     public static final int GET_JOB_CONFIG_OP = 21;
     public static final int TERMINATE_JOB_OP = 22;
@@ -159,6 +160,8 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
                     return new TerminateExecutionOperation();
                 case FILTER_JOB_RESULT_BY_NAME:
                     return new FilterJobResultByNamePredicate();
+                case GET_JOB_IDS_RESULT:
+                    return new GetJobIdsResult();
                 case GET_JOB_SUBMISSION_TIME_OP:
                     return new GetJobSubmissionTimeOperation();
                 case GET_JOB_CONFIG_OP:

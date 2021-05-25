@@ -49,7 +49,10 @@ public interface BasicJob {
      * Waits for the job to complete and throws an exception if the job
      * completes with an error. Never returns for streaming (unbounded) jobs,
      * unless they fail or are cancelled. In rare cases it can happen that
-     * after this method returns, the job is not fully cleaned up.
+     * after this method returns, the job is not yet fully cleaned up.
+     * <p>
+     * Joining a suspended job will block until that job is resumed and
+     * completes.
      * <p>
      * Shorthand for <code>job.getFuture().join()</code>.
      *
@@ -77,4 +80,11 @@ public interface BasicJob {
      * CancellationException}.
      */
     void cancel();
+
+    /**
+     * Returns {@code true} if this instance represents a {@linkplain
+     * JetInstance#newLightJob(Pipeline) light job}. For light jobs it's safe
+     * to cast the instance to {@link Job}.
+     */
+    boolean isLightJob();
 }

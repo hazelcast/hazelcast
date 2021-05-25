@@ -318,7 +318,7 @@ public class CancellationTest extends JetTestSupport {
         dag.newVertex("blocking", MockP::new).localParallelism(1);
         BasicJob job = newJob(jet, dag);
         job.join();
-        if (job instanceof Job) {
+        if (!job.isLightJob()) {
             assertEquals(JobStatus.COMPLETED, ((Job) job).getStatus());
         }
 

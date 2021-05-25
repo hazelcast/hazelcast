@@ -242,7 +242,7 @@ public interface JetInstance {
     @Nonnull
     default List<Job> getJobs() {
         return getAllJobs().stream()
-                .filter(j -> j instanceof Job)
+                .filter(j -> !j.isLightJob())
                 .map(j -> (Job) j)
                 .collect(toList());
     }
@@ -266,7 +266,7 @@ public interface JetInstance {
     @Nullable
     default Job getJob(long jobId) {
         BasicJob basicJob = getJobById(jobId);
-        return basicJob instanceof Job ? (Job) basicJob : null;
+        return !basicJob.isLightJob() ? (Job) basicJob : null;
     }
 
     /**

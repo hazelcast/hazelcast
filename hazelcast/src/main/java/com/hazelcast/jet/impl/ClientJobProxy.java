@@ -120,7 +120,7 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl, UUID
     protected CompletableFuture<Void> invokeSubmitJob(Data dag, JobConfig config) {
         Data configData = serializationService().toData(config);
         ClientMessage request = JetSubmitJobCodec.encodeRequest(getId(), dag, configData, isLightJob());
-        UUID target = coordinatorMemberId != null ? coordinatorMemberId : masterUuid();
+        UUID target = lightJobCoordinator != null ? lightJobCoordinator : masterUuid();
         return invocation(request, target).invoke().thenApply(c -> null);
     }
 

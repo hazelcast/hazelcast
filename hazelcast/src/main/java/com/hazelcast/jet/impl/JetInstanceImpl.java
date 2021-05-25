@@ -61,12 +61,12 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
     }
 
     @Override
-    protected Address getMasterId() {
+    public Address getMasterId() {
         return Preconditions.checkNotNull(nodeEngine.getMasterAddress(), "Cluster has not elected a master");
     }
 
     @Override
-    protected Map<Address, CompletableFuture<GetJobIdsResult>> getJobsInt(Long onlyJobId) {
+    public Map<Address, CompletableFuture<GetJobIdsResult>> getJobsInt(Long onlyJobId) {
         Map<Address, CompletableFuture<GetJobIdsResult>> futures = new HashMap<>();
         for (Member member : getCluster().getMembers()) {
             GetJobIdsOperation operation = new GetJobIdsOperation(onlyJobId);

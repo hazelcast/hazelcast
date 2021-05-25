@@ -110,17 +110,6 @@ public interface Job extends BasicJob {
     JobMetrics getMetrics();
 
     /**
-     * {@inheritDoc}
-     * <p>
-     * Does not return if the job gets suspended.
-     *
-     * @throws CancellationException if the job was cancelled
-     */
-    default void join() {
-        BasicJob.super.join();
-    }
-
-    /**
      * Gracefully stops the current execution and schedules a new execution
      * with the current member list of the Jet cluster. Can be called to
      * manually make use of added members, if {@linkplain

@@ -52,7 +52,7 @@ public class GetJobIdsOperation extends AsyncOperation implements AllowedDuringP
     }
 
     public GetJobIdsOperation(Long onlyJobId) {
-        this.onlyJobId = onlyJobId;
+        this.onlyJobId = onlyJobId == null ? ALL_JOBS : onlyJobId;
     }
 
     @Override
@@ -92,6 +92,9 @@ public class GetJobIdsOperation extends AsyncOperation implements AllowedDuringP
          */
         private boolean[] isLightJobs;
 
+        // for deserialization
+        public GetJobIdsResult() { }
+
         public GetJobIdsResult(long jobId, boolean isLightJob) {
             jobIds = new long[]{jobId};
             isLightJobs = new boolean[]{isLightJob};
@@ -123,7 +126,7 @@ public class GetJobIdsOperation extends AsyncOperation implements AllowedDuringP
 
         @Override
         public int getClassId() {
-            return JetInitDataSerializerHook.GET_JOB_IDS_RESPONSE;
+            return JetInitDataSerializerHook.GET_JOB_IDS_RESULT;
         }
 
         @Override

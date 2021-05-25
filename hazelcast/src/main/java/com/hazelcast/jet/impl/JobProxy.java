@@ -195,7 +195,7 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
     }
 
     private <T> CompletableFuture<T> invokeOp(Operation op) {
-        Address target = coordinatorMemberId != null ? coordinatorMemberId : masterAddress();
+        Address target = lightJobCoordinator != null ? lightJobCoordinator : masterAddress();
         return container()
                 .getOperationService()
                 .createInvocationBuilder(JetService.SERVICE_NAME, op, target)

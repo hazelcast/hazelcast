@@ -23,9 +23,9 @@ import com.hazelcast.function.SupplierEx;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
+import com.hazelcast.jet.BasicJob;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.BasicJob;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.ListSource;
@@ -44,7 +44,6 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -528,7 +527,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void when_deserializationOnMasterFails_then_jobSubmissionFails_member() throws Throwable {
+    public void when_deserializationOnMasterFails_then_jobSubmissionFails_member() {
         // Not applicable for light jobs - light jobs are always submitted to local member, without serializing the DAG
         assumeFalse(useLightJob);
 
@@ -536,27 +535,18 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void when_deserializationOnMasterFails_then_jobSubmissionFails_client() throws Throwable {
+    public void when_deserializationOnMasterFails_then_jobSubmissionFails_client() {
         when_deserializationOnMasterFails_then_jobSubmissionFails(client());
     }
 
-    private void when_deserializationOnMasterFails_then_jobSubmissionFails(JetInstance instance) throws Throwable {
-        // Given
+    private void when_deserializationOnMasterFails_then_jobSubmissionFails(JetInstance instance) {
         DAG dag = new DAG();
         // this is designed to fail when the master member deserializes the DAG
         dag.newVertex("faulty", new NotDeserializableProcessorMetaSupplier());
 
-        // Then
-        expectedException.expect(HazelcastSerializationException.class);
-        expectedException.expectMessage("fake.Class");
-
-        // When
-        BasicJob job = newJob(instance, dag, null);
-        try {
-            job.join();
-        } catch (Throwable e) {
-            throw peel(e);
-        }
+        assertThatThrownBy(() -> newJob(instance, dag, null).join())
+                .hasRootCauseInstanceOf(ClassNotFoundException.class)
+                .hasMessageContaining("fake.Class");
     }
 
     @Test
@@ -780,7 +770,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     private void assertJobSucceeded(BasicJob job) {
         assertTrue(job.getFuture().isDone());
         job.join();
-        if (job instanceof Job) {
+        if (!job.isLightJob()) {
             JobResult jobResult = getJobResult((Job) job);
             assertTrue(jobResult.isSuccessful());
             assertNull(jobResult.getFailureText());
@@ -795,7 +785,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         } catch (Throwable caught) {
             assertExceptionInCauses(expected, caught);
         }
-        if (job instanceof Job) {
+        if (!job.isLightJob()) {
             Job normalJob = (Job) job;
             JobResult jobResult = getJobResult(normalJob);
             assertFalse("jobResult.isSuccessful", jobResult.isSuccessful());
