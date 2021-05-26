@@ -74,7 +74,8 @@ public final class HazelcastCoalesceFunction extends HazelcastFunction {
         RelDataType returnType = argTypes.stream().reduce(HazelcastTypeUtils::withHigherPrecedence).get();
 
         Supplier<CalciteContextException> exceptionSupplier = () ->
-                validator.newValidationError(sqlCall, HazelcastResources.RESOURCES.cannotInferCaseResult(argTypes.toString(), "COALESCE"));
+                validator.newValidationError(
+                        sqlCall, HazelcastResources.RESOURCES.cannotInferCaseResult(argTypes.toString(), "COALESCE"));
 
         for (int i = 0; i < operandList.size(); i++) {
             int finalI = i;
