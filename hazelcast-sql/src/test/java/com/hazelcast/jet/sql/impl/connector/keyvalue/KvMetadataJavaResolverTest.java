@@ -30,8 +30,8 @@ import junitparams.Parameters;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS;
@@ -59,7 +59,7 @@ public class KvMetadataJavaResolverTest {
                 (key ? OPTION_KEY_CLASS : OPTION_VALUE_CLASS), int.class.getName()
         );
 
-        List<MappingField> fields = INSTANCE.resolveAndValidateFields(key, emptyList(), options, null);
+        Stream<MappingField> fields = INSTANCE.resolveAndValidateFields(key, emptyList(), options, null);
 
         assertThat(fields).containsExactly(field(path, QueryDataType.INT, QueryPath.create(path).toString()));
     }
@@ -69,20 +69,19 @@ public class KvMetadataJavaResolverTest {
             "true, __key",
             "false, this"
     })
-    public void when_userDeclaresPrimitiveField_then_itsNameHasPrecedenceOverResolvedOne(boolean key, String path) {
+    public void when_renamesPrimitiveField_then_throws(boolean key, String path) {
         Map<String, String> options = ImmutableMap.of(
                 (key ? OPTION_KEY_FORMAT : OPTION_VALUE_FORMAT), JAVA_FORMAT,
                 (key ? OPTION_KEY_CLASS : OPTION_VALUE_CLASS), int.class.getName()
         );
 
-        List<MappingField> fields = INSTANCE.resolveAndValidateFields(
+        assertThatThrownBy(() -> INSTANCE.resolveAndValidateFields(
                 key,
                 singletonList(field("renamed_field", QueryDataType.INT, path)),
                 options,
                 null
-        );
-
-        assertThat(fields).containsExactly(field("renamed_field", QueryDataType.INT, QueryPath.create(path).toString()));
+        )).isInstanceOf(QueryException.class)
+                .hasMessageMatching("Cannot rename field: '" + path + '\'');
     }
 
     @Test
@@ -161,7 +160,7 @@ public class KvMetadataJavaResolverTest {
                 (key ? OPTION_KEY_CLASS : OPTION_VALUE_CLASS), Type.class.getName()
         );
 
-        List<MappingField> fields = INSTANCE.resolveAndValidateFields(key, emptyList(), options, null);
+        Stream<MappingField> fields = INSTANCE.resolveAndValidateFields(key, emptyList(), options, null);
 
         assertThat(fields).containsExactly(field("field", QueryDataType.INT, prefix + ".field"));
     }
@@ -177,7 +176,7 @@ public class KvMetadataJavaResolverTest {
                 (key ? OPTION_KEY_CLASS : OPTION_VALUE_CLASS), Type.class.getName()
         );
 
-        List<MappingField> fields = INSTANCE.resolveAndValidateFields(
+        Stream<MappingField> fields = INSTANCE.resolveAndValidateFields(
                 key,
                 singletonList(field("renamed_field", QueryDataType.INT, prefix + ".field")),
                 options,
@@ -200,7 +199,7 @@ public class KvMetadataJavaResolverTest {
                 (key ? OPTION_KEY_CLASS : OPTION_VALUE_CLASS), Type.class.getName()
         );
 
-        List<MappingField> fields = INSTANCE.resolveAndValidateFields(
+        Stream<MappingField> fields = INSTANCE.resolveAndValidateFields(
                 key,
                 singletonList(field("field2", QueryDataType.VARCHAR, prefix + ".field2")),
                 options,

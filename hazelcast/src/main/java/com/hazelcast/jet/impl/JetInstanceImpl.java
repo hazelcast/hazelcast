@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.LightJob;
@@ -26,7 +27,7 @@ import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.operation.GetJobIdsByNameOperation;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation;
-import com.hazelcast.jet.impl.operation.SubmitLightJobOperation;
+import com.hazelcast.jet.impl.operation.SubmitJobOperation;
 import com.hazelcast.jet.impl.util.ImdgUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
@@ -62,7 +63,7 @@ public class JetInstanceImpl extends AbstractJetInstance {
     }
 
     @Nonnull @Override
-    protected LightJob newLightJobInt(Object jobDefinition) {
+    public LightJob newLightJobInt(Object jobDefinition) {
         Address coordinatorAddress;
         if (nodeEngine.getLocalMember().isLiteMember()) {
             // on lite member forward the request to a random member
@@ -73,7 +74,8 @@ public class JetInstanceImpl extends AbstractJetInstance {
         }
 
         long jobId = newJobId();
-        SubmitLightJobOperation operation = new SubmitLightJobOperation(jobId, jobDefinition);
+        Data serializedJobDefinition = nodeEngine.getSerializationService().toData(jobDefinition);
+        SubmitJobOperation operation = new SubmitJobOperation(jobId, serializedJobDefinition, null, true);
         CompletableFuture<Void> future = nodeEngine
                 .getOperationService()
                 .createInvocationBuilder(JetService.SERVICE_NAME, operation, coordinatorAddress)

@@ -1,0 +1,246 @@
+{
+  "instance": {
+    "hazelcast-client": {
+      "query-caches": {
+        "myContQueryCache": {
+          "map-name": false,
+          "include-value": 2,
+          "predicate": {
+            "class-name": null,
+            "unknown": true
+          },
+          "entry-listeners": [
+            {
+              "class-name": null,
+              "unknown": true
+            },
+            {}
+          ],
+          "in-memory-format": 3,
+          "populate": 1,
+          "coalesce": 0,
+          "delay-seconds": -3,
+          "batch-size": 0,
+          "buffer-size": -32,
+          "unknown": true,
+          "eviction": {
+            "unknown": true,
+            "size": -1000,
+            "max-size-policy": "invalid",
+            "eviction-policy": "invalid"
+          },
+          "indexes": [
+            {
+              "attributes": [
+                "name",
+                3
+              ],
+              "unknown": true
+            },
+            {}
+          ]
+        }
+      }
+    }
+  },
+  "error": {
+    "schemaLocation": "#/definitions/Map/additionalProperties/properties/query-caches/additionalProperties",
+    "pointerToViolation": "#/hazelcast-client/query-caches/myContQueryCache",
+    "causingExceptions": [
+      {
+        "schemaLocation": "#/definitions/Map/additionalProperties/properties/query-caches/additionalProperties",
+        "pointerToViolation": "#/hazelcast-client/query-caches/myContQueryCache",
+        "causingExceptions": [],
+        "keyword": "additionalProperties",
+        "message": "extraneous key [unknown] is not permitted"
+      },
+      {
+        "schemaLocation": "#/definitions/Map/additionalProperties/properties/query-caches/additionalProperties/properties/batch-size",
+        "pointerToViolation": "#/hazelcast-client/query-caches/myContQueryCache/batch-size",
+        "causingExceptions": [],
+        "keyword": "minimum",
+        "message": "0 is not greater or equal to 1"
+      },
+      {
+        "schemaLocation": "#/definitions/Map/additionalProperties/properties/query-caches/additionalProperties/properties/predicate",
+        "pointerToViolation": "#/hazelcast-client/query-caches/myContQueryCache/predicate",
+        "causingExceptions": [{
+          "pointerToViolation": "#/hazelcast-client/query-caches/myContQueryCache/predicate",
+          "causingExceptions": [
+            {
+              "pointerToViolation": "#/hazelcast-client/query-caches/myContQueryCache/predicate",
+              "causingExceptions": [],
+              "keyword": "additionalProperties",
+              "message": "extraneous key [unknown] is not permitted"
+            },
+            {
+              "schemaLocation": "#/definitions/Map/additionalProperties/properties/query-caches/additionalProperties/properties/predicate/properties/class-name",
+              "pointerToViolation": "#/hazelcast-client/query-caches/myContQueryCache/predicate/class-name",
+              "causingExceptions": [],
+              "keyword": "type",
+              "message": "expected type: String, found: Null"
+            }
+          ],
+          "message": "2 schema violations found"
+        }],
+        "keyword": "allOf",
+        "message": "#: only 1 subschema matches out of 2"
+      },
+      {
+        "schemaLocation": "#/definitions/Map/additionalProperties/properties/query-caches/additionalProperties/properties/entry-listeners",
+        "pointerToViolation": "#/hazelcast-client/query-caches/myContQueryCache/entry-listeners",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/EntryListener",
+            "pointerToViolation": "#/hazelcast-client/query-caches/myContQueryCache/entry-listeners/0",
+            "causingExceptions": [
+              {
+                "schemaLocation": "#/definitions/EntryListener",
+                "pointerToViolation": "#/hazelcast-client/query-caches/myContQueryCache/entry-listeners/0",
+                "causingExceptions": [],
+                "keyword": "additionalProperties",
+                "message": "extraneous key [unknown] is not permitted"
+              },
+              {
+                "schemaLocation": "#/definitions/EntryListener/properties/class-name",
+                "pointerToViolation": "#/hazelcast-client/query-caches/myContQueryCache/entry-listeners/0/class-name",
+                "causingExceptions": [],
+                "keyword": "type",
+                "message": "expected type: String, found: Null"
+              }
+            ],
+            "message": "2 schema violations found"
+          },
+          {
+            "schemaLocation": "#/definitions/EntryListener",
+            "pointerToViolation": "#/hazelcast-client/query-caches/myContQueryCache/entry-listeners/1",
+            "causingExceptions": [],
+            "keyword": "required",
+            "message": "required key [class-name] not found"
+          }
+        ],
+        "message": "3 schema violations found"
+      },
+      {
+        "schemaLocation": "#/definitions/Map/additionalProperties/properties/query-caches/additionalProperties/properties/populate",
+        "pointerToViolation": "#/hazelcast-client/query-caches/myContQueryCache/populate",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Boolean, found: Integer"
+      },
+      {
+        "schemaLocation": "#/definitions/Eviction",
+        "pointerToViolation": "#/hazelcast-client/query-caches/myContQueryCache/eviction",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/Eviction",
+            "pointerToViolation": "#/hazelcast-client/query-caches/myContQueryCache/eviction",
+            "causingExceptions": [],
+            "keyword": "additionalProperties",
+            "message": "extraneous key [unknown] is not permitted"
+          },
+          {
+            "schemaLocation": "#/definitions/Eviction/properties/eviction-policy",
+            "pointerToViolation": "#/hazelcast-client/query-caches/myContQueryCache/eviction/eviction-policy",
+            "causingExceptions": [],
+            "keyword": "enum",
+            "message": "invalid is not a valid enum value"
+          },
+          {
+            "schemaLocation": "#/definitions/Eviction/properties/size",
+            "pointerToViolation": "#/hazelcast-client/query-caches/myContQueryCache/eviction/size",
+            "causingExceptions": [],
+            "keyword": "minimum",
+            "message": "-1000 is not greater or equal to 0"
+          },
+          {
+            "schemaLocation": "#/definitions/Eviction/properties/max-size-policy",
+            "pointerToViolation": "#/hazelcast-client/query-caches/myContQueryCache/eviction/max-size-policy",
+            "causingExceptions": [],
+            "keyword": "enum",
+            "message": "invalid is not a valid enum value"
+          }
+        ],
+        "message": "4 schema violations found"
+      },
+      {
+        "schemaLocation": "#/definitions/Map/additionalProperties/properties/query-caches/additionalProperties/properties/map-name",
+        "pointerToViolation": "#/hazelcast-client/query-caches/myContQueryCache/map-name",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: String, found: Boolean"
+      },
+      {
+        "schemaLocation": "#/definitions/Map/additionalProperties/properties/query-caches/additionalProperties/properties/indexes",
+        "pointerToViolation": "#/hazelcast-client/query-caches/myContQueryCache/indexes",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/IndexConfig",
+            "pointerToViolation": "#/hazelcast-client/query-caches/myContQueryCache/indexes/0",
+            "causingExceptions": [
+              {
+                "schemaLocation": "#/definitions/IndexConfig",
+                "pointerToViolation": "#/hazelcast-client/query-caches/myContQueryCache/indexes/0",
+                "causingExceptions": [],
+                "keyword": "additionalProperties",
+                "message": "extraneous key [unknown] is not permitted"
+              },
+              {
+                "schemaLocation": "#/definitions/IndexConfig/properties/attributes/items",
+                "pointerToViolation": "#/hazelcast-client/query-caches/myContQueryCache/indexes/0/attributes/1",
+                "causingExceptions": [],
+                "keyword": "type",
+                "message": "expected type: String, found: Integer"
+              }
+            ],
+            "message": "2 schema violations found"
+          },
+          {
+            "schemaLocation": "#/definitions/IndexConfig",
+            "pointerToViolation": "#/hazelcast-client/query-caches/myContQueryCache/indexes/1",
+            "causingExceptions": [],
+            "keyword": "required",
+            "message": "required key [attributes] not found"
+          }
+        ],
+        "message": "3 schema violations found"
+      },
+      {
+        "schemaLocation": "#/definitions/Map/additionalProperties/properties/query-caches/additionalProperties/properties/coalesce",
+        "pointerToViolation": "#/hazelcast-client/query-caches/myContQueryCache/coalesce",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Boolean, found: Integer"
+      },
+      {
+        "schemaLocation": "#/definitions/Map/additionalProperties/properties/query-caches/additionalProperties/properties/buffer-size",
+        "pointerToViolation": "#/hazelcast-client/query-caches/myContQueryCache/buffer-size",
+        "causingExceptions": [],
+        "keyword": "minimum",
+        "message": "-32 is not greater or equal to 1"
+      },
+      {
+        "schemaLocation": "#/definitions/Map/additionalProperties/properties/query-caches/additionalProperties/properties/include-value",
+        "pointerToViolation": "#/hazelcast-client/query-caches/myContQueryCache/include-value",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Boolean, found: Integer"
+      },
+      {
+        "schemaLocation": "#/definitions/InMemoryFormat",
+        "pointerToViolation": "#/hazelcast-client/query-caches/myContQueryCache/in-memory-format",
+        "causingExceptions": [],
+        "keyword": "enum",
+        "message": "3 is not a valid enum value"
+      },
+      {
+        "schemaLocation": "#/definitions/Map/additionalProperties/properties/query-caches/additionalProperties/properties/delay-seconds",
+        "pointerToViolation": "#/hazelcast-client/query-caches/myContQueryCache/delay-seconds",
+        "causingExceptions": [],
+        "keyword": "minimum",
+        "message": "-3 is not greater or equal to 0"
+      }
+    ],
+    "message": "21 schema violations found"
+  }
+}

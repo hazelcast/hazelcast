@@ -47,7 +47,8 @@ public class YamlConfigSchemaValidatorTest {
         } catch (SchemaViolationConfigurationException e) {
             assertEquals("#", e.getKeywordLocation());
             assertEquals("#", e.getInstanceLocation());
-            assertEquals("required key [hazelcast] not found", e.getMessage());
+            assertEquals("exactly one of [hazelcast], [hazelcast-client] and [hazelcast-client-failover] should be present in the"
+                    + " root schema document, 0 are present", e.getMessage());
         }
     }
 
