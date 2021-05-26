@@ -477,6 +477,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
     @Test
     public void when_executionCancelledBeforeStart_then_jobIsCancelled() {
+        this test fails
         // not applicable to light jobs - light jobs don't use the StartExecutionOperation
         assumeFalse(useLightJob);
 
