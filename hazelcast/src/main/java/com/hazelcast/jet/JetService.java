@@ -16,10 +16,14 @@
 
 package com.hazelcast.jet;
 
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.function.Observer;
 import com.hazelcast.jet.pipeline.Pipeline;
+import com.hazelcast.jet.pipeline.Sinks;
+import com.hazelcast.ringbuffer.Ringbuffer;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -231,4 +235,46 @@ public interface JetService {
      */
     @Nonnull
     Collection<JobStateSnapshot> getJobStateSnapshots();
+
+    /**
+     * Returns an {@link Observable} instance with the specified name.
+     * Represents a flowing sequence of events produced by jobs containing
+     * {@linkplain Sinks#observable(String) observable sinks}.
+     * <p>
+     * Multiple calls of this method with the same name return the same
+     * instance (unless it was destroyed in the meantime).
+     * <p>
+     * In order to observe the events register an {@link Observer} on the
+     * {@code Observable}.
+     *
+     * @param name name of the observable
+     * @return observable with the specified name
+     *
+     * @since Jet 4.0
+     */
+    @Nonnull
+    <T> Observable<T> getObservable(@Nonnull String name);
+
+    /**
+     * Returns a new observable with a randomly generated name
+     *
+     * @since Jet 4.0
+     */
+    @Nonnull
+    default <T> Observable<T> newObservable() {
+        return getObservable(UuidUtil.newUnsecureUuidString());
+    }
+
+    /**
+     * Returns a list of all the {@link Observable Observables} that are active.
+     * By "active" we mean that their backing {@link Ringbuffer} has been
+     * created, which happens when either their first {@link Observer} is
+     * registered or when the job publishing their data (via
+     * {@linkplain Sinks#observable(String) observable sinks}) starts
+     * executing.
+     *
+     * @since Jet 4.0
+     */
+    @Nonnull
+    Collection<Observable<?>> getObservables();
 }

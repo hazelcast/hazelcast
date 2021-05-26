@@ -20,16 +20,12 @@ import com.hazelcast.cluster.Cluster;
 import com.hazelcast.collection.IList;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.util.UuidUtil;
-import com.hazelcast.jet.function.Observer;
 import com.hazelcast.jet.impl.AbstractJetInstance;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.impl.SnapshotValidationRecord;
-import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.replicatedmap.ReplicatedMap;
-import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.topic.ITopic;
@@ -58,6 +54,7 @@ public interface JetInstance extends JetService {
      * Returns the underlying Hazelcast instance used by Jet. It will
      * be either a server node or a client, depending on the type of this
      * {@code JetInstance}.
+     * @since Jet 3.0
      * @deprecated since 5.0
      * Because we first access to {@link HazelcastInstance} and then
      * {@link JetService} from the product's entry point -{@link Hazelcast}-,
@@ -69,6 +66,7 @@ public interface JetInstance extends JetService {
     HazelcastInstance getHazelcastInstance();
 
     /**
+     * @since Jet 3.0
      * @deprecated since 5.0
      * Use {@link HazelcastInstance#getName()} instead.
      */
@@ -77,6 +75,7 @@ public interface JetInstance extends JetService {
     String getName();
 
     /**
+     * @since Jet 3.0
      * @deprecated since 5.0
      * Use {@link HazelcastInstance#getCluster()} instead.
      */
@@ -85,9 +84,12 @@ public interface JetInstance extends JetService {
     Cluster getCluster();
 
     /**
-     * Returns the {@link JobStateSnapshot} object representing an exported
-     * snapshot with the given name. Returns {@code null} if no such snapshot
-     * exists.
+     * @since Jet 3.0
+     * @deprecated since 5.0
+     * We left it here since it has a default implementation depending
+     * on {@link JetInstance#getHazelcastInstance()}.
+     * Prefer to use {@link JetService#getJobStateSnapshot(String)}
+     * instead.
      */
     @Nullable
     @Override
@@ -109,6 +111,7 @@ public interface JetInstance extends JetService {
     }
 
     /**
+     * @since Jet 3.0
      * @deprecated since 5.0 we left it here since it has a default
      * implementation depending on {@link JetInstance#getHazelcastInstance()}.
      * Prefer to use {@link JetService#getJobStateSnapshots()} instead.
@@ -135,6 +138,7 @@ public interface JetInstance extends JetService {
     SqlService getSql();
 
     /**
+     * @since Jet 3.0
      * @deprecated since 5.0
      * Use {@link HazelcastInstance#getMap(String)} instead.
      */
@@ -143,6 +147,7 @@ public interface JetInstance extends JetService {
     <K, V> IMap<K, V> getMap(@Nonnull String name);
 
     /**
+     * @since Jet 3.0
      * @deprecated since 5.0
      * Use {@link HazelcastInstance#getReplicatedMap(String)} instead.
      */
@@ -151,6 +156,7 @@ public interface JetInstance extends JetService {
     <K, V> ReplicatedMap<K, V> getReplicatedMap(@Nonnull String name);
 
     /**
+     * @since Jet 3.0
      * @deprecated since 5.0
      * Use {@link HazelcastInstance#getList(String)} instead.
      */
@@ -159,6 +165,7 @@ public interface JetInstance extends JetService {
     <E> IList<E> getList(@Nonnull String name);
 
     /**
+     * @since Jet 3.0
      * @deprecated since 5.0
      * Use {@link HazelcastInstance#getReliableTopic(String)} instead.
      */
@@ -167,61 +174,13 @@ public interface JetInstance extends JetService {
     <E> ITopic<E> getReliableTopic(@Nonnull String name);
 
     /**
-     * Obtain the {@link JetCacheManager} that provides access to JSR-107 (JCache) caches
-     * configured on a Hazelcast Jet cluster.
-     * <p>
-     * Note that this method does not return a JCache {@code CacheManager}
-     *
-     * @return the Hazelcast Jet {@link JetCacheManager}
-     * @see JetCacheManager
+     * @since Jet 3.0
+     * @deprecated since 5.0
+     * Use {@link HazelcastInstance#getCacheManager()} instead.
      */
-    @Nonnull
     @Deprecated
+    @Nonnull
     JetCacheManager getCacheManager();
-
-    // TODO: Move this Jet observables to HazelcastInstance
-    /**
-     * Returns an {@link Observable} instance with the specified name.
-     * Represents a flowing sequence of events produced by jobs containing
-     * {@linkplain Sinks#observable(String) observable sinks}.
-     * <p>
-     * Multiple calls of this method with the same name return the same
-     * instance (unless it was destroyed in the meantime).
-     * <p>
-     * In order to observe the events register an {@link Observer} on the
-     * {@code Observable}.
-     *
-     * @param name name of the observable
-     * @return observable with the specified name
-     *
-     * @since Jet 4.0
-     */
-    @Nonnull
-    @Deprecated
-    <T> Observable<T> getObservable(@Nonnull String name);
-
-    /**
-     * Returns a new observable with a randomly generated name
-     *
-     * @since Jet 4.0
-     */
-    @Nonnull
-    @Deprecated
-    default <T> Observable<T> newObservable() {
-        return getObservable(UuidUtil.newUnsecureUuidString());
-    }
-
-    /**
-     * Returns a list of all the {@link Observable Observables} that are active.
-     * By "active" we mean that their backing {@link Ringbuffer} has been
-     * created, which happens when either their first {@link Observer} is
-     * registered or when the job publishing their data (via
-     * {@linkplain Sinks#observable(String) observable sinks}) starts
-     * executing.
-     */
-    @Nonnull
-    @Deprecated
-    Collection<Observable<?>> getObservables();
 
     /**
      * @deprecated since 5.0
