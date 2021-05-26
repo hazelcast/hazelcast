@@ -74,7 +74,8 @@ public class IMapSqlConnector implements SqlConnector {
             MetadataJsonResolver.INSTANCE
     );
 
-    private static final SqlNodeList KEY_NODE_LIST = new SqlNodeList(singletonList(new SqlIdentifier(QueryPath.KEY, SqlParserPos.ZERO)), SqlParserPos.ZERO);
+    private static final SqlNodeList KEY_NODE_LIST = new SqlNodeList(singletonList(
+            new SqlIdentifier(QueryPath.KEY, SqlParserPos.ZERO)), SqlParserPos.ZERO);
 
     @Override
     public String typeName() {
