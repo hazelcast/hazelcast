@@ -35,7 +35,6 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
@@ -59,6 +58,7 @@ import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.SinkProcessors.updateMapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.estimatePartitionedMapRowCount;
+import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Stream.concat;
 
@@ -74,6 +74,8 @@ public class IMapSqlConnector implements SqlConnector {
             MetadataJsonResolver.INSTANCE
     );
 
+    private static final SqlNodeList KEY_NODE_LIST = new SqlNodeList(singletonList(new SqlIdentifier(QueryPath.KEY, SqlParserPos.ZERO)), SqlParserPos.ZERO);
+
     @Override
     public String typeName() {
         return TYPE_NAME;
@@ -84,8 +86,7 @@ public class IMapSqlConnector implements SqlConnector {
         return false;
     }
 
-    @Nonnull
-    @Override
+    @Nonnull @Override
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull Map<String, String> options,
@@ -94,8 +95,7 @@ public class IMapSqlConnector implements SqlConnector {
         return METADATA_RESOLVERS.resolveAndValidateFields(userFields, options, nodeEngine);
     }
 
-    @Nonnull
-    @Override
+    @Nonnull @Override
     public Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
@@ -164,8 +164,7 @@ public class IMapSqlConnector implements SqlConnector {
         return vEnd;
     }
 
-    @Nonnull
-    @Override
+    @Nonnull @Override
     public VertexWithInputConfig nestedLoopReader(
             @Nonnull DAG dag,
             @Nonnull Table table0,
@@ -193,8 +192,7 @@ public class IMapSqlConnector implements SqlConnector {
         return true;
     }
 
-    @Nonnull
-    @Override
+    @Nonnull @Override
     public Vertex sink(
             @Nonnull DAG dag,
             @Nonnull Table table0
@@ -224,25 +222,13 @@ public class IMapSqlConnector implements SqlConnector {
         return vStart;
     }
 
-    @Override
+    @Nonnull @Override
     public SqlNodeList getPrimaryKey(Table table0) {
-        PartitionedMapTable table = (PartitionedMapTable) table0;
-
-        SqlNodeList keyFields = new SqlNodeList(SqlParserPos.ZERO);
-        keyFields.add(table.getFields().stream()
-                .map(MapTableField.class::cast)
-                .filter(field -> field.getPath().equals(QueryPath.KEY_PATH))
-                .map(field -> new SqlIdentifier(field.getName(), SqlParserPos.ZERO))
-                .findAny()
-                .orElseThrow(() -> QueryException.error("The IMap mapping doesn't expose the key"))
-        );
-        return keyFields;
+        return KEY_NODE_LIST;
     }
 
     @Nonnull @Override
-    public Vertex deleteProcessor(
-            @Nonnull DAG dag,
-            @Nonnull Table table0) {
+    public Vertex deleteProcessor(@Nonnull DAG dag, @Nonnull Table table0) {
         PartitionedMapTable table = (PartitionedMapTable) table0;
 
         return dag.newUniqueVertex(

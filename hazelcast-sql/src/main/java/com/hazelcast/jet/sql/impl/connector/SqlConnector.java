@@ -323,6 +323,7 @@ public interface SqlConnector {
      * doesn't have a primary key and an empty node list is returned from this
      * method, an error will be thrown.
      */
+    @Nonnull
     default SqlNodeList getPrimaryKey(Table table) {
         throw new UnsupportedOperationException("DELETE not supported by connector: " + typeName());
     }
