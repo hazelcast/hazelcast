@@ -18,12 +18,12 @@ package com.hazelcast.sql.impl.calcite.opt.physical.index;
 
 import com.hazelcast.config.IndexType;
 import com.hazelcast.internal.util.BiTuple;
+import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.IMapIndexScanPhysicalRel;
 import com.hazelcast.query.impl.ComparableIdentifiedDataSerializable;
 import com.hazelcast.query.impl.TypeConverters;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTrait;
 import com.hazelcast.sql.impl.calcite.opt.physical.MapIndexScanPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.RexToExpressionVisitor;
@@ -102,8 +102,8 @@ public final class JetIndexResolver {
      * Second, the lookups are created and if lookup's collation is equal to the full scan's collation,
      * the latter one is excluded.
      *
-     * @param scan         scan operator to be analyzed
-     * @param indexes      indexes available on the map being scanned
+     * @param scan    scan operator to be analyzed
+     * @param indexes indexes available on the map being scanned
      * @return zero, one or more index scan rels
      */
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity", "checkstyle:MethodLength"})
@@ -1024,7 +1024,7 @@ public final class JetIndexResolver {
      * @param indexComponentsCount number of components in the index
      * @return final filter or {@code null} if the filter could not be built for the given index type
      */
-    private static IndexFilter composeFilter(List<IndexFilter> filters, IndexType indexType, int indexComponentsCount) {
+    public static IndexFilter composeFilter(List<IndexFilter> filters, IndexType indexType, int indexComponentsCount) {
         assert !filters.isEmpty();
 
         if (indexComponentsCount == 1) {

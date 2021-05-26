@@ -76,9 +76,15 @@ final class FullScanPhysicalRule extends ConverterRule {
             //noinspection CollectionAddAllCanBeReplacedWithConstructor
             transforms.addAll(indexScans);
 
+            // Produce simple map scan if Calcite haven't produce index scan.
+            if (transforms.isEmpty()) {
+                transforms.add(convert(rel));
+            }
+
             for (RelNode transform : transforms) {
                 call.transformTo(transform);
             }
+
         }
     }
 

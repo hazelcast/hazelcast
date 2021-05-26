@@ -128,8 +128,7 @@ public class CreateDagVisitor {
                 dag,
                 table,
                 rel,
-                rel.filter(parameterMetadata),
-                rel.projection(parameterMetadata)
+                parameterMetadata
         );
     }
 

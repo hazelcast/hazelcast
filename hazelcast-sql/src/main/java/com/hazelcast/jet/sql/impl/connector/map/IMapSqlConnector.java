@@ -35,17 +35,21 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
+import com.hazelcast.sql.impl.calcite.opt.physical.visitor.RexToExpressionVisitor;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.plan.node.MapIndexScanMetadata;
 import com.hazelcast.sql.impl.plan.node.MapScanMetadata;
+import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import org.apache.calcite.rex.RexNode;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -181,15 +185,14 @@ public class IMapSqlConnector implements SqlConnector {
                 filter
         );
 
-        return dag.newUniqueVertex(table.toString(), OnHeapMapScanP.onHeapMapScanP(mapScanMetadata));
+        return dag.newUniqueVertex(table.getMapName(), OnHeapMapScanP.onHeapMapScanP(mapScanMetadata));
     }
 
     public Vertex indexScanReader(
             @Nonnull DAG dag,
             @Nonnull Table table0,
             @Nonnull IMapIndexScanPhysicalRel rel,
-            @Nullable Expression<Boolean> filter,
-            @Nonnull List<Expression<?>> projection
+            QueryParameterMetadata parameterMetadata
     ) {
         PartitionedMapTable table = (PartitionedMapTable) table0;
 
@@ -199,8 +202,12 @@ public class IMapSqlConnector implements SqlConnector {
                 table.getValueDescriptor(),
                 table.fieldPaths(),
                 table.types(),
-                projection,
-                filter
+                rel.projection(parameterMetadata),
+                convertFilter(
+                        new PlanNodeSchema(table.types()),
+                        rel.getRemainderExp(),
+                        parameterMetadata
+                )
         );
 
         MapIndexScanMetadata indexScanMetadata = new MapIndexScanMetadata(
@@ -261,5 +268,19 @@ public class IMapSqlConnector implements SqlConnector {
 
     private static String toString(PartitionedMapTable table) {
         return TYPE_NAME + "[" + table.getSchemaName() + "." + table.getSqlName() + "]";
+    }
+
+    private Expression<Boolean> convertFilter(
+            PlanNodeSchema schema,
+            RexNode expression,
+            QueryParameterMetadata parameterMetadata
+    ) {
+        if (expression == null) {
+            return null;
+        }
+
+        RexToExpressionVisitor converter = new RexToExpressionVisitor(schema, parameterMetadata);
+        Expression convertedExpression = expression.accept(converter);
+        return (Expression<Boolean>) convertedExpression;
     }
 }

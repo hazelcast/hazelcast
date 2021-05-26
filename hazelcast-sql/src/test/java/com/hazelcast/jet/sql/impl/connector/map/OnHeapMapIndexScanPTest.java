@@ -28,6 +28,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.sql.impl.exec.scan.index.IndexEqualsFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilterValue;
+import com.hazelcast.sql.impl.exec.scan.index.IndexInFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexRangeFilter;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
@@ -59,10 +60,12 @@ import java.util.function.BiPredicate;
 import static com.hazelcast.jet.TestContextSupport.adaptSupplier;
 import static com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
 import static com.hazelcast.sql.impl.SqlTestSupport.valuePath;
+import static com.hazelcast.sql.impl.calcite.opt.physical.index.JetIndexResolver.composeFilter;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 
 @SuppressWarnings("rawtypes")
 @RunWith(Parameterized.class)
@@ -168,7 +171,6 @@ public class OnHeapMapIndexScanPTest extends SimpleTestInClusterSupport {
         IndexFilterValue from = intValue(1, true);
         IndexFilterValue to = intValue(count / 2, true);
         IndexFilter filter = new IndexRangeFilter(from, true, to, true);
-//        IndexFilter filter = new IndexEqualsFilter(from);
 
         MapScanMetadata scanMetadata = new MapScanMetadata(
                 map.getName(),
@@ -244,6 +246,66 @@ public class OnHeapMapIndexScanPTest extends SimpleTestInClusterSupport {
                 scanMetadata,
                 indexConfig.getName(),
                 1,
+                filter,
+                emptyList(),
+                emptyList()
+        );
+
+        TestSupport
+                .verifyProcessor(adaptSupplier(OnHeapMapIndexScanP.onHeapMapIndexScanP(indexScanMetadata)))
+                .jetInstance(instance())
+                .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
+                .outputChecker(LENIENT_SAME_ITEMS_ANY_ORDER)
+                .disableSnapshots()
+                .disableProgressAssertion()
+                .expectOutput(expected);
+    }
+
+    // Real edge case when IN + RANGE filter didn't work together.
+    @Test
+    public void test_whenComplexFilterExistsWithoutSpecificProjection() {
+        List<Object[]> expected = new ArrayList<>();
+        for (int i = count; i > 0; i--) {
+            map.put(i, new Person("value-" + i, i));
+        }
+        expected.add(new Object[]{2, "value-2", 2});
+        expected.add(new Object[]{3, "value-3", 3});
+
+        IndexConfig indexConfig = new IndexConfig(IndexType.SORTED, "age", "name");
+        indexConfig.setName(randomName());
+        map.addIndex(indexConfig);
+
+        // SQL analogue : SELECT * FROM map WHERE (name = 'value-2' OR name = 'value-3') AND age = 2
+
+        IndexFilter rhs = new IndexInFilter(
+                new IndexEqualsFilter(new IndexFilterValue(singletonList(constant("value-2", VARCHAR)), singletonList(false))),
+                new IndexEqualsFilter(new IndexFilterValue(singletonList(constant("value-3", VARCHAR)), singletonList(false)))
+        );
+        IndexFilter lhs = new IndexRangeFilter(
+                intValue(1, false), true,
+                intValue(4, false), true
+        );
+
+        IndexFilter filter = composeFilter(asList(lhs, rhs), IndexType.SORTED, 2);
+
+        MapScanMetadata scanMetadata = new MapScanMetadata(
+                map.getName(),
+                GenericQueryTargetDescriptor.DEFAULT,
+                GenericQueryTargetDescriptor.DEFAULT,
+                Arrays.asList(QueryPath.KEY_PATH, valuePath("this.name"), valuePath("this.age")),
+                Arrays.asList(QueryDataType.INT, VARCHAR, QueryDataType.INT),
+                asList(
+                        ColumnExpression.create(0, INT),
+                        ColumnExpression.create(1, VARCHAR),
+                        ColumnExpression.create(2, INT)
+                ),
+                new ConstantPredicateExpression(true)
+        );
+
+        MapIndexScanMetadata indexScanMetadata = new MapIndexScanMetadata(
+                scanMetadata,
+                indexConfig.getName(),
+                2,
                 filter,
                 emptyList(),
                 emptyList()
