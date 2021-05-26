@@ -144,6 +144,15 @@ public class JetSqlValidator extends HazelcastSqlValidator {
         }
     }
 
+    @Override
+    protected void validateOrderList(SqlSelect select) {
+        super.validateOrderList(select);
+
+        if (select.hasOrderBy() && isInfiniteRows(select)) {
+            throw newValidationError(select, RESOURCE.streamingSortingNotSupported());
+        }
+    }
+
     private boolean containsGroupingOrAggregation(SqlSelect select) {
         if (select.getGroup() != null && select.getGroup().size() > 0) {
             return true;

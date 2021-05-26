@@ -58,4 +58,20 @@ public class SqlMemoryManagement extends SqlTestSupport {
         assertThatThrownBy(() -> sqlService.execute("SELECT * FROM " + name + " GROUP BY name").iterator().next())
                 .hasMessageContaining("Exception thrown to prevent an OutOfMemoryError on this Hazelcast instance");
     }
+
+    @Test
+    public void when_maxAccumulatedRecordsCountIsExceededWhileSorting_then_throws() {
+        String name = randomName();
+        TestBatchSqlConnector.create(
+                sqlService,
+                name,
+                singletonList("name"),
+                singletonList(QueryDataTypeFamily.VARCHAR),
+                asList(new String[]{"Alice"}, new String[]{"Bob"}, new String[]{"Joe"})
+        );
+
+        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM " + name + " ORDER BY name").iterator().next())
+                .hasMessageContaining("Exception thrown to prevent an OutOfMemoryError on this Hazelcast instance");
+
+    }
 }

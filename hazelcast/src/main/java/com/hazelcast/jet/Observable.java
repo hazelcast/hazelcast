@@ -19,6 +19,7 @@ package com.hazelcast.jet;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.jet.function.Observer;
 import com.hazelcast.jet.impl.observer.BlockingIteratorObserver;
+import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.ringbuffer.Ringbuffer;
 
 import javax.annotation.Nonnull;
