@@ -34,7 +34,6 @@ import com.hazelcast.internal.util.executor.StripedRunnable;
 import com.hazelcast.logging.ILogger;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import javax.net.ssl.SSLException;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
@@ -295,11 +294,9 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
                 }
             }
 
-            if (!(cause instanceof SSLException)) {
-                serverContext.onFailedConnection(remoteAddress);
-                if (!silent && plane != null) {
-                    getErrorHandler(remoteAddress, plane.errorHandlers).onError(cause);
-                }
+            serverContext.onFailedConnection(remoteAddress);
+            if (!silent && plane != null) {
+                getErrorHandler(remoteAddress, plane.errorHandlers).onError(cause);
             }
         }
     }
