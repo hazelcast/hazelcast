@@ -55,8 +55,7 @@ public final class UpdateProcessor extends AbstractProcessor {
     private int[] updateColumns;
 
     private MapProxyImpl<Object, Object> map;
-    private ExpressionEvalContext evalContext;
-    private Extractors extractors;
+    private KvRowProjector kvRowProjector;
 
     @SuppressWarnings("unused")
     private UpdateProcessor() {
@@ -71,14 +70,15 @@ public final class UpdateProcessor extends AbstractProcessor {
     @Override
     public void init(@Nonnull Context context) {
         map = (MapProxyImpl<Object, Object>) context.jetInstance().getMap(mapName);
-        evalContext = SimpleExpressionEvalContext.from(context);
-        extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
+        ExpressionEvalContext evalContext = SimpleExpressionEvalContext.from(context);
+        Extractors extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
+        kvRowProjector = mapEntryProjectorSupplier.get(evalContext, extractors);
     }
 
     @Override
     public void process(int ordinal, @Nonnull Inbox inbox) {
         int columnCount = mapEntryProjectorSupplier.columnCount();
-        KvRowProjector kvRowProjector = mapEntryProjectorSupplier.get(evalContext, extractors);
+
         for (Object[] row; (row = (Object[]) inbox.peek()) != null; ) {
             inbox.remove();
             Object key = row[0];
