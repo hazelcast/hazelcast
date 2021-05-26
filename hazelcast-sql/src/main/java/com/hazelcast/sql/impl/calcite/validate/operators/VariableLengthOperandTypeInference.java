@@ -54,7 +54,7 @@ public final class VariableLengthOperandTypeInference
         }
     }
 
-    static class OperandsIndexState implements State {
+    static class OperandsIndexState implements AbstractOperandTypeInference.State {
         private final List<Integer> unknownTypeOperandIndexes = new ArrayList<>();
 
         @Override

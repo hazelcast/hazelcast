@@ -82,9 +82,9 @@ public class CoalesceFunctionIntegrationTest extends ExpressionTestSupport {
     public void nonCoercibleTypes() {
         put(1);
         checkFailure0("select coalesce(1, 'abc') from map", SqlErrorCode.PARSING, "Cannot infer return type for COALESCE among [TINYINT, VARCHAR]");
-        checkFailure0("select coalesce('abc', CAST('2021-01-02' as DATE)) from map", SqlErrorCode.GENERIC, "while converting COALESCE(CAST('abc' AS DATE), CAST('2021-01-02' AS DATE))");
-        checkFailure0("select coalesce('abc', CAST('13:00:00' as TIME)) from map", SqlErrorCode.GENERIC, "while converting COALESCE(CAST('abc' AS TIME(0)), CAST('13:00:00' AS TIME))");
-        checkFailure0("select coalesce('abc', CAST('2021-01-02T13:00' as TIMESTAMP)) from map", SqlErrorCode.GENERIC, "while converting COALESCE(CAST('abc' AS TIMESTAMP(0)), CAST('2021-01-02T13:00' AS TIMESTAMP))");
+        checkFailure0("select coalesce('abc', CAST('2021-01-02' as DATE)) from map", SqlErrorCode.PARSING, "CAST function cannot convert literal 'abc' to type DATE: Cannot parse VARCHAR value to DATE");
+        checkFailure0("select coalesce('abc', CAST('13:00:00' as TIME)) from map", SqlErrorCode.PARSING, "CAST function cannot convert literal 'abc' to type TIME: Cannot parse VARCHAR value to TIME");
+        checkFailure0("select coalesce('abc', CAST('2021-01-02T13:00' as TIMESTAMP)) from map", SqlErrorCode.PARSING, "CAST function cannot convert literal 'abc' to type TIMESTAMP: Cannot parse VARCHAR value to TIMESTAMP");
         checkFailure0("select coalesce(1, CAST('2021-01-02' as DATE)) from map", SqlErrorCode.PARSING, "Cannot infer return type for COALESCE among [TINYINT, DATE]");
         checkFailure0("select coalesce(1, CAST('13:00:00' as TIME)) from map", SqlErrorCode.PARSING, "Cannot infer return type for COALESCE among [TINYINT, TIME]");
         checkFailure0("select coalesce(1, CAST('2021-01-02T13:00' as TIMESTAMP)) from map", SqlErrorCode.PARSING, "Cannot infer return type for COALESCE among [TINYINT, TIMESTAMP]");
