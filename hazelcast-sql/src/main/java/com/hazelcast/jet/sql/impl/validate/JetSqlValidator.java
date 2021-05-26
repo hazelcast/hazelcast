@@ -21,10 +21,12 @@ import com.hazelcast.jet.sql.impl.parse.SqlCreateJob;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
 import com.hazelcast.jet.sql.impl.schema.JetTableFunction;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlCall;
+import org.apache.calcite.sql.SqlDataTypeSpec;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlInsert;
 import org.apache.calcite.sql.SqlJoin;
@@ -34,6 +36,8 @@ import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.SqlUpdate;
+import org.apache.calcite.sql.parser.SqlParserPos;
+import org.apache.calcite.sql.type.SqlTypeUtil;
 import org.apache.calcite.sql.util.SqlBasicVisitor;
 import org.apache.calcite.sql.validate.SqlConformance;
 import org.apache.calcite.sql.validate.SqlValidatorCatalogReader;
@@ -93,11 +97,10 @@ public class JetSqlValidator extends HazelcastSqlValidator {
 
     @Override
     public void validateUpdate(SqlUpdate call) {
-        super.validateUpdate(call);
-
         SqlSelect sourceSelect = call.getSourceSelect();
         SqlValidatorScope selectScope = getSelectScope(sourceSelect);
         SqlNodeList sourceExpressionList = call.getSourceExpressionList();
+        SqlNodeList targetColumnList = call.getTargetColumnList();
         // we have to expand and infer types for source expressions
         // to overcome implicit casts during validateSelect routine
         // that added by our SQL engine to overcome calcite bugs ¯\\_(ツ)\_/¯
@@ -105,8 +108,16 @@ public class JetSqlValidator extends HazelcastSqlValidator {
             SqlNode node = sourceExpressionList.get(i);
             SqlNode expand = expand(node, selectScope);
             deriveTypeImpl(selectScope, expand);
-            sourceExpressionList.set(i, expand);
+            SqlNode sqlNode = targetColumnList.get(i);
+            SqlNode column = expand(sqlNode, selectScope);
+            RelDataType columnType = deriveTypeImpl(selectScope, column);
+            SqlDataTypeSpec targetTypeSpec = SqlTypeUtil.convertTypeToSpec(columnType);
+            SqlCall cast = HazelcastSqlOperatorTable.CAST.createCall(SqlParserPos.ZERO, expand, targetTypeSpec);
+            sourceExpressionList.set(i, cast);
+            sourceSelect.getSelectList().set(i + 1, cast);
         }
+
+        super.validateUpdate(call);
     }
 
     @Override

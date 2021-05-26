@@ -40,7 +40,7 @@ public class SqlUpdateTest extends SqlTestSupport {
     public void updateBySingleKey() {
         IMap<Object, Object> testMap = instance().getMap("test_map");
         testMap.put(1, 1);
-        checkUpdateCount("update test_map set this = cast(100 as integer) where __key = 1", 0);
+        checkUpdateCount("update test_map set this = 100 where __key = 1", 0);
 
         assertThat(testMap.get(1)).isEqualTo(100);
     }
@@ -50,7 +50,7 @@ public class SqlUpdateTest extends SqlTestSupport {
         IMap<Object, Object> testMap = instance().getMap("test_map");
 
         testMap.put(1, new Value(100, 200, 300));
-        checkUpdateCount("update test_map set field1 = cast(200 as integer) where __key = 1", 0);
+        checkUpdateCount("update test_map set field1 = 200 where __key = 1", 0);
         assertThat(testMap.get(1)).isEqualTo(new Value(200, 200, 300));
     }
 
@@ -59,7 +59,7 @@ public class SqlUpdateTest extends SqlTestSupport {
         IMap<Object, Object> testMap = instance().getMap("test_map");
 
         testMap.put(1, new Value(100, 200, 300));
-        checkUpdateCount("update test_map set field2 = cast(100 as integer) where __key = 1", 0);
+        checkUpdateCount("update test_map set field2 = 100 where __key = 1", 0);
         assertThat(testMap.get(1)).isEqualTo(new Value(100, 100, 300));
     }
 
@@ -68,7 +68,7 @@ public class SqlUpdateTest extends SqlTestSupport {
         IMap<Object, Object> testMap = instance().getMap("test_map");
 
         testMap.put(1, new Value(100, 200, 300));
-        checkUpdateCount("update test_map set field3 = cast(400 as integer) where __key = 1", 0);
+        checkUpdateCount("update test_map set field3 = 400 where __key = 1", 0);
         assertThat(testMap.get(1)).isEqualTo(new Value(100, 200, 400));
     }
 
@@ -79,9 +79,9 @@ public class SqlUpdateTest extends SqlTestSupport {
         testMap.put(1, new Value(100, 200, 300));
         checkUpdateCount(
                 "update test_map set\n"
-                + "field3 = cast(200 as integer),\n"
-                + "field1 = cast(400 as integer),\n"
-                + "field2 = cast(600 as integer)\n"
+                + "field3 = 200,\n"
+                + "field1 = 400,\n"
+                + "field2 = 600\n"
                 + "where __key = 1", 0);
         assertThat(testMap.get(1)).isEqualTo(new Value(400, 600, 200));
     }
@@ -91,7 +91,7 @@ public class SqlUpdateTest extends SqlTestSupport {
         IMap<Object, Object> testMap = instance().getMap("test_map");
 
         testMap.put(1, new Value(100, 200, 300));
-        checkUpdateCount("update test_map set field3 = cast(2 * field3 as integer) where __key = 1", 0);
+        checkUpdateCount("update test_map set field3 = 2 * field3 where __key = 1", 0);
         assertThat(testMap.get(1)).isEqualTo(new Value(100, 200, 600));
     }
 
@@ -100,7 +100,7 @@ public class SqlUpdateTest extends SqlTestSupport {
         IMap<Object, Object> testMap = instance().getMap("test_map");
 
         testMap.put(1, new Value(100, 200, 300));
-        checkUpdateCount("update test_map set field3 = cast(? as integer) where __key = 1", 0, 1);
+        checkUpdateCount("update test_map set field3 = ? where __key = 1", 0, 1);
         assertThat(testMap.get(1)).isEqualTo(new Value(100, 200, 1));
     }
 
@@ -109,7 +109,7 @@ public class SqlUpdateTest extends SqlTestSupport {
         IMap<Object, Object> testMap = instance().getMap("test_map");
 
         testMap.put(1, new Value(100, 200, 300));
-        checkUpdateCount("update test_map set field3 = cast(2 * field3 as integer) where field1 = 100", 0);
+        checkUpdateCount("update test_map set field3 = 600 where field1 = 100", 0);
         assertThat(testMap.get(1)).isEqualTo(new Value(100, 200, 600));
     }
 
