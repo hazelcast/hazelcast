@@ -329,17 +329,6 @@ public interface SqlConnector {
     }
 
     /**
-     * Return the indexes of fields that are primary key. These fields will be
-     * fed to the delete processor.
-     *
-     * If there's no primary key, theis method should what? (TODO)
-     * @return
-     */
-    default SqlNodeList getPrimaryKey(Table table) {
-        throw new UnsupportedOperationException("no primary key in " + typeName());
-    }
-
-    /**
      * Definition of a vertex along with a function to configure the input
      * edge(s).
      */
