@@ -113,11 +113,6 @@ public class KafkaSqlConnector implements SqlConnector {
         );
     }
 
-    @Override
-    public boolean supportsFullScanReader() {
-        return true;
-    }
-
     @Nonnull @Override
     public Vertex fullScanReader(
             @Nonnull DAG dag,
@@ -151,16 +146,6 @@ public class KafkaSqlConnector implements SqlConnector {
 
         dag.edge(between(vStart, vEnd).isolated());
         return vEnd;
-    }
-
-    @Override
-    public boolean supportsSink() {
-        return true;
-    }
-
-    @Override
-    public boolean supportsInsert() {
-        return true;
     }
 
     @Nonnull @Override

@@ -14,22 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet;
+package com.hazelcast.jet.impl.deployment;
 
-import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+public class JetDelegatingClassLoader extends ClassLoader {
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
-public class JetBootstrapTest {
+    public JetDelegatingClassLoader(ClassLoader parent) {
+        super(parent == null ? JetDelegatingClassLoader.class.getClassLoader() : parent);
+    }
 
-    @Test
-    public void bootstrappedInstance() {
-        JetInstance instance = Jet.bootstrappedInstance();
-        instance.shutdown();
+    public void shutdown() {
     }
 }

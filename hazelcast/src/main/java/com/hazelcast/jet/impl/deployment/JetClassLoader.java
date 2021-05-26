@@ -42,7 +42,7 @@ import static com.hazelcast.jet.impl.JobRepository.classKeyName;
 import static com.hazelcast.jet.impl.util.ReflectionUtils.toClassResourceId;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 
-public class JetClassLoader extends ClassLoader {
+public class JetClassLoader extends JetDelegatingClassLoader {
 
     private static final String JOB_URL_PROTOCOL = "jet-job-resource";
 
@@ -61,7 +61,7 @@ public class JetClassLoader extends ClassLoader {
             long jobId,
             @Nonnull JobRepository jobRepository
     ) {
-        super(parent == null ? JetClassLoader.class.getClassLoader() : parent);
+        super(parent);
         this.jobName = jobName;
         this.jobId = jobId;
         this.resourcesSupplier = Util.memoizeConcurrent(() -> jobRepository.getJobResources(jobId));

@@ -113,8 +113,7 @@ public class SqlExtendedInsert extends SqlInsert {
         super.validate(validator, scope);
 
         Map<String, TableField> fieldsMap = table.getTarget().getFields().stream()
-                                                 .map(f -> (MapTableField) f)
-                                                 .collect(Collectors.toMap(MapTableField::getName, f -> f));
+                                                 .collect(Collectors.toMap(TableField::getName, f -> f));
 
         for (SqlNode fieldNode : getTargetColumnList()) {
             TableField field = fieldsMap.get(((SqlIdentifier) fieldNode).getSimple());
@@ -128,14 +127,8 @@ public class SqlExtendedInsert extends SqlInsert {
         }
 
         SqlConnector connector = getJetSqlConnector(table.getTarget());
-        if (isSink()) {
-            if (!connector.supportsSink()) {
-                throw validator.newValidationError(this, RESOURCE.sinkIntoNotSupported(connector.typeName()));
-            }
-        } else {
-            if (!connector.supportsInsert()) {
-                throw validator.newValidationError(this, RESOURCE.insertIntoNotSupported(connector.typeName()));
-            }
+        if (!isSink() && connector.requiresSink()) {
+            throw validator.newValidationError(this, RESOURCE.insertIntoNotSupported(connector.typeName()));
         }
     }
 

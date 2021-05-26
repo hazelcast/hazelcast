@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.elastic;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestInstanceFactory;
@@ -58,7 +57,7 @@ public class AuthElasticSinksTest extends BaseElasticTest {
 
     @Override
     protected JetInstance createJetInstance() {
-        return factory.newMember(new Config());
+        return factory.newMember(config());
     }
 
     @Test

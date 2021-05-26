@@ -33,10 +33,12 @@ import com.hazelcast.internal.metrics.impl.MetricsCompressor;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.jet.Util;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.core.metrics.MetricNames;
 import com.hazelcast.jet.core.metrics.MetricTags;
+import com.hazelcast.jet.impl.deployment.JetDelegatingClassLoader;
 import com.hazelcast.jet.impl.deployment.JetClassLoader;
 import com.hazelcast.jet.impl.exception.ExecutionNotFoundException;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
@@ -119,7 +121,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
     // rely on specific semantics of computeIfAbsent. ConcurrentMap.computeIfAbsent
     // does not guarantee at most one computation per key.
     // key: jobId
-    private final ConcurrentHashMap<Long, JetClassLoader> classLoaders = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Long, JetDelegatingClassLoader> classLoaders = new ConcurrentHashMap<>();
 
     @Probe(name = MetricNames.JOB_EXECUTIONS_STARTED)
     private final Counter executionStarted = MwCounter.newMwCounter();
@@ -158,14 +160,22 @@ public class JobExecutionService implements DynamicMetricsProvider {
     }
 
     public ClassLoader getClassLoader(JobConfig config, long jobId) {
+        JetConfig jetConfig = nodeEngine.getConfig().getJetConfig();
         return classLoaders.computeIfAbsent(jobId,
                 k -> AccessController.doPrivileged(
-                        (PrivilegedAction<JetClassLoader>) () -> {
-                            ClassLoader parent = config.getClassLoaderFactory() != null
-                                    ? config.getClassLoaderFactory().getJobClassLoader()
-                                    : nodeEngine.getConfigClassLoader();
+                        (PrivilegedAction<JetDelegatingClassLoader>) () -> {
+                            ClassLoader parent = parentClassLoader(config);
+                            if (!jetConfig.isResourceUploadEnabled()) {
+                                return new JetDelegatingClassLoader(parent);
+                            }
                             return new JetClassLoader(nodeEngine, parent, config.getName(), jobId, jobRepository);
                         }));
+    }
+
+    private ClassLoader parentClassLoader(JobConfig config) {
+        return config.getClassLoaderFactory() != null
+                ? config.getClassLoaderFactory().getJobClassLoader()
+                : nodeEngine.getConfigClassLoader();
     }
 
     public ExecutionContext getExecutionContext(long executionId) {
@@ -443,7 +453,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
      */
     public void completeExecution(@Nonnull ExecutionContext executionContext, Throwable error) {
         executionContexts.remove(executionContext.executionId());
-        JetClassLoader removedClassLoader = classLoaders.remove(executionContext.jobId());
+        JetDelegatingClassLoader removedClassLoader = classLoaders.remove(executionContext.jobId());
         try {
             doWithClassLoader(removedClassLoader, () -> executionContext.completeExecution(error));
         } finally {
