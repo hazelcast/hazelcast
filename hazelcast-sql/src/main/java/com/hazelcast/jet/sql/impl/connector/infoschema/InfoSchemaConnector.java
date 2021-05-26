@@ -81,11 +81,6 @@ final class InfoSchemaConnector implements SqlConnector {
         throw new UnsupportedOperationException();
     }
 
-    @Override
-    public boolean supportsFullScanReader() {
-        return true;
-    }
-
     @Nonnull @Override
     public Vertex fullScanReader(
             @Nonnull DAG dag,
