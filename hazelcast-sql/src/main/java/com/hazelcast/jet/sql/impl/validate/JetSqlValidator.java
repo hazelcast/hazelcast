@@ -20,13 +20,16 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateJob;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
 import com.hazelcast.jet.sql.impl.schema.JetTableFunction;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
+import com.hazelcast.sql.impl.schema.Table;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlDataTypeSpec;
+import org.apache.calcite.sql.SqlDelete;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlInsert;
 import org.apache.calcite.sql.SqlJoin;
@@ -43,6 +46,7 @@ import org.apache.calcite.sql.validate.SqlConformance;
 import org.apache.calcite.sql.validate.SqlValidatorCatalogReader;
 import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.sql.validate.SqlValidatorTable;
+import org.apache.calcite.sql.validate.SqlValidatorUtil;
 
 import java.util.List;
 
@@ -241,10 +245,34 @@ public class JetSqlValidator extends HazelcastSqlValidator {
     }
 
     // createSourceSelectForUpdate could not be properly overridden due to bug in calcite
-    // which does not allow to have less columns then number of columns in the table that
+    // which does not allow to have less columns than number of columns in the table that
     // is updated
     @Override
     protected SqlSelect createSourceSelectForUpdate(SqlUpdate call) {
         return super.createSourceSelectForUpdate(call);
+    }
+
+    @Override
+    protected SqlSelect createSourceSelectForDelete(SqlDelete call) {
+        SqlNode sourceTable = call.getTargetTable();
+        Table table = getCatalogReader().getTable(((SqlIdentifier) sourceTable).names).unwrap(HazelcastTable.class).getTarget();
+        SqlConnector connector = getJetSqlConnector(table);
+
+        // The Calcite default implementation selects all fields (using SELECT *). I'm not sure about how's this supposed
+        // to work. We need to feed primary keys to the delete processor so that it can directly delete the records.
+        // Therefore we use the primary key for the select list.
+        SqlNodeList selectList = connector.getPrimaryKey(table);
+        if (selectList.size() == 0) {
+            throw QueryException.error("Cannot DELETE from " + call.getTargetTable() + ": it doesn't have a primary key");
+        }
+
+        if (call.getAlias() != null) {
+          sourceTable =
+              SqlValidatorUtil.addAlias(
+                  sourceTable,
+                  call.getAlias().getSimple());
+        }
+        return new SqlSelect(SqlParserPos.ZERO, null, selectList, sourceTable,
+            call.getCondition(), null, null, null, null, null, null, null);
     }
 }

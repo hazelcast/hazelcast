@@ -34,9 +34,11 @@ public final class PhysicalRules {
                 AggregatePhysicalRule.INSTANCE,
                 JoinPhysicalRule.INSTANCE,
                 ValuesPhysicalRule.INSTANCE,
-                InsertPhysicalRule.INSTANCE,
                 SortPhysicalRule.INSTANCE,
+                // DML rules
+                InsertPhysicalRule.INSTANCE,
                 UpdatePhysicalRule.INSTANCE,
+                DeletePhysicalRule.INSTANCE,
                 new AbstractConverter.ExpandConversionRule(RelFactories.LOGICAL_BUILDER)
         );
     }

@@ -77,10 +77,10 @@ public final class LogicalRules {
                 ValuesLogicalRules.PROJECT_FILTER_INSTANCE,
                 ValuesLogicalRules.UNION_INSTANCE,
 
-                // Insert rules
+                // DML rules
                 InsertLogicalRule.INSTANCE,
-
                 UpdateLogicalRule.INSTANCE,
+                DeleteLogicalRule.INSTANCE,
 
                 // Miscellaneous
                 PruneEmptyRules.PROJECT_INSTANCE,
