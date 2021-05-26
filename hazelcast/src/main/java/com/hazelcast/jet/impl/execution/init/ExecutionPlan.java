@@ -180,7 +180,10 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
 
             // create StoreSnapshotTasklet and the queues to it
             ConcurrentConveyor<Object> ssConveyor = null;
-            if (snapshotContext.processingGuarantee() != ProcessingGuarantee.NONE) {
+            if (!isLightJob) {
+                // Note that we create the snapshot queues for all non-light jobs, even if they don't have
+                // processing guarantee enabled, because in EE one can request a snapshot also for
+                // non-snapshotted jobs.
                 @SuppressWarnings("unchecked")
                 QueuedPipe<Object>[] snapshotQueues = new QueuedPipe[vertex.localParallelism()];
                 Arrays.setAll(snapshotQueues, i -> new OneToOneConcurrentArrayQueue<>(SNAPSHOT_QUEUE_SIZE));

@@ -55,6 +55,7 @@ import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.Util.idToString;
@@ -113,6 +114,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
     private volatile RawJobMetrics jobMetrics = RawJobMetrics.empty();
 
     private InternalSerializationService serializationService;
+    private final AtomicBoolean executionCompleted = new AtomicBoolean();
 
     public ExecutionContext(NodeEngine nodeEngine, long jobId, long executionId, boolean isLightJob) {
         this.jobId = jobId;
@@ -199,6 +201,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
         synchronized (executionLock) {
             if (executionFuture != null) {
                 // beginExecution was already called or execution was cancelled before it started.
+                LoggingUtil.logFine(logger, "%s: execution started after cancelled", jobNameAndExecutionId());
                 return executionFuture;
             } else {
                 // begin job execution
@@ -229,6 +232,10 @@ public class ExecutionContext implements DynamicMetricsProvider {
     public void completeExecution(Throwable error) {
         assert executionFuture == null || executionFuture.isDone()
                 : "If execution was begun, then completeExecution() should not be called before execution is done.";
+
+        if (!executionCompleted.compareAndSet(false, true)) {
+            return;
+        }
 
         for (Tasklet tasklet : tasklets) {
             try {
