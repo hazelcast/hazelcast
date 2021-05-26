@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.validate.operators.predicate;
+package com.hazelcast.sql.impl.calcite.validate.operators.misc;
 
 import com.hazelcast.sql.impl.calcite.validate.HazelcastResources;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlCase;
@@ -113,7 +113,7 @@ public final class HazelcastCaseOperator extends SqlOperator {
         RelDataType caseReturnType = argTypes.stream().reduce(HazelcastTypeUtils::withHigherPrecedence).get();
 
         Supplier<CalciteContextException> exceptionSupplier = () ->
-                validator.newValidationError(sqlCall, HazelcastResources.RESOURCES.cannotInferCaseResult(argTypes.toString()));
+                validator.newValidationError(sqlCall, HazelcastResources.RESOURCES.cannotInferCaseResult(argTypes.toString(), "CASE"));
 
         for (int i = 0; i < thenList.size(); i++) {
             int finalI = i;
@@ -140,7 +140,7 @@ public final class HazelcastCaseOperator extends SqlOperator {
                 exceptionSupplier);
     }
 
-    private boolean coerceItem(
+    static boolean coerceItem(
             HazelcastSqlValidator validator,
             SqlValidatorScope scope,
             SqlNode item,

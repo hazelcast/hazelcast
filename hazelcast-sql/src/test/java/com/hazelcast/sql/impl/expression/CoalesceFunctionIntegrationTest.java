@@ -93,20 +93,20 @@ public class CoalesceFunctionIntegrationTest extends ExpressionTestSupport {
     @Test
     public void testEquality() {
         checkEquals(
-                CoalesceExpression.create(ConstantExpression.create(1, INT), ConstantExpression.create(1, INT)),
-                CoalesceExpression.create(ConstantExpression.create(1, INT), ConstantExpression.create(1, INT)),
+                CaseExpression.coalesce(ConstantExpression.create(1, INT), ConstantExpression.create(1, INT)),
+                CaseExpression.coalesce(ConstantExpression.create(1, INT), ConstantExpression.create(1, INT)),
                 true);
 
         checkEquals(
-                CoalesceExpression.create(ConstantExpression.create(1, INT), ConstantExpression.create(1, INT)),
-                CoalesceExpression.create(ConstantExpression.create(1, INT), ConstantExpression.create(10, INT)),
+                CaseExpression.coalesce(ConstantExpression.create(1, INT), ConstantExpression.create(1, INT)),
+                CaseExpression.coalesce(ConstantExpression.create(1, INT), ConstantExpression.create(10, INT)),
                 false);
     }
 
     @Test
     public void testSerialization() {
-        CoalesceExpression<?> original = CoalesceExpression.create(ConstantExpression.create(1, INT), ConstantExpression.create(1, INT));
-        CoalesceExpression<?> restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_COALESCE);
+        CaseExpression<?> original = CaseExpression.coalesce(ConstantExpression.create(1, INT), ConstantExpression.create(1, INT));
+        CaseExpression<?> restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_CASE);
 
         checkEquals(original, restored, true);
     }

@@ -28,10 +28,8 @@ import com.hazelcast.sql.impl.exec.scan.index.IndexInFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexRangeFilter;
 import com.hazelcast.sql.impl.expression.CaseExpression;
 import com.hazelcast.sql.impl.expression.CastExpression;
-import com.hazelcast.sql.impl.expression.CoalesceExpression;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
-import com.hazelcast.sql.impl.expression.NullIfExpression;
 import com.hazelcast.sql.impl.expression.ParameterExpression;
 import com.hazelcast.sql.impl.expression.datetime.ExtractFunction;
 import com.hazelcast.sql.impl.expression.math.AbsFunction;
@@ -204,10 +202,7 @@ public class SqlDataSerializerHook implements DataSerializerHook {
 
     public static final int MAP_SCAN_METADATA = 73;
 
-    public static final int EXPRESSION_NULLIF = 74;
-    public static final int EXPRESSION_COALESCE = 75;
-
-    public static final int LEN = EXPRESSION_COALESCE + 1;
+    public static final int LEN = MAP_SCAN_METADATA + 1;
 
     @Override
     public int getFactoryId() {
@@ -312,9 +307,6 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[INTERVAL_DAY_SECOND] = arg -> new SqlDaySecondInterval();
 
         constructors[EXPRESSION_CASE] = arg -> new CaseExpression<>();
-
-        constructors[EXPRESSION_NULLIF] = arg -> new NullIfExpression<>();
-        constructors[EXPRESSION_COALESCE] = arg -> new CoalesceExpression<>();
 
         return new ArrayDataSerializableFactory(constructors);
     }

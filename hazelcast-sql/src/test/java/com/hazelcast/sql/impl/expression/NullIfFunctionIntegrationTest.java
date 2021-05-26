@@ -100,16 +100,16 @@ public class NullIfFunctionIntegrationTest extends ExpressionTestSupport {
                 "Cannot apply 'NULLIF' function to [TINYINT, VARCHAR] (consider adding an explicit CAST)");
         checkFailure0(
                 "select nullif('abc', CAST('2021-01-02' as DATE)) from map",
-                SqlErrorCode.GENERIC,
-                "while converting NULLIF(CAST('abc' AS DATE), CAST('2021-01-02' AS DATE))");
+                SqlErrorCode.PARSING,
+                "CAST function cannot convert literal 'abc' to type DATE: Cannot parse VARCHAR value to DATE");
         checkFailure0(
                 "select nullif('abc', CAST('13:00:00' as TIME)) from map",
-                SqlErrorCode.GENERIC,
-                "while converting NULLIF(CAST('abc' AS TIME(0)), CAST('13:00:00' AS TIME))");
+                SqlErrorCode.PARSING,
+                "CAST function cannot convert literal 'abc' to type TIME: Cannot parse VARCHAR value to TIME");
         checkFailure0(
                 "select nullif('abc', CAST('2021-01-02T13:00' as TIMESTAMP)) from map",
-                SqlErrorCode.GENERIC,
-                "while converting NULLIF(CAST('abc' AS TIMESTAMP(0)), CAST('2021-01-02T13:00' AS TIMESTAMP))");
+                SqlErrorCode.PARSING,
+                "CAST function cannot convert literal 'abc' to type TIMESTAMP: Cannot parse VARCHAR value to TIMESTAMP");
         checkFailure0(
                 "select nullif(1, CAST('2021-01-02' as DATE)) from map",
                 SqlErrorCode.PARSING,
@@ -127,20 +127,20 @@ public class NullIfFunctionIntegrationTest extends ExpressionTestSupport {
     @Test
     public void testEquality() {
         checkEquals(
-                NullIfExpression.create(ConstantExpression.create(1, INT), ConstantExpression.create(1, INT)),
-                NullIfExpression.create(ConstantExpression.create(1, INT), ConstantExpression.create(1, INT)),
+                CaseExpression.nullif(ConstantExpression.create(1, INT), ConstantExpression.create(1, INT)),
+                CaseExpression.nullif(ConstantExpression.create(1, INT), ConstantExpression.create(1, INT)),
                 true);
 
         checkEquals(
-                NullIfExpression.create(ConstantExpression.create(1, INT), ConstantExpression.create(1, INT)),
-                NullIfExpression.create(ConstantExpression.create(1, INT), ConstantExpression.create(10, INT)),
+                CaseExpression.nullif(ConstantExpression.create(1, INT), ConstantExpression.create(1, INT)),
+                CaseExpression.nullif(ConstantExpression.create(1, INT), ConstantExpression.create(10, INT)),
                 false);
     }
 
     @Test
     public void testSerialization() {
-        NullIfExpression<?> original = NullIfExpression.create(ConstantExpression.create(1, INT), ConstantExpression.create(1, INT));
-        NullIfExpression<?> restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_NULLIF);
+        CaseExpression<?> original = CaseExpression.nullif(ConstantExpression.create(1, INT), ConstantExpression.create(1, INT));
+        CaseExpression<?> restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_CASE);
 
         checkEquals(original, restored, true);
     }

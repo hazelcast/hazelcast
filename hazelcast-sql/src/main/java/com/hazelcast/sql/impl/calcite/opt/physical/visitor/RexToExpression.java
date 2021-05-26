@@ -23,10 +23,8 @@ import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastLikeOpe
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.expression.CaseExpression;
 import com.hazelcast.sql.impl.expression.CastExpression;
-import com.hazelcast.sql.impl.expression.CoalesceExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.expression.NullIfExpression;
 import com.hazelcast.sql.impl.expression.SymbolExpression;
 import com.hazelcast.sql.impl.expression.datetime.ExtractField;
 import com.hazelcast.sql.impl.expression.datetime.ExtractFunction;
@@ -309,9 +307,9 @@ public final class RexToExpression {
                 return CaseExpression.create(operands);
 
             case COALESCE:
-                return CoalesceExpression.create(operands);
+                return CaseExpression.coalesce(operands);
             case NULLIF:
-                return NullIfExpression.create(operands[0], operands[1]);
+                return CaseExpression.nullif(operands[0], operands[1]);
 
             case OTHER:
                 if (operator == HazelcastSqlOperatorTable.CONCAT) {

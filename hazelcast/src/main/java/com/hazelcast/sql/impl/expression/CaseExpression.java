@@ -20,6 +20,9 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
+import com.hazelcast.sql.impl.expression.predicate.ComparisonMode;
+import com.hazelcast.sql.impl.expression.predicate.ComparisonPredicate;
+import com.hazelcast.sql.impl.expression.predicate.IsNotNullPredicate;
 import com.hazelcast.sql.impl.expression.predicate.TernaryLogic;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -42,6 +45,27 @@ public class CaseExpression<T> implements Expression<T>, IdentifiedDataSerializa
         this.whenExpressions = whenExpressions;
         this.thenExpressions = thenExpressions;
         this.elseExpression = elseExpression;
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> CaseExpression<T> nullif(Expression<?> left, Expression<?> right) {
+        return new CaseExpression<>(
+                new Expression[]{ComparisonPredicate.create(left, right, ComparisonMode.EQUALS)},
+                new Expression[]{ConstantExpression.create(null, left.getType())},
+                left
+        );
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> CaseExpression<T> coalesce(Expression<?>... operands) {
+        int branchesSize = operands.length - 1;
+        Expression<Boolean>[] whenExpressions = new Expression[branchesSize];
+        Expression<?>[] thenExpressions = new Expression[branchesSize];
+        for (int i = 0; i < branchesSize; i++) {
+            whenExpressions[i] = IsNotNullPredicate.create(operands[i]);
+            thenExpressions[i] = operands[i];
+        }
+        return new CaseExpression<>(whenExpressions, thenExpressions, operands[operands.length - 1]);
     }
 
     @SuppressWarnings("unchecked")
