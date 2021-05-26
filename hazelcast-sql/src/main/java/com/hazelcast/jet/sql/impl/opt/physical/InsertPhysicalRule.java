@@ -17,7 +17,7 @@
 package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
-import com.hazelcast.jet.sql.impl.opt.logical.InsertLogicalRel;
+import com.hazelcast.jet.sql.impl.opt.logical.TableModifyLogicalRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.convert.ConverterRule;
@@ -32,14 +32,14 @@ final class InsertPhysicalRule extends ConverterRule {
 
     private InsertPhysicalRule() {
         super(
-                InsertLogicalRel.class, TableModify::isInsert, LOGICAL, PHYSICAL,
+                TableModifyLogicalRel.class, TableModify::isInsert, LOGICAL, PHYSICAL,
                 InsertPhysicalRule.class.getSimpleName()
         );
     }
 
     @Override
     public RelNode convert(RelNode rel) {
-        InsertLogicalRel logicalInsert = (InsertLogicalRel) rel;
+        TableModifyLogicalRel logicalInsert = (TableModifyLogicalRel) rel;
 
         return new InsertPhysicalRel(
                 logicalInsert.getCluster(),

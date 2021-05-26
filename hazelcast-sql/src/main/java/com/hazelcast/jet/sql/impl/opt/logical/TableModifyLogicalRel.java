@@ -26,9 +26,8 @@ import org.apache.calcite.rex.RexNode;
 
 import java.util.List;
 
-public class DeleteLogicalRel extends TableModify implements LogicalRel {
-
-    protected DeleteLogicalRel(
+public class TableModifyLogicalRel extends TableModify implements LogicalRel {
+    TableModifyLogicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelOptTable table,
@@ -39,22 +38,12 @@ public class DeleteLogicalRel extends TableModify implements LogicalRel {
             List<RexNode> sourceExpressionList,
             boolean flattened
     ) {
-        super(
-                cluster,
-                traitSet,
-                table,
-                catalogReader,
-                input,
-                operation,
-                updateColumnList,
-                sourceExpressionList,
-                flattened
-        );
+        super(cluster, traitSet, table, catalogReader, input, operation, updateColumnList, sourceExpressionList, flattened);
     }
 
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new DeleteLogicalRel(
+        return new TableModifyLogicalRel(
                 getCluster(),
                 traitSet,
                 getTable(),

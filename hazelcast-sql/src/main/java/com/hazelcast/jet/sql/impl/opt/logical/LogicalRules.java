@@ -78,9 +78,7 @@ public final class LogicalRules {
                 ValuesLogicalRules.UNION_INSTANCE,
 
                 // DML rules
-                InsertLogicalRule.INSTANCE,
-                UpdateLogicalRule.INSTANCE,
-                DeleteLogicalRule.INSTANCE,
+                TableModifyLogicalRule.INSTANCE,
 
                 // Miscellaneous
                 PruneEmptyRules.PROJECT_INSTANCE,

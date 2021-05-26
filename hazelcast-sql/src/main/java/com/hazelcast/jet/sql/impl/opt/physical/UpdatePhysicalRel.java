@@ -47,17 +47,7 @@ public class UpdatePhysicalRel extends TableModify implements PhysicalRel {
             List<RexNode> sourceExpressionList,
             boolean flattened
     ) {
-        super(
-                cluster,
-                traitSet,
-                table,
-                catalogReader,
-                input,
-                operation,
-                updateColumnList,
-                sourceExpressionList,
-                flattened
-        );
+        super(cluster, traitSet, table, catalogReader, input, operation, updateColumnList, sourceExpressionList, flattened);
     }
 
     @Override

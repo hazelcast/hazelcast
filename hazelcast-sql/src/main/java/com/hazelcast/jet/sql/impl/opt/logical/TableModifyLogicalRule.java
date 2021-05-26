@@ -26,22 +26,19 @@ import org.apache.calcite.rel.logical.LogicalTableModify;
 
 import static com.hazelcast.jet.sql.impl.opt.JetConventions.LOGICAL;
 
-final class UpdateLogicalRule extends ConverterRule {
+final class TableModifyLogicalRule extends ConverterRule {
 
-    static final RelOptRule INSTANCE = new UpdateLogicalRule();
+    static final RelOptRule INSTANCE = new TableModifyLogicalRule();
 
-    private UpdateLogicalRule() {
-        super(
-                LogicalTableModify.class, TableModify::isUpdate, Convention.NONE, LOGICAL,
-                UpdateLogicalRule.class.getSimpleName()
-        );
+    private TableModifyLogicalRule() {
+        super(LogicalTableModify.class, Convention.NONE, LOGICAL, TableModifyLogicalRule.class.getSimpleName());
     }
 
     @Override
     public RelNode convert(RelNode rel) {
         TableModify tableModify = (TableModify) rel;
 
-        return new UpdateLogicalRel(
+        return new TableModifyLogicalRel(
                 tableModify.getCluster(),
                 OptUtils.toLogicalConvention(tableModify.getTraitSet()),
                 tableModify.getTable(),

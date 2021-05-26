@@ -17,7 +17,7 @@
 package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
-import com.hazelcast.jet.sql.impl.opt.logical.DeleteLogicalRel;
+import com.hazelcast.jet.sql.impl.opt.logical.TableModifyLogicalRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.convert.ConverterRule;
@@ -32,14 +32,14 @@ public final class DeletePhysicalRule extends ConverterRule {
 
     private DeletePhysicalRule() {
         super(
-                DeleteLogicalRel.class, TableModify::isDelete, LOGICAL, PHYSICAL,
+                TableModifyLogicalRel.class, TableModify::isDelete, LOGICAL, PHYSICAL,
                 DeletePhysicalRule.class.getSimpleName()
         );
     }
 
     @Override
     public RelNode convert(RelNode rel) {
-        DeleteLogicalRel logicalDelete = (DeleteLogicalRel) rel;
+        TableModifyLogicalRel logicalDelete = (TableModifyLogicalRel) rel;
 
         return new DeletePhysicalRel(
                 logicalDelete.getCluster(),
