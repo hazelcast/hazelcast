@@ -143,8 +143,7 @@ public class CreateDagVisitor {
         String mapName = table.getSqlName();
         int[] updateColumns = rel.updateColumnIndexes();
 
-
-        Vertex update = dag.newUniqueVertex("Update", UpdateProcessor.metaSupplier(mapName, supplier, updateColumns));
+        Vertex update = dag.newUniqueVertex("Update", new UpdateProcessor.Supplier(mapName, supplier, updateColumns));
         connectInput(rel.getInput(), update, null);
 
         Edge edge = between(update, sink);
