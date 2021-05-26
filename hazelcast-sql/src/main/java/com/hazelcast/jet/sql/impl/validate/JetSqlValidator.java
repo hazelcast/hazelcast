@@ -21,10 +21,12 @@ import com.hazelcast.jet.sql.impl.parse.SqlCreateJob;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
 import com.hazelcast.jet.sql.impl.schema.JetTableFunction;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlCall;
+import org.apache.calcite.sql.SqlDataTypeSpec;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlInsert;
 import org.apache.calcite.sql.SqlJoin;
@@ -34,6 +36,8 @@ import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.SqlUpdate;
+import org.apache.calcite.sql.parser.SqlParserPos;
+import org.apache.calcite.sql.type.SqlTypeUtil;
 import org.apache.calcite.sql.util.SqlBasicVisitor;
 import org.apache.calcite.sql.validate.SqlConformance;
 import org.apache.calcite.sql.validate.SqlValidatorCatalogReader;
@@ -223,12 +227,6 @@ public class JetSqlValidator extends HazelcastSqlValidator {
     // createSourceSelectForUpdate could not be properly overridden due to bug in calcite
     // which does not allow to have less columns then number of columns in the table that
     // is updated
-    // One reason why our SQL engine goes this route is that SqlUpdate has two queries
-    // one is `UPDATE` and another one is `SELECT` to query dataset that has to be updated
-    // Calcite during `SELECT` validation (that we extended) adds implicit casts. `UPDATE`
-    // query is not validated and there are no these implicit  casts that is why calcite
-    // fails with error that some expression can not be type checked
-    // see JetSqlValidator#validateUpdate
     @Override
     protected SqlSelect createSourceSelectForUpdate(SqlUpdate call) {
         return super.createSourceSelectForUpdate(call);

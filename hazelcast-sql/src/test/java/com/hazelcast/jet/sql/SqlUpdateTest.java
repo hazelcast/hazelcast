@@ -96,6 +96,24 @@ public class SqlUpdateTest extends SqlTestSupport {
     }
 
     @Test
+    public void updateBySingleKey_withParameters() {
+        IMap<Object, Object> testMap = instance().getMap("test_map");
+
+        testMap.put(1, new Value(100, 200, 300));
+        checkUpdateCount("update test_map set field3 = cast(? as integer) where __key = 1", 0, 1);
+        assertThat(testMap.get(1)).isEqualTo(new Value(100, 200, 1));
+    }
+
+    @Test
+    public void updateByNonKeyField() {
+        IMap<Object, Object> testMap = instance().getMap("test_map");
+
+        testMap.put(1, new Value(100, 200, 300));
+        checkUpdateCount("update test_map set field3 = cast(2 * field3 as integer) where field1 = 100", 0);
+        assertThat(testMap.get(1)).isEqualTo(new Value(100, 200, 600));
+    }
+
+    @Test
     public void explicitMapping() {
         execute(
                 "create mapping test_map (\n"
@@ -116,12 +134,12 @@ public class SqlUpdateTest extends SqlTestSupport {
         assertThat(testMap.get(1)).isEqualTo(new Value(100, 100, 300));
     }
 
-    private void checkUpdateCount(String sql, int expected) {
-        assertThat(execute(sql).updateCount()).isEqualTo(expected);
+    private void checkUpdateCount(String sql, int expected, Object... params) {
+        assertThat(execute(sql, params).updateCount()).isEqualTo(expected);
     }
 
-    private SqlResult execute(String sql) {
-        return instance().getSql().execute(sql);
+    private SqlResult execute(String sql, Object... params) {
+        return instance().getSql().execute(sql, params);
     }
 
     public static class Value implements Serializable {
