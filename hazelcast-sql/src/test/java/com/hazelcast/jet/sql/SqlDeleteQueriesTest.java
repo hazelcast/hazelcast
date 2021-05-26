@@ -94,7 +94,7 @@ public class SqlDeleteQueriesTest extends SqlTestSupport {
     }
 
     @Test
-    public void dontDelete_whenKeyFieldOccursMoreThanOneWithConjunctionPredicate() {
+    public void doNotDelete_whenKeyFieldOccursMoreThanOneWithConjunctionPredicate() {
         put(1);
 
         checkUpdateCount("delete from test_map where __key = 1 and __key = 2", 0);

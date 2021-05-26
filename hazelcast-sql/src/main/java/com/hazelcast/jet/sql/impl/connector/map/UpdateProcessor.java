@@ -49,18 +49,14 @@ import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
 
-@SuppressFBWarnings(
-        value = {"SE_BAD_FIELD", "SE_NO_SERIALVERSIONID"},
-        justification = "the class is never java-serialized"
-)
-public final class UpdateProcessor extends AbstractProcessor implements DataSerializable {
+public final class UpdateProcessor extends AbstractProcessor {
     private String mapName;
     private KvRowProjector.Supplier mapEntryProjectorSupplier;
     private int[] updateColumns;
 
-    private transient MapProxyImpl<Object, Object> map;
-    private transient ExpressionEvalContext evalContext;
-    private transient Extractors extractors;
+    private MapProxyImpl<Object, Object> map;
+    private ExpressionEvalContext evalContext;
+    private Extractors extractors;
 
     @SuppressWarnings("unused")
     private UpdateProcessor() {
@@ -105,20 +101,10 @@ public final class UpdateProcessor extends AbstractProcessor implements DataSeri
         }
     }
 
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeString(mapName);
-        out.writeObject(mapEntryProjectorSupplier);
-        out.writeIntArray(updateColumns);
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        mapName = in.readString();
-        mapEntryProjectorSupplier = in.readObject();
-        updateColumns = in.readIntArray();
-    }
-
+    @SuppressFBWarnings(
+            value = {"SE_BAD_FIELD", "SE_NO_SERIALVERSIONID"},
+            justification = "the class is never java-serialized"
+    )
     private static final class UpdateProcessorMetaSupplier implements ProcessorMetaSupplier, DataSerializable {
         private String mapName;
         private KvRowProjector.Supplier mapEntryProjectorSupplier;
@@ -186,6 +172,10 @@ public final class UpdateProcessor extends AbstractProcessor implements DataSeri
         return new UpdateProcessorMetaSupplier(mapName, mapEntryProjectorSupplier, updateColumns);
     }
 
+    @SuppressFBWarnings(
+            value = {"SE_BAD_FIELD", "SE_NO_SERIALVERSIONID"},
+            justification = "the class is never java-serialized"
+    )
     private static class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializable {
         private String mapName;
         private KvRowProjector.Supplier mapEntryProjectorSupplier;
