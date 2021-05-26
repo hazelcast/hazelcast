@@ -605,7 +605,7 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
     @Override
     public JetInstance getJetInstance() {
         if (jetExtension == null) {
-            throw new IllegalArgumentException("Jet is disabled");
+            throw new IllegalArgumentException("Jet is disabled, see JetConfig#setEnabled.");
         }
         return jetExtension.getJetInstance();
     }

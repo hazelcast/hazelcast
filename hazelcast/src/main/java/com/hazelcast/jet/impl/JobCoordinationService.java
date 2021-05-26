@@ -205,7 +205,9 @@ public class JobCoordinationService {
                     return;
                 }
                 if (!config.isResourceUploadEnabled() && !jobConfig.getResourceConfigs().isEmpty()) {
-                    throw new JetException("Resource upload is disabled and JobConfig contains resources");
+                    throw new JetException("The JobConfig contains resources to upload, but the resource upload " +
+                            "is disabled. Either remove the resources from the job config or enabled resource " +
+                            "uploading, see JetConfig#setResourceUploadEnabled.");
                 }
 
                 int quorumSize = jobConfig.isSplitBrainProtectionEnabled() ? getQuorumSize() : 0;
