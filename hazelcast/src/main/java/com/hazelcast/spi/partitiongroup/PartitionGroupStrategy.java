@@ -21,7 +21,7 @@ import com.hazelcast.spi.discovery.AbstractDiscoveryStrategy;
 /**
  * <p>A <code>PartitionGroupStrategy</code> implementation defines a strategy
  * how backup groups are designed. Backup groups are units containing
- * one or more Hazelcast nodes to share the same physical host/node, rack or
+ * one or more Hazelcast nodes to share the same physical node/machine or
  * zone and backups are stored on nodes being part of a different
  * backup group. This behavior builds an additional layer of data
  * reliability by making sure that, in case of two zones, if zone A

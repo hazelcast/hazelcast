@@ -78,8 +78,8 @@ public interface DiscoveryStrategy {
 
     /**
      * Returns a map with discovered metadata provided by the runtime environment. Those information
-     * may include, but are not limited, to location information like datacenter, rack, host,
-     * node name or additional tags to be used for custom purpose.
+     * may include, but are not limited, to location information like datacenter, node name
+     * or additional tags to be used for custom purpose.
      * <p>
      * Information discovered from this method are shaded into the {@link Member}s
      * attributes. Existing attributes will not be overridden, that way local attribute configuration
