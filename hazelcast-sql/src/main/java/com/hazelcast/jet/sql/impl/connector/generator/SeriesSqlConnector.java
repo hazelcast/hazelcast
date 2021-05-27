@@ -82,11 +82,6 @@ class SeriesSqlConnector implements SqlConnector {
         return new SeriesTable(INSTANCE, FIELDS, schemaName, name, argumentExpressions);
     }
 
-    @Override
-    public boolean supportsFullScanReader() {
-        return true;
-    }
-
     @Nonnull
     @Override
     public Vertex fullScanReader(

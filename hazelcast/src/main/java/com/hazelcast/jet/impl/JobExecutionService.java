@@ -33,10 +33,12 @@ import com.hazelcast.internal.metrics.impl.MetricsCompressor;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.jet.Util;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.core.metrics.MetricNames;
 import com.hazelcast.jet.core.metrics.MetricTags;
+import com.hazelcast.jet.impl.deployment.JetDelegatingClassLoader;
 import com.hazelcast.jet.impl.deployment.JetClassLoader;
 import com.hazelcast.jet.impl.exception.ExecutionNotFoundException;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
@@ -119,7 +121,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
     // rely on specific semantics of computeIfAbsent. ConcurrentMap.computeIfAbsent
     // does not guarantee at most one computation per key.
     // key: jobId
-    private final ConcurrentHashMap<Long, JetClassLoader> classLoaders = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Long, JetDelegatingClassLoader> classLoaders = new ConcurrentHashMap<>();
 
     @Probe(name = MetricNames.JOB_EXECUTIONS_STARTED)
     private final Counter executionStarted = MwCounter.newMwCounter();
@@ -158,14 +160,22 @@ public class JobExecutionService implements DynamicMetricsProvider {
     }
 
     public ClassLoader getClassLoader(JobConfig config, long jobId) {
+        JetConfig jetConfig = nodeEngine.getConfig().getJetConfig();
         return classLoaders.computeIfAbsent(jobId,
                 k -> AccessController.doPrivileged(
-                        (PrivilegedAction<JetClassLoader>) () -> {
-                            ClassLoader parent = config.getClassLoaderFactory() != null
-                                    ? config.getClassLoaderFactory().getJobClassLoader()
-                                    : nodeEngine.getConfigClassLoader();
+                        (PrivilegedAction<JetDelegatingClassLoader>) () -> {
+                            ClassLoader parent = parentClassLoader(config);
+                            if (!jetConfig.isResourceUploadEnabled()) {
+                                return new JetDelegatingClassLoader(parent);
+                            }
                             return new JetClassLoader(nodeEngine, parent, config.getName(), jobId, jobRepository);
                         }));
+    }
+
+    private ClassLoader parentClassLoader(JobConfig config) {
+        return config.getClassLoaderFactory() != null
+                ? config.getClassLoaderFactory().getJobClassLoader()
+                : nodeEngine.getConfigClassLoader();
     }
 
     public ExecutionContext getExecutionContext(long executionId) {
@@ -275,7 +285,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
         if (logger.isFineEnabled()) {
             logger.fine("Execution plan for light job ID=" + idToString(jobId)
                     + ", jobName=" + (execCtx.jobName() != null ? '\'' + execCtx.jobName() + '\'' : "null")
-                    + ", executionId=" + idToString(executionId) + " initialized, will start the job");
+                    + ", executionId=" + idToString(executionId) + " initialized, will start the execution");
         }
 
         return beginExecution0(execCtx, false);
@@ -443,7 +453,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
      */
     public void completeExecution(@Nonnull ExecutionContext executionContext, Throwable error) {
         executionContexts.remove(executionContext.executionId());
-        JetClassLoader removedClassLoader = classLoaders.remove(executionContext.jobId());
+        JetDelegatingClassLoader removedClassLoader = classLoaders.remove(executionContext.jobId());
         try {
             doWithClassLoader(removedClassLoader, () -> executionContext.completeExecution(error));
         } finally {
@@ -491,7 +501,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
                     }
                     return terminalMetrics;
                 })
-                .whenComplete(withTryCatch(logger, (i, e) -> {
+                .whenCompleteAsync(withTryCatch(logger, (i, e) -> {
                     completeExecution(execCtx, peel(e));
 
                     if (e instanceof CancellationException) {
@@ -534,7 +544,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
                             .computeIfAbsent(coordinator, k -> new ArrayList<>())
                             .add(ctx.executionId());
                 } else {
-                    if (uninitializedContextThreshold <= ctx.getCreatedOn()) {
+                    if (ctx.getCreatedOn() <= uninitializedContextThreshold) {
                         LoggingUtil.logFine(logger, "Terminating light job %s because it wasn't initialized during %d seconds",
                                 idToString(ctx.executionId()), NANOSECONDS.toSeconds(UNINITIALIZED_CONTEXT_MAX_AGE_NS));
                         terminateExecution0(ctx, TerminationMode.CANCEL_FORCEFUL);

@@ -32,7 +32,8 @@ public class ClientDeploymentTest extends AbstractDeploymentTest {
 
     @BeforeClass
     public static void beforeClass() {
-        Config config = new Config();
+        Config config = smallInstanceConfig();
+        config.getJetConfig().setResourceUploadEnabled(true);
         FilteringClassLoader filteringClassLoader = new FilteringClassLoader(singletonList("deployment"), null);
         config.setClassLoader(filteringClassLoader);
         initializeWithClient(MEMBER_COUNT, config, null);
