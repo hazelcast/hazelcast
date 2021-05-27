@@ -51,6 +51,7 @@ public final class UnknownFromKnownOperandTypeInference implements SqlOperandTyp
     }
 
     @Override
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
     public void inferOperandTypes(SqlCallBinding binding, RelDataType returnType, RelDataType[] operandTypes) {
         assert operandTypes.length <= maxOperandCount;
         assert binding.getOperandCount() == operandTypes.length;
@@ -94,7 +95,7 @@ public final class UnknownFromKnownOperandTypeInference implements SqlOperandTyp
             throw new HazelcastCallBinding(binding).newValidationSignatureError();
         }
 
-        if (maxOperandCount == 2 // it's a binary operator
+        if (isBinaryOperator()
                 && SqlTypeName.INTERVAL_TYPES.contains(knownType.getSqlTypeName())
                 && operandTypes[unknownOperandIndexes.get(0)].getSqlTypeName() == SqlTypeName.NULL) {
             // If there is an interval on one side and NULL on the other, assume that the other side is a TIMESTAMP,
@@ -105,5 +106,9 @@ public final class UnknownFromKnownOperandTypeInference implements SqlOperandTyp
         for (Integer index : unknownOperandIndexes) {
             operandTypes[index] = knownType;
         }
+    }
+
+    private boolean isBinaryOperator() {
+        return maxOperandCount == 2;
     }
 }
