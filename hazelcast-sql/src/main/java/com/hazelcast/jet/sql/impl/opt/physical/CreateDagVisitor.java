@@ -33,8 +33,10 @@ import com.hazelcast.jet.pipeline.ServiceFactories;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
+import com.hazelcast.jet.sql.impl.connector.keyvalue.KvProjector;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.connector.map.UpdateProcessor;
+import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
@@ -118,8 +120,6 @@ public class CreateDagVisitor {
 
         collectObjectKeys(table0);
 
-        Vertex sink = getJetSqlConnector(table0).sink(dag, table0);
-
         PartitionedMapTable table = (PartitionedMapTable) table0;
 
         List<TableField> fields = table.getFields();
@@ -140,15 +140,20 @@ public class CreateDagVisitor {
                 null,
                 projection);
 
+        KvProjector.Supplier kvProjectorSupplier = KvProjector.supplier(
+                paths,
+                types,
+                (UpsertTargetDescriptor) table.getKeyJetMetadata(),
+                (UpsertTargetDescriptor) table.getValueJetMetadata());
+
         String mapName = table.getSqlName();
         int[] updateColumns = rel.updateColumnIndexes();
 
-        Vertex update = dag.newUniqueVertex("Update", new UpdateProcessor.Supplier(mapName, supplier, updateColumns));
+        Vertex update = dag.newUniqueVertex(
+                "Update", new UpdateProcessor.Supplier(mapName, supplier, kvProjectorSupplier, updateColumns));
         connectInput(rel.getInput(), update, null);
 
-        Edge edge = between(update, sink);
-        dag.edge(edge);
-        return sink;
+        return update;
     }
 
     public Vertex onInsert(InsertPhysicalRel rel) {
