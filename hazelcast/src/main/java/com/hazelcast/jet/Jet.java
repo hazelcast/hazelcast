@@ -76,6 +76,7 @@ public final class Jet {
     public static JetInstance newJetInstance(@Nonnull JetConfig config) {
         Preconditions.checkNotNull(config, "config");
         Config hzConfig = new Config();
+        hzConfig.setJetConfig(config);
         return (JetInstance) Hazelcast.newHazelcastInstance(hzConfig).getJet();
     }
 
