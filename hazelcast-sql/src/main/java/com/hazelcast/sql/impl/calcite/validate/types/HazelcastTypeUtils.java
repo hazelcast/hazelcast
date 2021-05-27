@@ -283,7 +283,7 @@ public final class HazelcastTypeUtils {
         return precedence1 > precedence2 ? type1 : type2;
     }
 
-    private static int precedenceOf(RelDataType type) {
+    public static int precedenceOf(RelDataType type) {
         SqlTypeName typeName = type.getSqlTypeName();
 
         if (YEAR_INTERVAL_TYPES.contains(typeName)) {

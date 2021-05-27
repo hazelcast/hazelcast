@@ -113,7 +113,6 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
         SUPPORTED_KINDS.add(SqlKind.TRIM);
 
         SUPPORTED_KINDS.add(SqlKind.CASE);
-
         SUPPORTED_KINDS.add(SqlKind.NULLIF);
         SUPPORTED_KINDS.add(SqlKind.COALESCE);
 

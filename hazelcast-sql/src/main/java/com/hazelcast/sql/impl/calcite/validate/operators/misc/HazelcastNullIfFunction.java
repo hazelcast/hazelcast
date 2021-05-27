@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.calcite.validate.operators.misc;
 
 import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
-import com.hazelcast.sql.impl.calcite.validate.operators.BinaryOperatorOperandTypeInference;
+import com.hazelcast.sql.impl.calcite.validate.operators.UnknownFromKnownOperandTypeInference;
 import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastComparisonPredicateUtils;
 import org.apache.calcite.sql.SqlFunctionCategory;
@@ -36,7 +36,7 @@ public final class HazelcastNullIfFunction extends HazelcastFunction {
                 "NULLIF",
                 SqlKind.NULLIF,
                 wrap(ReturnTypes.ARG0_NULLABLE),
-                BinaryOperatorOperandTypeInference.INSTANCE,
+                UnknownFromKnownOperandTypeInference.VARIADIC_INSTANCE,
                 SqlFunctionCategory.SYSTEM
         );
     }

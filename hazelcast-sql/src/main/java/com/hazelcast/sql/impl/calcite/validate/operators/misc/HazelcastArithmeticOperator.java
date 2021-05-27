@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.calcite.validate.operators.misc;
 
 import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
-import com.hazelcast.sql.impl.calcite.validate.operators.BinaryOperatorOperandTypeInference;
+import com.hazelcast.sql.impl.calcite.validate.operators.UnknownFromKnownOperandTypeInference;
 import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastBinaryOperator;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import org.apache.calcite.rel.type.RelDataType;
@@ -47,7 +47,7 @@ public final class HazelcastArithmeticOperator extends HazelcastBinaryOperator {
                 base.getLeftPrec(),
                 true,
                 new ArithmeticTypeInference(),
-                BinaryOperatorOperandTypeInference.INSTANCE
+                UnknownFromKnownOperandTypeInference.BINARY_INSTANCE
         );
     }
 

@@ -95,6 +95,7 @@ public final class HazelcastComparisonPredicateUtils {
             int lowIndex
     ) {
         QueryDataType highHZType = HazelcastTypeUtils.toHazelcastType(highType.getSqlTypeName());
+        QueryDataType lowHZType = HazelcastTypeUtils.toHazelcastType(lowType.getSqlTypeName());
 
         if (highHZType.getTypeFamily().isNumeric()) {
             // Set flexible parameter converter that allows TINYINT/SMALLINT/INTEGER -> BIGINT conversions
@@ -110,16 +111,16 @@ public final class HazelcastComparisonPredicateUtils {
                         highType,
                         lowOperandNode -> callBinding.getCall().setOperand(lowIndex, lowOperandNode));
 
-        if (!valid) {
-            // Types cannot be converted to each other, throw.
-            if (throwOnFailure) {
-                throw callBinding.newValidationSignatureError();
-            } else {
-                return false;
-            }
+        if (valid && highHZType == QueryDataType.OBJECT && lowHZType != QueryDataType.OBJECT) {
+            valid = false;
         }
 
-        return true;
+        // Types cannot be converted to each other.
+        if (!valid && throwOnFailure) {
+            throw callBinding.newValidationSignatureError();
+        }
+
+        return valid;
     }
 
     private static void setNumericParameterConverter(HazelcastSqlValidator validator, SqlNode node, QueryDataType type) {
