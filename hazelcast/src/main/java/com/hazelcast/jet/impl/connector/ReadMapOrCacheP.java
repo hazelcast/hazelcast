@@ -33,6 +33,7 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.function.SupplierEx;
 import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -64,6 +65,7 @@ import com.hazelcast.spi.impl.operationservice.OperationService;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.security.Permission;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -261,10 +263,14 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
 
         private static final long serialVersionUID = 1L;
         private final BiFunctionEx<HazelcastInstance, InternalSerializationService, Reader<F, B, R>> readerSupplier;
+        private final SupplierEx<Permission> permissionFn;
 
         LocalProcessorMetaSupplier(
-                @Nonnull BiFunctionEx<HazelcastInstance, InternalSerializationService, Reader<F, B, R>> readerSupplier) {
+                @Nonnull BiFunctionEx<HazelcastInstance, InternalSerializationService, Reader<F, B, R>> readerSupplier,
+                @Nonnull SupplierEx<Permission> permissionFn
+        ) {
             this.readerSupplier = readerSupplier;
+            this.permissionFn = permissionFn;
         }
 
         @Override @Nonnull
@@ -275,6 +281,11 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         @Override
         public int preferredLocalParallelism() {
             return 1;
+        }
+
+        @Override
+        public Permission getRequiredPermission() {
+            return permissionFn.get();
         }
     }
 

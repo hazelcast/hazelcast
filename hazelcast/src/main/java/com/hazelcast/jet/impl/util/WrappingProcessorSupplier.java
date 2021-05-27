@@ -21,6 +21,7 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 
 import javax.annotation.Nonnull;
+import java.security.Permission;
 import java.util.Collection;
 
 import static com.hazelcast.jet.impl.util.Util.toList;
@@ -55,5 +56,10 @@ public final class WrappingProcessorSupplier implements ProcessorSupplier {
     @Override
     public void close(Throwable error) throws Exception {
         wrapped.close(error);
+    }
+
+    @Override
+    public Permission getRequiredPermission() {
+        return wrapped.getRequiredPermission();
     }
 }

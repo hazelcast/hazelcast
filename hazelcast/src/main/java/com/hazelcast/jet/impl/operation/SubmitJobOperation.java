@@ -22,6 +22,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
 
+import javax.security.auth.Subject;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 
@@ -32,23 +33,30 @@ public class SubmitJobOperation extends AsyncJobOperation {
     private Data config;
     private boolean isLightJob;
 
+    private transient Subject subject;
+
     public SubmitJobOperation() {
     }
 
     public SubmitJobOperation(long jobId, Data jobDefinition, Data config, boolean isLightJob) {
+        this(jobId, jobDefinition, config, isLightJob, null);
+    }
+
+    public SubmitJobOperation(long jobId, Data jobDefinition, Data config, boolean isLightJob, Subject subject) {
         super(jobId);
         this.jobDefinition = jobDefinition;
         this.config = config;
         this.isLightJob = isLightJob;
+        this.subject = subject;
     }
 
     @Override
     public CompletableFuture<Void> doRun() {
         if (isLightJob) {
             assert !getNodeEngine().getLocalMember().isLiteMember() : "light job submitted to a lite member";
-            return getJobCoordinationService().submitLightJob(jobId(), jobDefinition);
+            return getJobCoordinationService().submitLightJob(jobId(), jobDefinition, subject);
         } else {
-            return getJobCoordinationService().submitJob(jobId(), jobDefinition, config);
+            return getJobCoordinationService().submitJob(jobId(), jobDefinition, config, subject);
         }
     }
 

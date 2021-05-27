@@ -71,6 +71,7 @@ public final class ActionConstants {
     public static final String ACTION_RESUME = "resume";
     public static final String ACTION_EXPORT = "export";
     public static final String ACTION_UPLOAD = "upload";
+    public static final String ACTION_WRITE = "write";
 
     public static final String LISTENER_INSTANCE = "instance";
     public static final String LISTENER_MEMBER = "member";

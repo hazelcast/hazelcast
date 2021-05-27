@@ -40,6 +40,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.Serializable;
+import java.security.Permission;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -76,6 +77,10 @@ import static java.util.Collections.singletonList;
  */
 @FunctionalInterface
 public interface ProcessorMetaSupplier extends Serializable {
+
+    default Permission getRequiredPermission() {
+        return null;
+    }
 
     /**
      * Returns the metadata on this supplier, a string-to-string map. There is
@@ -297,7 +302,6 @@ public interface ProcessorMetaSupplier extends Serializable {
             @Nonnull ProcessorSupplier supplier, @Nonnull String partitionKey
     ) {
         return new ProcessorMetaSupplier() {
-
             private transient Address ownerAddress;
 
             @Override
@@ -320,6 +324,11 @@ public interface ProcessorMetaSupplier extends Serializable {
             @Override
             public int preferredLocalParallelism() {
                 return 1;
+            }
+
+            @Override
+            public Permission getRequiredPermission() {
+                return supplier.getRequiredPermission();
             }
         };
     }

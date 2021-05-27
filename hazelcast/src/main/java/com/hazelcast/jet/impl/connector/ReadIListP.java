@@ -26,8 +26,10 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
+import com.hazelcast.security.permission.ListPermission;
 
 import javax.annotation.Nonnull;
+import java.security.Permission;
 import java.util.List;
 import java.util.function.BiFunction;
 
@@ -35,6 +37,8 @@ import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.Traversers.traverseStream;
 import static com.hazelcast.jet.impl.util.ImdgUtil.asClientConfig;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 import static java.lang.Math.min;
 import static java.util.stream.IntStream.rangeClosed;
 
@@ -110,5 +114,13 @@ public final class ReadIListP extends AbstractProcessor {
 
     private boolean isRemote() {
         return clientXml != null;
+    }
+
+    @Override
+    public Permission getRequiredPermission() {
+        if (isRemote()) {
+            return null;
+        }
+        return new ListPermission(name, ACTION_CREATE, ACTION_READ);
     }
 }

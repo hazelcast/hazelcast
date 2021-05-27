@@ -2694,6 +2694,8 @@
             <xs:element name="reliable-topic-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="replicatedmap-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="management-permission" type="management-permission" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="job-permission" type="job-permission" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="file-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
         </xs:choice>
         <xs:attribute name="on-join-operation" type="permission-on-join-operation" default="RECEIVE"/>
     </xs:complexType>
@@ -2753,6 +2755,15 @@
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
+    <xs:complexType name="job-permission">
+        <xs:complexContent>
+            <xs:extension base="base-permission">
+                <xs:sequence>
+                    <xs:element name="actions" type="actions"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
     <xs:complexType name="actions">
         <xs:sequence>
             <xs:element name="action" maxOccurs="unbounded">
@@ -2778,6 +2789,15 @@
                         <xs:enumeration value="index"/>
                         <xs:enumeration value="intercept"/>
                         <xs:enumeration value="publish"/>
+                        <xs:enumeration value="aggregate"/>
+                        <xs:enumeration value="projection"/>
+                        <xs:enumeration value="deploy"/>
+                        <xs:enumeration value="list"/>
+                        <xs:enumeration value="suspend"/>
+                        <xs:enumeration value="resume"/>
+                        <xs:enumeration value="export"/>
+                        <xs:enumeration value="upload"/>
+                        <xs:enumeration value="write"/>
                     </xs:restriction>
                 </xs:simpleType>
             </xs:element>

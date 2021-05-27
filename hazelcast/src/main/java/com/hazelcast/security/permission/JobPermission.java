@@ -43,6 +43,8 @@ public class JobPermission extends InstancePermission {
                 mask |= CREATE;
             } else if (ActionConstants.ACTION_DESTROY.equals(action)) {
                 mask |= DESTROY;
+            } else if (ActionConstants.ACTION_READ.equals(action)) {
+                mask |= READ;
             } else if (ActionConstants.ACTION_LIST.equals(action)) {
                 mask |= LIST;
             } else if (ActionConstants.ACTION_SUSPEND.equals(action)) {

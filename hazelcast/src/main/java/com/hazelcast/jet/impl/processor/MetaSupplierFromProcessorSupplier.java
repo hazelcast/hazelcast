@@ -26,6 +26,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.security.Permission;
 import java.util.List;
 import java.util.function.Function;
 
@@ -64,5 +65,10 @@ public class MetaSupplierFromProcessorSupplier implements ProcessorMetaSupplier,
     public void readData(ObjectDataInput in) throws IOException {
         preferredLocalParallelism = in.readInt();
         processorSupplier = in.readObject();
+    }
+
+    @Override
+    public Permission getRequiredPermission() {
+        return processorSupplier.getRequiredPermission();
     }
 }

@@ -228,7 +228,7 @@ public final class CdcSinks {
     ) {
         FunctionEx<? super ChangeRecord, ? extends V> toValueFn =
                 record -> DELETE.equals(record.operation()) ? null : valueFn.apply(record);
-        ProcessorSupplier supplier = AbstractHazelcastConnectorSupplier.of(asXmlString(clientConfig),
+        ProcessorSupplier supplier = AbstractHazelcastConnectorSupplier.ofMap(asXmlString(clientConfig), map,
                 instance -> new WriteCdcP<>(instance, map, keyFn, toValueFn));
         ProcessorMetaSupplier metaSupplier = ProcessorMetaSupplier.of(supplier);
         return new SinkImpl<>(name, metaSupplier, DISTRIBUTED_PARTITIONED, keyFn);

@@ -170,9 +170,13 @@ public class PermissionConfig implements IdentifiedDataSerializable {
          */
         MANAGEMENT("management-permission"),
         /**
-         * Cluster Management
+         * Jet Job permission
          */
         JOB("job-permission"),
+        /**
+         * Jet File Connector permission
+         */
+        FILE("file-permission")
         ;
         private final String nodeName;
 

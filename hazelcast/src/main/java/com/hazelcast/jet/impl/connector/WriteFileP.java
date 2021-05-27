@@ -32,6 +32,8 @@ import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.FilePermission;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
@@ -48,6 +50,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.security.Permission;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.function.LongSupplier;
@@ -298,6 +301,11 @@ public final class WriteFileP<T> implements Processor {
 
     private String currentTimeFormatted() {
         return dateFormatter.format(Instant.ofEpochMilli(clock.getAsLong()));
+    }
+
+    @Override
+    public Permission getRequiredPermission() {
+        return new FilePermission(directory.toString(), ActionConstants.ACTION_WRITE);
     }
 
     public static <T> ProcessorMetaSupplier metaSupplier(

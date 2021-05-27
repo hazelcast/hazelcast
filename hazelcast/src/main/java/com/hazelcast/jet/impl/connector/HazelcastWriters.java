@@ -36,9 +36,13 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.impl.observer.ObservableImpl;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.security.permission.CachePermission;
+import com.hazelcast.security.permission.ListPermission;
+import com.hazelcast.security.permission.RingBufferPermission;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.security.Permission;
 import java.util.AbstractMap;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.AbstractSet;
@@ -53,6 +57,9 @@ import java.util.function.Function;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
 import static com.hazelcast.jet.impl.util.ImdgUtil.asXmlString;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_ADD;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_PUT;
 import static java.util.Collections.singletonMap;
 
 /**
@@ -106,8 +113,8 @@ public final class HazelcastWriters {
         checkSerializable(updateFn, "updateFn");
 
         return ProcessorMetaSupplier.of(
-                AbstractHazelcastConnectorSupplier.of(
-                        asXmlString(clientConfig),
+                AbstractHazelcastConnectorSupplier.ofMap(
+                        asXmlString(clientConfig), mapName,
                         instance -> new UpdateMapP<>(instance, mapName, toKeyFn, updateFn)));
     }
 
@@ -121,7 +128,7 @@ public final class HazelcastWriters {
         checkSerializable(toKeyFn, "toKeyFn");
         checkSerializable(toEntryProcessorFn, "toEntryProcessorFn");
 
-        return ProcessorMetaSupplier.of(AbstractHazelcastConnectorSupplier.of(asXmlString(clientConfig),
+        return ProcessorMetaSupplier.of(AbstractHazelcastConnectorSupplier.ofMap(asXmlString(clientConfig), name,
                 instance -> new UpdateMapWithEntryProcessorP<>(instance, name, toKeyFn, toEntryProcessorFn)));
     }
 
@@ -136,7 +143,7 @@ public final class HazelcastWriters {
         checkSerializable(toKeyFn, "toKeyFn");
         checkSerializable(toEntryProcessorFn, "toEntryProcessorFn");
 
-        return ProcessorMetaSupplier.of(AbstractHazelcastConnectorSupplier.of(asXmlString(clientConfig),
+        return ProcessorMetaSupplier.of(AbstractHazelcastConnectorSupplier.ofMap(asXmlString(clientConfig), name,
                 instance -> new UpdateMapWithEntryProcessorP<>(instance, maxParallelAsyncOps, name, toKeyFn,
                         toEntryProcessorFn)));
     }
@@ -167,6 +174,12 @@ public final class HazelcastWriters {
             @Nonnull @Override
             public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
                 return address -> new WriteObservableP.Supplier(name);
+            }
+
+            @Override
+            public Permission getRequiredPermission() {
+                String ringbufferName = ObservableImpl.ringbufferName(name);
+                return new RingBufferPermission(ringbufferName, ACTION_CREATE, ACTION_PUT);
             }
         };
     }
@@ -208,6 +221,11 @@ public final class HazelcastWriters {
 
             return new WriteBufferedP<>(bufferCreator, entryReceiver, bufferFlusher, ConsumerEx.noop());
         }
+
+        @Override
+        public Permission getRequiredPermission() {
+            return new CachePermission(name, ACTION_CREATE, ACTION_PUT);
+        }
     }
 
     private static class WriteListPSupplier<T> extends AbstractHazelcastConnectorSupplier {
@@ -237,6 +255,11 @@ public final class HazelcastWriters {
             };
 
             return new WriteBufferedP<>(bufferCreator, itemReceiver, bufferFlusher, ConsumerEx.noop());
+        }
+
+        @Override
+        public Permission getRequiredPermission() {
+            return new ListPermission(name, ACTION_CREATE, ACTION_ADD);
         }
     }
 

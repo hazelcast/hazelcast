@@ -30,6 +30,8 @@ import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.RemoteProcessorSupplier;
 import com.hazelcast.jet.impl.util.ImdgUtil;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.security.permission.CachePermission;
+import com.hazelcast.security.permission.MapPermission;
 
 import javax.annotation.Nonnull;
 import java.util.Map.Entry;
@@ -38,6 +40,8 @@ import java.util.Objects;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelismOne;
 import static com.hazelcast.jet.impl.util.ImdgUtil.asXmlString;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 
 public final class HazelcastReaders {
 
@@ -47,7 +51,8 @@ public final class HazelcastReaders {
     @Nonnull
     public static ProcessorMetaSupplier readLocalCacheSupplier(@Nonnull String cacheName) {
         return new LocalProcessorMetaSupplier<>(
-                (hzInstance, serializationService) -> new LocalCacheReader(hzInstance, serializationService, cacheName)
+                (hzInstance, serializationService) -> new LocalCacheReader(hzInstance, serializationService, cacheName),
+                () -> new CachePermission(cacheName, ACTION_CREATE, ACTION_READ)
         );
     }
 
@@ -63,7 +68,8 @@ public final class HazelcastReaders {
     @Nonnull
     public static ProcessorMetaSupplier readLocalMapSupplier(@Nonnull String mapName) {
         return new LocalProcessorMetaSupplier<>(
-                (hzInstance, serializationService) -> new LocalMapReader(hzInstance, serializationService, mapName)
+                (hzInstance, serializationService) -> new LocalMapReader(hzInstance, serializationService, mapName),
+                () -> new MapPermission(mapName, ACTION_CREATE, ACTION_READ)
         );
     }
 
@@ -78,7 +84,8 @@ public final class HazelcastReaders {
 
         return new LocalProcessorMetaSupplier<>(
                 (hzInstance, serializationService) ->
-                        new LocalMapQueryReader(hzInstance, serializationService, mapName, predicate, projection)
+                        new LocalMapQueryReader(hzInstance, serializationService, mapName, predicate, projection),
+                () -> new MapPermission(mapName, ACTION_CREATE, ACTION_READ)
         );
     }
 
