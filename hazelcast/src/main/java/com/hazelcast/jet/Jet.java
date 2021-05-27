@@ -31,8 +31,9 @@ import javax.annotation.Nonnull;
  * Entry point to the Jet product.
  *
  * @since Jet 3.0
- * @deprecated After 5.0 merge of Hazelcast products (IMDG and Jet into single
- * Hazelcast product), use the {@link Hazelcast} class as the entry point.
+ *
+ * @deprecated After 5.0 Jet was merged into core Hazelcast product. Use
+ * the {@link Hazelcast} class as the entry point.
  */
 @Deprecated
 public final class Jet {

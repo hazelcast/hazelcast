@@ -59,10 +59,10 @@ import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.impl.util.Util.toList;
 
 /**
- * For not to break the static factory methods of {@link Jet} that
- * return these deprecated {@link JetInstance}, we continue to
- * implement {@link JetInstance}. Because we need to cast
- * instances of {@link AbstractJetInstance} to {@link JetInstance} in
+ * To not break the static factory methods of {@link Jet} that
+ * return the deprecated {@link JetInstance}, we continue to
+ * implement {@link JetInstance}, because we need to cast
+ * instances of {@link AbstractJetInstance} to {@link JetInstance}
  * there. Search for casts to {@link JetInstance} before you consider
  * removing this.
  */

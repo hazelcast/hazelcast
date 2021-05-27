@@ -424,7 +424,8 @@ public interface ProcessorMetaSupplier extends Serializable {
 
         /**
          * Returns the current Jet instance.
-         * @deprecated since 5.0, use {@link Context#hazelcastInstance} instead.
+         *
+         * @deprecated Use {@code hazelcastInstance().getJet()} instead.
          */
         @Nonnull
         @Deprecated

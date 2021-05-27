@@ -28,16 +28,13 @@ import com.hazelcast.topic.ITopic;
 
 import javax.annotation.Nonnull;
 
-
-
 /**
  * @since Jet 3.0
  *
- * @deprecated After 5.0 merge of Hazelcast products (IMDG and Jet into
- * single Hazelcast product), we represent Jet as an extension service
- * to a Hazelcast product instead of being an instance on its own which
- * encapsulates {@link HazelcastInstance}. Please use {@link JetService}
- * instead.
+ * @deprecated After 5.0 Jet was merged into core Hazelcast product. Jet
+ * became a service of Hazelcast instead of being an instance of its own
+ * that encapsulates {@link HazelcastInstance}. Please use {@link
+ * JetService} instead.
  */
 @Deprecated
 public interface JetInstance extends JetService {
@@ -46,7 +43,9 @@ public interface JetInstance extends JetService {
      * Returns the underlying Hazelcast instance used by Jet. It will
      * be either a server node or a client, depending on the type of this
      * {@code JetInstance}.
+     *
      * @since Jet 3.0
+     *
      * @deprecated since 5.0
      * Because we first access to {@link HazelcastInstance} and then
      * {@link JetService} from the product's entry point -{@link Hazelcast}-,

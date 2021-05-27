@@ -61,7 +61,7 @@ import java.util.concurrent.ConcurrentMap;
  * <p>
  * Instances should be shut down explicitly. See the {@link #shutdown()} method.
  * If the instance is a client and you don't shut it down explicitly, it will continue to run and
- * even connect to another live member if the one it was connected fails.
+ * even connect to another live member if the one it was connected to fails.
  * <p>
  * Each Hazelcast instance has its own socket and threads.
  *
@@ -469,11 +469,7 @@ public interface HazelcastInstance {
     @Nonnull SqlService getSql();
 
     /**
-     * Returns a Jet service to execute distributed batch and streaming
-     * jobs.
-     * <p>
-     *
-     * @return the Jet service
+     * Returns a Jet service to execute distributed batch and streaming jobs.
      *
      * @see JetService
      */

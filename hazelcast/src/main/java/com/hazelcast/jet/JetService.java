@@ -30,10 +30,10 @@ import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.List;
 
-
 /**
- * Represents either an instance of a
- * instance that connects to a remote cluster.
+ * Jet is a component of Hazelcast to execute streaming or batch
+ * computations.
+ *
  * @since 5.0
  */
 public interface JetService {

@@ -19,6 +19,7 @@ package com.hazelcast.jet;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.impl.SnapshotValidationRecord;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -38,10 +39,10 @@ public final class JobStateSnapshot {
     private final SnapshotValidationRecord snapshotValidationRecord;
 
     /**
-     * This constructor shouldn't be directly used, instead see
-     * {@link JetService#getJobStateSnapshot(String)} for the
-     * replacement and docs.
+     * This constructor is a private API, use {@link
+     * JetService#getJobStateSnapshot(String)} instead.
      */
+    @PrivateApi
     public JobStateSnapshot(@Nonnull HazelcastInstance instance, @Nonnull String name, @Nonnull SnapshotValidationRecord record) {
         this.instance = instance;
         this.name = name;
