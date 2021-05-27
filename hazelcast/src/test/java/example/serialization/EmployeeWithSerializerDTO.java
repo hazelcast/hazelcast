@@ -33,8 +33,8 @@ public class EmployeeWithSerializerDTO implements Compactable<EmployeeWithSerial
                 @Override
                 public EmployeeWithSerializerDTO read(CompactReader in) throws IOException {
                     EmployeeWithSerializerDTO employee = new EmployeeWithSerializerDTO();
-                    employee.age = in.getInt("a");
-                    employee.id = in.getLong("i");
+                    employee.age = in.readInt("a");
+                    employee.id = in.readLong("i");
                     return employee;
                 }
 
