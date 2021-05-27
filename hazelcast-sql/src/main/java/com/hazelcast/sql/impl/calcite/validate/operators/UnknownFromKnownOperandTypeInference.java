@@ -81,8 +81,12 @@ public final class UnknownFromKnownOperandTypeInference implements SqlOperandTyp
 
                 int precedence = precedenceOf(operandTypes[i]);
                 if (knownType == null || knownType.getSqlTypeName() == SqlTypeName.NULL || knownTypePrecedence > precedence) {
-                    knownType = operandTypes[i];
-                    knownTypePrecedence = precedence;
+                    if (operandTypes[i].getSqlTypeName() == SqlTypeName.NULL) {
+                        unknownOperandIndexes.add(i);
+                    } else {
+                        knownType = operandTypes[i];
+                        knownTypePrecedence = precedence;
+                    }
                 }
             } else {
                 unknownOperandIndexes.add(i);
