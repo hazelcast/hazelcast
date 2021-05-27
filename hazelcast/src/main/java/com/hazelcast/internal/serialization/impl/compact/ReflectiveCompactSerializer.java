@@ -172,147 +172,147 @@ public class ReflectiveCompactSerializer implements InternalCompactSerializer<Ob
             if (Byte.TYPE.equals(type)) {
                 readers[index] = (reader, o) -> {
                     if (fieldExists(reader, name, BYTE)) {
-                        field.setByte(o, reader.getByte(name));
+                        field.setByte(o, reader.readByte(name));
                     }
                 };
                 writers[index] = (w, o) -> w.writeByte(name, field.getByte(o));
             } else if (Short.TYPE.equals(type)) {
                 readers[index] = (reader, o) -> {
                     if (fieldExists(reader, name, SHORT)) {
-                        field.setShort(o, reader.getShort(name));
+                        field.setShort(o, reader.readShort(name));
                     }
                 };
                 writers[index] = (w, o) -> w.writeShort(name, field.getShort(o));
             } else if (Integer.TYPE.equals(type)) {
                 readers[index] = (reader, o) -> {
                     if (fieldExists(reader, name, INT)) {
-                        field.setInt(o, reader.getInt(name));
+                        field.setInt(o, reader.readInt(name));
                     }
                 };
                 writers[index] = (w, o) -> w.writeInt(name, field.getInt(o));
             } else if (Long.TYPE.equals(type)) {
                 readers[index] = (reader, o) -> {
                     if (fieldExists(reader, name, LONG)) {
-                        field.set(o, reader.getLong(name));
+                        field.set(o, reader.readLong(name));
                     }
                 };
                 writers[index] = (w, o) -> w.writeLong(name, field.getLong(o));
             } else if (Float.TYPE.equals(type)) {
                 readers[index] = (reader, o) -> {
                     if (fieldExists(reader, name, FLOAT)) {
-                        field.setFloat(o, reader.getFloat(name));
+                        field.setFloat(o, reader.readFloat(name));
                     }
                 };
                 writers[index] = (w, o) -> w.writeFloat(name, field.getFloat(o));
             } else if (Double.TYPE.equals(type)) {
                 readers[index] = (reader, o) -> {
                     if (fieldExists(reader, name, DOUBLE)) {
-                        field.setDouble(o, reader.getDouble(name));
+                        field.setDouble(o, reader.readDouble(name));
                     }
                 };
                 writers[index] = (w, o) -> w.writeDouble(name, field.getDouble(o));
             } else if (Boolean.TYPE.equals(type)) {
                 readers[index] = (reader, o) -> {
                     if (fieldExists(reader, name, BOOLEAN)) {
-                        field.setBoolean(o, reader.getBoolean(name));
+                        field.setBoolean(o, reader.readBoolean(name));
                     }
                 };
                 writers[index] = (w, o) -> w.writeBoolean(name, field.getBoolean(o));
             } else if (Character.TYPE.equals(type)) {
                 readers[index] = (reader, o) -> {
                     if (fieldExists(reader, name, CHAR)) {
-                        field.setChar(o, reader.getChar(name));
+                        field.setChar(o, reader.readChar(name));
                     }
                 };
                 writers[index] = (w, o) -> w.writeChar(name, field.getChar(o));
             } else if (String.class.equals(type)) {
                 readers[index] = (reader, o) -> {
                     if (fieldExists(reader, name, UTF)) {
-                        field.set(o, reader.getString(name));
+                        field.set(o, reader.readString(name));
                     }
                 };
                 writers[index] = (w, o) -> w.writeString(name, (String) field.get(o));
             } else if (Byte.class.equals(type)) {
                 readers[index] = (reader, o) -> {
                     if (fieldExists(reader, name, BYTE)) {
-                        field.set(o, reader.getByte(name));
+                        field.set(o, reader.readByte(name));
                     }
                 };
                 writers[index] = (w, o) -> w.writeByte(name, (byte) field.get(o));
             } else if (Short.class.equals(type)) {
                 readers[index] = (reader, o) -> {
                     if (fieldExists(reader, name, SHORT)) {
-                        field.set(o, reader.getShort(name));
+                        field.set(o, reader.readShort(name));
                     }
                 };
                 writers[index] = (w, o) -> w.writeShort(name, (short) field.get(o));
             } else if (Integer.class.equals(type)) {
                 readers[index] = (reader, o) -> {
                     if (fieldExists(reader, name, INT)) {
-                        field.set(o, reader.getInt(name));
+                        field.set(o, reader.readInt(name));
                     }
                 };
                 writers[index] = (w, o) -> w.writeInt(name, (int) field.get(o));
             } else if (Long.class.equals(type)) {
                 readers[index] = (reader, o) -> {
                     if (fieldExists(reader, name, LONG)) {
-                        field.set(o, reader.getLong(name));
+                        field.set(o, reader.readLong(name));
                     }
                 };
                 writers[index] = (w, o) -> w.writeLong(name, (long) field.get(o));
             } else if (Double.class.equals(type)) {
                 readers[index] = (reader, o) -> {
                     if (fieldExists(reader, name, FLOAT)) {
-                        field.set(o, reader.getDouble(name));
+                        field.set(o, reader.readDouble(name));
                     }
                 };
                 writers[index] = (w, o) -> w.writeDouble(name, (double) field.get(o));
             } else if (Boolean.class.equals(type)) {
                 readers[index] = (reader, o) -> {
                     if (fieldExists(reader, name, BOOLEAN)) {
-                        field.set(o, reader.getBoolean(name));
+                        field.set(o, reader.readBoolean(name));
                     }
                 };
                 writers[index] = (w, o) -> w.writeBoolean(name, (boolean) field.get(o));
             } else if (Character.class.equals(type)) {
                 readers[index] = (reader, o) -> {
                     if (fieldExists(reader, name, CHAR)) {
-                        field.set(o, reader.getChar(name));
+                        field.set(o, reader.readChar(name));
                     }
                 };
                 writers[index] = (w, o) -> w.writeChar(name, (char) field.get(o));
             } else if (BigDecimal.class.equals(type)) {
                 readers[index] = (reader, o) -> {
                     if (fieldExists(reader, name, DECIMAL)) {
-                        field.set(o, reader.getDecimal(name));
+                        field.set(o, reader.readDecimal(name));
                     }
                 };
                 writers[index] = (w, o) -> w.writeDecimal(name, (BigDecimal) field.get(o));
             } else if (LocalTime.class.equals(type)) {
                 readers[index] = (reader, o) -> {
                     if (fieldExists(reader, name, TIME)) {
-                        field.set(o, reader.getTime(name));
+                        field.set(o, reader.readTime(name));
                     }
                 };
                 writers[index] = (w, o) -> w.writeTime(name, (LocalTime) field.get(o));
             } else if (LocalDate.class.equals(type)) {
                 readers[index] = (reader, o) -> {
                     if (fieldExists(reader, name, DATE)) {
-                        field.set(o, reader.getDate(name));
+                        field.set(o, reader.readDate(name));
                     }
                 };
                 writers[index] = (w, o) -> w.writeDate(name, (LocalDate) field.get(o));
             } else if (LocalDateTime.class.equals(type)) {
                 readers[index] = (reader, o) -> {
                     if (fieldExists(reader, name, TIMESTAMP)) {
-                        field.set(o, reader.getTimestamp(name));
+                        field.set(o, reader.readTimestamp(name));
                     }
                 };
                 writers[index] = (w, o) -> w.writeTimestamp(name, (LocalDateTime) field.get(o));
             } else if (OffsetDateTime.class.equals(type)) {
                 readers[index] = (reader, o) -> {
                     if (fieldExists(reader, name, TIMESTAMP_WITH_TIMEZONE)) {
-                        field.set(o, reader.getTimestampWithTimezone(name));
+                        field.set(o, reader.readTimestampWithTimezone(name));
                     }
                 };
                 writers[index] = (w, o) -> w.writeTimestampWithTimezone(name, (OffsetDateTime) field.get(o));
@@ -321,105 +321,105 @@ public class ReflectiveCompactSerializer implements InternalCompactSerializer<Ob
                 if (Byte.TYPE.equals(componentType)) {
                     readers[index] = (reader, o) -> {
                         if (fieldExists(reader, name, BYTE_ARRAY)) {
-                            field.set(o, reader.getByteArray(name));
+                            field.set(o, reader.readByteArray(name));
                         }
                     };
                     writers[index] = (w, o) -> w.writeByteArray(name, (byte[]) field.get(o));
                 } else if (Short.TYPE.equals(componentType)) {
                     readers[index] = (reader, o) -> {
                         if (fieldExists(reader, name, SHORT_ARRAY)) {
-                            field.set(o, reader.getShortArray(name));
+                            field.set(o, reader.readShortArray(name));
                         }
                     };
                     writers[index] = (w, o) -> w.writeShortArray(name, (short[]) field.get(o));
                 } else if (Integer.TYPE.equals(componentType)) {
                     readers[index] = (reader, o) -> {
                         if (fieldExists(reader, name, INT_ARRAY)) {
-                            field.set(o, reader.getIntArray(name));
+                            field.set(o, reader.readIntArray(name));
                         }
                     };
                     writers[index] = (w, o) -> w.writeIntArray(name, (int[]) field.get(o));
                 } else if (Long.TYPE.equals(componentType)) {
                     readers[index] = (reader, o) -> {
                         if (fieldExists(reader, name, LONG_ARRAY)) {
-                            field.set(o, reader.getLongArray(name));
+                            field.set(o, reader.readLongArray(name));
                         }
                     };
                     writers[index] = (w, o) -> w.writeLongArray(name, (long[]) field.get(o));
                 } else if (Float.TYPE.equals(componentType)) {
                     readers[index] = (reader, o) -> {
                         if (fieldExists(reader, name, FLOAT_ARRAY)) {
-                            field.set(o, reader.getFloatArray(name));
+                            field.set(o, reader.readFloatArray(name));
                         }
                     };
                     writers[index] = (w, o) -> w.writeFloatArray(name, (float[]) field.get(o));
                 } else if (Double.TYPE.equals(componentType)) {
                     readers[index] = (reader, o) -> {
                         if (fieldExists(reader, name, DOUBLE_ARRAY)) {
-                            field.set(o, reader.getDoubleArray(name));
+                            field.set(o, reader.readDoubleArray(name));
                         }
                     };
                     writers[index] = (w, o) -> w.writeDoubleArray(name, (double[]) field.get(o));
                 } else if (Boolean.TYPE.equals(componentType)) {
                     readers[index] = (reader, o) -> {
                         if (fieldExists(reader, name, BOOLEAN_ARRAY)) {
-                            field.set(o, reader.getBooleanArray(name));
+                            field.set(o, reader.readBooleanArray(name));
                         }
                     };
                     writers[index] = (w, o) -> w.writeBooleanArray(name, (boolean[]) field.get(o));
                 } else if (Character.TYPE.equals(componentType)) {
                     readers[index] = (reader, o) -> {
                         if (fieldExists(reader, name, CHAR_ARRAY)) {
-                            field.set(o, reader.getCharArray(name));
+                            field.set(o, reader.readCharArray(name));
                         }
                     };
                     writers[index] = (w, o) -> w.writeCharArray(name, (char[]) field.get(o));
                 } else if (String.class.equals(componentType)) {
                     readers[index] = (reader, o) -> {
                         if (fieldExists(reader, name, UTF_ARRAY)) {
-                            field.set(o, reader.getStringArray(name));
+                            field.set(o, reader.readStringArray(name));
                         }
                     };
                     writers[index] = (w, o) -> w.writeStringArray(name, (String[]) field.get(o));
                 } else if (BigDecimal.class.equals(componentType)) {
                     readers[index] = (reader, o) -> {
                         if (fieldExists(reader, name, DECIMAL_ARRAY)) {
-                            field.set(o, reader.getDecimalArray(name));
+                            field.set(o, reader.readDecimalArray(name));
                         }
                     };
                     writers[index] = (w, o) -> w.writeDecimalArray(name, (BigDecimal[]) field.get(o));
                 } else if (LocalTime.class.equals(componentType)) {
                     readers[index] = (reader, o) -> {
                         if (fieldExists(reader, name, TIME_ARRAY)) {
-                            field.set(o, reader.getTimeArray(name));
+                            field.set(o, reader.readTimeArray(name));
                         }
                     };
                     writers[index] = (w, o) -> w.writeTimeArray(name, (LocalTime[]) field.get(o));
                 } else if (LocalDate.class.equals(componentType)) {
                     readers[index] = (reader, o) -> {
                         if (fieldExists(reader, name, DATE_ARRAY)) {
-                            field.set(o, reader.getDateArray(name));
+                            field.set(o, reader.readDateArray(name));
                         }
                     };
                     writers[index] = (w, o) -> w.writeDateArray(name, (LocalDate[]) field.get(o));
                 } else if (LocalDateTime.class.equals(componentType)) {
                     readers[index] = (reader, o) -> {
                         if (fieldExists(reader, name, TIMESTAMP_ARRAY)) {
-                            field.set(o, reader.getTimestampArray(name));
+                            field.set(o, reader.readTimestampArray(name));
                         }
                     };
                     writers[index] = (w, o) -> w.writeTimestampArray(name, (LocalDateTime[]) field.get(o));
                 } else if (OffsetDateTime.class.equals(componentType)) {
                     readers[index] = (reader, o) -> {
                         if (fieldExists(reader, name, TIMESTAMP_WITH_TIMEZONE_ARRAY)) {
-                            field.set(o, reader.getTimestampWithTimezoneArray(name));
+                            field.set(o, reader.readTimestampWithTimezoneArray(name));
                         }
                     };
                     writers[index] = (w, o) -> w.writeTimestampWithTimezoneArray(name, (OffsetDateTime[]) field.get(o));
                 } else {
                     readers[index] = (reader, o) -> {
                         if (fieldExists(reader, name, COMPOSED_ARRAY)) {
-                            field.set(o, reader.getObjectArray(name, componentType));
+                            field.set(o, reader.readObjectArray(name, componentType));
                         }
                     };
                     writers[index] = (w, o) -> w.writeObjectArray(name, (Object[]) field.get(o));
@@ -427,7 +427,7 @@ public class ReflectiveCompactSerializer implements InternalCompactSerializer<Ob
             } else {
                 readers[index] = (reader, o) -> {
                     if (fieldExists(reader, name, COMPOSED)) {
-                        field.set(o, reader.getObject(name));
+                        field.set(o, reader.readObject(name));
                     }
                 };
                 writers[index] = (w, o) -> w.writeObject(name, field.get(o));

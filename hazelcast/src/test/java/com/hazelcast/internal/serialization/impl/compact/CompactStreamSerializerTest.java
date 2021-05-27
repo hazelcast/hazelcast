@@ -156,7 +156,7 @@ public class CompactStreamSerializerTest {
                 new CompactSerializer<EmployeeDTO>() {
                     @Override
                     public EmployeeDTO read(CompactReader in) {
-                        return new EmployeeDTO(in.getInt("a"), in.getLong("i"));
+                        return new EmployeeDTO(in.readInt("a"), in.readLong("i"));
                     }
 
                     @Override
@@ -169,11 +169,11 @@ public class CompactStreamSerializerTest {
                 new CompactSerializer<EmployerDTO>() {
                     @Override
                     public EmployerDTO read(CompactReader in) {
-                        String name = in.getString("n");
-                        int age = in.getInt("a");
-                        long[] ids = in.getLongArray("ids");
-                        EmployeeDTO s = in.getObject("s");
-                        EmployeeDTO[] ss = in.getObjectArray("ss", EmployeeDTO.class);
+                        String name = in.readString("n");
+                        int age = in.readInt("a");
+                        long[] ids = in.readLongArray("ids");
+                        EmployeeDTO s = in.readObject("s");
+                        EmployeeDTO[] ss = in.readObjectArray("ss", EmployeeDTO.class);
                         return new EmployerDTO(name, age, ids, s, ss);
                     }
 
@@ -227,7 +227,7 @@ public class CompactStreamSerializerTest {
                 new CompactSerializer<EmployeeDTO>() {
                     @Override
                     public EmployeeDTO read(CompactReader in) {
-                        return new EmployeeDTO(in.getInt("a"), in.getLong("i"));
+                        return new EmployeeDTO(in.readInt("a"), in.readLong("i"));
                     }
 
                     @Override

@@ -77,9 +77,9 @@ public class XSerialization2API {
         compactSerializationConfig.register(Employee.class, "employee", new CompactSerializer<Employee>() {
             @Override
             public Employee read(CompactReader in) throws IOException {
-                String name = in.getString("name");
-                int age = in.getInt("age");
-                String surname = in.getString("surname", "NOT AVAILABLE");
+                String name = in.readString("name");
+                int age = in.readInt("age");
+                String surname = in.readString("surname", "NOT AVAILABLE");
                 return new Employee(name, age, surname);
             }
 
@@ -126,8 +126,8 @@ public class XSerialization2API {
         compactSerializationConfig.register(Employee.class, "employee", new CompactSerializer<Employee>() {
             @Override
             public Employee read(CompactReader in) throws IOException {
-                String name = in.getString("name");
-                int age = in.getInt("age");
+                String name = in.readString("name");
+                int age = in.readInt("age");
                 return new Employee(name, age);
             }
 

@@ -294,6 +294,8 @@
     <suppress checks="MethodCount"
               files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]compact[\\/]DeserializedGenericRecord"/>
     <suppress checks="MethodCount"
+              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]compact[\\/]CompactInternalGenericRecord"/>
+    <suppress checks="MethodCount"
               files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]compact[\\/]SerializingGenericRecordCloner"/>
     <suppress checks="MethodCount"
               files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]compact[\\/]SerializingGenericRecordBuilder"/>

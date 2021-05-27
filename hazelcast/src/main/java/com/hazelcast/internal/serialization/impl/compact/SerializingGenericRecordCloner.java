@@ -45,13 +45,14 @@ public class SerializingGenericRecordCloner implements GenericRecordBuilder {
     }
 
     private final Schema schema;
-    private final DefaultCompactReader genericRecord;
+    private final CompactInternalGenericRecord genericRecord;
     private final DefaultCompactWriter cw;
     private final CompactStreamSerializer serializer;
     private final Map<String, Writer> fields = new HashMap<>();
     private final Function<byte[], BufferObjectDataInput> bufferObjectDataInputFunc;
 
-    public SerializingGenericRecordCloner(CompactStreamSerializer serializer, Schema schema, DefaultCompactReader record,
+    public SerializingGenericRecordCloner(CompactStreamSerializer serializer, Schema schema,
+                                          CompactInternalGenericRecord record,
                                           Function<byte[], BufferObjectDataInput> bufferObjectDataInputFunc,
                                           Supplier<BufferObjectDataOutput> bufferObjectDataOutputSupplier) {
         this.serializer = serializer;

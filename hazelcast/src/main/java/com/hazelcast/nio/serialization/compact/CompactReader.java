@@ -17,6 +17,7 @@
 package com.hazelcast.nio.serialization.compact;
 
 
+import javax.annotation.Nonnull;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -31,132 +32,128 @@ import java.time.OffsetDateTime;
  */
 public interface CompactReader {
 
-    byte getByte(String fieldName);
+    byte readByte(@Nonnull String fieldName);
 
-    byte getByte(String fieldName, byte defaultValue);
+    byte readByte(@Nonnull String fieldName, byte defaultValue);
 
-    short getShort(String fieldName);
+    short readShort(@Nonnull String fieldName);
 
-    short getShort(String fieldName, short defaultValue);
+    short readShort(@Nonnull String fieldName, short defaultValue);
 
-    int getInt(String fieldName);
+    int readInt(@Nonnull String fieldName);
 
-    int getInt(String fieldName, int defaultValue);
+    int readInt(@Nonnull String fieldName, int defaultValue);
 
-    long getLong(String fieldName);
+    long readLong(@Nonnull String fieldName);
 
-    long getLong(String fieldName, long defaultValue);
+    long readLong(@Nonnull String fieldName, long defaultValue);
 
-    float getFloat(String fieldName);
+    float readFloat(@Nonnull String fieldName);
 
-    float getFloat(String fieldName, float defaultValue);
+    float readFloat(@Nonnull String fieldName, float defaultValue);
 
-    double getDouble(String fieldName);
+    double readDouble(@Nonnull String fieldName);
 
-    double getDouble(String fieldName, double defaultValue);
+    double readDouble(@Nonnull String fieldName, double defaultValue);
 
-    boolean getBoolean(String fieldName);
+    boolean readBoolean(@Nonnull String fieldName);
 
-    boolean getBoolean(String fieldName, boolean defaultValue);
+    boolean readBoolean(@Nonnull String fieldName, boolean defaultValue);
 
-    char getChar(String fieldName);
+    char readChar(@Nonnull String fieldName);
 
-    char getChar(String fieldName, char defaultValue);
+    char readChar(@Nonnull String fieldName, char defaultValue);
 
-    String getString(String fieldName);
+    String readString(@Nonnull String fieldName);
 
-    String getString(String fieldName, String defaultValue);
+    String readString(@Nonnull String fieldName, String defaultValue);
 
-    BigDecimal getDecimal(String fieldName);
+    BigDecimal readDecimal(@Nonnull String fieldName);
 
-    BigDecimal getDecimal(String fieldName, BigDecimal defaultValue);
+    BigDecimal readDecimal(@Nonnull String fieldName, BigDecimal defaultValue);
 
-    LocalTime getTime(String fieldName);
+    LocalTime readTime(@Nonnull String fieldName);
 
-    LocalTime getTime(String fieldName, LocalTime defaultValue);
+    LocalTime readTime(@Nonnull String fieldName, LocalTime defaultValue);
 
-    LocalDate getDate(String fieldName);
+    LocalDate readDate(@Nonnull String fieldName);
 
-    LocalDate getDate(String fieldName, LocalDate defaultValue);
+    LocalDate readDate(@Nonnull String fieldName, LocalDate defaultValue);
 
-    LocalDateTime getTimestamp(String fieldName);
+    LocalDateTime readTimestamp(@Nonnull String fieldName);
 
-    LocalDateTime getTimestamp(String fieldName, LocalDateTime defaultValue);
+    LocalDateTime readTimestamp(@Nonnull String fieldName, LocalDateTime defaultValue);
 
-    OffsetDateTime getTimestampWithTimezone(String fieldName);
+    OffsetDateTime readTimestampWithTimezone(@Nonnull String fieldName);
 
-    OffsetDateTime getTimestampWithTimezone(String fieldName, OffsetDateTime defaultValue);
-
-    /**
-     * @throws com.hazelcast.core.HazelcastException If the object is not able to be created because the related class not be
-     *                                               found in the classpath
-     */
-    <T> T getObject(String fieldName);
-
-    <T> T getObject(String fieldName, T defaultValue);
-
-    byte[] getByteArray(String fieldName);
-
-    byte[] getByteArray(String fieldName, byte[] defaultValue);
-
-    boolean[] getBooleanArray(String fieldName);
-
-    boolean[] getBooleanArray(String fieldName, boolean[] defaultValue);
-
-    char[] getCharArray(String fieldName);
-
-    char[] getCharArray(String fieldName, char[] defaultValue);
-
-    int[] getIntArray(String fieldName);
-
-    int[] getIntArray(String fieldName, int[] defaultValue);
-
-    long[] getLongArray(String fieldName);
-
-    long[] getLongArray(String fieldName, long[] defaultValue);
-
-    double[] getDoubleArray(String fieldName);
-
-    double[] getDoubleArray(String fieldName, double[] defaultValue);
-
-    float[] getFloatArray(String fieldName);
-
-    float[] getFloatArray(String fieldName, float[] defaultValue);
-
-    short[] getShortArray(String fieldName);
-
-    short[] getShortArray(String fieldName, short[] defaultValue);
-
-    String[] getStringArray(String fieldName);
-
-    String[] getStringArray(String fieldName, String[] defaultValue);
-
-    BigDecimal[] getDecimalArray(String fieldName);
-
-    BigDecimal[] getDecimalArray(String fieldName, BigDecimal[] defaultValue);
-
-    LocalTime[] getTimeArray(String fieldName);
-
-    LocalTime[] getTimeArray(String fieldName, LocalTime[] defaultValue);
-
-    LocalDate[] getDateArray(String fieldName);
-
-    LocalDate[] getDateArray(String fieldName, LocalDate[] defaultValue);
-
-    LocalDateTime[] getTimestampArray(String fieldName);
-
-    LocalDateTime[] getTimestampArray(String fieldName, LocalDateTime[] defaultValue);
-
-    OffsetDateTime[] getTimestampWithTimezoneArray(String fieldName);
-
-    OffsetDateTime[] getTimestampWithTimezoneArray(String fieldName, OffsetDateTime[] defaultValue);
+    OffsetDateTime readTimestampWithTimezone(@Nonnull String fieldName, OffsetDateTime defaultValue);
 
     /**
      * @throws com.hazelcast.core.HazelcastException If the object is not able to be created because the related class not be
      *                                               found in the classpath
      */
-    <T> T[] getObjectArray(String fieldName, Class<T> componentType);
+    <T> T readObject(@Nonnull String fieldName);
 
-    <T> T[] getObjectArray(String fieldName, Class<T> componentType, T[] defaultValue);
+    <T> T readObject(@Nonnull String fieldName, T defaultValue);
+
+    byte[] readByteArray(@Nonnull String fieldName);
+
+    byte[] readByteArray(@Nonnull String fieldName, byte[] defaultValue);
+
+    boolean[] readBooleanArray(@Nonnull String fieldName);
+
+    boolean[] readBooleanArray(@Nonnull String fieldName, boolean[] defaultValue);
+
+    char[] readCharArray(@Nonnull String fieldName);
+
+    char[] readCharArray(@Nonnull String fieldName, char[] defaultValue);
+
+    int[] readIntArray(@Nonnull String fieldName);
+
+    int[] readIntArray(@Nonnull String fieldName, int[] defaultValue);
+
+    long[] readLongArray(@Nonnull String fieldName);
+
+    long[] readLongArray(@Nonnull String fieldName, long[] defaultValue);
+
+    double[] readDoubleArray(@Nonnull String fieldName);
+
+    double[] readDoubleArray(@Nonnull String fieldName, double[] defaultValue);
+
+    float[] readFloatArray(@Nonnull String fieldName);
+
+    float[] readFloatArray(@Nonnull String fieldName, float[] defaultValue);
+
+    short[] readShortArray(@Nonnull String fieldName);
+
+    short[] readShortArray(@Nonnull String fieldName, short[] defaultValue);
+
+    String[] readStringArray(@Nonnull String fieldName);
+
+    String[] readStringArray(@Nonnull String fieldName, String[] defaultValue);
+
+    BigDecimal[] readDecimalArray(@Nonnull String fieldName);
+
+    BigDecimal[] readDecimalArray(@Nonnull String fieldName, BigDecimal[] defaultValue);
+
+    LocalTime[] readTimeArray(@Nonnull String fieldName);
+
+    LocalTime[] readTimeArray(@Nonnull String fieldName, LocalTime[] defaultValue);
+
+    LocalDate[] readDateArray(@Nonnull String fieldName);
+
+    LocalDate[] readDateArray(@Nonnull String fieldName, LocalDate[] defaultValue);
+
+    LocalDateTime[] readTimestampArray(@Nonnull String fieldName);
+
+    LocalDateTime[] readTimestampArray(@Nonnull String fieldName, LocalDateTime[] defaultValue);
+
+    OffsetDateTime[] readTimestampWithTimezoneArray(@Nonnull String fieldName);
+
+    OffsetDateTime[] readTimestampWithTimezoneArray(@Nonnull String fieldName, OffsetDateTime[] defaultValue);
+
+    <T> T[] readObjectArray(@Nonnull String fieldName, Class<T> componentType);
+
+    <T> T[] readObjectArray(@Nonnull String fieldName, Class<T> componentType, T[] defaultValue);
 
 }
