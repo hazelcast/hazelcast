@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
@@ -39,6 +38,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
+
 public class JetSqlCoreBackendImpl implements JetSqlCoreBackend, ManagedService {
 
     private MappingCatalog catalog;
@@ -47,7 +48,7 @@ public class JetSqlCoreBackendImpl implements JetSqlCoreBackend, ManagedService 
 
     @SuppressWarnings("unused") // used through reflection
     public void init(@Nonnull HazelcastInstance hazelcastInstance) {
-        NodeEngine nodeEngine = ((HazelcastInstanceImpl) hazelcastInstance).node.getNodeEngine();
+        NodeEngine nodeEngine = getNodeEngine(hazelcastInstance);
         MappingStorage mappingStorage = new MappingStorage(nodeEngine);
         SqlConnectorCache connectorCache = new SqlConnectorCache(nodeEngine);
         MappingCatalog mappingCatalog = new MappingCatalog(nodeEngine, mappingStorage, connectorCache);

@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.util;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.config.EdgeConfig;
@@ -32,6 +33,7 @@ import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
@@ -646,4 +648,7 @@ public final class Util {
         };
     }
 
+    public static NodeEngineImpl getNodeEngine(HazelcastInstance instance) {
+        return ((HazelcastInstanceImpl) instance).node.nodeEngine;
+    }
 }

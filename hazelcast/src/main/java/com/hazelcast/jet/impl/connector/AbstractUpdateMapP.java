@@ -47,6 +47,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.ToIntFunction;
 
+import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
+
 /**
  * @param <T> type of input items to this processor
  * @param <K> type of keys of the map being written
@@ -165,7 +167,7 @@ public abstract class AbstractUpdateMapP<T, K, V> extends AsyncHazelcastWriterP 
         @SuppressWarnings("unchecked")
         SerializationContext(HazelcastInstance instance, IMap<K, ?> map) {
             if (ImdgUtil.isMemberInstance(instance)) {
-                NodeEngineImpl nodeEngine = ((HazelcastInstanceImpl) instance).node.nodeEngine;
+                NodeEngineImpl nodeEngine = getNodeEngine(instance);
                 IPartitionService partitionService = nodeEngine.getPartitionService();
                 partitionCount = partitionService.getPartitionCount();
                 partitionIdFn = partitionService::getPartitionId;
