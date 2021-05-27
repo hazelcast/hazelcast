@@ -113,8 +113,8 @@ public abstract class AbstractSerializationService implements InternalSerializat
         this.allowOverrideDefaultSerializers = builder.allowOverrideDefaultSerializers;
         CompactSerializationConfig compactSerializationCfg = builder.compactSerializationConfig == null
                 ? new CompactSerializationConfig() : builder.compactSerializationConfig;
-        compactStreamSerializer = new CompactStreamSerializer(compactSerializationCfg, this,
-                managedContext, builder.schemaService);
+        compactStreamSerializer = new CompactStreamSerializer(compactSerializationCfg,
+                managedContext, builder.schemaService, classLoader, this::createObjectDataInput, this::createObjectDataOutput);
         this.compactWithSchemaSerializerAdapter = new CompactWithSchemaStreamSerializerAdapter(compactStreamSerializer);
         this.compactSerializerAdapter = createSerializerAdapter(compactStreamSerializer);
     }
@@ -153,8 +153,6 @@ public abstract class AbstractSerializationService implements InternalSerializat
                 // we need to deserialize and serialize back completely because the root schema
                 // is not enough to deserialize an data. Because nested levels, there could be multiple schemas
                 // accompanying the single data
-
-                // TODO sancar we could to better by iterating over data just for GenericRecord/[]
                 obj = toObject(data);
             } else {
                 // for other types data and data with schema is same

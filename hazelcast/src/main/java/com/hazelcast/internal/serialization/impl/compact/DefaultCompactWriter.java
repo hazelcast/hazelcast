@@ -71,7 +71,6 @@ public class DefaultCompactWriter implements CompactWriter {
     private final Schema schema;
     private final BufferObjectDataOutput out;
     private final int offset;
-    private final boolean isDebug = System.getProperty("com.hazelcast.serialization.compact.debug") != null;
     private final int[] fieldPositions;
     private final boolean includeSchemaOnBinary;
 
@@ -92,11 +91,6 @@ public class DefaultCompactWriter implements CompactWriter {
             out.writeZeroBytes(schema.getPrimitivesLength());
         }
         this.includeSchemaOnBinary = includeSchemaOnBinary;
-        if (isDebug) {
-            System.out.println("DEBUG WRITE " + schema.getTypeName() + "  offset  " + offset + " " + out);
-            System.out.println("DEBUG WRITE " + "schema.getNumberOfVariableLengthFields() "
-                    + schema.getNumberOfVariableLengthFields());
-        }
     }
 
     public byte[] toByteArray() {
@@ -116,10 +110,6 @@ public class DefaultCompactWriter implements CompactWriter {
             int length = position - offset;
             //write length
             out.writeInt(offset - INT_SIZE_IN_BYTES, length);
-            if (isDebug) {
-                System.out.println("DEBUG WRITE " + schema.getTypeName() + "  pos  "
-                        + (offset - INT_SIZE_IN_BYTES) + " length " + length);
-            }
         } catch (IOException e) {
             throw illegalStateException(e);
         }
@@ -349,7 +339,6 @@ public class DefaultCompactWriter implements CompactWriter {
     }
 
     protected <T> void writeObjectArrayField(@Nonnull String fieldName, FieldType fieldType, T[] values, Writer<T> writer) {
-        //TODO sancar make it same with writeArrayList
         if (values == null) {
             setPositionAsNull(fieldName, fieldType);
             return;
@@ -412,19 +401,11 @@ public class DefaultCompactWriter implements CompactWriter {
         int fieldPosition = pos - offset;
         int index = field.getIndex();
         fieldPositions[index] = fieldPosition;
-        if (isDebug) {
-            System.out.println("DEBUG WRITE " + schema.getTypeName() + " " + fieldName + " index "
-                    + index + " pos " + fieldPosition + " with offset " + pos);
-        }
     }
 
     private int getFixedLengthFieldPosition(@Nonnull String fieldName, FieldType fieldType) {
         FieldDescriptor fieldDefinition = checkFieldDefinition(fieldName, fieldType);
         int writeOffset = fieldDefinition.getOffset() + offset;
-        if (isDebug) {
-            System.out.println("DEBUG WRITE " + schema.getTypeName() + " " + fieldType + " "
-                    + fieldName + " " + fieldDefinition.getOffset() + ", with offset " + writeOffset);
-        }
         return writeOffset;
     }
 

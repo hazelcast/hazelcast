@@ -52,10 +52,6 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class CompactStreamSerializerTest {
 
-    { //TODO sancar cleanup
-        System.setProperty("com.hazelcast.serialization.compact.debug", "true");
-    }
-
     SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
 
     @Test

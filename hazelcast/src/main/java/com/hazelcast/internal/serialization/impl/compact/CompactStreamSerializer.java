@@ -21,8 +21,6 @@ import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
-import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.nio.ObjectDataInput;
@@ -38,28 +36,33 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static com.hazelcast.internal.serialization.impl.FieldOperations.fieldOperations;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.TYPE_COMPACT;
 
 public class CompactStreamSerializer implements StreamSerializer<Object> {
-    private final boolean isDebug = System.getProperty("com.hazelcast.serialization.compact.debug") != null;
     private final Map<Class, ConfigurationRegistry> classToRegistryMap = new ConcurrentHashMap<>();
     private final Map<String, ConfigurationRegistry> classNameToRegistryMap = new ConcurrentHashMap<>();
     private final Map<Class, Schema> classToSchemaMap = new ConcurrentHashMap<>();
     private final ReflectiveCompactSerializer reflectiveSerializer = new ReflectiveCompactSerializer();
     private final SchemaService schemaService;
     private final ManagedContext managedContext;
-    //TODO sancar cleanup by solving enterprise integration better. We should not need all the serialization servie
-    private final InternalSerializationService internalSerializationService;
-
+    private final ClassLoader classLoader;
+    private final Function<byte[], BufferObjectDataInput> bufferObjectDataInputFunc;
+    private final Supplier<BufferObjectDataOutput> bufferObjectDataOutputSupplier;
 
     public CompactStreamSerializer(CompactSerializationConfig compactSerializationConfig,
-                                   InternalSerializationService internalSerializationService,
-                                   ManagedContext managedContext, SchemaService schemaService) {
+                                   ManagedContext managedContext, SchemaService schemaService,
+                                   ClassLoader classLoader,
+                                   Function<byte[], BufferObjectDataInput> bufferObjectDataInputFunc,
+                                   Supplier<BufferObjectDataOutput> bufferObjectDataOutputSupplier) {
         this.managedContext = managedContext;
-        this.internalSerializationService = internalSerializationService;
         this.schemaService = schemaService;
+        this.bufferObjectDataInputFunc = bufferObjectDataInputFunc;
+        this.bufferObjectDataOutputSupplier = bufferObjectDataOutputSupplier;
+        this.classLoader = classLoader;
         Map<String, TriTuple<Class, String, CompactSerializer>> registries = compactSerializationConfig.getRegistries();
         for (Map.Entry<String, TriTuple<Class, String, CompactSerializer>> entry : registries.entrySet()) {
             String typeName = entry.getKey();
@@ -69,10 +72,6 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
             classToRegistryMap.put(clazz, new ConfigurationRegistry(clazz, typeName, compactSerializer));
             classNameToRegistryMap.put(typeName, new ConfigurationRegistry(clazz, typeName, compactSerializer));
         }
-    }
-
-    public InternalSerializationService getInternalSerializationService() {
-        return internalSerializationService;
     }
 
     public InternalGenericRecord readAsInternalGenericRecord(ObjectDataInput input, boolean schemaIncludedInBinary)
@@ -87,8 +86,14 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
 
     public GenericRecordBuilder createGenericRecordBuilder(Schema schema) {
         return new SerializingGenericRecordBuilder(this, schema,
-                internalSerializationService::createObjectDataInput,
-                internalSerializationService::createObjectDataOutput);
+                bufferObjectDataInputFunc,
+                bufferObjectDataOutputSupplier);
+    }
+
+    public GenericRecordBuilder createGenericRecordCloner(Schema schema, CompactInternalGenericRecord record) {
+        return new SerializingGenericRecordCloner(this, schema, record,
+                bufferObjectDataInputFunc,
+                bufferObjectDataOutputSupplier);
     }
 
     //========================== WRITE =============================//
@@ -111,15 +116,10 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
                             boolean includeSchemaOnBinary) throws IOException {
         Schema schema = record.getSchema();
         if (!schema.isSchemaIdSet()) {
-            Data data = internalSerializationService.toData(schema);
-            long schemaId = RabinFingerPrint.fingerprint64(data.toByteArray());
+            long schemaId = calculateSchemaId(schema);
             schema.setSchemaId(schemaId);
         }
         schemaService.put(schema);
-        if (isDebug) {
-            System.out.println("DEBUG WRITE DESERIALIZED GENERIC RECORD " + schema.getTypeName() + " pos "
-                    + output.position() + " " + schema.getSchemaId());
-        }
         writeSchema(output, includeSchemaOnBinary, schema);
         DefaultCompactWriter writer = new DefaultCompactWriter(this, output, schema, includeSchemaOnBinary);
         Collection<FieldDescriptor> fields = schema.getFields();
@@ -131,6 +131,12 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
         writer.end();
     }
 
+    private long calculateSchemaId(Schema schema) throws IOException {
+        BufferObjectDataOutput out = bufferObjectDataOutputSupplier.get();
+        schema.writeData(out);
+        return RabinFingerPrint.fingerprint64(out.toByteArray());
+    }
+
     public void writeObject(BufferObjectDataOutput out, Object o, boolean includeSchemaOnBinary) throws IOException {
         ConfigurationRegistry registry = getOrCreateRegistry(o);
         Class<?> aClass = o.getClass();
@@ -140,15 +146,10 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
             SchemaWriter writer = new SchemaWriter(registry.getTypeName());
             registry.getSerializer().write(writer, o);
             schema = writer.build();
-            Data data = internalSerializationService.toData(schema);
-            long schemaId = RabinFingerPrint.fingerprint64(data.toByteArray());
+            long schemaId = calculateSchemaId(schema);
             schema.setSchemaId(schemaId);
             schemaService.put(schema);
             classToSchemaMap.put(aClass, schema);
-        }
-        if (isDebug) {
-            System.out.println("DEBUG WRITE OBJECT " + schema.getTypeName() + " pos "
-                    + out.position() + " " + schema.getSchemaId());
         }
         writeSchema(out, includeSchemaOnBinary, schema);
         DefaultCompactWriter writer = new DefaultCompactWriter(this, out, schema, includeSchemaOnBinary);
@@ -178,14 +179,7 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
     }
 
     Object read(BufferObjectDataInput input, boolean schemaIncludedInBinary) throws IOException {
-        if (isDebug) {
-            System.out.print("DEBUG READ pos " + input.position());
-        }
-
         Schema schema = getOrReadSchema(input, schemaIncludedInBinary);
-        if (isDebug) {
-            System.out.println("DEBUG READ schema class name " + schema.getTypeName());
-        }
         ConfigurationRegistry registry = getOrCreateRegistry(schema.getTypeName());
 
         if (registry == null) {
@@ -215,9 +209,7 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
             input.readInt();
             schema = new Schema();
             schema.readData(input);
-            //TODO sancar cache data of shcema in schema service
-            Data data = internalSerializationService.toData(schema);
-            long includedSchemaId = RabinFingerPrint.fingerprint64(data.toByteArray());
+            long includedSchemaId = calculateSchemaId(schema);
             if (schemaId != includedSchemaId) {
                 throw new HazelcastSerializationException("Invalid schema id found. Expected " + schemaId
                         + ", actual " + includedSchemaId + " for schema " + schema);
@@ -259,7 +251,7 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
         return classNameToRegistryMap.computeIfAbsent(className, s -> {
             Class<?> clazz;
             try {
-                clazz = ClassLoaderUtil.loadClass(internalSerializationService.getClassLoader(), className);
+                clazz = ClassLoaderUtil.loadClass(classLoader, className);
             } catch (Exception e) {
                 return null;
             }
