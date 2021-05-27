@@ -48,8 +48,6 @@ import com.hazelcast.jet.sql.impl.schema.MappingField;
 import com.hazelcast.jet.sql.impl.validate.JetSqlValidator;
 import com.hazelcast.jet.sql.impl.validate.UnsupportedOperationVisitor;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.security.permission.ActionConstants;
-import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlRowMetadata;
@@ -59,23 +57,18 @@ import com.hazelcast.sql.impl.calcite.OptimizerContext;
 import com.hazelcast.sql.impl.calcite.SqlBackend;
 import com.hazelcast.sql.impl.calcite.parse.QueryConvertResult;
 import com.hazelcast.sql.impl.calcite.parse.QueryParseResult;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.optimizer.PlanKey;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
-import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.RelOptCluster;
-import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelOptTable.ViewExpander;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.prepare.Prepare.CatalogReader;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.RelShuttleImpl;
 import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.core.TableModify.Operation;
-import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.parser.SqlParserImplFactory;
 import org.apache.calcite.sql.util.SqlVisitor;
@@ -85,7 +78,6 @@ import org.apache.calcite.sql2rel.SqlRexConvertletTable;
 import org.apache.calcite.sql2rel.SqlToRelConverter;
 import org.apache.calcite.sql2rel.SqlToRelConverter.Config;
 
-import java.security.Permission;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -271,51 +263,19 @@ class JetSqlBackend implements SqlBackend {
         PhysicalRel physicalRel = optimize(parameterMetadata, rel, context);
 
         Address localAddress = nodeEngine.getThisAddress();
-        List<Permission> permissions = extractPermissions(physicalRel);
 
         if (physicalRel instanceof TableModify) {
             CreateDagVisitor result = traverseRel(physicalRel, parameterMetadata);
             Operation operation = ((TableModify) physicalRel).getOperation();
             return new DmlPlan(operation, planKey, parameterMetadata, result.getObjectKeys(), result.getDag(),
-                    planExecutor, permissions);
+                    planExecutor);
         } else {
             CreateDagVisitor result =
                     traverseRel(new JetRootRel(physicalRel, localAddress), parameterMetadata);
             SqlRowMetadata rowMetadata = createRowMetadata(fieldNames, physicalRel.schema(parameterMetadata).getTypes());
             return new SelectPlan(planKey, parameterMetadata, result.getObjectKeys(), result.getDag(), isInfiniteRows,
-                    rowMetadata, planExecutor, permissions);
+                    rowMetadata, planExecutor);
         }
-    }
-
-    private List<Permission> extractPermissions(PhysicalRel physicalRel) {
-        List<Permission> permissions = new ArrayList<>();
-
-        physicalRel.accept(new RelShuttleImpl() {
-            @Override
-            public RelNode visit(TableScan scan) {
-                addPermissionForTable(scan.getTable(), ActionConstants.ACTION_READ);
-                return super.visit(scan);
-            }
-
-            @Override
-            public RelNode visit(RelNode other) {
-                addPermissionForTable(other.getTable(), ActionConstants.ACTION_PUT);
-                return super.visit(other);
-            }
-
-            private void addPermissionForTable(RelOptTable t, String action) {
-                if (t == null) {
-                    return;
-                }
-                HazelcastTable table = t.unwrap(HazelcastTable.class);
-                if (table != null && table.getTarget() instanceof AbstractMapTable) {
-                    String mapName = ((AbstractMapTable) table.getTarget()).getMapName();
-                    permissions.add(new MapPermission(mapName, action));
-                }
-            }
-        });
-
-        return permissions;
     }
 
     private PhysicalRel optimize(QueryParameterMetadata parameterMetadata, RelNode rel, OptimizerContext context) {

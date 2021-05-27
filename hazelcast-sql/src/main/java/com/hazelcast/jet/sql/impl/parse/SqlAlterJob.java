@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.parse;
 
 import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.security.permission.JobPermission;
 import org.apache.calcite.sql.SqlAlter;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlKind;
@@ -32,6 +33,10 @@ import org.apache.calcite.util.ImmutableNullableList;
 import javax.annotation.Nonnull;
 import java.util.List;
 
+import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_DESTROY;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_RESUME;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_SUSPEND;
 import static java.util.Objects.requireNonNull;
 
 public class SqlAlterJob extends SqlAlter {
@@ -80,8 +85,19 @@ public class SqlAlterJob extends SqlAlter {
     }
 
     public enum AlterJobOperation {
-        SUSPEND,
-        RESUME,
-        RESTART
+
+        SUSPEND(new JobPermission(ACTION_SUSPEND)),
+        RESUME(new JobPermission(ACTION_RESUME)),
+        RESTART(new JobPermission(ACTION_DESTROY, ACTION_CREATE));
+
+        private final JobPermission permission;
+
+        AlterJobOperation(JobPermission permission) {
+            this.permission = permission;
+        }
+
+        public JobPermission getPermission() {
+            return permission;
+        }
     }
 }

@@ -130,8 +130,7 @@ public class JetPlanExecutorTest {
                 QueryParameterMetadata.EMPTY,
                 emptySet(),
                 dag,
-                planExecutor,
-                emptyList()
+                planExecutor
         );
 
         given(hazelcastInstance.getJet()).willReturn(jet);

@@ -333,6 +333,9 @@ public class JobCoordinationService {
 
     private void checkPermissions(Subject subject, DAG dag) {
         SecurityContext securityContext = nodeEngine.getNode().securityContext;
+        if (securityContext == null || subject == null) {
+            return;
+        }
         for (Vertex vertex : dag) {
             Permission requiredPermission = vertex.getMetaSupplier().getRequiredPermission();
             if (requiredPermission != null) {
