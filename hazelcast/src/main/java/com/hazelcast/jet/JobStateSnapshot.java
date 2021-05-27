@@ -37,7 +37,12 @@ public final class JobStateSnapshot {
     private final String name;
     private final SnapshotValidationRecord snapshotValidationRecord;
 
-    JobStateSnapshot(@Nonnull HazelcastInstance instance, @Nonnull String name, @Nonnull SnapshotValidationRecord record) {
+    /**
+     * This constructor shouldn't be directly used, instead see
+     * {@link JetService#getJobStateSnapshot(String)} for the
+     * replacement and docs.
+     */
+    public JobStateSnapshot(@Nonnull HazelcastInstance instance, @Nonnull String name, @Nonnull SnapshotValidationRecord record) {
         this.instance = instance;
         this.name = name;
         this.snapshotValidationRecord = record;

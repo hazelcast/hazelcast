@@ -20,22 +20,14 @@ import com.hazelcast.cluster.Cluster;
 import com.hazelcast.collection.IList;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.impl.AbstractJetInstance;
-import com.hazelcast.jet.impl.JobRepository;
-import com.hazelcast.jet.impl.SnapshotValidationRecord;
 import com.hazelcast.map.IMap;
-import com.hazelcast.map.impl.MapService;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.topic.ITopic;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.util.Collection;
 
-import static com.hazelcast.jet.impl.JobRepository.exportedSnapshotMapName;
-import static java.util.stream.Collectors.toList;
 
 
 /**
@@ -82,50 +74,6 @@ public interface JetInstance extends JetService {
     @Nonnull
     @Deprecated
     Cluster getCluster();
-
-    /**
-     * @since Jet 3.0
-     * @deprecated since 5.0
-     * We left it here since it has a default implementation depending
-     * on {@link JetInstance#getHazelcastInstance()}.
-     * Prefer to use {@link JetService#getJobStateSnapshot(String)}
-     * instead.
-     */
-    @Nullable
-    @Override
-    @Deprecated
-    default JobStateSnapshot getJobStateSnapshot(@Nonnull String name) {
-        String mapName = exportedSnapshotMapName(name);
-        if (!((AbstractJetInstance) this).existsDistributedObject(MapService.SERVICE_NAME, mapName)) {
-            return null;
-        }
-        IMap<Object, Object> map = getHazelcastInstance().getMap(mapName);
-        Object validationRecord = map.get(SnapshotValidationRecord.KEY);
-        if (validationRecord instanceof SnapshotValidationRecord) {
-            // update the cache - for robustness. For example after the map was copied
-            getHazelcastInstance().getMap(JobRepository.EXPORTED_SNAPSHOTS_DETAIL_CACHE).set(name, validationRecord);
-            return new JobStateSnapshot(getHazelcastInstance(), name, (SnapshotValidationRecord) validationRecord);
-        } else {
-            return null;
-        }
-    }
-
-    /**
-     * @since Jet 3.0
-     * @deprecated since 5.0 we left it here since it has a default
-     * implementation depending on {@link JetInstance#getHazelcastInstance()}.
-     * Prefer to use {@link JetService#getJobStateSnapshots()} instead.
-     */
-    @Nonnull
-    @Override
-    @Deprecated
-    default Collection<JobStateSnapshot> getJobStateSnapshots() {
-        return getHazelcastInstance().getMap(JobRepository.EXPORTED_SNAPSHOTS_DETAIL_CACHE)
-                .entrySet().stream()
-                .map(entry -> new JobStateSnapshot(getHazelcastInstance(), (String) entry.getKey(),
-                        (SnapshotValidationRecord) entry.getValue()))
-                .collect(toList());
-    }
 
     /**
      * @since Jet 4.4
