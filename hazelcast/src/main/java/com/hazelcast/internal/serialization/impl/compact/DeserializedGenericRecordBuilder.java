@@ -41,7 +41,6 @@ public class DeserializedGenericRecordBuilder extends AbstractGenericRecordBuild
 
     /**
      * @return newly created GenericRecord
-     * TODO sancar fix this javadoc
      * @throws HazelcastSerializationException if a field is not written when building with builder from
      *                                         {@link GenericRecordBuilder#compact(String)} (ClassDefinition)} and
      *                                         {@link GenericRecord#newBuilder()}
@@ -53,7 +52,7 @@ public class DeserializedGenericRecordBuilder extends AbstractGenericRecordBuild
     }
 
 
-    protected GenericRecordBuilder write(String fieldName, Object value, FieldType fieldType) {
+    protected GenericRecordBuilder write(@Nonnull String fieldName, Object value, FieldType fieldType) {
         if (objects.putIfAbsent(fieldName, value) != null) {
             throw new HazelcastSerializationException("Field can only be written once");
         }

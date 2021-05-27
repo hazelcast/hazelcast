@@ -43,10 +43,10 @@ public class DeserializedGenericRecordCloner extends AbstractGenericRecordBuilde
     }
 
 
-    protected GenericRecordBuilder write(String fieldName, Object value, FieldType fieldType) {
+    protected GenericRecordBuilder write(@Nonnull String fieldName, Object value, FieldType fieldType) {
         checkTypeWithSchema(schema, fieldName, fieldType);
-        if (overwrittenFields.contains(fieldName)) {
-            throw new HazelcastSerializationException("Field can only overwritten once with `cloneWithBuilder`");
+        if (!overwrittenFields.add(fieldName)) {
+            throw new HazelcastSerializationException("Field can only be written once");
         }
         objects.put(fieldName, value);
         return this;

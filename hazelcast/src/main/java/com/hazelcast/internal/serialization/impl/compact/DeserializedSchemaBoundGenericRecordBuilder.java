@@ -22,6 +22,7 @@ import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 
 import javax.annotation.Nonnull;
+import java.util.Set;
 import java.util.TreeMap;
 
 class DeserializedSchemaBoundGenericRecordBuilder extends AbstractGenericRecordBuilder {
@@ -35,11 +36,18 @@ class DeserializedSchemaBoundGenericRecordBuilder extends AbstractGenericRecordB
 
     public @Nonnull
     GenericRecord build() {
+        Set<String> fieldNames = schema.getFieldNames();
+        for (String fieldName : fieldNames) {
+            if (!objects.containsKey(fieldName)) {
+                throw new HazelcastSerializationException("Found an unset field " + fieldName
+                        + ". All the fields must be set before build");
+            }
+        }
         return new DeserializedGenericRecord(schema, objects);
     }
 
     @Override
-    protected GenericRecordBuilder write(String fieldName, Object value, FieldType fieldType) {
+    protected GenericRecordBuilder write(@Nonnull String fieldName, Object value, FieldType fieldType) {
         checkTypeWithSchema(schema, fieldName, fieldType);
         if (objects.putIfAbsent(fieldName, value) != null) {
             throw new HazelcastSerializationException("Field can only be written once");
