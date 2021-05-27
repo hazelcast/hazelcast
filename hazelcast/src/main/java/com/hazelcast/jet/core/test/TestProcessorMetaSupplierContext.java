@@ -74,8 +74,10 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
     @Nonnull
     public TestProcessorMetaSupplierContext setJetInstance(@Nonnull JetInstance jetInstance) {
         this.jetInstance = jetInstance;
-        NodeEngineImpl nodeEngine = ((HazelcastInstanceImpl) jetInstance.getHazelcastInstance()).node.nodeEngine;
-        this.partitionAssignment = ExecutionPlanBuilder.getPartitionAssignment(nodeEngine);
+        if (jetInstance.getHazelcastInstance() instanceof HazelcastInstanceImpl) {
+            NodeEngineImpl nodeEngine = ((HazelcastInstanceImpl) jetInstance.getHazelcastInstance()).node.nodeEngine;
+            this.partitionAssignment = ExecutionPlanBuilder.getPartitionAssignment(nodeEngine);
+        }
         return this;
     }
 
