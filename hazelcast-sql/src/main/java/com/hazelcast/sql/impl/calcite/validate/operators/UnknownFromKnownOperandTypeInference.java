@@ -99,20 +99,16 @@ public final class UnknownFromKnownOperandTypeInference implements SqlOperandTyp
             throw new HazelcastCallBinding(binding).newValidationSignatureError();
         }
 
-        if (isBinaryOperator()
-                && SqlTypeName.INTERVAL_TYPES.contains(knownType.getSqlTypeName())
+        boolean isBinaryOperator = maxOperandCount == 2;
+        if (isBinaryOperator && SqlTypeName.INTERVAL_TYPES.contains(knownType.getSqlTypeName())
                 && operandTypes[unknownOperandIndexes.get(0)].getSqlTypeName() == SqlTypeName.NULL) {
             // If there is an interval on one side and NULL on the other, assume that the other side is a TIMESTAMP,
-            // because this is the only viable overload for binary operators.
+            // because this is currently the only viable overload for binary operators.
             knownType = createType(binding.getTypeFactory(), SqlTypeName.TIMESTAMP, true);
         }
 
         for (Integer index : unknownOperandIndexes) {
             operandTypes[index] = knownType;
         }
-    }
-
-    private boolean isBinaryOperator() {
-        return maxOperandCount == 2;
     }
 }
