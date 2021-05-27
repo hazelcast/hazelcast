@@ -38,13 +38,14 @@ public class CoalesceFunctionIntegrationTest extends ExpressionTestSupport {
         checkValue0("select coalesce(null, this, 2) from map", SqlColumnType.INTEGER, 1);
         checkValue0("select coalesce(null, 2, this) from map", SqlColumnType.INTEGER, 2);
         checkValue0("select coalesce(CAST(null as INT), null) from map", SqlColumnType.INTEGER, null);
-        checkValue0("select coalesce(null) from map", SqlColumnType.NULL, null);
+        checkValue0("select coalesce(CAST(null as INT)) from map", SqlColumnType.INTEGER, null);
     }
 
     @Test
     public void fails_whenReturnTypeCantBeInferred() {
         put(1);
         checkFailure0("select coalesce(?) from map", SqlErrorCode.PARSING, "Cannot apply 'COALESCE' function to [UNKNOWN] (consider adding an explicit CAST)");
+        checkFailure0("select coalesce(null) from map", SqlErrorCode.PARSING, "Cannot apply 'COALESCE' function to [UNKNOWN] (consider adding an explicit CAST)");
     }
 
     @Test
