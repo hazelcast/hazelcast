@@ -20,7 +20,6 @@ import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.impl.spi.ClientPartitionService;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.serialization.Data;
