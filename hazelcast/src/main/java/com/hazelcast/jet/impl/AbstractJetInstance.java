@@ -20,7 +20,9 @@ import com.hazelcast.cluster.Cluster;
 import com.hazelcast.collection.IList;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.JetCacheManager;
+import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobAlreadyExistsException;
 import com.hazelcast.jet.LightJob;
@@ -53,6 +55,14 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.impl.util.Util.toList;
 
+/**
+ * For not to break the static factory methods of {@link Jet} that
+ * return these deprecated {@link JetInstance}, we continue to
+ * implement {@link JetInstance}. Because we need to cast
+ * instances of {@link AbstractJetInstance} to {@link JetInstance} in
+ * there. Search for casts to {@link JetInstance} before you consider
+ * removing this.
+ */
 public abstract class AbstractJetInstance implements JetInstance {
 
     private final HazelcastInstance hazelcastInstance;
