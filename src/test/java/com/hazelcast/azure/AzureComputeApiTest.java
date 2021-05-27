@@ -62,7 +62,7 @@ public class AzureComputeApiTest {
     public void instancesNoScaleSetNoTag() {
         // given
         stubFor(get(urlEqualTo(String.format("/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Network"
-                                             + "/networkInterfaces?api-version=%s", SUBSCRIPTION_ID, RESOURCE_GROUP, API_VERSION)))
+                + "/networkInterfaces?api-version=%s", SUBSCRIPTION_ID, RESOURCE_GROUP, API_VERSION)))
                 .withHeader("Authorization", equalTo(String.format("Bearer %s", ACCESS_TOKEN)))
                 .willReturn(aResponse().withStatus(200).withBody(instancesResponseForNetworkInterfaces())));
         stubFor(get(urlEqualTo(String.format("/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Network"
