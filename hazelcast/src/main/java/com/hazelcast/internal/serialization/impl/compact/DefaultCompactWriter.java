@@ -428,7 +428,7 @@ public class DefaultCompactWriter implements CompactWriter {
     }
 
     protected FieldDescriptor checkFieldDefinition(String fieldName, FieldType fieldType) {
-        FieldDescriptor field = (FieldDescriptor) schema.getField(fieldName);
+        FieldDescriptor field = schema.getField(fieldName);
         if (field == null) {
             throw new HazelcastSerializationException("Invalid field name: '" + fieldName + " for " + schema);
         }
