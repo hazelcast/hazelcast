@@ -1008,7 +1008,7 @@
                 <hz:statement-timeout-millis>30</hz:statement-timeout-millis>
             </hz:sql>
 
-            <hz:jet>
+            <hz:jet enabled="true" resource-upload-enabled="true">
                 <hz:instance>
                     <hz:cooperative-thread-count>4</hz:cooperative-thread-count>
                     <hz:backup-count>2</hz:backup-count>

@@ -1500,6 +1500,8 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     @Test
     public void testJetConfig() {
         JetConfig jetConfig = config.getJetConfig();
+        assertTrue(jetConfig.isEnabled());
+        assertTrue(jetConfig.isResourceUploadEnabled());
 
         InstanceConfig instanceConfig = jetConfig.getInstanceConfig();
         assertEquals(4, instanceConfig.getCooperativeThreadCount());
