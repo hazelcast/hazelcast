@@ -46,6 +46,7 @@ public class AzureComputeApiTest {
     private static final String INSTANCE_2_PRIVATE_IP = "10.240.0.3";
     private static final String INSTANCE_2_PUBLIC_IP = "35.237.227.147";
     private static final String INSTANCE_3_PRIVATE_IP = "10.240.0.4";
+    private static final String INSTANCE_4_PRIVATE_IP = "10.240.0.5";
 
     private AzureComputeApi azureComputeApi;
 
@@ -76,10 +77,12 @@ public class AzureComputeApiTest {
         AzureAddress address1 = new AzureAddress(INSTANCE_1_PRIVATE_IP, INSTANCE_1_PUBLIC_IP);
         AzureAddress address2 = new AzureAddress(INSTANCE_2_PRIVATE_IP, INSTANCE_2_PUBLIC_IP);
         AzureAddress address3 = new AzureAddress(INSTANCE_3_PRIVATE_IP, null);
-        Set<AzureAddress> expected = new LinkedHashSet<AzureAddress>(2);
+        AzureAddress address4 = new AzureAddress(INSTANCE_4_PRIVATE_IP, null);
+        Set<AzureAddress> expected = new LinkedHashSet<AzureAddress>(4);
         expected.add(address1);
         expected.add(address2);
         expected.add(address3);
+        expected.add(address4);
         assertEquals(expected, result);
     }
 
@@ -104,10 +107,12 @@ public class AzureComputeApiTest {
         AzureAddress address1 = new AzureAddress(INSTANCE_1_PRIVATE_IP, INSTANCE_1_PUBLIC_IP);
         AzureAddress address2 = new AzureAddress(INSTANCE_2_PRIVATE_IP, INSTANCE_2_PUBLIC_IP);
         AzureAddress address3 = new AzureAddress(INSTANCE_3_PRIVATE_IP, null);
-        Set<AzureAddress> expected = new LinkedHashSet<AzureAddress>(2);
+        AzureAddress address4 = new AzureAddress(INSTANCE_4_PRIVATE_IP, null);
+        Set<AzureAddress> expected = new LinkedHashSet<AzureAddress>(4);
         expected.add(address1);
         expected.add(address2);
         expected.add(address3);
+        expected.add(address4);
         assertEquals(expected, result);
     }
 
@@ -265,13 +270,53 @@ public class AzureComputeApiTest {
                 + "        },\n"
                 + "        \"primary\": true,\n"
                 + "        \"virtualMachine\": {\n"
-                + "          \"id\": \"/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Compute/virtualMachines/vm2\"\n"
+                + "          \"id\": \"/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Compute/virtualMachines/vm3\"\n"
+                + "        }\n"
+                + "      },\n"
+                + "      \"type\": \"Microsoft.Network/networkInterfaces\"\n"
+                + "    },\n"
+                + "    {\n"
+                + "      \"name\": \"test-nic4\",\n"
+                + "      \"id\": \"/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Network/networkInterfaces/test-nic4\",\n"
+                + "      \"location\": \"eastus\",\n"
+                + "      \"properties\": {\n"
+                + "        \"provisioningState\": \"Succeeded\",\n"
+                + "        \"ipConfigurations\": [\n"
+                + "          {\n"
+                + "            \"name\": \"ipconfig1\",\n"
+                + "            \"id\": \"/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Network/networkInterfaces/test-nic4/ipConfigurations/ipconfig1\",\n"
+                + "            \"properties\": {\n"
+                + "              \"provisioningState\": \"Succeeded\",\n"
+                + "              \"privateIPAddress\": \"%s\",\n"
+                + "              \"privateIPAllocationMethod\": \"Dynamic\",\n"
+                + "              \"subnet\": {\n"
+                + "                \"id\": \"/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Network/virtualNetworks/rg1-vnet2/subnets/default\"\n"
+                + "              },\n"
+                + "              \"primary\": true,\n"
+                + "              \"privateIPAddressVersion\": \"IPv4\"\n"
+                + "            }\n"
+                + "          }\n"
+                + "        ],\n"
+                + "        \"dnsSettings\": {\n"
+                + "          \"dnsServers\": [],\n"
+                + "          \"appliedDnsServers\": [],\n"
+                + "          \"internalDomainNameSuffix\": \"test4.bx.internal.cloudapp.net\"\n"
+                + "        },\n"
+                + "        \"macAddress\": \"00-0D-3A-1B-C7-43\",\n"
+                + "        \"enableAcceleratedNetworking\": true,\n"
+                + "        \"enableIPForwarding\": false,\n"
+                + "        \"networkSecurityGroup\": {\n"
+                + "          \"id\": \"/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Network/networkSecurityGroups/nsg\"\n"
+                + "        },\n"
+                + "        \"primary\": true,\n"
+                + "        \"virtualMachine\": {\n"
+                + "          \"id\": \"/subscriptions/subid/resourceGroups/rg1/providers/Microsoft.Compute/virtualMachines/vm4\"\n"
                 + "        }\n"
                 + "      },\n"
                 + "      \"type\": \"Microsoft.Network/networkInterfaces\"\n"
                 + "    }\n"
                 + "  ]\n"
-                + "}", INSTANCE_1_PRIVATE_IP, TAG.getKey(), TAG.getValue(), INSTANCE_2_PRIVATE_IP, INSTANCE_3_PRIVATE_IP);
+                + "}", INSTANCE_1_PRIVATE_IP, TAG.getKey(), TAG.getValue(), INSTANCE_2_PRIVATE_IP, INSTANCE_3_PRIVATE_IP, INSTANCE_4_PRIVATE_IP);
     }
 
     private String instancesResponseForPublicIPAddresses() {
