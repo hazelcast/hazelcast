@@ -730,7 +730,6 @@ public class CompactStreamSerializerValueReaderSpecTest extends HazelcastTestSup
                         "objects[0].objects", p),
                 scenario(nestedFullGroup, ((GroupObject) (nestedFullGroup.objects[0])).objects,
                         "objects[0].objects[any]", p),
-//                scenario(nestedFullGroup, new PrimitiveObject[]{prim(1, FULL)},//TODO SANCAR changed
                 scenario(nestedFullGroup, prim(1, FULL),
                         "objects[any].objects[0]", p),
                 scenario(nestedFullGroup, ((GroupObject) (nestedFullGroup.objects[0])).objects,

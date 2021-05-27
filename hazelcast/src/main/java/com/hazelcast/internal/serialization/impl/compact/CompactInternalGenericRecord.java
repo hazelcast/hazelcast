@@ -78,7 +78,6 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     private final BufferObjectDataInput in;
     private final int finalPosition;
     private final int offset;
-    private final boolean isDebug = System.getProperty("com.hazelcast.serialization.compact.debug") != null;
     private final CompactStreamSerializer serializer;
     private final boolean schemaIncludedInBinary;
     private final @Nullable
@@ -99,10 +98,6 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
                 //set the position to final so that the next one to read something from `in` can start from
                 //correct position
                 in.position(finalPosition);
-                if (isDebug) {
-                    System.out.println("DEBUG READ " + schema.getTypeName() + " finalPosition " + finalPosition
-                            + " offset " + offset + " length " + length);
-                }
             } else {
                 offset = in.position();
                 finalPosition = offset + schema.getPrimitivesLength();
@@ -135,9 +130,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     @Override
     @Nonnull
     public GenericRecordBuilder cloneWithBuilder() {
-        return new SerializingGenericRecordCloner(serializer, schema, this,
-                bytes -> serializer.getInternalSerializationService().createObjectDataInput(bytes),
-                () -> serializer.getInternalSerializationService().createObjectDataOutput());
+        return serializer.createGenericRecordCloner(schema, this);
     }
 
     @Override
@@ -228,8 +221,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
             int booleanOffsetWithinLastByte = booleanOffset % Byte.SIZE;
             int getOffset = booleanOffsetInBytes + offset;
             byte lastByte = in.readByte(getOffset);
-            boolean result = ((lastByte >>> booleanOffsetWithinLastByte) & 1) != 0;
-            return result;
+            return ((lastByte >>> booleanOffsetWithinLastByte) & 1) != 0;
         } catch (IOException e) {
             throw illegalStateException(e);
         }
@@ -246,7 +238,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
 
     @Override
     public String getString(@Nonnull String fieldName) {
-        return getVariableLength(fieldName, UTF, BufferObjectDataInput::readUTF);
+        return getVariableLength(fieldName, UTF, BufferObjectDataInput::readString);
     }
 
     private <T> T getVariableLength(@Nonnull String fieldName, FieldType fieldType,
@@ -376,7 +368,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
 
     @Override
     public String[] getStringArray(@Nonnull String fieldName) {
-        return getVariableLengthArray(fieldName, UTF_ARRAY, String[]::new, ObjectDataInput::readUTF);
+        return getVariableLengthArray(fieldName, UTF_ARRAY, String[]::new, ObjectDataInput::readString);
     }
 
     @Override
@@ -452,12 +444,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     private int readPrimitivePosition(@Nonnull String fieldName, FieldType fieldType) {
         FieldDescriptor fd = getFieldDefinition(fieldName, fieldType);
         int primitiveOffset = fd.getOffset();
-        int getOffset = primitiveOffset + offset;
-        if (isDebug) {
-            System.out.println("DEBUG READ " + schema.getTypeName() + " "
-                    + fieldType + " " + fieldName + " " + primitiveOffset + " withOffset " + getOffset);
-        }
-        return getOffset;
+        return primitiveOffset + offset;
     }
 
     @Nonnull
@@ -477,10 +464,6 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
             FieldDescriptor fd = getFieldDefinition(fieldName, fieldType);
             int index = fd.getIndex();
             int pos = in.readInt(finalPosition - (index + 1) * INT_SIZE_IN_BYTES);
-            if (isDebug) {
-                System.out.println("DEBUG READ " + schema.getTypeName() + "  "
-                        + fieldName + " pos " + pos + " with offset " + pos + offset);
-            }
             return pos == NULL_POSITION ? NULL_POSITION : pos + offset;
         } catch (IOException e) {
             throw illegalStateException(e);
@@ -517,8 +500,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
             int booleanOffsetInBytes = index == 0 ? 0 : (index / Byte.SIZE);
             int booleanOffsetWithinLastByte = index % Byte.SIZE;
             byte b = in.readByte(INT_SIZE_IN_BYTES + position + booleanOffsetInBytes);
-            boolean result = ((b >>> booleanOffsetWithinLastByte) & 1) != 0;
-            return result;
+            return ((b >>> booleanOffsetWithinLastByte) & 1) != 0;
         } catch (IOException e) {
             throw illegalStateException(e);
         } finally {
@@ -569,7 +551,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
 
     @Override
     public String getStringFromArray(@Nonnull String fieldName, int index) {
-        return getVarSizeFromArray(fieldName, UTF_ARRAY, BufferObjectDataInput::readUTF, index);
+        return getVarSizeFromArray(fieldName, UTF_ARRAY, BufferObjectDataInput::readString, index);
     }
 
     @Override
