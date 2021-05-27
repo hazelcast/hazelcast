@@ -123,9 +123,7 @@ public final class HazelcastCastFunction extends HazelcastFunction {
         public void inferOperandTypes(SqlCallBinding binding, RelDataType returnType, RelDataType[] operandTypes) {
             RelDataType operandType = binding.getOperandType(0);
 
-            // Calcite use SqlTypeName.NULL for both NULL and dynamic parameters.
-            // Both types very similar except results of #toString call
-            if (operandType.getSqlTypeName() == SqlTypeName.NULL && "UNKNOWN".equals(operandType.toString())) {
+            if (operandType.getSqlTypeName() == SqlTypeName.NULL) {
                 operandType = binding.getTypeFactory().createSqlType(SqlTypeName.ANY);
             }
 
