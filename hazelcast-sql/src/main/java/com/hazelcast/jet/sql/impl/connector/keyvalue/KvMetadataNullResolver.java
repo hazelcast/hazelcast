@@ -45,12 +45,12 @@ public class KvMetadataNullResolver implements KvMetadataResolver {
     public static final KvMetadataNullResolver INSTANCE = new KvMetadataNullResolver();
 
     @Override
-    public List<MappingField> resolveAndValidateFields(
+    public Stream<MappingField> resolveAndValidateFields(
             boolean isKey, List<MappingField> userFields,
             Map<String, String> options,
             InternalSerializationService serializationService
     ) {
-        return emptyList();
+        return Stream.empty();
     }
 
     @Override

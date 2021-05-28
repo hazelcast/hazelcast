@@ -78,11 +78,11 @@ public class OperationLossTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void when_initExecutionOperationLost_then_jobRestarts_lightJob() {
+    public void when_initExecutionOperationLost_then_initRetried_lightJob() {
         PacketFiltersUtil.dropOperationsFrom(instance().getHazelcastInstance(), JetInitDataSerializerHook.FACTORY_ID,
                 singletonList(JetInitDataSerializerHook.INIT_EXECUTION_OP));
         DAG dag = new DAG();
-        Vertex v1 = dag.newVertex("v1", () -> new MockP().streaming());
+        Vertex v1 = dag.newVertex("v1", () -> new NoOutputSourceP());
         Vertex v2 = dag.newVertex("v2", mapP(identity())).localParallelism(1);
         dag.edge(between(v1, v2).distributed());
 
@@ -92,7 +92,7 @@ public class OperationLossTest extends SimpleTestInClusterSupport {
                 .<JetService>getService(JetService.SERVICE_NAME)
                 .getJobExecutionService();
         // assert that the execution doesn't start on the 2nd member. For light jobs, jobId == executionId
-        assertTrueAllTheTime(() -> assertNull(jobExecutionService.getExecutionContext(job.getId())), 2);
+        assertTrueAllTheTime(() -> assertNull(jobExecutionService.getExecutionContext(job.getId())), 1);
 
         // now allow the job to complete normally
         PacketFiltersUtil.resetPacketFiltersFrom(instance().getHazelcastInstance());
@@ -101,7 +101,7 @@ public class OperationLossTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void when_initExecutionOperationLost_then_jobRestarts_normalJob() {
+    public void when_initExecutionOperationLost_then_initOpRetried_normalJob() {
         when_operationLost_then_jobRestarts(JetInitDataSerializerHook.INIT_EXECUTION_OP, STARTING);
     }
 

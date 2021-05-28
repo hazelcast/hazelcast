@@ -63,8 +63,6 @@ import static com.hazelcast.jet.sql.impl.validate.ValidatorResource.RESOURCE;
 @SuppressWarnings("checkstyle:ExecutableStatementCount")
 public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
 
-    public static final UnsupportedOperationVisitor INSTANCE = new UnsupportedOperationVisitor();
-
     /**
      * A set of {@link SqlKind} values that are supported without any additional validation.
      */
@@ -210,8 +208,8 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_OPERATORS.add(JetSqlOperatorTable.PARQUET_FILE);
     }
 
-    private UnsupportedOperationVisitor() {
-    }
+    // The top level select is used to filter out nested selects with FETCH/OFFSET
+    private SqlSelect topLevelSelect;
 
     @Override
     public Void visit(SqlCall call) {
@@ -345,6 +343,9 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
                 processOtherDdl(call);
                 break;
 
+            case DELETE:
+                break;
+
             default:
                 throw unsupported(call, kind);
         }
@@ -353,6 +354,15 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
     private void processSelect(SqlSelect select) {
         if (select.getOffset() != null) {
             throw unsupported(select.getOffset(), "OFFSET");
+        }
+
+        if (topLevelSelect == null) {
+            topLevelSelect = select;
+        } else {
+            // Check for nested fetch offset
+            if (select.getFetch() != null || select.getOffset() != null) {
+                throw error(select, "FETCH/OFFSET is only supported for the top-level SELECT");
+            }
         }
     }
 
@@ -397,7 +407,11 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         return error(node, ValidatorResource.RESOURCE.notSupported(name));
     }
 
-    private CalciteContextException error(SqlNode node, ExInst<SqlValidatorException> error) {
+    private static CalciteContextException error(SqlNode node, ExInst<SqlValidatorException> error) {
         return SqlUtil.newContextException(node.getParserPosition(), error);
+    }
+
+    public static CalciteContextException error(SqlNode node, String name) {
+        return error(node, RESOURCE.error(name));
     }
 }

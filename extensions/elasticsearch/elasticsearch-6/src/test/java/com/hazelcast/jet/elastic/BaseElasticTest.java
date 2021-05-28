@@ -17,6 +17,7 @@
 package com.hazelcast.jet.elastic;
 
 import com.hazelcast.collection.IList;
+import com.hazelcast.config.Config;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
@@ -53,6 +54,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.google.common.collect.ImmutableMap.of;
+import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 import static org.assertj.core.util.Lists.newArrayList;
@@ -257,5 +259,11 @@ public abstract class BaseElasticTest {
         }
 
         return jet.newJob(p, config);
+    }
+
+    protected static Config config() {
+        Config config = smallInstanceConfig();
+        config.getJetConfig().setResourceUploadEnabled(true);
+        return config;
     }
 }

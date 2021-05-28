@@ -136,11 +136,6 @@ public class TestAllTypesSqlConnector implements SqlConnector {
         return new TestAllTypesTable(this, schemaName, mappingName);
     }
 
-    @Override
-    public boolean supportsFullScanReader() {
-        return true;
-    }
-
     @Nonnull @Override
     public Vertex fullScanReader(
             @Nonnull DAG dag,

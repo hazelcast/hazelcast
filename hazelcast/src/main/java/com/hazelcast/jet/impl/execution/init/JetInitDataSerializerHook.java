@@ -28,7 +28,6 @@ import com.hazelcast.jet.impl.JobSummary;
 import com.hazelcast.jet.impl.JobSuspensionCauseImpl;
 import com.hazelcast.jet.impl.SnapshotValidationRecord;
 import com.hazelcast.jet.impl.connector.WriteFileP;
-import com.hazelcast.jet.impl.operation.CancelLightJobOperation;
 import com.hazelcast.jet.impl.operation.CheckLightJobsOperation;
 import com.hazelcast.jet.impl.operation.GetJobConfigOperation;
 import com.hazelcast.jet.impl.operation.GetJobIdsByNameOperation;
@@ -49,7 +48,6 @@ import com.hazelcast.jet.impl.operation.SnapshotPhase1Operation.SnapshotPhase1Re
 import com.hazelcast.jet.impl.operation.SnapshotPhase2Operation;
 import com.hazelcast.jet.impl.operation.StartExecutionOperation;
 import com.hazelcast.jet.impl.operation.SubmitJobOperation;
-import com.hazelcast.jet.impl.operation.SubmitLightJobOperation;
 import com.hazelcast.jet.impl.operation.TerminateExecutionOperation;
 import com.hazelcast.jet.impl.operation.TerminateJobOperation;
 import com.hazelcast.jet.impl.processor.NoopP;
@@ -105,11 +103,9 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
     public static final int WRITE_FILE_P_FILE_ID = 42;
     public static final int JOB_SUSPENSION_CAUSE = 43;
     public static final int GET_JOB_SUSPENSION_CAUSE_OP = 44;
-    public static final int SUBMIT_LIGHT_JOB_OP = 45;
-    public static final int CANCEL_LIGHT_JOB_OP = 46;
-    public static final int PROCESSOR_SUPPLIER_FROM_SIMPLE_SUPPLIER = 47;
-    public static final int NOOP_PROCESSOR_SUPPLIER = 48;
-    public static final int CHECK_LIGHT_JOBS_OP = 49;
+    public static final int PROCESSOR_SUPPLIER_FROM_SIMPLE_SUPPLIER = 45;
+    public static final int NOOP_PROCESSOR_SUPPLIER = 46;
+    public static final int CHECK_LIGHT_JOBS_OP = 47;
 
     public static final int FACTORY_ID = FactoryIdHelper.getFactoryId(JET_IMPL_DS_FACTORY, JET_IMPL_DS_FACTORY_ID);
 
@@ -204,10 +200,6 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
                     return new JobSuspensionCauseImpl();
                 case GET_JOB_SUSPENSION_CAUSE_OP:
                     return new GetJobSuspensionCauseOperation();
-                case SUBMIT_LIGHT_JOB_OP:
-                    return new SubmitLightJobOperation();
-                case CANCEL_LIGHT_JOB_OP:
-                    return new CancelLightJobOperation();
                 case PROCESSOR_SUPPLIER_FROM_SIMPLE_SUPPLIER:
                     return new ProcessorSupplierFromSimpleSupplier();
                 case NOOP_PROCESSOR_SUPPLIER:

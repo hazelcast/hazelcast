@@ -1,0 +1,110 @@
+{
+  "instance": {
+    "hazelcast-client": {
+      "security": {
+        "username-password": {
+          "username": "me",
+          "password": "secret"
+        },
+        "realms": [
+          {
+            "name": "mr",
+            "authentication": {
+              "jaas": [
+                {
+                  "class-name": "com.hazelcast.examples.MyRequiredLoginModule",
+                  "usage": "REQUIRED",
+                  "properties": {
+                    "property": "value"
+                  }
+                }
+              ]
+            },
+            "identity": {
+              "credentials-factory": {
+                "class-name": "com.hazelcast.examples.MyCredentialsFactory",
+                "properties": {
+                  "property": "value"
+                }
+              }
+            }
+          },
+          {
+            "name": "cr",
+            "authentication": {
+              "jaas": [
+                {
+                  "class-name": "com.hazelcast.examples.MyOptionalLoginModule",
+                  "usage": "OPTIONAL",
+                  "properties": {
+                    "property": "value"
+                  }
+                },
+                {
+                  "class-name": "com.hazelcast.examples.MyRequiredLoginModule",
+                  "usage": "REQUIRED",
+                  "properties": {
+                    "property": "value"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "name": "ldapRealm",
+            "authentication": {
+              "ldap": {
+                "url": "ldap://ldap.my-company.example",
+                "socket-factory-class-name": "socketFactoryClassName",
+                "parse-dn": true,
+                "role-context": "roleContext",
+                "role-filter": "roleFilter",
+                "role-mapping-attribute": "roleMappingAttribute",
+                "role-mapping-mode": "reverse",
+                "role-name-attribute": "roleNameAttribute",
+                "role-recursion-max-depth": 25,
+                "role-search-scope": "object",
+                "user-name-attribute": "userNameAttribute",
+                "system-user-dn": "systemUserDn",
+                "system-user-password": "systemUserPassword",
+                "password-attribute": "passwordAttribute",
+                "user-context": "userContext",
+                "user-filter": "userFilter",
+                "user-search-scope": "one-level",
+                "security-realm": "realmName",
+                "system-authentication": "simple"
+              }
+            }
+          },
+          {
+            "name": "tlsRealm",
+            "authentication": {
+              "tls": {
+                "roleAttribute": "cn"
+              }
+            }
+          },
+          {
+            "name": "usernamePasswordIdentityRealm",
+            "identity": {
+              "username-password": {
+                "username": "user",
+                "password": "Hazelcast"
+              }
+            }
+          },
+          {
+            "name": "tokenIdentityRealm",
+            "identity": {
+              "token": {
+                "encoding": "base64",
+                "value": "SGF6ZWxjYXN0"
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "error": null
+}
