@@ -34,33 +34,24 @@ import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils.t
  * A type inference algorithm that infers unknown operands to the type of
  * the operand with a known type with highest precedence.
  */
-public final class UnknownFromKnownOperandTypeInference implements SqlOperandTypeInference {
+public final class CoalesceOperandTypeInference implements SqlOperandTypeInference {
 
-    public static final UnknownFromKnownOperandTypeInference BINARY_INSTANCE =
-            new UnknownFromKnownOperandTypeInference(2);
-    public static final UnknownFromKnownOperandTypeInference VARIADIC_INSTANCE =
-            new UnknownFromKnownOperandTypeInference(Integer.MAX_VALUE);
+    public static final CoalesceOperandTypeInference INSTANCE = new CoalesceOperandTypeInference();
 
-    private final int maxOperandCount;
-
-    private UnknownFromKnownOperandTypeInference(int maxOperandCount) {
-        if (maxOperandCount < 2) {
-            throw new IllegalArgumentException("Usable for at least 2 operands");
-        }
-        this.maxOperandCount = maxOperandCount;
+    private CoalesceOperandTypeInference() {
     }
 
     @Override
     @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
     public void inferOperandTypes(SqlCallBinding binding, RelDataType returnType, RelDataType[] operandTypes) {
-        assert operandTypes.length <= maxOperandCount;
+        assert operandTypes.length > 0;
         assert binding.getOperandCount() == operandTypes.length;
 
         boolean hasParameters = binding.operands().stream().anyMatch((operand) -> operand.getKind() == SqlKind.DYNAMIC_PARAM);
 
         List<Integer> unknownOperandIndexes = new ArrayList<>();
         RelDataType knownType = null;
-        int knownTypePrecedence = Integer.MIN_VALUE;
+        int knownTypePrecedence = Integer.MAX_VALUE;
 
         for (int i = 0; i < binding.getOperandCount(); i++) {
             operandTypes[i] = binding.getOperandType(i);
@@ -80,13 +71,11 @@ public final class UnknownFromKnownOperandTypeInference implements SqlOperandTyp
                 }
 
                 int precedence = precedenceOf(operandTypes[i]);
-                if (knownType == null || knownType.getSqlTypeName() == SqlTypeName.NULL || knownTypePrecedence > precedence) {
-                    if (operandTypes[i].getSqlTypeName() == SqlTypeName.NULL) {
-                        unknownOperandIndexes.add(i);
-                    } else {
-                        knownType = operandTypes[i];
-                        knownTypePrecedence = precedence;
-                    }
+                if (knownType == null
+                        && knownTypePrecedence > precedence
+                        && operandTypes[i].getSqlTypeName() != SqlTypeName.NULL) {
+                    knownType = operandTypes[i];
+                    knownTypePrecedence = precedence;
                 }
             } else {
                 unknownOperandIndexes.add(i);
@@ -97,14 +86,6 @@ public final class UnknownFromKnownOperandTypeInference implements SqlOperandTyp
         // since we cannot deduce the return type. [NULL, NULL] is ok.
         if (knownType == null || knownType.getSqlTypeName() == SqlTypeName.NULL && hasParameters) {
             throw new HazelcastCallBinding(binding).newValidationSignatureError();
-        }
-
-        boolean isBinaryOperator = maxOperandCount == 2;
-        if (isBinaryOperator && SqlTypeName.INTERVAL_TYPES.contains(knownType.getSqlTypeName())
-                && operandTypes[unknownOperandIndexes.get(0)].getSqlTypeName() == SqlTypeName.NULL) {
-            // If there is an interval on one side and NULL on the other, assume that the other side is a TIMESTAMP,
-            // because this is currently the only viable overload for binary operators.
-            knownType = createType(binding.getTypeFactory(), SqlTypeName.TIMESTAMP, true);
         }
 
         for (Integer index : unknownOperandIndexes) {

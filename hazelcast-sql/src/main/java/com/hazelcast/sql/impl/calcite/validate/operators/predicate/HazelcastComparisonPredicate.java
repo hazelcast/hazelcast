@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators.predicate;
 
-import com.hazelcast.sql.impl.calcite.validate.operators.UnknownFromKnownOperandTypeInference;
+import com.hazelcast.sql.impl.calcite.validate.operators.BinaryOperatorOperandTypeInference;
 import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastBinaryOperator;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
 import org.apache.calcite.sql.SqlBinaryOperator;
@@ -58,7 +58,7 @@ public final class HazelcastComparisonPredicate extends HazelcastBinaryOperator 
                 base.getLeftPrec(),
                 true,
                 ReturnTypes.BOOLEAN_NULLABLE,
-                UnknownFromKnownOperandTypeInference.BINARY_INSTANCE
+                BinaryOperatorOperandTypeInference.INSTANCE
         );
     }
 
