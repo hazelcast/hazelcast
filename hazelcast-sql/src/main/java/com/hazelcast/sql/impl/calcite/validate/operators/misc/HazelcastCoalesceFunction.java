@@ -17,13 +17,11 @@
 package com.hazelcast.sql.impl.calcite.validate.operators.misc;
 
 import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
-import com.hazelcast.sql.impl.calcite.validate.HazelcastResources;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.calcite.validate.operators.CoalesceOperandTypeInference;
 import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastFunction;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.runtime.CalciteContextException;
 import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlKind;
@@ -35,10 +33,9 @@ import org.apache.calcite.sql.validate.SqlValidatorScope;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Supplier;
 
+import static com.hazelcast.sql.impl.calcite.validate.HazelcastResources.RESOURCES;
 import static com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference.wrap;
-import static com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastCaseOperator.coerceItem;
 
 public final class HazelcastCoalesceFunction extends HazelcastFunction {
     public static final HazelcastCoalesceFunction INSTANCE = new HazelcastCoalesceFunction();
@@ -70,25 +67,23 @@ public final class HazelcastCoalesceFunction extends HazelcastFunction {
             argTypes.add(validator.deriveType(scope, node));
         }
 
-        //noinspection OptionalGetWithoutIsPresent
+        assert !argTypes.isEmpty();
         RelDataType returnType = argTypes.stream().reduce(HazelcastTypeUtils::withHigherPrecedence).get();
-
-        Supplier<CalciteContextException> exceptionSupplier = () ->
-                validator.newValidationError(
-                        sqlCall, HazelcastResources.RESOURCES.cannotInferCaseResult(argTypes.toString(), "COALESCE"));
 
         for (int i = 0; i < operandList.size(); i++) {
             int finalI = i;
-            if (!coerceItem(
-                    validator,
+            boolean elementTypeCoerced = validator.getTypeCoercion().rowTypeElementCoercion(
                     scope,
                     operandList.get(i),
                     returnType,
-                    sqlNode -> sqlCall.getOperands()[finalI] = sqlNode,
-                    throwOnFailure,
-                    exceptionSupplier)
-            ) {
-                return false;
+                    sqlNode -> sqlCall.getOperands()[finalI] = sqlNode);
+
+            if (!elementTypeCoerced) {
+                if (throwOnFailure) {
+                    throw validator.newValidationError(sqlCall, RESOURCES.cannotInferCaseResult(argTypes.toString(), getName()));
+                } else {
+                    return false;
+                }
             }
         }
 

@@ -141,7 +141,7 @@ public final class HazelcastCaseOperator extends SqlOperator {
                 exceptionSupplier);
     }
 
-    static boolean coerceItem(
+    private boolean coerceItem(
             HazelcastSqlValidator validator,
             SqlValidatorScope scope,
             SqlNode item,

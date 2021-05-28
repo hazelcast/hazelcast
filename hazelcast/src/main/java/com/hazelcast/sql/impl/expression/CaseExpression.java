@@ -56,9 +56,9 @@ public class CaseExpression<T> implements Expression<T>, IdentifiedDataSerializa
         );
     }
 
-    @SuppressWarnings("unchecked")
     public static <T> CaseExpression<T> coalesce(Expression<?>... operands) {
         int branchesSize = operands.length - 1;
+        @SuppressWarnings("unchecked")
         Expression<Boolean>[] whenExpressions = new Expression[branchesSize];
         Expression<?>[] thenExpressions = new Expression[branchesSize];
         for (int i = 0; i < branchesSize; i++) {
