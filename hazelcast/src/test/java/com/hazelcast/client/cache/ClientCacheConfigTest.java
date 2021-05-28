@@ -47,6 +47,7 @@ import java.util.Properties;
 
 import static com.hazelcast.cache.CacheTestSupport.createClientCachingProvider;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
+import static com.hazelcast.test.TestEnvironment.isSolaris;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 

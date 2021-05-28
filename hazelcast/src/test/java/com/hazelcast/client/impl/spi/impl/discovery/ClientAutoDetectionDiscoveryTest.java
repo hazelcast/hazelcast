@@ -30,6 +30,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.test.TestEnvironment.isSolaris;
+
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class ClientAutoDetectionDiscoveryTest extends HazelcastTestSupport {
