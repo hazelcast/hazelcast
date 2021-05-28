@@ -21,6 +21,7 @@ import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import org.junit.Test;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -30,6 +31,7 @@ import java.time.ZoneOffset;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 
 public class NullIfFunctionIntegrationTest extends ExpressionTestSupport {
+
     @Test
     public void equalParameters() {
         put(1);
@@ -64,6 +66,13 @@ public class NullIfFunctionIntegrationTest extends ExpressionTestSupport {
         checkValue0("select nullif(this, CAST(1 as REAL)) from map", SqlColumnType.REAL, null);
         checkValue0("select nullif(this, CAST(1 as DOUBLE PRECISION)) from map", SqlColumnType.DOUBLE, null);
         checkValue0("select nullif(this, CAST(1 as DECIMAL)) from map", SqlColumnType.DECIMAL, null);
+
+        checkValue0("select nullif(this, 2) from map", SqlColumnType.INTEGER, 1);
+        checkValue0("select nullif(this, CAST(2 as SMALLINT)) from map", SqlColumnType.INTEGER, 1);
+        checkValue0("select nullif(this, CAST(2 as BIGINT)) from map", SqlColumnType.BIGINT, 1L);
+        checkValue0("select nullif(this, CAST(2 as REAL)) from map", SqlColumnType.REAL, 1f);
+        checkValue0("select nullif(this, CAST(2 as DOUBLE PRECISION)) from map", SqlColumnType.DOUBLE, 1d);
+        checkValue0("select nullif(this, CAST(2 as DECIMAL)) from map", SqlColumnType.DECIMAL, BigDecimal.ONE);
     }
 
     @Test

@@ -34,6 +34,8 @@ public class CoalesceFunctionIntegrationTest extends ExpressionTestSupport {
     public void coalesce() {
         put(1);
 
+        checkValue0("select coalesce(null) from map", SqlColumnType.NULL, null);
+        checkValue0("select coalesce(null, null) from map", SqlColumnType.NULL, null);
         checkValue0("select coalesce(this, 2) from map", SqlColumnType.INTEGER, 1);
         checkValue0("select coalesce(null, this, 2) from map", SqlColumnType.INTEGER, 1);
         checkValue0("select coalesce(null, 2, this) from map", SqlColumnType.INTEGER, 2);
@@ -44,8 +46,9 @@ public class CoalesceFunctionIntegrationTest extends ExpressionTestSupport {
     @Test
     public void fails_whenReturnTypeCantBeInferred() {
         put(1);
+        checkFailure0("select coalesce() from map", SqlErrorCode.PARSING, "Invalid number of arguments to function 'COALESCE'. Was expecting 1 arguments");
         checkFailure0("select coalesce(?) from map", SqlErrorCode.PARSING, "Cannot apply 'COALESCE' function to [UNKNOWN] (consider adding an explicit CAST)");
-        checkFailure0("select coalesce(null) from map", SqlErrorCode.PARSING, "Cannot apply 'COALESCE' function to [UNKNOWN] (consider adding an explicit CAST)");
+        checkFailure0("select coalesce(?, ?) from map", SqlErrorCode.PARSING, "Cannot apply 'COALESCE' function to [UNKNOWN] (consider adding an explicit CAST)");
     }
 
     @Test
@@ -53,6 +56,7 @@ public class CoalesceFunctionIntegrationTest extends ExpressionTestSupport {
         put(1);
 
         checkValue0("select coalesce(this, CAST(null as BIGINT)) from map", SqlColumnType.BIGINT, 1L);
+        checkValue0("select coalesce(null, this, 1234567890123) from map", SqlColumnType.BIGINT, 1L);
     }
 
     @Test

@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators;
 
+import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.type.SqlOperandTypeInference;
@@ -24,7 +26,9 @@ import org.apache.calcite.sql.type.SqlTypeName;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils.createType;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils.precedenceOf;
+import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils.toHazelcastType;
 
 /**
  * A type inference algorithm that infers unknown operands to the type of
@@ -39,25 +43,31 @@ public final class CoalesceOperandTypeInference implements SqlOperandTypeInferen
 
     @Override
     public void inferOperandTypes(SqlCallBinding binding, RelDataType returnType, RelDataType[] operandTypes) {
-        assert operandTypes.length > 0;
+        if (operandTypes.length == 0) {
+            // will be handled later
+            return;
+        }
         assert binding.getOperandCount() == operandTypes.length;
 
-        boolean hasParameters = BinaryOperatorOperandTypeInference.hasParameters(binding);
+        boolean hasParameters = HazelcastTypeUtils.hasParameters(binding);
 
         List<Integer> unknownOperandIndexes = new ArrayList<>();
         RelDataType knownType = null;
-        int knownTypePrecedence = Integer.MAX_VALUE;
+        int knownTypePrecedence = Integer.MIN_VALUE;
 
         for (int i = 0; i < binding.getOperandCount(); i++) {
             operandTypes[i] = binding.getOperandType(i);
 
             if (!operandTypes[i].equals(binding.getValidator().getUnknownType())) {
-                BinaryOperatorOperandTypeInference.castToBigIntIfNumeric(binding, operandTypes, hasParameters, i);
+                if (hasParameters && toHazelcastType(operandTypes[i].getSqlTypeName()).getTypeFamily().isNumericInteger()) {
+                    // If there are parameters in the operands, widen all the integers to BIGINT so that an expression
+                    // `COALESCE(1, ?)` is resolved to `COALESCE((BIGINT)1, (BIGINT)?)` rather than
+                    // `COALESCE((TINYINT)1, (TINYINT)?)`
+                    operandTypes[i] = createType(binding.getTypeFactory(), SqlTypeName.BIGINT, operandTypes[i].isNullable());
+                }
 
                 int precedence = precedenceOf(operandTypes[i]);
-                if (knownType == null
-                        && knownTypePrecedence > precedence
-                        && operandTypes[i].getSqlTypeName() != SqlTypeName.NULL) {
+                if (knownTypePrecedence < precedence) {
                     knownType = operandTypes[i];
                     knownTypePrecedence = precedence;
                 }
@@ -66,7 +76,11 @@ public final class CoalesceOperandTypeInference implements SqlOperandTypeInferen
             }
         }
 
-        BinaryOperatorOperandTypeInference.throwErrorIfTypeCanNotBeDeduced(binding, knownType, hasParameters);
+        // If we have only  UNKNOWN operands or a combination of NULL and UNKNOWN, throw a signature error,
+        // since we cannot deduce the return type
+        if (knownType == null || knownType.getSqlTypeName() == SqlTypeName.NULL && hasParameters) {
+            throw new HazelcastCallBinding(binding).newValidationSignatureError();
+        }
 
         for (Integer index : unknownOperandIndexes) {
             operandTypes[index] = knownType;
