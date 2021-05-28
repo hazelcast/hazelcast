@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl.schema;
 
 import com.hazelcast.jet.sql.SqlTestSupport;
-import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
 import com.hazelcast.jet.sql.impl.schema.model.IdentifiedPerson;
 import com.hazelcast.jet.sql.impl.schema.model.Person;
 import com.hazelcast.sql.HazelcastSqlException;
@@ -166,10 +165,10 @@ public class SqlMappingTest extends SqlTestSupport {
 
     @Test
     public void test_caseInsensitiveType() {
-        TestBatchSqlConnector.create(sqlService, "TestBatch", 1);
-        TestBatchSqlConnector.create(sqlService, "testbatch", 1);
-        TestBatchSqlConnector.create(sqlService, "TESTBATCH", 1);
-        TestBatchSqlConnector.create(sqlService, "tEsTbAtCh", 1);
+        sqlService.execute("CREATE MAPPING t1 TYPE AllTypes");
+        sqlService.execute("CREATE MAPPING t2 TYPE alltypes");
+        sqlService.execute("CREATE MAPPING t3 TYPE ALLTYPES");
+        sqlService.execute("CREATE MAPPING t4 TYPE aLlTyPeS");
     }
 
     @Test
