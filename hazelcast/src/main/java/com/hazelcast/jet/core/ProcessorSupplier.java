@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.config.JobConfig;
@@ -152,5 +153,15 @@ public interface ProcessorSupplier extends Serializable {
          */
         @Nonnull
         ManagedContext managedContext();
+
+        /**
+         * Returns the partitions from {@link #partitionAssignment()} pertaining to
+         * this member. The returned list can be empty.
+         */
+        @Nonnull
+        default int[] memberPartitions() {
+            Address address = jetInstance().getCluster().getLocalMember().getAddress();
+            return partitionAssignment().get(address);
+        }
     }
 }
