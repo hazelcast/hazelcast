@@ -26,6 +26,7 @@ import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -46,6 +47,7 @@ import java.util.Properties;
 
 import static com.hazelcast.cache.CacheTestSupport.createClientCachingProvider;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
+import static com.hazelcast.test.TestEnvironment.isSolaris;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -171,6 +173,9 @@ public class ClientCacheConfigTest extends HazelcastTestSupport {
 
         try {
             Config config = new Config();
+            if (isSolaris()) {
+                config.setProperty(ClusterProperty.MULTICAST_SOCKET_SET_INTERFACE.getName(), "false");
+            }
             CacheSimpleConfig cacheSimpleConfig = new CacheSimpleConfig()
                     .setName(CACHE_NAME)
                     .setBackupCount(1); // Be sure that cache put operation is mirrored to backup node
