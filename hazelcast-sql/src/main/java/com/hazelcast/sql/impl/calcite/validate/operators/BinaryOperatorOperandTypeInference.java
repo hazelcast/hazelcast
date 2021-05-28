@@ -39,7 +39,7 @@ public final class BinaryOperatorOperandTypeInference implements SqlOperandTypeI
         assert operandTypes.length == 2;
         assert binding.getOperandCount() == 2;
 
-        boolean hasParameters = binding.operands().stream().anyMatch((operand) -> operand.getKind() == SqlKind.DYNAMIC_PARAM);
+        boolean hasParameters = hasParameters(binding);
 
         int knownTypeOperandIndex = -1;
         RelDataType knownType = null;
@@ -48,18 +48,7 @@ public final class BinaryOperatorOperandTypeInference implements SqlOperandTypeI
             operandTypes[i] = binding.getOperandType(i);
 
             if (!operandTypes[i].equals(binding.getValidator().getUnknownType())) {
-                if (hasParameters && toHazelcastType(operandTypes[i].getSqlTypeName()).getTypeFamily().isNumericInteger()) {
-                    // If we are here, the operands are a parameter and a numeric expression.
-                    // We widen the type of the numeric expression to BIGINT, so that an expression `1 > ?` is resolved to
-                    // `(BIGINT)1 > (BIGINT)?` rather than `(TINYINT)1 > (TINYINT)?`
-                    RelDataType newOperandType = createType(
-                            binding.getTypeFactory(),
-                            SqlTypeName.BIGINT,
-                            operandTypes[i].isNullable()
-                    );
-
-                    operandTypes[i] = newOperandType;
-                }
+                castToBigIntIfNumeric(binding, operandTypes, hasParameters, i);
 
                 if (knownType == null || knownType.getSqlTypeName() == SqlTypeName.NULL) {
                     knownType = operandTypes[i];
@@ -68,11 +57,7 @@ public final class BinaryOperatorOperandTypeInference implements SqlOperandTypeI
             }
         }
 
-        // If we have [UNKNOWN, UNKNOWN] or [NULL, UNKNOWN] operands, throw a signature error,
-        // since we cannot deduce the return type
-        if (knownType == null || knownType.getSqlTypeName() == SqlTypeName.NULL && hasParameters) {
-            throw new HazelcastCallBinding(binding).newValidationSignatureError();
-        }
+        throwErrorIfTypeCanNotBeDeduced(binding, knownType, hasParameters);
 
         if (SqlTypeName.INTERVAL_TYPES.contains(knownType.getSqlTypeName())
                 && operandTypes[1 - knownTypeOperandIndex].getSqlTypeName() == SqlTypeName.NULL) {
@@ -81,6 +66,33 @@ public final class BinaryOperatorOperandTypeInference implements SqlOperandTypeI
             operandTypes[1 - knownTypeOperandIndex] = createType(binding.getTypeFactory(), SqlTypeName.TIMESTAMP, true);
         } else {
             operandTypes[1 - knownTypeOperandIndex] = knownType;
+        }
+    }
+
+    static boolean hasParameters(SqlCallBinding binding) {
+        return binding.operands().stream().anyMatch((operand) -> operand.getKind() == SqlKind.DYNAMIC_PARAM);
+    }
+
+    static void throwErrorIfTypeCanNotBeDeduced(SqlCallBinding binding, RelDataType knownType, boolean hasParameters) {
+        // If we have [UNKNOWN, UNKNOWN] or [NULL, UNKNOWN] operands, throw a signature error,
+        // since we cannot deduce the return type
+        if (knownType == null || knownType.getSqlTypeName() == SqlTypeName.NULL && hasParameters) {
+            throw new HazelcastCallBinding(binding).newValidationSignatureError();
+        }
+    }
+
+    static void castToBigIntIfNumeric(SqlCallBinding binding, RelDataType[] operandTypes, boolean hasParameters, int i) {
+        if (hasParameters && toHazelcastType(operandTypes[i].getSqlTypeName()).getTypeFamily().isNumericInteger()) {
+            // If we are here, the operands are a parameter and a numeric expression.
+            // We widen the type of the numeric expression to BIGINT, so that an expression `1 > ?` is resolved to
+            // `(BIGINT)1 > (BIGINT)?` rather than `(TINYINT)1 > (TINYINT)?`
+            RelDataType newOperandType = createType(
+                    binding.getTypeFactory(),
+                    SqlTypeName.BIGINT,
+                    operandTypes[i].isNullable()
+            );
+
+            operandTypes[i] = newOperandType;
         }
     }
 }
