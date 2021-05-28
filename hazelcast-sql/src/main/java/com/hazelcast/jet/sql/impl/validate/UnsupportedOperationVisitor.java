@@ -270,6 +270,10 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
     public Void visit(SqlLiteral literal) {
         SqlTypeName typeName = literal.getTypeName();
 
+        if (HazelcastTypeUtils.isIntervalType(typeName)) {
+            return null;
+        }
+
         switch (typeName) {
             case BOOLEAN:
             case TINYINT:
@@ -284,6 +288,10 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
                 // string literals to be of CHAR type, not VARCHAR. Validated type
                 // of string literals is still VARCHAR in HazelcastSqlValidator.
             case CHAR:
+            case TIMESTAMP:
+            case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
+            case DATE:
+            case TIME:
             case ANY:
             case NULL:
                 return null;
