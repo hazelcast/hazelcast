@@ -201,6 +201,8 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int EXPRESSION_EXTRACT = 72;
 
     public static final int MAP_SCAN_METADATA = 73;
+//    Reserved
+//    public static final int MAP_INDEX_SCAN_METADATA = 74;
 
     public static final int LEN = MAP_SCAN_METADATA + 1;
 
@@ -294,7 +296,6 @@ public class SqlDataSerializerHook implements DataSerializerHook {
 
         constructors[EXPRESSION_EXTRACT] = arg -> new ExtractFunction();
 
-        constructors[MAP_SCAN_METADATA] = arg -> new MapScanMetadata();
         constructors[NODE_RECEIVE_MERGE_SORT] = arg -> new ReceiveSortMergePlanNode();
         constructors[NODE_FETCH] = arg -> new FetchPlanNode();
 
@@ -307,6 +308,8 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[INTERVAL_DAY_SECOND] = arg -> new SqlDaySecondInterval();
 
         constructors[EXPRESSION_CASE] = arg -> new CaseExpression<>();
+
+        constructors[MAP_SCAN_METADATA] = arg -> new MapScanMetadata();
 
         return new ArrayDataSerializableFactory(constructors);
     }

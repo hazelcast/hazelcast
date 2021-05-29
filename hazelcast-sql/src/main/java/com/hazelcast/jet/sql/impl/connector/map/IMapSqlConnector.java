@@ -21,7 +21,6 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadata;
@@ -38,6 +37,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
+import com.hazelcast.sql.impl.plan.node.MapScanMetadata;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
@@ -87,7 +87,8 @@ public class IMapSqlConnector implements SqlConnector {
         return false;
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull Map<String, String> options,
@@ -96,7 +97,8 @@ public class IMapSqlConnector implements SqlConnector {
         return METADATA_RESOLVERS.resolveAndValidateFields(userFields, options, nodeEngine);
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
@@ -134,38 +136,30 @@ public class IMapSqlConnector implements SqlConnector {
         );
     }
 
-    @Nonnull @Override
+
+    @Nonnull
+    @Override
     public Vertex fullScanReader(
             @Nonnull DAG dag,
             @Nonnull Table table0,
-            @Nullable Expression<Boolean> predicate,
-            @Nonnull List<Expression<?>> projections
-    ) {
+            @Nullable Expression<Boolean> filter,
+            @Nonnull List<Expression<?>> projection) {
         PartitionedMapTable table = (PartitionedMapTable) table0;
+        MapScanMetadata mapScanMetadata = new MapScanMetadata(
+                table.getMapName(),
+                table.getKeyDescriptor(),
+                table.getValueDescriptor(),
+                table.fieldPaths(),
+                table.types(),
+                projection,
+                filter
+        );
 
-        List<TableField> fields = table.getFields();
-        QueryPath[] paths = fields.stream().map(field -> ((MapTableField) field).getPath()).toArray(QueryPath[]::new);
-        QueryDataType[] types = fields.stream().map(TableField::getType).toArray(QueryDataType[]::new);
-
-        Vertex vStart = dag.newUniqueVertex(
-                toString(table),
-                SourceProcessors.readMapP(table.getMapName()));
-
-        Vertex vEnd = dag.newUniqueVertex(
-                "Project(" + toString(table) + ")",
-                KvProcessors.rowProjector(
-                        paths,
-                        types,
-                        table.getKeyDescriptor(),
-                        table.getValueDescriptor(),
-                        predicate,
-                        projections));
-
-        dag.edge(between(vStart, vEnd).isolated());
-        return vEnd;
+        return dag.newUniqueVertex(table.toString(), OnHeapMapScanP.onHeapMapScanP(mapScanMetadata));
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public VertexWithInputConfig nestedLoopReader(
             @Nonnull DAG dag,
             @Nonnull Table table0,
@@ -193,7 +187,8 @@ public class IMapSqlConnector implements SqlConnector {
         return true;
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public Vertex sink(
             @Nonnull DAG dag,
             @Nonnull Table table0
@@ -223,12 +218,14 @@ public class IMapSqlConnector implements SqlConnector {
         return vStart;
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public SqlNodeList getPrimaryKey(Table table0) {
         return KEY_NODE_LIST;
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public Vertex deleteProcessor(@Nonnull DAG dag, @Nonnull Table table0) {
         PartitionedMapTable table = (PartitionedMapTable) table0;
 
