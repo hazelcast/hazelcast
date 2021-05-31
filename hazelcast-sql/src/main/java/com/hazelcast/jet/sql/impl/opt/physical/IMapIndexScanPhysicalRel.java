@@ -21,6 +21,7 @@ import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.opt.AbstractScanRel;
 import com.hazelcast.sql.impl.calcite.opt.cost.CostUtils;
+import com.hazelcast.sql.impl.calcite.opt.physical.visitor.RexToExpressionVisitor;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -82,10 +83,7 @@ public class IMapIndexScanPhysicalRel extends AbstractScanRel implements Physica
 
     public Expression<Boolean> filter(QueryParameterMetadata parameterMetadata) {
         PlanNodeSchema schema = OptUtils.schema(getTable());
-
-        RexNode filter = getTable().unwrap(HazelcastTable.class).getFilter();
-
-        return filter(schema, filter, parameterMetadata);
+        return convertRemainderExpToFilter(schema, remainderExp, parameterMetadata);
     }
 
     public List<Expression<?>> projection(QueryParameterMetadata parameterMetadata) {
@@ -125,10 +123,6 @@ public class IMapIndexScanPhysicalRel extends AbstractScanRel implements Physica
 
     public List<QueryDataType> getConverterTypes() {
         return converterTypes;
-    }
-
-    public RexNode getRemainderExp() {
-        return remainderExp;
     }
 
     public List<Boolean> getAscs() {
@@ -179,5 +173,19 @@ public class IMapIndexScanPhysicalRel extends AbstractScanRel implements Physica
         }
 
         return rowCount;
+    }
+
+    private static Expression<Boolean> convertRemainderExpToFilter(
+            PlanNodeSchema schema,
+            RexNode expression,
+            QueryParameterMetadata parameterMetadata
+    ) {
+        if (expression == null) {
+            return null;
+        }
+
+        RexToExpressionVisitor converter = new RexToExpressionVisitor(schema, parameterMetadata);
+        Expression convertedExpression = expression.accept(converter);
+        return (Expression<Boolean>) convertedExpression;
     }
 }

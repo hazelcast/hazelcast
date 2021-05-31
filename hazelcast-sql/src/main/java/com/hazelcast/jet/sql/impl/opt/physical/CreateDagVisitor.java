@@ -133,8 +133,12 @@ public class CreateDagVisitor {
         return mapSqlConnector.indexScanReader(
                 dag,
                 table,
-                rel,
-                parameterMetadata
+                rel.filter(parameterMetadata),
+                rel.projection(parameterMetadata),
+                rel.getIndex(),
+                rel.getIndexFilter(),
+                rel.getConverterTypes(),
+                rel.getAscs()
         );
     }
 

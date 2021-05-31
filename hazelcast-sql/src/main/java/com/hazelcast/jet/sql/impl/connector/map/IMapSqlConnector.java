@@ -29,27 +29,24 @@ import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolvers;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvProcessors;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
-import com.hazelcast.jet.sql.impl.opt.physical.IMapIndexScanPhysicalRel;
 import com.hazelcast.jet.sql.impl.schema.MappingField;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.sql.impl.calcite.opt.physical.visitor.RexToExpressionVisitor;
+import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.plan.node.MapIndexScanMetadata;
 import com.hazelcast.sql.impl.plan.node.MapScanMetadata;
-import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
+import com.hazelcast.sql.impl.schema.map.MapTableIndex;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.parser.SqlParserPos;
@@ -144,31 +141,6 @@ public class IMapSqlConnector implements SqlConnector {
 
     @Nonnull
     @Override
-    public VertexWithInputConfig nestedLoopReader(
-            @Nonnull DAG dag,
-            @Nonnull Table table0,
-            @Nullable Expression<Boolean> predicate,
-            @Nonnull List<Expression<?>> projections,
-            @Nonnull JetJoinInfo joinInfo
-    ) {
-        PartitionedMapTable table = (PartitionedMapTable) table0;
-
-        String name = table.getMapName();
-        List<TableField> fields = table.getFields();
-        QueryPath[] paths = fields.stream().map(field -> ((MapTableField) field).getPath()).toArray(QueryPath[]::new);
-        QueryDataType[] types = fields.stream().map(TableField::getType).toArray(QueryDataType[]::new);
-        QueryTargetDescriptor keyDescriptor = table.getKeyDescriptor();
-        QueryTargetDescriptor valueDescriptor = table.getValueDescriptor();
-
-        KvRowProjector.Supplier rightRowProjectorSupplier =
-                KvRowProjector.supplier(paths, types, keyDescriptor, valueDescriptor, predicate, projections);
-
-        return IMapJoiner.join(dag, name, toString(table), joinInfo, rightRowProjectorSupplier);
-    }
-
-
-    @Nonnull
-    @Override
     public Vertex fullScanReader(
             @Nonnull DAG dag,
             @Nonnull Table table0,
@@ -191,8 +163,12 @@ public class IMapSqlConnector implements SqlConnector {
     public Vertex indexScanReader(
             @Nonnull DAG dag,
             @Nonnull Table table0,
-            @Nonnull IMapIndexScanPhysicalRel rel,
-            QueryParameterMetadata parameterMetadata
+            @Nullable Expression<Boolean> filter,
+            @Nonnull List<Expression<?>> projection,
+            MapTableIndex index,
+            IndexFilter indexFilter,
+            List<QueryDataType> converterTypes,
+            List<Boolean> ascs
     ) {
         PartitionedMapTable table = (PartitionedMapTable) table0;
 
@@ -202,27 +178,47 @@ public class IMapSqlConnector implements SqlConnector {
                 table.getValueDescriptor(),
                 table.fieldPaths(),
                 table.types(),
-                rel.projection(parameterMetadata),
-                convertFilter(
-                        new PlanNodeSchema(table.types()),
-                        rel.getRemainderExp(),
-                        parameterMetadata
-                )
+                projection,
+                filter
         );
 
         MapIndexScanMetadata indexScanMetadata = new MapIndexScanMetadata(
                 mapScanMetadata,
-                rel.getIndex().getName(),
-                rel.getIndex().getComponentsCount(),
-                rel.getIndexFilter(),
-                rel.getConverterTypes(),
-                rel.getAscs()
+                index.getName(),
+                index.getComponentsCount(),
+                indexFilter,
+                converterTypes,
+                ascs
         );
 
         return dag.newUniqueVertex(
                 "Index(" + table.getMapName() + ")",
                 OnHeapMapIndexScanP.onHeapMapIndexScanP(indexScanMetadata)
         );
+    }
+
+    @Nonnull
+    @Override
+    public VertexWithInputConfig nestedLoopReader(
+            @Nonnull DAG dag,
+            @Nonnull Table table0,
+            @Nullable Expression<Boolean> predicate,
+            @Nonnull List<Expression<?>> projections,
+            @Nonnull JetJoinInfo joinInfo
+    ) {
+        PartitionedMapTable table = (PartitionedMapTable) table0;
+
+        String name = table.getMapName();
+        List<TableField> fields = table.getFields();
+        QueryPath[] paths = fields.stream().map(field -> ((MapTableField) field).getPath()).toArray(QueryPath[]::new);
+        QueryDataType[] types = fields.stream().map(TableField::getType).toArray(QueryDataType[]::new);
+        QueryTargetDescriptor keyDescriptor = table.getKeyDescriptor();
+        QueryTargetDescriptor valueDescriptor = table.getValueDescriptor();
+
+        KvRowProjector.Supplier rightRowProjectorSupplier =
+                KvRowProjector.supplier(paths, types, keyDescriptor, valueDescriptor, predicate, projections);
+
+        return IMapJoiner.join(dag, name, toString(table), joinInfo, rightRowProjectorSupplier);
     }
 
     @Override
@@ -283,19 +279,5 @@ public class IMapSqlConnector implements SqlConnector {
 
     private static String toString(PartitionedMapTable table) {
         return TYPE_NAME + "[" + table.getSchemaName() + "." + table.getSqlName() + "]";
-    }
-
-    private Expression<Boolean> convertFilter(
-            PlanNodeSchema schema,
-            RexNode expression,
-            QueryParameterMetadata parameterMetadata
-    ) {
-        if (expression == null) {
-            return null;
-        }
-
-        RexToExpressionVisitor converter = new RexToExpressionVisitor(schema, parameterMetadata);
-        Expression convertedExpression = expression.accept(converter);
-        return (Expression<Boolean>) convertedExpression;
     }
 }

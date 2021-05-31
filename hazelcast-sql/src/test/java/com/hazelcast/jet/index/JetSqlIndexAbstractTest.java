@@ -91,7 +91,7 @@ import static org.junit.Assert.fail;
 @SuppressWarnings({"unchecked", "rawtypes", "unused"})
 public abstract class JetSqlIndexAbstractTest extends SqlTestSupport {
 
-    private static final int DEFAULT_MEMBERS_COUNT = 2;
+    private static final int DEFAULT_MEMBERS_COUNT = 1;
     private static final AtomicInteger MAP_NAME_GEN = new AtomicInteger();
     private static final String INDEX_NAME = "index";
 
