@@ -82,7 +82,7 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
     private int processorIndex;
     private Traverser<Object> traverser = Traversers.empty();
 
-    StreamKafkaP(
+    public StreamKafkaP(
             @Nonnull Properties properties,
             @Nonnull List<String> topics,
             @Nonnull FunctionEx<? super ConsumerRecord<K, V>, ? extends T> projectionFn,

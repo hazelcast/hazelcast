@@ -17,6 +17,8 @@
 package com.hazelcast.jet.sql.impl.connector.kafka;
 
 import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.EventTimePolicy;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.kafka.KafkaProcessors;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
@@ -41,9 +43,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.Edge.between;
-import static com.hazelcast.jet.core.EventTimePolicy.noEventTime;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Stream.concat;
 
@@ -122,30 +122,23 @@ public class KafkaSqlConnector implements SqlConnector {
     ) {
         KafkaTable table = (KafkaTable) table0;
 
-        Vertex vStart = dag.newUniqueVertex(
+        return dag.newUniqueVertex(
                 table.toString(),
-                KafkaProcessors.streamKafkaP(
-                        table.kafkaConsumerProperties(),
-                        record -> entry(record.key(), record.value()),
-                        noEventTime(),
-                        table.topicName()
+                ProcessorMetaSupplier.of(
+                        KafkaProcessors.PREFERRED_LOCAL_PARALLELISM,
+                        new RowProjectorProcessorSupplier(
+                                table.kafkaConsumerProperties(),
+                                table.topicName(),
+                                EventTimePolicy.noEventTime(),
+                                table.paths(),
+                                table.types(),
+                                table.keyQueryDescriptor(),
+                                table.valueQueryDescriptor(),
+                                predicate,
+                                projections
+                        )
                 )
         );
-
-        Vertex vEnd = dag.newUniqueVertex(
-                "Project(" + table + ")",
-                KvProcessors.rowProjector(
-                        table.paths(),
-                        table.types(),
-                        table.keyQueryDescriptor(),
-                        table.valueQueryDescriptor(),
-                        predicate,
-                        projections
-                )
-        );
-
-        dag.edge(between(vStart, vEnd).isolated());
-        return vEnd;
     }
 
     @Nonnull @Override

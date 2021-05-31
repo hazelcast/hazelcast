@@ -82,16 +82,16 @@ public class SqlPrimitiveTest extends SqlTestSupport {
         );
 
         String from = randomName();
-        TestBatchSqlConnector.create(sqlService, from, 2);
+        TestBatchSqlConnector.create(sqlService, from, 4);
 
         assertTopicEventually(
                 name,
                 "INSERT INTO " + name + " SELECT v, 'value-' || v FROM " + from,
-                createMap(0, "value-0", 1, "value-1")
+                createMap(0, "value-0", 1, "value-1", 2, "value-2", 3, "value-3")
         );
         assertRowsEventuallyInAnyOrder(
-                "SELECT * FROM " + name,
-                asList(new Row(0, "value-0"), new Row(1, "value-1"))
+                "SELECT * FROM " + name + " WHERE __key > 0 AND __key < 3",
+                asList(new Row(1, "value-1"), new Row(2, "value-2"))
         );
     }
 

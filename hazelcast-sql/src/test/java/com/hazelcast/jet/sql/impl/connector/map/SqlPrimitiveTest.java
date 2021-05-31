@@ -77,18 +77,18 @@ public class SqlPrimitiveTest extends SqlTestSupport {
         sqlService.execute(javaSerializableMapDdl(name, Integer.class, String.class));
 
         String from = randomName();
-        TestBatchSqlConnector.create(sqlService, from, 2);
+        TestBatchSqlConnector.create(sqlService, from, 4);
 
         assertMapEventually(
                 name,
                 "SINK INTO " + name + " SELECT v, 'value-' || v FROM " + from,
-                createMap(0, "value-0", 1, "value-1")
+                createMap(0, "value-0", 1, "value-1", 2, "value-2", 3, "value-3")
         );
         assertRowsAnyOrder(
-                "SELECT * FROM " + name,
+                "SELECT * FROM " + name + " WHERE __key > 0 AND __key < 3",
                 asList(
-                        new Row(0, "value-0"),
-                        new Row(1, "value-1")
+                        new Row(1, "value-1"),
+                        new Row(2, "value-2")
                 )
         );
     }
