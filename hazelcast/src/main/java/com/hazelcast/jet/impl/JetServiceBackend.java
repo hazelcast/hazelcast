@@ -61,7 +61,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class JetServiceBackend implements ManagedService, MembershipAwareService, LiveOperationsTracker {
 
-    public static final String SERVICE_NAME = "hz:impl:jetServiceBackend";
+    public static final String SERVICE_NAME = "hz:impl:jetService";
     public static final int MAX_PARALLEL_ASYNC_OPS = 1000;
 
     private static final int NOTIFY_MEMBER_SHUTDOWN_DELAY = 5;
