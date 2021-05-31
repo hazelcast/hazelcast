@@ -27,12 +27,14 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.map.IMap;
 import com.hazelcast.projection.Projections;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.io.File;
 import java.io.PrintWriter;
@@ -59,6 +61,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 @Category(QuickTest.class)
+@RunWith(HazelcastSerialClassRunner.class)
 public class SourcesTest extends PipelineTestSupport {
     private static HazelcastInstance remoteHz;
     private static ClientConfig clientConfig;

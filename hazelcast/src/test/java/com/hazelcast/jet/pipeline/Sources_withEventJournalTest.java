@@ -29,11 +29,13 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.map.IMap;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -54,6 +56,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 @Category(SlowTest.class)
+@RunWith(HazelcastSerialClassRunner.class)
 public class Sources_withEventJournalTest extends PipelineTestSupport {
     private static HazelcastInstance remoteHz;
     private static ClientConfig clientConfig;
