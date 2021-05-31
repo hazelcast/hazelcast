@@ -37,6 +37,9 @@ import java.util.Properties;
  */
 public final class KafkaProcessors {
 
+    /**
+     * Preferred local parallelism for Kafka processors.
+     */
     public static final int PREFERRED_LOCAL_PARALLELISM = 4;
 
     private KafkaProcessors() {
