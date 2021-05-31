@@ -61,7 +61,7 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
     @Test
     public void mysql() throws Exception {
         Assume.assumeFalse("https://github.com/hazelcast/hazelcast-jet/issues/2623",
-                System.getProperty("java.version").startsWith("15"));
+                System.getProperty("java.version").matches("^1[56].*"));
 
         MySQLContainer<?> container = mySqlContainer();
 
@@ -147,7 +147,7 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
     @Test
     public void mysql_simpleJson() {
         Assume.assumeFalse("https://github.com/hazelcast/hazelcast-jet/issues/2623",
-                System.getProperty("java.version").startsWith("15"));
+                System.getProperty("java.version").matches("^1[56].*"));
 
         MySQLContainer<?> container = mySqlContainer();
 
