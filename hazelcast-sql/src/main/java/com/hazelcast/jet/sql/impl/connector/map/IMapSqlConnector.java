@@ -136,7 +136,6 @@ public class IMapSqlConnector implements SqlConnector {
         );
     }
 
-
     @Nonnull
     @Override
     public Vertex fullScanReader(
@@ -155,7 +154,7 @@ public class IMapSqlConnector implements SqlConnector {
                 filter
         );
 
-        return dag.newUniqueVertex(table.toString(), OnHeapMapScanP.onHeapMapScanP(mapScanMetadata));
+        return dag.newUniqueVertex(toString(table), OnHeapMapScanP.onHeapMapScanP(mapScanMetadata));
     }
 
     @Nonnull
