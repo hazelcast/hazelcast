@@ -48,7 +48,7 @@ public class CoalesceFunctionIntegrationTest extends ExpressionTestSupport {
         put(1);
         checkFailure0("select coalesce() from map", SqlErrorCode.PARSING, "Invalid number of arguments to function 'COALESCE'. Was expecting 1 arguments");
         checkFailure0("select coalesce(?) from map", SqlErrorCode.PARSING, "Cannot apply 'COALESCE' function to [UNKNOWN] (consider adding an explicit CAST)");
-        checkFailure0("select coalesce(?, ?) from map", SqlErrorCode.PARSING, "Cannot apply 'COALESCE' function to [UNKNOWN] (consider adding an explicit CAST)");
+        checkFailure0("select coalesce(?, ?) from map", SqlErrorCode.PARSING, "Cannot apply 'COALESCE' function to [UNKNOWN, UNKNOWN] (consider adding an explicit CAST)");
     }
 
     @Test
