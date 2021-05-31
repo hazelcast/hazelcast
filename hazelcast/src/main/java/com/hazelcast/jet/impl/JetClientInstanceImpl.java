@@ -21,7 +21,6 @@ import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectsCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.BasicJob;
@@ -37,14 +36,12 @@ import com.hazelcast.logging.ILogger;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
+import static com.hazelcast.jet.impl.operation.GetJobIdsOperation.ALL_JOBS;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
 /**
@@ -69,24 +66,18 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
     }
 
     @Override
-    public Map<UUID, CompletableFuture<GetJobIdsResult>> getJobsInt(Long onlyJobId) {
-        Map<Address, CompletableFuture<GetJobIdsResult>> futures = new HashMap<>();
-        return invokeRequestOnMasterAndDecodeResponse(JetGetJobIdsCodec.encodeRequest(null, onlyJobId), resp -> {
-            Data responseSerialized = JetGetJobIdsCodec.decodeResponse(resp).response;
-            return serializationService.toObject(responseSerialized);
-        });
+    public Map<UUID, GetJobIdsResult> getJobsInt(Long onlyJobId) {
+        return invokeRequestOnAnyMemberAndDecodeResponse(
+                JetGetJobIdsCodec.encodeRequest(null, onlyJobId == null ? ALL_JOBS : onlyJobId),
+                resp -> {
+                    Data responseSerialized = JetGetJobIdsCodec.decodeResponse(resp).response;
+                    return serializationService.toObject(responseSerialized);
+                });
     }
 
     @Nonnull @Override
     public JetConfig getConfig() {
         throw new UnsupportedOperationException("Jet Configuration is not available on the client");
-    }
-
-    private GetJobIdsResult getJobIdsInternal(@Nullable String onlyName, long onlyJobId) {
-        return invokeRequestOnMasterAndDecodeResponse(JetGetJobIdsCodec.encodeRequest(onlyName, onlyJobId), resp -> {
-            Data responseSerialized = JetGetJobIdsCodec.decodeResponse(resp).response;
-            return serializationService.toObject(responseSerialized);
-        });
     }
 
     @Nonnull @Override

@@ -17,6 +17,7 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.TestProcessors.MockP;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.pipeline.Pipeline;
@@ -37,6 +38,8 @@ import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.core.Edge.between;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
@@ -84,5 +87,19 @@ public class LightJobTest extends SimpleTestInClusterSupport {
         submittingInstance().newLightJob(p).join();
         List<Integer> result = instance().getList("sink");
         assertThat(result).containsExactlyInAnyOrderElementsOf(items);
+    }
+
+    @Test
+    public void test_getJobIds() {
+        DAG dag = new DAG();
+        dag.newVertex("v", () -> new MockP().streaming()).localParallelism(1);
+
+        BasicJob job = instance().newLightJob(dag);
+        long jobId = job.getId();
+
+        assertNotNull("getJobById", submittingInstance().getJobById(jobId));
+        List<BasicJob> allJobs = submittingInstance().getAllJobs();
+        assertEquals(1, allJobs.size());
+        assertEquals(jobId, allJobs.get(0).getId());
     }
 }

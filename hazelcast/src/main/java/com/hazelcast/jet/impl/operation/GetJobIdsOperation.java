@@ -55,6 +55,11 @@ public class GetJobIdsOperation extends AsyncOperation implements AllowedDuringP
         this.onlyJobId = onlyJobId == null ? ALL_JOBS : onlyJobId;
     }
 
+    public GetJobIdsOperation(String onlyName, long onlyJobId) {
+        this.onlyName = onlyName;
+        this.onlyJobId = onlyJobId;
+    }
+
     @Override
     public CompletableFuture<GetJobIdsResult> doRun() {
         return getJobCoordinationService().getJobIds(onlyName, onlyJobId);

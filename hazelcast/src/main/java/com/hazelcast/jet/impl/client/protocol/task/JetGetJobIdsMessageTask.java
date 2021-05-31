@@ -17,34 +17,57 @@
 package com.hazelcast.jet.impl.client.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.task.AbstractMultiTargetMessageTask;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobIdsCodec;
-import com.hazelcast.jet.impl.operation.GetJobIdsOperation.GetJobIdsResult;
+import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobIdsCodec.RequestParameters;
+import com.hazelcast.jet.impl.operation.GetJobIdsOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
-import java.util.concurrent.CompletableFuture;
+import java.security.Permission;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.function.Supplier;
 
-import static java.util.concurrent.CompletableFuture.completedFuture;
+import static java.util.stream.Collectors.toMap;
 
-public class JetGetJobIdsMessageTask extends AbstractJetMessageTask<Void, Data> {
+public class JetGetJobIdsMessageTask extends AbstractMultiTargetMessageTask<RequestParameters> {
 
     JetGetJobIdsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
-        super(clientMessage, node, connection,
-                m -> null,
-                JetGetJobIdsCodec::encodeResponse);
+        super(clientMessage, node, connection);
     }
 
     @Override
-    protected CompletableFuture<Object> processInternal() {
-        // TODO [viliam] send to all members and merge the results
-        return completedFuture(serializationService.toData(GetJobIdsResult.EMPTY));
+    protected Supplier<Operation> createOperationSupplier() {
+        return () -> new GetJobIdsOperation(parameters.onlyName, parameters.onlyJobId);
     }
 
     @Override
-    // TODO [viliam] remove this method
-    protected Operation prepareOperation() {
+    public Collection<Member> getTargets() {
+        return nodeEngine.getClusterService().getMembers();
+    }
+
+    @Override
+    protected Object reduce(Map<Member, Object> map) {
+        return map.entrySet().stream().collect(toMap(en -> en.getKey().getUuid(), Entry::getValue));
+    }
+
+    @Override
+    protected RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return JetGetJobIdsCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return JetGetJobIdsCodec.encodeResponse(serializationService.toData(response));
+    }
+
+    @Override
+    public String getDistributedObjectName() {
         return null;
     }
 
@@ -56,5 +79,15 @@ public class JetGetJobIdsMessageTask extends AbstractJetMessageTask<Void, Data> 
     @Override
     public Object[] getParameters() {
         return new Object[0];
+    }
+
+    @Override
+    public String getServiceName() {
+         return JetService.SERVICE_NAME;
+    }
+
+    @Override
+    public Permission getRequiredPermission() {
+        return null;
     }
 }

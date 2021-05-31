@@ -19,7 +19,6 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.collection.IList;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.jet.BasicJob;
 import com.hazelcast.jet.JetCacheManager;
 import com.hazelcast.jet.JetInstance;
@@ -38,9 +37,9 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.IMap;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
-import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.topic.ITopic;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -48,13 +47,10 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
@@ -151,52 +147,35 @@ public abstract class AbstractJetInstance<MemberIdType> implements JetInstance {
 
     @Nonnull @Override
     public List<BasicJob> getAllJobs() {
-        MemberIdType masterAddress = getMasterId();
-        Map<MemberIdType, CompletableFuture<GetJobIdsResult>> futures = getJobsInt(null);
+        Map<MemberIdType, GetJobIdsResult> results = getJobsInt(null);
 
-        try {
-            return futures.entrySet().stream()
-                    .flatMap(en -> {
-                        GetJobIdsResult result;
-                        try {
-                            result = en.getValue().get();
-                        } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
-                            return Stream.of();
-                        } catch (ExecutionException e) {
-                            // Don't ignore exceptions from master. If we don't get a response from a non-master member, it
-                            // can contain only light jobs - we ignore that member's failure, because these jobs are not as
-                            // important. If we don't get response from the master, we report it to the user.
-                            if (!en.getKey().equals(masterAddress)
-                                    && (e.getCause() instanceof TargetNotMemberException || e.getCause() instanceof MemberLeftException)) {
-                                return Stream.of();
-                            }
-                            throw new RuntimeException("Error when getting job IDs: " + e, e);
-                        }
-                        return IntStream.range(0, result.getJobIds().length)
-                                .mapToObj(i -> {
-                                    long jobId = result.getJobIds()[i];
-                                    boolean isLightJob = result.getIsLightJobs()[i];
-                                    return newJobProxy(jobId, isLightJob ? en.getKey() : null);
-                                });
-                    })
-                    .collect(toList());
-        } catch (Throwable t) {
-            throw rethrow(t);
-        }
+        return results.entrySet().stream()
+                .flatMap(en -> IntStream.range(0, en.getValue().getJobIds().length)
+                        .mapToObj(i -> {
+                            long jobId = en.getValue().getJobIds()[i];
+                            boolean isLightJob = en.getValue().getIsLightJobs()[i];
+                            return newJobProxy(jobId, isLightJob ? en.getKey() : null);
+                        }))
+                .collect(toList());
+    }
+
+    @Nonnull @Override
+    public List<Job> getJobs(@NotNull String name) {
+        // TODO [viliam]
+        return null;
     }
 
     public abstract MemberIdType getMasterId();
 
-    public abstract Map<MemberIdType, CompletableFuture<GetJobIdsResult>> getJobsInt(Long onlyJobId);
+    public abstract Map<MemberIdType, GetJobIdsResult> getJobsInt(Long onlyJobId);
     
     @Override
     public BasicJob getJobById(long jobId) {
         try {
             BasicJob job = null;
-            Map<MemberIdType, CompletableFuture<GetJobIdsResult>> jobs = getJobsInt(jobId);
-            for (Entry<MemberIdType, CompletableFuture<GetJobIdsResult>> resultEntry : jobs.entrySet()) {
-                GetJobIdsResult result = resultEntry.getValue().get();
+            Map<MemberIdType, GetJobIdsResult> jobs = getJobsInt(jobId);
+            for (Entry<MemberIdType, GetJobIdsResult> resultEntry : jobs.entrySet()) {
+                GetJobIdsResult result = resultEntry.getValue();
                 assert result.getJobIds().length <= 1;
                 if (result.getJobIds().length > 0) {
                     assert job == null : "duplicate job by ID";

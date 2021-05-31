@@ -38,11 +38,10 @@ import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.internal.util.StringUtil;
-
+import com.hazelcast.jet.BasicJob;
 import com.hazelcast.jet.JetCacheManager;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.BasicJob;
 import com.hazelcast.jet.Observable;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
@@ -70,7 +69,6 @@ import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
-
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
@@ -86,7 +84,7 @@ import java.util.Collection;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -97,8 +95,6 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.stream.Collectors;
-import java.util.UUID;
-
 
 import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
 import static com.hazelcast.jet.core.JobStatus.STARTING;
@@ -710,7 +706,7 @@ public final class HazelcastBootstrap {
         }
 
         @Override
-        public Map<MemberIdType, CompletableFuture<GetJobIdsResult>> getJobsInt(Long onlyJobId) {
+        public Map<MemberIdType, GetJobIdsResult> getJobsInt(Long onlyJobId) {
             return jet.getJobsInt(onlyJobId);
         }
     }

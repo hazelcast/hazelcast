@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.BasicJob;
@@ -29,6 +30,7 @@ import com.hazelcast.jet.impl.operation.GetJobIdsOperation.GetJobIdsResult;
 import com.hazelcast.jet.impl.util.ImdgUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import org.jetbrains.annotations.NotNull;
@@ -38,7 +40,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
@@ -66,9 +70,13 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
     }
 
     @Override
-    public Map<Address, CompletableFuture<GetJobIdsResult>> getJobsInt(Long onlyJobId) {
+    public Map<Address, GetJobIdsResult> getJobsInt(Long onlyJobId) {
         Map<Address, CompletableFuture<GetJobIdsResult>> futures = new HashMap<>();
+        Address masterAddress = null;
         for (Member member : getCluster().getMembers()) {
+            if (masterAddress == null) {
+                masterAddress = member.getAddress();
+            }
             GetJobIdsOperation operation = new GetJobIdsOperation(onlyJobId);
             InvocationFuture<GetJobIdsResult> future = nodeEngine
                     .getOperationService()
@@ -76,7 +84,31 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
                     .invoke();
             futures.put(member.getAddress(), future);
         }
-        return futures;
+
+        Map<Address, GetJobIdsResult> res = new HashMap<>(futures.size());
+        for (Entry<Address, CompletableFuture<GetJobIdsResult>> en : futures.entrySet()) {
+            GetJobIdsResult result;
+            try {
+                result = en.getValue().get();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                result = GetJobIdsResult.EMPTY;
+            } catch (ExecutionException e) {
+                // Don't ignore exceptions from master. If we don't get a response from a non-master member, it
+                // can contain only light jobs - we ignore that member's failure, because these jobs are not as
+                // important. If we don't get response from the master, we report it to the user.
+                if (!en.getKey().equals(masterAddress)
+                        && (e.getCause() instanceof TargetNotMemberException || e.getCause() instanceof MemberLeftException)) {
+                    result = GetJobIdsResult.EMPTY;
+                } else {
+                    throw new RuntimeException("Error when getting job IDs: " + e, e);
+                }
+            }
+
+            res.put(en.getKey(), result);
+        }
+
+        return res;
     }
 
     @Nonnull @Override
