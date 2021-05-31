@@ -266,6 +266,10 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
             this.values = values;
         }
 
+        public Object[] getValues() {
+            return values;
+        }
+
         @Override
         public String toString() {
             return "Row{" + Arrays.toString(values) + '}';

@@ -3819,6 +3819,14 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "resource-upload-enabled": {
+          "type": "boolean",
+          "default": false
+        },
         "instance": {
           "type": "object",
           "additionalProperties": false,

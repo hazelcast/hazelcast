@@ -32,6 +32,7 @@ import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.pipeline.ServiceFactories;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
+import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -79,6 +80,13 @@ public class CreateDagVisitor {
         this.parameterMetadata = parameterMetadata;
     }
 
+    public Vertex onDelete(DeletePhysicalRel rel) {
+        Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
+        Vertex vertex = getJetSqlConnector(table).deleteProcessor(dag, table);
+        connectInput(rel.getInput(), vertex, null);
+        return vertex;
+    }
+
     public Vertex onValues(ValuesPhysicalRel rel) {
         List<ExpressionValues> values = rel.values();
 
@@ -109,9 +117,9 @@ public class CreateDagVisitor {
     public Vertex onFullScan(FullScanPhysicalRel rel) {
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
         collectObjectKeys(table);
+        SqlConnector jetSqlConnector = getJetSqlConnector(table);
 
-        return getJetSqlConnector(table)
-                .fullScanReader(dag, table, rel.filter(parameterMetadata), rel.projection(parameterMetadata));
+        return jetSqlConnector.fullScanReader(dag, table, rel.filter(parameterMetadata), rel.projection(parameterMetadata));
     }
 
     public Vertex onFilter(FilterPhysicalRel rel) {

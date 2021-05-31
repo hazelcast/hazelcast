@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.deployment;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.DAG;
@@ -38,7 +39,9 @@ public class JetClassLoaderTest extends JetTestSupport {
         DAG dag = new DAG();
         dag.newVertex("v", LeakClassLoaderP::new).localParallelism(1);
 
-        JetInstance instance = createJetMember();
+        Config config = smallInstanceConfig();
+        config.getJetConfig().setResourceUploadEnabled(true);
+        JetInstance instance = createJetMember(config);
 
         // When
         instance.newJob(dag).join();

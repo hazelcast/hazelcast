@@ -21,6 +21,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -28,6 +29,8 @@ import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import static com.hazelcast.test.TestEnvironment.isSolaris;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -40,8 +43,13 @@ public class ClientAutoDetectionDiscoveryTest extends HazelcastTestSupport {
 
     @Test
     public void defaultDiscovery() {
-        Hazelcast.newHazelcastInstance();
-        Hazelcast.newHazelcastInstance();
+        Config c = new Config();
+        if (isSolaris()) {
+            c.setProperty(ClusterProperty.MULTICAST_SOCKET_SET_INTERFACE.getName(), "false");
+        }
+
+        Hazelcast.newHazelcastInstance(c);
+        Hazelcast.newHazelcastInstance(c);
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient();
         assertClusterSizeEventually(2, client);

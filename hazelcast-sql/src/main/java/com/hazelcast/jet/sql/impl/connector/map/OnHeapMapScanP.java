@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.connector.map;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Processor;
@@ -27,6 +28,9 @@ import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -38,6 +42,7 @@ import com.hazelcast.sql.impl.expression.predicate.TernaryLogic;
 import com.hazelcast.sql.impl.plan.node.MapScanMetadata;
 
 import javax.annotation.Nonnull;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -46,6 +51,10 @@ import java.util.function.Function;
 import static com.hazelcast.jet.impl.util.Util.distributeObjects;
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.jet.sql.impl.ExpressionUtil.evaluate;
+import static com.hazelcast.jet.sql.impl.JetSqlSerializerHook.F_ID;
+import static com.hazelcast.jet.sql.impl.JetSqlSerializerHook.IMAP_SCAN_PROCESSOR;
+import static com.hazelcast.jet.sql.impl.JetSqlSerializerHook.IMAP_SCAN_PROCESSOR_META_SUPPLIER;
+import static com.hazelcast.jet.sql.impl.JetSqlSerializerHook.IMAP_SCAN_PROCESSOR_SUPPLIER;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
@@ -60,14 +69,18 @@ import static java.util.stream.Collectors.toList;
  * Simultaneously, usage of Traverser interface saves simplicity and cleanliness:
  * it just returns all map entries which it can read.
  */
-public final class OnHeapMapScanP extends AbstractProcessor {
+public final class OnHeapMapScanP extends AbstractProcessor implements IdentifiedDataSerializable {
     private static final int MAX_ROWS_SCANNED = 10_000;
 
-    private final MapScanMetadata mapScanMetadata;
-    private final List<Integer> partitions;
     private IMapTraverser traverser;
+    private MapScanMetadata mapScanMetadata;
+    private List<Integer> partitions;
     private boolean done;
     private int remainingBatch;
+
+    public OnHeapMapScanP() {
+
+    }
 
     private OnHeapMapScanP(
             @Nonnull MapScanMetadata mapScanMetadata,
@@ -175,13 +188,44 @@ public final class OnHeapMapScanP extends AbstractProcessor {
         }
     }
 
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeObject(traverser);
+        out.writeObject(mapScanMetadata);
+        out.writeBoolean(done);
+        out.writeInt(remainingBatch);
+        SerializationUtil.writeList(partitions, out);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        this.traverser = in.readObject();
+        this.mapScanMetadata = in.readObject();
+        this.done = in.readBoolean();
+        this.remainingBatch = in.readInt();
+        this.partitions = SerializationUtil.readList(in);
+    }
+
+    @Override
+    public int getFactoryId() {
+        return F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return IMAP_SCAN_PROCESSOR;
+    }
+
     public static ProcessorMetaSupplier onHeapMapScanP(@Nonnull MapScanMetadata mapScanMetadata) {
         return new OnHeapMapScanMetaSupplier(mapScanMetadata);
     }
 
-    private static final class OnHeapMapScanMetaSupplier implements ProcessorMetaSupplier {
-        private final MapScanMetadata mapScanMetadata;
+    public static final class OnHeapMapScanMetaSupplier implements ProcessorMetaSupplier, IdentifiedDataSerializable {
+        private MapScanMetadata mapScanMetadata;
         private transient PartitionService partitionService;
+
+        public OnHeapMapScanMetaSupplier() {
+        }
 
         private OnHeapMapScanMetaSupplier(@Nonnull MapScanMetadata mapScanMetadata) {
             this.mapScanMetadata = mapScanMetadata;
@@ -207,11 +251,34 @@ public final class OnHeapMapScanP extends AbstractProcessor {
 
             return address -> new OnHeapMapScanSupplier(mapScanMetadata, partitionsByMember.get(address));
         }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeObject(mapScanMetadata);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            this.mapScanMetadata = in.readObject();
+        }
+
+        @Override
+        public int getFactoryId() {
+            return F_ID;
+        }
+
+        @Override
+        public int getClassId() {
+            return IMAP_SCAN_PROCESSOR_META_SUPPLIER;
+        }
     }
 
-    private static final class OnHeapMapScanSupplier implements ProcessorSupplier {
-        private final MapScanMetadata mapScanMetadata;
-        private final List<Integer> memberPartitions;
+    public static final class OnHeapMapScanSupplier implements ProcessorSupplier, IdentifiedDataSerializable {
+        private MapScanMetadata mapScanMetadata;
+        private List<Integer> memberPartitions;
+
+        public OnHeapMapScanSupplier() {
+        }
 
         private OnHeapMapScanSupplier(MapScanMetadata mapScanMetadata, List<Integer> memberPartitions) {
             this.mapScanMetadata = mapScanMetadata;
@@ -224,6 +291,28 @@ public final class OnHeapMapScanP extends AbstractProcessor {
             return distributeObjects(count, memberPartitions).values().stream()
                     .map(partitions -> new OnHeapMapScanP(mapScanMetadata, partitions))
                     .collect(toList());
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeObject(mapScanMetadata);
+            SerializationUtil.writeList(memberPartitions, out);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            this.mapScanMetadata = in.readObject();
+            this.memberPartitions = SerializationUtil.readList(in);
+        }
+
+        @Override
+        public int getFactoryId() {
+            return F_ID;
+        }
+
+        @Override
+        public int getClassId() {
+            return IMAP_SCAN_PROCESSOR_SUPPLIER;
         }
     }
 }

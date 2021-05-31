@@ -18,6 +18,7 @@ package com.hazelcast.instance.impl;
 
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.test.AssertionSinks;
@@ -25,6 +26,7 @@ import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.AfterClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -36,15 +38,30 @@ import java.util.List;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class HazelcastBootstrapTest {
 
+    @AfterClass
+    public static void teardown() {
+        Hazelcast.bootstrappedInstance().shutdown();
+    }
+
     @Test
-    public void bootstrappedInstance() {
+    public void testHazelcast_bootstrappedInstance() {
         HazelcastInstance hz = Hazelcast.bootstrappedInstance();
         JetInstance jet = hz.getJetInstance();
+        executeWithBootstrappedInstance(jet);
+    }
+
+    @Test
+    public void testJet_bootstrappedInstance() {
+        JetInstance jet = Jet.bootstrappedInstance();
+        executeWithBootstrappedInstance(jet);
+    }
+
+
+    public void executeWithBootstrappedInstance(JetInstance jet) {
         List<Integer> expected = Arrays.asList(1, 2, 3);
         Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items(1, 2, 3))
                 .writeTo(AssertionSinks.assertAnyOrder(expected));
         jet.newJob(p).join();
-        hz.shutdown();
     }
 }
