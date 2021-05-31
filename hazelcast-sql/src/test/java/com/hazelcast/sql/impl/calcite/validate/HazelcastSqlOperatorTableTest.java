@@ -20,7 +20,7 @@ import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference;
 import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastOperandTypeCheckerAware;
-import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastCaseOperator;
+import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastCaseOperator;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
