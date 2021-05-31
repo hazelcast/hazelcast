@@ -54,6 +54,8 @@ import static com.hazelcast.jet.impl.util.PrefixedLogger.prefixedLogger;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.jet.impl.util.Util.getJetInstance;
 import static com.hazelcast.jet.impl.util.Util.toList;
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toMap;
 
 public final class ExecutionPlanBuilder {
 
@@ -69,9 +71,11 @@ public final class ExecutionPlanBuilder {
         final int defaultParallelism = instance.getConfig().getInstanceConfig().getCooperativeThreadCount();
         final Map<Address, int[]> partitionAssignment = getPartitionAssignment(nodeEngine);
         final Set<MemberInfo> members = new HashSet<>(membersView.size());
-        Set<Address> membersViewAddresses = membersView.getAddresses();
+        Map<Address, MemberInfo> membersMap =
+                membersView.getMembers().stream().collect(toMap(MemberInfo::getAddress, identity()));
         for (Address address : partitionAssignment.keySet()) {
-            if (!membersViewAddresses.contains(address)) {
+            MemberInfo member = membersMap.get(address);
+            if (member == null) {
                 // Address in partition table doesn't exist in member list,
                 // it has just joined the cluster.
                 throw new TopologyChangedException("Topology changed, " + address + " is not in original member list");
