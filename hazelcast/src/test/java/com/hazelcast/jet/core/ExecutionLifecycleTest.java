@@ -477,14 +477,13 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
     @Test
     public void when_executionCancelledBeforeStart_then_jobIsCancelled() {
-        this test fails
         // not applicable to light jobs - light jobs don't use the StartExecutionOperation
         assumeFalse(useLightJob);
 
         DAG dag = new DAG().vertex(new Vertex("test",
                 new MockPS(NoOutputSourceP::new, MEMBER_COUNT)));
 
-        PacketFiltersUtil.dropOperationsFrom(instance().getHazelcastInstance(), JetInitDataSerializerHook.FACTORY_ID,
+        PacketFiltersUtil.delayOperationsFrom(instance().getHazelcastInstance(), JetInitDataSerializerHook.FACTORY_ID,
                 singletonList(JetInitDataSerializerHook.START_EXECUTION_OP));
 
         Job job = instance().newJob(dag);
