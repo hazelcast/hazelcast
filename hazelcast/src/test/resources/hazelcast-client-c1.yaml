@@ -21,5 +21,4 @@ hazelcast-client:
 
   connection-strategy:
     async-start: true
-    connection-retry:
-      enabled: false
+    connection-retry: {}

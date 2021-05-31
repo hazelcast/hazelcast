@@ -121,11 +121,6 @@ public class FileSqlConnector implements SqlConnector {
         );
     }
 
-    @Override
-    public boolean supportsFullScanReader() {
-        return true;
-    }
-
     @Nonnull
     @Override
     public Vertex fullScanReader(

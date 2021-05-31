@@ -3611,6 +3611,12 @@
 
         Configuration element's name is <jet>.
 
+        It has the following attributes:
+        - enabled:
+            Enables or disables Jet Service.
+        - resource-upload-enabled
+            Enables or disables resource uploading for Jet jobs.
+
         It has the following sub-elements:
 
         * <instance>:
@@ -3714,7 +3720,7 @@
                 the last acked byte.
                 This setting has no effect on a non-distributed edge.
     -->
-    <jet>
+    <jet enabled="true" resource-upload-enabled="true">
         <instance>
             <cooperative-thread-count>4</cooperative-thread-count>
             <flow-control-period>100</flow-control-period>

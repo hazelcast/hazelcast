@@ -165,10 +165,10 @@ public class SqlMappingTest extends SqlTestSupport {
 
     @Test
     public void test_caseInsensitiveType() {
-        sqlService.execute("CREATE MAPPING t1 TYPE TestStream");
-        sqlService.execute("CREATE MAPPING t2 TYPE teststream");
-        sqlService.execute("CREATE MAPPING t3 TYPE TESTSTREAM");
-        sqlService.execute("CREATE MAPPING t4 TYPE tEsTsTrEaM");
+        sqlService.execute("CREATE MAPPING t1 TYPE AllTypes");
+        sqlService.execute("CREATE MAPPING t2 TYPE alltypes");
+        sqlService.execute("CREATE MAPPING t3 TYPE ALLTYPES");
+        sqlService.execute("CREATE MAPPING t4 TYPE aLlTyPeS");
     }
 
     @Test

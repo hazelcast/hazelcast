@@ -26,6 +26,7 @@ import com.hazelcast.jet.sql.impl.schema.MappingField;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.schema.Table;
+import org.apache.calcite.sql.SqlNodeList;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -202,14 +203,6 @@ public interface SqlConnector {
     );
 
     /**
-     * Returns whether this connector supports the {@link #fullScanReader}. The
-     * default implementation returns {@code false}.
-     */
-    default boolean supportsFullScanReader() {
-        return false;
-    }
-
-    /**
      * Returns a supplier for a source vertex reading the input according to
      * the {@code projection}/{@code predicate}. The output type of the source
      * is {@link JetSqlRow}.
@@ -235,16 +228,7 @@ public interface SqlConnector {
             @Nullable Expression<Boolean> predicate,
             @Nonnull List<Expression<?>> projection
     ) {
-        assert !supportsFullScanReader();
         throw new UnsupportedOperationException("Full scan not supported for " + typeName());
-    }
-
-    /**
-     * Returns whether this connector supports the {@link #nestedLoopReader}.
-     * The default implementation returns {@code false}.
-     */
-    default boolean supportsNestedLoopReader() {
-        return false;
     }
 
     /**
@@ -297,23 +281,16 @@ public interface SqlConnector {
             @Nonnull List<Expression<?>> projection,
             @Nonnull JetJoinInfo joinInfo
     ) {
-        assert !supportsNestedLoopReader();
-        throw new UnsupportedOperationException("Join not supported for " + typeName());
+        throw new UnsupportedOperationException("Nested-loop join not supported for " + typeName());
     }
 
     /**
-     * Returns whether this connector supports the {@link #sink}. The default
-     * implementation returns {@code false}.
+     * Returns {@code true}, if {@code SINK INTO} is required instead of {@code
+     * INSERT INTO} statements.
+     * <p>
+     * Unused for connectors that don't override {@link #sink}.
      */
-    default boolean supportsSink() {
-        return false;
-    }
-
-    /**
-     * Returns whether this connector supports the {@code INSERT} statement.
-     * The default implementation returns {@code false}.
-     */
-    default boolean supportsInsert() {
+    default boolean requiresSink() {
         return false;
     }
 
@@ -325,8 +302,31 @@ public interface SqlConnector {
             @Nonnull DAG dag,
             @Nonnull Table table
     ) {
-        assert !supportsSink();
-        throw new UnsupportedOperationException("Sink not supported for " + typeName());
+        throw new UnsupportedOperationException("INSERT INTO or SINK INTO not supported for " + typeName());
+    }
+
+    /**
+     * Returns the supplier for the delete processor that will delete from the
+     * given {@code table}. The input to the processor will be the fields
+     * returned by {@link #getPrimaryKey(Table)}.
+     */
+    @Nonnull
+    default Vertex deleteProcessor(@Nonnull DAG dag, @Nonnull Table table) {
+        throw new UnsupportedOperationException("DELETE not supported for " + typeName());
+    }
+
+    /**
+     * Return the indexes of fields that are primary key. These fields will be
+     * fed to the delete processor.
+     * <p>
+     * Every connector that supports a {@link #deleteProcessor} should have a
+     * primary key on each table, otherwise deleting cannot work. If some table
+     * doesn't have a primary key and an empty node list is returned from this
+     * method, an error will be thrown.
+     */
+    @Nonnull
+    default SqlNodeList getPrimaryKey(Table table) {
+        throw new UnsupportedOperationException("DELETE not supported by connector: " + typeName());
     }
 
     /**

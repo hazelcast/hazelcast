@@ -2,9 +2,6 @@
   "$schema": "http://json-schema.org/draft-06/schema",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "hazelcast"
-  ],
   "properties": {
     "hazelcast": {
       "type": "object",
@@ -141,6 +138,105 @@
           "$ref": "#/definitions/Jet"
         }
       }
+    },
+    "hazelcast-client": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "import": {
+          "$ref": "#/definitions/Import"
+        },
+        "config-replacers": {
+          "$ref": "#/definitions/ConfigReplacers"
+        },
+        "cluster-name": {
+          "type": "string",
+          "description": "Specifies the cluster name. It's sent as part of the client authentication message to Hazelcast member(s)."
+        },
+        "instance-name": {
+          "$ref": "#/properties/hazelcast/properties/instance-name"
+        },
+        "properties": {
+          "$ref": "#/properties/hazelcast/properties/properties"
+        },
+        "client-labels": {
+          "description": "The 'client-labels' sequence lets you define labels in your Java client, similar to the way it can be done for the members. Through the client labels, you can assign special roles for your clients and use these roles to perform some actions specific to those client connections. You can also group your clients using the client labels. These client groups can be blacklisted in the Hazelcast Management Center so that they can be prevented from connecting to a cluster. See the related section in the Hazelcast Management Center Reference Manual for more information on this topic.",
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        },
+        "backup-ack-to-client-enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "The 'backup-ack-to-client-enabled' element lets you enable/disable backups ack to client. This feature reduces number of hops and increase performance for smart clients. It is enabled by default for smart clients. This config has no effect for unisocket clients."
+        },
+        "listeners": {
+          "$ref": "#/definitions/Listeners"
+        },
+        "serialization": {
+          "$ref": "#/definitions/Serialization"
+        },
+        "native-memory": {
+          "$ref": "#/definitions/NativeMemory"
+        },
+        "proxy-factories": {
+          "$ref": "#/definitions/ProxyFactories"
+        },
+        "load-balancer": {
+          "$ref": "#/definitions/LoadBalancer"
+        },
+        "near-cache": {
+          "$ref": "#/definitions/ClientNearCache"
+        },
+        "flake-id-generator": {
+          "$ref": "#/definitions/ClientFlakeIdGenerator"
+        },
+        "query-caches": {
+          "$ref": "#/definitions/Map/additionalProperties/properties/query-caches"
+        },
+        "reliable-topic": {
+          "$ref": "#/definitions/ClientReliableTopic"
+        },
+        "user-code-deployment": {
+          "$ref": "#/definitions/ClientUserCodeDeployment"
+        },
+        "instance-tracking": {
+          "$ref": "#/definitions/InstanceTracking"
+        },
+        "metrics": {
+          "$ref": "#/definitions/ClientMetrics"
+        },
+        "connection-strategy": {
+          "$ref": "#/definitions/ConnectionStrategy"
+        },
+        "security": {
+          "$ref": "#/definitions/ClientSecurity"
+        },
+        "network": {
+          "$ref": "#/definitions/ClientNetwork"
+        }
+      }
+    },
+    "hazelcast-client-failover": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "The Hazelcast client can configurations that the client is using to connect to a Hazelcast cluster in the case of a disconnect is listed under the \"clients\" array. You can list client configurations as many as you want.",
+      "properties": {
+        "clients": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "try-count": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 2147483647
+        }
+      }
     }
   },
   "definitions": {
@@ -250,15 +346,7 @@
           }
         },
         "auto-detection": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "enabled": {
-              "type": "boolean",
-              "default": "true"
-            }
-          },
-          "description": "When enabled, it will walk through all available discovery strategies and detect the correct one for the current runtime environment. For example, it will automatically use the hazelcast-aws plugin if run on an AWS instance."
+          "$ref": "#/definitions/AutoDetection"
         },
         "tcp-ip": {
           "type": "object",
@@ -604,22 +692,7 @@
           "description": "Allows to configure Memcache text protocol support in Hazelcast."
         },
         "ssl": {
-          "type": "object",
-          "additionalProperties": false,
-          "description": "Lets you configure SSL using the SSL context factory. This feature is available only in Hazelcast Enterprise. To be able to use it, encryption should NOT be enabled and you should first implement your SSLContextFactory class. Its configuration contains the factory class and SSL properties. By default, it is disabled.",
-          "properties": {
-            "enabled": {
-              "type": "boolean",
-              "default": false
-            },
-            "factory-class-name": {
-              "type": "string",
-              "example": "com.hazelcast.nio.ssl.BasicSSLContextFactory"
-            },
-            "properties": {
-              "type": "object"
-            }
-          }
+          "$ref": "#/definitions/SSL"
         },
         "rest-api": {
           "type": "object",
@@ -660,21 +733,7 @@
           }
         },
         "socket-interceptor": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "enabled": {
-              "type": "boolean",
-              "default": false
-            },
-            "class-name": {
-              "type": "string"
-            },
-            "properties": {
-              "type": "object"
-            }
-          },
-          "description": "Lets you add custom hooks to join and perform connection procedures (like a custom authentication protocol, etc.). This feature is available only in Hazelcast Enterprise. To be able to use it, you should first implement the MemberSocketInterceptor (for members joining to a cluster) or SocketInterceptor (for clients connecting to a member) class. Its configuration contains the class you implemented and socket interceptor properties. By default, it is disabled."
+          "$ref": "#/definitions/SocketInterceptor"
         }
       }
     },
@@ -1213,6 +1272,14 @@
                 "default": false,
                 "description": "Sets if local entries are also cached in the Near Cache. This is useful when the in-memory format of the Near Cache is different from the backing data structure. This setting has no meaning on Hazelcast clients, since they have no local entries."
               },
+              "local-update-policy": {
+                "description": "Defines how to reflect local updates to the Near Cache. Possible values:\\n * INVALIDATE: Local put and local remove immediately invalidate Near Cache.\\n * CACHE_ON_UPDATE: While local remove immediately invalidates Near Cache, local put adds new value to it.",
+                "enum": [
+                  "INVALIDATE",
+                  "CACHE_ON_UPDATE"
+                ],
+                "default": "INVALIDATE"
+              },
               "eviction": {
                 "$ref": "#/definitions/Eviction"
               },
@@ -1291,6 +1358,10 @@
               "type": "object",
               "additionalProperties": false,
               "properties": {
+                "map-name": {
+                  "type": "string",
+                  "description": "In client configurations it is used to identify the map to which this query cache belongs to."
+                },
                 "include-value": {
                   "type": "boolean",
                   "default": true,
@@ -2065,30 +2136,65 @@
     },
     "Metrics": {
       "type": "object",
-      "additionalProperties": false,
+      "allOf": [
+        {
+          "properties": {
+            "management-center": {
+              "type": "object",
+              "description": "Defines the Hazelcast Management Center related metrics configuration.",
+              "additionalProperties": false,
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "Controls whether the metrics collected are exposed to Hazelcast Management Center. Please note that the metrics are polled by the Hazelcast Management Center, hence the members need to buffer the collected metrics between two polls. The aim for this switch is to reduce memory consumption of the metrics system if the Hazelcast Management Center is not used."
+                },
+                "retention-seconds": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "default": 5,
+                  "description": "Sets the number of seconds the metrics will be retained on the instance. More retention means more heap memory, but allows for longer client hiccups without losing a value (for example to restart the Management Center)."
+                }
+              }
+            }
+          },
+          "propertyNames": {
+            "enum": [
+              "enabled",
+              "management-center",
+              "jmx",
+              "collection-frequency-seconds"
+            ]
+          }
+        },
+        {
+          "$ref": "#/definitions/BaseMetrics"
+        }
+      ]
+    },
+    "ClientMetrics": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/BaseMetrics"
+        },
+        {
+          "propertyNames": {
+            "enum": [
+              "enabled",
+              "jmx",
+              "collection-frequency-seconds"
+            ]
+          }
+        }
+      ]
+    },
+    "BaseMetrics": {
+      "type": "object",
       "properties": {
         "enabled": {
           "type": "boolean",
           "default": true,
           "description": "The master-switch for the metrics collection. If this is set to false no metrics collection is done, regardless of the other settings."
-        },
-        "management-center": {
-          "type": "object",
-          "description": "Defines the Hazelcast Management Center related metrics configuration.",
-          "additionalProperties": false,
-          "properties": {
-            "enabled": {
-              "type": "boolean",
-              "default": true,
-              "description": "Controls whether the metrics collected are exposed to Hazelcast Management Center. Please note that the metrics are polled by the Hazelcast Management Center, hence the members need to buffer the collected metrics between two polls. The aim for this switch is to reduce memory consumption of the metrics system if the Hazelcast Management Center is not used."
-            },
-            "retention-seconds": {
-              "type": "integer",
-              "minimum": 1,
-              "default": 5,
-              "description": "Sets the number of seconds the metrics will be retained on the instance. More retention means more heap memory, but allows for longer client hiccups without losing a value (for example to restart the Management Center)."
-            }
-          }
         },
         "jmx": {
           "type": "object",
@@ -2474,7 +2580,7 @@
                       "user-search-scope": {
                         "$ref": "#/definitions/LdapSearchScope"
                       },
-                      "system-authentication":  {
+                      "system-authentication": {
                         "type": "string"
                       },
                       "security-realm": {
@@ -2498,45 +2604,13 @@
                 "maxProperties": 1,
                 "properties": {
                   "username-password": {
-                    "type": "object",
-                    "additionalProperties": false,
-                    "description": "Defines a static UsernamePasswordCredentials instance as the member's identity. It has mandatory \"username\" and \"password\" attributes.",
-                    "properties": {
-                      "username": {
-                        "type": "string"
-                      },
-                      "password": {
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "username",
-                      "password"
-                    ]
+                    "$ref": "#/definitions/UsernamePasswordIdentity"
                   },
                   "token": {
-                    "type": "object",
-                    "additionalProperties": false,
-                    "description": "Defines a static TokenCredentials instance as the client's identity. It has a \"value\" and it can have also \"encoding\" defined.",
-                    "properties": {
-                      "encoding": {
-                        "enum": [
-                          "none",
-                          "base64"
-                        ]
-                      },
-                      "value": {
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "encoding",
-                      "value"
-                    ]
+                    "$ref": "#/definitions/TokenIdentity"
                   },
                   "credentials-factory": {
-                    "description": " Specifies the name and properties of your class that you developed by implementing Hazelcast's Credentials interface. This element has a mandatory \"class-name\" attribute where you should define the factory class implementing ICredentialsFactory used to create Credentials objects. With the \"properties\" child property, you can define properties for the factory class.",
-                    "$ref": "#/definitions/ClassNameWithProps"
+                    "$ref": "#/definitions/CredentialsFactoryIdentity"
                   }
                 }
               }
@@ -3049,7 +3123,7 @@
           "member-count-split-brain-protection": {
             "enabled": {
               "type": "boolean",
-              "default":  false
+              "default": false
             },
             "protect-on": {
               "enum": [
@@ -3741,17 +3815,25 @@
         }
       ]
     },
-    "Jet":  {
+    "Jet": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "resource-upload-enabled": {
+          "type": "boolean",
+          "default": false
+        },
         "instance": {
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "cooperative-thread-count": {
               "type": "integer",
-              "description":  "the number of threads each cluster member will use to execute Jet jobs. This refers only to threads executing `cooperative` processors; each `blocking` processor is assigned its own thread. By default it is the same as the number of available processors."
+              "description": "the number of threads each cluster member will use to execute Jet jobs. This refers only to threads executing `cooperative` processors; each `blocking` processor is assigned its own thread. By default it is the same as the number of available processors."
             },
             "flow-control-period": {
               "type": "integer",
@@ -3760,13 +3842,13 @@
             },
             "backup-count": {
               "type": "integer",
-              "default":  1,
+              "default": 1,
               "maximum": 6,
               "description": "Sets the number of backups that Jet will maintain for the job metadata and snapshots. Each backup is on another cluster member; all backup write operations must complete before the overall write operation can complete. The maximum allowed number of backups is 6 and the default is 1. For example, if you set the backup count to 2, Jet will replicate all the job metadata and snapshot data to two other members. If one or two members of the cluster fail, Jet can recover the data from the snapshot and continue executing the job on the remaining members without loss."
             },
             "scale-up-delay-millis": {
               "type": "integer",
-              "default":  10000,
+              "default": 10000,
               "description": "Sets the delay after which auto-scaled jobs will restart if a new member is added to the cluster. Has no effect on jobs with auto scaling disabled."
             },
             "lossless-restart-enabled": {
@@ -3789,9 +3871,9 @@
             "queue-size": {
               "type": "integer",
               "default": 1024,
-              "description":  "Sets the capacity of processor-to-processor concurrent queues. The value is rounded upwards to the next power of 2. When data needs to travel between two processors on the same cluster member, Jet sends it over a concurrent single-producer, single-consumer (SPSC) queue of fixed capacity. Since there are several processors executing the logic of each vertex, and since the queues are SPSC, there will be `senderParallelism input.txt receiverParallelism` queues representing the edge on each member. The edge capacity should strike a balance between performance and memory usage."
+              "description": "Sets the capacity of processor-to-processor concurrent queues. The value is rounded upwards to the next power of 2. When data needs to travel between two processors on the same cluster member, Jet sends it over a concurrent single-producer, single-consumer (SPSC) queue of fixed capacity. Since there are several processors executing the logic of each vertex, and since the queues are SPSC, there will be `senderParallelism input.txt receiverParallelism` queues representing the edge on each member. The edge capacity should strike a balance between performance and memory usage."
             },
-            "packet-size-limit":  {
+            "packet-size-limit": {
               "type": "integer",
               "default": 16384,
               "description": "For a distributed edge, data is sent to a remote member via Hazelcast network packets. Each packet is dedicated to the data of a single edge, but may contain any number of data items. This setting limits the size of the packet in bytes. Packets should be large enough to drown out any fixed overheads, but small enough to allow good interleaving with other packets. Note that a single item cannot straddle packets, therefore the maximum packet size can exceed the value configured here by the size of a single data item. This setting has no effect on a non-distributed edge. "
@@ -3802,6 +3884,533 @@
               "description": "Sets the scaling factor used by the adaptive receive window sizing function. For each distributed edge the receiving member regularly sends flow-control (\"ack\") packets to its sender which prevent it from sending too much data and overflowing the buffers. The sender is allowed to send the data one `receive window` further than the last acknowledged byte and the receive window is sized in proportion to the rate of processing at the receiver. Ack packets are sent in regular intervals (InstanceConfig#setFlowControlPeriodMs) and the `receive window multiplier` sets the factor of the linear relationship between the amount of data processed within one such interval and the size of the receive window. To put it another way, let us define an `ackworth` as the amount of data processed between two consecutive ack packets. The receive window multiplier determines the number of ackworths the sender can be ahead of the last acked byte. This setting has no effect on a non-distributed edge."
             }
           }
+        }
+      }
+    },
+    "ConnectionStrategy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "async-start": {
+          "type": "boolean",
+          "default": false,
+          "description": "If set to true, creating Hazelcast client does not wait for connecting to the cluster."
+        },
+        "reconnect-mode": {
+          "description": "Defines the reconnection mode. The valid values are:\\n * \"ON\": Enables reconnection in a blocking manner where all the waiting invocations are blocked until a cluster connection is established or failed. This is the default value.\\n * \"OFF\": Disables the reconnection.\\n * \"ASYNC\": Enables reconnection in a non-blocking manner where all the waiting invocations receive a HazelcastClientOfflineException.",
+          "enum": [
+            "ASYNC",
+            "ON",
+            "OFF"
+          ],
+          "default": "ON"
+        },
+        "connection-retry": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Defines the configuration used when retrying to connect to the cluster.",
+          "properties": {
+            "initial-backoff-millis": {
+              "type": "integer",
+              "default": 1000,
+              "minimum": 0,
+              "description": "Specifies how long to wait (backoff) after the first failure before retrying in milliseconds."
+            },
+            "max-backoff-millis": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 30000,
+              "description": "Specifies the upper limit for the backoff in milliseconds."
+            },
+            "multiplier": {
+              "type": "number",
+              "default": 1.05,
+              "minimum": 1.0,
+              "description": "Factor to multiply the backoff after a failed retry."
+            },
+            "cluster-connect-timeout-millis": {
+              "type": "integer",
+              "default": -1,
+              "minimum": -1,
+              "description": "Timeout value in milliseconds for the client to give up to connect to the current cluster Depending on FailoverConfig, a client can shutdown or start trying on alternative cluster after reaching the timeout. Its default value is -1. For the default value, the client will not stop trying to connect to the cluster. If the failover client is used, the client will start trying to connect alternative clusters after 120000 ms. For any other value, both the failover and non-failover client will use that as it is."
+            },
+            "jitter": {
+              "type": "number",
+              "default": 0,
+              "minimum": 0,
+              "maximum": 1,
+              "description": "Specifies by how much to randomize backoffs."
+            }
+          }
+        }
+      }
+    },
+    "ClientUserCodeDeployment": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "If set to true, user code deployment is enabled."
+        },
+        "jarPaths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Sequence lists the jar files containing the classes to load."
+        },
+        "classNames": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Sequence lists the classes available in the client class path to load."
+        }
+      }
+    },
+    "ProxyFactories": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "class-name": {
+            "type": "string"
+          },
+          "service": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "class-name",
+          "service"
+        ]
+      }
+    },
+    "LoadBalancer": {
+      "description": "The load balancer can be configured with the \"load-balancer\" mapping. It has a scalar sub-node called \"type\". The valid values for the type of the load balancer are:\\n * \"random\": The member the operations to be sent to is chosen randomly.\\n * \"round-robin\": The member the operations to be sent to is chosen in a round-robin fashion.\\n * \"custom\": The member the operations to be sent to is chosen by provided load balancer implementation. The implementation class name is specified in additional \"class-name\" key. ",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "enum": [
+            "random",
+            "round-robin",
+            "custom"
+          ]
+        },
+        "class-name": {
+          "type": "string"
+        }
+      },
+      "anyOf": [
+        {
+          "not": {
+            "properties": {
+              "type": {
+                "const": "custom"
+              }
+            }
+          }
+        },
+        {
+          "required": [
+            "class-name"
+          ]
+        }
+      ]
+    },
+    "ClientNearCache": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "time-to-live-seconds": {
+            "$ref": "#/definitions/Map/additionalProperties/properties/near-cache/properties/time-to-live-seconds"
+          },
+          "max-idle-seconds": {
+            "$ref": "#/definitions/Map/additionalProperties/properties/near-cache/properties/max-idle-seconds"
+          },
+          "invalidate-on-change": {
+            "$ref": "#/definitions/Map/additionalProperties/properties/near-cache/properties/invalidate-on-change"
+          },
+          "in-memory-format": {
+            "$ref": "#/definitions/Map/additionalProperties/properties/near-cache/properties/in-memory-format"
+          },
+          "serialize-keys": {
+            "$ref": "#/definitions/Map/additionalProperties/properties/near-cache/properties/serialize-keys"
+          },
+          "local-update-policy": {
+            "$ref": "#/definitions/Map/additionalProperties/properties/near-cache/properties/local-update-policy"
+          },
+          "eviction": {
+            "$ref": "#/definitions/Eviction"
+          },
+          "preloader": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "enabled": {
+                "type": "boolean",
+                "default": false
+              },
+              "directory": {
+                "type": "string",
+                "default": ""
+              },
+              "store-initial-delay-seconds": {
+                "type": "integer",
+                "minimum": 0,
+                "default": 600
+              },
+              "store-interval-seconds": {
+                "type": "integer",
+                "minimum": 0,
+                "default": 600
+              }
+            }
+          }
+        }
+      }
+    },
+    "ClientFlakeIdGenerator": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "prefetch-count": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100000,
+            "default": 100,
+            "description": "Sets how many IDs are pre-fetched on the background when one call to FlakeIdGenerator#newId() is made."
+          },
+          "prefetch-validity-millis": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 600000,
+            "description": "Sets for how long the pre-fetched IDs can be used. If this time elapses, a new batch of IDs will be fetched. Time unit is milliseconds, default is 600,000 (10 minutes)."
+          }
+        }
+      }
+    },
+    "ClientReliableTopic": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "read-batch-size": {
+            "type": "integer",
+            "default": 10,
+            "minimum": 1,
+            "description": "Sets the read batch size. The ReliableTopic tries to read a batch of messages from the ringbuffer. It will get at least one, but if there are more available, then it will try to get more to increase throughput. The maximum read batch size can be influenced using the read batch size. Apart from influencing the number of messages to retrieve, the readBatchSize also determines how many messages will be processed by the thread running the MessageListener before it returns back to the pool to look for other MessageListeners that need to be processed. The problem with returning to the pool and looking for new work is that interacting with an executor is quite expensive due to contention on the work-queue. The more work that can be done without retuning to the pool, the smaller the overhead. If the readBatchSize is 10 and there are 50 messages available, 10 items are retrieved and processed consecutively before the thread goes back to the pool and helps out with the processing of other messages. If the readBatchSize is 10 and there are 2 items available, 2 items are retrieved and processed consecutively. If the readBatchSize is an issue because a thread will be busy too long with processing a single MessageListener and it can't help out other MessageListeners, increase the size of the threadpool so the other MessageListeners don't need to wait for a thread, but can be processed in parallel."
+          },
+          "topic-overload-policy": {
+            "default": "BLOCK",
+            "enum": [
+              "BLOCK",
+              "DISCARD_OLDEST",
+              "DISCARD_NEWEST"
+            ],
+            "description": "A policy to deal with an overloaded topic; so topic where there is no place to store new messages. This policy can only be used in combination with the com.hazelcast.core.HazelcastInstance#getReliableTopic(String). The reliable topic uses a com.hazelcast.ringbuffer.Ringbuffer to store the messages. A ringbuffer doesn't track where readers are, so it has no concept of a slow consumers. This provides many advantages like high performance reads, but it also gives the ability to the reader to re-read the same message multiple times in case of an error. A ringbuffer has a limited, fixed capacity. A fast producer may overwrite old messages that are still being read by a slow consumer. To prevent this, we may configure a time-to-live on the ringbuffer (see com.hazelcast.config.RingbufferConfig#setTimeToLiveSeconds(int). Once the time-to-live is configured, the TopicOverloadPolicy controls how the publisher is going to deal with the situation that a ringbuffer is full and the oldest item in the ringbuffer is not old enough to get overwritten. Keep in mind that this retention period (time-to-live) can keep messages from being overwritten, even though all readers might have already completed reading. Its default value is BLOCK. Available values are as follows: - DISCARD_OLDEST: Using this policy, a message that has not expired can be overwritten. No matter the retention period set, the overwrite will just overwrite the item. This can be a problem for slow consumers because they were promised a certain time window to process messages. But it will benefit producers and fast consumers since they are able to continue. This policy sacrifices the slow producer in favor of fast producers/consumers.\\n * DISCARD_NEWEST: Message that was to be published is discarded.\\n * BLOCK: The caller will wait until there is space in the Ringbuffer.\\n * ERROR: The publish call fails immediately."
+          }
+        }
+      }
+    },
+    "ClientSecurity": {
+      "type": "object",
+      "additionalProperties": false,
+      "propertyNames": {
+        "enum": [
+          "realms",
+          "username-password",
+          "kerberos",
+          "token",
+          "credentials-factory"
+        ]
+      },
+      "properties": {
+        "username-password": {
+          "$ref": "#/definitions/UsernamePasswordIdentity"
+        },
+        "token": {
+          "$ref": "#/definitions/TokenIdentity"
+        },
+        "credentials-factory": {
+          "$ref": "#/definitions/CredentialsFactoryIdentity"
+        },
+        "kerberos": {
+          "$ref": "#/definitions/KerberosIdentity"
+        },
+        "realms": {
+          "$ref": "#/definitions/Security/properties/realms"
+        }
+      }
+    },
+    "UsernamePasswordIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Defines a static UsernamePasswordCredentials instance as the member's identity. It has mandatory \"username\" and \"password\" attributes.",
+      "properties": {
+        "username": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "username",
+        "password"
+      ]
+    },
+    "KerberosIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "realm": {
+          "type": "string"
+        },
+        "security-realm": {
+          "type": "string"
+        },
+        "principal": {
+          "type": "string"
+        },
+        "keytab-file": {
+          "type": "string"
+        },
+        "service-name-prefix": {
+          "type": "string"
+        },
+        "spn": {
+          "type": "string"
+        },
+        "use-canonical-hostname": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "TokenIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Defines a static TokenCredentials instance as the client's identity. It has a \"value\" and it can have also \"encoding\" defined.",
+      "properties": {
+        "encoding": {
+          "enum": [
+            "none",
+            "base64"
+          ]
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "encoding",
+        "value"
+      ]
+    },
+    "CredentialsFactoryIdentity": {
+      "description": " Specifies the name and properties of your class that you developed by implementing Hazelcast's Credentials interface. This element has a mandatory \"class-name\" attribute where you should define the factory class implementing ICredentialsFactory used to create Credentials objects. With the \"properties\" child property, you can define properties for the factory class.",
+      "$ref": "#/definitions/ClassNameWithProps"
+    },
+    "ClientNetwork": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "cluster-members": {
+          "description": "This sequence lets you list the members in your cluster the client is connecting to.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "outbound-ports": {
+          "$ref": "#/definitions/OutboundPorts"
+        },
+        "smart-routing": {
+          "type": "boolean",
+          "default": true,
+          "description": "If true, client will route the key based operations to owner of the key at the best effort. Note that it uses a cached version of com.hazelcast.core.PartitionService#getPartitions() and doesn't guarantee that the operation will always be executed on the owner. The cached table is updated every second."
+        },
+        "redo-operation": {
+          "type": "boolean",
+          "default": false,
+          "description": "If true, client will redo the operations that were executing on the server and client lost the connection. This can be because of network, or simply because the member died. However it is not clear whether the application is performed or not. For idempotent operations this is harmless, but for non idempotent ones retrying can cause to undesirable effects. Note that the redo can perform on any member. If false, the operation will throw a RuntimeException that is wrapping a java.io.IOException."
+        },
+        "socket-interceptor": {
+          "$ref": "#/definitions/SocketInterceptor"
+        },
+        "connection-timeout": {
+          "type": "integer",
+          "description": "Connection timeout is the timeout value in milliseconds for members to accept client connection requests. The following are the example configurations. Its default value is 5000.",
+          "default": 5000,
+          "minimum": 0
+        },
+        "icmp-ping": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": false,
+              "description": "Flag to enable icmp ping failure detector. When set to true, this client will use icmp ping failure detector to detect unavailable members."
+            },
+            "interval-milliseconds": {
+              "type": "integer",
+              "default": 1000,
+              "minimum": 1000,
+              "description": "Interval, in milliseconds, between each ping attempt. 1000ms (1 sec) is also the minimum interval allowed."
+            },
+            "timeout-milliseconds": {
+              "type": "integer",
+              "default": 1000,
+              "description": "Number of milliseconds until a ping attempt is considered failed if there was no reply."
+            },
+            "max-attempts": {
+              "type": "integer",
+              "description": "Maximum number of ping attempts before the member gets suspected by the detector.",
+              "default": 3
+            },
+            "ttl": {
+              "description": "Maximum number of hops the packets should go through. You can set to 0 to use your system’s default TTL.",
+              "type": "integer",
+              "default": 255,
+              "minimum": 0
+            },
+            "echo-fail-fast-on-startup": {
+              "description": "The client will fail to start if it is unable to action an ICMP ping command when ICMP is enabled. Failure is usually due to OS level restrictions.",
+              "type": "boolean",
+              "default": true
+            }
+          }
+        },
+        "auto-detection": {
+          "$ref": "#/definitions/AutoDetection"
+        },
+        "azure": {
+          "$ref": "#/definitions/AzureDiscovery"
+        },
+        "gcp": {
+          "$ref": "#/definitions/GcpDiscovery"
+        },
+        "aws": {
+          "$ref": "#/definitions/AwsDiscovery"
+        },
+        "kubernetes": {
+          "$ref": "#/definitions/KubernetesDiscovery"
+        },
+        "ssl": {
+          "$ref": "#/definitions/SSL"
+        },
+        "eureka": {
+          "$ref": "#/definitions/EurekaDiscovery"
+        },
+        "discovery-strategies": {
+          "$ref": "#/definitions/DiscoveryStrategies"
+        },
+        "hazelcast-cloud": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Set its \"enabled\" sub-element to true for cluster discovery in the Hazelcast Cloud infrastructure. You need to define the mandatory \"discovery-token\" sub-node used by the discovery mechanism.",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": false
+            },
+            "discovery-token": {
+              "type": "string"
+            }
+          }
+        },
+        "socket-options": {
+          "$ref": "#/definitions/ClientSocketOptions"
+        }
+      }
+    },
+    "SocketInterceptor": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "class-name": {
+          "type": "string"
+        },
+        "properties": {
+          "type": "object"
+        }
+      },
+      "description": "Lets you add custom hooks to join and perform connection procedures (like a custom authentication protocol, etc.). This feature is available only in Hazelcast Enterprise. To be able to use it, you should first implement the MemberSocketInterceptor (for members joining to a cluster) or SocketInterceptor (for clients connecting to a member) class. Its configuration contains the class you implemented and socket interceptor properties. By default, it is disabled."
+    },
+    "AutoDetection": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": "true"
+        }
+      },
+      "description": "When enabled, it will walk through all available discovery strategies and detect the correct one for the current runtime environment. For example, it will automatically use the hazelcast-aws plugin if run on an AWS instance."
+    },
+    "SSL": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Lets you configure SSL using the SSL context factory. This feature is available only in Hazelcast Enterprise. To be able to use it, encryption should NOT be enabled and you should first implement your SSLContextFactory class. Its configuration contains the factory class and SSL properties. By default, it is disabled.",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "factory-class-name": {
+          "type": "string",
+          "example": "com.hazelcast.nio.ssl.BasicSSLContextFactory"
+        },
+        "properties": {
+          "type": "object"
+        }
+      }
+    },
+    "ClientSocketOptions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "tcp-no-delay": {
+          "description": "Enables/disables the TCP_NODELAY socket option.",
+          "default": true,
+          "type": "boolean"
+        },
+        "keep-alive": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enables/disables the SO_KEEPALIVE socket option."
+        },
+        "reuse-address": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enables/disables the SO_REUSEADDR socket option."
+        },
+        "linger-seconds": {
+          "type": "integer",
+          "default": 3,
+          "minimum": 0,
+          "description": "Enables/disables SO_LINGER with the specified linger time in seconds."
+        },
+        "buffer-size": {
+          "type": "integer",
+          "default": 128,
+          "minimum": 0,
+          "description": "Sets the SO_SNDBUF and SO_RCVBUF options to the specified value in KB for this Socket."
         }
       }
     }

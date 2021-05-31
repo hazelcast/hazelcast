@@ -14,4 +14,4 @@
 # limitations under the License.
 #
 
-com.hazelcast.jet.sql.impl.SqlSerializationHooks
+com.hazelcast.jet.sql.impl.JetSqlSerializerHook

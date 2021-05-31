@@ -70,6 +70,7 @@ import static com.hazelcast.sql.SqlBasicTest.SerializationMode;
 import static com.hazelcast.sql.SqlBasicTest.SerializationMode.IDENTIFIED_DATA_SERIALIZABLE;
 import static com.hazelcast.sql.SqlBasicTest.SerializationMode.SERIALIZABLE;
 import static com.hazelcast.sql.SqlBasicTest.serializationConfig;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -602,12 +603,15 @@ public class SqlOrderByTest extends SqlTestSupport {
         String sql = "SELECT intVal FROM ( SELECT intVal FROM " + stableMapName()
                 + " FETCH FIRST 5 ROWS ONLY)";
 
-        assertThrows(HazelcastSqlException.class, () -> assertSqlResultCount(sql, 0));
+        assertThatThrownBy(() -> query(sql))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("FETCH/OFFSET is only supported for the top-level SELECT");
 
-        String sqlLimit = "SELECT intVal FROM ( SELECT intVal FROM " + stableMapName()
-                + " LIMIT 5)";
+        String sqlLimit = "SELECT intVal FROM ( SELECT intVal FROM " + stableMapName() + " FETCH 1)";
 
-        assertThrows(HazelcastSqlException.class, () -> assertSqlResultCount(sqlLimit, 0));
+        assertThatThrownBy(() -> query(sql))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("FETCH/OFFSET is only supported for the top-level SELECT");
     }
 
     private void addIndex(List<String> fieldNames, IndexType type) {

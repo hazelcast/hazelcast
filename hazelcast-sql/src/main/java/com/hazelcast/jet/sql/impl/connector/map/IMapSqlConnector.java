@@ -17,10 +17,10 @@
 package com.hazelcast.jet.sql.impl.connector.map;
 
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadata;
@@ -37,12 +37,16 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
+import com.hazelcast.sql.impl.plan.node.MapScanMetadata;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import org.apache.calcite.sql.SqlIdentifier;
+import org.apache.calcite.sql.SqlNodeList;
+import org.apache.calcite.sql.parser.SqlParserPos;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -51,7 +55,10 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.jet.core.Edge.between;
+import static com.hazelcast.jet.core.processor.SinkProcessors.updateMapP;
+import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.estimatePartitionedMapRowCount;
+import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Stream.concat;
 
@@ -66,6 +73,9 @@ public class IMapSqlConnector implements SqlConnector {
             MetadataPortableResolver.INSTANCE,
             MetadataJsonResolver.INSTANCE
     );
+
+    private static final SqlNodeList KEY_NODE_LIST = new SqlNodeList(singletonList(
+            new SqlIdentifier(QueryPath.KEY, SqlParserPos.ZERO)), SqlParserPos.ZERO);
 
     @Override
     public String typeName() {
@@ -126,9 +136,26 @@ public class IMapSqlConnector implements SqlConnector {
         );
     }
 
+
+    @Nonnull
     @Override
-    public boolean supportsNestedLoopReader() {
-        return true;
+    public Vertex fullScanReader(
+            @Nonnull DAG dag,
+            @Nonnull Table table0,
+            @Nullable Expression<Boolean> filter,
+            @Nonnull List<Expression<?>> projection) {
+        PartitionedMapTable table = (PartitionedMapTable) table0;
+        MapScanMetadata mapScanMetadata = new MapScanMetadata(
+                table.getMapName(),
+                table.getKeyDescriptor(),
+                table.getValueDescriptor(),
+                table.fieldPaths(),
+                table.types(),
+                projection,
+                filter
+        );
+
+        return dag.newUniqueVertex(table.toString(), OnHeapMapScanP.onHeapMapScanP(mapScanMetadata));
     }
 
     @Nonnull
@@ -156,13 +183,8 @@ public class IMapSqlConnector implements SqlConnector {
     }
 
     @Override
-    public boolean supportsSink() {
+    public boolean requiresSink() {
         return true;
-    }
-
-    @Override
-    public boolean supportsInsert() {
-        return false;
     }
 
     @Nonnull
@@ -189,11 +211,31 @@ public class IMapSqlConnector implements SqlConnector {
 
         Vertex vEnd = dag.newUniqueVertex(
                 toString(table),
-                SinkProcessors.writeMapP(table.getMapName())
+                writeMapP(table.getMapName())
         );
 
         dag.edge(between(vStart, vEnd));
         return vStart;
+    }
+
+    @Nonnull
+    @Override
+    public SqlNodeList getPrimaryKey(Table table0) {
+        return KEY_NODE_LIST;
+    }
+
+    @Nonnull
+    @Override
+    public Vertex deleteProcessor(@Nonnull DAG dag, @Nonnull Table table0) {
+        PartitionedMapTable table = (PartitionedMapTable) table0;
+
+        return dag.newUniqueVertex(
+                toString(table),
+                // TODO do a simpler, specialized deleting-only processor
+                updateMapP(table.getMapName(), (FunctionEx<Object[], Object>) row -> {
+                    assert row.length == 1;
+                    return row[0];
+                }, (v, t) -> null));
     }
 
     private static String toString(PartitionedMapTable table) {

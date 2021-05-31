@@ -80,7 +80,7 @@ public abstract class TestInClusterSupport extends JetTestSupport {
         parallelism = Runtime.getRuntime().availableProcessors() / MEMBER_COUNT / 2;
         Config config = smallInstanceConfig();
 
-        JetConfig jetConfig = config.getJetConfig();
+        JetConfig jetConfig = config.getJetConfig().setResourceUploadEnabled(true);
         jetConfig.getInstanceConfig().setCooperativeThreadCount(max(2, parallelism));
         config.getMetricsConfig().setCollectionFrequencySeconds(1);
         // Set partition count to match the parallelism of IMap sources.

@@ -199,11 +199,6 @@ public class TestBatchSqlConnector implements SqlConnector {
         return new TestBatchTable(this, schemaName, mappingName, fields, rows);
     }
 
-    @Override
-    public boolean supportsFullScanReader() {
-        return true;
-    }
-
     @Nonnull
     @Override
     public Vertex fullScanReader(
