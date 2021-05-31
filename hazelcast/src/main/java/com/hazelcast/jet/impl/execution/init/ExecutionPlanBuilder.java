@@ -69,9 +69,9 @@ public final class ExecutionPlanBuilder {
         final int defaultParallelism = instance.getConfig().getInstanceConfig().getCooperativeThreadCount();
         final Map<Address, int[]> partitionAssignment = getPartitionAssignment(nodeEngine);
         final Set<MemberInfo> members = new HashSet<>(membersView.size());
+        Set<Address> membersViewAddresses = membersView.getAddresses();
         for (Address address : partitionAssignment.keySet()) {
-            MemberInfo member = membersView.getMember(address);
-            if (member == null) {
+            if (!membersViewAddresses.contains(address)) {
                 // Address in partition table doesn't exist in member list,
                 // it has just joined the cluster.
                 throw new TopologyChangedException("Topology changed, " + address + " is not in original member list");
