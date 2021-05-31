@@ -132,8 +132,8 @@ public abstract class JetSqlIndexAbstractTest extends SqlTestSupport {
 
     @Test
     public void test() {
-//        checkFirstColumn();
-//        checkSecondColumn();
+        checkFirstColumn();
+        checkSecondColumn();
         checkBothColumns();
     }
 
@@ -401,7 +401,8 @@ public abstract class JetSqlIndexAbstractTest extends SqlTestSupport {
             Predicate<ExpressionValue> expectedKeysPredicate
     ) {
         int runId = runIdGen++;
-        checkPlan(expectedUseIndex, sql, params);
+        // TODO: requires Jet parser to be enabled. Uncomment after parser switch.
+//        checkPlan(expectedUseIndex, sql, params);
 
         Set<Integer> sqlKeys = sqlKeys(expectedUseIndex, sql, params);
         Set<Integer> expectedMapKeys = expectedMapKeys(expectedKeysPredicate);
@@ -465,7 +466,7 @@ public abstract class JetSqlIndexAbstractTest extends SqlTestSupport {
     }
 
     private void checkPlan(boolean withIndex, String sql, List<Object> params) {
-        JetPlan.SelectOrSinkPlan jetPlan = planFromQuery(sql, params);
+        JetPlan.SelectPlan jetPlan = planFromQuery(sql, params);
         assertNotNull(jetPlan);
 
         DAG dag = jetPlan.getDag();
@@ -620,7 +621,7 @@ public abstract class JetSqlIndexAbstractTest extends SqlTestSupport {
         return new Query(sql(condition), parameters != null ? Arrays.asList(parameters) : null);
     }
 
-    private JetPlan.SelectOrSinkPlan planFromQuery(String sql, @Nonnull List<Object> parameters) {
+    private JetPlan.SelectPlan planFromQuery(String sql, @Nonnull List<Object> parameters) {
         SqlServiceImpl sqlService = (SqlServiceImpl) instance().getSql();
         Method prepareMethod;
         try {
@@ -635,7 +636,7 @@ public abstract class JetSqlIndexAbstractTest extends SqlTestSupport {
                     SqlExpectedResultType.ANY
             );
             // Logically, only Select/Scan plan is allowed for ... index scan :)
-            JetPlan.SelectOrSinkPlan plan = (JetPlan.SelectOrSinkPlan) erasedPlan;
+            JetPlan.SelectPlan plan = (JetPlan.SelectPlan) erasedPlan;
             return plan;
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
             e.printStackTrace();

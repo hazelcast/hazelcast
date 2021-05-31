@@ -23,7 +23,6 @@ import com.hazelcast.query.impl.predicates.PredicateDataSerializerHook;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.Arrays;
 
 import static com.hazelcast.query.impl.AbstractIndex.NULL;
@@ -94,7 +93,7 @@ import static java.lang.Integer.signum;
  * comparison operation supported is the full equality of keys expressed as
  * composite values. Partial key matching is impossible.
  */
-public final class CompositeValue implements Comparable<CompositeValue>, IdentifiedDataSerializable, Serializable {
+public final class CompositeValue implements Comparable<CompositeValue>, IdentifiedDataSerializable {
 
     /**
      * Represents a value that is equal to itself and less than any other value.

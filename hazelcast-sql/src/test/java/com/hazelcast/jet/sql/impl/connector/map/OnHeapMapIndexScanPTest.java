@@ -222,7 +222,6 @@ public class OnHeapMapIndexScanPTest extends SimpleTestInClusterSupport {
         IndexFilterValue from = intValue(1, true);
         IndexFilterValue to = intValue(count / 2, true);
         IndexFilter filter = new IndexRangeFilter(from, true, to, true);
-//        IndexFilter filter = new IndexEqualsFilter(from);
 
         MapScanMetadata scanMetadata = new MapScanMetadata(
                 map.getName(),

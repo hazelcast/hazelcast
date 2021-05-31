@@ -29,7 +29,6 @@ import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.Row;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -46,7 +45,7 @@ import java.util.List;
  * {1/false, 2/false}. While for the condition "WHERE a=1 AND b IS NULL", the filter would be {1/false, null/true}.
  */
 @SuppressWarnings("rawtypes")
-public class IndexFilterValue implements IdentifiedDataSerializable, Serializable {
+public class IndexFilterValue implements IdentifiedDataSerializable {
 
     private List<Expression> components;
     private List<Boolean> allowNulls;
@@ -85,10 +84,10 @@ public class IndexFilterValue implements IdentifiedDataSerializable, Serializabl
     /**
      * Evaluate the value of the component at the given index.
      *
-     * @param index index
+     * @param index       index
      * @param evalContext evaluation context
      * @return evaluated value or {@code null} if the evaluation should be stopped, because the parent index condition will
-     *     never return any entry
+     * never return any entry
      */
     private Comparable getComponentValue(int index, ExpressionEvalContext evalContext) {
         Object value = components.get(index).evalTop(NoColumnAccessRow.INSTANCE, evalContext);

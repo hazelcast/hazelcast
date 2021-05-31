@@ -18,8 +18,6 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-import java.io.Serializable;
-
 /**
  * Defines a contract of objects that are simultaneously {@link Comparable} and
  * {@link IdentifiedDataSerializable}.
@@ -32,6 +30,6 @@ import java.io.Serializable;
  * See {@link AbstractIndex#NULL} and {@link CompositeValue#NEGATIVE_INFINITY}
  * for examples.
  */
-public interface ComparableIdentifiedDataSerializable extends Comparable, IdentifiedDataSerializable, Serializable {
+public interface ComparableIdentifiedDataSerializable extends Comparable, IdentifiedDataSerializable {
 
 }

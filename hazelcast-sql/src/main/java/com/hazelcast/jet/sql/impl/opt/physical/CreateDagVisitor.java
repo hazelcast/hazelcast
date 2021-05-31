@@ -345,7 +345,7 @@ public class CreateDagVisitor {
      * vertices normally connected by an unicast or isolated edge, depending on
      * whether the {@code rel} has collation fields.
      *
-     * @param rel The rel to connect to input
+     * @param rel    The rel to connect to input
      * @param vertex The vertex for {@code rel}
      */
     private void connectInputPreserveCollation(SingleRel rel, Vertex vertex) {
