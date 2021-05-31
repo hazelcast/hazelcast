@@ -280,6 +280,13 @@ public class MultiMapProxyImpl<K, V>
 
     @Nonnull
     @Override
+    public UUID addLocalEntryListener(@Nonnull EntryListener<K, V> listener, boolean includeValue) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
+        return getService().addLocalListener(name, listener, null, includeValue);
+    }
+
+    @Nonnull
+    @Override
     public UUID addEntryListener(@Nonnull EntryListener<K, V> listener, boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         return getService().addListener(name, listener, null, includeValue);

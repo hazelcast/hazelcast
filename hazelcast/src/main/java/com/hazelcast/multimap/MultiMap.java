@@ -319,6 +319,20 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
     UUID addLocalEntryListener(@Nonnull EntryListener<K, V> listener);
 
     /**
+     * Adds a local entry listener for this multimap.
+     * <p>
+     * The listener will be notified for all multimap
+     * add/remove/update events.
+     *
+     * @param listener     entry listener for this multimap
+     * @param includeValue {@code true} if {@code EntryEvent} should contain the value,
+     *                     {@code false} otherwise
+     * @return returns registration ID for the entry listener
+     */
+    @Nonnull
+    UUID addLocalEntryListener(@Nonnull EntryListener<K, V> listener, boolean includeValue);
+
+    /**
      * Adds an entry listener for this multimap.
      * <p>
      * The listener will be notified for all multimap
