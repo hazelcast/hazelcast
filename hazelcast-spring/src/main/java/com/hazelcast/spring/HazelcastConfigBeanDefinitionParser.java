@@ -2123,6 +2123,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
 
         private void handleJet(Node node) {
             BeanDefinitionBuilder jetConfigBuilder = createBeanBuilder(JetConfig.class);
+            fillAttributeValues(node, jetConfigBuilder);
             for (Node child : childElements(node)) {
                 String nodeName = cleanNodeName(child);
                 if ("instance".equals(nodeName)) {

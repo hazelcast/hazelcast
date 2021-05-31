@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.schema.map;
 
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
@@ -102,7 +103,7 @@ public class PartitionedMapTable extends AbstractMapTable {
     }
 
     public List<QueryPath> fieldPaths() {
-        return getFields().stream().map(field -> ((MapTableField) field).getPath()).collect(Collectors.toList());
+        return Util.toList(getFields(), field -> ((MapTableField) field).getPath());
     }
 
     public List<QueryDataType> types() {

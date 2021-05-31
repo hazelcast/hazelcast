@@ -1,0 +1,57 @@
+{
+  "instance": {
+    "hazelcast-client": {
+      "connection-strategy": {
+        "connection-retry": {
+          "initial-backoff-millis": -1,
+          "max-backoff-millis": -1,
+          "multiplier": 0.9,
+          "cluster-connect-timeout-millis": -2,
+          "jitter": 1.05
+        }
+      }
+    }
+  },
+  "error": {
+    "schemaLocation": "#/definitions/ConnectionStrategy/properties/connection-retry",
+    "pointerToViolation": "#/hazelcast-client/connection-strategy/connection-retry",
+    "causingExceptions": [
+      {
+        "schemaLocation": "#/definitions/ConnectionStrategy/properties/connection-retry/properties/jitter",
+        "pointerToViolation": "#/hazelcast-client/connection-strategy/connection-retry/jitter",
+        "causingExceptions": [],
+        "keyword": "maximum",
+        "message": "1.05 is not less or equal to 1"
+      },
+      {
+        "schemaLocation": "#/definitions/ConnectionStrategy/properties/connection-retry/properties/multiplier",
+        "pointerToViolation": "#/hazelcast-client/connection-strategy/connection-retry/multiplier",
+        "causingExceptions": [],
+        "keyword": "minimum",
+        "message": "0.9 is not greater or equal to 1.0"
+      },
+      {
+        "schemaLocation": "#/definitions/ConnectionStrategy/properties/connection-retry/properties/initial-backoff-millis",
+        "pointerToViolation": "#/hazelcast-client/connection-strategy/connection-retry/initial-backoff-millis",
+        "causingExceptions": [],
+        "keyword": "minimum",
+        "message": "-1 is not greater or equal to 0"
+      },
+      {
+        "schemaLocation": "#/definitions/ConnectionStrategy/properties/connection-retry/properties/max-backoff-millis",
+        "pointerToViolation": "#/hazelcast-client/connection-strategy/connection-retry/max-backoff-millis",
+        "causingExceptions": [],
+        "keyword": "minimum",
+        "message": "-1 is not greater or equal to 0"
+      },
+      {
+        "schemaLocation": "#/definitions/ConnectionStrategy/properties/connection-retry/properties/cluster-connect-timeout-millis",
+        "pointerToViolation": "#/hazelcast-client/connection-strategy/connection-retry/cluster-connect-timeout-millis",
+        "causingExceptions": [],
+        "keyword": "minimum",
+        "message": "-2 is not greater or equal to -1"
+      }
+    ],
+    "message": "5 schema violations found"
+  }
+}

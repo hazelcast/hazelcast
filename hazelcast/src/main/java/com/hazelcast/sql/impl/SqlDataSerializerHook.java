@@ -312,7 +312,6 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[MAP_SCAN_METADATA] = arg -> new MapScanMetadata();
         constructors[MAP_INDEX_SCAN_METADATA] = arg -> new MapIndexScanMetadata();
 
-
         return new ArrayDataSerializableFactory(constructors);
     }
 }

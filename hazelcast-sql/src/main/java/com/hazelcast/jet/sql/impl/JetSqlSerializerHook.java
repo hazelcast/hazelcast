@@ -63,6 +63,5 @@ public class JetSqlSerializerHook implements DataSerializerHook {
         constructors[IMAP_INDEX_SCAN_PROCESSOR_SUPPLIER] = arg -> new OnHeapMapIndexScanP.OnHeapMapIndexScanSupplier();
 
         return new ArrayDataSerializableFactory(constructors);
-//        return new JetSqlDataSerializableFactory();
     }
 }

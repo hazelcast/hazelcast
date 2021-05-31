@@ -88,11 +88,6 @@ public class TestFailingSqlConnector implements SqlConnector {
         );
     }
 
-    @Override
-    public boolean supportsFullScanReader() {
-        return true;
-    }
-
     @Nonnull @Override
     public Vertex fullScanReader(
             @Nonnull DAG dag,

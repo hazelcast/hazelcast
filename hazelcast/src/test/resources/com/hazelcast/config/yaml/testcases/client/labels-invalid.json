@@ -1,0 +1,33 @@
+{
+  "instance": {
+    "hazelcast-client": {
+      "client-labels": [
+        "label1",
+        null,
+        "duplicate",
+        "duplicate"
+      ]
+    }
+  },
+  "error": {
+    "schemaLocation": "#/properties/hazelcast-client/properties/client-labels",
+    "pointerToViolation": "#/hazelcast-client/client-labels",
+    "causingExceptions": [
+      {
+        "schemaLocation": "#/properties/hazelcast-client/properties/client-labels",
+        "pointerToViolation": "#/hazelcast-client/client-labels",
+        "causingExceptions": [],
+        "keyword": "uniqueItems",
+        "message": "array items are not unique"
+      },
+      {
+        "schemaLocation": "#/properties/hazelcast-client/properties/client-labels/items",
+        "pointerToViolation": "#/hazelcast-client/client-labels/1",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: String, found: Null"
+      }
+    ],
+    "message": "2 schema violations found"
+  }
+}

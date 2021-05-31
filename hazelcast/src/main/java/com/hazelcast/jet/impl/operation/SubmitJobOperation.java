@@ -30,19 +30,26 @@ public class SubmitJobOperation extends AsyncJobOperation {
     // force serialization of fields to avoid sharing of the mutable instances if submitted to the master member
     private Data jobDefinition;
     private Data config;
+    private boolean isLightJob;
 
     public SubmitJobOperation() {
     }
 
-    public SubmitJobOperation(long jobId, Data jobDefinition, Data config) {
+    public SubmitJobOperation(long jobId, Data jobDefinition, Data config, boolean isLightJob) {
         super(jobId);
         this.jobDefinition = jobDefinition;
         this.config = config;
+        this.isLightJob = isLightJob;
     }
 
     @Override
     public CompletableFuture<Void> doRun() {
-        return getJobCoordinationService().submitJob(jobId(), jobDefinition, config);
+        if (isLightJob) {
+            assert !getNodeEngine().getLocalMember().isLiteMember() : "light job submitted to a lite member";
+            return getJobCoordinationService().submitLightJob(jobId(), jobDefinition);
+        } else {
+            return getJobCoordinationService().submitJob(jobId(), jobDefinition, config);
+        }
     }
 
     @Override
@@ -55,6 +62,7 @@ public class SubmitJobOperation extends AsyncJobOperation {
         super.writeInternal(out);
         IOUtil.writeData(out, jobDefinition);
         IOUtil.writeData(out, config);
+        out.writeBoolean(isLightJob);
     }
 
     @Override
@@ -62,5 +70,6 @@ public class SubmitJobOperation extends AsyncJobOperation {
         super.readInternal(in);
         jobDefinition = IOUtil.readData(in);
         config = IOUtil.readData(in);
+        isLightJob = in.readBoolean();
     }
 }

@@ -82,11 +82,6 @@ class StreamSqlConnector implements SqlConnector {
         return new StreamTable(INSTANCE, FIELDS, schemaName, name, argumentExpressions);
     }
 
-    @Override
-    public boolean supportsFullScanReader() {
-        return true;
-    }
-
     @Nonnull
     @Override
     public Vertex fullScanReader(

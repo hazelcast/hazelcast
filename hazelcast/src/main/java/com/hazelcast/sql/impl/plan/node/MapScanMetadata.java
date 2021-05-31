@@ -27,7 +27,6 @@ import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
 

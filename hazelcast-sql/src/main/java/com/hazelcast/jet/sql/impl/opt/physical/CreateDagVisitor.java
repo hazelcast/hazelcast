@@ -81,6 +81,13 @@ public class CreateDagVisitor {
         this.parameterMetadata = parameterMetadata;
     }
 
+    public Vertex onDelete(DeletePhysicalRel rel) {
+        Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
+        Vertex vertex = getJetSqlConnector(table).deleteProcessor(dag, table);
+        connectInput(rel.getInput(), vertex, null);
+        return vertex;
+    }
+
     public Vertex onValues(ValuesPhysicalRel rel) {
         List<ExpressionValues> values = rel.values();
 
@@ -120,7 +127,6 @@ public class CreateDagVisitor {
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
         collectObjectKeys(table);
         SqlConnector sqlConnector = getJetSqlConnector(table);
-        // TODO: discuss it.
         assert sqlConnector instanceof IMapSqlConnector;
         IMapSqlConnector mapSqlConnector = (IMapSqlConnector) sqlConnector;
 
