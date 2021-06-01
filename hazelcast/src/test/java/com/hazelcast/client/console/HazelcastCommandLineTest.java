@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.server;
+package com.hazelcast.client.console;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.cluster.Address;
@@ -58,7 +58,7 @@ import java.util.function.Function;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
-import static com.hazelcast.jet.server.HazelcastCommandLine.runCommandLine;
+import static com.hazelcast.client.console.HazelcastCommandLine.runCommandLine;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

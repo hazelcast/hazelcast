@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.server;
+package com.hazelcast.client.console;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
@@ -42,7 +42,7 @@ import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.jet.impl.JobSummary;
-import com.hazelcast.jet.server.HazelcastCommandLine.HazelcastVersionProvider;
+import com.hazelcast.client.console.HazelcastCommandLine.HazelcastVersionProvider;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlColumnType;
@@ -112,13 +112,22 @@ import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static java.util.Collections.emptyList;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-@SuppressWarnings({"unused", "MismatchedQueryAndUpdateOfCollection"})
+@SuppressWarnings({
+        "unused",
+        "MismatchedQueryAndUpdateOfCollection",
+        "checkstyle:ClassFanOutComplexity",
+        "checkstyle:MethodCount",
+        "checkstyle:CyclomaticComplexity",
+        "checkstyle:MethodLength",
+        "checkstyle:NPathComplexity",
+        "checkstyle:TrailingComment"
+})
 @Command(
         name = "hazelcast",
-        description = "Utility to perform operations on a Hazelcast cluster.%n" +
-                "By default it uses the file config/hazelcast-client.yaml to configure the client connection." +
-                "%n%n" +
-                "Global options are:%n",
+        description = "Utility to perform operations on a Hazelcast cluster.%n"
+                + "By default it uses the file config/hazelcast-client.yaml to configure the client connection."
+                + "%n%n"
+                + "Global options are:%n",
         versionProvider = HazelcastVersionProvider.class,
         mixinStandardHelpOptions = true,
         sortOptions = false,
@@ -136,8 +145,8 @@ public class HazelcastCommandLine implements Runnable {
     private final PrintStream err;
 
     @Option(names = {"-f", "--config"},
-            description = "Optional path to a client config XML/YAML file." +
-                    " The default is to use config/hazelcast-client.yaml.",
+            description = "Optional path to a client config XML/YAML file."
+                    + " The default is to use config/hazelcast-client.yaml.",
             order = 0
     )
     private File config;
@@ -146,16 +155,16 @@ public class HazelcastCommandLine implements Runnable {
             split = ",",
             arity = "1..*",
             paramLabel = "<hostname>:<port>",
-            description = "[DEPRECATED] Optional comma-separated list of Jet node addresses in the format" +
-                    " <hostname>:<port>, if you want to connect to a cluster other than the" +
-                    " one configured in the configuration file. Use --targets instead.",
+            description = "[DEPRECATED] Optional comma-separated list of Jet node addresses in the format"
+                    + " <hostname>:<port>, if you want to connect to a cluster other than the"
+                    + " one configured in the configuration file. Use --targets instead.",
             order = 1
     )
     private List<String> addresses;
 
     @Option(names = {"-n", "--cluster-name"},
-            description = "[DEPRECATED] The cluster name to use when connecting to the cluster " +
-                    "specified by the <addresses> parameter. Use --targets instead.",
+            description = "[DEPRECATED] The cluster name to use when connecting to the cluster "
+                    + "specified by the <addresses> parameter. Use --targets instead.",
             defaultValue = "dev",
             showDefaultValue = Visibility.ALWAYS,
             order = 2
@@ -638,8 +647,8 @@ public class HazelcastCommandLine implements Runnable {
     }
 
     private boolean isYaml() {
-        return isConfigFileNotNull() &&
-                (config.getPath().endsWith(".yaml") || config.getPath().endsWith(".yml"));
+        return isConfigFileNotNull()
+                && (config.getPath().endsWith(".yaml") || config.getPath().endsWith(".yml"));
     }
 
     private boolean isConfigFileNotNull() {
@@ -1157,20 +1166,20 @@ public class HazelcastCommandLine implements Runnable {
                             // End the block; arg could be empty, but that's fine
                             quoteStart = -1;
                         }
-                    } else if (oneLineCommentStart == -1 &&
-                            line.regionMatches(i, "/*", 0, "/*".length())) {
+                    } else if (oneLineCommentStart == -1
+                            && line.regionMatches(i, "/*", 0, "/*".length())) {
                         // Enter the multiline comment block
                         multiLineCommentStart = i;
                         containsNonWhitespaceData = true;
                     } else if (multiLineCommentStart >= 0) {
                         // In a multiline comment block
-                        if (i - multiLineCommentStart > 2 &&
-                                line.regionMatches(i - 1, "*/", 0, "*/".length())) {
+                        if (i - multiLineCommentStart > 2
+                                && line.regionMatches(i - 1, "*/", 0, "*/".length())) {
                             // End the multiline block
                             multiLineCommentStart = -1;
                         }
-                    } else if (oneLineCommentStart == -1 &&
-                            line.regionMatches(i, "--", 0, "--".length())) {
+                    } else if (oneLineCommentStart == -1
+                            && line.regionMatches(i, "--", 0, "--".length())) {
                         // Enter the one line comment block
                         oneLineCommentStart = i;
                         containsNonWhitespaceData = true;
@@ -1215,8 +1224,8 @@ public class HazelcastCommandLine implements Runnable {
                 throw new EOFError(-1, cursor, "Missing end of comment", "**");
             }
 
-            if (containsNonWhitespaceData &&
-                    (lastSemicolonIdx == -1 || lastSemicolonIdx >= cursor)) {
+            if (containsNonWhitespaceData
+                    && (lastSemicolonIdx == -1 || lastSemicolonIdx >= cursor)) {
                 throw new EOFError(-1, cursor, "Missing semicolon (;)");
             }
         }
