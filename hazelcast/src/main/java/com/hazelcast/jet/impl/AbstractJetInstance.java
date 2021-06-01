@@ -19,10 +19,12 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.collection.IList;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetCacheManager;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobAlreadyExistsException;
+import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.Observable;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
@@ -34,6 +36,7 @@ import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.IMap;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.sql.SqlService;
@@ -51,10 +54,19 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static com.hazelcast.jet.impl.JobRepository.exportedSnapshotMapName;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static java.util.stream.Collectors.toList;
 
+/**
+ * To not break the static factory methods of {@link Jet} that
+ * return the deprecated {@link JetInstance}, we continue to
+ * implement {@link JetInstance}, because we need to cast
+ * instances of {@link AbstractJetInstance} to {@link JetInstance}
+ * there. Search for casts to {@link JetInstance} before you consider
+ * removing this.
+ */
 public abstract class AbstractJetInstance<MemberIdType> implements JetInstance {
 
     private final HazelcastInstance hazelcastInstance;
@@ -65,7 +77,7 @@ public abstract class AbstractJetInstance<MemberIdType> implements JetInstance {
     public AbstractJetInstance(HazelcastInstance hazelcastInstance) {
         this.hazelcastInstance = hazelcastInstance;
         this.cacheManager = new JetCacheManagerImpl(this);
-        this.jobRepository = Util.memoizeConcurrent(() -> new JobRepository(this));
+        this.jobRepository = Util.memoizeConcurrent(() -> new JobRepository(hazelcastInstance));
         this.observables = new ConcurrentHashMap<>();
     }
 
@@ -195,6 +207,34 @@ public abstract class AbstractJetInstance<MemberIdType> implements JetInstance {
         } catch (Throwable t) {
             throw rethrow(t);
         }
+    }
+
+    @Nullable
+    @Override
+    public JobStateSnapshot getJobStateSnapshot(@Nonnull String name) {
+        String mapName = exportedSnapshotMapName(name);
+        if (!this.existsDistributedObject(MapService.SERVICE_NAME, mapName)) {
+            return null;
+        }
+        IMap<Object, Object> map = getHazelcastInstance().getMap(mapName);
+        Object validationRecord = map.get(SnapshotValidationRecord.KEY);
+        if (validationRecord instanceof SnapshotValidationRecord) {
+            // update the cache - for robustness. For example after the map was copied
+            getHazelcastInstance().getMap(JobRepository.EXPORTED_SNAPSHOTS_DETAIL_CACHE).set(name, validationRecord);
+            return new JobStateSnapshot(getHazelcastInstance(), name, (SnapshotValidationRecord) validationRecord);
+        } else {
+            return null;
+        }
+    }
+
+    @Nonnull
+    @Override
+    public Collection<JobStateSnapshot> getJobStateSnapshots() {
+        return getHazelcastInstance().getMap(JobRepository.EXPORTED_SNAPSHOTS_DETAIL_CACHE)
+                .entrySet().stream()
+                .map(entry -> new JobStateSnapshot(getHazelcastInstance(), (String) entry.getKey(),
+                        (SnapshotValidationRecord) entry.getValue()))
+                .collect(Collectors.toList());
     }
 
     @Nonnull @Override

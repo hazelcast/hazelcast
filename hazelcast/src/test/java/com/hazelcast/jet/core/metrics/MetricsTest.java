@@ -450,7 +450,7 @@ public class MetricsTest extends JetTestSupport {
         assertSourceSinkTags(metrics[0], "sink", true, false, true);
 
         // restart after a snapshot so that the job will restart from a snapshot. Check the source/sink tags afterwards.
-        waitForFirstSnapshot(new JobRepository(instance), job.getId(), 10, true);
+        waitForFirstSnapshot(new JobRepository(instance.getHazelcastInstance()), job.getId(), 10, true);
         job.restart();
 
         assertJobStatusEventually(job, RUNNING);

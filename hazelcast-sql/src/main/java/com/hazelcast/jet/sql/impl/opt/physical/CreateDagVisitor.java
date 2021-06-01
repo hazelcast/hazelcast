@@ -32,7 +32,6 @@ import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.pipeline.ServiceFactories;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
-import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -61,7 +60,6 @@ import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static com.hazelcast.jet.core.processor.Processors.mapUsingServiceP;
 import static com.hazelcast.jet.core.processor.Processors.sortP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.convenientSourceP;
-import static com.hazelcast.jet.impl.util.Util.getJetInstance;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 import static com.hazelcast.jet.sql.impl.processors.RootResultConsumerSink.rootResultConsumerSink;
 import static java.util.Collections.singletonList;
@@ -82,6 +80,7 @@ public class CreateDagVisitor {
 
     public Vertex onDelete(DeletePhysicalRel rel) {
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
+
         Vertex vertex = getJetSqlConnector(table).deleteProcessor(dag, table);
         connectInput(rel.getInput(), vertex, null);
         return vertex;
@@ -117,9 +116,9 @@ public class CreateDagVisitor {
     public Vertex onFullScan(FullScanPhysicalRel rel) {
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
         collectObjectKeys(table);
-        SqlConnector jetSqlConnector = getJetSqlConnector(table);
 
-        return jetSqlConnector.fullScanReader(dag, table, rel.filter(parameterMetadata), rel.projection(parameterMetadata));
+        return getJetSqlConnector(table)
+                .fullScanReader(dag, table, rel.filter(parameterMetadata), rel.projection(parameterMetadata));
     }
 
     public Vertex onFilter(FilterPhysicalRel rel) {
@@ -338,7 +337,8 @@ public class CreateDagVisitor {
                 preserveCollation ? Edge::isolated : null);
 
         if (preserveCollation) {
-            int cooperativeThreadCount = getJetInstance(nodeEngine).getConfig().getInstanceConfig().getCooperativeThreadCount();
+            int cooperativeThreadCount = nodeEngine.getConfig().getJetConfig()
+                    .getInstanceConfig().getCooperativeThreadCount();
             int explicitLP = inputVertex.determineLocalParallelism(cooperativeThreadCount);
             // It's not strictly necessary to set the LP to the input, but we do it to ensure that the two
             // vertices indeed have the same LP

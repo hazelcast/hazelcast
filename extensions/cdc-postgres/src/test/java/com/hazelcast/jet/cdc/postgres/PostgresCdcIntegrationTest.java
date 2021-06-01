@@ -179,7 +179,7 @@ public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTe
         //make sure the job stores a Postgres WAL offset so that it won't trigger database snapshots after any restart
         //multiple snapshots are a problem for this test, because it is updating the same row, so subsequent snapshots
         //will return different images
-        JobRepository jr = new JobRepository(jet);
+        JobRepository jr = new JobRepository(jet.getHazelcastInstance());
         waitForNextSnapshot(jr, job.getId(), 20, false);
 
         String lsnFlushedBeforeRestart = getConfirmedFlushLsn();

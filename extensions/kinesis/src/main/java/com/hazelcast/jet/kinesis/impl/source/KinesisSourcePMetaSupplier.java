@@ -87,7 +87,7 @@ public class KinesisSourcePMetaSupplier implements ProcessorMetaSupplier {
     @Nonnull
     private static List<Address> getMemberAddresses(@Nonnull Context context) {
         return context
-                .jetInstance().getCluster().getMembers().stream()
+                .hazelcastInstance().getCluster().getMembers().stream()
                 .map(Member::getAddress)
                 .collect(toList());
     }

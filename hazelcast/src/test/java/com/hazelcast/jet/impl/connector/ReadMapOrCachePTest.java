@@ -59,7 +59,7 @@ public class ReadMapOrCachePTest extends SimpleTestInClusterSupport {
     public void test_whenEmpty() {
         TestSupport
                 .verifyProcessor(adaptSupplier(SourceProcessors.readMapP(randomMapName())))
-                .jetInstance(instance())
+                .hazelcastInstance(instance().getHazelcastInstance())
                 .disableSnapshots()
                 .disableProgressAssertion()
                 .expectOutput(emptyList());
@@ -76,7 +76,7 @@ public class ReadMapOrCachePTest extends SimpleTestInClusterSupport {
 
         TestSupport
                 .verifyProcessor(adaptSupplier(SourceProcessors.readMapP(map.getName())))
-                .jetInstance(instance())
+                .hazelcastInstance(instance().getHazelcastInstance())
                 .disableSnapshots()
                 .disableProgressAssertion()
                 .outputChecker(TestSupport.SAME_ITEMS_ANY_ORDER)
@@ -98,7 +98,7 @@ public class ReadMapOrCachePTest extends SimpleTestInClusterSupport {
         Projection<Entry<Integer, String>, String> projection = toProjection(Entry::getValue);
         TestSupport
                 .verifyProcessor(adaptSupplier(SourceProcessors.readMapP(map.getName(), predicate, projection)))
-                .jetInstance(instance())
+                .hazelcastInstance(instance().getHazelcastInstance())
                 .disableSnapshots()
                 .disableProgressAssertion()
                 .outputChecker(TestSupport.SAME_ITEMS_ANY_ORDER)
@@ -154,7 +154,7 @@ public class ReadMapOrCachePTest extends SimpleTestInClusterSupport {
 
         TestSupport
                 .verifyProcessor(adaptSupplier(SourceProcessors.readMapP(map.getName())))
-                .jetInstance(instance())
+                .hazelcastInstance(instance().getHazelcastInstance())
                 .disableSnapshots()
                 .disableProgressAssertion()
                 .outputChecker((expected, actual) -> 2 == actual.size())

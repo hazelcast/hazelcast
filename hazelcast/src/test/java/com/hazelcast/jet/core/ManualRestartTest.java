@@ -26,7 +26,7 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobRestartWithSnapshotTest.SequencesInPartitionsGeneratorP;
 import com.hazelcast.jet.core.TestProcessors.MockPS;
 import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
-import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -166,8 +166,8 @@ public class ManualRestartTest extends JetTestSupport {
                 .setSnapshotIntervalMillis(2000));
 
         // wait for the first snapshot
-        JetService jetService = getNode(instances[0]).nodeEngine.getService(JetService.SERVICE_NAME);
-        JobRepository jobRepository = jetService.getJobCoordinationService().jobRepository();
+        JetServiceBackend jetServiceBackend = getNode(instances[0]).nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
+        JobRepository jobRepository = jetServiceBackend.getJobCoordinationService().jobRepository();
         assertJobStatusEventually(job, RUNNING);
         assertTrueEventually(() -> assertTrue(
                 jobRepository.getJobExecutionRecord(job.getId()).dataMapIndex() >= 0));

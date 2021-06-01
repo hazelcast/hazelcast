@@ -50,7 +50,6 @@ import java.util.concurrent.ThreadLocalRandom;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.jet.impl.JobMetricsUtil.toJobMetrics;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
-import static com.hazelcast.jet.impl.util.Util.getJetInstance;
 
 /**
  * {@link Job} proxy on member.
@@ -145,14 +144,14 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
     }
 
     private JobStateSnapshot doExportSnapshot(String name, boolean cancelJob) {
+        JetServiceBackend jetServiceBackend = container().getService(JetServiceBackend.SERVICE_NAME);
         try {
-            JetService jetService = container().getService(JetService.SERVICE_NAME);
-            Operation operation = jetService.createExportSnapshotOperation(getId(), name, cancelJob);
+            Operation operation = jetServiceBackend.createExportSnapshotOperation(getId(), name, cancelJob);
             invokeOp(operation).get();
         } catch (Exception e) {
             throw rethrow(e);
         }
-        return getJetInstance(container()).getJobStateSnapshot(name);
+        return jetServiceBackend.getJet().getJobStateSnapshot(name);
     }
 
     @Override
@@ -201,7 +200,7 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
         Address target = lightJobCoordinator != null ? lightJobCoordinator : masterAddress();
         return container()
                 .getOperationService()
-                .createInvocationBuilder(JetService.SERVICE_NAME, op, target)
+                .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, op, target)
                 .invoke();
     }
 

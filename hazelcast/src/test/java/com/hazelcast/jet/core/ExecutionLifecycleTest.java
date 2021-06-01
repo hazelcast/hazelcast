@@ -33,7 +33,7 @@ import com.hazelcast.jet.core.TestProcessors.MockPMS;
 import com.hazelcast.jet.core.TestProcessors.MockPS;
 import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.jet.core.processor.Processors;
-import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobResult;
 import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
@@ -450,7 +450,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         MembersView membersView = clusterService.getMembershipManager().getMembersView();
         int memberListVersion = membersView.getVersion();
 
-        JetService jetService = getJetService(instance());
+        JetServiceBackend jetServiceBackend = getJetService(instance());
         final Map<MemberInfo, ExecutionPlan> executionPlans =
                 ExecutionPlanBuilder.createExecutionPlans(nodeEngineImpl, membersView, dag, 1, 1,
                         new JobConfig(), NO_SNAPSHOT, false);
@@ -459,15 +459,15 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         long executionId = 1;
 
         Set<MemberInfo> participants = new HashSet<>(membersView.getMembers());
-        jetService.getJobExecutionService().initExecution(
+        jetServiceBackend.getJobExecutionService().initExecution(
                 jobId, executionId, localAddress, memberListVersion, participants, executionPlan
         );
 
-        ExecutionContext executionContext = jetService.getJobExecutionService().getExecutionContext(executionId);
+        ExecutionContext executionContext = jetServiceBackend.getJobExecutionService().getExecutionContext(executionId);
         executionContext.terminateExecution(null);
 
         // When
-        CompletableFuture<Void> future = executionContext.beginExecution(jetService.getTaskletExecutionService());
+        CompletableFuture<Void> future = executionContext.beginExecution(jetServiceBackend.getTaskletExecutionService());
 
         // Then
         expectedException.expect(CancellationException.class);
@@ -819,9 +819,9 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     }
 
     private JobResult getJobResult(Job job) {
-        JetService jetService = getJetService(instance());
-        assertNull(jetService.getJobRepository().getJobRecord(job.getId()));
-        JobResult jobResult = jetService.getJobRepository().getJobResult(job.getId());
+        JetServiceBackend jetServiceBackend = getJetService(instance());
+        assertNull(jetServiceBackend.getJobRepository().getJobRecord(job.getId()));
+        JobResult jobResult = jetServiceBackend.getJobRepository().getJobResult(job.getId());
         assertNotNull(jobResult);
         return jobResult;
     }

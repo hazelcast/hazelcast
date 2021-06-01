@@ -39,7 +39,7 @@ import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.jet.JetCacheManager;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.Observable;
 import com.hazelcast.jet.config.JetConfig;
@@ -183,7 +183,7 @@ public final class HazelcastBootstrap {
     }
 
     private static void awaitJobsStarted() {
-        List<Job> submittedJobs = ((BootstrappedJetProxy) HazelcastBootstrap.supplier.get().getJetInstance()).submittedJobs();
+        List<Job> submittedJobs = ((BootstrappedJetProxy) HazelcastBootstrap.supplier.get().getJet()).submittedJobs();
         int submittedCount = submittedJobs.size();
         if (submittedCount == 0) {
             System.out.println("The JAR didn't submit any jobs.");
@@ -304,7 +304,7 @@ public final class HazelcastBootstrap {
     @SuppressWarnings({"checkstyle:methodcount"})
     private static class BootstrappedInstanceProxy implements HazelcastInstance {
         private final HazelcastInstance instance;
-        private final JetInstance jetProxy;
+        private final JetService jetProxy;
 
         BootstrappedInstanceProxy(@Nonnull HazelcastInstance instance) {
             this(instance, null, null, null);
@@ -317,7 +317,7 @@ public final class HazelcastBootstrap {
                 @Nullable String jobName
         ) {
             this.instance = instance;
-            this.jetProxy = new BootstrappedJetProxy(instance.getJetInstance(), jar, snapshotName, jobName);
+            this.jetProxy = new BootstrappedJetProxy(instance.getJet(), jar, snapshotName, jobName);
         }
 
         @Nonnull
@@ -537,7 +537,7 @@ public final class HazelcastBootstrap {
 
         @Nonnull
         @Override
-        public JetInstance getJetInstance() {
+        public JetService getJet() {
             return jetProxy;
         }
 
@@ -555,12 +555,12 @@ public final class HazelcastBootstrap {
         private final Collection<Job> submittedJobs = new CopyOnWriteArrayList<>();
 
         BootstrappedJetProxy(
-                @Nonnull JetInstance jet,
+                @Nonnull JetService jet,
                 @Nullable String jar,
                 @Nullable String snapshotName,
                 @Nullable String jobName
         ) {
-            super(jet.getHazelcastInstance());
+            super(((AbstractJetInstance) jet).getHazelcastInstance());
             this.jet = (AbstractJetInstance<MemberIdType>) jet;
             this.jar = jar;
             this.snapshotName = snapshotName;

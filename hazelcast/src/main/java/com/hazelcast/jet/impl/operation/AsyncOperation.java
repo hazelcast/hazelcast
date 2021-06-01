@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobCoordinationService;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
@@ -42,7 +42,7 @@ public abstract class AsyncOperation extends Operation implements IdentifiedData
 
     @Override
     public void beforeRun() {
-        JetService service = getService();
+        JetServiceBackend service = getService();
         service.getLiveOperationRegistry().register(this);
     }
 
@@ -73,7 +73,7 @@ public abstract class AsyncOperation extends Operation implements IdentifiedData
 
     private void doSendResponse(Object value) {
         try {
-            final JetService service = getService();
+            final JetServiceBackend service = getService();
             service.getLiveOperationRegistry().deregister(this);
         } finally {
             try {
@@ -95,13 +95,13 @@ public abstract class AsyncOperation extends Operation implements IdentifiedData
         }
     }
 
-    protected JetService getJetService() {
-        assert getServiceName().equals(JetService.SERVICE_NAME) : "Service is not Jet Service";
+    protected JetServiceBackend getJetServiceBackend() {
+        assert getServiceName().equals(JetServiceBackend.SERVICE_NAME) : "Service is not Jet Service";
         return getService();
     }
 
     protected JobCoordinationService getJobCoordinationService() {
-        return getJetService().getJobCoordinationService();
+        return getJetServiceBackend().getJobCoordinationService();
     }
 
     @Override

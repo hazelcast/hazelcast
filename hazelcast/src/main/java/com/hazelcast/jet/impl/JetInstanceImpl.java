@@ -81,7 +81,7 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
             GetJobIdsOperation operation = new GetJobIdsOperation(onlyJobId);
             InvocationFuture<GetJobIdsResult> future = nodeEngine
                     .getOperationService()
-                    .createInvocationBuilder(JetService.SERVICE_NAME, operation, member.getAddress())
+                    .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, operation, member.getAddress())
                     .invoke();
             futures.put(member.getAddress(), future);
         }
@@ -115,8 +115,8 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
     @Override
     public void shutdown() {
         try {
-            JetService jetService = nodeEngine.getService(JetService.SERVICE_NAME);
-            jetService.shutDownJobs();
+            JetServiceBackend jetServiceBackend = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
+            jetServiceBackend.shutDownJobs();
             super.shutdown();
         } catch (Throwable t) {
             throw rethrow(t);

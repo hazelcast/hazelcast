@@ -162,9 +162,9 @@ public class MasterJobContext {
     MasterJobContext(MasterContext masterContext, ILogger logger) {
         this.mc = masterContext;
         this.logger = logger;
-        this.defaultParallelism = mc.getJetService().getConfig()
+        this.defaultParallelism = mc.getJetServiceBackend().getJetConfig()
               .getInstanceConfig().getCooperativeThreadCount();
-        this.defaultQueueSize = mc.getJetService().getJetInstance().getConfig()
+        this.defaultQueueSize = mc.getJetServiceBackend().getJetConfig()
                 .getDefaultEdgeConfig().getQueueSize();
     }
 
@@ -270,7 +270,7 @@ public class MasterJobContext {
                 // requested termination mode is RESTART, ignore it because we are just starting
                 requestedTerminationMode = null;
             }
-            ClassLoader classLoader = mc.getJetService().getClassLoader(mc.jobId());
+            ClassLoader classLoader = mc.getJetServiceBackend().getClassLoader(mc.jobId());
             DAG dag;
             try {
                 dag = deserializeWithCustomClassLoader(mc.nodeEngine().getSerializationService(),

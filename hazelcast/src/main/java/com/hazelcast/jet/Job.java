@@ -33,7 +33,7 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * A handle to Jet computation job created by submitting a {@link DAG} or
- * {@link Pipeline} to the cluster. See {@link JetInstance} for methods to
+ * {@link Pipeline} to the cluster. See {@link JetService} for methods to
  * submit jobs and to get a handle to an existing job.
  *
  * @since 3.0

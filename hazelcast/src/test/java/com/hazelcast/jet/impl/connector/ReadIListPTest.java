@@ -62,7 +62,7 @@ public class ReadIListPTest extends JetTestSupport {
         list.addAll(data);
         TestSupport
                 .verifyProcessor(adaptSupplier(SourceProcessors.readListP(list.getName())))
-                .jetInstance(instance)
+                .hazelcastInstance(instance.getHazelcastInstance())
                 .disableSnapshots()
                 .disableLogging()
                 .expectOutput(data);

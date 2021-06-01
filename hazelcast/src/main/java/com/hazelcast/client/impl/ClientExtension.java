@@ -24,7 +24,7 @@ import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.JetService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.internal.memory.MemoryStats;
 import com.hazelcast.nio.SocketInterceptor;
@@ -108,5 +108,8 @@ public interface ClientExtension {
      */
     MemoryStats getMemoryStats();
 
-    JetInstance getJetInstance();
+    /**
+     * Returns a JetService.
+     */
+    JetService getJet();
 }

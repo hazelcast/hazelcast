@@ -23,7 +23,6 @@ import com.hazelcast.core.LifecycleService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ResourceConfig;
@@ -169,7 +168,7 @@ public class JobRepository {
     private static final int JOB_ID_STRING_LENGTH = idToString(0L).length();
 
 
-    private final JetInstance jetInstance;
+    private final HazelcastInstance instance;
     private final ILogger logger;
 
     private final ConcurrentMemoizingSupplier<IMap<Long, JobRecord>> jobRecords;
@@ -181,9 +180,8 @@ public class JobRepository {
 
     private long resourcesExpirationMillis = DEFAULT_RESOURCES_EXPIRATION_MILLIS;
 
-    public JobRepository(JetInstance jetInstance) {
-        this.jetInstance = jetInstance;
-        HazelcastInstance instance = jetInstance.getHazelcastInstance();
+    public JobRepository(HazelcastInstance instance) {
+        this.instance = instance;
         this.logger = instance.getLoggingService().getLogger(getClass());
 
         jobRecords = new ConcurrentMemoizingSupplier<>(() -> instance.getMap(JOB_RECORDS_MAP_NAME));
@@ -391,7 +389,7 @@ public class JobRepository {
                 break;
             } catch (Exception e) {
                 // if the local instance was shut down, re-throw the error
-                LifecycleService lifecycleService = jetInstance.getHazelcastInstance().getLifecycleService();
+                LifecycleService lifecycleService = instance.getLifecycleService();
                 if (e instanceof HazelcastInstanceNotActiveException && (!lifecycleService.isRunning())) {
                     throw e;
                 }
@@ -527,7 +525,7 @@ public class JobRepository {
 
     private Map<Long, JobRecord> jobRecordsMap() {
         if (jobRecords.remembered() != null ||
-                ((AbstractJetInstance) jetInstance).existsDistributedObject(SERVICE_NAME, JOB_RECORDS_MAP_NAME)) {
+                ((AbstractJetInstance) instance.getJet()).existsDistributedObject(SERVICE_NAME, JOB_RECORDS_MAP_NAME)) {
             return jobRecords.get();
         }
         return Collections.emptyMap();
@@ -535,7 +533,7 @@ public class JobRepository {
 
     private Map<Long, JobResult> jobResultsMap() {
         if (jobResults.remembered() != null ||
-                ((AbstractJetInstance) jetInstance).existsDistributedObject(SERVICE_NAME, JOB_RESULTS_MAP_NAME)) {
+                ((AbstractJetInstance) instance.getJet()).existsDistributedObject(SERVICE_NAME, JOB_RESULTS_MAP_NAME)) {
             return jobResults.get();
         }
         return Collections.emptyMap();
@@ -553,7 +551,7 @@ public class JobRepository {
      * Gets the job resources map
      */
     public IMap<String, byte[]> getJobResources(long jobId) {
-        return jetInstance.getMap(jobResourcesMapName(jobId));
+        return instance.getMap(jobResourcesMapName(jobId));
     }
 
     @Nullable
@@ -631,7 +629,7 @@ public class JobRepository {
     void clearSnapshotData(long jobId, int dataMapIndex) {
         String mapName = snapshotDataMapName(jobId, dataMapIndex);
         try {
-            jetInstance.getMap(mapName).clear();
+            instance.getMap(mapName).clear();
             logFine(logger, "Cleared snapshot data map %s", mapName);
         } catch (Exception logged) {
             logger.warning("Cannot delete old snapshot data  " + idToString(jobId), logged);

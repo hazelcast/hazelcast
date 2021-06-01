@@ -61,7 +61,7 @@ public class PostponedSnapshotTestBase extends JetTestSupport {
         config.setSnapshotIntervalMillis(snapshotInterval);
 
         Job job = instance.newJob(dag, config);
-        JobRepository jr = new JobRepository(instance);
+        JobRepository jr = new JobRepository(instance.getHazelcastInstance());
 
         // check, that snapshot starts, but stays in ONGOING state
         if (snapshotInterval < 1000) {

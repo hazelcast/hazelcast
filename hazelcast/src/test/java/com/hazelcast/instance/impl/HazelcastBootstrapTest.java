@@ -18,6 +18,7 @@ package com.hazelcast.instance.impl;
 
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.pipeline.Pipeline;
@@ -46,7 +47,7 @@ public class HazelcastBootstrapTest {
     @Test
     public void testHazelcast_bootstrappedInstance() {
         HazelcastInstance hz = Hazelcast.bootstrappedInstance();
-        JetInstance jet = hz.getJetInstance();
+        JetService jet = hz.getJet();
         executeWithBootstrappedInstance(jet);
     }
 
@@ -57,7 +58,7 @@ public class HazelcastBootstrapTest {
     }
 
 
-    public void executeWithBootstrappedInstance(JetInstance jet) {
+    public void executeWithBootstrappedInstance(JetService jet) {
         List<Integer> expected = Arrays.asList(1, 2, 3);
         Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items(1, 2, 3))

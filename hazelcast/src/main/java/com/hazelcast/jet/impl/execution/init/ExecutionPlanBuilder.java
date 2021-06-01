@@ -17,10 +17,10 @@
 package com.hazelcast.jet.impl.execution.init;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.internal.partition.IPartitionService;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
@@ -52,7 +52,6 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefix;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefixedLogger;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
-import static com.hazelcast.jet.impl.util.Util.getJetInstance;
 import static com.hazelcast.jet.impl.util.Util.toList;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
@@ -67,8 +66,9 @@ public final class ExecutionPlanBuilder {
             JobConfig jobConfig, long lastSnapshotId, boolean isLightJob
     ) {
         assert !isLightJob || jobConfig == LIGHT_JOB_CONFIG;
-        final JetInstance instance = getJetInstance(nodeEngine);
-        final int defaultParallelism = instance.getConfig().getInstanceConfig().getCooperativeThreadCount();
+        final HazelcastInstance hazelcastInstance = nodeEngine.getHazelcastInstance();
+        final int defaultParallelism = hazelcastInstance.getConfig().getJetConfig()
+                .getInstanceConfig().getCooperativeThreadCount();
         final Map<Address, int[]> partitionAssignment = getPartitionAssignment(nodeEngine);
         final Set<MemberInfo> members = new HashSet<>(membersView.size());
         Map<Address, MemberInfo> membersMap =
@@ -86,7 +86,7 @@ public final class ExecutionPlanBuilder {
         final List<Address> addresses = toList(members, MemberInfo::getAddress);
         final int clusterSize = members.size();
         final boolean isJobDistributed = clusterSize > 1;
-        final EdgeConfig defaultEdgeConfig = instance.getConfig().getDefaultEdgeConfig();
+        final EdgeConfig defaultEdgeConfig = hazelcastInstance.getConfig().getJetConfig().getDefaultEdgeConfig();
         final Map<MemberInfo, ExecutionPlan> plans = new HashMap<>();
         int memberIndex = 0;
         for (MemberInfo member : members) {
@@ -111,7 +111,7 @@ public final class ExecutionPlanBuilder {
             String prefix = prefix(jobConfig.getName(), jobId, vertex.getName(), "#PMS");
             ILogger logger = prefixedLogger(nodeEngine.getLogger(metaSupplier.getClass()), prefix);
             try {
-                metaSupplier.init(new MetaSupplierCtx(instance, jobId, executionId, jobConfig, logger,
+                metaSupplier.init(new MetaSupplierCtx(hazelcastInstance, jobId, executionId, jobConfig, logger,
                         vertex.getName(), localParallelism, totalParallelism, clusterSize, isLightJob, partitionAssignment));
             } catch (Exception e) {
                 throw sneakyThrow(e);

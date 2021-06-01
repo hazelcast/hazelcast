@@ -71,7 +71,7 @@ public class JobRepositoryTest extends JetTestSupport {
         config.setProperty(JOB_RESULTS_MAX_SIZE.getName(), Integer.toString(MAX_JOB_RESULTS_COUNT));
 
         instance = createJetMember(config);
-        jobRepository = new JobRepository(instance);
+        jobRepository = new JobRepository(instance.getHazelcastInstance());
         jobRepository.setResourcesExpirationMillis(RESOURCES_EXPIRATION_TIME_MILLIS);
 
         TestProcessors.reset(2);
@@ -180,12 +180,12 @@ public class JobRepositoryTest extends JetTestSupport {
         JetInstance client = createJetClient();
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.streamFromProcessor("source", ProcessorMetaSupplier.of(() -> new NoOutputSourceP())))
-         .withoutTimestamps()
-         .writeTo(Sinks.logger());
+                .withoutTimestamps()
+                .writeTo(Sinks.logger());
         Job job = instance.newJob(p, new JobConfig()
-            .setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE)
-            .setSnapshotIntervalMillis(100));
-        JobRepository jobRepository = new JobRepository(client);
+                .setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE)
+                .setSnapshotIntervalMillis(100));
+        JobRepository jobRepository = new JobRepository(client.getHazelcastInstance());
         assertTrueEventually(() -> assertNotNull(jobRepository.getJobRecord(job.getId())));
         client.shutdown();
     }

@@ -60,7 +60,7 @@ public class SinkBuilderTest extends PipelineTestSupport {
                             File directory = createTempDirectory();
                             File file = new File(directory, randomName());
                             assertTrue(file.createNewFile());
-                            context.jetInstance().getList(listName).add(directory.toPath().toString());
+                            context.hazelcastInstance().getList(listName).add(directory.toPath().toString());
                             return file;
                         })
                 .receiveFn((File sink1, Integer item) -> appendToFile(sink1, item.toString()))

@@ -228,7 +228,7 @@ public class SuspendResumeTest extends JetTestSupport {
         assertJobStatusEventually(job, FAILED);
 
         // check that job resources are deleted
-        JobRepository jobRepository = new JobRepository(instances[0]);
+        JobRepository jobRepository = new JobRepository(instances[0].getHazelcastInstance());
         assertTrueEventually(() -> {
             assertNull("JobRecord", jobRepository.getJobRecord(job.getId()));
             JobResult jobResult = jobRepository.getJobResult(job.getId());

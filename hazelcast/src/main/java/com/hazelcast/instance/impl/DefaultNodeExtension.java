@@ -93,8 +93,8 @@ import com.hazelcast.internal.util.JVMUtil;
 import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.internal.util.phonehome.PhoneHome;
 import com.hazelcast.internal.util.Preconditions;
-import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.JetService;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.MemberSocketInterceptor;
@@ -158,7 +158,7 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
         createAndSetPhoneHome();
 
         if (node.getConfig().getJetConfig().isEnabled()) {
-            jetExtension = new JetExtension(node, createService(JetService.class));
+            jetExtension = new JetExtension(node, createService(JetServiceBackend.class));
         }
     }
 
@@ -345,8 +345,8 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
             return (T) new CacheService();
         } else if (MapService.class.isAssignableFrom(clazz)) {
             return createMapService();
-        } else if (JetService.class.isAssignableFrom(clazz)) {
-            return (T) new JetService(node);
+        } else if (JetServiceBackend.class.isAssignableFrom(clazz)) {
+            return (T) new JetServiceBackend(node);
         }
 
         throw new IllegalArgumentException("Unknown service class: " + clazz);
@@ -603,11 +603,11 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
     }
 
     @Override
-    public JetInstance getJetInstance() {
+    public JetService getJet() {
         if (jetExtension == null) {
             throw new IllegalArgumentException("Jet is disabled, see JetConfig#setEnabled.");
         }
-        return jetExtension.getJetInstance();
+        return jetExtension.getJet();
     }
 
     @Override

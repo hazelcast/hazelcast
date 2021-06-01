@@ -46,7 +46,7 @@ public final class UnaryService<T, R> implements GrpcService<T, R> {
         this.channel = channel;
         callFn = callStubFn.apply(channel);
 
-        Properties properties = context.jetInstance().getHazelcastInstance().getConfig().getProperties();
+        Properties properties = context.hazelcastInstance().getConfig().getProperties();
         HazelcastProperties hzProperties = new HazelcastProperties(properties);
         shutdownTimeout = hzProperties.getSeconds(GrpcProperties.SHUTDOWN_TIMEOUT);
     }

@@ -20,7 +20,7 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.jet.impl.util.LoggingUtil;
@@ -72,7 +72,7 @@ public class InitExecutionOperation extends AsyncJobOperation {
     @Override
     protected CompletableFuture<?> doRun() {
         ILogger logger = getLogger();
-        JetService service = getService();
+        JetServiceBackend service = getService();
         Address caller = getCallerAddress();
         LoggingUtil.logFine(logger, "Initializing execution plan for %s from %s", jobIdAndExecutionId(jobId(), executionId),
                 caller);
@@ -131,7 +131,7 @@ public class InitExecutionOperation extends AsyncJobOperation {
         if (isLightJob) {
             return getNodeEngine().getSerializationService().toObject(planBlob);
         } else {
-            JetService service = getService();
+            JetServiceBackend service = getService();
             ClassLoader cl = service.getClassLoader(jobId());
             return deserializeWithCustomClassLoader(getNodeEngine().getSerializationService(), cl, planBlob);
         }

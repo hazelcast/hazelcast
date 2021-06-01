@@ -16,11 +16,12 @@
 
 package com.hazelcast.jet.sql.impl;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
-import com.hazelcast.jet.impl.AbstractJetInstance;
 import com.hazelcast.jet.sql.impl.JetPlan.CreateMappingPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DmlPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropMappingPlan;
@@ -63,7 +64,10 @@ public class JetPlanExecutorTest {
     private MappingCatalog catalog;
 
     @Mock
-    private AbstractJetInstance jetInstance;
+    private HazelcastInstance hazelcastInstance;
+
+    @Mock
+    private JetService jet;
 
     @Mock
     private Map<String, QueryResultProducer> resultConsumerRegistry;
@@ -130,7 +134,8 @@ public class JetPlanExecutorTest {
                 emptyList()
         );
 
-        given(jetInstance.newJob(eq(dag), isA(JobConfig.class))).willReturn(job);
+        given(hazelcastInstance.getJet()).willReturn(jet);
+        given(jet.newJob(eq(dag), isA(JobConfig.class))).willReturn(job);
 
         // when
         SqlResult result = planExecutor.execute(plan, queryId, emptyList());

@@ -22,7 +22,7 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.instance.impl.DefaultNodeContext;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
-import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.test.Accessors;
 import com.hazelcast.test.mocknetwork.TestNodeRegistry;
 
@@ -57,15 +57,15 @@ public class JetTestInstanceFactory {
     }
 
     public JetInstance newMember(Config config) {
-        return factory.newHazelcastInstance(config).getJetInstance();
+        return (JetInstance) factory.newHazelcastInstance(config).getJet();
     }
 
     public JetInstance newMember(Config config, Address address) {
-        return factory.newHazelcastInstance(address, config).getJetInstance();
+        return (JetInstance) factory.newHazelcastInstance(address, config).getJet();
     }
 
     public JetInstance newMember(Config config, Address[] blockedAddresses) {
-        return factory.newHazelcastInstance(config, blockedAddresses).getJetInstance();
+        return (JetInstance) factory.newHazelcastInstance(config, blockedAddresses).getJet();
     }
 
     public JetInstance[] newMembers(Config config, int nodeCount) {
@@ -106,14 +106,14 @@ public class JetTestInstanceFactory {
     }
 
     public JetInstance newClient(ClientConfig config) {
-        return factory.newHazelcastClient(config).getJetInstance();
+        return (JetInstance) factory.newHazelcastClient(config).getJet();
     }
 
     public JetInstance[] getAllJetInstances() {
         return factory.getAllHazelcastInstances().stream()
                       .map(Accessors::getNodeEngineImpl)
-                      .map(node -> node.<JetService>getService(JetService.SERVICE_NAME))
-                      .map(JetService::getJetInstance)
+                      .map(node -> node.<JetServiceBackend>getService(JetServiceBackend.SERVICE_NAME))
+                      .map(jetServiceBackend -> (JetInstance) jetServiceBackend.getJet())
                       .toArray(JetInstance[]::new);
     }
 
