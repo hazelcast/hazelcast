@@ -260,6 +260,26 @@ public final class Util {
     }
 
     /**
+     * Distributes the {@code objects} to {@code count} processors in a
+     * round-robin fashion. If the object count is smaller than processor
+     * count, an empty array is put for the rest of the processors.
+     *
+     * @param count   count of processors
+     * @param objects list of objects to distribute
+     * @return an array, at n-th index is an array of partitions for n-th processor
+     */
+    public static int[][] distributeObjects(int count, int[] objects) {
+        int[][] processorToObjects = new int[count][];
+        for (int i = 0; i < count; i++) {
+            processorToObjects[i] = new int[objects.length / count + (objects.length % count > i ? 1 : 0)];
+        }
+        for (int i = 0; i < objects.length; i++) {
+            processorToObjects[i % count][i / count] = objects[i];
+        }
+        return processorToObjects;
+    }
+
+    /**
      * From an imaginary set of integers {@code (0, 1, ..., objectCount-1)}
      * returns {@code index}-th disjoint subset out of {@code count} subsets.
      * The assignment of objects to subset is done in round-robin fashion.

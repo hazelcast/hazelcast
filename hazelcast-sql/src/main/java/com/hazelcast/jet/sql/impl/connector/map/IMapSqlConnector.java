@@ -145,7 +145,8 @@ public class IMapSqlConnector implements SqlConnector {
             @Nonnull DAG dag,
             @Nonnull Table table0,
             @Nullable Expression<Boolean> filter,
-            @Nonnull List<Expression<?>> projection) {
+            @Nonnull List<Expression<?>> projection
+    ) {
         PartitionedMapTable table = (PartitionedMapTable) table0;
         MapScanMetadata mapScanMetadata = new MapScanMetadata(
                 table.getMapName(),

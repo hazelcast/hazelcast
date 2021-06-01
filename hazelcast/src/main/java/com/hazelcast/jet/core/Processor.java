@@ -497,5 +497,20 @@ public interface Processor {
          * they will have indexes 4..7.
          */
         int globalProcessorIndex();
+
+        /**
+         * Returns the slice of partitions for this processor. It distributes
+         * {@link #memberPartitions()} according to the {@link #localParallelism()}
+         * and {@link #localProcessorIndex()}.
+         */
+        default int[] processorPartitions() {
+            int[] memberPartitions = memberPartitions();
+            int[] res = new int[memberPartitions.length / localParallelism()
+                    + (memberPartitions.length % localParallelism() > localProcessorIndex() ? 1 : 0)];
+            for (int i = localProcessorIndex(), j = 0; i < memberPartitions.length; i += localParallelism(), j++) {
+                res[j] = memberPartitions[i];
+            }
+            return res;
+        }
     }
 }

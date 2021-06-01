@@ -36,7 +36,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.sql.impl.ExpressionUtil.NOT_IMPLEMENTED_ARGUMENTS_CONTEXT;
 import static com.hazelcast.sql.impl.type.QueryDataType.BOOLEAN;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
@@ -63,7 +62,7 @@ public class KvRowProjectorTest {
                 NOT_IMPLEMENTED_ARGUMENTS_CONTEXT
         );
 
-        Object[] row = projector.project(entry(1, 8));
+        Object[] row = projector.project(1, 8);
 
         assertThat(row).isEqualTo(new Object[]{2, 4});
     }
@@ -81,7 +80,7 @@ public class KvRowProjectorTest {
                 NOT_IMPLEMENTED_ARGUMENTS_CONTEXT
         );
 
-        Object[] row = projector.project(entry(1, 8));
+        Object[] row = projector.project(1, 8);
 
         assertThat(row).isNull();
     }

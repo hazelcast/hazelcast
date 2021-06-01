@@ -83,6 +83,7 @@ public class CreateDagVisitor {
 
     public Vertex onDelete(DeletePhysicalRel rel) {
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
+
         Vertex vertex = getJetSqlConnector(table).deleteProcessor(dag, table);
         connectInput(rel.getInput(), vertex, null);
         return vertex;

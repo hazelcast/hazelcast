@@ -29,6 +29,8 @@ import javax.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.Properties;
 
+import static com.hazelcast.jet.kafka.impl.StreamKafkaP.PREFERRED_LOCAL_PARALLELISM;
+
 /**
  * Static utility class with factories of Apache Kafka source and sink
  * processors.
@@ -36,8 +38,6 @@ import java.util.Properties;
  * @since 3.0
  */
 public final class KafkaProcessors {
-
-    private static final int PREFERRED_LOCAL_PARALLELISM = 4;
 
     private KafkaProcessors() {
     }

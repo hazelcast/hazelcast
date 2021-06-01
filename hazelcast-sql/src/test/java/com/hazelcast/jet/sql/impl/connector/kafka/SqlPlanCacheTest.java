@@ -97,6 +97,18 @@ public class SqlPlanCacheTest extends SqlTestSupport {
         assertThat(planCache(instance()).size()).isZero();
     }
 
+    @Test
+    public void test_dmlCaching() {
+        String topicName = createRandomTopic();
+
+        createMapping("kafka", topicName, "int", "earliest");
+        sqlService.execute("INSERT INTO kafka VALUES(0)");
+        assertThat(planCache(instance()).size()).isEqualTo(1);
+
+        sqlService.execute("DROP MAPPING kafka");
+        assertThat(planCache(instance()).size()).isZero();
+    }
+
     private static String createRandomTopic() {
         String topicName = randomName();
         kafkaTestSupport.createTopic(topicName, INITIAL_PARTITION_COUNT);
