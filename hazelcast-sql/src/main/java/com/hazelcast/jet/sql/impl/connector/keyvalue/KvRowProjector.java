@@ -37,7 +37,7 @@ import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static com.hazelcast.jet.sql.impl.ExpressionUtil.evaluate;
 
 /**
- * An utility to convert a key-value entry to a row represented as
+ * A utility to convert a key-value entry to a row represented as
  * {@code Object[]}. As a convenience, it also contains a
  * {@link #predicate} - it is applied before projecting.
  * <p>

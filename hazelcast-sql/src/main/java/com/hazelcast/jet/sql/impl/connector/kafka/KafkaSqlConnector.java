@@ -21,6 +21,7 @@ import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.kafka.KafkaProcessors;
+import com.hazelcast.jet.kafka.impl.StreamKafkaP;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadata;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataAvroResolver;
@@ -125,7 +126,7 @@ public class KafkaSqlConnector implements SqlConnector {
         return dag.newUniqueVertex(
                 table.toString(),
                 ProcessorMetaSupplier.of(
-                        KafkaProcessors.PREFERRED_LOCAL_PARALLELISM,
+                        StreamKafkaP.PREFERRED_LOCAL_PARALLELISM,
                         new RowProjectorProcessorSupplier(
                                 table.kafkaConsumerProperties(),
                                 table.topicName(),

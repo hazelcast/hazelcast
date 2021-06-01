@@ -58,6 +58,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  */
 public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
 
+    public static final int PREFERRED_LOCAL_PARALLELISM = 4;
     private static final long METADATA_CHECK_INTERVAL_NANOS = SECONDS.toNanos(5);
     private static final String PARTITION_COUNTS_SNAPSHOT_KEY = "partitionCounts";
 
