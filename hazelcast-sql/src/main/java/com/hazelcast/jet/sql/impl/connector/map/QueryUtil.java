@@ -124,7 +124,7 @@ final class QueryUtil {
 
         @Override
         public Object[] transform(Entry<Object, Object> entry) {
-            return rightRowProjectorSupplier.get(evalContext, extractors).project(entry);
+            return rightRowProjectorSupplier.get(evalContext, extractors).project(entry.getKey(), entry.getValue());
         }
 
         @Override

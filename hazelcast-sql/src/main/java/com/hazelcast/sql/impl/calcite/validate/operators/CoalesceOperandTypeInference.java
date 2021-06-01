@@ -23,64 +23,67 @@ import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.type.SqlOperandTypeInference;
 import org.apache.calcite.sql.type.SqlTypeName;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils.createType;
+import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils.precedenceOf;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils.toHazelcastType;
 
-public final class BinaryOperatorOperandTypeInference implements SqlOperandTypeInference {
+/**
+ * A type inference algorithm that infers unknown operands to the type of
+ * the operand with a known type with highest precedence.
+ */
+public final class CoalesceOperandTypeInference implements SqlOperandTypeInference {
 
-    public static final BinaryOperatorOperandTypeInference INSTANCE = new BinaryOperatorOperandTypeInference();
+    public static final CoalesceOperandTypeInference INSTANCE = new CoalesceOperandTypeInference();
 
-    private BinaryOperatorOperandTypeInference() {
-        // No-op.
+    private CoalesceOperandTypeInference() {
     }
 
     @Override
     public void inferOperandTypes(SqlCallBinding binding, RelDataType returnType, RelDataType[] operandTypes) {
-        assert operandTypes.length == 2;
-        assert binding.getOperandCount() == 2;
+        if (operandTypes.length == 0) {
+            // will be handled later
+            return;
+        }
+        assert binding.getOperandCount() == operandTypes.length;
 
         boolean hasParameters = HazelcastTypeUtils.hasParameters(binding);
 
-        int knownTypeOperandIndex = -1;
+        List<Integer> unknownOperandIndexes = new ArrayList<>();
         RelDataType knownType = null;
+        int knownTypePrecedence = Integer.MIN_VALUE;
 
         for (int i = 0; i < binding.getOperandCount(); i++) {
             operandTypes[i] = binding.getOperandType(i);
 
             if (!operandTypes[i].equals(binding.getValidator().getUnknownType())) {
                 if (hasParameters && toHazelcastType(operandTypes[i].getSqlTypeName()).getTypeFamily().isNumericInteger()) {
-                    // If we are here, the operands are a parameter and a numeric expression.
-                    // We widen the type of the numeric expression to BIGINT, so that an expression `1 > ?` is resolved to
-                    // `(BIGINT)1 > (BIGINT)?` rather than `(TINYINT)1 > (TINYINT)?`
-                    RelDataType newOperandType = createType(
-                            binding.getTypeFactory(),
-                            SqlTypeName.BIGINT,
-                            operandTypes[i].isNullable()
-                    );
-
-                    operandTypes[i] = newOperandType;
+                    // If there are parameters in the operands, widen all the integers to BIGINT so that an expression
+                    // `COALESCE(1, ?)` is resolved to `COALESCE((BIGINT)1, (BIGINT)?)` rather than
+                    // `COALESCE((TINYINT)1, (TINYINT)?)`
+                    operandTypes[i] = createType(binding.getTypeFactory(), SqlTypeName.BIGINT, operandTypes[i].isNullable());
                 }
 
-                if (knownType == null || knownType.getSqlTypeName() == SqlTypeName.NULL) {
+                int precedence = precedenceOf(operandTypes[i]);
+                if (knownTypePrecedence < precedence) {
                     knownType = operandTypes[i];
-                    knownTypeOperandIndex = i;
+                    knownTypePrecedence = precedence;
                 }
+            } else {
+                unknownOperandIndexes.add(i);
             }
         }
 
-        // If we have [UNKNOWN, UNKNOWN] or [NULL, UNKNOWN] operands, throw a signature error,
+        // If we have only  UNKNOWN operands or a combination of NULL and UNKNOWN, throw a signature error,
         // since we cannot deduce the return type
         if (knownType == null || knownType.getSqlTypeName() == SqlTypeName.NULL && hasParameters) {
             throw new HazelcastCallBinding(binding).newValidationSignatureError();
         }
 
-        if (SqlTypeName.INTERVAL_TYPES.contains(knownType.getSqlTypeName())
-                && operandTypes[1 - knownTypeOperandIndex].getSqlTypeName() == SqlTypeName.NULL) {
-            // If there is an interval on the one side and NULL on the other, assume that the other side is a TIMESTAMP,
-            // because this is the only viable overload.
-            operandTypes[1 - knownTypeOperandIndex] = createType(binding.getTypeFactory(), SqlTypeName.TIMESTAMP, true);
-        } else {
-            operandTypes[1 - knownTypeOperandIndex] = knownType;
+        for (Integer index : unknownOperandIndexes) {
+            operandTypes[index] = knownType;
         }
     }
 }

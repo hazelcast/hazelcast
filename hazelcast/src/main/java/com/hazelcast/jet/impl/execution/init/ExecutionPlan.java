@@ -102,7 +102,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     private static final int SNAPSHOT_QUEUE_SIZE = DEFAULT_QUEUE_SIZE;
 
     /** Snapshot of partition table used to route items on partitioned edges */
-    private Address[] partitionOwners;
+    private Map<Address, int[]> partitionAssignment;
 
     private JobConfig jobConfig;
     private List<VertexDef> vertices = new ArrayList<>();
@@ -135,17 +135,16 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
 
     // list of unique remote members
     private final transient Supplier<Set<Address>> remoteMembers = memoize(() ->
-            Arrays.stream(partitionOwners)
+            partitionAssignment.keySet().stream()
                   .filter(a -> !a.equals(nodeEngine.getThisAddress()))
-                  .collect(Collectors.toSet())
-    );
+                  .collect(Collectors.toSet()));
 
     ExecutionPlan() {
     }
 
-    ExecutionPlan(Address[] partitionOwners, JobConfig jobConfig, long lastSnapshotId,
+    ExecutionPlan(Map<Address, int[]> partitionAssignment, JobConfig jobConfig, long lastSnapshotId,
                   int memberIndex, int memberCount, boolean isLightJob) {
-        this.partitionOwners = partitionOwners;
+        this.partitionAssignment = partitionAssignment;
         this.jobConfig = jobConfig;
         this.lastSnapshotId = lastSnapshotId;
         this.memberIndex = memberIndex;
@@ -169,7 +168,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         initProcSuppliers(jobId, tempDirectories, jobSerializationService);
         initDag(jobSerializationService);
 
-        this.ptionArrgmt = new PartitionArrangement(partitionOwners, nodeEngine.getThisAddress());
+        this.ptionArrgmt = new PartitionArrangement(partitionAssignment, nodeEngine.getThisAddress());
         JetInstance instance = getJetInstance(nodeEngine);
         Set<Integer> higherPriorityVertices = VertexDef.getHigherPriorityVertices(vertices);
         for (Address destAddr : remoteMembers.get()) {
@@ -213,6 +212,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                         localProcessorIdx,
                         globalProcessorIndex,
                         isLightJob,
+                        partitionAssignment,
                         vertex.localParallelism(),
                         memberIndex,
                         memberCount,
@@ -291,11 +291,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         writeList(out, vertices);
-        out.writeInt(partitionOwners.length);
         out.writeLong(lastSnapshotId);
-        for (Address address : partitionOwners) {
-            out.writeObject(address);
-        }
+        out.writeObject(partitionAssignment);
         out.writeBoolean(isLightJob);
         if (!isLightJob) {
             out.writeObject(jobConfig);
@@ -307,12 +304,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         vertices = readList(in);
-        int len = in.readInt();
-        partitionOwners = new Address[len];
         lastSnapshotId = in.readLong();
-        for (int i = 0; i < len; i++) {
-            partitionOwners[i] = in.readObject();
-        }
+        partitionAssignment = in.readObject();
         isLightJob = in.readBoolean();
         jobConfig = isLightJob ? LIGHT_JOB_CONFIG : in.readObject();
         memberIndex = in.readInt();
@@ -343,6 +336,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                         memberIndex,
                         memberCount,
                         isLightJob,
+                        partitionAssignment,
                         tempDirectories,
                         jobSerializationService
                 ));

@@ -38,3 +38,6 @@ contain code originating from the Apache Calcite (https://github.com/apache/calc
 
 The class com.hazelcast.jet.kafka.impl.ResumeTransactionUtil contains
 code derived from the Apache Flink project.
+
+The class com.hazelcast.internal.util.ConcurrentReferenceHashMap contains code written by Doug Lea
+and updated within the WildFly project (https://github.com/wildfly/wildfly).

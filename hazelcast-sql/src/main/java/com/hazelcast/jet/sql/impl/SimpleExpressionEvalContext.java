@@ -22,10 +22,15 @@ import com.hazelcast.jet.impl.execution.init.Contexts;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 
 import javax.annotation.Nonnull;
+import javax.annotation.concurrent.ThreadSafe;
 import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 
+/**
+ * An immutable and thread-safe context of a running query.
+ */
+@ThreadSafe
 public final class SimpleExpressionEvalContext implements ExpressionEvalContext {
 
     public static final String SQL_ARGUMENTS_KEY_NAME = "__sql.arguments";

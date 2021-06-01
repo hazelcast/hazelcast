@@ -18,6 +18,8 @@ package com.hazelcast.sql.impl.calcite.validate;
 
 import com.hazelcast.sql.impl.calcite.validate.operators.datetime.HazelcastExtractFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlCase;
+import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastCoalesceFunction;
+import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastNullIfFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastAbsFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastDoubleBiFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastDoubleFunction;
@@ -31,7 +33,7 @@ import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastDescOpera
 import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastUnaryOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastAndOrPredicate;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastBetweenOperator;
-import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastCaseOperator;
+import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastCaseOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastComparisonPredicate;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastInOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastIsTrueFalseNullPredicate;
@@ -197,6 +199,13 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
     public static final SqlFunction EXTRACT = HazelcastExtractFunction.INSTANCE;
 
     public static final SqlPostfixOperator DESC = HazelcastDescOperator.DESC;
+
+    //#endregion
+
+    //#region null check functions
+
+    public static final SqlFunction NULLIF = HazelcastNullIfFunction.INSTANCE;
+    public static final SqlFunction COALESCE = HazelcastCoalesceFunction.INSTANCE;
 
     //#endregion
 
