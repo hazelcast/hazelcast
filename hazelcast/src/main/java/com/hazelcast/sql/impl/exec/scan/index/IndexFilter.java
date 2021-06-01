@@ -20,14 +20,13 @@ import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 
-import java.io.Serializable;
 import java.util.Iterator;
 
 /**
  * Index filter which is transferred over a wire.
  */
 @SuppressWarnings("rawtypes")
-public interface IndexFilter extends Serializable {
+public interface IndexFilter {
     /**
      * Get index entries iterator
      *

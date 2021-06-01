@@ -14,15 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.index;
+package com.hazelcast.jet.sql.impl.connector.map.index;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.impl.processor.MetaSupplierFromProcessorSupplier;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.JetPlan;
+import com.hazelcast.jet.sql.impl.connector.map.OnHeapMapIndexScanP;
 import com.hazelcast.jet.sql.impl.connector.map.OnHeapMapScanP;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlExpectedResultType;
@@ -44,6 +49,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -53,7 +59,6 @@ import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 
-import static com.hazelcast.jet.sql.impl.connector.map.OnHeapMapIndexScanP.OnHeapMapIndexScanMetaSupplier;
 import static com.hazelcast.sql.impl.SqlTestSupport.getLocalKeys;
 import static com.hazelcast.sql.support.expressions.ExpressionPredicates.and;
 import static com.hazelcast.sql.support.expressions.ExpressionPredicates.eq;
@@ -84,6 +89,7 @@ import static com.hazelcast.sql.support.expressions.ExpressionTypes.INTEGER;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.LONG;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.SHORT;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.STRING;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -470,14 +476,26 @@ public abstract class JetSqlIndexAbstractTest extends SqlTestSupport {
         assertNotNull(jetPlan);
 
         DAG dag = jetPlan.getDag();
-        final String indexVertexName = String.format("Index(%s)", mapName);
-        final Vertex indexVertexCandidate = dag.getVertex(indexVertexName);
 
         if (withIndex) {
+            final String indexVertexName = String.format("Index(IMap[partitioned.%s])", mapName);
+            final Vertex indexVertexCandidate = dag.getVertex(indexVertexName);
+
             assertNotNull(indexVertexCandidate);
-            assertInstanceOf(OnHeapMapIndexScanMetaSupplier.class, indexVertexCandidate.getMetaSupplier());
+            assertInstanceOf(MetaSupplierFromProcessorSupplier.class, indexVertexCandidate.getMetaSupplier());
+            assertEquals(1, indexVertexCandidate.getLocalParallelism());
+
+            Address address = instance().getHazelcastInstance().getCluster().getLocalMember().getAddress();
+            MetaSupplierFromProcessorSupplier metaSupplier =
+                    (MetaSupplierFromProcessorSupplier) indexVertexCandidate.getMetaSupplier();
+            ProcessorSupplier processorSupplier = metaSupplier.get(Collections.singletonList(address)).apply(address);
+            assertInstanceOf(OnHeapMapIndexScanP.OnHeapMapIndexScanSupplier.class, processorSupplier);
+            assertEquals(1, processorSupplier.get(0).size());
+            Processor processor = processorSupplier.get(0).iterator().next();
+            assertInstanceOf(OnHeapMapIndexScanP.class, processor);
         } else {
-            final Vertex scanVertexCandidate = dag.getVertex(mapName);
+            final Vertex scanVertexCandidate = dag.getVertex(String.format("IMap[partitioned.%s]", mapName));
+            assertNotNull(scanVertexCandidate);
             assertInstanceOf(OnHeapMapScanP.OnHeapMapScanMetaSupplier.class, scanVertexCandidate.getMetaSupplier());
         }
     }

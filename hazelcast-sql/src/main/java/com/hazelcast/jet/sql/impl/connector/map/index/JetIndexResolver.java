@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.index;
+package com.hazelcast.jet.sql.impl.connector.map.index;
 
 import com.hazelcast.config.IndexType;
 import com.hazelcast.internal.util.BiTuple;

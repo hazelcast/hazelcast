@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
-import com.hazelcast.jet.sql.impl.index.JetIndexResolver;
+import com.hazelcast.jet.sql.impl.connector.map.index.JetIndexResolver;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;

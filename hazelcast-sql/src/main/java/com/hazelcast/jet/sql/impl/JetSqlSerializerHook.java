@@ -20,10 +20,10 @@ import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.jet.sql.impl.connector.map.MapIndexScanMetadata;
+import com.hazelcast.jet.sql.impl.connector.map.MapScanMetadata;
 import com.hazelcast.jet.sql.impl.connector.map.OnHeapMapIndexScanP;
 import com.hazelcast.jet.sql.impl.connector.map.OnHeapMapScanP;
-import com.hazelcast.jet.sql.impl.opt.MapIndexScanMetadata;
-import com.hazelcast.jet.sql.impl.opt.MapScanMetadata;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
@@ -43,9 +43,8 @@ public class JetSqlSerializerHook implements DataSerializerHook {
     public static final int IMAP_SCAN_METADATA = 4;
 
     public static final int IMAP_INDEX_SCAN_PROCESSOR = 5;
-    public static final int IMAP_INDEX_SCAN_PROCESSOR_META_SUPPLIER = 6;
-    public static final int IMAP_INDEX_SCAN_PROCESSOR_SUPPLIER = 7;
-    public static final int IMAP_INDEX_SCAN_METADATA = 8;
+    public static final int IMAP_INDEX_SCAN_PROCESSOR_SUPPLIER = 6;
+    public static final int IMAP_INDEX_SCAN_METADATA = 7;
 
     public static final int LEN = IMAP_INDEX_SCAN_METADATA + 1;
 
@@ -64,7 +63,6 @@ public class JetSqlSerializerHook implements DataSerializerHook {
         constructors[IMAP_SCAN_PROCESSOR_SUPPLIER] = arg -> new OnHeapMapScanP.OnHeapMapScanSupplier();
 
         constructors[IMAP_INDEX_SCAN_PROCESSOR] = arg -> new OnHeapMapIndexScanP();
-        constructors[IMAP_INDEX_SCAN_PROCESSOR_META_SUPPLIER] = arg -> new OnHeapMapIndexScanP.OnHeapMapIndexScanMetaSupplier();
         constructors[IMAP_INDEX_SCAN_PROCESSOR_SUPPLIER] = arg -> new OnHeapMapIndexScanP.OnHeapMapIndexScanSupplier();
 
         constructors[IMAP_SCAN_METADATA] = arg -> new MapScanMetadata();
