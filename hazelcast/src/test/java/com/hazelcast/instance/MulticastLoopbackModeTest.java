@@ -21,14 +21,11 @@ import com.hazelcast.config.MulticastConfig;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
-import com.hazelcast.internal.cluster.impl.MulticastService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -54,10 +51,6 @@ public class MulticastLoopbackModeTest extends HazelcastTestSupport {
 
     private HazelcastInstance hz1;
     private HazelcastInstance hz2;
-
-    @Rule
-    public OverridePropertyRule multicastGroupOverride = OverridePropertyRule
-            .clear(MulticastService.SYSTEM_PROPERTY_MULTICAST_GROUP);
 
     @Before
     public void setUpTests() {
