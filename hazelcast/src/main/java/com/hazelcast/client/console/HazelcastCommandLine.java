@@ -20,6 +20,7 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.client.config.YamlClientConfigBuilder;
+import com.hazelcast.client.console.HazelcastCommandLine.HazelcastVersionProvider;
 import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.management.MCClusterMetadata;
@@ -42,7 +43,6 @@ import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.jet.impl.JobSummary;
-import com.hazelcast.client.console.HazelcastCommandLine.HazelcastVersionProvider;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlColumnType;
@@ -70,7 +70,6 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.DefaultExceptionHandler;
 import picocli.CommandLine.ExecutionException;
 import picocli.CommandLine.Help.Ansi;
-import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.HelpCommand;
 import picocli.CommandLine.ITypeConverter;
 import picocli.CommandLine.IVersionProvider;
@@ -150,26 +149,6 @@ public class HazelcastCommandLine implements Runnable {
             order = 0
     )
     private File config;
-
-    @Option(names = {"-a", "--addresses"},
-            split = ",",
-            arity = "1..*",
-            paramLabel = "<hostname>:<port>",
-            description = "[DEPRECATED] Optional comma-separated list of Jet node addresses in the format"
-                    + " <hostname>:<port>, if you want to connect to a cluster other than the"
-                    + " one configured in the configuration file. Use --targets instead.",
-            order = 1
-    )
-    private List<String> addresses;
-
-    @Option(names = {"-n", "--cluster-name"},
-            description = "[DEPRECATED] The cluster name to use when connecting to the cluster "
-                    + "specified by the <addresses> parameter. Use --targets instead.",
-            defaultValue = "dev",
-            showDefaultValue = Visibility.ALWAYS,
-            order = 2
-    )
-    private String clusterName;
 
     @Mixin(name = "targets")
     private TargetsMixin targetsMixin;
@@ -617,14 +596,6 @@ public class HazelcastCommandLine implements Runnable {
             config = new YamlClientConfigBuilder(this.config).build();
         } else if (isConfigFileNotNull()) {
             config = new XmlClientConfigBuilder(this.config).build();
-        } else if (addresses != null) {
-            // Whole default configuration is ignored if addresses is provided.
-            // This doesn't make much sense, but but addresses is deprecated, so will leave as is until it can be
-            // removed in next major version
-            ClientConfig c = new ClientConfig();
-            c.getNetworkConfig().addAddress(addresses.toArray(new String[0]));
-            c.setClusterName(clusterName);
-            return c;
         } else {
             config = ClientConfig.load();
         }
