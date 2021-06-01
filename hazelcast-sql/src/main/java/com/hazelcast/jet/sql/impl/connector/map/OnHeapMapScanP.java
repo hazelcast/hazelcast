@@ -26,6 +26,7 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
+import com.hazelcast.jet.sql.impl.opt.MapScanMetadata;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ObjectDataInput;
@@ -39,7 +40,6 @@ import com.hazelcast.sql.impl.exec.scan.MapScanExecIterator;
 import com.hazelcast.sql.impl.exec.scan.MapScanRow;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.predicate.TernaryLogic;
-import com.hazelcast.sql.impl.plan.node.MapScanMetadata;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;

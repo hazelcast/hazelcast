@@ -27,12 +27,14 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
+import com.hazelcast.jet.sql.impl.opt.MapIndexScanMetadata;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.partition.Partition;
+import com.hazelcast.query.impl.GlobalIndexPartitionTracker;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -45,7 +47,6 @@ import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.exec.scan.index.MapIndexScanExecIterator;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.predicate.TernaryLogic;
-import com.hazelcast.sql.impl.plan.node.MapIndexScanMetadata;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import javax.annotation.Nonnull;
@@ -144,6 +145,7 @@ public final class OnHeapMapIndexScanP extends AbstractProcessor implements Iden
             this.ctx = ctx;
             MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
             this.mapContainer = mapService.getMapServiceContext().getMapContainer(indexScanMetadata.getMapName());
+            this.partitions = partitions;
             this.projections = indexScanMetadata.getProjects();
             this.filter = indexScanMetadata.getFilter();
 

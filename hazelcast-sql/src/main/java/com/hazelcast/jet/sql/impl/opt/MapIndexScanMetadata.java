@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.plan.node;
+package com.hazelcast.jet.sql.impl.opt;
 
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
+import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
@@ -150,11 +151,11 @@ public class MapIndexScanMetadata extends MapScanMetadata {
 
     @Override
     public int getFactoryId() {
-        return SqlDataSerializerHook.F_ID;
+        return JetSqlSerializerHook.F_ID;
     }
 
     @Override
     public int getClassId() {
-        return SqlDataSerializerHook.MAP_INDEX_SCAN_METADATA;
+        return JetSqlSerializerHook.IMAP_INDEX_SCAN_METADATA;
     }
 }
