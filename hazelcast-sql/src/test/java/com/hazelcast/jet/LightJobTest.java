@@ -89,6 +89,7 @@ public class LightJobTest extends SimpleTestInClusterSupport {
         assertThat(result).containsExactlyInAnyOrderElementsOf(items);
     }
 
+    // TODO [viliam] keep this?
     @Test
     public void test_getJobIds() {
         DAG dag = new DAG();

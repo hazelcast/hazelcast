@@ -78,8 +78,6 @@ public interface JetInstance extends JetService {
      * @since Jet 4.4
      * @deprecated since 5.0
      * Use {@link HazelcastInstance#getSql()} instead.
-     *
-     * @since 5.0
      */
     @Beta
     @Nonnull

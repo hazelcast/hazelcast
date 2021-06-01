@@ -191,8 +191,9 @@ public interface JetService {
 
     /**
      * Returns all submitted jobs. The result includes completed normal jobs,
-     * but doesn't include completed light jobs - for these jobs the cluster
-     * doesn't retain any information after they complete.
+     * but doesn't include completed {@linkplain #newLightJob(Pipeline) light
+     * jobs} - for light jobs the cluster doesn't retain any information after
+     * they complete.
      */
     @Nonnull
     List<Job> getJobs();
@@ -208,8 +209,7 @@ public interface JetService {
      * Returns all jobs submitted with the given name, ordered in descending
      * order by submission time. The active job is always first. Empty list
      * will be returned if no job with the given name exists. The list includes
-     * completed jobs. It never includes {@linkplain #newLightJob(Pipeline)
-     * light jobs} because they can't have a name.
+     * completed jobs.
      */
     @Nonnull
     List<Job> getJobs(@Nonnull String name);

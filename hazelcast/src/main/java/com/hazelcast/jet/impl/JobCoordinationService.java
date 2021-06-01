@@ -435,7 +435,7 @@ public class JobCoordinationService {
      */
     public CompletableFuture<GetJobIdsResult> getJobIds(@Nullable String onlyName, long onlyJobId) {
         if (onlyName != null) {
-            assertIsMaster("Cannot query list of job ids by name on non-master node");
+            assertIsMaster("Cannot query list of job IDs by name on non-master node");
         }
 
         return submitToCoordinatorThread(() -> {

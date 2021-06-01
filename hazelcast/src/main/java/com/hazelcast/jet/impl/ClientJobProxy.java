@@ -72,9 +72,10 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl, UUID
     @Nonnull
     @Override
     public JobStatus getStatus() {
+        checkNotLightJob("job status");
         return callAndRetryIfTargetNotFound(()  -> {
             ClientMessage request = JetGetJobStatusCodec.encodeRequest(getId());
-            ClientMessage response = invocation(request, masterUuid()).invoke().get();
+            ClientMessage response = invocation(request, masterId()).invoke().get();
             int jobStatusIndex = JetGetJobStatusCodec.decodeResponse(response);
             return JobStatus.values()[jobStatusIndex];
         });
@@ -83,9 +84,10 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl, UUID
     @Nonnull
     @Override
     public JobSuspensionCause getSuspensionCause() {
+        checkNotLightJob("suspensionCause");
         return callAndRetryIfTargetNotFound(()  -> {
             ClientMessage request = JetGetJobSuspensionCauseCodec.encodeRequest(getId());
-            ClientMessage response = invocation(request, masterUuid()).invoke().get();
+            ClientMessage response = invocation(request, masterId()).invoke().get();
             Data data = JetGetJobSuspensionCauseCodec.decodeResponse(response);
             return serializationService().toObject(data);
         });
@@ -94,10 +96,10 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl, UUID
     @Nonnull
     @Override
     public JobMetrics getMetrics() {
-        assert !isLightJob();
+        checkNotLightJob("metrics");
         return callAndRetryIfTargetNotFound(()  -> {
             ClientMessage request = JetGetJobMetricsCodec.encodeRequest(getId());
-            ClientMessage response = invocation(request, masterUuid()).invoke().get();
+            ClientMessage response = invocation(request, masterId()).invoke().get();
             Data metricsData = JetGetJobMetricsCodec.decodeResponse(response);
             return toJobMetrics(serializationService().toObject(metricsData));
         });
@@ -121,14 +123,14 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl, UUID
     protected CompletableFuture<Void> invokeSubmitJob(Data dag, JobConfig config) {
         Data configData = serializationService().toData(config);
         ClientMessage request = JetSubmitJobCodec.encodeRequest(getId(), dag, configData, isLightJob());
-        UUID target = lightJobCoordinator != null ? lightJobCoordinator : masterUuid();
+        UUID target = lightJobCoordinator != null ? lightJobCoordinator : masterId();
         return invocation(request, target).invoke().thenApply(c -> null);
     }
 
     @Override
     protected CompletableFuture<Void> invokeJoinJob() {
         ClientMessage request = JetJoinSubmittedJobCodec.encodeRequest(getId(), isLightJob());
-        ClientInvocation invocation = invocation(request, masterUuid());
+        ClientInvocation invocation = invocation(request, masterId());
         // this invocation should never time out, as the job may be running for a long time
         invocation.setInvocationTimeoutMillis(Long.MAX_VALUE); // 0 is not supported
         return invocation.invoke().thenApply(c -> null);
@@ -137,14 +139,15 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl, UUID
     @Override
     protected CompletableFuture<Void> invokeTerminateJob(TerminationMode mode) {
         ClientMessage request = JetTerminateJobCodec.encodeRequest(getId(), mode.ordinal(), isLightJob());
-        return invocation(request, masterUuid()).invoke().thenApply(c -> null);
+        return invocation(request, masterId()).invoke().thenApply(c -> null);
     }
 
     @Override
     public void resume() {
+        checkNotLightJob("resume");
         ClientMessage request = JetResumeJobCodec.encodeRequest(getId());
         try {
-            invocation(request, masterUuid()).invoke().get();
+            invocation(request, masterId()).invoke().get();
         } catch (Throwable t) {
             throw rethrow(t);
         }
@@ -161,9 +164,10 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl, UUID
     }
 
     private JobStateSnapshot doExportSnapshot(String name, boolean cancelJob) {
+        checkNotLightJob("export snapshot");
         ClientMessage request = JetExportSnapshotCodec.encodeRequest(getId(), name, cancelJob);
         try {
-            invocation(request, masterUuid()).invoke().get();
+            invocation(request, masterId()).invoke().get();
         } catch (Throwable t) {
             throw rethrow(t);
         }
@@ -174,7 +178,7 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl, UUID
     protected long doGetJobSubmissionTime() {
         return callAndRetryIfTargetNotFound(() -> {
             ClientMessage request = JetGetJobSubmissionTimeCodec.encodeRequest(getId(), isLightJob());
-            ClientMessage response = invocation(request, masterUuid()).invoke().get();
+            ClientMessage response = invocation(request, masterId()).invoke().get();
             return JetGetJobSubmissionTimeCodec.decodeResponse(response);
         });
     }
@@ -183,14 +187,14 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl, UUID
     protected JobConfig doGetJobConfig() {
         return callAndRetryIfTargetNotFound(() -> {
             ClientMessage request = JetGetJobConfigCodec.encodeRequest(getId());
-            ClientMessage response = invocation(request, masterUuid()).invoke().get();
+            ClientMessage response = invocation(request, masterId()).invoke().get();
             Data data = JetGetJobConfigCodec.decodeResponse(response);
             return serializationService().toObject(data);
         });
     }
 
     @Nonnull @Override
-    protected UUID masterUuid() {
+    protected UUID masterId() {
         Member masterMember = container().getHazelcastClient().getClientClusterService().getMasterMember();
         if (masterMember == null) {
             throw new IllegalStateException("Master isn't known");
@@ -236,5 +240,4 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl, UUID
             }
         }
     }
-
 }

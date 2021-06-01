@@ -680,8 +680,8 @@ public final class HazelcastBootstrap {
         }
 
         @Override
-        public Job newJobProxy(long jobId, MemberIdType coordinator) {
-            return jet.newJobProxy(jobId, coordinator);
+        public Job newJobProxy(long jobId, MemberIdType lightJobCoordinator) {
+            return jet.newJobProxy(jobId, lightJobCoordinator);
         }
 
         @Override

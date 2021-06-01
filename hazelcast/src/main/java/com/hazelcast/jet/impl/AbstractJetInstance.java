@@ -48,14 +48,12 @@ import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.impl.JobRepository.exportedSnapshotMapName;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static java.util.stream.Collectors.toList;
 
@@ -158,8 +156,23 @@ public abstract class AbstractJetInstance<MemberIdType> implements JetInstance {
 
     @Nonnull @Override
     public List<Job> getJobs() {
-        Map<MemberIdType, GetJobIdsResult> results = getJobsInt(null, null);
+        return mergeJobIdsResults(getJobsInt(null, null));
+    }
 
+    @Nonnull @Override
+    public List<Job> getJobs(@NotNull String name) {
+        return mergeJobIdsResults(getJobsInt(name, null));
+    }
+
+    @Nullable @Override
+    public Job getJob(long jobId) {
+        List<Job> jobs = mergeJobIdsResults(getJobsInt(null, jobId));
+        assert jobs.size() <= 1;
+        return jobs.isEmpty() ? null : jobs.get(0);
+    }
+
+    @Nonnull
+    private List<Job> mergeJobIdsResults(Map<MemberIdType, GetJobIdsResult> results) {
         return results.entrySet().stream()
                 .flatMap(en -> IntStream.range(0, en.getValue().getJobIds().length)
                         .mapToObj(i -> {
@@ -168,45 +181,6 @@ public abstract class AbstractJetInstance<MemberIdType> implements JetInstance {
                             return newJobProxy(jobId, isLightJob ? en.getKey() : null);
                         }))
                 .collect(toList());
-    }
-
-    @Nonnull @Override
-    public List<Job> getJobs(@NotNull String name) {
-        Map<MemberIdType, GetJobIdsResult> results = getJobsInt(name, null);
-
-        return results.entrySet().stream()
-                .flatMap(en -> IntStream.range(0, en.getValue().getJobIds().length)
-                        .mapToObj(i -> {
-                            long jobId = en.getValue().getJobIds()[i];
-                            boolean isLightJob = en.getValue().getIsLightJobs()[i];
-                            assert !isLightJob;
-                            return (Job) newJobProxy(jobId, null);
-                        }))
-                .collect(toList());
-    }
-
-    public abstract MemberIdType getMasterId();
-
-    public abstract Map<MemberIdType, GetJobIdsResult> getJobsInt(String onlyName, Long onlyJobId);
-
-    @Override
-    public Job getJob(long jobId) {
-        try {
-            Job job = null;
-            Map<MemberIdType, GetJobIdsResult> jobs = getJobsInt(null, jobId);
-            for (Entry<MemberIdType, GetJobIdsResult> resultEntry : jobs.entrySet()) {
-                GetJobIdsResult result = resultEntry.getValue();
-                assert result.getJobIds().length <= 1;
-                if (result.getJobIds().length > 0) {
-                    assert job == null : "duplicate job by ID";
-                    boolean isLightJob = result.getIsLightJobs()[0];
-                    job = newJobProxy(result.getJobIds()[0], isLightJob ? resultEntry.getKey() : null);
-                }
-            }
-            return job;
-        } catch (Throwable t) {
-            throw rethrow(t);
-        }
     }
 
     @Nullable
@@ -317,7 +291,18 @@ public abstract class AbstractJetInstance<MemberIdType> implements JetInstance {
 
     public abstract ILogger getLogger();
 
-    public abstract Job newJobProxy(long jobId, MemberIdType coordinator);
+    /**
+     * Create a job proxy for a submitted job. {@code lightJobCoordinator} must
+     * be non-null iff it's a light job.
+     */
+    public abstract Job newJobProxy(long jobId, MemberIdType lightJobCoordinator);
 
+    /**
+     * Submit a new job and return the job proxy.
+     */
     public abstract Job newJobProxy(long jobId, boolean isLightJob, Object jobDefinition, JobConfig config);
+
+    public abstract Map<MemberIdType, GetJobIdsResult> getJobsInt(String onlyName, Long onlyJobId);
+
+    public abstract MemberIdType getMasterId();
 }

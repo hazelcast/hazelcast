@@ -145,8 +145,8 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
     }
 
     @Override
-    public Job newJobProxy(long jobId, Address coordinator) {
-        return new JobProxy(nodeEngine, jobId, coordinator);
+    public Job newJobProxy(long jobId, Address lightJobCoordinator) {
+        return new JobProxy(nodeEngine, jobId, lightJobCoordinator);
     }
 
     @Override

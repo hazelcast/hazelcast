@@ -126,7 +126,9 @@ public interface Job {
      */
     long getSubmissionTime();
 
-    // ### Methods below apply only to normal (non-light) jobs
+
+    // ### Methods below apply only to normal (non-light) jobs.
+
 
     /**
      * Returns the configuration this job was submitted with. Changes made to

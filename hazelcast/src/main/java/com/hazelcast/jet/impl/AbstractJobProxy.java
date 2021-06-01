@@ -31,7 +31,6 @@ import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 
 import javax.annotation.Nonnull;
-import java.util.UUID;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -74,7 +73,7 @@ public abstract class AbstractJobProxy<ContainerType, MemberIdType> implements J
         this.container = container;
         this.lightJobCoordinator = lightJobCoordinator;
 
-        logger = loggingService().getLogger(Job.class);
+        logger = loggingService().getLogger(AbstractJobProxy.class);
         future = new NonCompletableFuture();
         joinJobCallback = new JoinJobCallback();
     }
@@ -94,7 +93,7 @@ public abstract class AbstractJobProxy<ContainerType, MemberIdType> implements J
                 future = submitFuture;
                 joinJobCallback = null;
             } else {
-                submitFuture.get();
+                submitFuture.join();
                 future = new NonCompletableFuture();
                 joinJobCallback = new JoinJobCallback();
                 doInvokeJoinJob();
@@ -111,9 +110,7 @@ public abstract class AbstractJobProxy<ContainerType, MemberIdType> implements J
 
     @Nonnull @Override
     public JobConfig getConfig() {
-        if (lightJobCoordinator != null) {
-            throw new UnsupportedOperationException("not supported for light jobs");
-        }
+        checkNotLightJob("config");
 
         // The common path will use a single volatile load
         JobConfig loadResult = jobConfig;
@@ -180,6 +177,10 @@ public abstract class AbstractJobProxy<ContainerType, MemberIdType> implements J
     }
 
     private void terminate(TerminationMode mode) {
+        if (mode != TerminationMode.CANCEL_FORCEFUL) {
+            checkNotLightJob(mode.toString());
+        }
+
         logger.fine("Sending " + mode + " request for job " + idAndName());
         while (true) {
             try {
@@ -227,12 +228,12 @@ public abstract class AbstractJobProxy<ContainerType, MemberIdType> implements J
     protected abstract JobConfig doGetJobConfig();
 
     /**
-     * Get the current master UUID.
+     * Get the current master ID.
      *
      * @throws IllegalStateException if the master isn't known
      */
     @Nonnull
-    protected abstract UUID masterUuid();
+    protected abstract MemberIdType masterId();
 
     protected abstract SerializationService serializationService();
 
@@ -269,6 +270,12 @@ public abstract class AbstractJobProxy<ContainerType, MemberIdType> implements J
                 .whenCompleteAsync(withTryCatch(logger, joinJobCallback));
     }
 
+    protected void checkNotLightJob(String msg) {
+        if (isLightJob()) {
+            throw new UnsupportedOperationException("not supported for light jobs: " + msg);
+        }
+    }
+
     private abstract class CallbackBase implements BiConsumer<Void, Throwable> {
         private final NonCompletableFuture future;
 
@@ -302,7 +309,7 @@ public abstract class AbstractJobProxy<ContainerType, MemberIdType> implements J
         private void retryAction(Throwable t) {
             try {
                 // calling for the side-effect of throwing ISE if master not known
-                masterUuid();
+                masterId();
             } catch (IllegalStateException e) {
                 // job data will be cleaned up eventually by the coordinator
                 String msg = operationName() + " failed for job " + idAndName() + " because the cluster " +

@@ -41,9 +41,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.annotation.Nonnull;
-import java.util.Collection;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -66,6 +64,7 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
 
     @Nonnull @Override
     public JobStatus getStatus() {
+        checkNotLightJob("job status");
         try {
             return this.<JobStatus>invokeOp(new GetJobStatusOperation(getId())).get();
         } catch (Throwable t) {
@@ -73,9 +72,9 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
         }
     }
 
-    @Nonnull
-    @Override
+    @Nonnull @Override
     public JobSuspensionCause getSuspensionCause() {
+        checkNotLightJob("suspensionCause");
         try {
             return this.<JobSuspensionCause>invokeOp(new GetJobSuspensionCauseOperation(getId())).get();
         } catch (Throwable t) {
@@ -85,9 +84,7 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
 
     @Nonnull @Override
     public JobMetrics getMetrics() {
-        if (isLightJob()) {
-            throw new UnsupportedOperationException("metrics not supported for light jobs");
-        }
+        checkNotLightJob("metrics");
         try {
             List<RawJobMetrics> shards = this.<List<RawJobMetrics>>invokeOp(new GetJobMetricsOperation(getId())).get();
             return toJobMetrics(shards);
@@ -126,6 +123,7 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
 
     @Override
     public void resume() {
+        checkNotLightJob("resume");
         try {
             invokeOp(new ResumeJobOperation(getId())).get();
         } catch (Exception e) {
@@ -144,6 +142,7 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
     }
 
     private JobStateSnapshot doExportSnapshot(String name, boolean cancelJob) {
+        checkNotLightJob("export snapshot");
         JetServiceBackend jetServiceBackend = container().getService(JetServiceBackend.SERVICE_NAME);
         try {
             Operation operation = jetServiceBackend.createExportSnapshotOperation(getId(), name, cancelJob);
@@ -172,15 +171,6 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
         }
     }
 
-    @Nonnull @Override
-    protected UUID masterUuid() {
-        Collection<Member> members = container().getClusterService().getMembers();
-        if (members.isEmpty()) {
-            throw new IllegalStateException("No members in cluster");
-        }
-        return members.iterator().next().getUuid();
-    }
-
     @Override
     protected SerializationService serializationService() {
         return container().getSerializationService();
@@ -197,14 +187,15 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
     }
 
     private <T> CompletableFuture<T> invokeOp(Operation op) {
-        Address target = lightJobCoordinator != null ? lightJobCoordinator : masterAddress();
+        Address target = lightJobCoordinator != null ? lightJobCoordinator : masterId();
         return container()
                 .getOperationService()
                 .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, op, target)
                 .invoke();
     }
 
-    private Address masterAddress() {
+    @Nonnull @Override
+    protected Address masterId() {
         Address masterAddress = container().getMasterAddress();
         if (masterAddress == null) {
             throw new IllegalStateException("Master address unknown: instance is not yet initialized or is shut down");
