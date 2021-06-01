@@ -628,7 +628,7 @@ public class HazelcastCommandLineTest extends JetTestSupport {
 
     @Test
     public void test_targets_after_command_and_configuration_from_default_config_together() throws IOException {
-        Path sourceLocation = Paths.get("src/test/resources/com/hazelcast/jet/server/hazelcast-client-template.yaml");
+        Path sourceLocation = Paths.get("src/test/resources/com/hazelcast/client/console/hazelcast-client-template.yaml");
         Path cpConfigLocation = Paths.get("target/test-classes/hazelcast-client.yaml");
 
         try {
