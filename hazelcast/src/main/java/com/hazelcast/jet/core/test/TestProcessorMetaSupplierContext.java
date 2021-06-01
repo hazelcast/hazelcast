@@ -16,14 +16,22 @@
 
 package com.hazelcast.jet.core.test;
 
+import com.hazelcast.cluster.Address;
+import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import javax.annotation.Nonnull;
+import java.net.UnknownHostException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
 
@@ -47,6 +55,13 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
     private ProcessingGuarantee processingGuarantee = NONE;
     private long maxProcessorAccumulatedRecords = Long.MAX_VALUE;
     private boolean isLightJob;
+    private Map<Address, int[]> partitionAssignment = Collections.unmodifiableMap(new HashMap<Address, int[]>() {{
+        try {
+            put(new Address("1.2.3.4", 1), new int[]{0});
+        } catch (UnknownHostException e) {
+            throw new RuntimeException(e);
+        }
+    }});
 
     @Nonnull @Override
     public JetInstance jetInstance() {
@@ -59,6 +74,10 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
     @Nonnull
     public TestProcessorMetaSupplierContext setJetInstance(@Nonnull JetInstance jetInstance) {
         this.jetInstance = jetInstance;
+        if (jetInstance.getHazelcastInstance() instanceof HazelcastInstanceImpl) {
+            NodeEngineImpl nodeEngine = ((HazelcastInstanceImpl) jetInstance.getHazelcastInstance()).node.nodeEngine;
+            this.partitionAssignment = ExecutionPlanBuilder.getPartitionAssignment(nodeEngine);
+        }
         return this;
     }
 
@@ -117,8 +136,6 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
 
     @Override
     public int localParallelism() {
-        assert totalParallelism % localParallelism == 0 :
-                "totalParallelism=" + totalParallelism + " not divisible with localParallelism=" + localParallelism;
         return localParallelism;
     }
 
@@ -204,6 +221,20 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
     @Nonnull
     public TestProcessorMetaSupplierContext setIsLightJob(boolean isLightJob) {
         this.isLightJob = isLightJob;
+        return this;
+    }
+
+    @Override
+    public Map<Address, int[]> partitionAssignment() {
+        return partitionAssignment;
+    }
+
+    /**
+     * Sets the partition assignment.
+     */
+    @Nonnull
+    public TestProcessorMetaSupplierContext setPartitionAssignment(Map<Address, int[]> partitionAssignment) {
+        this.partitionAssignment = partitionAssignment;
         return this;
     }
 }

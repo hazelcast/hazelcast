@@ -24,6 +24,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -43,7 +44,12 @@ public class PartitionArrangementTest {
         a1 = new Address("1.2.3.4", 1);
         a2 = new Address("1.2.3.4", 2);
 
-        a = new PartitionArrangement(new Address[] { a0, a2, a1, a0, a1, a2, a0}, a0);
+        a = new PartitionArrangement(
+                ImmutableMap.of(
+                        a0, new int[]{0, 3, 6},
+                        a1, new int[]{2, 4},
+                        a2, new int[]{1, 5}),
+                a0);
     }
 
     @Test

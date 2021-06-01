@@ -32,16 +32,14 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Map.Entry;
 
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static com.hazelcast.jet.sql.impl.ExpressionUtil.evaluate;
 
 /**
- * A utility to convert a key-value entry represented as {@code
- * Entry<Object, Object>} to a row represented as {@code Object[]}. As a
- * convenience, it also contains a {@link #predicate} - it is applied
- * before projecting.
+ * A utility to convert a key-value entry to a row represented as
+ * {@code Object[]}. As a convenience, it also contains a
+ * {@link #predicate} - it is applied before projecting.
  * <p>
  * {@link KvProjector} does the reverse.
  */
@@ -94,9 +92,9 @@ public class KvRowProjector implements Row {
         return extractors;
     }
 
-    public Object[] project(Entry<Object, Object> entry) {
-        keyTarget.setTarget(entry.getKey(), null);
-        valueTarget.setTarget(entry.getValue(), null);
+    public Object[] project(Object key, Object value) {
+        keyTarget.setTarget(key, null);
+        valueTarget.setTarget(value, null);
 
         if (!Boolean.TRUE.equals(evaluate(predicate, this, evalContext))) {
             return null;
