@@ -21,7 +21,6 @@ import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.opt.AbstractScanRel;
 import com.hazelcast.sql.impl.calcite.opt.cost.CostUtils;
-import com.hazelcast.sql.impl.calcite.opt.physical.visitor.RexToExpressionVisitor;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -83,7 +82,7 @@ public class IMapIndexScanPhysicalRel extends AbstractScanRel implements Physica
 
     public Expression<Boolean> filter(QueryParameterMetadata parameterMetadata) {
         PlanNodeSchema schema = OptUtils.schema(getTable());
-        return convertRemainderExpToFilter(schema, remainderExp, parameterMetadata);
+        return filter(schema, remainderExp, parameterMetadata);
     }
 
     public List<Expression<?>> projection(QueryParameterMetadata parameterMetadata) {
@@ -100,17 +99,6 @@ public class IMapIndexScanPhysicalRel extends AbstractScanRel implements Physica
         }
 
         return project(schema, projection, parameterMetadata);
-    }
-
-    @Override
-    public PlanNodeSchema schema(QueryParameterMetadata parameterMetadata) {
-        List<QueryDataType> fieldTypes = toList(projection(parameterMetadata), Expression::getType);
-        return new PlanNodeSchema(fieldTypes);
-    }
-
-    @Override
-    public Vertex accept(CreateDagVisitor visitor) {
-        return visitor.onIndexScan(this);
     }
 
     public MapTableIndex getIndex() {
@@ -136,6 +124,17 @@ public class IMapIndexScanPhysicalRel extends AbstractScanRel implements Physica
             ascs.add(asc);
         }
         return ascs;
+    }
+
+    @Override
+    public PlanNodeSchema schema(QueryParameterMetadata parameterMetadata) {
+        List<QueryDataType> fieldTypes = toList(projection(parameterMetadata), Expression::getType);
+        return new PlanNodeSchema(fieldTypes);
+    }
+
+    @Override
+    public Vertex accept(CreateDagVisitor visitor) {
+        return visitor.onIndexScan(this);
     }
 
     @Override
@@ -173,19 +172,5 @@ public class IMapIndexScanPhysicalRel extends AbstractScanRel implements Physica
         }
 
         return rowCount;
-    }
-
-    private static Expression<Boolean> convertRemainderExpToFilter(
-            PlanNodeSchema schema,
-            RexNode expression,
-            QueryParameterMetadata parameterMetadata
-    ) {
-        if (expression == null) {
-            return null;
-        }
-
-        RexToExpressionVisitor converter = new RexToExpressionVisitor(schema, parameterMetadata);
-        Expression convertedExpression = expression.accept(converter);
-        return (Expression<Boolean>) convertedExpression;
     }
 }
