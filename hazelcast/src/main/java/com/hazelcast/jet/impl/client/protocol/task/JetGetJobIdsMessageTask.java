@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.protocol.task.AbstractMultiTargetMessageTask;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobIdsCodec;
 import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobIdsCodec.RequestParameters;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation;
@@ -87,7 +87,7 @@ public class JetGetJobIdsMessageTask extends AbstractMultiTargetMessageTask<Requ
 
     @Override
     public String getServiceName() {
-         return JetService.SERVICE_NAME;
+         return JetServiceBackend.SERVICE_NAME;
     }
 
     @Override
