@@ -29,3 +29,9 @@ from The Moby Project (https://github.com/moby/moby).
 
 The class com.hazelcast.internal.util.graph.BronKerboschCliqueFinder contains code
 originating from The JGraphT Project (https://github.com/jgrapht/jgrapht).
+
+The package com.hazelcast.sql contains code
+originating from the Apache Calcite (https://github.com/apache/calcite)
+
+The class com.hazelcast.internal.util.ConcurrentReferenceHashMap contains code written by Doug Lea
+and updated within the WildFly project (https://github.com/wildfly/wildfly).
