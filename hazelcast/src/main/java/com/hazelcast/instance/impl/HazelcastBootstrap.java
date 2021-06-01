@@ -706,8 +706,8 @@ public final class HazelcastBootstrap {
         }
 
         @Override
-        public Map<MemberIdType, GetJobIdsResult> getJobsInt(Long onlyJobId) {
-            return jet.getJobsInt(onlyJobId);
+        public Map<MemberIdType, GetJobIdsResult> getJobsInt(String onlyName, Long onlyJobId) {
+            return jet.getJobsInt(onlyName, onlyJobId);
         }
     }
 }

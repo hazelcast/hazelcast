@@ -22,7 +22,6 @@ import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.BasicJob;
-import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation;
@@ -33,18 +32,17 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static java.util.Collections.singleton;
 
 /**
  * Member-side {@code JetInstance} implementation
@@ -70,10 +68,13 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
     }
 
     @Override
-    public Map<Address, GetJobIdsResult> getJobsInt(Long onlyJobId) {
+    public Map<Address, GetJobIdsResult> getJobsInt(String onlyName, Long onlyJobId) {
         Map<Address, CompletableFuture<GetJobIdsResult>> futures = new HashMap<>();
         Address masterAddress = null;
-        for (Member member : getCluster().getMembers()) {
+        // if onlyName != null, only send the operation to master. Light jobs cannot have a name
+        Set<Member> targetMembers = onlyName == null ? getCluster().getMembers()
+                : singleton(nodeEngine.getClusterService().getMembers().iterator().next());
+        for (Member member : targetMembers) {
             if (masterAddress == null) {
                 masterAddress = member.getAddress();
             }
@@ -109,28 +110,6 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
         }
 
         return res;
-    }
-
-    @Nonnull @Override
-    public List<Job> getJobs(@NotNull String name) {
-        GetJobIdsOperation operation = new GetJobIdsOperation(name);
-        Address masterAddress = getMasterId();
-        InvocationFuture<GetJobIdsResult> future = nodeEngine
-                .getOperationService()
-                .createInvocationBuilder(JetService.SERVICE_NAME, operation, masterAddress)
-                .invoke();
-
-        GetJobIdsResult result;
-        try {
-            result = future.get();
-        } catch (Throwable e) {
-            throw rethrow(e);
-        }
-        List<Job> resultList = new ArrayList<>();
-        for (int i = 0; i < result.getJobIds().length; i++) {
-            resultList.add(new JobProxy(nodeEngine, result.getJobIds()[i], masterAddress));
-        }
-        return resultList;
     }
 
     @Override

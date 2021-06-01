@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Supplier;
 
+import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toMap;
 
 public class JetGetJobIdsMessageTask extends AbstractMultiTargetMessageTask<RequestParameters> {
@@ -48,7 +49,11 @@ public class JetGetJobIdsMessageTask extends AbstractMultiTargetMessageTask<Requ
 
     @Override
     public Collection<Member> getTargets() {
-        return nodeEngine.getClusterService().getMembers();
+        otestovat toto
+        // if onlyName != null, only send the operation to master. Light jobs cannot have a name
+        return parameters.onlyName != null
+                ? singleton(nodeEngine.getClusterService().getMembers().iterator().next())
+                : nodeEngine.getClusterService().getMembers();
     }
 
     @Override

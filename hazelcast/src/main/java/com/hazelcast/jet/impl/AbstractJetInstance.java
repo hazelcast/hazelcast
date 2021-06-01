@@ -147,7 +147,7 @@ public abstract class AbstractJetInstance<MemberIdType> implements JetInstance {
 
     @Nonnull @Override
     public List<BasicJob> getAllJobs() {
-        Map<MemberIdType, GetJobIdsResult> results = getJobsInt(null);
+        Map<MemberIdType, GetJobIdsResult> results = getJobsInt(null, null);
 
         return results.entrySet().stream()
                 .flatMap(en -> IntStream.range(0, en.getValue().getJobIds().length)
@@ -161,19 +161,28 @@ public abstract class AbstractJetInstance<MemberIdType> implements JetInstance {
 
     @Nonnull @Override
     public List<Job> getJobs(@NotNull String name) {
-        // TODO [viliam]
-        return null;
+        Map<MemberIdType, GetJobIdsResult> results = getJobsInt(name, null);
+
+        return results.entrySet().stream()
+                .flatMap(en -> IntStream.range(0, en.getValue().getJobIds().length)
+                        .mapToObj(i -> {
+                            long jobId = en.getValue().getJobIds()[i];
+                            boolean isLightJob = en.getValue().getIsLightJobs()[i];
+                            assert !isLightJob;
+                            return (Job) newJobProxy(jobId, null);
+                        }))
+                .collect(toList());
     }
 
     public abstract MemberIdType getMasterId();
 
-    public abstract Map<MemberIdType, GetJobIdsResult> getJobsInt(Long onlyJobId);
+    public abstract Map<MemberIdType, GetJobIdsResult> getJobsInt(String onlyName, Long onlyJobId);
     
     @Override
     public BasicJob getJobById(long jobId) {
         try {
             BasicJob job = null;
-            Map<MemberIdType, GetJobIdsResult> jobs = getJobsInt(jobId);
+            Map<MemberIdType, GetJobIdsResult> jobs = getJobsInt(null, jobId);
             for (Entry<MemberIdType, GetJobIdsResult> resultEntry : jobs.entrySet()) {
                 GetJobIdsResult result = resultEntry.getValue();
                 assert result.getJobIds().length <= 1;
