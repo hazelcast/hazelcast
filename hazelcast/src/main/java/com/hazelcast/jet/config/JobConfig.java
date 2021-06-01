@@ -20,7 +20,7 @@ import com.hazelcast.config.MetricsConfig;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.annotation.EvolvingApi;
 import com.hazelcast.jet.core.Processor;
@@ -91,7 +91,7 @@ public class JobConfig implements IdentifiedDataSerializable {
     /**
      * Sets the name of the job. There can be at most one active job in the cluster
      * with particular name, however, the name can be reused after the previous job
-     * with that name completed or failed. See {@link JetInstance#newJobIfAbsent}.
+     * with that name completed or failed. See {@link JetService#newJobIfAbsent}.
      * An active job is a job that is running, suspended or waiting to be run.
      * <p>
      * The job name is printed in logs and is visible in Management Center.

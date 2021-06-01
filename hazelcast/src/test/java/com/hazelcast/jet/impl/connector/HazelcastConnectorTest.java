@@ -21,7 +21,7 @@ import com.hazelcast.cache.ICache;
 import com.hazelcast.collection.IList;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.jet.JetCacheManager;
+import com.hazelcast.core.ICacheManager;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.core.DAG;
@@ -99,7 +99,7 @@ public class HazelcastConnectorTest extends SimpleTestInClusterSupport {
         streamSinkName = "stream" + sinkName;
 
         // workaround for `cache is not created` exception, create cache locally on all nodes
-        JetCacheManager cacheManager = instances()[1].getCacheManager();
+        ICacheManager cacheManager = instances()[1].getHazelcastInstance().getCacheManager();
         cacheManager.getCache(sourceName);
         cacheManager.getCache(sinkName);
         cacheManager.getCache(streamSourceName);

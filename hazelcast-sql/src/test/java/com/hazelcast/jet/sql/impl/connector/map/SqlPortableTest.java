@@ -48,6 +48,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 
 import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS_ID;
@@ -605,7 +606,7 @@ public class SqlPortableTest extends SqlTestSupport {
 
     @SuppressWarnings({"OptionalGetWithoutIsPresent", "unchecked", "rawtypes"})
     private static Entry<Data, Data> randomEntryFrom(String mapName) {
-        NodeEngine engine = ((HazelcastInstanceImpl) instance().getHazelcastInstance()).node.nodeEngine;
+        NodeEngine engine = getNodeEngine(instance().getHazelcastInstance());
         MapService service = engine.getService(MapService.SERVICE_NAME);
         MapServiceContext context = service.getMapServiceContext();
 

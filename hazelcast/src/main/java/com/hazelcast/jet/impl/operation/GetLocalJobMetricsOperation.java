@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.operation;
 
-import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.exception.ExecutionNotFoundException;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
@@ -44,7 +44,7 @@ public class GetLocalJobMetricsOperation extends AbstractJobOperation {
 
     @Override
     public void run() {
-        JetService service = getService();
+        JetServiceBackend service = getService();
         ExecutionContext executionContext = service.getJobExecutionService().getExecutionContext(executionId);
         if (executionContext == null) {
             throw new ExecutionNotFoundException(executionId);

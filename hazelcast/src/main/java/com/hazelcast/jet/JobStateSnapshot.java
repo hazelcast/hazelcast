@@ -16,8 +16,10 @@
 
 package com.hazelcast.jet;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.impl.SnapshotValidationRecord;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -28,15 +30,20 @@ import static com.hazelcast.jet.impl.JobRepository.exportedSnapshotMapName;
  * A handle to an exported state snapshot created using {@link
  * Job#exportSnapshot(String)}.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public final class JobStateSnapshot {
 
-    private final JetInstance instance;
+    private final HazelcastInstance instance;
     private final String name;
     private final SnapshotValidationRecord snapshotValidationRecord;
 
-    JobStateSnapshot(@Nonnull JetInstance instance, @Nonnull String name, @Nonnull SnapshotValidationRecord record) {
+    /**
+     * This constructor is a private API, use {@link
+     * JetService#getJobStateSnapshot(String)} instead.
+     */
+    @PrivateApi
+    public JobStateSnapshot(@Nonnull HazelcastInstance instance, @Nonnull String name, @Nonnull SnapshotValidationRecord record) {
         this.instance = instance;
         this.name = name;
         this.snapshotValidationRecord = record;

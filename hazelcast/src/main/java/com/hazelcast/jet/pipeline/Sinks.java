@@ -842,7 +842,7 @@ public final class Sinks {
     @Nonnull
     public static <T> Sink<T> reliableTopic(@Nonnull String reliableTopicName) {
         return SinkBuilder.<ITopic<T>>sinkBuilder("reliableTopicSink(" + reliableTopicName + "))",
-                ctx -> ctx.jetInstance().getReliableTopic(reliableTopicName))
+                ctx -> ctx.hazelcastInstance().getReliableTopic(reliableTopicName))
                 .<T>receiveFn(ITopic::publish)
                 .build();
     }

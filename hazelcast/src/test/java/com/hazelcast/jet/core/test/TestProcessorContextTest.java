@@ -19,7 +19,7 @@ package com.hazelcast.jet.core.test;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import org.junit.Test;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 
@@ -36,15 +36,14 @@ public class TestProcessorContextTest {
         TestProcessorContext c = new TestProcessorContext()
                 .setPartitionAssignment(ImmutableMap.of(a0, new int[]{0, 3, 6}));
 
-        JetInstance mockJetInstance = mock(JetInstance.class);
+        HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
         Cluster mockCluster = mock(Cluster.class);
-        when(mockJetInstance.getCluster()).thenReturn(mockCluster);
+        when(mockHazelcastInstance.getCluster()).thenReturn(mockCluster);
         Member mockMember = mock(Member.class);
         when(mockCluster.getLocalMember()).thenReturn(mockMember);
         when(mockMember.getAddress()).thenReturn(a0);
 
-        c.setJetInstance(mockJetInstance);
-
+        c.setHazelcastInstance(mockHazelcastInstance);
         assertArrayEquals(new int[]{0, 3, 6}, c.memberPartitions());
 
         c.setLocalParallelism(2);

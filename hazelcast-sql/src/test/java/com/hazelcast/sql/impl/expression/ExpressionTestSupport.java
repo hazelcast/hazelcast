@@ -95,7 +95,7 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
             return;
         }
         // after each test ditch all jobs and objects
-        List<Job> jobs = member.getJetInstance().getJobs();
+        List<Job> jobs = member.getJet().getJobs();
         SUPPORT_LOGGER.info("Ditching " + jobs.size() + " jobs in ExpressionTestSupport.@After: "
                 + jobs.stream().map(j -> idToString(j.getId())).collect(joining(", ", "[", "]")));
         for (Job job : jobs) {

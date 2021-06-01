@@ -296,7 +296,7 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
 
         @Override
         public void init(@Nonnull Context context) {
-            hzInstance = context.jetInstance().getHazelcastInstance();
+            hzInstance = context.hazelcastInstance();
             serializationService = ((ProcSupplierCtx) context).serializationService();
             memberPartitions = context.partitionAssignment().get(hzInstance.getCluster().getLocalMember().getAddress());
         }

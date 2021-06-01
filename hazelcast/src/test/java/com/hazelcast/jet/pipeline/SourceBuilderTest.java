@@ -494,7 +494,7 @@ public class SourceBuilderTest extends PipelineStreamTestSupport {
          .writeTo(Sinks.list(result));
 
         Job job = jet().newJob(p, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE).setSnapshotIntervalMillis(100));
-        JobRepository jr = new JobRepository(jet());
+        JobRepository jr = new JobRepository(jet().getHazelcastInstance());
         waitForFirstSnapshot(jr, job.getId(), 10, true);
 
         job.restart();

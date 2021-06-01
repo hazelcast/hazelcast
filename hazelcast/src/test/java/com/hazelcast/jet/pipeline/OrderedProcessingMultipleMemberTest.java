@@ -98,7 +98,7 @@ public class OrderedProcessingMultipleMemberTest extends JetTestSupport implemen
         eventJournalConfig.setCapacity(30000); // 30000/271 ~= 111 item per partition
         instances = new JetInstance[INSTANCE_COUNT];
         for (int i = 0; i < INSTANCE_COUNT; i++) {
-            instances[i] = Hazelcast.newHazelcastInstance(config).getJetInstance();
+            instances[i] = (JetInstance) Hazelcast.newHazelcastInstance(config).getJet();
         }
     }
 

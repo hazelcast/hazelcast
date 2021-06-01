@@ -74,7 +74,7 @@ final class JoinScanProcessorSupplier implements ProcessorSupplier, DataSerializ
 
     @Override
     public void init(@Nonnull Context context) {
-        map = context.jetInstance().getMap(mapName);
+        map = context.hazelcastInstance().getMap(mapName);
         evalContext = SimpleExpressionEvalContext.from(context);
     }
 

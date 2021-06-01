@@ -92,7 +92,7 @@ public final class OnHeapMapScanP extends AbstractProcessor implements Identifie
 
     @Override
     protected void init(@Nonnull Context context) throws Exception {
-        NodeEngine nodeEngine = getNodeEngine(context.jetInstance());
+        NodeEngine nodeEngine = getNodeEngine(context.hazelcastInstance());
 
         traverser = new IMapTraverser(
                 nodeEngine,
@@ -233,7 +233,7 @@ public final class OnHeapMapScanP extends AbstractProcessor implements Identifie
 
         @Override
         public void init(@Nonnull Context context) throws Exception {
-            this.partitionService = context.jetInstance().getHazelcastInstance().getPartitionService();
+            this.partitionService = context.hazelcastInstance().getPartitionService();
         }
 
         @Nonnull

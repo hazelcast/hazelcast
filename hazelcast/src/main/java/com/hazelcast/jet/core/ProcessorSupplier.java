@@ -160,7 +160,7 @@ public interface ProcessorSupplier extends Serializable {
          */
         @Nonnull
         default int[] memberPartitions() {
-            Address address = jetInstance().getCluster().getLocalMember().getAddress();
+            Address address = hazelcastInstance().getCluster().getLocalMember().getAddress();
             return partitionAssignment().get(address);
         }
     }

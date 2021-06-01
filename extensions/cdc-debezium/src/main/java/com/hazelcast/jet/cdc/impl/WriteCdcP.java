@@ -76,7 +76,7 @@ public class WriteCdcP<K, V> extends AbstractUpdateMapP<ChangeRecord, K, V> {
     public void init(@Nonnull Outbox outbox, @Nonnull Context context) {
         super.init(outbox, context);
 
-        Properties properties = context.jetInstance().getHazelcastInstance().getConfig().getProperties();
+        Properties properties = context.hazelcastInstance().getConfig().getProperties();
         HazelcastProperties hzProperties = new HazelcastProperties(properties);
         long expirationMs = hzProperties.getMillis(CdcSinks.SEQUENCE_CACHE_EXPIRATION_SECONDS);
         sequences = new LinkedHashMap<K, Sequence>(INITIAL_CAPACITY, LOAD_FACTOR, true) {

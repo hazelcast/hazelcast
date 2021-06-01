@@ -75,7 +75,7 @@ class PythonServiceContext {
     private final Path runtimeBaseDir;
 
     PythonServiceContext(ProcessorSupplier.Context context, PythonServiceConfig cfg) {
-        logger = context.jetInstance().getHazelcastInstance().getLoggingService()
+        logger = context.hazelcastInstance().getLoggingService()
                 .getLogger(getClass().getPackage().getName());
         checkIfPythonIsAvailable();
         try {

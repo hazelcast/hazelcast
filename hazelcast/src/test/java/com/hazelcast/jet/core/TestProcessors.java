@@ -558,7 +558,7 @@ public final class TestProcessors {
                 @Override
                 protected void init(@Nonnull Context context) {
                     this.list = lists.get(context.globalProcessorIndex());
-                    members.set(context.memberIndex(), context.jetInstance().getCluster().getLocalMember().getAddress());
+                    members.set(context.memberIndex(), context.hazelcastInstance().getCluster().getLocalMember().getAddress());
                 }
 
                 @Override

@@ -114,7 +114,7 @@ public class SourceBuilder_TopologyChangeTest extends JetTestSupport {
         Job job = jet.newJob(p, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE).setSnapshotIntervalMillis(500));
         assertTrueEventually(() -> assertFalse("result list is still empty", result.isEmpty()));
         assertJobStatusEventually(job, JobStatus.RUNNING);
-        JobRepository jr = new JobRepository(jet);
+        JobRepository jr = new JobRepository(jet.getHazelcastInstance());
         waitForFirstSnapshot(jr, job.getId(), 10, false);
 
         assertFalse(stateRestored);

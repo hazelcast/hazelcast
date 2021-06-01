@@ -346,7 +346,7 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
         Job job = instance().newJob(dag, config);
         assertJobStatusEventually(job, RUNNING);
 
-        JobRepository jr = new JobRepository(instance());
+        JobRepository jr = new JobRepository(instance().getHazelcastInstance());
         waitForFirstSnapshot(jr, job.getId(), 10, true);
         for (int i = 0; i < numItems; i++) {
             waitForNextSnapshot(jr, job.getId(), 10, true);
@@ -415,7 +415,7 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
             }
         } while (System.nanoTime() < endTime);
 
-        waitForNextSnapshot(new JobRepository(instance()), job.getId(), 10, true);
+        waitForNextSnapshot(new JobRepository(instance().getHazelcastInstance()), job.getId(), 10, true);
         ditchJob(job, instances());
         // when the job is cancelled, there should be no temporary files
         checkFileContents(0, numItems, exactlyOnce, false, false);
