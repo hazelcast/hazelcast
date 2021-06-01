@@ -510,5 +510,12 @@ public interface ProcessorMetaSupplier extends Serializable {
          * JetService#newLightJob(Pipeline)}.
          */
         boolean isLightJob();
+
+        /**
+         * Returns the partition assignment used by this job. This is the
+         * assignment partitioned edges will use and the assignment processors
+         * dealing with Hazelcast data structures should use.
+         */
+        Map<Address, int[]> partitionAssignment();
     }
 }

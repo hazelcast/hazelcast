@@ -167,7 +167,7 @@ final class JoinByEquiJoinProcessorSupplier implements ProcessorSupplier, DataSe
     ) {
         List<Object[]> rows = new ArrayList<>();
         for (Entry<Object, Object> entry : entries) {
-            Object[] right = rightRowProjector.project(entry);
+            Object[] right = rightRowProjector.project(entry.getKey(), entry.getValue());
             if (right == null) {
                 continue;
             }

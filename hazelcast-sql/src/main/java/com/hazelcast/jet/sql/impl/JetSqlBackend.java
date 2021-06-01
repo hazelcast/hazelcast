@@ -122,7 +122,7 @@ class JetSqlBackend implements SqlBackend {
 
     @Override
     public SqlVisitor<Void> unsupportedOperationVisitor(CatalogReader catalogReader) {
-        return UnsupportedOperationVisitor.INSTANCE;
+        return new UnsupportedOperationVisitor();
     }
 
     @Override

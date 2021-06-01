@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.execution.init;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.nio.IOUtil;
@@ -41,6 +42,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.jet.Util.idToString;
@@ -72,7 +74,9 @@ public final class Contexts {
         private final int totalParallelism;
         private final int memberCount;
         private final boolean isLightJob;
+        private final Map<Address, int[]> partitionAssignment;
 
+        @SuppressWarnings("checkstyle:ParameterNumber")
         MetaSupplierCtx(
                 HazelcastInstance instance,
                 long jobId,
@@ -83,7 +87,8 @@ public final class Contexts {
                 int localParallelism,
                 int totalParallelism,
                 int memberCount,
-                boolean isLightJob
+                boolean isLightJob,
+                Map<Address, int[]> partitionAssignment
         ) {
             this.instance = instance;
             this.jobId = jobId;
@@ -95,6 +100,7 @@ public final class Contexts {
             this.localParallelism = localParallelism;
             this.memberCount = memberCount;
             this.isLightJob = isLightJob;
+            this.partitionAssignment = partitionAssignment;
         }
 
         @Nonnull @Override
@@ -158,12 +164,18 @@ public final class Contexts {
             long jobMaxProcessorAccumulatedRecords = jobConfig.getMaxProcessorAccumulatedRecords();
             return jobMaxProcessorAccumulatedRecords > -1
                     ? jobMaxProcessorAccumulatedRecords
-                    : jetInstance().getConfig().getInstanceConfig().getMaxProcessorAccumulatedRecords();
+                    : hazelcastInstance().getConfig().getJetConfig().getInstanceConfig()
+                    .getMaxProcessorAccumulatedRecords();
         }
 
         @Override
         public boolean isLightJob() {
             return isLightJob;
+        }
+
+        @Override
+        public Map<Address, int[]> partitionAssignment() {
+            return partitionAssignment;
         }
     }
 
@@ -186,11 +198,12 @@ public final class Contexts {
                 int memberIndex,
                 int memberCount,
                 boolean isLightJob,
+                Map<Address, int[]> partitionAssignment,
                 ConcurrentHashMap<String, File> tempDirectories,
                 InternalSerializationService serializationService
         ) {
             super(instance, jobId, executionId, jobConfig, logger, vertexName, localParallelism, totalParallelism,
-                    memberCount, isLightJob);
+                    memberCount, isLightJob, partitionAssignment);
             this.memberIndex = memberIndex;
             this.tempDirectories = tempDirectories;
             this.serializationService = serializationService;
@@ -314,6 +327,7 @@ public final class Contexts {
                        int localProcessorIndex,
                        int globalProcessorIndex,
                        boolean isLightJob,
+                       Map<Address, int[]> partitionAssignment,
                        int localParallelism,
                        int memberIndex,
                        int memberCount,
@@ -321,7 +335,7 @@ public final class Contexts {
                        InternalSerializationService serializationService) {
             super(hazelcastInstance, jobId, executionId, jobConfig, logger, vertexName, localParallelism,
                     memberCount * localParallelism, memberIndex, memberCount,
-                    isLightJob, tempDirectories, serializationService);
+                    isLightJob, partitionAssignment, tempDirectories, serializationService);
             this.localProcessorIndex = localProcessorIndex;
             this.globalProcessorIndex = globalProcessorIndex;
         }

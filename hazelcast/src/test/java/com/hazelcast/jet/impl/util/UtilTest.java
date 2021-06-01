@@ -43,6 +43,7 @@ import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
 import static com.hazelcast.jet.impl.util.Util.addClamped;
 import static com.hazelcast.jet.impl.util.Util.addOrIncrementIndexInName;
 import static com.hazelcast.jet.impl.util.Util.createFieldProjection;
+import static com.hazelcast.jet.impl.util.Util.distributeObjects;
 import static com.hazelcast.jet.impl.util.Util.formatJobDuration;
 import static com.hazelcast.jet.impl.util.Util.gcd;
 import static com.hazelcast.jet.impl.util.Util.memoizeConcurrent;
@@ -262,5 +263,42 @@ public class UtilTest {
         Function<String[], String[]> fieldProjection =
                 createFieldProjection(new String[]{"c", "a", "d", "a"}, asList("a", "b", "c"));
         assertArrayEquals(new String[]{"a", null, "c"}, fieldProjection.apply(new String[]{"c", "a", "d"}));
+    }
+
+    @Test
+    public void test_distributeObjects() {
+        // count == 1
+        assertArrayEquals(
+                new int[][]{
+                        new int[]{}},
+                distributeObjects(1, new int[]{}));
+        assertArrayEquals(
+                new int[][]{
+                        new int[]{2}},
+                distributeObjects(1, new int[]{2}));
+        assertArrayEquals(
+                new int[][]{
+                        new int[]{2, 4}},
+                distributeObjects(1, new int[]{2, 4}));
+
+        // count == 3
+        assertArrayEquals(
+                new int[][]{
+                        new int[]{2},
+                        new int[]{},
+                        new int[]{}},
+                distributeObjects(3, new int[]{2}));
+        assertArrayEquals(
+                new int[][]{
+                        new int[]{2},
+                        new int[]{4},
+                        new int[]{6}},
+                distributeObjects(3, new int[]{2, 4, 6}));
+        assertArrayEquals(
+                new int[][]{
+                        new int[]{2, 8},
+                        new int[]{4},
+                        new int[]{6}},
+                distributeObjects(3, new int[]{2, 4, 6, 8}));
     }
 }

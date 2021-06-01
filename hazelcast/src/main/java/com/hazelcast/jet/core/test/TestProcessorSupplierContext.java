@@ -16,13 +16,13 @@
 
 package com.hazelcast.jet.core.test;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.logging.ILogger;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import java.io.File;
@@ -78,9 +78,14 @@ public class TestProcessorSupplierContext
         return (TestProcessorSupplierContext) super.setProcessingGuarantee(processingGuarantee);
     }
 
-    @NotNull @Override
+    @Nonnull @Override
     public TestProcessorSupplierContext setIsLightJob(boolean isLightJob) {
         return (TestProcessorSupplierContext) super.setIsLightJob(isLightJob);
+    }
+
+    @Nonnull @Override
+    public TestProcessorSupplierContext setPartitionAssignment(Map<Address, int[]> partitionAssignment) {
+        return (TestProcessorSupplierContext) super.setPartitionAssignment(partitionAssignment);
     }
 
     @Override

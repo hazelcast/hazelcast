@@ -16,16 +16,20 @@
 
 package com.hazelcast.sql.impl.schema.map;
 
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableStatistics;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_PARTITIONED;
 
@@ -96,6 +100,14 @@ public class PartitionedMapTable extends AbstractMapTable {
         checkException();
 
         return indexes != null ? indexes : Collections.emptyList();
+    }
+
+    public List<QueryPath> fieldPaths() {
+        return Util.toList(getFields(), field -> ((MapTableField) field).getPath());
+    }
+
+    public List<QueryDataType> types() {
+        return getFields().stream().map(TableField::getType).collect(Collectors.toList());
     }
 
     public boolean isHd() {

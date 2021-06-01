@@ -51,10 +51,9 @@ public class SqlJobManagementTest extends SqlTestSupport {
 
     @Test
     public void when_streamingDmlWithoutCreateJob_then_fail() {
-        sqlService.execute("CREATE MAPPING src TYPE TestStream");
         sqlService.execute(javaSerializableMapDdl("dest", Long.class, Long.class));
 
-        assertThatThrownBy(() -> sqlService.execute("SINK INTO dest SELECT v, v FROM src"))
+        assertThatThrownBy(() -> sqlService.execute("SINK INTO dest SELECT v, v FROM TABLE(GENERATE_STREAM(100))"))
                 .hasMessageContaining("You must use CREATE JOB statement for a streaming DML query");
     }
 
@@ -102,10 +101,9 @@ public class SqlJobManagementTest extends SqlTestSupport {
 
     @Test
     public void testJobSubmitAndCancel() {
-        sqlService.execute("CREATE MAPPING src TYPE TestStream");
         sqlService.execute(javaSerializableMapDdl("dest", Long.class, Long.class));
 
-        sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v, v FROM src");
+        sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v, v FROM TABLE(GENERATE_STREAM(100))");
 
         assertNotNull("job doesn't exist", instance().getJob("testJob"));
 
@@ -114,25 +112,23 @@ public class SqlJobManagementTest extends SqlTestSupport {
 
     @Test
     public void when_duplicateName_then_fails() {
-        sqlService.execute("CREATE MAPPING src TYPE TestStream");
         sqlService.execute(javaSerializableMapDdl("dest", Long.class, Long.class));
 
-        sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v, v FROM src");
+        sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v, v FROM TABLE(GENERATE_STREAM(100))");
 
         assertThatThrownBy(() ->
-                sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v, v FROM src"))
+                sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v, v FROM TABLE(GENERATE_STREAM(100))"))
                 .hasMessageContaining("Another active job with equal name (testJob) exists");
     }
 
     @Test
     public void when_duplicateName_and_ifNotExists_then_secondSubmissionIgnored() {
-        sqlService.execute("CREATE MAPPING src TYPE TestStream");
         sqlService.execute(javaSerializableMapDdl("dest", Long.class, Long.class));
 
-        sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v, v FROM src");
+        sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v, v FROM TABLE(GENERATE_STREAM(100))");
         assertEquals(1, countActiveJobs());
 
-        sqlService.execute("CREATE JOB IF NOT EXISTS testJob AS SINK INTO dest SELECT v, v FROM src");
+        sqlService.execute("CREATE JOB IF NOT EXISTS testJob AS SINK INTO dest SELECT v, v FROM TABLE(GENERATE_STREAM(100))");
         assertEquals(1, countActiveJobs());
     }
 
@@ -173,7 +169,6 @@ public class SqlJobManagementTest extends SqlTestSupport {
 
     @Test
     public void test_jobOptions() {
-        sqlService.execute("CREATE MAPPING src TYPE TestStream");
         sqlService.execute(javaSerializableMapDdl("dest", Long.class, Long.class));
 
         sqlService.execute("CREATE JOB testJob " +
@@ -187,7 +182,7 @@ public class SqlJobManagementTest extends SqlTestSupport {
                 "'initialSnapshotName'='fooSnapshot'," +
                 "'storeMetricsAfterJobCompletion'='true'," +
                 "'maxProcessorAccumulatedRecords'='10')" +
-                "AS SINK INTO dest SELECT v, v FROM src");
+                "AS SINK INTO dest SELECT v, v FROM TABLE(GENERATE_STREAM(100))");
 
         JobConfig config = instance().getJob("testJob").getConfig();
 
@@ -222,10 +217,9 @@ public class SqlJobManagementTest extends SqlTestSupport {
         JetInstance client = factory().newClient();
         SqlService sqlService = client.getSql();
 
-        sqlService.execute("CREATE MAPPING src TYPE TestStream");
         sqlService.execute(javaSerializableMapDdl("dest", Long.class, Long.class));
 
-        sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v, v FROM src");
+        sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v, v FROM TABLE(GENERATE_STREAM(100))");
         Job job = instance().getJob("testJob");
         assertNotNull(job);
         assertJobStatusEventually(job, RUNNING);
@@ -240,10 +234,9 @@ public class SqlJobManagementTest extends SqlTestSupport {
 
     @Test
     public void test_suspendResume() {
-        sqlService.execute("CREATE MAPPING src TYPE TestStream");
         sqlService.execute(javaSerializableMapDdl("dest", Long.class, Long.class));
 
-        sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v, v FROM src");
+        sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v, v FROM TABLE(GENERATE_STREAM(100))");
 
         Job job = instance().getJob("testJob");
         long executionId = assertJobRunningEventually(instance(), job, null);
@@ -293,10 +286,9 @@ public class SqlJobManagementTest extends SqlTestSupport {
 
     @Test
     public void when_snapshotExportWithoutOrReplace_then_orReplaceRequired() {
-        sqlService.execute("CREATE MAPPING src TYPE TestStream");
         sqlService.execute(javaSerializableMapDdl("dest", Long.class, Long.class));
 
-        sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v, v FROM src");
+        sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v, v FROM TABLE(GENERATE_STREAM(100))");
 
         assertThatThrownBy(() -> sqlService.execute("CREATE SNAPSHOT mySnapshot FOR JOB testJob"))
                 .hasMessageContaining("The OR REPLACE option is required for CREATE SNAPSHOT");
@@ -311,10 +303,9 @@ public class SqlJobManagementTest extends SqlTestSupport {
 
     @Test
     public void when_snapshotExport_then_failNotEnterprise() {
-        sqlService.execute("CREATE MAPPING src TYPE TestStream");
         sqlService.execute(javaSerializableMapDdl("dest", Long.class, Long.class));
 
-        sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v, v FROM src");
+        sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v, v FROM TABLE(GENERATE_STREAM(100))");
 
         assertThatThrownBy(() -> sqlService.execute("CREATE OR REPLACE SNAPSHOT mySnapshot FOR JOB testJob"))
                 .hasMessageContaining("You need Hazelcast Jet Enterprise to use this feature");
@@ -335,10 +326,9 @@ public class SqlJobManagementTest extends SqlTestSupport {
 
     @Test
     public void when_dropJobWithSnapshot_then_failNotEnterprise() {
-        sqlService.execute("CREATE MAPPING src TYPE TestStream");
         sqlService.execute(javaSerializableMapDdl("dest", Long.class, Long.class));
 
-        sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v, v FROM src");
+        sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v, v FROM TABLE(GENERATE_STREAM(100))");
 
         assertThatThrownBy(() -> sqlService.execute("DROP JOB testJob WITH SNAPSHOT mySnapshot"))
                 .hasMessageContaining("You need Hazelcast Jet Enterprise to use this feature");
@@ -346,11 +336,10 @@ public class SqlJobManagementTest extends SqlTestSupport {
 
     @Test
     public void test_createDropJobInQuickSuccession() {
-        sqlService.execute("CREATE MAPPING src TYPE TestStream");
         sqlService.execute(javaSerializableMapDdl("dest", Long.class, Long.class));
 
         for (int i = 0; i < 10; i++) {
-            sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v, v FROM src");
+            sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v, v FROM TABLE(GENERATE_STREAM(100))");
             sqlService.execute("DROP JOB testJob");
         }
     }
@@ -358,8 +347,7 @@ public class SqlJobManagementTest extends SqlTestSupport {
     @Test
     public void test_planCache() {
         sqlService.execute(javaSerializableMapDdl("target", Long.class, Long.class));
-        sqlService.execute("CREATE MAPPING source TYPE TestStream");
-        sqlService.execute("CREATE JOB job AS SINK INTO target SELECT v, v FROM source");
+        sqlService.execute("CREATE JOB job AS SINK INTO target SELECT v, v FROM TABLE(GENERATE_STREAM(100))");
         assertThat(planCache(instance()).size()).isEqualTo(1);
 
         sqlService.execute("DROP MAPPING target");
