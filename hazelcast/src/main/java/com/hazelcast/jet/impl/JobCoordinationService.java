@@ -440,11 +440,11 @@ public class JobCoordinationService {
 
         return submitToCoordinatorThread(() -> {
             if (onlyJobId != ALL_JOBS) {
-                if (masterContexts.get(onlyJobId) != null) {
-                    return new GetJobIdsResult(onlyJobId, false);
-                }
-                if (lightMasterContexts.get(onlyJobId) != null || jobRepository.getJobResult(onlyJobId) != null) {
+                if (lightMasterContexts.get(onlyJobId) != null) {
                     return new GetJobIdsResult(onlyJobId, true);
+                }
+                if (masterContexts.get(onlyJobId) != null || jobRepository.getJobResult(onlyJobId) != null) {
+                    return new GetJobIdsResult(onlyJobId, false);
                 }
                 return GetJobIdsResult.EMPTY;
             }
