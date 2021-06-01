@@ -49,12 +49,12 @@ import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
  */
 public abstract class AbstractJobProxy<ContainerType, MemberIdType> implements Job {
 
+    /** Null for normal jobs, non-null for light jobs  */
+    protected final MemberIdType lightJobCoordinator;
+
     private final long jobId;
     private final ILogger logger;
     private final ContainerType container;
-
-    /** Null for normal jobs, non-null for light jobs  */
-    protected final MemberIdType lightJobCoordinator;
 
     /**
      * Future that will be completed when we learn that the coordinator

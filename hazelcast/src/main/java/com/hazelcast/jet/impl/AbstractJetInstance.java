@@ -177,7 +177,7 @@ public abstract class AbstractJetInstance<MemberIdType> implements JetInstance {
     public abstract MemberIdType getMasterId();
 
     public abstract Map<MemberIdType, GetJobIdsResult> getJobsInt(String onlyName, Long onlyJobId);
-    
+
     @Override
     public BasicJob getJobById(long jobId) {
         try {
