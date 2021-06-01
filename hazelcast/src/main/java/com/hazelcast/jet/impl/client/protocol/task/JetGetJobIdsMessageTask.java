@@ -49,7 +49,6 @@ public class JetGetJobIdsMessageTask extends AbstractMultiTargetMessageTask<Requ
 
     @Override
     public Collection<Member> getTargets() {
-        otestovat toto
         // if onlyName != null, only send the operation to master. Light jobs cannot have a name
         return parameters.onlyName != null
                 ? singleton(nodeEngine.getClusterService().getMembers().iterator().next())

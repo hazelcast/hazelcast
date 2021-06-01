@@ -198,7 +198,7 @@ public class CancellationTest extends JetTestSupport {
 
     @Test
     public void when_jobCancelled_then_trackedJobsGetNotified() {
-        // TODO [viliam] run for light jobs too once `JetInstance.getJobs` returns them
+        // not applicable to light jobs - they are not tracked after cancellation
         assumeFalse(useLightJob);
 
         // Given
@@ -217,7 +217,7 @@ public class CancellationTest extends JetTestSupport {
         // Then
         assertExecutionTerminated();
         expectedException.expect(CancellationException.class);
-        Job tracked = instance2.getJobs().iterator().next();
+        BasicJob tracked = instance2.getAllJobs().iterator().next();
         tracked.join();
     }
 

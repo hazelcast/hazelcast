@@ -86,8 +86,11 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
 
     @Nonnull @Override
     public JobMetrics getMetrics() {
+        if (isLightJob()) {
+            throw new UnsupportedOperationException("metrics not supported for light jobs");
+        }
         try {
-            List<RawJobMetrics> shards = this.<List<RawJobMetrics>>invokeOp(new GetJobMetricsOperation(getId(), isLightJob())).get();
+            List<RawJobMetrics> shards = this.<List<RawJobMetrics>>invokeOp(new GetJobMetricsOperation(getId())).get();
             return toJobMetrics(shards);
         } catch (Throwable t) {
             throw rethrow(t);

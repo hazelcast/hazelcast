@@ -87,4 +87,13 @@ public interface BasicJob {
      * to cast the instance to {@link Job}.
      */
     boolean isLightJob();
+
+    /**
+     * Returns the time when the job was submitted to the cluster.
+     * <p>
+     * The time is assigned by reading {@code System.currentTimeMillis()} of
+     * the master member that executes the job for the first time. It doesn't
+     * change on restart.
+     */
+    long getSubmissionTime();
 }

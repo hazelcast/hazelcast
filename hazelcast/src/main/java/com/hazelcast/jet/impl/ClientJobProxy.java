@@ -94,8 +94,9 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl, UUID
     @Nonnull
     @Override
     public JobMetrics getMetrics() {
+        assert !isLightJob();
         return callAndRetryIfTargetNotFound(()  -> {
-            ClientMessage request = JetGetJobMetricsCodec.encodeRequest(getId(), isLightJob());
+            ClientMessage request = JetGetJobMetricsCodec.encodeRequest(getId());
             ClientMessage response = invocation(request, masterUuid()).invoke().get();
             Data metricsData = JetGetJobMetricsCodec.decodeResponse(response);
             return toJobMetrics(serializationService().toObject(metricsData));

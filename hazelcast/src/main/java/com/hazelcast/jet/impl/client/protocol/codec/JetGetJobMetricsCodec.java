@@ -35,39 +35,20 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 
 /**
  */
-@Generated("8f56e259127236c4fb0817718c0e5781")
+@Generated("2eceabbaee0153e6e5af4dd180b9e9f5")
 public final class JetGetJobMetricsCodec {
     //hex: 0xFE0D00
     public static final int REQUEST_MESSAGE_TYPE = 16649472;
     //hex: 0xFE0D01
     public static final int RESPONSE_MESSAGE_TYPE = 16649473;
     private static final int REQUEST_JOB_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int REQUEST_IS_LIGHT_JOB_FIELD_OFFSET = REQUEST_JOB_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_IS_LIGHT_JOB_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_JOB_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private JetGetJobMetricsCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         */
-        public long jobId;
-
-        /**
-         */
-        public boolean isLightJob;
-
-        /**
-         * True if the isLightJob is received from the client, false otherwise.
-         * If this is false, isLightJob has the default value for its type.
-         */
-        public boolean isIsLightJobExists;
-    }
-
-    public static ClientMessage encodeRequest(long jobId, boolean isLightJob) {
+    public static ClientMessage encodeRequest(long jobId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setOperationName("Jet.GetJobMetrics");
@@ -75,23 +56,16 @@ public final class JetGetJobMetricsCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeLong(initialFrame.content, REQUEST_JOB_ID_FIELD_OFFSET, jobId);
-        encodeBoolean(initialFrame.content, REQUEST_IS_LIGHT_JOB_FIELD_OFFSET, isLightJob);
         clientMessage.add(initialFrame);
         return clientMessage;
     }
 
-    public static JetGetJobMetricsCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    /**
+     */
+    public static long decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        request.jobId = decodeLong(initialFrame.content, REQUEST_JOB_ID_FIELD_OFFSET);
-        if (initialFrame.content.length >= REQUEST_IS_LIGHT_JOB_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES) {
-            request.isLightJob = decodeBoolean(initialFrame.content, REQUEST_IS_LIGHT_JOB_FIELD_OFFSET);
-            request.isIsLightJobExists = true;
-        } else {
-            request.isIsLightJobExists = false;
-        }
-        return request;
+        return decodeLong(initialFrame.content, REQUEST_JOB_ID_FIELD_OFFSET);
     }
 
     public static ClientMessage encodeResponse(com.hazelcast.internal.serialization.Data response) {

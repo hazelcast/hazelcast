@@ -106,6 +106,7 @@ import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static java.util.Collections.emptyList;
 import static java.util.Comparator.comparing;
+import static java.util.concurrent.CompletableFuture.completedFuture;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -539,11 +540,7 @@ public class JobCoordinationService {
      * Returns the latest metrics for a job or fails with {@link JobNotFoundException}
      * if the requested job is not found.
      */
-    public CompletableFuture<List<RawJobMetrics>> getJobMetrics(long jobId, boolean isLightJob) {
-        if (isLightJob) {
-            throw new UnsupportedOperationException("TODO"); // TODO [viliam]
-        }
-
+    public CompletableFuture<List<RawJobMetrics>> getJobMetrics(long jobId) {
         CompletableFuture<List<RawJobMetrics>> cf = new CompletableFuture<>();
         runWithJob(jobId,
                 mc -> mc.jobContext().collectMetrics(cf),
@@ -562,7 +559,11 @@ public class JobCoordinationService {
      */
     public CompletableFuture<Long> getJobSubmissionTime(long jobId, boolean isLightJob) {
         if (isLightJob) {
-            throw new UnsupportedOperationException("TODO"); // TODO [viliam]
+            LightMasterContext mc = lightMasterContexts.get(jobId);
+            if (mc == null) {
+                throw new JobNotFoundException(jobId);
+            }
+            return completedFuture(mc.getStartTime());
         }
         return callWithJob(jobId,
                 mc -> mc.jobRecord().getCreationTime(),
@@ -624,7 +625,7 @@ public class JobCoordinationService {
         if (removedMembers.containsKey(uuid)) {
             logFine(logger, "NotifyMemberShutdownOperation received for a member that was already " +
                     "removed from the cluster: %s", uuid);
-            return CompletableFuture.completedFuture(null);
+            return completedFuture(null);
         }
         logFine(logger, "Added a shutting-down member: %s", uuid);
         CompletableFuture[] futures = masterContexts.values().stream()
@@ -1109,7 +1110,7 @@ public class JobCoordinationService {
         // if we are on our thread already, execute directly in a blocking way
         if (IS_JOB_COORDINATOR_THREAD.get()) {
             try {
-                return CompletableFuture.completedFuture(action.call());
+                return completedFuture(action.call());
             } catch (Throwable e) {
                 // most callers ignore the failure on the returned future, let's log it at least
                 logger.warning(null, e);

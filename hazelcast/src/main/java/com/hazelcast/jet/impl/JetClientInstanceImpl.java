@@ -24,7 +24,6 @@ import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.BasicJob;
-import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.client.protocol.codec.JetExistsDistributedObjectCodec;
@@ -33,7 +32,6 @@ import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobSummaryListCodec;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation.GetJobIdsResult;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -78,12 +76,6 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
     @Nonnull @Override
     public JetConfig getConfig() {
         throw new UnsupportedOperationException("Jet Configuration is not available on the client");
-    }
-
-    @Nonnull @Override
-    public List<Job> getJobs(@NotNull String name) {
-        // TODO [viliam]
-        return null;
     }
 
     /**

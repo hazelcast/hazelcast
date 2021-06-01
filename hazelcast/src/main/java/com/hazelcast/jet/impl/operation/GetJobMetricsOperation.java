@@ -30,19 +30,16 @@ import java.util.concurrent.CompletableFuture;
  */
 public class GetJobMetricsOperation extends AsyncJobOperation implements AllowedDuringPassiveState {
 
-    private boolean isLightJob;
-
     public GetJobMetricsOperation() {
     }
 
-    public GetJobMetricsOperation(long jobId, boolean isLightJob) {
+    public GetJobMetricsOperation(long jobId) {
         super(jobId);
-        this.isLightJob = isLightJob;
     }
 
     @Override
     protected CompletableFuture<?> doRun() {
-        return getJobCoordinationService().getJobMetrics(jobId(), isLightJob);
+        return getJobCoordinationService().getJobMetrics(jobId());
     }
 
     @Override
@@ -53,12 +50,10 @@ public class GetJobMetricsOperation extends AsyncJobOperation implements Allowed
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeBoolean(isLightJob);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        isLightJob = in.readBoolean();
     }
 }
