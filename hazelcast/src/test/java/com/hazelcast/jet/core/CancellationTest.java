@@ -19,7 +19,6 @@ package com.hazelcast.jet.core;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.BasicJob;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.DummyStatefulP;
 import com.hazelcast.jet.core.TestProcessors.MockP;
@@ -99,7 +98,7 @@ public class CancellationTest extends JetTestSupport {
         DAG dag = new DAG();
         dag.newVertex("slow", StuckSource::new);
 
-        BasicJob job = newJob(instance, dag);
+        Job job = newJob(instance, dag);
         assertExecutionStarted();
 
         // When
@@ -111,7 +110,7 @@ public class CancellationTest extends JetTestSupport {
         job.join();
     }
 
-    private BasicJob newJob(JetInstance instance, DAG dag) {
+    private Job newJob(JetInstance instance, DAG dag) {
         return useLightJob ? instance.newLightJob(dag) : instance.newJob(dag);
     }
 
@@ -124,7 +123,7 @@ public class CancellationTest extends JetTestSupport {
         DAG dag = new DAG();
         dag.newVertex("slow", StuckSource::new);
 
-        BasicJob job = newJob(instance, dag);
+        Job job = newJob(instance, dag);
         assertExecutionStarted();
 
         // When
@@ -144,7 +143,7 @@ public class CancellationTest extends JetTestSupport {
         DAG dag = new DAG();
         dag.newVertex("slow", StuckSource::new);
 
-        BasicJob job = newJob(instance, dag);
+        Job job = newJob(instance, dag);
         assertExecutionStarted();
 
         // When
@@ -164,7 +163,7 @@ public class CancellationTest extends JetTestSupport {
         DAG dag = new DAG();
         dag.newVertex("slow", StuckSource::new);
 
-        BasicJob job = newJob(client, dag);
+        Job job = newJob(client, dag);
         assertExecutionStarted();
 
         // When
@@ -186,7 +185,7 @@ public class CancellationTest extends JetTestSupport {
         DAG dag = new DAG();
         dag.newVertex("slow", StuckSource::new);
 
-        BasicJob job = newJob(client, dag);
+        Job job = newJob(client, dag);
         assertExecutionStarted();
 
         // When
@@ -208,7 +207,7 @@ public class CancellationTest extends JetTestSupport {
         DAG dag = new DAG();
         dag.newVertex("slow", StuckSource::new);
 
-        BasicJob job = newJob(instance1, dag);
+        Job job = newJob(instance1, dag);
         assertExecutionStarted();
 
         // When
@@ -217,7 +216,7 @@ public class CancellationTest extends JetTestSupport {
         // Then
         assertExecutionTerminated();
         expectedException.expect(CancellationException.class);
-        BasicJob tracked = instance2.getAllJobs().iterator().next();
+        Job tracked = instance2.getJobs().iterator().next();
         tracked.join();
     }
 
@@ -233,7 +232,7 @@ public class CancellationTest extends JetTestSupport {
         SingleNodeFaultSupplier supplier = new SingleNodeFaultSupplier(getAddress(instance), fault);
         dag.newVertex("faulty", supplier).localParallelism(4);
 
-        BasicJob job = newJob(instance, dag);
+        Job job = newJob(instance, dag);
         assertExecutionStarted();
 
         // Then
@@ -260,7 +259,7 @@ public class CancellationTest extends JetTestSupport {
         dag.newVertex("faulty", new SingleNodeFaultSupplier(getAddress(other), fault))
            .localParallelism(4);
 
-        BasicJob job = newJob(instance, dag);
+        Job job = newJob(instance, dag);
         assertExecutionStarted();
 
         // Then
@@ -305,7 +304,7 @@ public class CancellationTest extends JetTestSupport {
         JetInstance jet = createJetMember();
         DAG dag = new DAG();
         dag.newVertex("blocking", BlockingProcessor::new).localParallelism(1);
-        BasicJob job = newJob(jet, dag);
+        Job job = newJob(jet, dag);
         assertTrueEventually(() -> assertTrue(BlockingProcessor.hasStarted), ASSERTION_TIMEOUT_SECONDS);
         job.cancel();
         assertBlockingProcessorEventuallyNotRunning();
@@ -316,7 +315,7 @@ public class CancellationTest extends JetTestSupport {
         JetInstance jet = createJetMember();
         DAG dag = new DAG();
         dag.newVertex("blocking", MockP::new).localParallelism(1);
-        BasicJob job = newJob(jet, dag);
+        Job job = newJob(jet, dag);
         job.join();
         if (!job.isLightJob()) {
             assertEquals(JobStatus.COMPLETED, ((Job) job).getStatus());
@@ -331,7 +330,7 @@ public class CancellationTest extends JetTestSupport {
         JetInstance jet = createJetMember();
         DAG dag = new DAG();
         dag.newVertex("blocking", BlockingProcessor::new).localParallelism(1);
-        BasicJob job = newJob(jet, dag);
+        Job job = newJob(jet, dag);
         assertTrueEventually(() -> assertTrue(BlockingProcessor.hasStarted));
 
         // When-Then: should not fail

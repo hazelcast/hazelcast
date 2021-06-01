@@ -94,11 +94,11 @@ public class LightJobTest extends SimpleTestInClusterSupport {
         DAG dag = new DAG();
         dag.newVertex("v", () -> new MockP().streaming()).localParallelism(1);
 
-        BasicJob job = instance().newLightJob(dag);
+        Job job = instance().newLightJob(dag);
         long jobId = job.getId();
 
         assertNotNull("getJobById", submittingInstance().getJobById(jobId));
-        List<BasicJob> allJobs = submittingInstance().getAllJobs();
+        List<Job> allJobs = submittingInstance().getAllJobs();
         assertEquals(1, allJobs.size());
         assertEquals(jobId, allJobs.get(0).getId());
     }

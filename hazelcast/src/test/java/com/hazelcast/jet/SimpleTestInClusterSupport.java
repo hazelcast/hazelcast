@@ -94,7 +94,6 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
         for (Job job : jobs) {
             ditchJob(job, instances());
         }
-        // TODO [viliam] remove this after `getJobs` includes light jobs
         // cancel all light jobs by cancelling their executions
         for (JetInstance inst : instances) {
             JetService jetService = getNodeEngineImpl(inst).getService(JetService.SERVICE_NAME);

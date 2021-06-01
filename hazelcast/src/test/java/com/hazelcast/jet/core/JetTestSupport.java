@@ -26,7 +26,6 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.BasicJob;
 import com.hazelcast.jet.function.RunnableEx;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.JobExecutionRecord;
@@ -371,10 +370,10 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
     }
 
     /**
-     * Cancel the job and wait until it cancels using {@link BasicJob#join()},
+     * Cancel the job and wait until it cancels using {@link Job#join()},
      * ignoring the CancellationException.
      */
-    public static void cancelAndJoin(@Nonnull BasicJob job) {
+    public static void cancelAndJoin(@Nonnull Job job) {
         job.cancel();
         try {
             job.join();

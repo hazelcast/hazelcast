@@ -38,7 +38,6 @@ import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.internal.util.StringUtil;
-import com.hazelcast.jet.BasicJob;
 import com.hazelcast.jet.JetCacheManager;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
@@ -631,16 +630,6 @@ public final class HazelcastBootstrap {
         }
 
         @Nonnull @Override
-        public List<BasicJob> getAllJobs() {
-            return jet.getAllJobs();
-        }
-
-        @Override
-        public BasicJob getJobById(long jobId) {
-            return jet.getJobById(jobId);
-        }
-
-        @Nonnull @Override
         public List<Job> getJobs(@Nonnull String name) {
             return jet.getJobs(name);
         }
@@ -691,12 +680,12 @@ public final class HazelcastBootstrap {
         }
 
         @Override
-        public BasicJob newJobProxy(long jobId, MemberIdType coordinator) {
+        public Job newJobProxy(long jobId, MemberIdType coordinator) {
             return jet.newJobProxy(jobId, coordinator);
         }
 
         @Override
-        public BasicJob newJobProxy(long jobId, boolean isLightJob, Object jobDefinition, JobConfig config) {
+        public Job newJobProxy(long jobId, boolean isLightJob, Object jobDefinition, JobConfig config) {
             return jet.newJobProxy(jobId, isLightJob, jobDefinition, config);
         }
 

@@ -19,7 +19,6 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.collection.IList;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.BasicJob;
 import com.hazelcast.jet.JetCacheManager;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
@@ -94,7 +93,7 @@ public abstract class AbstractJetInstance<MemberIdType> implements JetInstance {
         return (Job) newJobInt(jobId, pipeline, config, false);
     }
 
-    private BasicJob newJobInt(long jobId, @Nonnull Object jobDefinition, @Nullable JobConfig config, boolean isLightJob) {
+    private Job newJobInt(long jobId, @Nonnull Object jobDefinition, @Nullable JobConfig config, boolean isLightJob) {
         if (config != null) {
             if (jobDefinition instanceof PipelineImpl) {
                 config = config.attachAll(((PipelineImpl) jobDefinition).attachedFiles());
@@ -136,17 +135,17 @@ public abstract class AbstractJetInstance<MemberIdType> implements JetInstance {
     }
 
     @Nonnull @Override
-    public BasicJob newLightJob(Pipeline pipeline) {
+    public Job newLightJob(Pipeline pipeline) {
         return newJobInt(newJobId(), pipeline, null, true);
     }
 
     @Nonnull @Override
-    public BasicJob newLightJob(DAG dag) {
+    public Job newLightJob(DAG dag) {
         return newJobInt(newJobId(), dag, null, true);
     }
 
     @Nonnull @Override
-    public List<BasicJob> getAllJobs() {
+    public List<Job> getJobs() {
         Map<MemberIdType, GetJobIdsResult> results = getJobsInt(null, null);
 
         return results.entrySet().stream()
@@ -179,9 +178,9 @@ public abstract class AbstractJetInstance<MemberIdType> implements JetInstance {
     public abstract Map<MemberIdType, GetJobIdsResult> getJobsInt(String onlyName, Long onlyJobId);
 
     @Override
-    public BasicJob getJobById(long jobId) {
+    public Job getJob(long jobId) {
         try {
-            BasicJob job = null;
+            Job job = null;
             Map<MemberIdType, GetJobIdsResult> jobs = getJobsInt(null, jobId);
             for (Entry<MemberIdType, GetJobIdsResult> resultEntry : jobs.entrySet()) {
                 GetJobIdsResult result = resultEntry.getValue();
@@ -278,7 +277,7 @@ public abstract class AbstractJetInstance<MemberIdType> implements JetInstance {
 
     public abstract ILogger getLogger();
 
-    public abstract BasicJob newJobProxy(long jobId, MemberIdType coordinator);
+    public abstract Job newJobProxy(long jobId, MemberIdType coordinator);
 
-    public abstract BasicJob newJobProxy(long jobId, boolean isLightJob, Object jobDefinition, JobConfig config);
+    public abstract Job newJobProxy(long jobId, boolean isLightJob, Object jobDefinition, JobConfig config);
 }

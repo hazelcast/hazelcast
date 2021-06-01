@@ -23,7 +23,7 @@ import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectsCodec
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.jet.BasicJob;
+import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.client.protocol.codec.JetExistsDistributedObjectCodec;
@@ -108,11 +108,11 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
     }
 
     @Override
-    public BasicJob newJobProxy(long jobId, UUID coordinator) {
+    public Job newJobProxy(long jobId, UUID coordinator) {
         return new ClientJobProxy(this, jobId, coordinator);
     }
 
-    public BasicJob newJobProxy(long jobId, boolean isLightJob, Object jobDefinition, JobConfig config) {
+    public Job newJobProxy(long jobId, boolean isLightJob, Object jobDefinition, JobConfig config) {
         return new ClientJobProxy(this, jobId, isLightJob, jobDefinition, config);
     }
 

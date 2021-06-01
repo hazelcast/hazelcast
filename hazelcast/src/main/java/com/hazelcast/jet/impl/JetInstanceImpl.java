@@ -21,7 +21,7 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.util.Preconditions;
-import com.hazelcast.jet.BasicJob;
+import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation;
@@ -145,12 +145,12 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
     }
 
     @Override
-    public BasicJob newJobProxy(long jobId, Address coordinator) {
+    public Job newJobProxy(long jobId, Address coordinator) {
         return new JobProxy(nodeEngine, jobId, coordinator);
     }
 
     @Override
-    public BasicJob newJobProxy(long jobId, boolean isLightJob, Object jobDefinition, JobConfig config) {
+    public Job newJobProxy(long jobId, boolean isLightJob, Object jobDefinition, JobConfig config) {
         return new JobProxy(nodeEngine, jobId, isLightJob, jobDefinition, config);
     }
 

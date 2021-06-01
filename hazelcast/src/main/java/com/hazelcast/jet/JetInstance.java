@@ -221,7 +221,7 @@ public interface JetInstance {
      * @since 5.0
      */
     @Nonnull
-    BasicJob newLightJob(Pipeline p);
+    Job newLightJob(Pipeline p);
 
     /**
      * Submits a job defined in the Core API.
@@ -231,52 +231,22 @@ public interface JetInstance {
      * @since 5.0
      */
     @Nonnull
-    BasicJob newLightJob(DAG dag);
+    Job newLightJob(DAG dag);
 
     /**
-     * Returns all submitted jobs including running and completed ones.
-     *
-     * @deprecated Use {@link #getAllJobs()}, the result of this method doesn't
-     * contain {@linkplain #newLightJob(Pipeline) light jobs}.
+     * Returns all submitted jobs. The result includes completed normal jobs,
+     * but doesn't include completed light jobs - for these jobs the cluster
+     * doesn't retain any information after they complete.
      */
     @Nonnull
-    default List<Job> getJobs() {
-        return getAllJobs().stream()
-                .filter(j -> !j.isLightJob())
-                .map(j -> (Job) j)
-                .collect(toList());
-    }
-
-    /**
-     * Returns all submitted jobs including running and completed ones. Does
-     * not include completed {@linkplain #newLightJob(Pipeline) light jobs}.
-     *
-     * @since 5.0
-     */
-    @Nonnull
-    List<BasicJob> getAllJobs();
+    List<Job> getJobs();
 
     /**
      * Returns the job with the given id or {@code null} if no such job could
      * be found.
-     *
-     * @deprecated Use {@link #getJobById(long)}, this method always returns
-     * {@code null} for {@linkplain #newLightJob(Pipeline) light jobs}.
      */
     @Nullable
-    default Job getJob(long jobId) {
-        BasicJob basicJob = getJobById(jobId);
-        return !basicJob.isLightJob() ? (Job) basicJob : null;
-    }
-
-    /**
-     * Returns the job with the given id or {@code null} if no such job could
-     * be found.
-     *
-     * @since 5.0
-     */
-    @Nullable
-    BasicJob getJobById(long jobId);
+    Job getJob(long jobId);
 
     /**
      * Returns all jobs submitted with the given name, ordered in descending
