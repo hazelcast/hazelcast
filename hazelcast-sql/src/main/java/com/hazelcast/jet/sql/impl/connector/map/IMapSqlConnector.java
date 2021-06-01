@@ -157,7 +157,7 @@ public class IMapSqlConnector implements SqlConnector {
                 filter
         );
 
-        return dag.newUniqueVertex(table.getMapName(), OnHeapMapScanP.onHeapMapScanP(mapScanMetadata));
+        return dag.newUniqueVertex(toString(table), OnHeapMapScanP.onHeapMapScanP(mapScanMetadata));
     }
 
     public Vertex indexScanReader(
@@ -192,7 +192,7 @@ public class IMapSqlConnector implements SqlConnector {
         );
 
         return dag.newUniqueVertex(
-                "Index(" + table.getMapName() + ")",
+                "Index(" + toString(table) + ")",
                 OnHeapMapIndexScanP.onHeapMapIndexScanP(indexScanMetadata)
         );
     }
