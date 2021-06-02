@@ -78,7 +78,7 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
             if (masterAddress == null) {
                 masterAddress = member.getAddress();
             }
-            GetJobIdsOperation operation = new GetJobIdsOperation(onlyJobId);
+            GetJobIdsOperation operation = new GetJobIdsOperation(onlyName, onlyJobId);
             InvocationFuture<GetJobIdsResult> future = nodeEngine
                     .getOperationService()
                     .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, operation, member.getAddress())

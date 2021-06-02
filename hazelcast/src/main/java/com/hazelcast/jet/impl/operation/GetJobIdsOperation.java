@@ -27,6 +27,10 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import static com.hazelcast.jet.Util.idToString;
 
 /**
  * Get the job IDs. Runs in 3 modes:
@@ -47,17 +51,9 @@ public class GetJobIdsOperation extends AsyncOperation implements AllowedDuringP
     public GetJobIdsOperation() {
     }
 
-    public GetJobIdsOperation(String onlyName) {
+    public GetJobIdsOperation(String onlyName, Long onlyJobId) {
         this.onlyName = onlyName;
-    }
-
-    public GetJobIdsOperation(Long onlyJobId) {
         this.onlyJobId = onlyJobId == null ? ALL_JOBS : onlyJobId;
-    }
-
-    public GetJobIdsOperation(String onlyName, long onlyJobId) {
-        this.onlyName = onlyName;
-        this.onlyJobId = onlyJobId;
     }
 
     @Override
@@ -144,6 +140,20 @@ public class GetJobIdsOperation extends AsyncOperation implements AllowedDuringP
         public void readData(ObjectDataInput in) throws IOException {
             jobIds = in.readLongArray();
             isLightJobs = in.readBooleanArray();
+        }
+
+        @Override
+        public String toString() {
+            return "GetJobIdsResult{" +
+                    "jobs=" + formatJobs(false) +
+                    ", lightJobs=" + formatJobs(true) + '}';
+        }
+
+        private String formatJobs(boolean isLightJob) {
+            return IntStream.range(0, jobIds.length)
+                    .filter(i -> isLightJobs[i] == isLightJob)
+                    .mapToObj(i -> idToString(jobIds[i]))
+                    .collect(Collectors.joining(", ", "[", "]"));
         }
     }
 }
