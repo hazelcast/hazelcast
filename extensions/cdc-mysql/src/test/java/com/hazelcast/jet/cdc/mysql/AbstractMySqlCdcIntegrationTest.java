@@ -50,9 +50,10 @@ public abstract class AbstractMySqlCdcIntegrationTest extends AbstractCdcIntegra
     );
 
     @Before
-    public void ignoreOnJdk15() {
-        Assume.assumeFalse("https://github.com/hazelcast/hazelcast-jet/issues/2623",
-                System.getProperty("java.version").startsWith("15"));
+    public void ignoreOnJdk15OrHigher() {
+        Assume.assumeFalse("https://github.com/hazelcast/hazelcast-jet/issues/2623, " +
+                        "https://github.com/hazelcast/hazelcast/issues/18800",
+                System.getProperty("java.version").matches("^1[56].*"));
     }
 
     protected MySqlCdcSources.Builder sourceBuilder(String name) {
