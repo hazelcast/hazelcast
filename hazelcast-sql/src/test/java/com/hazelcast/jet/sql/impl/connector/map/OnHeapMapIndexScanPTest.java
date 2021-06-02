@@ -140,7 +140,7 @@ public class OnHeapMapIndexScanPTest extends SimpleTestInClusterSupport {
 
         TestSupport
                 .verifyProcessor(adaptSupplier(OnHeapMapIndexScanP.onHeapMapIndexScanP(indexScanMetadata)))
-                .jetInstance(instance())
+                .hazelcastInstance(instance().getHazelcastInstance())
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
                 .outputChecker(LENIENT_SAME_ITEMS_ANY_ORDER)
                 .disableSnapshots()
@@ -191,7 +191,7 @@ public class OnHeapMapIndexScanPTest extends SimpleTestInClusterSupport {
 
         TestSupport
                 .verifyProcessor(adaptSupplier(OnHeapMapIndexScanP.onHeapMapIndexScanP(indexScanMetadata)))
-                .jetInstance(instance())
+                .hazelcastInstance(instance().getHazelcastInstance())
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
                 .outputChecker(LENIENT_SAME_ITEMS_ANY_ORDER)
                 .disableSnapshots()
@@ -246,7 +246,7 @@ public class OnHeapMapIndexScanPTest extends SimpleTestInClusterSupport {
 
         TestSupport
                 .verifyProcessor(adaptSupplier(OnHeapMapIndexScanP.onHeapMapIndexScanP(indexScanMetadata)))
-                .jetInstance(instance())
+                .hazelcastInstance(instance().getHazelcastInstance())
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
                 .outputChecker(LENIENT_SAME_ITEMS_ANY_ORDER)
                 .disableSnapshots()
@@ -299,7 +299,7 @@ public class OnHeapMapIndexScanPTest extends SimpleTestInClusterSupport {
 
         TestSupport
                 .verifyProcessor(adaptSupplier(OnHeapMapIndexScanP.onHeapMapIndexScanP(indexScanMetadata)))
-                .jetInstance(instance())
+                .hazelcastInstance(instance().getHazelcastInstance())
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
                 .outputChecker(LENIENT_SAME_ITEMS_ANY_ORDER)
                 .disableSnapshots()
