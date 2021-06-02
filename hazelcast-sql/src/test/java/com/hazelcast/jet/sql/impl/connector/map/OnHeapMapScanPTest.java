@@ -115,7 +115,7 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
 
         TestSupport
                 .verifyProcessor(adaptSupplier(OnHeapMapScanP.onHeapMapScanP(scanMetadata)))
-                .jetInstance(instance())
+                .hazelcastInstance(instance().getHazelcastInstance())
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
                 .disableSnapshots()
                 .disableProgressAssertion()
@@ -145,7 +145,7 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
 
         TestSupport
                 .verifyProcessor(adaptSupplier(OnHeapMapScanP.onHeapMapScanP(scanMetadata)))
-                .jetInstance(instance())
+                .hazelcastInstance(instance().getHazelcastInstance())
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
                 .outputChecker(LENIENT_SAME_ITEMS_ANY_ORDER)
                 .disableSnapshots()
@@ -184,7 +184,7 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
 
         TestSupport
                 .verifyProcessor(adaptSupplier(OnHeapMapScanP.onHeapMapScanP(scanMetadata)))
-                .jetInstance(instance())
+                .hazelcastInstance(instance().getHazelcastInstance())
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
                 .outputChecker(LENIENT_SAME_ITEMS_ANY_ORDER)
                 .disableSnapshots()
@@ -222,7 +222,7 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
 
         TestSupport
                 .verifyProcessor(adaptSupplier(OnHeapMapScanP.onHeapMapScanP(scanMetadata)))
-                .jetInstance(instance())
+                .hazelcastInstance(instance().getHazelcastInstance())
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
                 .outputChecker(LENIENT_SAME_ITEMS_ANY_ORDER)
                 .disableSnapshots()
@@ -253,7 +253,7 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
 
         TestSupport
                 .verifyProcessor(adaptSupplier(OnHeapMapScanP.onHeapMapScanP(scanMetadata)))
-                .jetInstance(instance())
+                .hazelcastInstance(instance().getHazelcastInstance())
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
                 .outputChecker(LENIENT_SAME_ITEMS_ANY_ORDER)
                 .disableSnapshots()

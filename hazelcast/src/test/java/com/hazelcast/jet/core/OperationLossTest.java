@@ -27,7 +27,7 @@ import com.hazelcast.jet.core.TestProcessors.DummyStatefulP;
 import com.hazelcast.jet.core.TestProcessors.MockP;
 import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.jet.core.processor.DiagnosticProcessors;
-import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobExecutionRecord;
 import com.hazelcast.jet.impl.JobExecutionService;
 import com.hazelcast.jet.impl.JobRepository;
@@ -89,7 +89,7 @@ public class OperationLossTest extends SimpleTestInClusterSupport {
         LightJob job = instance().newLightJob(dag);
         // we assert that the PMS is initialized, but the PS isn't
         JobExecutionService jobExecutionService = getNodeEngineImpl(instances()[1])
-                .<JetService>getService(JetService.SERVICE_NAME)
+                .<JetServiceBackend>getService(JetServiceBackend.SERVICE_NAME)
                 .getJobExecutionService();
         // assert that the execution doesn't start on the 2nd member. For light jobs, jobId == executionId
         assertTrueAllTheTime(() -> assertNull(jobExecutionService.getExecutionContext(job.getId())), 1);
@@ -143,7 +143,7 @@ public class OperationLossTest extends SimpleTestInClusterSupport {
                 .setProcessingGuarantee(EXACTLY_ONCE)
                 .setSnapshotIntervalMillis(100));
         assertJobStatusEventually(job, RUNNING);
-        JobRepository jobRepository = new JobRepository(instance());
+        JobRepository jobRepository = new JobRepository(instance().getHazelcastInstance());
         assertTrueEventually(() -> {
             JobExecutionRecord record = jobRepository.getJobExecutionRecord(job.getId());
             assertNotNull("null JobExecutionRecord", record);

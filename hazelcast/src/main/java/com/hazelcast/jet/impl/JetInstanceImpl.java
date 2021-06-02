@@ -78,7 +78,7 @@ public class JetInstanceImpl extends AbstractJetInstance {
         SubmitJobOperation operation = new SubmitJobOperation(jobId, serializedJobDefinition, null, true);
         CompletableFuture<Void> future = nodeEngine
                 .getOperationService()
-                .createInvocationBuilder(JetService.SERVICE_NAME, operation, coordinatorAddress)
+                .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, operation, coordinatorAddress)
                 .invoke();
 
         return new LightJobProxy(nodeEngine, jobId, coordinatorAddress, future);
@@ -89,7 +89,7 @@ public class JetInstanceImpl extends AbstractJetInstance {
         Address masterAddress = getMasterAddress();
         Future<List<Long>> future = nodeEngine
                 .getOperationService()
-                .createInvocationBuilder(JetService.SERVICE_NAME, new GetJobIdsOperation(), masterAddress)
+                .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, new GetJobIdsOperation(), masterAddress)
                 .invoke();
 
         try {
@@ -107,7 +107,7 @@ public class JetInstanceImpl extends AbstractJetInstance {
         Address masterAddress = getMasterAddress();
         Future<List<Long>> future = nodeEngine
                 .getOperationService()
-                .createInvocationBuilder(JetService.SERVICE_NAME, new GetJobIdsByNameOperation(name), masterAddress)
+                .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, new GetJobIdsByNameOperation(name), masterAddress)
                 .invoke();
 
         try {
@@ -125,8 +125,8 @@ public class JetInstanceImpl extends AbstractJetInstance {
     @Override
     public void shutdown() {
         try {
-            JetService jetService = nodeEngine.getService(JetService.SERVICE_NAME);
-            jetService.shutDownJobs();
+            JetServiceBackend jetServiceBackend = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
+            jetServiceBackend.shutDownJobs();
             super.shutdown();
         } catch (Throwable t) {
             throw rethrow(t);

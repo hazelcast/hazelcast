@@ -168,7 +168,7 @@ public final class WriteHadoopOldApiP<T, K, V> extends AbstractProcessor {
         public List<Processor> get(int count) {
             return range(0, count).mapToObj(i -> {
                 try {
-                    String uuid = context.jetInstance().getCluster().getLocalMember().getUuid().toString();
+                    String uuid = context.hazelcastInstance().getCluster().getLocalMember().getUuid().toString();
                     TaskAttemptID taskAttemptID = new TaskAttemptID("jet-node-" + uuid, jobContext.getJobID().getId(),
                             JOB_SETUP, i, 0);
 

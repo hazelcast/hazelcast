@@ -58,7 +58,7 @@ public final class BidirectionalStreamingService<T, R> implements GrpcService<T,
         this.channel = channel;
         sink = callStubFn.apply(channel).apply(new OutputMessageObserver());
 
-        Properties properties = context.jetInstance().getHazelcastInstance().getConfig().getProperties();
+        Properties properties = context.hazelcastInstance().getConfig().getProperties();
         HazelcastProperties hzProperties = new HazelcastProperties(properties);
         destroyTimeout = hzProperties.getSeconds(GrpcProperties.DESTROY_TIMEOUT);
         shutdownTimeout = hzProperties.getSeconds(GrpcProperties.SHUTDOWN_TIMEOUT);

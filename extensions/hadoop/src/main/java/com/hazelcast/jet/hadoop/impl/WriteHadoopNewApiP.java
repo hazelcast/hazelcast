@@ -197,7 +197,7 @@ public final class WriteHadoopNewApiP<T, K, V> extends AbstractProcessor {
     }
 
     private static String getUuid(@Nonnull ProcessorMetaSupplier.Context context) {
-        return context.jetInstance().getCluster().getLocalMember().getUuid().toString();
+        return context.hazelcastInstance().getCluster().getLocalMember().getUuid().toString();
     }
 
     private static OutputFormat getOutputFormat(Configuration config) {

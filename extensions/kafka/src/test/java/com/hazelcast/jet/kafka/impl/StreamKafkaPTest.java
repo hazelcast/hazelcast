@@ -184,7 +184,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
 
         if (guarantee != ProcessingGuarantee.NONE) {
             // wait until a new snapshot appears
-            JobRepository jr = new JobRepository(instances[0]);
+            JobRepository jr = new JobRepository(instances[0].getHazelcastInstance());
             long currentMax = jr.getJobExecutionRecord(job.getId()).snapshotId();
             assertTrueEventually(() -> {
                 JobExecutionRecord jobExecutionRecord = jr.getJobExecutionRecord(job.getId());

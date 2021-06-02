@@ -164,7 +164,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
 
         if (!isRemoteReader) {
             // try to serde projection/predicate to fail fast if they aren't known to IMDG
-            HazelcastInstanceImpl hzInstance = (HazelcastInstanceImpl) context.jetInstance().getHazelcastInstance();
+            HazelcastInstanceImpl hzInstance = (HazelcastInstanceImpl) context.hazelcastInstance();
             InternalSerializationService ss = hzInstance.getSerializationService();
             try {
                 deserializeWithCustomClassLoader(ss, hzInstance.getClass().getClassLoader(), ss.toData(predicate));
@@ -372,7 +372,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
             if (clientXml != null) {
                 initRemote();
             } else {
-                initLocal(context.jetInstance().getHazelcastInstance().getPartitionService().getPartitions());
+                initLocal(context.hazelcastInstance().getPartitionService().getPartitions());
             }
         }
 
@@ -452,7 +452,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
 
         @Override
         public void init(@Nonnull Context context) {
-            HazelcastInstance instance = context.jetInstance().getHazelcastInstance();
+            HazelcastInstance instance = context.hazelcastInstance();
             if (clientXml != null) {
                 client = newHazelcastClient(asClientConfig(clientXml));
                 instance = client;

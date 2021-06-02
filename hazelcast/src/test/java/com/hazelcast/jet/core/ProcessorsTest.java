@@ -83,7 +83,7 @@ public class ProcessorsTest extends SimpleTestInClusterSupport {
                 .verifyProcessor(Processors.mapUsingServiceP(
                         nonSharedService(pctx -> new int[1], arr -> assertEquals(6, arr[0])),
                         (int[] context, Integer item) -> context[0] += item))
-                .jetInstance(instance())
+                .hazelcastInstance(instance().getHazelcastInstance())
                 .disableSnapshots()
                 .input(asList(1, 2, 3))
                 .expectOutput(asList(1, 3, 6));
@@ -102,7 +102,7 @@ public class ProcessorsTest extends SimpleTestInClusterSupport {
                             context.addAndGet(item);
                             return item;
                         })))
-                .jetInstance(instance())
+                .hazelcastInstance(instance().getHazelcastInstance())
                 .disableSnapshots()
                 .disableProgressAssertion()
                 .input(asList(1, 2, 3))
@@ -129,7 +129,7 @@ public class ProcessorsTest extends SimpleTestInClusterSupport {
                                 context[0] = item;
                             }
                         }))
-                .jetInstance(instance())
+                .hazelcastInstance(instance().getHazelcastInstance())
                 .disableSnapshots()
                 .input(asList(1, 2, 3))
                 .expectOutput(asList(1, 3));
@@ -145,7 +145,7 @@ public class ProcessorsTest extends SimpleTestInClusterSupport {
                         t -> "k",
                         (int[] context, Integer item) ->
                                 supplyAsync(() -> item % context[0] != 0 ? item : null)))
-                .jetInstance(instance())
+                .hazelcastInstance(instance().getHazelcastInstance())
                 .disableSnapshots()
                 .disableProgressAssertion()
                 .input(asList(1, 2, 3))
@@ -182,7 +182,7 @@ public class ProcessorsTest extends SimpleTestInClusterSupport {
                                 context[0] = item;
                             }
                         }))
-                .jetInstance(instance())
+                .hazelcastInstance(instance().getHazelcastInstance())
                 .input(asList(1, 2, 1, 2))
                 .disableSnapshots()
                 .expectOutput(asList(1, 2, 2));
@@ -204,7 +204,7 @@ public class ProcessorsTest extends SimpleTestInClusterSupport {
                 .verifyProcessor(flatMapUsingServiceP(
                         nonSharedService(pctx -> context, c -> c[0] = 0),
                         (int[] c, Integer item) -> traverseItems(item, c[0] += item)))
-                .jetInstance(instance())
+                .hazelcastInstance(instance().getHazelcastInstance())
                 .disableSnapshots()
                 .input(asList(1, 2, 3))
                 .expectOutput(asList(1, 1, 2, 3, 3, 6));

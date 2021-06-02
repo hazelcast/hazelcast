@@ -286,7 +286,7 @@ public interface GeneralStage<T> extends Stage {
      * field on them by looking up from a registry:
      * <pre>{@code
      * stage.mapUsingService(
-     *     ServiceFactories.sharedService(ctx -> new ItemDetailRegistry(ctx.jetInstance())),
+     *     ServiceFactories.sharedService(ctx -> new ItemDetailRegistry(ctx.hazelcastInstance())),
      *     (reg, item) -> item.setDetail(reg.fetchDetail(item))
      * )
      * }</pre>
@@ -334,7 +334,7 @@ public interface GeneralStage<T> extends Stage {
      * field on them by looking up from a registry:
      * <pre>{@code
      * stage.mapUsingServiceAsync(
-     *     ServiceFactories.sharedService(ctx -> new ItemDetailRegistry(ctx.jetInstance())),
+     *     ServiceFactories.sharedService(ctx -> new ItemDetailRegistry(ctx.hazelcastInstance())),
      *     (reg, item) -> reg.fetchDetailAsync(item)
      *                       .thenApply(detail -> item.setDetail(detail))
      * )
@@ -379,7 +379,7 @@ public interface GeneralStage<T> extends Stage {
      * field on them by looking up from a registry:
      * <pre>{@code
      * stage.mapUsingServiceAsync(
-     *     ServiceFactories.sharedService(ctx -> new ItemDetailRegistry(ctx.jetInstance())),
+     *     ServiceFactories.sharedService(ctx -> new ItemDetailRegistry(ctx.hazelcastInstance())),
      *     (reg, item) -> reg.fetchDetailAsync(item)
      *                       .thenApply(detail -> item.setDetail(detail))
      * )
@@ -432,7 +432,7 @@ public interface GeneralStage<T> extends Stage {
      * size of the items to lookup is specified as {@code 100}:
      * <pre>{@code
      * stage.mapUsingServiceAsyncBatched(
-     *     ServiceFactories.sharedService(ctx -> new ItemDetailRegistry(ctx.jetInstance())),
+     *     ServiceFactories.sharedService(ctx -> new ItemDetailRegistry(ctx.hazelcastInstance())),
      *     100,
      *     (reg, itemList) -> reg
      *             .fetchDetailsAsync(itemList)
@@ -480,7 +480,7 @@ public interface GeneralStage<T> extends Stage {
      * about their contents, and keeps only photos of cats:
      * <pre>{@code
      * photos.filterUsingService(
-     *     ServiceFactories.sharedService(ctx -> new ImageClassifier(ctx.jetInstance())),
+     *     ServiceFactories.sharedService(ctx -> new ImageClassifier(ctx.hazelcastInstance())),
      *     (classifier, photo) -> classifier.classify(photo).equals("cat")
      * )
      * }</pre>

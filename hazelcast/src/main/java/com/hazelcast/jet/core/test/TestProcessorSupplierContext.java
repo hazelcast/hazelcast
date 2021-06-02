@@ -17,8 +17,8 @@
 package com.hazelcast.jet.core.test;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.ProcessorSupplier;
@@ -49,8 +49,8 @@ public class TestProcessorSupplierContext
     }
 
     @Nonnull @Override
-    public TestProcessorSupplierContext setJetInstance(@Nonnull JetInstance jetInstance) {
-        return (TestProcessorSupplierContext) super.setJetInstance(jetInstance);
+    public TestProcessorSupplierContext setHazelcastInstance(@Nonnull HazelcastInstance instance) {
+        return (TestProcessorSupplierContext) super.setHazelcastInstance(instance);
     }
 
     @Nonnull @Override

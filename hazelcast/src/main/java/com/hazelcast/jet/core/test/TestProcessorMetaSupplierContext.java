@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.core.test;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.jet.JetInstance;
@@ -23,6 +24,7 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -44,8 +46,7 @@ import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
 public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.Context {
 
     protected ILogger logger;
-
-    private JetInstance jetInstance;
+    private HazelcastInstance instance;
     private long jobId = 1;
     private long executionId = 1;
     private JobConfig jobConfig = new JobConfig();
@@ -64,18 +65,24 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
     }});
 
     @Nonnull @Override
+    public HazelcastInstance hazelcastInstance() {
+        return instance;
+    }
+
+    @Nonnull @Override
+    @Deprecated
     public JetInstance jetInstance() {
-        return jetInstance;
+        return (JetInstance) instance.getJet();
     }
 
     /**
-     * Sets the jet instance.
+     * Sets the Hazelcast instance.
      */
     @Nonnull
-    public TestProcessorMetaSupplierContext setJetInstance(@Nonnull JetInstance jetInstance) {
-        this.jetInstance = jetInstance;
-        if (jetInstance.getHazelcastInstance() instanceof HazelcastInstanceImpl) {
-            NodeEngineImpl nodeEngine = ((HazelcastInstanceImpl) jetInstance.getHazelcastInstance()).node.nodeEngine;
+    public TestProcessorMetaSupplierContext setHazelcastInstance(@Nonnull HazelcastInstance instance) {
+        this.instance = instance;
+        if (this.instance instanceof HazelcastInstanceImpl) {
+            NodeEngineImpl nodeEngine = Util.getNodeEngine(this.instance);
             this.partitionAssignment = ExecutionPlanBuilder.getPartitionAssignment(nodeEngine);
         }
         return this;

@@ -63,7 +63,7 @@ public final class NioInboundPipeline extends NioPipeline implements InboundPipe
     private final SwCounter normalFramesRead = newSwCounter();
     @Probe(name = NETWORKING_METRIC_NIO_INBOUND_PIPELINE_PRIORITY_FRAMES_READ)
     private final SwCounter priorityFramesRead = newSwCounter();
-    private volatile long lastReadTime;
+    private volatile long lastReadTime = -1;
 
     private volatile long bytesReadLastPublish;
     private volatile long normalFramesReadLastPublish;
@@ -111,18 +111,16 @@ public final class NioInboundPipeline extends NioPipeline implements InboundPipe
 
     @Override
     void process() throws Exception {
-        processCount.inc();
-        // we are going to set the timestamp even if the channel is going to fail reading. In that case
-        // the connection is going to be closed anyway.
-        lastReadTime = currentTimeMillis();
-
         int readBytes = socketChannel.read(receiveBuffer);
 
         if (readBytes == -1) {
             throw new EOFException("Remote socket closed!");
         }
 
-        bytesRead.inc(readBytes);
+        if (readBytes > 0) {
+            processCount.inc();
+            lastReadTime = currentTimeMillis();
+        }
 
         // currently the whole pipeline is retried when one of the handlers is dirty; but only the dirty handler
         // and the remaining sequence should need to retry.

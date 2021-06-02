@@ -17,11 +17,13 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.internal.serialization.SerializableByConvention;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.impl.processor.ExpectNothingP;
@@ -306,7 +308,7 @@ public interface ProcessorMetaSupplier extends Serializable {
                                     + "supports only total parallelism of 1. Local parallelism must be 1.");
                 }
                 String key = StringPartitioningStrategy.getPartitionKey(partitionKey);
-                ownerAddress = context.jetInstance().getHazelcastInstance().getPartitionService()
+                ownerAddress = context.hazelcastInstance().getPartitionService()
                                       .getPartition(key).getOwner().getAddress();
             }
 
@@ -346,6 +348,7 @@ public interface ProcessorMetaSupplier extends Serializable {
             @Nonnull ProcessorSupplier supplier,
             @Nonnull Address memberAddress
     ) {
+
         /**
          * A meta-supplier that will only use the given {@code ProcessorSupplier}
          * on a node with given {@link Address}.
@@ -408,14 +411,24 @@ public interface ProcessorMetaSupplier extends Serializable {
      * Context passed to the meta-supplier at init time on the member that
      * received a job request from the client.
      *
-     * @since 3.0
+     * @since Jet 3.0
      */
     interface Context {
 
         /**
-         * Returns the current Jet instance.
+         * Returns the current Hazelcast instance.
+         * @since 5.0
          */
         @Nonnull
+        HazelcastInstance hazelcastInstance();
+
+        /**
+         * Returns the current Jet instance.
+         *
+         * @deprecated Use {@code hazelcastInstance().getJet()} instead.
+         */
+        @Nonnull
+        @Deprecated
         JetInstance jetInstance();
 
         /**
@@ -494,7 +507,7 @@ public interface ProcessorMetaSupplier extends Serializable {
 
         /**
          * Returns if this job runs as a light job, see {@link
-         * JetInstance#newLightJob(Pipeline)}.
+         * JetService#newLightJob(Pipeline)}.
          */
         boolean isLightJob();
 

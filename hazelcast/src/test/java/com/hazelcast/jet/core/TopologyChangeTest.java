@@ -28,7 +28,7 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.MockPS;
 import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
-import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobRecord;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.impl.JobResult;
@@ -411,11 +411,11 @@ public class TopologyChangeTest extends JetTestSupport {
         DAG dag = new DAG().vertex(new Vertex("test", new MockPS(TestProcessors.Identity::new, nodeCount + 1)));
 
         Job job = instances[0].newJob(dag);
-        JetService jetService = getJetService(instances[0]);
+        JetServiceBackend jetServiceBackend = getJetService(instances[0]);
 
-        assertTrueEventually(() -> assertFalse(jetService.getJobCoordinationService().getMasterContexts().isEmpty()));
+        assertTrueEventually(() -> assertFalse(jetServiceBackend.getJobCoordinationService().getMasterContexts().isEmpty()));
 
-        MasterContext masterContext = jetService.getJobCoordinationService().getMasterContext(job.getId());
+        MasterContext masterContext = jetServiceBackend.getJobCoordinationService().getMasterContext(job.getId());
 
         assertTrueEventually(() -> {
             assertEquals(STARTING, masterContext.jobStatus());
@@ -463,9 +463,9 @@ public class TopologyChangeTest extends JetTestSupport {
 
         Job job = instances[0].newJob(dag);
 
-        JetService jetService = getJetService(instances[0]);
+        JetServiceBackend jetServiceBackend = getJetService(instances[0]);
 
-        assertTrueEventually(() -> assertFalse(jetService.getJobCoordinationService().getMasterContexts().isEmpty()));
+        assertTrueEventually(() -> assertFalse(jetServiceBackend.getJobCoordinationService().getMasterContexts().isEmpty()));
 
         spawn(() -> instances[2].getHazelcastInstance().shutdown());
 
@@ -514,7 +514,7 @@ public class TopologyChangeTest extends JetTestSupport {
 
         InitExecutionOperation op = new InitExecutionOperation(jobId, executionId, memberListVersion, memberInfos, null, false);
         Future<Object> future = Accessors.getOperationService(master)
-                .createInvocationBuilder(JetService.SERVICE_NAME, op, Accessors.getAddress(master))
+                .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, op, Accessors.getAddress(master))
                 .invoke();
 
         try {

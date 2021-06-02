@@ -54,7 +54,7 @@ public class LightJobProxy implements LightJob {
     public void cancel() {
         TerminateJobOperation operation = new TerminateJobOperation(jobId, CANCEL_FORCEFUL, true);
         nodeEngine.getOperationService()
-                .createInvocationBuilder(JetService.SERVICE_NAME, operation, coordinatorAddress)
+                .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, operation, coordinatorAddress)
                 .invoke()
                 .join();
     }

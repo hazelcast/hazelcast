@@ -1058,7 +1058,7 @@
     <hz:ringbuffer id="testRingbuffer" instance-ref="instance" name="testRingbuffer"/>
     <hz:reliableTopic id="testReliableTopic" instance-ref="instance" name="testReliableTopic"/>
     <hz:PNCounter id="pnCounter" instance-ref="instance" name="pnCounter"/>
-    <hz:jet id="jetInstance" instance-ref="instance"/>
+    <hz:jet id="jetService" instance-ref="instance"/>
 
     <bean id="dummyMapStore" class="com.hazelcast.spring.DummyStore"/>
     <bean id="dummyMapStoreFactory" class="com.hazelcast.spring.DummyStoreFactory"/>

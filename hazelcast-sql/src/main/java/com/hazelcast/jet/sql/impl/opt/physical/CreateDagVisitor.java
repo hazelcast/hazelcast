@@ -62,7 +62,6 @@ import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static com.hazelcast.jet.core.processor.Processors.mapUsingServiceP;
 import static com.hazelcast.jet.core.processor.Processors.sortP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.convenientSourceP;
-import static com.hazelcast.jet.impl.util.Util.getJetInstance;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 import static com.hazelcast.jet.sql.impl.processors.RootResultConsumerSink.rootResultConsumerSink;
 import static java.util.Collections.singletonList;
@@ -357,7 +356,8 @@ public class CreateDagVisitor {
                 preserveCollation ? Edge::isolated : null);
 
         if (preserveCollation) {
-            int cooperativeThreadCount = getJetInstance(nodeEngine).getConfig().getInstanceConfig().getCooperativeThreadCount();
+            int cooperativeThreadCount = nodeEngine.getConfig().getJetConfig()
+                    .getInstanceConfig().getCooperativeThreadCount();
             int explicitLP = inputVertex.determineLocalParallelism(cooperativeThreadCount);
             // It's not strictly necessary to set the LP to the input, but we do it to ensure that the two
             // vertices indeed have the same LP
