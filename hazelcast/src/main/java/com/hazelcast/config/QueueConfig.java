@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.collection.IQueue;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.nio.ObjectDataInput;
@@ -421,6 +422,10 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Ver
         out.writeString(splitBrainProtectionName);
         out.writeObject(mergePolicyConfig);
         out.writeString(priorityComparatorClassName);
+
+        if (out.getVersion().isGreaterOrEqual(Versions.V4_2)) {
+            out.writeObject(wanReplicationRef);
+        }
     }
 
     @Override
@@ -436,6 +441,10 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Ver
         splitBrainProtectionName = in.readString();
         mergePolicyConfig = in.readObject();
         priorityComparatorClassName = in.readString();
+
+        if (in.getVersion().isGreaterOrEqual(Versions.V4_2)) {
+            wanReplicationRef = in.readObject();
+        }
     }
 
     @Override

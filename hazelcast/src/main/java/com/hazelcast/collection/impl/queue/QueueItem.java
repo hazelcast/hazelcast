@@ -35,8 +35,8 @@ public class QueueItem implements IdentifiedDataSerializable, Comparable<QueueIt
     protected long itemId;
     protected Data serializedObject;
 
+    protected transient long creationTime;
     protected transient Object deserializedObject;
-    protected transient final long creationTime;
     protected transient QueueContainer container;
 
     public QueueItem() {

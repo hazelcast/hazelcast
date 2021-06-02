@@ -146,5 +146,15 @@ public class WanEventCounters {
         public long getRemoveCount() {
             return removeCount.longValue();
         }
+
+        @Override
+        public String toString() {
+            return "DistributedObjectWanEventCounters{"
+                    + "syncCount=" + syncCount
+                    + ", updateCount=" + updateCount
+                    + ", removeCount=" + removeCount
+                    + ", droppedCount=" + droppedCount
+                    + '}';
+        }
     }
 }

@@ -463,8 +463,12 @@ public class QueueContainer implements IdentifiedDataSerializable {
     // TX Methods Ends
 
     public long offer(Data data) {
+        return offerInternal(nextId(), data);
+    }
+
+    private long offerInternal(long itemId, Data data) {
         Data itemData = shouldKeepItemData() ? data : null;
-        QueueItem item = new QueueItem(this, nextId(), itemData);
+        QueueItem item = new QueueItem(this, itemId, itemData);
         if (store.isEnabled()) {
             try {
                 store.store(item.getItemId(), data);
@@ -475,6 +479,15 @@ public class QueueContainer implements IdentifiedDataSerializable {
         getItemQueue().offer(item);
         cancelEvictionIfExists();
         return item.getItemId();
+    }
+
+    public long offerWithWan(long itemId, Data data) {
+        // TODO do not expect this to work with active-active scenarios.
+        assert itemId == idGenerator + 1
+                : String.format("itemId=%d but idGenerator=%d", itemId, idGenerator);
+
+        idGenerator = itemId;
+        return offerInternal(itemId, data);
     }
 
     /**
@@ -579,6 +592,24 @@ public class QueueContainer implements IdentifiedDataSerializable {
     public QueueItem poll() {
         QueueItem item = peek();
         if (item == null) {
+            return null;
+        }
+        if (store.isEnabled()) {
+            try {
+                store.delete(item.getItemId());
+            } catch (Exception e) {
+                throw new HazelcastException(e);
+            }
+        }
+        getItemQueue().poll();
+        age(item, Clock.currentTimeMillis());
+        scheduleEvictionIfEmpty();
+        return item;
+    }
+
+    public QueueItem pollWithWan(long itemId) {
+        QueueItem item = peek();
+        if (item == null || item.itemId != itemId) {
             return null;
         }
         if (store.isEnabled()) {

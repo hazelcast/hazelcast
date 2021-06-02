@@ -17,8 +17,9 @@
 package com.hazelcast.wan.impl;
 
 import com.hazelcast.cache.impl.CacheService;
-import com.hazelcast.map.impl.MapService;
+import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.wan.WanEventCounters;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -68,6 +69,7 @@ public class WanEventCounterRegistry {
     private static final class WanPublisherEventCounters {
         private final WanEventCounters mapEventCounters = new WanEventCounters();
         private final WanEventCounters cacheEventCounters = new WanEventCounters();
+        private final WanEventCounters queueEventCounters = new WanEventCounters();
 
         /**
          * Removes the counter for the given {@code serviceName} and {@code dataStructureName}.
@@ -84,6 +86,8 @@ public class WanEventCounterRegistry {
                 return mapEventCounters;
             } else if (CacheService.SERVICE_NAME.equals(serviceName)) {
                 return cacheEventCounters;
+            } else if (QueueService.SERVICE_NAME.equals(serviceName)) {
+                return queueEventCounters;
             } else {
                 throw new IllegalArgumentException("Unsupported service for counting WAN events " + serviceName);
             }

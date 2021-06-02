@@ -40,7 +40,9 @@ import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.services.DistributedObjectNamespace;
 import com.hazelcast.internal.services.ManagedService;
+import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.services.RemoteService;
 import com.hazelcast.internal.services.SplitBrainHandlerService;
 import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
@@ -433,6 +435,10 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
         provide(descriptor, context, QUEUE_PREFIX, getStats());
+    }
+
+    public static ObjectNamespace getObjectNamespace(String queueName) {
+        return new DistributedObjectNamespace(SERVICE_NAME, queueName);
     }
 
     private class Merger extends AbstractContainerMerger<QueueContainer, Collection<Object>, QueueMergeTypes<Object>> {
