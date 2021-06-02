@@ -45,7 +45,7 @@ Hazelcast repository continues its development as with a next major version.
 - HazelcastInstance can return JetInstance via #getJetInstance (this will
   change before the release into a `JetService getJet()` where `JetService`
   provides a subset of `JetInstance` methods)
-- Jet datastructures created by com.hazelcast.jet.impl.JobRepository are
+- Jet data structures created by com.hazelcast.jet.impl.JobRepository are
   created lazily when needed
 - JetConfig is now a field in `com.hazelcast.config.Config`
 - Jet run tests in parallel by default, Jet tests were marked with `QuickTest`
@@ -62,4 +62,3 @@ There are 2 outstanding items to resolve:
 - some checkstyle rules were ignored for Jet code
 - Jet had some stricker rules regarding public javadoc, this is now not in
   place, ideally we should bring whole  
-
