@@ -120,7 +120,7 @@ public class MasterJobContext {
     public static final int SNAPSHOT_RESTORE_EDGE_PRIORITY = Integer.MIN_VALUE;
     public static final String SNAPSHOT_VERTEX_PREFIX = "__snapshot_";
 
-    static final int COLLECT_METRICS_RETRY_DELAY_MILLIS = 100;
+    private static final int COLLECT_METRICS_RETRY_DELAY_MILLIS = 100;
     private static final Runnable NO_OP = () -> { };
 
     private final MasterContext mc;

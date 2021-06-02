@@ -469,13 +469,19 @@ public class JobCoordinationService {
                     }
                 }
 
-                for (JobResult jobResult : jobRepository.getJobResults(onlyName)) {
-                    jobs.put(jobResult.getJobId(), jobResult.getCreationTime());
-                }
+                if (onlyName != null) {
+                    for (JobResult jobResult : jobRepository.getJobResults(onlyName)) {
+                        jobs.put(jobResult.getJobId(), jobResult.getCreationTime());
+                    }
 
-                jobs.entrySet().stream()
-                        .sorted(comparing(Entry<Long, Long>::getValue).reversed())
-                        .forEach(entry -> result.add(tuple2(entry.getKey(), false)));
+                    jobs.entrySet().stream()
+                            .sorted(comparing(Entry<Long, Long>::getValue).reversed())
+                            .forEach(entry -> result.add(tuple2(entry.getKey(), false)));
+                } else {
+                    for (Long jobId : jobRepository.getAllJobIds()) {
+                        result.add(tuple2(jobId, false));
+                    }
+                }
             }
 
             return new GetJobIdsResult(result);
@@ -596,7 +602,7 @@ public class JobCoordinationService {
             jobRepository.getJobRecords().stream().map(this::getJobSummary).forEach(s -> jobs.put(s.getJobId(), s));
 
             // completed jobs
-            jobRepository.getJobResults(null).stream()
+            jobRepository.getJobResults().stream()
                          .map(r -> new JobSummary(
                                  r.getJobId(), r.getJobNameOrId(), r.getJobStatus(), r.getCreationTime(),
                                  r.getCompletionTime(), r.getFailureText())

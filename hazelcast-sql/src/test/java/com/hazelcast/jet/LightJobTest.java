@@ -98,8 +98,8 @@ public class LightJobTest extends SimpleTestInClusterSupport {
         Job job = instance().newLightJob(dag);
         long jobId = job.getId();
 
-        assertNotNull("getJobById", submittingInstance().getJobById(jobId));
-        List<Job> allJobs = submittingInstance().getAllJobs();
+        assertNotNull("getJobById", submittingInstance().getJob(jobId));
+        List<Job> allJobs = submittingInstance().getJobs();
         assertEquals(1, allJobs.size());
         assertEquals(jobId, allJobs.get(0).getId());
     }

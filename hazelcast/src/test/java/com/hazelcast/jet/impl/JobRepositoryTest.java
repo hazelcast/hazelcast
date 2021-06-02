@@ -201,7 +201,7 @@ public class JobRepositoryTest extends JetTestSupport {
         }
 
         jobRepository.cleanup(getNodeEngineImpl(instance));
-        assertEquals(MAX_JOB_RESULTS_COUNT, jobRepository.getJobResults(null).size());
+        assertEquals(MAX_JOB_RESULTS_COUNT, jobRepository.getJobResults().size());
     }
 
     private void cleanup() {

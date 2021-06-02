@@ -61,6 +61,7 @@ import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -71,7 +72,6 @@ import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
-import java.util.stream.Collectors;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -88,6 +88,7 @@ import static java.util.Comparator.comparing;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.stream.Collectors.toList;
 
 public class JobRepository {
 
@@ -487,7 +488,7 @@ public class JobRepository {
             jobResultsMap.values().stream().sorted(comparing(JobResult::getCompletionTime).reversed())
                     .skip(maxNoResults)
                     .map(JobResult::getJobId)
-                    .collect(Collectors.toList())
+                    .collect(toList())
                     .forEach(id -> {
                         jobMetrics.get().delete(id);
                         jobResults.get().delete(id);
@@ -517,6 +518,13 @@ public class JobRepository {
 
     private boolean isResourceMapExpired(long creationTime) {
         return (System.currentTimeMillis() - creationTime) >= resourcesExpirationMillis;
+    }
+
+    Set<Long> getAllJobIds() {
+        Set<Long> ids = new HashSet<>();
+        ids.addAll(jobRecordsMap().keySet());
+        ids.addAll(jobResultsMap().keySet());
+        return ids;
     }
 
     public Collection<JobRecord> getJobRecords() {
@@ -568,10 +576,13 @@ public class JobRepository {
      * Returns job results for jobs with the given name, or all job results, if
      * the given name is null.
      */
-    Collection<JobResult> getJobResults(@Nullable String name) {
-        return name != null
-                ? jobResults.get().values(new FilterJobResultByNamePredicate(name))
-                : jobResults.get().values();
+    Collection<JobResult> getJobResults() {
+        return jobResults.get().values();
+    }
+
+    List<JobResult> getJobResults(@Nonnull String name) {
+        return jobResults.get().values(new FilterJobResultByNamePredicate(name)).stream()
+                         .sorted(comparing(JobResult::getCreationTime).reversed()).collect(toList());
     }
 
     /**
