@@ -346,16 +346,16 @@ public class JobTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void when_jobIsRunning_then_itIsQueriedByName() throws InterruptedException {
-        testGetJobByNameWhenJobIsRunning(instances()[1]);
+    public void when_jobIsRunning_then_itIsQueriedByName_member() throws InterruptedException {
+        when_jobIsRunning_then_itIsQueriedByName(instances()[1]);
     }
 
     @Test
-    public void when_jobIsRunning_then_itIsQueriedByNameFromClient() throws InterruptedException {
-        testGetJobByNameWhenJobIsRunning(client());
+    public void when_jobIsRunning_then_itIsQueriedByName_client() throws InterruptedException {
+        when_jobIsRunning_then_itIsQueriedByName(client());
     }
 
-    private void testGetJobByNameWhenJobIsRunning(JetService instance) throws InterruptedException {
+    private void when_jobIsRunning_then_itIsQueriedByName(JetService instance) throws InterruptedException {
         // Given
         DAG dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, NODE_COUNT)));
         JobConfig config = new JobConfig();

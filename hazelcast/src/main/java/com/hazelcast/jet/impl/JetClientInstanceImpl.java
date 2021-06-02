@@ -66,7 +66,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
     @Override
     public Map<UUID, GetJobIdsResult> getJobsInt(String onlyName, Long onlyJobId) {
         return invokeRequestOnAnyMemberAndDecodeResponse(
-                JetGetJobIdsCodec.encodeRequest(null, onlyJobId == null ? ALL_JOBS : onlyJobId),
+                JetGetJobIdsCodec.encodeRequest(onlyName, onlyJobId == null ? ALL_JOBS : onlyJobId),
                 resp -> {
                     Data responseSerialized = JetGetJobIdsCodec.decodeResponse(resp).response;
                     return serializationService.toObject(responseSerialized);
