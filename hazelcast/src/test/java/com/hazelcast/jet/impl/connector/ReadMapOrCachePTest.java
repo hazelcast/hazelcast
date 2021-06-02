@@ -28,11 +28,11 @@ import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.jetbrains.annotations.NotNull;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashMap;
@@ -135,7 +135,7 @@ public class ReadMapOrCachePTest extends SimpleTestInClusterSupport {
     private static final class CheckItemsP extends AbstractProcessor {
         static BitSet received;
         @Override
-        protected boolean tryProcess0(@NotNull Object item) {
+        protected boolean tryProcess0(@Nonnull Object item) {
             @SuppressWarnings("unchecked")
             int value = ((Entry<Integer, Integer>) item).getValue();
             assertFalse(received.get(value));

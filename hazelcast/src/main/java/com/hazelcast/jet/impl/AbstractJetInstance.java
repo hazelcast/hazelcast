@@ -41,7 +41,6 @@ import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.topic.ITopic;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -161,7 +160,7 @@ public abstract class AbstractJetInstance<MemberIdType> implements JetInstance {
     }
 
     @Nonnull @Override
-    public List<Job> getJobs(@NotNull String name) {
+    public List<Job> getJobs(@Nonnull String name) {
         return mergeJobIdsResults(getJobsInt(name, null));
     }
 

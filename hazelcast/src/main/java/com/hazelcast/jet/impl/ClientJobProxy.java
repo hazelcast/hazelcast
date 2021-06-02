@@ -71,8 +71,8 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl, UUID
 
     @Nonnull
     @Override
-    public JobStatus getStatus() {
-        checkNotLightJob("job status");
+    public JobStatus getStatus0() {
+        assert !isLightJob();
         return callAndRetryIfTargetNotFound(()  -> {
             ClientMessage request = JetGetJobStatusCodec.encodeRequest(getId());
             ClientMessage response = invocation(request, masterId()).invoke().get();

@@ -63,8 +63,8 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
     }
 
     @Nonnull @Override
-    public JobStatus getStatus() {
-        checkNotLightJob("job status");
+    public JobStatus getStatus0() {
+        assert !isLightJob();
         try {
             return this.<JobStatus>invokeOp(new GetJobStatusOperation(getId())).get();
         } catch (Throwable t) {

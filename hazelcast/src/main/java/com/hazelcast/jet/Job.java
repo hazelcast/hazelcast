@@ -126,6 +126,30 @@ public interface Job {
      */
     long getSubmissionTime();
 
+    /**
+     * Returns the name of this job or {@code null} if no name was supplied.
+     * <p>
+     * Jobs can be named through {@link JobConfig#setName(String)} prior to
+     * submission. For light jobs it always returns {@code null}.
+     */
+    @Nullable
+    default String getName() {
+        if (isLightJob()) {
+            return null;
+        }
+        return getConfig().getName();
+    }
+
+    /**
+     * Returns the current status of this job. Each invocation queries the
+     * status from the job coordinator. For light jobs it returns only {@link
+     * JobStatus#RUNNING RUNNING}, {@link JobStatus#COMPLETED COMPLETED} or
+     * {@link JobStatus#FAILED FAILED}.
+     *
+     * @throws UnsupportedOperationException if called for a light job
+     */
+    @Nonnull
+    JobStatus getStatus();
 
     // ### Methods below apply only to normal (non-light) jobs.
 
@@ -139,28 +163,6 @@ public interface Job {
      */
     @Nonnull
     JobConfig getConfig();
-
-    /**
-     * Returns the name of this job or {@code null} if no name was supplied.
-     * <p>
-     * Jobs can be named through {@link JobConfig#setName(String)} prior to
-     * submission. Not supported for light jobs.
-     *
-     * @throws UnsupportedOperationException if called for a light job
-     */
-    @Nullable
-    default String getName() {
-        return getConfig().getName();
-    }
-
-    /**
-     * Returns the current status of this job. Each invocation queries the
-     * status from the job coordinator. Not supported for light jobs.
-     *
-     * @throws UnsupportedOperationException if called for a light job
-     */
-    @Nonnull
-    JobStatus getStatus();
 
     /**
      * Return a {@link JobSuspensionCause description of the cause} that has

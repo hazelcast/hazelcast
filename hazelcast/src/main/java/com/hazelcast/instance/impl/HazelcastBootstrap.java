@@ -68,7 +68,6 @@ import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -430,7 +429,7 @@ public final class HazelcastBootstrap {
             return instance.getCluster();
         }
 
-        @NotNull
+        @Nonnull
         @Override
         public Endpoint getLocalEndpoint() {
             return instance.getLocalEndpoint();

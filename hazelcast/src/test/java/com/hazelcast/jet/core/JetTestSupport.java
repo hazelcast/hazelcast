@@ -152,7 +152,7 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
         return file;
     }
 
-    public static void assertJobStatusEventually(Job job, JobStatus expected) {
+    public static void assertJobStatusEventually(Job job, @Nonnull JobStatus expected) {
         assertJobStatusEventually(job, expected, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
     }
 

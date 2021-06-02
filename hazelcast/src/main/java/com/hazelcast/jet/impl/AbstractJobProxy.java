@@ -24,6 +24,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobNotFoundException;
+import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.util.NonCompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -143,14 +144,29 @@ public abstract class AbstractJobProxy<ContainerType, MemberIdType> implements J
                 + ')';
     }
 
-    @Nonnull
-    @Override
+    @Nonnull @Override
     public CompletableFuture<Void> getFuture() {
         if (joinedJob.compareAndSet(false, true)) {
             doInvokeJoinJob();
         }
         return future;
     }
+
+    @Nonnull @Override
+    public final JobStatus getStatus() {
+        if (isLightJob()) {
+            CompletableFuture<Void> f = getFuture();
+            if (!f.isDone()) {
+                return JobStatus.RUNNING;
+            }
+            return f.isCompletedExceptionally()
+                    ? JobStatus.FAILED : JobStatus.COMPLETED;
+        } else {
+            return getStatus0();
+        }
+    }
+
+    protected abstract JobStatus getStatus0();
 
     @Override
     public long getSubmissionTime() {
