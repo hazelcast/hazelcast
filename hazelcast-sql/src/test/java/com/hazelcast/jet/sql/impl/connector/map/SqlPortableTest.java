@@ -97,7 +97,7 @@ public class SqlPortableTest extends SqlTestSupport {
         initialize(1, null);
         sqlService = instance().getSql();
 
-        serializationService = ((HazelcastInstanceImpl) instance().getHazelcastInstance()).getSerializationService();
+        serializationService = ((HazelcastInstanceImpl) instance()).getSerializationService();
 
         personIdClassDefinition =
                 new ClassDefinitionBuilder(PERSON_ID_FACTORY_ID, PERSON_ID_CLASS_ID, PERSON_ID_CLASS_VERSION)
@@ -606,7 +606,7 @@ public class SqlPortableTest extends SqlTestSupport {
 
     @SuppressWarnings({"OptionalGetWithoutIsPresent", "unchecked", "rawtypes"})
     private static Entry<Data, Data> randomEntryFrom(String mapName) {
-        NodeEngine engine = getNodeEngine(instance().getHazelcastInstance());
+        NodeEngine engine = getNodeEngine(instance());
         MapService service = engine.getService(MapService.SERVICE_NAME);
         MapServiceContext context = service.getMapServiceContext();
 

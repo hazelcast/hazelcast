@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.sql;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.UuidUtil;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
@@ -64,7 +64,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
 
     @After
     public void tearDown() {
-        for (JetInstance instance : instances()) {
+        for (HazelcastInstance instance : instances()) {
             PlanCache planCache = planCache(instance);
             SUPPORT_LOGGER.info("Removing " + planCache.size() + " cached plans in SqlTestSupport.@After");
             planCache.clear();
@@ -241,8 +241,8 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
                 : "/non/existing/path";
     }
 
-    public static PlanCache planCache(JetInstance instance) {
-        return nodeEngine(instance.getHazelcastInstance()).getSqlService().getPlanCache();
+    public static PlanCache planCache(HazelcastInstance instance) {
+        return nodeEngine(instance).getSqlService().getPlanCache();
     }
 
     /**

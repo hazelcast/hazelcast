@@ -18,12 +18,12 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.LightJob;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
@@ -127,7 +127,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
     @Before
     public void before() {
-        parallelism = instance().getConfig().getInstanceConfig().getCooperativeThreadCount();
+        parallelism = instance().getConfig().getJetConfig().getInstanceConfig().getCooperativeThreadCount();
         TestProcessors.reset(MEMBER_COUNT * parallelism);
     }
 
@@ -450,7 +450,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         MembersView membersView = clusterService.getMembershipManager().getMembersView();
         int memberListVersion = membersView.getVersion();
 
-        JetServiceBackend jetServiceBackend = getJetService(instance());
+        JetServiceBackend jetServiceBackend = getJetServiceBackend(instance());
         final Map<MemberInfo, ExecutionPlan> executionPlans =
                 ExecutionPlanBuilder.createExecutionPlans(nodeEngineImpl, membersView, dag, 1, 1,
                         new JobConfig(), NO_SNAPSHOT, false);
@@ -509,7 +509,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         when_deserializationOnMembersFails_then_jobSubmissionFails(client());
     }
 
-    private void when_deserializationOnMembersFails_then_jobSubmissionFails(JetInstance instance) throws Throwable {
+    private void when_deserializationOnMembersFails_then_jobSubmissionFails(HazelcastInstance instance) throws Throwable {
         // Given
         DAG dag = new DAG();
         // this is designed to fail when member deserializes the execution plan while executing
@@ -538,7 +538,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         when_deserializationOnMasterFails_then_jobSubmissionFails(client());
     }
 
-    private void when_deserializationOnMasterFails_then_jobSubmissionFails(JetInstance instance) throws Throwable {
+    private void when_deserializationOnMasterFails_then_jobSubmissionFails(HazelcastInstance instance) throws Throwable {
         // Given
         DAG dag = new DAG();
         // this is designed to fail when the master member deserializes the DAG
@@ -597,8 +597,8 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         }
 
         // create a new client that will join the job after completion
-        JetInstance client2 = factory().newClient();
-        Job job2 = client2.getJob(job.getId());
+        HazelcastInstance client2 = factory().newHazelcastClient();
+        Job job2 = client2.getJet().getJob(job.getId());
         try {
             job2.join();
             throw new AssertionError("should have failed");
@@ -622,11 +622,11 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
     @Test
     public void when_job_withNoSnapshots_completed_then_noSnapshotMapsLeft() {
-        JetInstance instance = createJetMember();
+        HazelcastInstance instance = createHazelcastInstance();
         DAG dag = new DAG();
         dag.newVertex("noop", Processors.noopP());
         newJob(instance, dag, null).join();
-        Collection<DistributedObject> objects = instance.getHazelcastInstance().getDistributedObjects();
+        Collection<DistributedObject> objects = instance.getDistributedObjects();
         long snapshotMaps = objects.stream()
                                    .filter(obj -> obj instanceof IMap)
                                    .filter(obj -> obj.getName().contains("snapshots.data"))
@@ -690,12 +690,12 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         return newJob(instance(), dag, null);
     }
 
-    private LightJob newJob(JetInstance instance, DAG dag, JobConfig config) {
+    private LightJob newJob(HazelcastInstance instance, DAG dag, JobConfig config) {
         if (config != null) {
             assumeFalse(useLightJob); // light jobs don't support config
-            return instance.newJob(dag, config);
+            return instance.getJet().newJob(dag, config);
         } else {
-            return useLightJob ? instance.newLightJob(dag) : instance.newJob(dag);
+            return useLightJob ? instance.getJet().newLightJob(dag) : instance.getJet().newJob(dag);
         }
     }
 
@@ -810,7 +810,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     }
 
     private JobResult getJobResult(Job job) {
-        JetServiceBackend jetServiceBackend = getJetService(instance());
+        JetServiceBackend jetServiceBackend = getJetServiceBackend(instance());
         assertNull(jetServiceBackend.getJobRepository().getJobRecord(job.getId()));
         JobResult jobResult = jetServiceBackend.getJobRepository().getJobResult(job.getId());
         assertNotNull(jobResult);

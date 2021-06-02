@@ -108,7 +108,7 @@ public class WriteKafkaPTest extends SimpleTestInClusterSupport {
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.map(sourceIMap))
          .writeTo(KafkaSinks.kafka(properties, topic));
-        instance().newJob(p).join();
+        instance().getJet().newJob(p).join();
 
         kafkaTestSupport.assertTopicContentsEventually(topic, sourceIMap, false);
     }
@@ -122,7 +122,7 @@ public class WriteKafkaPTest extends SimpleTestInClusterSupport {
          .writeTo(KafkaSinks.kafka(properties, e ->
                  new ProducerRecord<>(localTopic, e.getKey(), e.getKey(), e.getValue()))
          );
-        instance().newJob(p).join();
+        instance().getJet().newJob(p).join();
 
         kafkaTestSupport.assertTopicContentsEventually(topic, sourceIMap, true);
     }
@@ -138,7 +138,7 @@ public class WriteKafkaPTest extends SimpleTestInClusterSupport {
                 ProcessorMetaSupplier.of(ProcessorWithEntryAndLatch::new)))
          .writeTo(KafkaSinks.kafka(properties, topic));
 
-        Job job = instance().newJob(p);
+        Job job = instance().getJet().newJob(p);
 
         // the event should not appear in the topic due to linger.ms
         try (KafkaConsumer<Integer, String> consumer = kafkaTestSupport.createConsumer(topic)) {
@@ -177,7 +177,7 @@ public class WriteKafkaPTest extends SimpleTestInClusterSupport {
                             .exactlyOnce(exactlyOnce)
                             .build());
 
-        Job job = instance().newJob(p, new JobConfig()
+        Job job = instance().getJet().newJob(p, new JobConfig()
                 .setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE)
                 .setSnapshotIntervalMillis(4000));
 

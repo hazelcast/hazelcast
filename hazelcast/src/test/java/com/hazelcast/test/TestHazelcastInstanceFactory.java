@@ -35,8 +35,14 @@ import com.hazelcast.test.metrics.MetricsRule;
 import com.hazelcast.test.mocknetwork.TestNodeRegistry;
 
 import java.net.UnknownHostException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -143,7 +149,7 @@ public class TestHazelcastInstanceFactory {
             config = initOrCreateConfig(config);
             NodeContext nodeContext = registry.createNodeContext(address);
             HazelcastInstance hazelcastInstance =
-                HazelcastInstanceFactory.newHazelcastInstance(config, instanceName, nodeContext);
+                    HazelcastInstanceFactory.newHazelcastInstance(config, instanceName, nodeContext);
             registerTestMetricsPublisher(hazelcastInstance);
 
             return hazelcastInstance;
@@ -190,7 +196,7 @@ public class TestHazelcastInstanceFactory {
                             ? Collections.emptySet()
                             : new HashSet<>(asList(blockedAddresses)));
             HazelcastInstance hazelcastInstance =
-                HazelcastInstanceFactory.newHazelcastInstance(config, instanceName, nodeContext);
+                    HazelcastInstanceFactory.newHazelcastInstance(config, instanceName, nodeContext);
             registerTestMetricsPublisher(hazelcastInstance);
 
             return hazelcastInstance;

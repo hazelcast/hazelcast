@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.util;
 
 import com.hazelcast.client.map.helpers.AMapStore;
 import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
@@ -25,7 +26,6 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.HeapData;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.execution.SnapshotContext;
@@ -89,9 +89,9 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
               .setEnabled(true)
               .setImplementation(new AlwaysFailingMapStore());
 
-        JetInstance instance = createJetMember(config);
-        nodeEngine = ((HazelcastInstanceImpl) instance.getHazelcastInstance()).node.nodeEngine;
-        serializationService = ((HazelcastInstanceImpl) instance.getHazelcastInstance()).getSerializationService();
+        HazelcastInstance instance = createHazelcastInstance(config);
+        nodeEngine = ((HazelcastInstanceImpl) instance).node.nodeEngine;
+        serializationService = ((HazelcastInstanceImpl) instance).getSerializationService();
         partitionService = nodeEngine.getPartitionService();
         snapshotContext = mock(SnapshotContext.class);
         when(snapshotContext.currentMapName()).thenReturn("map1");
@@ -99,7 +99,7 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
         writer = new AsyncSnapshotWriterImpl(128, nodeEngine, snapshotContext, "vertex", 0, 1,
                 nodeEngine.getSerializationService());
         when(snapshotContext.currentSnapshotId()).thenReturn(1L); // simulates starting new snapshot
-        map = instance.getHazelcastInstance().getMap("map1");
+        map = instance.getMap("map1");
         assertTrue(writer.usableChunkCapacity > 0);
     }
 

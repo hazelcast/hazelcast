@@ -79,7 +79,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
     public void mapJournal_byName() {
         // Given
         String mapName = JOURNALED_MAP_PREFIX + randomName();
-        IMap<String, Integer> map = jet().getMap(mapName);
+        IMap<String, Integer> map = hz().getMap(mapName);
 
         // When
         StreamSource<Entry<String, Integer>> source = Sources.mapJournal(mapName, START_FROM_OLDEST);
@@ -92,7 +92,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
     public void mapJournal_byRef() {
         // Given
         String mapName = JOURNALED_MAP_PREFIX + randomName();
-        IMap<String, Integer> map = jet().getMap(mapName);
+        IMap<String, Integer> map = hz().getMap(mapName);
 
         // When
         StreamSource<Entry<String, Integer>> source = Sources.mapJournal(map, START_FROM_OLDEST);
@@ -126,7 +126,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
          .withoutTimestamps()
          .map(entryValue())
          .writeTo(sink);
-        jet().newJob(p);
+        hz().getJet().newJob(p);
 
         // Then eventually we get all the map values in the sink.
         assertSizeEventually(itemCount, sinkList);
@@ -157,7 +157,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         String mapName = JOURNALED_MAP_PREFIX + randomName();
 
         // When
-        StreamSource<String> source = Sources.mapJournal(jet().getMap(mapName), START_FROM_OLDEST,
+        StreamSource<String> source = Sources.mapJournal(hz().getMap(mapName), START_FROM_OLDEST,
                 (EventJournalMapEvent<Integer, Entry<Integer, String>> entry) -> entry.getNewValue().getValue(),
                 mapPutEvents()
         );
@@ -185,12 +185,12 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
             String mapName, StreamSource<String> source
     ) {
         // Given
-        IMap<Integer, Entry<Integer, String>> sourceMap = jet().getMap(mapName);
+        IMap<Integer, Entry<Integer, String>> sourceMap = hz().getMap(mapName);
         range(0, itemCount).forEach(i -> sourceMap.put(i, entry(i, i % 2 == 0 ? null : String.valueOf(i))));
 
         // When
         p.readFrom(source).withoutTimestamps().writeTo(sink);
-        jet().newJob(p);
+        hz().getJet().newJob(p);
 
         // Then
         assertTrueEventually(() -> assertEquals(
@@ -199,7 +199,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
                         .mapToObj(String::valueOf)
                         .sorted()
                         .collect(joining("\n")),
-                jet().getHazelcastInstance().<String>getList(sinkName)
+                hz().<String>getList(sinkName)
                         .stream()
                         .sorted()
                         .collect(joining("\n"))
@@ -210,7 +210,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
     public void mapJournal_withDefaultFilter() {
         // Given
         String mapName = JOURNALED_MAP_PREFIX + randomName();
-        IMap<Integer, Integer> sourceMap = jet().getMap(mapName);
+        IMap<Integer, Integer> sourceMap = hz().getMap(mapName);
         sourceMap.put(1, 1); // ADDED
         sourceMap.remove(1); // REMOVED - filtered out
         sourceMap.put(1, 2); // ADDED
@@ -220,8 +220,8 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
 
         // Then
         p.readFrom(source).withoutTimestamps().writeTo(sink);
-        jet().newJob(p);
-        IList<Entry<Integer, Integer>> sinkList = jet().getList(sinkName);
+        hz().getJet().newJob(p);
+        IList<Entry<Integer, Integer>> sinkList = hz().getList(sinkName);
         assertTrueEventually(() -> {
                     assertEquals(2, sinkList.size());
 
@@ -240,7 +240,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
     public void cacheJournal_withDefaultFilter() {
         // Given
         String cacheName = JOURNALED_CACHE_PREFIX + randomName();
-        ICache<Integer, Integer> sourceMap = jet().getCacheManager().getCache(cacheName);
+        ICache<Integer, Integer> sourceMap = hz().getCacheManager().getCache(cacheName);
         sourceMap.put(1, 1); // ADDED
         sourceMap.remove(1); // REMOVED - filtered out
         sourceMap.put(1, 2); // ADDED
@@ -250,8 +250,8 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
 
         // Then
         p.readFrom(source).withoutTimestamps().writeTo(sink);
-        jet().newJob(p);
-        IList<Entry<Integer, Integer>> sinkList = jet().getList(sinkName);
+        hz().getJet().newJob(p);
+        IList<Entry<Integer, Integer>> sinkList = hz().getList(sinkName);
         assertTrueEventually(() -> {
                     assertEquals(2, sinkList.size());
 
@@ -270,7 +270,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
     public void mapJournal_withPredicateAndProjection() {
         // Given
         String mapName = JOURNALED_MAP_PREFIX + randomName();
-        IMap<String, Integer> map = jet().getMap(mapName);
+        IMap<String, Integer> map = hz().getMap(mapName);
         PredicateEx<EventJournalMapEvent<String, Integer>> p = e -> e.getNewValue() % 2 == 0;
 
         // When
@@ -304,7 +304,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
 
         // When we start the job...
         p.readFrom(source).withoutTimestamps().writeTo(sink);
-        jet().newJob(p);
+        hz().getJet().newJob(p);
 
         // Then eventually we get all the map values in the sink.
         assertSizeEventually(itemCount / 2, sinkList);
@@ -347,7 +347,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         p.readFrom(source).withoutTimestamps().map(en -> en.getValue().toString()).writeTo(sink);
         JobConfig jobConfig = new JobConfig();
         jobConfig.addJar(jarResource);
-        Job job = jet().newJob(p, jobConfig);
+        Job job = hz().getJet().newJob(p, jobConfig);
         List<Object> expected = singletonList(car.toString());
         assertTrueEventually(() -> assertEquals(expected, new ArrayList<>(sinkList)), 10);
         job.cancel();
@@ -357,7 +357,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
     public void cacheJournal_byName() {
         // Given
         String cacheName = JOURNALED_CACHE_PREFIX + randomName();
-        ICache<String, Integer> cache = jet().getCacheManager().getCache(cacheName);
+        ICache<String, Integer> cache = hz().getCacheManager().getCache(cacheName);
 
         // When
         StreamSource<Entry<String, Integer>> source = Sources.cacheJournal(cacheName, START_FROM_OLDEST);
@@ -391,7 +391,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
          .withoutTimestamps()
          .map(entryValue())
          .writeTo(sink);
-        jet().newJob(p);
+        hz().getJet().newJob(p);
 
         // Then eventually we get all the cache values in the sink.
         assertSizeEventually(itemCount, sinkList);
@@ -421,7 +421,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         // Given
         String cacheName = JOURNALED_CACHE_PREFIX + randomName();
         PredicateEx<EventJournalCacheEvent<String, Integer>> p = e -> e.getNewValue() % 2 == 0;
-        ICache<String, Integer> cache = jet().getCacheManager().getCache(cacheName);
+        ICache<String, Integer> cache = hz().getCacheManager().getCache(cacheName);
 
         // When
         StreamSource<Integer> source = Sources.cacheJournal(
@@ -458,7 +458,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         p.readFrom(source)
          .withoutTimestamps()
          .writeTo(sink);
-        jet().newJob(p);
+        hz().getJet().newJob(p);
 
         // Then eventually we get all the map values in the sink.
         assertSizeEventually(itemCount / 2, sinkList);
@@ -503,7 +503,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         p.readFrom(source).withoutTimestamps().map(en -> en.getValue().toString()).writeTo(sink);
         JobConfig jobConfig = new JobConfig();
         jobConfig.addJar(jarResource);
-        Job job = jet().newJob(p, jobConfig);
+        Job job = hz().getJet().newJob(p, jobConfig);
         List<Object> expected = singletonList(car.toString());
         assertTrueEventually(() -> assertEquals(expected, new ArrayList<>(sinkList)), 10);
         job.cancel();

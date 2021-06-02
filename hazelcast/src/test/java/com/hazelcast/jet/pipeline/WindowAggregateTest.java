@@ -144,7 +144,7 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
         // Then
         windowed.aggregate(summingLong(i -> i))
                 .writeTo(sink);
-        jet().newJob(p);
+        hz().getJet().newJob(p);
         String expectedString = new SlidingWindowSimulator(wDef)
                 .acceptStream(input.stream())
                 .stringResults(e -> formatFn.apply(e.getKey(), e.getValue()));
@@ -203,7 +203,7 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
 
         // Then
         aggregated.writeTo(sink);
-        jet().newJob(p);
+        hz().getJet().newJob(p);
         String expectedString = new SlidingWindowSimulator(wDef)
                 .acceptStream(input.stream())
                 .stringResults(e -> formatFn.apply(e.getKey(), e.getValue()));
@@ -269,7 +269,7 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
                 // suppress incomplete windows to get predictable results
                 .filter(wr -> wr.end() - wr.start() == sessionLength + sessionTimeout - 1)
                 .writeTo(sink);
-        jet().newJob(p);
+        hz().getJet().newJob(p);
 
         String expectedString = new SessionWindowSimulator(wDef, sessionLength + sessionTimeout)
                 .acceptStream(input.stream())
@@ -304,7 +304,7 @@ public class WindowAggregateTest extends PipelineStreamTestSupport {
 
         // Then
         stage.aggregate(counting()).writeTo(Sinks.list(sinkList));
-        jet().newJob(p);
+        hz().getJet().newJob(p);
         assertTrueEventually(() -> assertGreaterOrEquals("sinkList.size()", sinkList.size(), 10));
         WindowResult<Long> expected = new WindowResult<>(0L, 10L, 1L, true);
         sinkList.forEach(it -> assertEquals(expected, it));

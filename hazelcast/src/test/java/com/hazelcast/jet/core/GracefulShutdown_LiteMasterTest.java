@@ -17,8 +17,8 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.SupplierEx;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.DummyStatefulP;
@@ -40,16 +40,16 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class GracefulShutdown_LiteMasterTest extends JetTestSupport {
 
-    private JetInstance instance;
-    private JetInstance liteMaster;
+    private HazelcastInstance instance;
+    private HazelcastInstance liteMaster;
 
     @Before
     public void setup() {
         TestProcessors.reset(0);
         Config liteMemberConfig = smallInstanceConfig();
         liteMemberConfig.setLiteMember(true);
-        liteMaster = createJetMember(liteMemberConfig);
-        instance = createJetMember();
+        liteMaster = createHazelcastInstance(liteMemberConfig);
+        instance = createHazelcastInstance();
     }
 
     @Test
@@ -58,7 +58,7 @@ public class GracefulShutdown_LiteMasterTest extends JetTestSupport {
         DAG dag = new DAG();
         dag.newVertex("v", (SupplierEx<Processor>) DummyStatefulP::new)
            .localParallelism(DummyStatefulP.parallelism);
-        Job job = instance.newJob(dag, new JobConfig()
+        Job job = instance.getJet().newJob(dag, new JobConfig()
                 .setSnapshotIntervalMillis(DAYS.toMillis(1))
                 .setProcessingGuarantee(EXACTLY_ONCE));
         assertJobStatusEventually(job, RUNNING, 10);

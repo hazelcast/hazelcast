@@ -85,7 +85,7 @@ public class ReadJdbcPTest extends SimpleTestInClusterSupport {
                 resultSet -> entry(resultSet.getInt(1), resultSet.getString(2))))
          .writeTo(assertAnyOrder(tableContents));
 
-        instance().newJob(p).join();
+        instance().getJet().newJob(p).join();
     }
 
     @Test
@@ -95,6 +95,6 @@ public class ReadJdbcPTest extends SimpleTestInClusterSupport {
                 resultSet -> entry(resultSet.getInt(1), resultSet.getString(2))))
          .writeTo(assertOrdered(tableContents));
 
-        instance().newJob(p).join();
+        instance().getJet().newJob(p).join();
     }
 }

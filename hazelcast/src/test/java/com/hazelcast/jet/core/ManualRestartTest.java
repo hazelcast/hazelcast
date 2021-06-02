@@ -19,8 +19,8 @@ package com.hazelcast.jet.core;
 import com.hazelcast.client.map.helpers.AMapStore;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobRestartWithSnapshotTest.SequencesInPartitionsGeneratorP;
@@ -70,14 +70,14 @@ public class ManualRestartTest extends JetTestSupport {
     public ExpectedException exception = ExpectedException.none();
 
     private DAG dag;
-    private JetInstance[] instances;
+    private HazelcastInstance[] instances;
 
     @Before
     public void setup() {
         TestProcessors.reset(NODE_COUNT * LOCAL_PARALLELISM);
 
         dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, NODE_COUNT)));
-        instances = createJetMembers(NODE_COUNT);
+        instances = createHazelcastInstances(NODE_COUNT);
     }
 
     @Test
@@ -92,15 +92,15 @@ public class ManualRestartTest extends JetTestSupport {
 
     private void testJobRestartWhenJobIsRunning(boolean autoRestartOnMemberFailureEnabled) {
         // Given that the job is running
-        JetInstance client = createJetClient();
-        Job job = client.newJob(dag, new JobConfig().setAutoScaling(autoRestartOnMemberFailureEnabled));
+        HazelcastInstance client = createHazelcastClient();
+        Job job = client.getJet().newJob(dag, new JobConfig().setAutoScaling(autoRestartOnMemberFailureEnabled));
 
         assertTrueEventually(() -> assertEquals(NODE_COUNT, MockPS.initCount.get()));
 
         // When the job is restarted after new members join to the cluster
         int newMemberCount = 2;
         for (int i = 0; i < newMemberCount; i++) {
-            createJetMember();
+            createHazelcastInstance();
         }
 
         assertTrueAllTheTime(() -> assertEquals(NODE_COUNT, MockPS.initCount.get()), 3);
@@ -115,11 +115,11 @@ public class ManualRestartTest extends JetTestSupport {
     @Test
     public void when_jobIsNotBeingExecuted_then_itCannotBeRestarted() {
         // Given that the job execution has not started
-        rejectOperationsBetween(instances[0].getHazelcastInstance(), instances[1].getHazelcastInstance(),
+        rejectOperationsBetween(instances[0], instances[1],
                 JetInitDataSerializerHook.FACTORY_ID, singletonList(JetInitDataSerializerHook.INIT_EXECUTION_OP));
 
-        JetInstance client = createJetClient();
-        Job job = client.newJob(dag);
+        HazelcastInstance client = createHazelcastClient();
+        Job job = client.getJet().newJob(dag);
 
         assertJobStatusEventually(job, STARTING);
 
@@ -132,8 +132,8 @@ public class ManualRestartTest extends JetTestSupport {
     @Test
     public void when_jobIsCompleted_then_itCannotBeRestarted() {
         // Given that the job is completed
-        JetInstance client = createJetClient();
-        Job job = client.newJob(dag);
+        HazelcastInstance client = createHazelcastClient();
+        Job job = client.getJet().newJob(dag);
         job.cancel();
 
         cancelAndJoin(job);
@@ -150,7 +150,7 @@ public class ManualRestartTest extends JetTestSupport {
         mapConfig.getMapStoreConfig()
                  .setClassName(FailingMapStore.class.getName())
                  .setEnabled(true);
-        Config config = instances[0].getHazelcastInstance().getConfig();
+        Config config = instances[0].getConfig();
         ((DynamicConfigurationAwareConfig) config).getStaticConfig().addMapConfig(mapConfig);
         FailingMapStore.fail = false;
         FailingMapStore.failed = false;
@@ -161,7 +161,7 @@ public class ManualRestartTest extends JetTestSupport {
         Vertex sink = dag.newVertex("sink", writeListP("sink"));
         dag.edge(between(source, sink));
         source.localParallelism(1);
-        Job job = instances[0].newJob(dag, new JobConfig()
+        Job job = instances[0].getJet().newJob(dag, new JobConfig()
                 .setProcessingGuarantee(EXACTLY_ONCE)
                 .setSnapshotIntervalMillis(2000));
 

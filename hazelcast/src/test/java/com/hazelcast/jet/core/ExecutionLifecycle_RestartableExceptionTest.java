@@ -189,7 +189,7 @@ public class ExecutionLifecycle_RestartableExceptionTest extends SimpleTestInClu
     }
 
     private LightJob newJob(DAG dag) {
-        return useLightJob ? instance().newLightJob(dag) : instance().newJob(dag, jobConfigWithAutoScaling);
+        return useLightJob ? instance().getJet().newLightJob(dag) : instance().getJet().newJob(dag, jobConfigWithAutoScaling);
     }
 
     private static class RestartableMockPMS implements ProcessorMetaSupplier {

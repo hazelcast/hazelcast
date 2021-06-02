@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.elastic;
 
-import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.JetTestInstanceFactory;
+import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.elastic.ElasticSinkBuilderTest.ClientHolder;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sink;
@@ -43,17 +43,17 @@ import static org.mockito.Mockito.when;
  */
 public class LocalElasticSinkTest extends CommonElasticSinksTest {
 
-    private JetTestInstanceFactory factory = new JetTestInstanceFactory();
+    private TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         factory.terminateAll();
     }
 
     @Override
-    protected JetInstance createJetInstance() {
+    protected HazelcastInstance createHazelcastInstance() {
         // This starts very quickly, no need to cache the instance
-        return factory.newMember(config());
+        return factory.newHazelcastInstance(config());
     }
 
     @Test
@@ -81,7 +81,7 @@ public class LocalElasticSinkTest extends CommonElasticSinksTest {
         p.readFrom(TestSources.items("a", "b", "c"))
          .writeTo(elasticSink);
 
-        jet.newJob(p).join();
+        hz.getJet().newJob(p).join();
 
         for (RestClient client : ClientHolder.elasticClients) {
             verify(client).close();

@@ -62,12 +62,12 @@ public class JobMetrics_StreamTest extends TestInClusterSupport {
 
     @Test
     public void when_jobRunning_then_metricsEventuallyExist() {
-        Map<String, String> map = jet().getMap(journalMapName);
+        Map<String, String> map = hz().getMap(journalMapName);
         putIntoMap(map, 2, 1);
-        List<String> sink = jet().getList(sinkListName);
+        List<String> sink = hz().getList(sinkListName);
 
         // When
-        Job job = jet().newJob(createPipeline());
+        Job job = hz().getJet().newJob(createPipeline());
 
         assertTrueEventually(() -> assertEquals(2, sink.size()));
         // Then
@@ -81,15 +81,15 @@ public class JobMetrics_StreamTest extends TestInClusterSupport {
 
     @Test
     public void when_suspendAndResume_then_metricsReset() {
-        Map<String, String> map = jet().getMap(journalMapName);
+        Map<String, String> map = hz().getMap(journalMapName);
         putIntoMap(map, 2, 1);
-        List<String> sink = jet().getList(sinkListName);
+        List<String> sink = hz().getList(sinkListName);
 
         JobConfig jobConfig = new JobConfig()
             .setStoreMetricsAfterJobCompletion(true)
             .setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
         // When
-        Job job = jet().newJob(createPipeline(), jobConfig);
+        Job job = hz().getJet().newJob(createPipeline(), jobConfig);
 
         putIntoMap(map, 1, 1);
 
@@ -117,11 +117,11 @@ public class JobMetrics_StreamTest extends TestInClusterSupport {
 
     @Test
     public void when_jobRestarted_then_metricsReset() {
-        Map<String, String> map = jet().getMap(journalMapName);
+        Map<String, String> map = hz().getMap(journalMapName);
         putIntoMap(map, 2, 1);
-        List<String> sink = jet().getList(sinkListName);
+        List<String> sink = hz().getList(sinkListName);
 
-        Job job = jet().newJob(createPipeline(), JOB_CONFIG_WITH_METRICS);
+        Job job = hz().getJet().newJob(createPipeline(), JOB_CONFIG_WITH_METRICS);
 
         assertTrueEventually(() -> assertEquals(2, sink.size()));
         assertTrueEventually(() -> assertMetrics(job.getMetrics(), 3, 1));
@@ -146,10 +146,10 @@ public class JobMetrics_StreamTest extends TestInClusterSupport {
 
     @Test
     public void when_jobRestarted_then_metricsReset_withJournal() {
-        Map<String, String> map = jet().getMap(journalMapName);
-        List<String> sink = jet().getList(sinkListName);
+        Map<String, String> map = hz().getMap(journalMapName);
+        List<String> sink = hz().getList(sinkListName);
 
-        Job job = jet().newJob(createPipeline(), JOB_CONFIG_WITH_METRICS);
+        Job job = hz().getJet().newJob(createPipeline(), JOB_CONFIG_WITH_METRICS);
 
         assertJobStatusEventually(job, RUNNING);
         assertTrueEventually(() -> assertMetrics(job.getMetrics(), 0, 0));

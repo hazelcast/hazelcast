@@ -20,8 +20,8 @@ import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.model.ExposedPort;
 import com.github.dockerjava.api.model.PortBinding;
 import com.github.dockerjava.api.model.Ports;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.cdc.AbstractCdcIntegrationTest;
 import com.hazelcast.jet.cdc.ChangeRecord;
@@ -112,8 +112,8 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
         Pipeline pipeline = initPipeline(containerIpAddress, port);
 
         // when job starts
-        JetInstance jet = createJetMembers(2)[0];
-        Job job = jet.newJob(pipeline);
+        HazelcastInstance hz = createHazelcastInstances(2)[0];
+        Job job = hz.getJet().newJob(pipeline);
         // then
         boolean neverReconnect = reconnectBehavior.getMaxAttempts() == 0;
         if (neverReconnect) {
@@ -121,17 +121,17 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
             assertThatThrownBy(job::join)
                     .hasRootCauseInstanceOf(JetException.class)
                     .hasStackTraceContaining("Failed to connect to database");
-            assertTrue(jet.getMap("results").isEmpty());
+            assertTrue(hz.getMap("results").isEmpty());
         } else {
             // and can't connect to DB
             assertJobStatusEventually(job, RUNNING);
-            assertTrue(jet.getMap("results").isEmpty());
+            assertTrue(hz.getMap("results").isEmpty());
 
             // and DB starts
             postgres.start();
             try {
                 // then source connects successfully
-                assertEqualsEventually(() -> jet.getMap("results").size(), 4);
+                assertEqualsEventually(() -> hz.getMap("results").size(), 4);
                 assertEquals(RUNNING, job.getStatus());
             } finally {
                 abortJob(job);
@@ -149,8 +149,8 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
             ToxiproxyContainer.ContainerProxy proxy = initProxy(toxiproxy, postgres);
             Pipeline pipeline = initPipeline(proxy.getContainerIpAddress(), proxy.getProxyPort());
             // when job starts
-            JetInstance jet = createJetMembers(2)[0];
-            Job job = jet.newJob(pipeline);
+            HazelcastInstance hz = createHazelcastInstances(2)[0];
+            Job job = hz.getJet().newJob(pipeline);
             assertJobStatusEventually(job, RUNNING);
 
             // and snapshotting is ongoing (we have no exact way of identifying
@@ -169,7 +169,7 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
 
             // then connector manages to reconnect and finish snapshot
             try {
-                assertEqualsEventually(() -> jet.getMap("results").size(), 4);
+                assertEqualsEventually(() -> hz.getMap("results").size(), 4);
             } finally {
                 abortJob(job);
             }
@@ -183,8 +183,8 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
 
         Pipeline pipeline = initPipeline(postgres.getContainerIpAddress(), port);
         // when job starts
-        JetInstance jet = createJetMembers(2)[0];
-        Job job = jet.newJob(pipeline);
+        HazelcastInstance hz = createHazelcastInstances(2)[0];
+        Job job = hz.getJet().newJob(pipeline);
         assertJobStatusEventually(job, RUNNING);
 
         // and snapshotting is ongoing (we have no exact way of identifying
@@ -207,7 +207,7 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
 
             // then snapshotting finishes successfully
             try {
-                assertEqualsEventually(() -> jet.getMap("results").size(), 4);
+                assertEqualsEventually(() -> hz.getMap("results").size(), 4);
                 assertEquals(RUNNING, job.getStatus());
             } finally {
                 abortJob(job);
@@ -225,12 +225,12 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
             ToxiproxyContainer.ContainerProxy proxy = initProxy(toxiproxy, postgres);
             Pipeline pipeline = initPipeline(proxy.getContainerIpAddress(), proxy.getProxyPort());
             // when connector is up and transitions to binlog reading
-            JetInstance jet = createJetMembers(2)[0];
-            Job job = jet.newJob(pipeline);
-            assertEqualsEventually(() -> jet.getMap("results").size(), 4);
+            HazelcastInstance hz = createHazelcastInstances(2)[0];
+            Job job = hz.getJet().newJob(pipeline);
+            assertEqualsEventually(() -> hz.getMap("results").size(), 4);
             SECONDS.sleep(3);
             insertRecords(postgres, 1005);
-            assertEqualsEventually(() -> jet.getMap("results").size(), 5);
+            assertEqualsEventually(() -> hz.getMap("results").size(), 5);
 
             // and the connection is cut
             proxy.setConnectionCut(true);
@@ -247,7 +247,7 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
             // then
             try {
                 // then job keeps running, connector starts freshly, including snapshotting
-                assertEqualsEventually(() -> jet.getMap("results").size(), 7);
+                assertEqualsEventually(() -> hz.getMap("results").size(), 7);
                 assertEquals(RUNNING, job.getStatus());
             } finally {
                 abortJob(job);
@@ -264,12 +264,12 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
 
         Pipeline pipeline = initPipeline(postgres.getContainerIpAddress(), port);
         // when connector is up and transitions to binlog reading
-        JetInstance jet = createJetMembers(2)[0];
-        Job job = jet.newJob(pipeline);
-        assertEqualsEventually(() -> jet.getMap("results").size(), 4);
+        HazelcastInstance hz = createHazelcastInstances(2)[0];
+        Job job = hz.getJet().newJob(pipeline);
+        assertEqualsEventually(() -> hz.getMap("results").size(), 4);
         SECONDS.sleep(3);
         insertRecords(postgres, 1005);
-        assertEqualsEventually(() -> jet.getMap("results").size(), 5);
+        assertEqualsEventually(() -> hz.getMap("results").size(), 5);
 
         // and DB is stopped
         stopContainer(postgres);
@@ -282,8 +282,8 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
                     .hasStackTraceContaining("Failed to connect to database");
         } else {
             // and results are cleared
-            jet.getMap("results").clear();
-            assertEqualsEventually(() -> jet.getMap("results").size(), 0);
+            hz.getMap("results").clear();
+            assertEqualsEventually(() -> hz.getMap("results").size(), 0);
 
             // and DB is started anew
             postgres = initPostgres(null, port);
@@ -295,7 +295,7 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
 
             try {
                 // then job keeps running, connector starts freshly, including snapshotting
-                assertEqualsEventually(() -> jet.getMap("results").size(), 7);
+                assertEqualsEventually(() -> hz.getMap("results").size(), 7);
                 assertEquals(RUNNING, job.getStatus());
             } finally {
                 abortJob(job);

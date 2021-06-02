@@ -55,7 +55,7 @@ public class SqlSelectTest extends SqlTestSupport {
 
     @Test
     public void test_basicSelect() {
-        HazelcastInstance hazelcastInstance = instance().getHazelcastInstance();
+        HazelcastInstance hazelcastInstance = instance();
         String name = randomName();
         IMap<Integer, String> map = hazelcastInstance.getMap(name);
 
@@ -66,7 +66,7 @@ public class SqlSelectTest extends SqlTestSupport {
 
     @Test
     public void test_selectWithEqFilter() {
-        HazelcastInstance hazelcastInstance = instance().getHazelcastInstance();
+        HazelcastInstance hazelcastInstance = instance();
         String name = randomName();
         IMap<Integer, String> map = hazelcastInstance.getMap(name);
 
@@ -78,7 +78,7 @@ public class SqlSelectTest extends SqlTestSupport {
 
     @Test
     public void test_selectWithEvenNumbersFilter() {
-        HazelcastInstance hazelcastInstance = instance().getHazelcastInstance();
+        HazelcastInstance hazelcastInstance = instance();
         String name = randomName();
         IMap<Integer, String> map = hazelcastInstance.getMap(name);
 
@@ -93,7 +93,7 @@ public class SqlSelectTest extends SqlTestSupport {
     @Test
     public void test_selectWithProjection() {
         final int thisProjection = 1;
-        HazelcastInstance hazelcastInstance = instance().getHazelcastInstance();
+        HazelcastInstance hazelcastInstance = instance();
         String name = randomName();
         IMap<Integer, String> map = hazelcastInstance.getMap(name);
 

@@ -162,7 +162,7 @@ public class AsyncTransformUsingServiceP_IntegrationTest extends SimpleTestInClu
         dag.edge(between(source, map).setConfig(edgeToMapperConfig))
            .edge(between(map, sink).setConfig(edgeFromMapperConfig));
 
-        Job job = instance().newJob(dag, jobConfig);
+        Job job = instance().getJet().newJob(dag, jobConfig);
         for (int i = 0; restart && i < 5; i++) {
             assertJobStatusEventually(job, RUNNING);
             sleepMillis(100);
@@ -180,7 +180,7 @@ public class AsyncTransformUsingServiceP_IntegrationTest extends SimpleTestInClu
          .setLocalParallelism(2)
          .writeTo(Sinks.list(sinkList));
 
-        instance().newJob(p, jobConfig);
+        instance().getJet().newJob(p, jobConfig);
         assertResultEventually(i -> Stream.of(i + "-1"), NUM_ITEMS);
     }
 
@@ -194,7 +194,7 @@ public class AsyncTransformUsingServiceP_IntegrationTest extends SimpleTestInClu
          .setLocalParallelism(2)
          .writeTo(Sinks.list(sinkList));
 
-        instance().newJob(p, jobConfig);
+        instance().getJet().newJob(p, jobConfig);
         assertResultEventually(i -> Stream.of(i + "-1"), NUM_ITEMS);
     }
 

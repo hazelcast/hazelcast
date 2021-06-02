@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.processor.Processors;
@@ -28,11 +29,11 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 public class LightJobBench extends JetTestSupport {
 
-    private JetInstance inst;
+    private HazelcastInstance inst;
 
     @Before
     public void before() {
-        inst = createJetMember();
+        inst = createHazelcastInstance();
     }
 
     @Test
@@ -43,7 +44,7 @@ public class LightJobBench extends JetTestSupport {
         dag.newVertex("v", Processors.noopP());
         logger.info("will submit " + warmUpIterations + " jobs");
         for (int i = 0; i < warmUpIterations; i++) {
-            inst.newLightJob(dag).join();
+            inst.getJet().newLightJob(dag).join();
         }
 //        for (int i = 20; i >= 0; i--) {
 //            System.out.println("attach profiler " + i);
@@ -52,7 +53,7 @@ public class LightJobBench extends JetTestSupport {
         logger.info("warmup jobs done, starting benchmark");
         long start = System.nanoTime();
         for (int i = 0; i < realIterations; i++) {
-            inst.newLightJob(dag).join();
+            inst.getJet().newLightJob(dag).join();
         }
         long elapsedMicros = NANOSECONDS.toMicros(System.nanoTime() - start);
         System.out.println(realIterations + " jobs run in " + (elapsedMicros / realIterations) + " us/job");

@@ -646,7 +646,7 @@ public class RebalanceBatchStageTest extends PipelineTestSupport {
                         context -> context.hazelcastInstance().getList("result" + context.globalProcessorIndex()))
                 .receiveFn((list, o) -> list.add(o)).build());
 
-        member.newJob(p).join();
+        member.getJet().newJob(p).join();
 
         IList<Object> result0 = member.getList("result0");
         IList<Object> result1 = member.getList("result1");

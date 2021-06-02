@@ -48,7 +48,7 @@ public class SlowSourceYieldTest extends SimpleTestInClusterSupport {
         Vertex sink = dag.newVertex("sink", noopP()).localParallelism(1);
         dag.edge(between(source, sink));
 
-        instance().newJob(dag).join();
+        instance().getJet().newJob(dag).join();
         assertTrue("processor never yielded", SlowSourceP.yieldCount > 0);
     }
 

@@ -17,8 +17,7 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.collection.IList;
-import com.hazelcast.config.Config;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.impl.JetServiceBackend;
@@ -42,26 +41,25 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class HazelcastConnector_RestartTest extends JetTestSupport {
 
-    private JetInstance instance1;
-    private JetInstance instance2;
+    private HazelcastInstance instance1;
+    private HazelcastInstance instance2;
 
     @Before
     public void setup() {
-        Config config = smallInstanceConfig();
-        instance1 = createJetMember(config);
-        instance2 = createJetMember(config);
+        instance1 = createHazelcastInstance();
+        instance2 = createHazelcastInstance();
     }
 
     @Test
     public void when_iListWrittenAndMemberShutdown_then_jobRestarts() {
-        IList<SimpleEvent> sinkList = instance1.getHazelcastInstance().getList("list");
+        IList<SimpleEvent> sinkList = instance1.getList("list");
 
         Pipeline p = Pipeline.create();
         p.readFrom(TestSources.itemStream(10))
                 .withoutTimestamps()
                 .writeTo(Sinks.list(sinkList));
 
-        Job job = instance1.newJob(p);
+        Job job = instance1.getJet().newJob(p);
         assertTrueEventually(() -> assertTrue("no output to sink", sinkList.size() > 0), 10);
 
         Long executionId = executionId(instance1, job);
@@ -79,14 +77,14 @@ public class HazelcastConnector_RestartTest extends JetTestSupport {
                 assertTrue("no output after migration completed", sinkList.size() > sizeAfterShutdown), 20);
     }
 
-    private Long executionId(JetInstance instance, Job job) {
-        JetServiceBackend jetServiceBackend = getNodeEngineImpl(instance).getService(JetServiceBackend.SERVICE_NAME);
+    private Long executionId(HazelcastInstance instance, Job job) {
+        JetServiceBackend jetServiceBackend = getJetServiceBackend(instance);
         JobExecutionService executionService = jetServiceBackend.getJobExecutionService();
         return executionService.getExecutionIdForJobId(job.getId());
     }
 
-    private void waitExecutionDoneOnMember(JetInstance instance, long executionId) {
-        JetServiceBackend jetServiceBackend = getNodeEngineImpl(instance).getService(JetServiceBackend.SERVICE_NAME);
+    private void waitExecutionDoneOnMember(HazelcastInstance instance, long executionId) {
+        JetServiceBackend jetServiceBackend = getJetServiceBackend(instance);
         JobExecutionService executionService = jetServiceBackend.getJobExecutionService();
         ExecutionContext execCtx = executionService.getExecutionContext(executionId);
         assertTrueEventually(() -> assertTrue(execCtx == null || execCtx.getExecutionFuture().isDone()));

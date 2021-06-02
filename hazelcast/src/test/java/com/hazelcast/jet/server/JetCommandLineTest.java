@@ -20,6 +20,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.collection.IList;
 import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
@@ -84,10 +85,10 @@ public class JetCommandLineTest extends JetTestSupport {
 
     private PrintStream out;
     private PrintStream err;
-    private JetInstance jet;
+    private HazelcastInstance hz;
     private IMap<Integer, Integer> sourceMap;
     private IList<Integer> sinkList;
-    private JetInstance client;
+    private HazelcastInstance client;
 
     @BeforeClass
     public static void beforeClass() throws IOException {
@@ -114,18 +115,18 @@ public class JetCommandLineTest extends JetTestSupport {
         cfg.getMapConfig(SOURCE_NAME).getEventJournalConfig().setEnabled(true);
         String clusterName = randomName();
         cfg.setClusterName(clusterName);
-        jet = createJetMember(cfg);
+        hz = createHazelcastInstance(cfg);
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setClusterName(clusterName);
-        client = createJetClient(clientConfig);
+        client = createHazelcastClient(clientConfig);
         resetOut();
 
-        Address address = jet.getCluster().getLocalMember().getAddress();
+        Address address = hz.getCluster().getLocalMember().getAddress();
         System.setProperty("member", address.getHost() + ":" + address.getPort());
         System.setProperty("group", clusterName);
-        sourceMap = jet.getMap(SOURCE_NAME);
+        sourceMap = hz.getMap(SOURCE_NAME);
         IntStream.range(0, ITEM_COUNT).forEach(i -> sourceMap.put(i, i));
-        sinkList = jet.getList(SINK_NAME);
+        sinkList = hz.getList(SINK_NAME);
         assertTrueEventually(() -> {
             if (!isJarFileExists()) {
                 createJarFile();
@@ -416,7 +417,7 @@ public class JetCommandLineTest extends JetTestSupport {
 
         // Then
         String actual = captureOut();
-        assertContains(actual, jet.getCluster().getLocalMember().getUuid().toString());
+        assertContains(actual, hz.getCluster().getLocalMember().getUuid().toString());
         assertContains(actual, "ACTIVE");
     }
 
@@ -447,8 +448,8 @@ public class JetCommandLineTest extends JetTestSupport {
     @Test
     public void test_submit() {
         run("submit", testJobJarFile.toString());
-        assertTrueEventually(() -> assertEquals(1, jet.getJobs().size()));
-        Job job = jet.getJobs().get(0);
+        assertTrueEventually(() -> assertEquals(1, hz.getJet().getJobs().size()));
+        Job job = hz.getJet().getJobs().get(0);
         assertJobStatusEventually(job, JobStatus.RUNNING);
         assertNull(job.getName());
     }
@@ -456,25 +457,25 @@ public class JetCommandLineTest extends JetTestSupport {
     @Test
     public void test_submit_clientShutdownWhenDone() {
         run("submit", testJobJarFile.toString());
-        assertTrueEventually(() -> assertEquals(1, jet.getJobs().size()));
-        Job job = jet.getJobs().get(0);
+        assertTrueEventually(() -> assertEquals(1, hz.getJet().getJobs().size()));
+        Job job = hz.getJet().getJobs().get(0);
         assertJobStatusEventually(job, JobStatus.RUNNING);
-        assertFalse("Instance should be shut down", client.getHazelcastInstance().getLifecycleService().isRunning());
+        assertFalse("Instance should be shut down", hz.getLifecycleService().isRunning());
     }
 
     @Test
     public void test_submit_nameUsed() {
         run("submit", "-n", "fooName", testJobJarFile.toString());
-        assertTrueEventually(() -> assertEquals(1, jet.getJobs().size()), 5);
-        Job job = jet.getJobs().get(0);
+        assertTrueEventually(() -> assertEquals(1, hz.getJet().getJobs().size()), 5);
+        Job job = hz.getJet().getJobs().get(0);
         assertEquals("fooName", job.getName());
     }
 
     @Test
     public void test_submit_withClassName() {
         run("submit", "--class", "com.hazelcast.jet.testjob.TestJob", testJobJarFile.toString());
-        assertTrueEventually(() -> assertEquals(1, jet.getJobs().size()), 5);
-        Job job = jet.getJobs().get(0);
+        assertTrueEventually(() -> assertEquals(1, hz.getJet().getJobs().size()), 5);
+        Job job = hz.getJet().getJobs().get(0);
         assertJobStatusEventually(job, JobStatus.RUNNING);
         assertNull(job.getName());
     }
@@ -497,8 +498,8 @@ public class JetCommandLineTest extends JetTestSupport {
         IOUtil.copy(JetCommandLineTest.class.getResourceAsStream("testjob-with-jet-bootstrap.jar"),
                 testJarWithJetBootstrap.toFile());
         run("submit", testJarWithJetBootstrap.toString());
-        assertTrueEventually(() -> assertEquals(1, jet.getJobs().size()));
-        Job job = jet.getJobs().get(0);
+        assertTrueEventually(() -> assertEquals(1, hz.getJet().getJobs().size()));
+        Job job = hz.getJet().getJobs().get(0);
         assertJobStatusEventually(job, JobStatus.RUNNING);
         assertNull(job.getName());
         IOUtil.deleteQuietly(testJarWithJetBootstrap.toFile());
@@ -568,7 +569,7 @@ public class JetCommandLineTest extends JetTestSupport {
         AtomicReference<ClientConfig> atomicConfig = new AtomicReference<>();
         Function<ClientConfig, JetInstance> fnRunCommand = (config) -> {
             atomicConfig.set(config);
-            return this.client;
+            return (JetInstance) this.client.getJet();
         };
 
         try {
@@ -648,10 +649,10 @@ public class JetCommandLineTest extends JetTestSupport {
     }
 
     private void test_custom_configuration(String configFile) {
-        run(this::createJetClient, "-f", configFile, "cluster");
+        run(cfg -> (JetInstance) createHazelcastClient(cfg).getJet(), "-f", configFile, "cluster");
 
         String actual = captureOut();
-        assertContains(actual, jet.getCluster().getLocalMember().getUuid().toString());
+        assertContains(actual, hz.getCluster().getLocalMember().getUuid().toString());
         assertContains(actual, "ACTIVE");
     }
 
@@ -674,13 +675,13 @@ public class JetCommandLineTest extends JetTestSupport {
         p.readFrom(Sources.mapJournal(SOURCE_NAME, START_FROM_OLDEST))
                 .withoutTimestamps()
                 .writeTo(Sinks.list(SINK_NAME));
-        Job job = jet.newJob(p, new JobConfig().setName(jobName));
+        Job job = hz.getJet().newJob(p, new JobConfig().setName(jobName));
         assertJobStatusEventually(job, JobStatus.RUNNING);
         return job;
     }
 
     private void run(String... args) {
-        runCommandLine(cfg -> client, out, err, false, args);
+        runCommandLine(cfg -> (JetInstance) client.getJet(), out, err, false, args);
     }
 
     private void run(Function<ClientConfig, JetInstance> clientFn, String... args) {

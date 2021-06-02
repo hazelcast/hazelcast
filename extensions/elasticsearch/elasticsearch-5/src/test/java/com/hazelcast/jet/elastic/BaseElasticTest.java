@@ -18,8 +18,8 @@ package com.hazelcast.jet.elastic;
 
 import com.hazelcast.collection.IList;
 import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.SupplierEx;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.pipeline.Pipeline;
@@ -68,7 +68,7 @@ import static org.assertj.core.util.Lists.newArrayList;
  *
  * To use implement:
  * - {@link #elasticClientSupplier()}
- * - {@link #createJetInstance()}
+ * - {@link #createHazelcastInstance()}
  * Subclasses are free to cache
  */
 @RunWith(HazelcastSerialClassRunner.class)
@@ -81,7 +81,7 @@ public abstract class BaseElasticTest {
     protected RestHighLevelClient elasticClient;
     protected TransportClient transportClient;
 
-    protected JetInstance jet;
+    protected HazelcastInstance hz;
     protected IList<String> results;
 
     @Before
@@ -100,10 +100,10 @@ public abstract class BaseElasticTest {
         }
         cleanElasticData();
 
-        if (jet == null) {
-            jet = createJetInstance();
+        if (hz == null) {
+            hz = createHazelcastInstance();
         }
-        results = jet.getList("results");
+        results = hz.getList("results");
         results.clear();
     }
 
@@ -136,7 +136,7 @@ public abstract class BaseElasticTest {
         return ElasticSupport.elasticClientSupplier();
     }
 
-    protected abstract JetInstance createJetInstance();
+    protected abstract HazelcastInstance createHazelcastInstance();
 
     /**
      * Creates an index with given name with 3 shards
@@ -284,7 +284,7 @@ public abstract class BaseElasticTest {
             clazz = clazz.getSuperclass();
         }
 
-        return jet.newJob(p, config);
+        return hz.getJet().newJob(p, config);
     }
 
     protected static Config config() {

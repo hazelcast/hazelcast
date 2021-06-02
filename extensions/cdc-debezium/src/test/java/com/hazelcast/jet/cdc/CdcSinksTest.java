@@ -19,7 +19,6 @@ package com.hazelcast.jet.cdc;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.SupplierEx;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.cdc.impl.ChangeRecordImpl;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.pipeline.BatchSource;
@@ -69,9 +68,9 @@ public class CdcSinksTest extends PipelineTestSupport {
                 .writeTo(localSync());
         execute().join();
 
-        assertMap(jet(), "sally.thomas@acme.com", "gbailey@foobar.com");
+        assertMap(hz(), "sally.thomas@acme.com", "gbailey@foobar.com");
 
-        jet().getMap(MAP).destroy();
+        hz().getMap(MAP).destroy();
     }
 
     @Test
@@ -96,9 +95,9 @@ public class CdcSinksTest extends PipelineTestSupport {
                 .writeTo(localSync());
         execute().join();
 
-        assertMap(jet(), "sthomas@acme.com", "gbailey@foobar.com");
+        assertMap(hz(), "sthomas@acme.com", "gbailey@foobar.com");
 
-        jet().getMap(MAP).destroy();
+        hz().getMap(MAP).destroy();
     }
 
     @Test
@@ -122,9 +121,9 @@ public class CdcSinksTest extends PipelineTestSupport {
                 .writeTo(localSync());
         execute().join();
 
-        assertMap(jet(), "sally.thomas@acme.com", null);
+        assertMap(hz(), "sally.thomas@acme.com", null);
 
-        jet().getMap(MAP).destroy();
+        hz().getMap(MAP).destroy();
     }
 
     @Test
@@ -157,9 +156,9 @@ public class CdcSinksTest extends PipelineTestSupport {
                 ));
         execute().join();
 
-        assertMap(jet(), null, "gbailey@foobar.com");
+        assertMap(hz(), null, "gbailey@foobar.com");
 
-        jet().getMap(MAP).destroy();
+        hz().getMap(MAP).destroy();
     }
 
     @Test
@@ -207,9 +206,9 @@ public class CdcSinksTest extends PipelineTestSupport {
                 .writeTo(localSync());
         execute().join();
 
-        assertMap(jet(), "sthomas5@acme.com", null);
+        assertMap(hz(), "sthomas5@acme.com", null);
 
-        jet().getMap(MAP).destroy();
+        hz().getMap(MAP).destroy();
     }
 
     @Test
@@ -218,9 +217,9 @@ public class CdcSinksTest extends PipelineTestSupport {
                 .writeTo(localSync());
         execute().join();
 
-        assertMap(jet(), "sthomas@acme.com", null);
+        assertMap(hz(), "sthomas@acme.com", null);
 
-        jet().getMap(MAP).destroy();
+        hz().getMap(MAP).destroy();
     }
 
     @Test
@@ -229,9 +228,9 @@ public class CdcSinksTest extends PipelineTestSupport {
                 .writeTo(localSync());
         execute().join();
 
-        assertMap(jet(), null, null);
+        assertMap(hz(), null, null);
 
-        jet().getMap(MAP).destroy();
+        hz().getMap(MAP).destroy();
     }
 
     @Test
@@ -240,9 +239,9 @@ public class CdcSinksTest extends PipelineTestSupport {
                 .writeTo(localSync());
         execute().join();
 
-        assertMap(jet(), "sthomas@acme.com", null);
+        assertMap(hz(), "sthomas@acme.com", null);
 
-        jet().getMap(MAP).destroy();
+        hz().getMap(MAP).destroy();
     }
 
     @Test
@@ -251,9 +250,9 @@ public class CdcSinksTest extends PipelineTestSupport {
                 .writeTo(localSync());
         execute().join();
 
-        assertMap(jet(), "sally.thomas@acme.com", null);
+        assertMap(hz(), "sally.thomas@acme.com", null);
 
-        jet().getMap(MAP).destroy();
+        hz().getMap(MAP).destroy();
     }
 
     @Test
@@ -267,13 +266,9 @@ public class CdcSinksTest extends PipelineTestSupport {
 
         execute().join();
 
-        assertMap(jet(), "sthomas2@acme.com", "gbailey@foobar.com");
+        assertMap(hz(), "sthomas2@acme.com", "gbailey@foobar.com");
 
-        jet().getMap(MAP).destroy();
-    }
-
-    private void assertMap(JetInstance jetInstance, String email1, String email2) {
-        assertMap(jetInstance.getHazelcastInstance(), email1, email2);
+        hz().getMap(MAP).destroy();
     }
 
     private void assertMap(HazelcastInstance instance, String email1, String email2) {

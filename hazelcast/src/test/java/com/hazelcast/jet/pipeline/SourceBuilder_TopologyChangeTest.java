@@ -18,8 +18,8 @@ package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.collection.IList;
 import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.UuidUtil;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.aggregate.AggregateOperations;
 import com.hazelcast.jet.config.JobConfig;
@@ -54,23 +54,23 @@ public class SourceBuilder_TopologyChangeTest extends JetTestSupport {
 
     @Test
     public void test_restartJob_nodeShutDown() {
-        testTopologyChange(() -> createJetMember(), node -> node.shutdown(), true);
+        testTopologyChange(() -> createHazelcastInstance(), node -> node.shutdown(), true);
     }
 
     @Test
     public void test_restartJob_nodeTerminated() {
-        testTopologyChange(() -> createJetMember(), node -> node.getHazelcastInstance().getLifecycleService().terminate(),
+        testTopologyChange(() -> createHazelcastInstance(), node -> node.getLifecycleService().terminate(),
                 false);
     }
 
     @Test
     public void test_restartJob_nodeAdded() {
-        testTopologyChange(() -> null, ignore -> createJetMember(), true);
+        testTopologyChange(() -> null, ignore -> createHazelcastInstance(), true);
     }
 
     private void testTopologyChange(
-            Supplier<JetInstance> secondMemberSupplier,
-            Consumer<JetInstance> changeTopologyFn,
+            Supplier<HazelcastInstance> secondMemberSupplier,
+            Consumer<HazelcastInstance> changeTopologyFn,
             boolean assertMonotonicity) {
         stateRestored = false;
         StreamSource<Integer> source = SourceBuilder
@@ -97,11 +97,11 @@ public class SourceBuilder_TopologyChangeTest extends JetTestSupport {
 
         Config config = smallInstanceConfig();
         config.getJetConfig().getInstanceConfig().setScaleUpDelayMillis(1000); // restart sooner after member add
-        JetInstance jet = createJetMember(config);
-        JetInstance possibleSecondNode = secondMemberSupplier.get();
+        HazelcastInstance hz = createHazelcastInstance(config);
+        HazelcastInstance possibleSecondNode = secondMemberSupplier.get();
 
         long windowSize = 100;
-        IList<WindowResult<Long>> result = jet.getList("result-" + UuidUtil.newUnsecureUuidString());
+        IList<WindowResult<Long>> result = hz.getList("result-" + UuidUtil.newUnsecureUuidString());
 
         Pipeline p = Pipeline.create();
         p.readFrom(source)
@@ -111,10 +111,10 @@ public class SourceBuilder_TopologyChangeTest extends JetTestSupport {
                 .peek()
                 .writeTo(Sinks.list(result));
 
-        Job job = jet.newJob(p, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE).setSnapshotIntervalMillis(500));
+        Job job = hz.getJet().newJob(p, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE).setSnapshotIntervalMillis(500));
         assertTrueEventually(() -> assertFalse("result list is still empty", result.isEmpty()));
         assertJobStatusEventually(job, JobStatus.RUNNING);
-        JobRepository jr = new JobRepository(jet.getHazelcastInstance());
+        JobRepository jr = new JobRepository(hz);
         waitForFirstSnapshot(jr, job.getId(), 10, false);
 
         assertFalse(stateRestored);

@@ -17,8 +17,8 @@
 package com.hazelcast.jet.impl.deployment;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.FilteringClassLoader;
-import com.hazelcast.jet.JetInstance;
 import org.junit.BeforeClass;
 
 import static java.util.Collections.singletonList;
@@ -36,7 +36,7 @@ public class DeploymentTest extends AbstractDeploymentTest {
     }
 
     @Override
-    protected JetInstance getJetInstance() {
+    protected HazelcastInstance getHazelcastInstance() {
         return instance();
     }
 }

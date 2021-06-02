@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.cdc.postgres;
 
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.cdc.ChangeRecord;
@@ -234,12 +234,12 @@ public class PostgresCdcWhiteBlackListIntegrationTest extends AbstractPostgresCd
         Pipeline pipeline = pipeline(source);
 
         // when
-        JetInstance jet = createJetMembers(2)[0];
-        Job job = jet.newJob(pipeline);
+        HazelcastInstance hz = createHazelcastInstances(2)[0];
+        Job job = hz.getJet().newJob(pipeline);
 
         try {
             //then
-            assertEqualsEventually(() -> jet.getMap(SINK_MAP_NAME).size(), expectedInitialOps);
+            assertEqualsEventually(() -> hz.getMap(SINK_MAP_NAME).size(), expectedInitialOps);
 
             //when
             executeStatementsOnSchema(1);
@@ -247,7 +247,7 @@ public class PostgresCdcWhiteBlackListIntegrationTest extends AbstractPostgresCd
             executeStatementsOnSchema(3);
 
             //then
-            assertTrueEventually(() -> assertMatch(expectedRecords, mapResultsToSortedList(jet.getMap(SINK_MAP_NAME))));
+            assertTrueEventually(() -> assertMatch(expectedRecords, mapResultsToSortedList(hz.getMap(SINK_MAP_NAME))));
         } finally {
             job.cancel();
             assertJobStatusEventually(job, JobStatus.FAILED);

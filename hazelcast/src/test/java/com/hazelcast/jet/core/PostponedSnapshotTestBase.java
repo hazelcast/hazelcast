@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.core;
 
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
@@ -38,11 +38,11 @@ public class PostponedSnapshotTestBase extends JetTestSupport {
     @SuppressWarnings("WeakerAccess") // used by subclass in jet-enterprise
     protected static volatile AtomicIntegerArray latches;
 
-    protected JetInstance instance;
+    protected HazelcastInstance instance;
 
     @Before
     public void setup() {
-        instance = createJetMember();
+        instance = createHazelcastInstance();
         latches = new AtomicIntegerArray(2);
     }
 
@@ -60,8 +60,8 @@ public class PostponedSnapshotTestBase extends JetTestSupport {
         config.setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
         config.setSnapshotIntervalMillis(snapshotInterval);
 
-        Job job = instance.newJob(dag, config);
-        JobRepository jr = new JobRepository(instance.getHazelcastInstance());
+        Job job = instance.getJet().newJob(dag, config);
+        JobRepository jr = new JobRepository(instance);
 
         // check, that snapshot starts, but stays in ONGOING state
         if (snapshotInterval < 1000) {
