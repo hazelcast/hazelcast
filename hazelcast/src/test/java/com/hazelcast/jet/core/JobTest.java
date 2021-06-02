@@ -31,12 +31,14 @@ import com.hazelcast.jet.core.TestProcessors.MockP;
 import com.hazelcast.jet.core.TestProcessors.MockPS;
 import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.jet.core.processor.DiagnosticProcessors;
+import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -93,6 +95,11 @@ public class JobTest extends SimpleTestInClusterSupport {
     @Before
     public void setup() {
         TestProcessors.reset(TOTAL_PARALLELISM);
+    }
+
+    @After
+    public void after() {
+        new JobRepository(instance().getHazelcastInstance()).clearMetadataMaps();
     }
 
     @Test
@@ -780,20 +787,40 @@ public class JobTest extends SimpleTestInClusterSupport {
 
     @Test
     public void when_jobWithSameNameManyTimes_then_queryResultSortedBySubmission() {
-        fail("todo");
+        DAG batchDag = new DAG();
+        batchDag.newVertex("v", MockP::new);
+        DAG streamingDag = new DAG();
+        streamingDag.newVertex("v", () -> new MockP().streaming());
+
+        List<Long> jobIds = new ArrayList<>();
+
+        // When
+        for (int i = 0; i < 10; i++) {
+            Job job = instance().newJob(batchDag, new JobConfig().setName("foo"));
+            jobIds.add(0, job.getId());
+            job.cancel();
+            joinAndExpectCancellation(job);
+        }
+        Job activeJob = instance().newJob(streamingDag, new JobConfig().setName("foo"));
+        jobIds.add(0, activeJob.getId());
+
+        // Then
+        List<Job> actualJobs = instance().getJobs("foo");
+        assertThat(toList(actualJobs, Job::getId))
+                .containsExactlyElementsOf(jobIds);
     }
 
     @Test
-    public void when_manyJobs_then_allListed_member() {
-        when_manyJobs_then_allListed(instance());
+    public void test_manyJobs_member() {
+        test_manyJobs(instance());
     }
 
     @Test
-    public void when_manyJobs_then_allListed_client() {
-        when_manyJobs_then_allListed(client());
+    public void test_manyJobs_client() {
+        test_manyJobs(client());
     }
 
-    private void when_manyJobs_then_allListed(JetInstance inst) {
+    private void test_manyJobs(JetInstance inst) {
         DAG streamingDag = new DAG();
         streamingDag.newVertex("v", () -> new MockP().streaming());
 
@@ -857,7 +884,7 @@ public class JobTest extends SimpleTestInClusterSupport {
 
             if (allJobsExceptCompletedLightJobs.contains(job)) {
                 assertEquals(jobEqualityString(job), jobEqualityString(trackedJobById));
-                if (job.getName() != null) {
+                if (job.getName() != null && job != namedStreamingJob2) {
                     assertEquals(jobEqualityString(job), jobEqualityString(trackedJobByName));
                 }
             } else {
@@ -891,17 +918,21 @@ public class JobTest extends SimpleTestInClusterSupport {
 
     @Test
     public void when_lightJob_then_unsupportedMethodsThrow() {
-        fail("todo");
-    }
+        DAG streamingDag = new DAG();
+        streamingDag.newVertex("v", () -> new MockP().streaming());
 
-    @Test
-    public void when_lightJobRunning_then_canBeTracked() {
-        fail("todo");
-    }
+        // When
+        Job job = instance().newLightJob(streamingDag);
 
-    @Test
-    public void when_lightJobCompleted_then_canNotBeTracked() {
-        fail("todo");
+        // Then
+        assertThatThrownBy(job::getConfig).isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(job::getSuspensionCause).isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(job::getMetrics).isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(job::restart).isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(job::suspend).isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(job::resume).isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(() -> job.cancelAndExportSnapshot("foo")).isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(() -> job.exportSnapshot("foo")).isInstanceOf(UnsupportedOperationException.class);
     }
 
     private void joinAndExpectCancellation(Job job) {
