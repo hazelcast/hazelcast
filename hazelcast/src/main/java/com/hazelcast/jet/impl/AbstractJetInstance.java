@@ -65,6 +65,7 @@ import static java.util.stream.Collectors.toList;
  * there. Search for casts to {@link JetInstance} before you consider
  * removing this.
  */
+@SuppressWarnings("deprecation") // we implement a deprecated API here
 public abstract class AbstractJetInstance<MemberIdType> implements JetInstance {
 
     private final HazelcastInstance hazelcastInstance;
@@ -85,22 +86,22 @@ public abstract class AbstractJetInstance<MemberIdType> implements JetInstance {
 
     @Nonnull @Override
     public Job newJob(@Nonnull DAG dag, @Nonnull JobConfig config) {
-        return (Job) newJobInt(newJobId(), dag, config, false);
+        return newJobInt(newJobId(), dag, config, false);
     }
 
     @Nonnull
     public Job newJob(long jobId, @Nonnull DAG dag, @Nonnull JobConfig config) {
-        return (Job) newJobInt(jobId, dag, config, false);
+        return newJobInt(jobId, dag, config, false);
     }
 
     @Nonnull @Override
     public Job newJob(@Nonnull Pipeline pipeline, @Nonnull JobConfig config) {
-        return (Job) newJobInt(newJobId(), pipeline, config, false);
+        return newJobInt(newJobId(), pipeline, config, false);
     }
 
     @Nonnull
     public Job newJob(long jobId, @Nonnull Pipeline pipeline, @Nonnull JobConfig config) {
-        return (Job) newJobInt(jobId, pipeline, config, false);
+        return newJobInt(jobId, pipeline, config, false);
     }
 
     private Job newJobInt(long jobId, @Nonnull Object jobDefinition, @Nullable JobConfig config, boolean isLightJob) {
@@ -115,7 +116,7 @@ public abstract class AbstractJetInstance<MemberIdType> implements JetInstance {
 
     private Job newJobIfAbsent(@Nonnull Object jobDefinition, @Nonnull JobConfig config) {
         if (config.getName() == null) {
-            return (Job) newJobInt(newJobId(), jobDefinition, config, false);
+            return newJobInt(newJobId(), jobDefinition, config, false);
         } else {
             while (true) {
                 Job job = getJob(config.getName());
@@ -126,7 +127,7 @@ public abstract class AbstractJetInstance<MemberIdType> implements JetInstance {
                     }
                 }
                 try {
-                    return (Job) newJobInt(newJobId(), jobDefinition, config, false);
+                    return newJobInt(newJobId(), jobDefinition, config, false);
                 } catch (JobAlreadyExistsException e) {
                     logFine(getLogger(), "Could not submit job with duplicate name: %s, ignoring", config.getName());
                 }
