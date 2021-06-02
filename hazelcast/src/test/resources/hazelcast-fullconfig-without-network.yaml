@@ -846,6 +846,14 @@ hazelcast:
             - all
       management:
         - principal: "mcadmin"
+      job:
+        - principal: "*"
+          actions:
+            - all
+      file:
+        - name: "*"
+          actions:
+            - all
     client-block-unmapped-actions: true
 
   member-attributes:

@@ -2690,7 +2690,9 @@
               "ring-buffer",
               "reliable-topic",
               "replicatedmap",
-              "management"
+              "management",
+              "job",
+              "file"
             ]
           },
           "properties": {
@@ -2763,19 +2765,30 @@
         "all",
         "create",
         "destroy",
-        "put",
-        "add",
+        "modify",
         "read",
         "remove",
         "lock",
-        "intercept",
-        "index",
         "listen",
-        "publish",
-        "modify",
-        "acquire",
         "release",
-        "deploy"
+        "acquire",
+        "put",
+        "add",
+        "index",
+        "intercept",
+        "publish",
+        "aggregate",
+        "projection",
+        "deploy",
+        "list",
+        "suspend",
+        "resume",
+        "export",
+        "upload",
+        "write",
+        "instance",
+        "member",
+        "migration"
       ]
     },
     "NativeMemory": {
