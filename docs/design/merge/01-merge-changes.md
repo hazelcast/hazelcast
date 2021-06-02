@@ -7,7 +7,7 @@ Jet codebases are summarized in this document.
 Hazelcast Jet repository was merged into Hazelcast repository.
 
 The name Jet doesn't refer to standalone product anymore, but is kept when
-referencing the streaming engine part of the product - the Jet engine.
+referring to the streaming engine part of the product - the Jet engine.
 
 Hazelcast repository - https://github.com/hazelcast/hazelcast
 Hazelcast Jet repository - https://github.com/hazelcast/hazelcast-jet
@@ -62,5 +62,4 @@ There are 2 outstanding items to resolve:
 - some checkstyle rules were ignored for Jet code
 - Jet had some stricker rules regarding public javadoc, this is now not in
   place, ideally we should bring whole  
-
 
