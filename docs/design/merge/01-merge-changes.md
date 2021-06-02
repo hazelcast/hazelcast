@@ -61,4 +61,18 @@ Hazelcast repository continues its development as with a next major version.
 There are 2 outstanding items to resolve:
 - some checkstyle rules were ignored for Jet code
 - Jet had some stricker rules regarding public javadoc, this is now not in
-  place, ideally we should bring whole  
+  place, ideally we should apply it to the whole product
+
+## Distribution
+
+- IMDG and Jet distributions were merged, the result is closer to the Jet
+  distribution as there were more features.
+- the distribution is started using `bin/hazelcast-start` command
+- the cli tool is under `bin/hazelcast` (used to be `bin/jet`)
+- the configuration files
+  - hazelcast.yaml - configuration file for hazelcast, contains also
+    configuration for the Jet engine (follows the structure where the JetConfig
+    is a field of Config)
+  - hazelcast-client.yaml - configuration file for the CLI tool
+
+
