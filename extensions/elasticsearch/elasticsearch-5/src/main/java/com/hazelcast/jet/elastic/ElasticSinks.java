@@ -28,7 +28,7 @@ import javax.annotation.Nonnull;
  * Provides factory methods for Elasticsearch sinks.
  * Alternatively you can use {@link ElasticSinkBuilder}
  *
- * @since 4.2
+ * @since Jet 4.2
  */
 public final class ElasticSinks {
 

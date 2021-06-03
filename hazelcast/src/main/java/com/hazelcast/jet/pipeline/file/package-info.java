@@ -19,6 +19,6 @@
  * which allows you to construct various kinds of {@link com.hazelcast.jet.pipeline.Pipeline
  * Pipeline} sources that read from local or distributed files.
  *
- * @since 4.4
+ * @since Jet 4.4
  */
 package com.hazelcast.jet.pipeline.file;

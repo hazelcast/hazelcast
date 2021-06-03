@@ -50,7 +50,7 @@ import javax.annotation.Nonnull;
  * sequence may be the offset in a write-ahead log. Then it makes sense to
  * compare them only if they come from the same log file.
  *
- * @since 4.2
+ * @since Jet 4.2
  */
 @EvolvingApi
 public interface ChangeRecord {
@@ -75,7 +75,7 @@ public interface ChangeRecord {
      * as the source sequence doesn't change, the values will be monotonically
      * increasing and can be used to impose ordering over the stream of records.
      *
-     * @since 4.3
+     * @since Jet 4.3
      */
     long sequenceValue();
 
@@ -85,7 +85,7 @@ public interface ChangeRecord {
      * numeric values. No ordering can be deduced for two records with different
      * sequence sources.
      *
-     * @since 4.3
+     * @since Jet 4.3
      */
     long sequenceSource();
 

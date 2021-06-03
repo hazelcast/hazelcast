@@ -30,7 +30,7 @@ import java.io.Serializable;
  * up (for example it did a specified maximum number of retries, all of
  * them failed).
  *
- * @since 4.3
+ * @since Jet 4.3
  */
 public interface RetryStrategy extends Serializable {
 

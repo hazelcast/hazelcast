@@ -35,7 +35,7 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
  * @param <S> type of the state object
  * @param <T> type of the items the sink will accept
  *
- * @since 3.2
+ * @since Jet 3.2
  */
 public final class AssertionSinkBuilder<S, T> {
 
@@ -88,7 +88,7 @@ public final class AssertionSinkBuilder<S, T> {
      *
      * @param <S> type of the state object
      *
-     * @since 3.2
+     * @since Jet 3.2
      */
     @Nonnull
     public static <S> AssertionSinkBuilder<S, Void> assertionSink(

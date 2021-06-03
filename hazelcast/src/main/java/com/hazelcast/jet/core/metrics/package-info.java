@@ -17,6 +17,6 @@
 /**
  * Jet's Job Metric API.
  *
- * @since 3.2
+ * @since Jet 3.2
  */
 package com.hazelcast.jet.core.metrics;

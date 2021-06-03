@@ -93,7 +93,7 @@ import java.util.StringJoiner;
  * under the {@code com.hazelcast.jet.python} log category. This includes
  * all the output from launched subprocesses.
  *
- * @since 4.0
+ * @since Jet 4.0
  */
 public class PythonServiceConfig implements Serializable {
     private static final String HANDLER_FUNCTION_DEFAULT = "transform_list";

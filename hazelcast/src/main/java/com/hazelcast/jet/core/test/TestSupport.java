@@ -161,7 +161,7 @@ import static java.util.stream.Collectors.toMap;
  *            .expectOutput(asList("FOO", "BAR"));
  * }</pre>
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public final class TestSupport {
 

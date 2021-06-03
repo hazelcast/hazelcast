@@ -17,6 +17,6 @@
 /**
  * AWS S3 read/write support for Hazelcast Jet.
  *
- * @since 3.2
+ * @since Jet 3.2
  */
 package com.hazelcast.jet.s3;

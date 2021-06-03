@@ -32,7 +32,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * @param <T> the type of the first argument to the predicate
  * @param <U> the type of the second argument to the predicate
  * @param <V> the type of the third argument to the predicate
- * @since 3.0
+ * @since Jet 3.0
  */
 @FunctionalInterface
 public interface TriPredicate<T, U, V> extends Serializable {

@@ -29,7 +29,7 @@ import java.io.Serializable;
  * <p>
  * It is useful in custom class-loading environments, for example in OSGi.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public interface JobClassLoaderFactory extends Serializable {
 

@@ -34,7 +34,7 @@ import java.util.Objects;
  * Contains factory methods for creating Amazon Kinesis Data Streams
  * (KDS) sources.
  *
- * @since 4.4
+ * @since Jet 4.4
  */
 public final class KinesisSources {
 

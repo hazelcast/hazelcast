@@ -26,7 +26,7 @@ import java.lang.annotation.Target;
  * Indicates that the annotated class, method or interface has stable
  * implementation but its API may change between minor versions.
  *
- * @since 4.0
+ * @since Jet 4.0
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

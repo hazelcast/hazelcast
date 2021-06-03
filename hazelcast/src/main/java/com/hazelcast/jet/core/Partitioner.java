@@ -33,7 +33,7 @@ import java.io.Serializable;
  *
  * @param <T> type of item the partitioner accepts
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 @FunctionalInterface
 public interface Partitioner<T> extends Serializable {

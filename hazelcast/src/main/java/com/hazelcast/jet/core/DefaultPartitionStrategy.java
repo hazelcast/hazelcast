@@ -20,7 +20,7 @@ package com.hazelcast.jet.core;
  * A facade that hides the details of Hazelcast partitioning SPI and exposes
  * just the partitioning strategy.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 @FunctionalInterface
 public interface DefaultPartitionStrategy {

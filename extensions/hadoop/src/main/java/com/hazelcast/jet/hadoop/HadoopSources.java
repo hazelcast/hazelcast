@@ -38,7 +38,7 @@ import static com.hazelcast.jet.hadoop.HadoopProcessors.readHadoopP;
 /**
  * Contains factory methods for Apache Hadoop sources.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public final class HadoopSources {
 
@@ -83,12 +83,12 @@ public final class HadoopSources {
      *     BatchSource<Entry<K, V>> source = HadoopSources.inputFormat(conf);
      * }</pre>
      *
-     * @since 4.4
+     * @since Jet 4.4
      */
     public static final String SHARED_LOCAL_FS = "jet.source.sharedlocalfs";
 
     /**
-     * @since 4.4
+     * @since Jet 4.4
      */
     public static final String IGNORE_FILE_NOT_FOUND = "jet.source.ignorefilenotfound";
 

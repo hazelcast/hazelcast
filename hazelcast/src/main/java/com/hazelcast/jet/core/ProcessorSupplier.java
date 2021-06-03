@@ -33,7 +33,7 @@ import java.util.Collection;
  * Factory of {@link Processor} instances. Part of the initialization
  * chain as explained on {@link ProcessorMetaSupplier}.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 @FunctionalInterface
 public interface ProcessorSupplier extends Serializable {
@@ -88,7 +88,7 @@ public interface ProcessorSupplier extends Serializable {
     /**
      * Context passed to the supplier in the {@link #init(Context) init()} call.
      *
-     * @since 3.0
+     * @since Jet 3.0
      */
     interface Context extends ProcessorMetaSupplier.Context {
 
@@ -113,7 +113,7 @@ public interface ProcessorSupplier extends Serializable {
          * If the directory was already created, just returns its location.
          *
          * @param id the ID you used in a previous {@link JobConfig#attachDirectory} call
-         * @since 4.0
+         * @since Jet 4.0
          */
         @Nonnull
         File attachedDirectory(@Nonnull String id);
@@ -122,7 +122,7 @@ public interface ProcessorSupplier extends Serializable {
          * Behaves like {@link #attachedDirectory}, but if the directory already
          * exists, it deletes and recreates all its contents.
          *
-         * @since 4.3
+         * @since Jet 4.3
          */
         @Nonnull
         File recreateAttachedDirectory(@Nonnull String id);
@@ -134,7 +134,7 @@ public interface ProcessorSupplier extends Serializable {
          * file was already created, just returns its location.
          *
          * @param id the ID you used in a previous {@link JobConfig#attachFile} call
-         * @since 4.0
+         * @since Jet 4.0
          */
         @Nonnull
         File attachedFile(@Nonnull String id);
@@ -143,7 +143,7 @@ public interface ProcessorSupplier extends Serializable {
          * Behaves like {@link #attachedFile}, but if the file already exists, it
          * deletes and recreates it.
          *
-         * @since 4.3
+         * @since Jet 4.3
          */
         @Nonnull
         File recreateAttachedFile(@Nonnull String id);

@@ -23,7 +23,7 @@ import javax.annotation.Nonnull;
 /**
  * Configuration object for a Jet instance.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public class JetConfig {
 

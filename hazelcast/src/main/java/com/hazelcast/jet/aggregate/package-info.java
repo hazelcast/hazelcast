@@ -18,6 +18,6 @@
  * Contains {@code AggregateOperation} and its several variants, as well
  * as a builder object for the aggregate operations.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 package com.hazelcast.jet.aggregate;
