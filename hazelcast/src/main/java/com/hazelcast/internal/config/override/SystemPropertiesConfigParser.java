@@ -19,6 +19,8 @@ import java.util.AbstractMap;
 import java.util.Map;
 import java.util.Properties;
 
+import com.hazelcast.internal.util.StringUtil;
+
 import static java.util.stream.Collectors.toMap;
 
 /**
@@ -50,9 +52,8 @@ class SystemPropertiesConfigParser {
     }
 
     private String processKey(AbstractMap.SimpleEntry<String, String> e) {
-        return e.getKey()
+        return StringUtil.lowerCaseInternal(e.getKey()
           .replace(" ", "")
-          .replaceFirst(prefix, rootNode + ".")
-          .toLowerCase();
+          .replaceFirst(prefix, rootNode + "."));
     }
 }

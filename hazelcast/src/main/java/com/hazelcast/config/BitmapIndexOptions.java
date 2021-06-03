@@ -94,7 +94,7 @@ public class BitmapIndexOptions implements IdentifiedDataSerializable {
                 throw new IllegalArgumentException("empty unique key transformation");
             }
 
-            String upperCasedText = name.toUpperCase();
+            String upperCasedText = StringUtil.upperCaseInternal(name);
             if (upperCasedText.equals(OBJECT.name)) {
                 return OBJECT;
             }

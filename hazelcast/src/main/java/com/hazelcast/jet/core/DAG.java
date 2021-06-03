@@ -428,7 +428,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
             edge.add("toOrdinal", e.getDestOrdinal());
             edge.add("priority", e.getPriority());
             edge.add("distributedTo", String.valueOf(e.getDistributedTo()));
-            edge.add("type", e.getRoutingPolicy().toString().toLowerCase());
+            edge.add("type", StringUtil.lowerCaseInternal(e.getRoutingPolicy().toString()));
             edges.add(edge);
         }
         dag.add("edges", edges);
@@ -531,7 +531,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
             labels.add("distributed to " + e.getDistributedTo());
         }
         if (e.getRoutingPolicy() != RoutingPolicy.UNICAST) {
-            labels.add(e.getRoutingPolicy().toString().toLowerCase());
+            labels.add(StringUtil.lowerCaseInternal(e.getRoutingPolicy().toString()));
         }
         return String.join("-", labels);
     }

@@ -45,6 +45,7 @@ import java.util.logging.Level;
 
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 import static com.hazelcast.internal.util.ExceptionUtil.peel;
+import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
 
 @SuppressWarnings({"checkstyle:methodcount"})
 public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand> {
@@ -370,7 +371,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
         String queueName = uri.substring(URI_QUEUES.length(), indexEnd);
         String secondStr = (uri.length() > (indexEnd + 1)) ? uri.substring(indexEnd + 1) : null;
 
-        if (QUEUE_SIZE_COMMAND.equalsIgnoreCase(secondStr)) {
+        if (equalsIgnoreCase(QUEUE_SIZE_COMMAND, secondStr)) {
             int size = textCommandService.size(queueName);
             prepareResponse(command, Integer.toString(size));
         } else {
