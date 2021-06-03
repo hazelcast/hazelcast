@@ -74,7 +74,22 @@ public final class State {
             this.listeners = listeners;
         }
 
+        /**
+         * Returns the next state of this machine given its current state.
+         * <p>
+         * This method should NOT have any side effects, it should be
+         * a pure stateless function.
+         */
         public abstract long nextState(long current);
+
+        /**
+         * Returns a rest state right before this machine first non-rest
+         * state given its current state.
+         * <p>
+         * This method should NOT have any side effects, it should be
+         * a pure stateless function.
+         */
+        public abstract long cycleStart(long current);
 
         public void globalEntering(long next, long current) {
             for (State.Listener listener : listeners) {
@@ -132,14 +147,27 @@ public final class State {
         }
         state = stable(state);
 
-        // Participate.
+        if (phase(state) == PHASE_REST) {
+            // the current machine reached its end or isn't started yet
+            threadStates.set(threadIndex, state);
+            return state;
+        }
 
-        // TODO: Proper stepping of the thread through all the states
-        //       until the current one.
+        // Step the thread until the current global state.
 
-        machine.threadEntering(state, DETACHED);
-        threadStates.set(threadIndex, state);
-        machine.threadEntered(state, DETACHED);
+        long current = machine.cycleStart(state);
+        assert current == stable(current) && phase(current) == PHASE_REST;
+        long next;
+        do {
+            next = machine.nextState(current);
+
+            machine.threadEntering(next, current);
+            threadStates.set(threadIndex, next);
+            machine.threadEntered(next, current);
+
+            current = next;
+        } while (next != state);
+
         return state;
     }
 
@@ -220,6 +248,11 @@ public final class State {
         machine.threadEntering(newState, threadState);
         threadStates.set(threadIndex, newState);
         machine.threadEntered(newState, threadState);
+
+        if (phase(newState) == PHASE_REST) {
+            // machine has ended
+            this.active = 0;
+        }
     }
 
     /**
@@ -274,6 +307,12 @@ public final class State {
 
         @Override
         public long nextState(long current) {
+            assert false;
+            return 0;
+        }
+
+        @Override
+        public long cycleStart(long current) {
             assert false;
             return 0;
         }
