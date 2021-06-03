@@ -157,12 +157,10 @@ public interface JetService {
      * Limitation of light jobs:
      * <ul>
      *     <li>no job configuration, that means no processing guarantee, no custom
-     *         classes or job resources
+     *         classes or job resources - all job code must be available in the cluster.
      *
-     *     <li>no metrics after job completion
-     *
-     *     <li>no visibility in {@link #getJobs()} or in Management Center (this
-     *         will be added later)
+     *     <li>metrics not available through {@link Job#getMetrics()}. However,
+     *         light jobs are included in member metrics accessed through other means.
      *
      *     <li>failures will be only reported to the caller and logged in the
      *         cluster logs, but no trace of the job will remain in the cluster after
@@ -184,7 +182,7 @@ public interface JetService {
     /**
      * Submits a job defined in the Core API.
      * <p>
-     * See {@link #newLightJob(Pipeline)}.
+     * See {@link #newLightJob(Pipeline)} for more information.
      */
     @Nonnull
     Job newLightJob(DAG dag);

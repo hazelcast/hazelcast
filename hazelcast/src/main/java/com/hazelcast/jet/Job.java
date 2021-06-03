@@ -90,7 +90,8 @@ public interface Job {
 
     /**
      * Makes a request to cancel this job and returns. The job will complete
-     * after its execution has stopped on all the nodes.
+     * after its execution has stopped on all the nodes, which can happen some
+     * time after this method returns.
      * <p>
      * After cancellation, {@link #join()} will throw a {@link
      * CancellationException}.
