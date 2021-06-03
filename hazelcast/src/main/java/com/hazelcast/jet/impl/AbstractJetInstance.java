@@ -54,6 +54,7 @@ import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.impl.JobRepository.exportedSnapshotMapName;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
+import static com.hazelcast.jet.impl.util.Util.distinctBy;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -180,6 +181,11 @@ public abstract class AbstractJetInstance<MemberIdType> implements JetInstance {
                             boolean isLightJob = en.getValue().getIsLightJobs()[i];
                             return newJobProxy(jobId, isLightJob ? en.getKey() : null);
                         }))
+                // In edge cases there can be duplicates. E.g. the GetIdsOp is broadcast to all members.  member1
+                // is master and responds and dies. It's removed from cluster, member2 becomes master and
+                // responds with the same normal jobs. It's safe to remove duplicates because the same jobId should
+                // be the same job - we use FlakeIdGenerator to generate the IDs.
+                .filter(distinctBy(Job::getId))
                 .collect(toList());
     }
 
