@@ -46,7 +46,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
-import com.hazelcast.test.PacketFiltersUtil;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -85,6 +84,7 @@ import static com.hazelcast.jet.impl.JobExecutionRecord.NO_SNAPSHOT;
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.test.PacketFiltersUtil.delayOperationsFrom;
 import static java.lang.String.format;
 import static java.util.Collections.nCopies;
 import static java.util.Collections.singletonList;
@@ -482,7 +482,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         DAG dag = new DAG().vertex(new Vertex("test",
                 new MockPS(NoOutputSourceP::new, MEMBER_COUNT)));
 
-        PacketFiltersUtil.delayOperationsFrom(instance().getHazelcastInstance(), JetInitDataSerializerHook.FACTORY_ID,
+        delayOperationsFrom(instance().getHazelcastInstance(), JetInitDataSerializerHook.FACTORY_ID,
                 singletonList(JetInitDataSerializerHook.START_EXECUTION_OP));
 
         Job job = instance().newJob(dag);
@@ -593,7 +593,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
                            .localParallelism(1);
         dag.edge(between(noop, faulty));
 
-        Job job = (Job) newJob(client(), dag, null);
+        Job job = newJob(client(), dag, null);
         assertJobStatusEventually(job, RUNNING);
         NoOutputSourceP.proceedLatch.countDown();
         Throwable excBeforeComplete;
@@ -662,7 +662,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
         DAG dag = new DAG();
         dag.newVertex("v", () -> new TestProcessors.MockP().streaming());
-        Job job = (Job) newJob(dag);
+        Job job = newJob(dag);
 
         long endTime = System.nanoTime() + SECONDS.toNanos(2);
         while (System.nanoTime() < endTime) {
@@ -794,7 +794,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         assertTrue(job.getFuture().isDone());
         job.join();
         if (!job.isLightJob()) {
-            JobResult jobResult = getJobResult((Job) job);
+            JobResult jobResult = getJobResult(job);
             assertTrue(jobResult.isSuccessful());
             assertNull(jobResult.getFailureText());
         }
@@ -809,7 +809,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
             assertExceptionInCauses(expected, caught);
         }
         if (!job.isLightJob()) {
-            Job normalJob = (Job) job;
+            Job normalJob = job;
             JobResult jobResult = getJobResult(normalJob);
             assertFalse("jobResult.isSuccessful", jobResult.isSuccessful());
             assertNotNull(jobResult.getFailureText());

@@ -293,7 +293,7 @@ public class JobCoordinationService {
         LightMasterContext mc = new LightMasterContext(nodeEngine, dag, jobId);
         LightMasterContext oldContext = lightMasterContexts.put(jobId, mc);
         assert oldContext == null : "duplicate jobId";
-        return mc.start()
+        return mc.getCompletionFuture()
                 .whenComplete((t, r) -> {
                     LightMasterContext removed = lightMasterContexts.remove(jobId);
                     assert removed != null : "LMC not found";
@@ -423,8 +423,7 @@ public class JobCoordinationService {
     public void terminateLightJob(long jobId) {
         LightMasterContext mc = lightMasterContexts.get(jobId);
         if (mc == null) {
-            // job must have terminated already
-            return;
+            throw new JobNotFoundException(jobId);
         }
         mc.requestTermination();
     }

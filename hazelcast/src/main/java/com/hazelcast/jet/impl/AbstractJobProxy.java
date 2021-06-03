@@ -34,7 +34,9 @@ import com.hazelcast.spi.exception.TargetNotMemberException;
 import javax.annotation.Nonnull;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.LockSupport;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
@@ -43,11 +45,14 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.memoizeConcurrent;
 import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * Base {@link Job} implementation for both client and member proxy.
  */
 public abstract class AbstractJobProxy<ContainerType, MemberIdType> implements Job {
+
+    private static final long TERMINATE_RETRY_DELAY_NS = MILLISECONDS.toNanos(100);
 
     /** Null for normal jobs, non-null for light jobs  */
     protected final MemberIdType lightJobCoordinator;
@@ -69,6 +74,12 @@ public abstract class AbstractJobProxy<ContainerType, MemberIdType> implements J
     private volatile JobConfig jobConfig;
     private final Supplier<Long> submissionTimeSup = memoizeConcurrent(this::doGetJobSubmissionTime);
 
+    /**
+     * True if this instance submitted the job. False if it was created later
+     * to track existing job.
+     */
+    private final boolean submittingInstance;
+
     AbstractJobProxy(ContainerType container, long jobId, MemberIdType lightJobCoordinator) {
         this.jobId = jobId;
         this.container = container;
@@ -77,6 +88,7 @@ public abstract class AbstractJobProxy<ContainerType, MemberIdType> implements J
         logger = loggingService().getLogger(AbstractJobProxy.class);
         future = new NonCompletableFuture();
         joinJobCallback = new JoinJobCallback();
+        submittingInstance = false;
     }
 
     AbstractJobProxy(ContainerType container, long jobId, boolean isLightJob, Object jobDefinition, JobConfig config) {
@@ -84,6 +96,7 @@ public abstract class AbstractJobProxy<ContainerType, MemberIdType> implements J
         this.container = container;
         this.lightJobCoordinator = isLightJob ? findLightJobCoordinator() : null;
         this.logger = loggingService().getLogger(Job.class);
+        submittingInstance = true;
 
         try {
             NonCompletableFuture submitFuture = doSubmitJob(jobDefinition, config);
@@ -200,8 +213,33 @@ public abstract class AbstractJobProxy<ContainerType, MemberIdType> implements J
         logger.fine("Sending " + mode + " request for job " + idAndName());
         while (true) {
             try {
-                invokeTerminateJob(mode).get();
-                break;
+                try {
+                    invokeTerminateJob(mode).get();
+                    break;
+                } catch (ExecutionException e) {
+                    if (!(e.getCause() instanceof JobNotFoundException) || !isLightJob()) {
+                        throw e;
+                    }
+                    if (submittingInstance) {
+                        // it can happen that we enqueued the submit operation, but the master handled
+                        // the terminate op before the submit op and doesn't yet know about the job. But
+                        // it can be that the job already completed, we don't know. We'll look at the submit
+                        // future, if it's done, the job is done. Otherwise we'll retry - the job will eventually
+                        // start or complete.
+                        // This scenario is possible only on the client or lite member. On normal member,
+                        // the submit op is executed directly.
+                        assert joinedJob.get() : "not joined";
+                        if (getFuture().isDone()) {
+                            return;
+                        }
+                    } else {
+                        // This instance is an output of one of the JetService.getJob() or getJobs() methods.
+                        // That means that the job was already known to some member and since it's not
+                        // known anymore, it's safe to assume it already completed.
+                        return;
+                    }
+                }
+                LockSupport.parkNanos(TERMINATE_RETRY_DELAY_NS);
             } catch (Exception e) {
                 if (!isRestartable(e)) {
                     throw rethrow(e);

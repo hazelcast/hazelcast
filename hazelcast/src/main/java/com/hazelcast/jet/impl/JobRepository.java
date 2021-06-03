@@ -655,14 +655,6 @@ public class JobRepository {
         }
     }
 
-    // for tests
-    public void clearMetadataMaps() {
-        jobResults.get().clear();
-        jobRecords.get().clear();
-        exportedSnapshotDetailsCache.get().clear();
-        jobExecutionRecords.get().clear();
-    }
-
     public static final class UpdateJobExecutionRecordEntryProcessor implements
             EntryProcessor<Long, JobExecutionRecord, Object>,
             IdentifiedDataSerializable {

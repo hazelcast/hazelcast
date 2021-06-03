@@ -31,14 +31,12 @@ import com.hazelcast.jet.core.TestProcessors.MockP;
 import com.hazelcast.jet.core.TestProcessors.MockPS;
 import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.jet.core.processor.DiagnosticProcessors;
-import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -95,11 +93,6 @@ public class JobTest extends SimpleTestInClusterSupport {
     @Before
     public void setup() {
         TestProcessors.reset(TOTAL_PARALLELISM);
-    }
-
-    @After
-    public void after() {
-        new JobRepository(instance().getHazelcastInstance()).clearMetadataMaps();
     }
 
     @Test
@@ -812,12 +805,21 @@ public class JobTest extends SimpleTestInClusterSupport {
 
     @Test
     public void test_manyJobs_member() {
-        test_manyJobs(instance());
+        // we use a standalone cluster here - this test looks at all the jobs and it must not see completed jobs from other tests
+        JetInstance inst = createJetMember();
+        createJetMember();
+        
+        test_manyJobs(inst);
     }
 
     @Test
     public void test_manyJobs_client() {
-        test_manyJobs(client());
+        // we use a standalone cluster here - this test looks at all the jobs and it must not see completed jobs from other tests
+        createJetMember();
+        createJetMember();
+        JetInstance client = createJetClient();
+
+        test_manyJobs(client);
     }
 
     private void test_manyJobs(JetInstance inst) {

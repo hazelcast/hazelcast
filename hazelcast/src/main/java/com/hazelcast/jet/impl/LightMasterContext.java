@@ -70,36 +70,28 @@ public class LightMasterContext {
     };
 
     private final NodeEngine nodeEngine;
-    private final DAG dag;
     private final long jobId;
 
     private final ILogger logger;
     private final String jobIdString;
     private final long startTime = System.nanoTime();
 
-    private Map<MemberInfo, ExecutionPlan> executionPlanMap;
+    private final Map<MemberInfo, ExecutionPlan> executionPlanMap;
     private final AtomicBoolean invocationsCancelled = new AtomicBoolean();
     private final CompletableFuture<Void> jobCompletionFuture = new CompletableFuture<>();
-    private Set<Vertex> vertices;
+    private final Set<Vertex> vertices;
 
     public LightMasterContext(NodeEngine nodeEngine, DAG dag, long jobId) {
         this.nodeEngine = nodeEngine;
-        this.dag = dag;
         this.jobId = jobId;
 
         logger = nodeEngine.getLogger(LightMasterContext.class);
         jobIdString = idToString(jobId);
-    }
 
-    public long getJobId() {
-        return jobId;
-    }
-
-    public CompletableFuture<Void> start() {
         MembersView membersView = getMembersView();
         if (logger.isFineEnabled()) {
             String dotRepresentation = dag.toDotString();
-            logFine(logger, "Start executing light %s, execution graph in DOT format:\n%s"
+            logFine(logger, "Start executing light job %s, execution graph in DOT format:\n%s"
                             + "\nHINT: You can use graphviz or http://viz-js.com to visualize the printed graph.",
                     jobIdString, dotRepresentation);
             logFine(logger, "Building execution plan for %s", jobIdString);
@@ -107,12 +99,15 @@ public class LightMasterContext {
 
         vertices = new HashSet<>();
         dag.iterator().forEachRemaining(vertices::add);
+        Map<MemberInfo, ExecutionPlan> executionPlanMapTmp;
         try {
-            executionPlanMap = createExecutionPlans(nodeEngine, membersView, dag, jobId, jobId, LIGHT_JOB_CONFIG, 0, true);
+            executionPlanMapTmp = createExecutionPlans(nodeEngine, membersView, dag, jobId, jobId, LIGHT_JOB_CONFIG, 0, true);
         } catch (Throwable e) {
+            executionPlanMap = null;
             finalizeJob(e);
-            return jobCompletionFuture;
+            return;
         }
+        executionPlanMap = executionPlanMapTmp;
         logFine(logger, "Built execution plans for %s", jobIdString);
         Set<MemberInfo> participants = executionPlanMap.keySet();
         Function<ExecutionPlan, Operation> operationCtor = plan -> {
@@ -123,7 +118,10 @@ public class LightMasterContext {
                 responses -> finalizeJob(findError(responses)),
                 error -> cancelInvocations()
         );
-        return jobCompletionFuture;
+    }
+
+    public long getJobId() {
+        return jobId;
     }
 
     private void finalizeJob(@Nullable Throwable failure) {
@@ -260,5 +258,9 @@ public class LightMasterContext {
 
     public long getStartTime() {
         return startTime;
+    }
+
+    public CompletableFuture<Void> getCompletionFuture() {
+        return jobCompletionFuture;
     }
 }
