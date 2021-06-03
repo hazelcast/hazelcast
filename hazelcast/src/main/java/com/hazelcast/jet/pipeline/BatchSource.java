@@ -26,7 +26,7 @@ import javax.annotation.Nonnull;
  *
  * @param <T> the stream item type
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public interface BatchSource<T> {
 

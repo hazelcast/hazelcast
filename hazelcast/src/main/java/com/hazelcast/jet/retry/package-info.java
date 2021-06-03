@@ -18,6 +18,6 @@
  * Interfaces and utility classes for defining and tracking various types of
  * retry behaviour.
  *
- * @since 4.3
+ * @since Jet 4.3
  */
 package com.hazelcast.jet.retry;

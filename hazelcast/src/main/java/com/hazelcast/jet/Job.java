@@ -36,7 +36,7 @@ import java.util.concurrent.CompletableFuture;
  * {@link Pipeline} to the cluster. See {@link JetService} for methods to
  * submit jobs and to get a handle to an existing job.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public interface Job {
 
@@ -170,7 +170,7 @@ public interface Job {
      * led to the suspension of the job. Throws an {@code IllegalStateException}
      * if the job is not currently suspended. Not supported for light jobs.
      *
-     * @since 4.3
+     * @since Jet 4.3
      *
      * @throws UnsupportedOperationException if called for a light job
      */
@@ -202,7 +202,7 @@ public interface Job {
      * was enabled. If a job fails, is cancelled or suspended, empty metrics
      * will be returned.
      *
-     * @since 3.2
+     * @since Jet 3.2
      *
      * @throws UnsupportedOperationException if called for a light job
      */
@@ -342,7 +342,7 @@ public interface Job {
      * Forceful job-control actions will interrupt the export procedure.
      * <p>
      * You can access the exported state using {@link
-     * JetInstance#getJobStateSnapshot(String)}.
+     * JetService#getJobStateSnapshot(String)}.
      * <p>
      * The method call will block until it has fully exported the snapshot.
      *

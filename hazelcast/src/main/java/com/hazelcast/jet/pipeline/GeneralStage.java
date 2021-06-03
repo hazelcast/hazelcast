@@ -52,7 +52,7 @@ import static com.hazelcast.function.PredicateEx.alwaysTrue;
  *
  * @param <T> the type of items coming out of this stage
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public interface GeneralStage<T> extends Stage {
 
@@ -460,7 +460,7 @@ public interface GeneralStage<T> extends Stage {
      * @param <S> type of service object
      * @param <R> the future result type of the mapping function
      * @return the newly attached stage
-     * @since 4.0
+     * @since Jet 4.0
      */
     @Nonnull
     <S, R> GeneralStage<R> mapUsingServiceAsyncBatched(
@@ -828,7 +828,7 @@ public interface GeneralStage<T> extends Stage {
      * @param <R>           the resulting output type
      * @return the newly attached stage
      *
-     * @since 4.1
+     * @since Jet 4.1
      */
     @Nonnull
     <K, T1_IN, T1, R> GeneralStage<R> innerHashJoin(
@@ -935,7 +935,7 @@ public interface GeneralStage<T> extends Stage {
      * @param <R>           the resulting output type
      * @return the newly attached stage
      *
-     * @since 4.1
+     * @since Jet 4.1
      */
     @Nonnull
     <K1, K2, T1_IN, T2_IN, T1, T2, R> GeneralStage<R> innerHashJoin2(
@@ -1052,7 +1052,7 @@ public interface GeneralStage<T> extends Stage {
      * @return a new stage using the same transform as this one, only with a
      *         rebalancing flag raised that will affect data routing into the next
      *         stage.
-     * @since 4.2
+     * @since Jet 4.2
      */
     @Nonnull
     GeneralStage<T> rebalance();
@@ -1119,7 +1119,7 @@ public interface GeneralStage<T> extends Stage {
      * @return a new stage using the same transform as this one, only with a
      *         rebalancing flag raised that will affect data routing into the next
      *         stage.
-     * @since 4.2
+     * @since Jet 4.2
      */
     @Nonnull
     <K> GeneralStage<T> rebalance(@Nonnull FunctionEx<? super T, ? extends K> keyFn);

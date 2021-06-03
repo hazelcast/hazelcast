@@ -27,7 +27,7 @@ import java.util.Objects;
  * @param <E0> the type of the field 0
  * @param <E1> the type of the field 1
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public final class Tuple2<E0, E1> implements Map.Entry<E0, E1> {
     private final E0 f0;

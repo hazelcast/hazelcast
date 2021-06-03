@@ -25,7 +25,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 /**
  * Properties of the grpc module
  *
- * @since 4.2
+ * @since Jet 4.2
  */
 public final class GrpcProperties {
 

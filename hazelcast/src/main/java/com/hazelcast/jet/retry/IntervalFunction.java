@@ -26,7 +26,7 @@ import java.io.Serializable;
  * attempt, 2 = second failed attempt and so on), the output is the wait time in
  * milliseconds.
  *
- * @since 4.3
+ * @since Jet 4.3
  */
 @FunctionalInterface
 public interface IntervalFunction extends Serializable {

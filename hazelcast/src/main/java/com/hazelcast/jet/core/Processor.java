@@ -93,7 +93,7 @@ import javax.annotation.Nonnull;
  * service), you can do additional back-off: use {@code sleep} in a
  * non-cooperative processor or do nothing if sufficient time didn't elapse.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public interface Processor {
 
@@ -320,7 +320,7 @@ public interface Processor {
      *
      * @return {@code true} if this step is done, {@code false} to call this
      *      method again
-     * @since 4.0
+     * @since Jet 4.0
      */
     default boolean snapshotCommitPrepare() {
         return true;
@@ -373,7 +373,7 @@ public interface Processor {
      * @param success true, if the first snapshot phase completed successfully
      * @return {@code true} if this step is done, {@code false} to call this
      *      method again
-     * @since 4.0
+     * @since Jet 4.0
      */
     default boolean snapshotCommitFinish(boolean success) {
         return true;
@@ -468,7 +468,7 @@ public interface Processor {
      * Context passed to the processor in the
      * {@link #init(Outbox, Context) init()} call.
      *
-     * @since 3.0
+     * @since Jet 3.0
      */
     interface Context extends ProcessorSupplier.Context {
 

@@ -24,7 +24,7 @@ import java.io.Serializable;
  * Represents a four-arity function that accepts four arguments and
  * produces a result.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 @FunctionalInterface
 public interface QuadFunction<T0, T1, T2, T3, R> extends Serializable {

@@ -24,7 +24,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * Collection of factory methods for creating the most frequently used
  * {@link RetryStrategy RetryStrategies}.
  *
- * @since 4.3
+ * @since Jet 4.3
  */
 public final class RetryStrategies {
 

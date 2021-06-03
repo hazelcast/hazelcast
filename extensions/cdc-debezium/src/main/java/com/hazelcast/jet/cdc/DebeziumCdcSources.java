@@ -41,7 +41,7 @@ import java.util.Properties;
  * sequence numbers, so functionality based on them (like reordering
  * protection in {@link CdcSinks}) is disabled.
  *
- * @since 4.2
+ * @since Jet 4.2
  */
 @EvolvingApi
 public final class DebeziumCdcSources {
