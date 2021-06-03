@@ -823,6 +823,21 @@ public class QueueContainer implements IdentifiedDataSerializable {
         return dataList;
     }
 
+    public List<QueueItem> getAllQueueItems() {
+        List<QueueItem> queueItems = new ArrayList<>(getItemQueue().size());
+        for (QueueItem item : getItemQueue()) {
+            if (store.isEnabled() && item.getSerializedObject() == null) {
+                try {
+                    load(item);
+                } catch (Exception e) {
+                    throw new HazelcastException(e);
+                }
+            }
+            queueItems.add(item);
+        }
+        return queueItems;
+    }
+
     /**
      * Compares if the queue contains the items in the dataList and removes them according to the retain parameter. If
      * the retain parameter is true, it will remove items which are not in the dataList (retaining the items which are in the
