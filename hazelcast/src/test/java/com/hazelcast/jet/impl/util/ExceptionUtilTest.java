@@ -46,7 +46,7 @@ public class ExceptionUtilTest extends JetTestSupport {
     public final ExpectedException exceptionRule = ExpectedException.none();
 
     @Test
-    public void when_throwableIsRuntimeException_then_peelReturnsOriginal() {
+    public void when_throwableIsRuntimeException_then_peelReJobSummaryTestturnsOriginal() {
         Throwable throwable = new RuntimeException("expected exception");
         Throwable result = peel(throwable);
 
@@ -87,7 +87,7 @@ public class ExceptionUtilTest extends JetTestSupport {
     @Test
     public void test_serializationOnNode() {
         // create one member and one client
-        HazelcastInstance instance = createHazelcastInstance();
+        createHazelcastInstance();
         HazelcastInstance client = createHazelcastClient();
 
         RuntimeException exc = new RuntimeException("myException");

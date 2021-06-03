@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.impl;
 
-import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
@@ -51,7 +50,7 @@ public class JobSummaryTest extends JetTestSupport {
 
     private static final String SOURCE_NAME = "source";
     private HazelcastInstance instance;
-    private HazelcastClientInstanceImpl client;
+    private HazelcastInstance client;
 
     @Before
     public void setup() {
@@ -60,7 +59,7 @@ public class JobSummaryTest extends JetTestSupport {
         mapConfig.getEventJournalConfig().setEnabled(true);
         config.addMapConfig(mapConfig);
         instance = createHazelcastInstances(config, 2)[0];
-        client = (HazelcastClientInstanceImpl) createHazelcastClient();
+        client = createHazelcastClient();
     }
 
     @Test

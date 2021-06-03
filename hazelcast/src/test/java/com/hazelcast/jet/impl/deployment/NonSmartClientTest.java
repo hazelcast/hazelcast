@@ -157,7 +157,7 @@ public class NonSmartClientTest extends JetTestSupport {
         startJobAndVerifyItIsRunning();
 
         //When
-        List<JobSummary> summaryList = ((JetClientInstanceImpl) client).getJobSummaryList();
+        List<JobSummary> summaryList = ((JetClientInstanceImpl) client.getJet()).getJobSummaryList();
 
         //Then
         assertNotNull(summaryList);

@@ -460,7 +460,7 @@ public class JetCommandLineTest extends JetTestSupport {
         assertTrueEventually(() -> assertEquals(1, hz.getJet().getJobs().size()));
         Job job = hz.getJet().getJobs().get(0);
         assertJobStatusEventually(job, JobStatus.RUNNING);
-        assertFalse("Instance should be shut down", hz.getLifecycleService().isRunning());
+        assertFalse("Instance should be shut down", client.getLifecycleService().isRunning());
     }
 
     @Test
