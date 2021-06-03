@@ -40,6 +40,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static com.hazelcast.jet.Util.idToString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
@@ -49,6 +50,7 @@ import static org.junit.Assert.assertNull;
 public class JobSummaryTest extends JetTestSupport {
 
     private static final String SOURCE_NAME = "source";
+    private JetInstance[] instances;
     private JetInstance instance;
     private JetClientInstanceImpl client;
 
@@ -58,7 +60,8 @@ public class JobSummaryTest extends JetTestSupport {
         MapConfig mapConfig = new MapConfig(SOURCE_NAME);
         mapConfig.getEventJournalConfig().setEnabled(true);
         config.addMapConfig(mapConfig);
-        instance = createJetMembers(config, 2)[0];
+        instances = createJetMembers(config, 2);
+        instance = instances[0];
         client = (JetClientInstanceImpl) createJetClient();
     }
 
@@ -76,7 +79,7 @@ public class JobSummaryTest extends JetTestSupport {
         assertEquals(1, list.size());
         JobSummary jobSummary = list.get(0);
 
-        assertEquals("jobA", jobSummary.getName());
+        assertEquals("jobA", jobSummary.getNameOrId());
         assertEquals(job.getId(), jobSummary.getJobId());
         assertEquals(JobStatus.COMPLETED, jobSummary.getStatus());
         assertNull(jobSummary.getFailureText());
@@ -89,7 +92,7 @@ public class JobSummaryTest extends JetTestSupport {
         assertEquals(1, list.size());
         JobSummary jobSummary = list.get(0);
 
-        assertEquals("jobA", jobSummary.getName());
+        assertEquals("jobA", jobSummary.getNameOrId());
         assertEquals(job.getId(), jobSummary.getJobId());
 
         assertTrueEventually(() -> {
@@ -126,7 +129,19 @@ public class JobSummaryTest extends JetTestSupport {
 
         List<Job> jobs = new ArrayList<>();
         for (int i = 0; i < numJobs; i++) {
-            Job job = instance.newJob(newStreamPipeline(), new JobConfig().setName("job " + i));
+            // half of the jobs will be light, half normal
+            boolean useLightJob = i % 2 == 0;
+            Pipeline p = newStreamPipeline();
+            Job job;
+            if (useLightJob) {
+                // i % 4 / 2: submit every other light job to a different instance to have different coordinators
+                job = instances[i % 4 / 2].newLightJob(p);
+                // We need to assert this for light jobs as newLightJob returns immediately before the
+                // SubmitOp is handled
+                assertJobRunningEventually(instance, job, null);
+            } else {
+                job = instance.newJob(p);
+            }
             jobs.add(job);
         }
 
@@ -138,7 +153,7 @@ public class JobSummaryTest extends JetTestSupport {
             // jobs are sorted by submission time in descending order
             for (int i = 0; i < numJobs; i++) {
                 JobSummary summary = list.get(i);
-                assertEquals("job " + i, summary.getName());
+                assertEquals(idToString(summary.getJobId()), summary.getNameOrId());
                 assertEquals(JobStatus.RUNNING, summary.getStatus());
             }
         }, 20);
@@ -147,14 +162,20 @@ public class JobSummaryTest extends JetTestSupport {
 
         assertTrueEventually(() -> {
             List<JobSummary> list = new ArrayList<>(client.getJobSummaryList());
-            assertEquals(numJobs, list.size());
+            // numJobs / 2: only the normal jobs
+            assertEquals(numJobs / 2, list.size());
 
             Collections.reverse(list);
 
-            // jobs should still be sorted by submission time in descending order
+            // jobs should still be sorted by submission time in descending order, light jobs are missing
             for (int i = 0; i < numJobs; i++) {
-                JobSummary summary = list.get(i);
-                assertEquals("job " + i, summary.getName());
+                boolean useLightJob = i % 2 == 0;
+                if (useLightJob) {
+                    // light jobs aren't included after cancellation
+                    continue;
+                }
+                JobSummary summary = list.get(i / 2);
+                assertEquals(idToString(summary.getJobId()), summary.getNameOrId());
                 assertEquals(JobStatus.FAILED, summary.getStatus());
                 assertNotEquals(0, summary.getCompletionTime());
             }
@@ -182,7 +203,7 @@ public class JobSummaryTest extends JetTestSupport {
         assertNotEquals(0, jobSummary.getCompletionTime());
     }
 
-    public Pipeline newStreamPipeline() {
+    private Pipeline newStreamPipeline() {
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.mapJournal(SOURCE_NAME, JournalInitialPosition.START_FROM_OLDEST))
                 .withoutTimestamps()
@@ -190,7 +211,7 @@ public class JobSummaryTest extends JetTestSupport {
         return p;
     }
 
-    public Pipeline newBatchPipeline() {
+    private Pipeline newBatchPipeline() {
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.map(SOURCE_NAME))
                 .writeTo(Sinks.noop());

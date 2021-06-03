@@ -596,16 +596,23 @@ public class JobCoordinationService {
     public CompletableFuture<List<JobSummary>> getJobSummaryList() {
         return submitToCoordinatorThread(() -> {
             Map<Long, JobSummary> jobs = new HashMap<>();
+            if (isMaster()) {
+                // running jobs
+                jobRepository.getJobRecords().stream().map(this::getJobSummary).forEach(s -> jobs.put(s.getJobId(), s));
 
-            // running jobs
-            jobRepository.getJobRecords().stream().map(this::getJobSummary).forEach(s -> jobs.put(s.getJobId(), s));
+                // completed jobs
+                jobRepository.getJobResults().stream()
+                        .map(r -> new JobSummary(
+                                r.getJobId(), r.getJobNameOrId(), r.getJobStatus(), r.getCreationTime(),
+                                r.getCompletionTime(), r.getFailureText()))
+                        .forEach(s -> jobs.put(s.getJobId(), s));
+            }
 
-            // completed jobs
-            jobRepository.getJobResults().stream()
-                         .map(r -> new JobSummary(
-                                 r.getJobId(), r.getJobNameOrId(), r.getJobStatus(), r.getCreationTime(),
-                                 r.getCompletionTime(), r.getFailureText())
-                         ).forEach(s -> jobs.put(s.getJobId(), s));
+            // light jobs
+            lightMasterContexts.values().stream()
+                    .map(lmc -> new JobSummary(
+                            lmc.getJobId(), lmc.getJobId(), idToString(lmc.getJobId()), RUNNING, lmc.getStartTime()))
+                    .forEach(s -> jobs.put(s.getJobId(), s));
 
             return jobs.values().stream().sorted(comparing(JobSummary::getSubmissionTime).reversed()).collect(toList());
         });
