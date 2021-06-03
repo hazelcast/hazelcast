@@ -81,6 +81,7 @@ public class LightMasterContext {
     private final CompletableFuture<Void> jobCompletionFuture = new CompletableFuture<>();
     private final Set<Vertex> vertices;
 
+    @SuppressWarnings("checkstyle:ExecutableStatementCount")
     public LightMasterContext(NodeEngine nodeEngine, DAG dag, long jobId) {
         this.nodeEngine = nodeEngine;
         this.jobId = jobId;

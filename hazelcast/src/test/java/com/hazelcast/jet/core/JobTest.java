@@ -808,7 +808,7 @@ public class JobTest extends SimpleTestInClusterSupport {
         // we use a standalone cluster here - this test looks at all the jobs and it must not see completed jobs from other tests
         JetInstance inst = createJetMember();
         createJetMember();
-        
+
         test_manyJobs(inst);
     }
 
