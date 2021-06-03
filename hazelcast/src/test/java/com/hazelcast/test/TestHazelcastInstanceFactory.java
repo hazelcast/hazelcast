@@ -26,6 +26,7 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.instance.impl.DefaultNodeContext;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.instance.impl.NodeContext;
 import com.hazelcast.internal.metrics.MetricsPublisher;
 import com.hazelcast.internal.metrics.impl.MetricsService;
@@ -290,7 +291,14 @@ public class TestHazelcastInstanceFactory {
     }
 
     private static boolean isMaster(HazelcastInstance inst) {
-        return ((HazelcastInstanceImpl) inst).node.isMaster();
+        if (inst instanceof HazelcastInstanceImpl) {
+            return ((HazelcastInstanceImpl) inst).node.isMaster();
+        } else if (inst instanceof HazelcastInstanceProxy) {
+            return ((HazelcastInstanceProxy) inst).getOriginal().node.isMaster();
+        } else {
+            throw new IllegalArgumentException("This method can be called only member"
+                    + " instances such as HazelcastInstanceImpl and HazelcastInstanceProxy.");
+        }
     }
 
     public Collection<HazelcastInstance> getAllHazelcastInstances() {
