@@ -22,6 +22,7 @@ import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.client.impl.ClusterViewListenerService;
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.config.AuditlogConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.HotRestartPersistenceConfig;
@@ -327,6 +328,8 @@ public class DefaultNodeExtension implements NodeExtension {
             return (T) new CacheService();
         } else if (MapService.class.isAssignableFrom(clazz)) {
             return createMapService();
+        } else if (QueueService.class.isAssignableFrom(clazz)) {
+            return (T) new QueueService(node.getNodeEngine());
         }
 
         throw new IllegalArgumentException("Unknown service class: " + clazz);
