@@ -19,7 +19,6 @@ package com.hazelcast.jet.impl.util;
 import com.hazelcast.client.map.helpers.AMapStore;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.partition.InternalPartitionService;
@@ -90,8 +89,8 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
               .setImplementation(new AlwaysFailingMapStore());
 
         HazelcastInstance instance = createHazelcastInstance(config);
-        nodeEngine = ((HazelcastInstanceImpl) instance).node.nodeEngine;
-        serializationService = ((HazelcastInstanceImpl) instance).getSerializationService();
+        nodeEngine = Util.getNodeEngine(instance);
+        serializationService = Util.getSerializationService(instance);
         partitionService = nodeEngine.getPartitionService();
         snapshotContext = mock(SnapshotContext.class);
         when(snapshotContext.currentMapName()).thenReturn("map1");

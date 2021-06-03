@@ -19,6 +19,7 @@ package com.hazelcast.jet.core.test;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
@@ -81,7 +82,7 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
     @Nonnull
     public TestProcessorMetaSupplierContext setHazelcastInstance(@Nonnull HazelcastInstance instance) {
         this.instance = instance;
-        if (this.instance instanceof HazelcastInstanceImpl) {
+        if (this.instance instanceof HazelcastInstanceProxy || this.instance instanceof HazelcastInstanceImpl) {
             NodeEngineImpl nodeEngine = Util.getNodeEngine(this.instance);
             this.partitionAssignment = ExecutionPlanBuilder.getPartitionAssignment(nodeEngine);
         }

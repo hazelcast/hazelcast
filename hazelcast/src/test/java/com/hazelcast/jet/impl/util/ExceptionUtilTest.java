@@ -87,6 +87,7 @@ public class ExceptionUtilTest extends JetTestSupport {
     @Test
     public void test_serializationOnNode() {
         // create one member and one client
+        HazelcastInstance instance = createHazelcastInstance();
         HazelcastInstance client = createHazelcastClient();
 
         RuntimeException exc = new RuntimeException("myException");

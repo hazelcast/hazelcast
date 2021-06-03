@@ -16,8 +16,6 @@
 
 package com.hazelcast.jet.impl.connector;
 
-import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.JetTestSupport;
@@ -74,7 +72,7 @@ public class UpdateMapPTest extends JetTestSupport {
     @Before
     public void setup() {
         hz = createHazelcastInstance();
-        client = new HazelcastClientProxy((HazelcastClientInstanceImpl) createHazelcastClient());
+        client = createHazelcastClient();
         sinkMap = hz.getMap("results");
     }
 
