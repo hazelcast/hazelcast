@@ -53,6 +53,7 @@ import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.jms.Connection;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
@@ -382,15 +383,16 @@ public final class SourceProcessors {
      */
     @Nonnull
     public static <T> ProcessorMetaSupplier streamJmsQueueP(
+            @Nullable String destination,
+            @Nonnull ProcessingGuarantee maxGuarantee,
+            @Nonnull EventTimePolicy<? super T> eventTimePolicy,
             @Nonnull SupplierEx<? extends Connection> newConnectionFn,
             @Nonnull FunctionEx<? super Session, ? extends MessageConsumer> consumerFn,
             @Nonnull FunctionEx<? super Message, ?> messageIdFn,
-            @Nonnull FunctionEx<? super Message, ? extends T> projectionFn,
-            @Nonnull EventTimePolicy<? super T> eventTimePolicy,
-            ProcessingGuarantee maxGuarantee
+            @Nonnull FunctionEx<? super Message, ? extends T> projectionFn
     ) {
         ProcessorSupplier pSupplier = new StreamJmsP.Supplier<>(
-                newConnectionFn, consumerFn, messageIdFn, projectionFn, eventTimePolicy, maxGuarantee);
+                destination, maxGuarantee, eventTimePolicy, newConnectionFn, consumerFn, messageIdFn, projectionFn);
         return ProcessorMetaSupplier.of(StreamJmsP.PREFERRED_LOCAL_PARALLELISM, pSupplier);
     }
 
@@ -406,16 +408,17 @@ public final class SourceProcessors {
      */
     @Nonnull
     public static <T> ProcessorMetaSupplier streamJmsTopicP(
+            @Nullable String destination,
+            boolean isSharedConsumer,
+            @Nonnull ProcessingGuarantee maxGuarantee,
+            @Nonnull EventTimePolicy<? super T> eventTimePolicy,
             @Nonnull SupplierEx<? extends Connection> newConnectionFn,
             @Nonnull FunctionEx<? super Session, ? extends MessageConsumer> consumerFn,
-            boolean isSharedConsumer,
             @Nonnull FunctionEx<? super Message, ?> messageIdFn,
-            @Nonnull FunctionEx<? super Message, ? extends T> projectionFn,
-            @Nonnull EventTimePolicy<? super T> eventTimePolicy,
-            ProcessingGuarantee maxGuarantee
+            @Nonnull FunctionEx<? super Message, ? extends T> projectionFn
     ) {
         ProcessorSupplier pSupplier = new StreamJmsP.Supplier<>(
-                newConnectionFn, consumerFn, messageIdFn, projectionFn, eventTimePolicy, maxGuarantee);
+                destination, maxGuarantee, eventTimePolicy, newConnectionFn, consumerFn, messageIdFn, projectionFn);
         return isSharedConsumer
                 ? ProcessorMetaSupplier.of(StreamJmsP.PREFERRED_LOCAL_PARALLELISM, pSupplier)
                 : ProcessorMetaSupplier.forceTotalParallelismOne(pSupplier);

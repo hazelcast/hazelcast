@@ -28,7 +28,7 @@ import com.hazelcast.jet.pipeline.file.impl.FileProcessorMetaSupplier;
 import com.hazelcast.jet.pipeline.file.impl.FileTraverser;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.security.permission.FilePermission;
+import com.hazelcast.security.permission.ConnectorPermission;
 
 import javax.annotation.Nonnull;
 import java.io.File;
@@ -188,7 +188,7 @@ public final class ReadFilesP<T> extends AbstractProcessor {
 
         @Override
         public Permission getRequiredPermission() {
-            return new FilePermission(directory, ACTION_READ);
+            return ConnectorPermission.file(directory, ACTION_READ);
         }
     }
 

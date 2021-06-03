@@ -33,6 +33,7 @@ import com.hazelcast.jet.impl.pipeline.SinkImpl;
 import com.hazelcast.jet.json.JsonUtil;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
+import com.hazelcast.security.permission.ReliableTopicPermission;
 import com.hazelcast.topic.ITopic;
 
 import javax.annotation.Nonnull;
@@ -64,6 +65,8 @@ import static com.hazelcast.jet.core.processor.SinkProcessors.writeRemoteMapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeSocketP;
 import static com.hazelcast.jet.impl.util.ImdgUtil.asClientConfig;
 import static com.hazelcast.jet.impl.util.ImdgUtil.asXmlString;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_PUBLISH;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
@@ -844,6 +847,7 @@ public final class Sinks {
         return SinkBuilder.<ITopic<T>>sinkBuilder("reliableTopicSink(" + reliableTopicName + "))",
                 ctx -> ctx.hazelcastInstance().getReliableTopic(reliableTopicName))
                 .<T>receiveFn(ITopic::publish)
+                .permissionFn(() -> new ReliableTopicPermission(reliableTopicName, ACTION_CREATE, ACTION_PUBLISH))
                 .build();
     }
 

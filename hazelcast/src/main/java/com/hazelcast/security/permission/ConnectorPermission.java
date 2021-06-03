@@ -16,14 +16,43 @@
 
 package com.hazelcast.security.permission;
 
-public class FilePermission extends InstancePermission {
+import javax.annotation.Nullable;
+
+public class ConnectorPermission extends InstancePermission {
+
+    public static final String FILE_PREFIX = "file:";
+    public static final String SOCKET_PREFIX = "socket:";
+    public static final String JMS_PREFIX = "jms:";
+    public static final String JDBC_PREFIX = "jdbc:";
 
     private static final int READ = 1;
     private static final int WRITE = 2;
     private static final int ALL = READ | WRITE;
 
-    public FilePermission(String name, String... actions) {
+    public ConnectorPermission(String name, String... actions) {
         super(name, actions);
+    }
+
+    public static ConnectorPermission file(String directory, String action) {
+        return new ConnectorPermission(FILE_PREFIX + directory, action);
+    }
+
+    public static ConnectorPermission socket(String hostAndPort, String action) {
+        return new ConnectorPermission(SOCKET_PREFIX + hostAndPort, action);
+    }
+
+    public static ConnectorPermission jms(@Nullable String destination, String action) {
+        if (destination == null) {
+            return new ConnectorPermission(JMS_PREFIX, action);
+        }
+        return new ConnectorPermission(JMS_PREFIX + destination, action);
+    }
+
+    public static ConnectorPermission jdbc(@Nullable String connectionUrl, String action) {
+        if (connectionUrl == null) {
+            return new ConnectorPermission(JDBC_PREFIX, action);
+        }
+        return new ConnectorPermission(connectionUrl, action);
     }
 
     @Override

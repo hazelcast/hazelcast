@@ -28,6 +28,8 @@ import com.hazelcast.jet.core.Vertex;
 
 import javax.annotation.Nonnull;
 
+import java.security.Permission;
+
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeBufferedP;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 
@@ -46,6 +48,7 @@ public final class SinkBuilder<C, T> {
     private BiConsumerEx<? super C, ? super T> receiveFn;
     private ConsumerEx<? super C> flushFn = ConsumerEx.noop();
     private ConsumerEx<? super C> destroyFn = ConsumerEx.noop();
+    private SupplierEx<? extends Permission> permissionFn = SupplierEx.noop();
     private int preferredLocalParallelism = 1;
 
     private SinkBuilder(
@@ -167,6 +170,12 @@ public final class SinkBuilder<C, T> {
         return this;
     }
 
+    public SinkBuilder<C, T> permissionFn(@Nonnull SupplierEx<? extends Permission> permissionFn) {
+        checkSerializable(permissionFn, "permissionFn");
+        this.permissionFn = permissionFn;
+        return this;
+    }
+
     /**
      * Sets the local parallelism of the sink. On each member of the cluster
      * Jet will create this many parallel processors for the sink. To identify
@@ -192,7 +201,7 @@ public final class SinkBuilder<C, T> {
     @Nonnull
     public Sink<T> build() {
         Preconditions.checkNotNull(receiveFn, "receiveFn must be set");
-        SupplierEx<Processor> supplier = writeBufferedP(createFn, receiveFn, flushFn, destroyFn);
+        SupplierEx<Processor> supplier = writeBufferedP(createFn, receiveFn, flushFn, destroyFn, permissionFn);
         return Sinks.fromProcessor(name, ProcessorMetaSupplier.of(preferredLocalParallelism, supplier));
     }
 }

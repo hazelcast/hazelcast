@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl.connector;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.processor.SourceProcessors;
+import com.hazelcast.security.permission.ConnectorPermission;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -28,9 +29,11 @@ import java.nio.CharBuffer;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
+import java.security.Permission;
 import java.util.concurrent.locks.LockSupport;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -153,6 +156,11 @@ public final class StreamSocketP extends AbstractProcessor {
 
     private String hostAndPort() {
         return host + ':' + port;
+    }
+
+    @Override
+    public Permission getRequiredPermission() {
+        return ConnectorPermission.socket(hostAndPort(), ACTION_READ);
     }
 
     /**

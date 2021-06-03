@@ -2905,7 +2905,7 @@
                                     maxOccurs="unbounded"/>
                         <xs:element name="job-permission" type="job-permission" minOccurs="0"
                                     maxOccurs="unbounded"/>
-                        <xs:element name="file-permission" type="instance-permission" minOccurs="0"
+                        <xs:element name="connector-permission" type="instance-permission" minOccurs="0"
                                     maxOccurs="unbounded"/>
                     </xs:choice>
                     <xs:attribute name="on-join-operation" type="permission-on-join-operation" default="RECEIVE"/>

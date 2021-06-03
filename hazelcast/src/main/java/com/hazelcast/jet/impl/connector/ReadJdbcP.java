@@ -24,8 +24,11 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.function.ToResultSetFunction;
+import com.hazelcast.security.permission.ConnectorPermission;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.security.Permission;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -35,6 +38,7 @@ import java.sql.Statement;
 
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 
 /**
  * Use {@link SourceProcessors#readJdbcP}.
@@ -44,6 +48,7 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
     private final SupplierEx<? extends Connection> newConnectionFn;
     private final ToResultSetFunction resultSetFn;
     private final FunctionEx<? super ResultSet, ? extends T> mapOutputFn;
+    private final String connectionUrl;
 
     private Connection connection;
     private ResultSet resultSet;
@@ -52,10 +57,12 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
     private int index;
 
     private ReadJdbcP(
+            @Nullable String connectionUrl,
             @Nonnull SupplierEx<? extends Connection> newConnectionFn,
             @Nonnull ToResultSetFunction resultSetFn,
             @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {
+        this.connectionUrl = connectionUrl;
         this.newConnectionFn = newConnectionFn;
         this.resultSetFn = resultSetFn;
         this.mapOutputFn = mapOutputFn;
@@ -79,7 +86,7 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
         checkSerializable(mapOutputFn, "mapOutputFn");
 
         return ProcessorMetaSupplier.preferLocalParallelismOne(() ->
-                new ReadJdbcP<>(newConnectionFn, resultSetFn, mapOutputFn));
+                new ReadJdbcP<>(null, newConnectionFn, resultSetFn, mapOutputFn));
     }
 
     public static <T> ProcessorMetaSupplier supplier(
@@ -91,6 +98,7 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
 
         return ProcessorMetaSupplier.forceTotalParallelismOne(ProcessorSupplier.of(() ->
                 new ReadJdbcP<>(
+                        connectionURL,
                         () -> DriverManager.getConnection(connectionURL),
                         (connection, parallelism, index) -> {
                             PreparedStatement statement = connection.prepareStatement(query);
@@ -153,5 +161,10 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
             return e;
         }
         return null;
+    }
+
+    @Override
+    public Permission getRequiredPermission() {
+        return ConnectorPermission.jdbc(connectionUrl, ACTION_READ);
     }
 }

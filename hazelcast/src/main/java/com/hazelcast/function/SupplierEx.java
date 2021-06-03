@@ -47,4 +47,8 @@ public interface SupplierEx<T> extends Supplier<T>, Serializable {
         }
     }
 
+    static <T> SupplierEx<T> noop() {
+        return () -> null;
+    }
+
 }

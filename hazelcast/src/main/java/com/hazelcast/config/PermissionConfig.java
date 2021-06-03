@@ -174,9 +174,9 @@ public class PermissionConfig implements IdentifiedDataSerializable {
          */
         JOB("job-permission"),
         /**
-         * Jet File Connector permission
+         * Jet Connector permission
          */
-        FILE("file-permission")
+        CONNECTOR("connector-permission")
         ;
         private final String nodeName;
 

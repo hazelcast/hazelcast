@@ -850,7 +850,7 @@ hazelcast:
         - principal: "*"
           actions:
             - all
-      file:
+      connector:
         - name: "*"
           actions:
             - all

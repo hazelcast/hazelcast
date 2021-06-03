@@ -910,16 +910,16 @@
                 </actions>
             </replicatedmap-permission>
             <management-permission principal="mcadmin"/>
-            <job-permission>
+            <job-permission principal="*">
                 <actions>
                     <action>all</action>
                 </actions>
             </job-permission>
-            <file-permission name="*" principal="*">
+            <connector-permission name="*">
                 <actions>
                     <action>all</action>
                 </actions>
-            </file-permission>
+            </connector-permission>
         </client-permissions>
         <client-block-unmapped-actions>true</client-block-unmapped-actions>
     </security>

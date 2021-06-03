@@ -27,6 +27,7 @@ import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.BinaryOperatorEx;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.function.SupplierEx;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.RestartableException;
@@ -219,7 +220,7 @@ public final class HazelcastWriters {
                 buffer.clear();
             };
 
-            return new WriteBufferedP<>(bufferCreator, entryReceiver, bufferFlusher, ConsumerEx.noop());
+            return new WriteBufferedP<>(bufferCreator, entryReceiver, bufferFlusher, ConsumerEx.noop(), SupplierEx.noop());
         }
 
         @Override
@@ -254,7 +255,7 @@ public final class HazelcastWriters {
                 buffer.clear();
             };
 
-            return new WriteBufferedP<>(bufferCreator, itemReceiver, bufferFlusher, ConsumerEx.noop());
+            return new WriteBufferedP<>(bufferCreator, itemReceiver, bufferFlusher, ConsumerEx.noop(), SupplierEx.noop());
         }
 
         @Override

@@ -29,6 +29,7 @@ import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.processor.SinkProcessors;
 
 import javax.annotation.Nonnull;
+import java.security.Permission;
 import java.util.function.Consumer;
 
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
@@ -38,6 +39,7 @@ public final class WriteBufferedP<B, T> implements Processor {
     private final FunctionEx<? super Context, B> createFn;
     private final ConsumerEx<? super B> flushFn;
     private final ConsumerEx<? super B> destroyFn;
+    private final SupplierEx<? extends Permission> permissionFn;
 
     private B buffer;
     private final Consumer<Object> inboxConsumer;
@@ -46,11 +48,13 @@ public final class WriteBufferedP<B, T> implements Processor {
             @Nonnull FunctionEx<? super Context, B> createFn,
             @Nonnull BiConsumerEx<? super B, ? super T> onReceiveFn,
             @Nonnull ConsumerEx<? super B> flushFn,
-            @Nonnull ConsumerEx<? super B> destroyFn
+            @Nonnull ConsumerEx<? super B> destroyFn,
+            @Nonnull SupplierEx<? extends Permission> permissionFn
     ) {
         this.createFn = createFn;
         this.flushFn = flushFn;
         this.destroyFn = destroyFn;
+        this.permissionFn = permissionFn;
 
         inboxConsumer = item -> onReceiveFn.accept(buffer, (T) item);
     }
@@ -89,6 +93,11 @@ public final class WriteBufferedP<B, T> implements Processor {
         return false;
     }
 
+    @Override
+    public Permission getRequiredPermission() {
+        return permissionFn.get();
+    }
+
     /**
      * This is private API. Call {@link SinkProcessors#writeBufferedP} instead.
      */
@@ -97,13 +106,14 @@ public final class WriteBufferedP<B, T> implements Processor {
             @Nonnull FunctionEx<? super Context, ? extends B> createFn,
             @Nonnull BiConsumerEx<? super B, ? super T> onReceiveFn,
             @Nonnull ConsumerEx<? super B> flushFn,
-            @Nonnull ConsumerEx<? super B> destroyFn
+            @Nonnull ConsumerEx<? super B> destroyFn,
+            @Nonnull SupplierEx<? extends Permission> permissionFn
     ) {
         checkSerializable(createFn, "createFn");
         checkSerializable(onReceiveFn, "onReceiveFn");
         checkSerializable(flushFn, "flushFn");
         checkSerializable(destroyFn, "destroyFn");
 
-        return () -> new WriteBufferedP<>(createFn, onReceiveFn, flushFn, destroyFn);
+        return () -> new WriteBufferedP<>(createFn, onReceiveFn, flushFn, destroyFn, permissionFn);
     }
 }

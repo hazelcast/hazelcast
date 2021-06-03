@@ -30,6 +30,7 @@ import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.security.permission.ConnectorPermission;
 
 import javax.annotation.Nonnull;
 import javax.sql.CommonDataSource;
@@ -37,6 +38,7 @@ import javax.sql.DataSource;
 import javax.sql.PooledConnection;
 import javax.sql.XAConnection;
 import javax.sql.XADataSource;
+import java.security.Permission;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -50,6 +52,7 @@ import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_WRITE;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -116,6 +119,16 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
                                         .mapToObj(i -> new WriteJdbcP<>(updateQuery, dataSource, bindFn,
                                                                exactlyOnce, batchLimit))
                                         .collect(Collectors.toList());
+                    }
+
+                    @Override
+                    public Permission getRequiredPermission() {
+                        CommonDataSource commonDataSource = dataSourceSupplier.get();
+                        String jdbcUrl = null;
+                        if (commonDataSource instanceof DataSourceFromConnectionSupplier) {
+                            jdbcUrl = ((DataSourceFromConnectionSupplier) commonDataSource).getJdbcUrl();
+                        }
+                        return ConnectorPermission.jdbc(jdbcUrl, ACTION_WRITE);
                     }
                 });
     }

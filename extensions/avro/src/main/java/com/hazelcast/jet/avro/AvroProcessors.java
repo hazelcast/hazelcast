@@ -21,6 +21,7 @@ import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.impl.connector.ReadFilesP;
 import com.hazelcast.jet.impl.connector.WriteBufferedP;
+import com.hazelcast.security.permission.ConnectorPermission;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.avro.Schema;
 import org.apache.avro.file.DataFileReader;
@@ -36,6 +37,7 @@ import java.util.stream.StreamSupport;
 
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_WRITE;
 
 /**
  * Static utility class with factories of Apache Avro source and sink
@@ -84,7 +86,8 @@ public final class AvroProcessors {
                                 jsonSchema, datumWriterSupplier),
                         DataFileWriter::append,
                         DataFileWriter::flush,
-                        DataFileWriter::close
+                        DataFileWriter::close,
+                        () -> ConnectorPermission.file(directoryName, ACTION_WRITE)
                 ));
     }
 

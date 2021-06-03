@@ -32,8 +32,7 @@ import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.security.permission.ActionConstants;
-import com.hazelcast.security.permission.FilePermission;
+import com.hazelcast.security.permission.ConnectorPermission;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
@@ -64,6 +63,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static com.hazelcast.jet.pipeline.FileSinkBuilder.DISABLE_ROLLING;
 import static com.hazelcast.jet.pipeline.FileSinkBuilder.TEMP_FILE_SUFFIX;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_WRITE;
 
 /**
  * A file-writing sink supporting rolling files. Rolling can occur:
@@ -305,7 +305,7 @@ public final class WriteFileP<T> implements Processor {
 
     @Override
     public Permission getRequiredPermission() {
-        return new FilePermission(directory.toString(), ActionConstants.ACTION_WRITE);
+        return ConnectorPermission.file(directory.toString(), ACTION_WRITE);
     }
 
     public static <T> ProcessorMetaSupplier metaSupplier(

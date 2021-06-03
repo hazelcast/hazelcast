@@ -114,7 +114,8 @@ public class WriteBufferedPTest extends JetTestSupport {
                 },
                 (buffer, item) -> events.add("add:" + item),
                 buffer -> events.add("flush"),
-                buffer -> events.add("dispose")
+                buffer -> events.add("dispose"),
+                () -> null
         );
     }
 }

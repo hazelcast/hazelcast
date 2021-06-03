@@ -2692,7 +2692,7 @@
               "replicatedmap",
               "management",
               "job",
-              "file"
+              "connector"
             ]
           },
           "properties": {

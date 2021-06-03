@@ -33,6 +33,7 @@ import com.hazelcast.jet.impl.connector.WriteJdbcP;
 import com.hazelcast.jet.impl.connector.WriteJmsP;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.security.permission.ConnectorPermission;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -44,6 +45,7 @@ import java.io.BufferedWriter;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.nio.charset.Charset;
+import java.security.Permission;
 import java.sql.PreparedStatement;
 import java.util.Map;
 
@@ -52,6 +54,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_WRITE;
 
 /**
  * Static utility class with factories of sink processors (the terminators
@@ -274,7 +277,8 @@ public final class SinkProcessors {
                     bufferedWriter.write('\n');
                 },
                 BufferedWriter::flush,
-                BufferedWriter::close
+                BufferedWriter::close,
+                () -> ConnectorPermission.socket(host + ':' + port, ACTION_WRITE)
         ));
     }
 
@@ -298,7 +302,7 @@ public final class SinkProcessors {
 
     /**
      * Shortcut for {@link #writeBufferedP(FunctionEx,
-     * BiConsumerEx, ConsumerEx, ConsumerEx)} with
+     * BiConsumerEx, ConsumerEx, ConsumerEx, SupplierEx)} with
      * a no-op {@code destroyFn}.
      */
     @Nonnull
@@ -307,7 +311,7 @@ public final class SinkProcessors {
             @Nonnull BiConsumerEx<? super W, ? super T> onReceiveFn,
             @Nonnull ConsumerEx<? super W> flushFn
     ) {
-        return writeBufferedP(createFn, onReceiveFn, flushFn, ConsumerEx.noop());
+        return writeBufferedP(createFn, onReceiveFn, flushFn, ConsumerEx.noop(), SupplierEx.noop());
     }
 
     /**
@@ -335,9 +339,10 @@ public final class SinkProcessors {
             @Nonnull FunctionEx<? super Context, ? extends W> createFn,
             @Nonnull BiConsumerEx<? super W, ? super T> onReceiveFn,
             @Nonnull ConsumerEx<? super W> flushFn,
-            @Nonnull ConsumerEx<? super W> destroyFn
+            @Nonnull ConsumerEx<? super W> destroyFn,
+            @Nonnull SupplierEx<? extends Permission> permissionFn
     ) {
-        return WriteBufferedP.supplier(createFn, onReceiveFn, flushFn, destroyFn);
+        return WriteBufferedP.supplier(createFn, onReceiveFn, flushFn, destroyFn, permissionFn);
     }
 
     /**
