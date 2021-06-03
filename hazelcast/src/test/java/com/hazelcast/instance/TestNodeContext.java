@@ -18,6 +18,7 @@ package com.hazelcast.instance;
 
 import com.hazelcast.auditlog.impl.NoOpAuditlogService;
 import com.hazelcast.cache.impl.ICacheService;
+import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.cp.internal.persistence.NopCPPersistenceService;
 import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.instance.impl.Node;
@@ -72,6 +73,7 @@ public class TestNodeContext implements NodeContext {
     public NodeExtension createNodeExtension(Node node) {
         when(nodeExtension.createService(MapService.class)).thenReturn(mock(MapService.class));
         when(nodeExtension.createService(ICacheService.class)).thenReturn(mock(ICacheService.class));
+        when(nodeExtension.createService(QueueService.class)).thenReturn(mock(QueueService.class));
         when(nodeExtension.createService(WanReplicationService.class)).thenReturn(mock(WanReplicationService.class));
         when(nodeExtension.createSerializationService()).thenReturn(new DefaultSerializationServiceBuilder().build());
         when(nodeExtension.isStartCompleted()).thenReturn(true);
