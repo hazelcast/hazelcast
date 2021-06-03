@@ -318,7 +318,7 @@ public class CancellationTest extends JetTestSupport {
         Job job = newJob(jet, dag);
         job.join();
         if (!job.isLightJob()) {
-            assertEquals(JobStatus.COMPLETED, ((Job) job).getStatus());
+            assertEquals(JobStatus.COMPLETED, job.getStatus());
         }
 
         // When-Then: should not fail
