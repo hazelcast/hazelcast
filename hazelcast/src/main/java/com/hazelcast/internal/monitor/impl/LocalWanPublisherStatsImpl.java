@@ -54,6 +54,7 @@ public class LocalWanPublisherStatsImpl implements LocalWanPublisherStats {
     private volatile long totalPublishedEventCount;
     private volatile Map<String, DistributedObjectWanEventCounters> sentMapEventCounter;
     private volatile Map<String, DistributedObjectWanEventCounters> sentCacheEventCounter;
+    private volatile Map<String, DistributedObjectWanEventCounters> sentQueueEventCounter;
     private volatile Map<String, ConsistencyCheckResult> lastConsistencyCheckResults;
     private volatile Map<String, WanSyncStats> lastSyncStats;
 
@@ -110,6 +111,15 @@ public class LocalWanPublisherStatsImpl implements LocalWanPublisherStats {
 
     public void setSentCacheEventCounter(Map<String, DistributedObjectWanEventCounters> sentCacheEventCounter) {
         this.sentCacheEventCounter = sentCacheEventCounter;
+    }
+
+    @Override
+    public Map<String, DistributedObjectWanEventCounters> getSentQueueEventCounter() {
+        return sentQueueEventCounter;
+    }
+
+    public void setSentQueueEventCounter(Map<String, DistributedObjectWanEventCounters> sentQueueEventCounter) {
+        this.sentQueueEventCounter = sentQueueEventCounter;
     }
 
     public void setLastConsistencyCheckResults(Map<String, ConsistencyCheckResult> lastConsistencyCheckResults) {
