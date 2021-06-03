@@ -49,10 +49,13 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,8 +63,6 @@ import java.util.UUID;
 import java.util.logging.Level;
 
 import static com.hazelcast.instance.EndpointQualifier.REST;
-import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_PLAIN_TEXT;
-import static com.hazelcast.internal.util.StringUtil.bytesToString;
 import static com.hazelcast.test.Accessors.getNode;
 
 @SuppressWarnings("SameParameterValue")
@@ -113,6 +114,10 @@ public class HTTPCommunicator {
     public static final String URI_LOG_LEVEL = "log-level";
     public static final String URI_LOG_LEVEL_RESET = "log-level/reset";
 
+    private static final String WWW_FORM_URL_ENCODED_MEDIA_TYPE = "application/x-www-form-urlencoded";
+    private static final String DEFAULT_MEDIA_TYPE = WWW_FORM_URL_ENCODED_MEDIA_TYPE;
+    private static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
+
     private final String address;
     private final boolean sslEnabled;
     private boolean enableChunkedStreaming;
@@ -120,6 +125,8 @@ public class HTTPCommunicator {
     private TrustManager[] clientTrustManagers;
     private KeyManager[] clientKeyManagers;
     private String tlsProtocol = "TLSv1.1";
+    private String mediaType = DEFAULT_MEDIA_TYPE;
+    private Charset charset = DEFAULT_CHARSET;
 
     public HTTPCommunicator(HazelcastInstance instance) {
         this(instance, null);
@@ -144,6 +151,11 @@ public class HTTPCommunicator {
             this.baseRestAddress = baseRestAddress;
         }
         this.address = protocol + this.baseRestAddress + "/hazelcast/rest/";
+    }
+
+    public void setContentType(String mediaType, final Charset charset) {
+        this.mediaType = mediaType;
+        this.charset = charset;
     }
 
     public HTTPCommunicator(int port) {
@@ -465,7 +477,6 @@ public class HTTPCommunicator {
         CloseableHttpResponse response = null;
         try {
             HttpGet request = new HttpGet(url);
-            request.setHeader("Content-type", "text/xml; charset=" + "UTF-8");
             response = client.execute(request);
             return new ConnectionResponse(response);
         } finally {
@@ -477,14 +488,25 @@ public class HTTPCommunicator {
     public ConnectionResponse doPost(String url, String... params) throws IOException {
         CloseableHttpClient client = newClient();
 
-        List<NameValuePair> nameValuePairs = new ArrayList<>(params.length);
-        for (String param : params) {
-            nameValuePairs.add(new BasicNameValuePair(param == null ? "" : param, null));
+        String data;
+        if (mediaType.equals(WWW_FORM_URL_ENCODED_MEDIA_TYPE)) {
+            List<NameValuePair> nameValuePairs = new ArrayList<>(params.length);
+            for (String param : params) {
+                nameValuePairs.add(new BasicNameValuePair(param == null ? "" : param, null));
+            }
+            data = URLEncodedUtils.format(nameValuePairs, charset);
+        } else if (params.length == 1) {
+            data = params[0];
+        } else if (params.length == 0){
+            data = "";
+        } else {
+            throw new AssertionError("Media Type is set to " + mediaType + ", but there are multiple"
+                    + "parts to send as a POST request body. Use " + WWW_FORM_URL_ENCODED_MEDIA_TYPE
+                    + " to send multiple parts. Parts: '" + Arrays.toString(params) + "'.");
         }
-        String data = URLEncodedUtils.format(nameValuePairs, Consts.UTF_8);
 
         HttpEntity entity;
-        ContentType contentType = ContentType.create(bytesToString(CONTENT_TYPE_PLAIN_TEXT), Consts.UTF_8);
+        ContentType contentType = ContentType.create(mediaType, charset);
         if (enableChunkedStreaming) {
             ByteArrayInputStream stream = new ByteArrayInputStream(data.getBytes(Consts.UTF_8));
             InputStreamEntity streamEntity = new InputStreamEntity(stream, contentType);

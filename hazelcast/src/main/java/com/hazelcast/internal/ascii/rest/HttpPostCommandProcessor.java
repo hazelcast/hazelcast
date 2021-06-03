@@ -18,6 +18,7 @@ package com.hazelcast.internal.ascii.rest;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.WanReplicationConfig;
+import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.CPSubsystemManagementService;
 import com.hazelcast.internal.ascii.TextCommandService;
@@ -31,8 +32,11 @@ import com.hazelcast.version.Version;
 import com.hazelcast.wan.WanPublisherState;
 import com.hazelcast.wan.impl.AddWanConfigResult;
 import com.hazelcast.wan.impl.WanReplicationService;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 import static com.hazelcast.cp.CPGroup.METADATA_CP_GROUP_NAME;
@@ -47,7 +51,8 @@ import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
 
 @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:methodcount", "checkstyle:methodlength"})
 public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostCommand> {
-    private static final byte[] QUEUE_SIMPLE_VALUE_CONTENT_TYPE = stringToBytes("text/plain");
+    private static final byte[] QUEUE_SIMPLE_VALUE_CONTENT_TYPE_BYTES = stringToBytes("text/plain");
+    private static final String JSON_CONTENT_TYPE = "application/json";
 
     public HttpPostCommandProcessor(TextCommandService textCommandService) {
         super(textCommandService, textCommandService.getNode().getLogger(HttpPostCommandProcessor.class));
@@ -235,16 +240,15 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
             queueName = suffix.substring(0, indexSlash);
             simpleValue = suffix.substring(indexSlash + 1);
         }
-        byte[] data;
-        byte[] contentType;
+
+        Object value;
         if (simpleValue == null) {
-            data = command.getData();
-            contentType = command.getContentType();
+            value = extractValueObjectFromData(command);
         } else {
-            data = stringToBytes(simpleValue);
-            contentType = QUEUE_SIMPLE_VALUE_CONTENT_TYPE;
+            byte[] data = stringToBytes(simpleValue);
+            value = new RestValue(data, QUEUE_SIMPLE_VALUE_CONTENT_TYPE_BYTES);
         }
-        boolean offerResult = textCommandService.offer(queueName, new RestValue(data, contentType));
+        boolean offerResult = textCommandService.offer(queueName, value);
         if (offerResult) {
             command.send200();
         } else {
@@ -260,9 +264,24 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         }
         String mapName = uri.substring(URI_MAPS.length(), indexEnd);
         String key = uri.substring(indexEnd + 1);
-        byte[] data = command.getData();
-        textCommandService.put(mapName, key, new RestValue(data, command.getContentType()), -1);
+        Object value = extractValueObjectFromData(command);
+        textCommandService.put(mapName, key, value, -1);
         command.send200();
+    }
+
+    @NotNull
+    private static Object extractValueObjectFromData(HttpPostCommand command) {
+        byte[] data = command.getData();
+        if (JSON_CONTENT_TYPE.equals(command.getMediaType())) {
+            Charset charset = command.getCharset();
+            if (charset == null) {
+                charset = StandardCharsets.UTF_8;
+            }
+            return new HazelcastJsonValue(new String(data, charset));
+        } else {
+            byte[] contentTypeBytes = command.getContentTypeBytes();
+            return new RestValue(data, contentTypeBytes);
+        }
     }
 
     /**

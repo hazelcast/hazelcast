@@ -29,6 +29,7 @@ import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.dto.WanReplicationConfigDTO;
 import com.hazelcast.map.IMap;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestAwareInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
@@ -43,6 +44,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.util.Map;
+import java.util.Set;
 
 import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_JSON;
 import static com.hazelcast.internal.nio.IOUtil.readFully;
@@ -57,8 +60,10 @@ import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static com.hazelcast.test.HazelcastTestSupport.sleepAtLeastSeconds;
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static java.net.HttpURLConnection.HTTP_OK;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -120,6 +125,38 @@ public class RestTest {
         assertEquals(HTTP_OK, communicator.mapPut(name, key, value));
         assertEquals(value, communicator.mapGetAndResponse(name, key));
         assertTrue(instance.getMap(name).containsKey(key));
+    }
+
+    @Test
+    public void testMapPutSearchJSON() throws Exception {
+        String name = randomMapName();
+        communicator.setContentType("application/json", UTF_8);
+
+        String arthur = Json.object().add("firstname", "Arthur")
+                .add("lastname", "Dent")
+                .add("age", 42)
+                .toString();
+
+        String ford = Json.object().add("firstname", "Ford")
+                .add("lastname", "Prefect")
+                .add("age", 200)
+                .toString();
+
+
+        assertEquals(HTTP_OK, communicator.mapPut(name, "arthur", arthur));
+        assertEquals(HTTP_OK, communicator.mapPut(name, "ford", ford));
+        assertEquals(arthur, communicator.mapGetAndResponse(name, "arthur"));
+        assertEquals(ford, communicator.mapGetAndResponse(name, "ford"));
+
+        IMap<String, HazelcastJsonValue> map = instance.getMap(name);
+        Set<Map.Entry<String, HazelcastJsonValue>> result = map.entrySet(Predicates.equal("age", 42));
+        assertEquals(1, result.size());
+        Map.Entry<String, HazelcastJsonValue> entry = result.iterator().next();
+        assertEquals("arthur", entry.getKey());
+        assertJsonContains(entry.getValue().toString(),
+                "firstname", "Arthur",
+                "lastname", "Dent"
+        );
     }
 
     @Test
@@ -229,11 +266,28 @@ public class RestTest {
 
     @Test
     public void testQueuePollWithJson() throws Exception {
-        final String queueName = "mapName";
+        final String queueName = "queueName";
         String jsonValue = Json.object().add("arbitrary-attribute", "arbitrary-value").toString();
         instance.getQueue(queueName).offer(new HazelcastJsonValue(jsonValue));
         HTTPCommunicator.ConnectionResponse response = communicator.queuePoll(queueName, 10);
 
+        assertContains(response.responseHeaders.get("Content-Type").iterator().next(), bytesToString(CONTENT_TYPE_JSON));
+        assertEquals(jsonValue, response.response);
+    }
+
+    @Test
+    public void testQueueJsonPoll() throws Exception {
+        communicator.setContentType("application/json", UTF_8);
+        final String queueName = "queueName";
+        String jsonValue = Json.object().add("arbitrary-attribute", "arbitrary-value").toString();
+        communicator.queueOffer(queueName, jsonValue);
+        communicator.queueOffer(queueName, jsonValue);
+
+        HazelcastJsonValue object = instance.<HazelcastJsonValue>getQueue(queueName).poll();
+        HTTPCommunicator.ConnectionResponse response = communicator.queuePoll(queueName, 10);
+
+        assertNotNull(object);
+        assertJsonContains(object.toString(), "arbitrary-attribute", "arbitrary-value");
         assertContains(response.responseHeaders.get("Content-Type").iterator().next(), bytesToString(CONTENT_TYPE_JSON));
         assertEquals(jsonValue, response.response);
     }
