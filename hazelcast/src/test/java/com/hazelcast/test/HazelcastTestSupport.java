@@ -158,12 +158,14 @@ public abstract class HazelcastTestSupport {
     }
 
     protected static <T> void assertCollection(Collection<T> expected, Collection<T> actual) {
-        assertEquals(expected.size(), actual.size());
+        assertEquals(String.format("Expected collection: `%s`, actual collection: `%s`", expected, actual),
+                expected.size(), actual.size());
         assertContainsAll(expected, actual);
     }
 
     protected static <T> void assertCollection(Collection<T> expected, Collection<T> actual, Comparator<T> comparator) {
-        assertEquals(expected.size(), actual.size());
+        assertEquals(String.format("Expected collection: `%s`, actual collection: `%s`", expected, actual),
+                expected.size(), actual.size());
         for (T item : expected) {
             if (!containsIn(item, actual, comparator)) {
                 throw new AssertionError("Actual collection does not contain the item " + item);
