@@ -83,6 +83,7 @@ import static com.hazelcast.internal.util.Preconditions.checkFalse;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkState;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
+import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
 import static java.util.Collections.newSetFromMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.unmodifiableCollection;
@@ -479,7 +480,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
     }
 
     public CPGroupSummary createRaftGroup(String groupName, Collection<RaftEndpoint> groupEndpoints, long groupId) {
-        checkFalse(METADATA_CP_GROUP_NAME.equalsIgnoreCase(groupName), groupName + " is reserved for internal usage!");
+        checkFalse(equalsIgnoreCase(METADATA_CP_GROUP_NAME, groupName), groupName + " is reserved for internal usage!");
         checkMetadataGroupInitSuccessful();
 
         // keep configuration on every metadata node
@@ -640,7 +641,7 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
 
     public void forceDestroyRaftGroup(String groupName) {
         checkNotNull(groupName);
-        checkFalse(METADATA_CP_GROUP_NAME.equalsIgnoreCase(groupName), "Cannot force-destroy the METADATA CP group!");
+        checkFalse(equalsIgnoreCase(METADATA_CP_GROUP_NAME, groupName), "Cannot force-destroy the METADATA CP group!");
         checkMetadataGroupInitSuccessful();
 
         boolean found = false;

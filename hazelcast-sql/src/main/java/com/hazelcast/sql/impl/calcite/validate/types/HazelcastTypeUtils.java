@@ -31,6 +31,7 @@ import org.apache.calcite.sql.type.SqlTypeName;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
 import static org.apache.calcite.sql.type.SqlTypeFamily.INTERVAL_DAY_TIME;
 import static org.apache.calcite.sql.type.SqlTypeName.DAY_INTERVAL_TYPES;
 import static org.apache.calcite.sql.type.SqlTypeName.INTERVAL_DAY_SECOND;
@@ -139,7 +140,7 @@ public final class HazelcastTypeUtils {
     }
 
     public static boolean isObjectIdentifier(SqlIdentifier identifier) {
-        return identifier.isSimple() && SqlColumnType.OBJECT.name().equalsIgnoreCase(identifier.getSimple());
+        return identifier.isSimple() && equalsIgnoreCase(SqlColumnType.OBJECT.name(), identifier.getSimple());
     }
 
     /**

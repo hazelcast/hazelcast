@@ -73,7 +73,7 @@ public interface GeneralStage<T> extends Stage {
      * <p>
      * This sample takes a stream of names and outputs the names in lowercase:
      * <pre>{@code
-     * stage.map(name -> name.toLowerCase())
+     * stage.map(name -> name.toLowerCase(Locale.ROOT))
      * }</pre>
      *
      * @param mapFn a mapping function. It must be stateless and {@linkplain
