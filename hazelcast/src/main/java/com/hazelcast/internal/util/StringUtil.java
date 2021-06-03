@@ -46,10 +46,9 @@ public final class StringUtil {
 
     /**
      * LOCALE_INTERNAL is the default locale for string operations and number formatting. Initialized to
-     * {@code java.util.Locale.US} (US English).
+     * {@code java.util.Locale.ROOT} (language neutral).
      */
-    //TODO Use java.util.Locale#ROOT value (language neutral) in Hazelcast 4
-    public static final Locale LOCALE_INTERNAL = Locale.US;
+    public static final Locale LOCALE_INTERNAL = Locale.ROOT;
 
     /**
      * Pattern used to tokenize version strings.
