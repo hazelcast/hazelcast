@@ -45,7 +45,7 @@ import java.util.ArrayDeque;
  *
  * @param <T> item type
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public class AppendableTraverser<T> implements Traverser<T> {
     private final ArrayDeque<T> queue;

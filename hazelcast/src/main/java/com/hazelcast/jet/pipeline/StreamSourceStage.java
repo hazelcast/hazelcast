@@ -32,7 +32,7 @@ import javax.annotation.Nonnull;
  *
  * @param <T> the type of items coming out of this stage
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public interface StreamSourceStage<T> {
 

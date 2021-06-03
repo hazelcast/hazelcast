@@ -42,7 +42,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @param <T> the type of items coming out of this stage
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public interface StreamStage<T> extends GeneralStage<T> {
 
@@ -288,7 +288,7 @@ public interface StreamStage<T> extends GeneralStage<T> {
      * @param transformFn function to transform this stage into another stage
      * @param <R> type of the returned stage
      *
-     * @since 3.1
+     * @since Jet 3.1
      */
     @Nonnull
     default <R> StreamStage<R> apply(

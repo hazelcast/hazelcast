@@ -20,6 +20,6 @@
  * They are Hazelcast-serializable via {@link
  * com.hazelcast.jet.accumulator.AccumulatorSerializerHooks}.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 package com.hazelcast.jet.accumulator;

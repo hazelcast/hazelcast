@@ -71,7 +71,7 @@ import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
  * also create your own aggregate operation using the {@link
  * AggregateOperation#withCreate builder object}.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public final class AggregateOperations {
 
@@ -648,7 +648,7 @@ public final class AggregateOperations {
      * @param <A> downstream operation's accumulator type
      * @param <R> downstream operation's result type
      *
-     * @since 3.1
+     * @since Jet 3.1
      */
     public static <T, A, R> AggregateOperation1<T, A, R> filtering(
             @Nonnull PredicateEx<? super T> filterFn,
@@ -702,7 +702,7 @@ public final class AggregateOperations {
      * @param <A> downstream operation's accumulator type
      * @param <R> downstream operation's result type
      *
-     * @since 3.1
+     * @since Jet 3.1
      */
     public static <T, U, A, R> AggregateOperation1<T, A, R> flatMapping(
             @Nonnull FunctionEx<? super T, ? extends Traverser<? extends U>> flatMapFn,

@@ -36,7 +36,7 @@ import javax.annotation.Nonnull;
  *
  * @param <T0> type of items in stage-0 (the one you obtained this builder from)
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public class AggregateBuilder1<T0> {
     private final AggBuilder aggBuilder;

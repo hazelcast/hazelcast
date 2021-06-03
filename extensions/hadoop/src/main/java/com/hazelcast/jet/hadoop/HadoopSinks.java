@@ -30,7 +30,7 @@ import java.util.Map.Entry;
 /**
  * Factories of Apache Hadoop sinks.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public final class HadoopSinks {
 

@@ -33,7 +33,7 @@ import static com.hazelcast.jet.core.processor.SinkProcessors.writeFileP;
  * See {@link Sinks#filesBuilder}.
  *
  * @param <T> type of the items the sink accepts
- * @since 3.0
+ * @since Jet 3.0
  */
 public final class FileSinkBuilder<T> {
 
@@ -99,7 +99,7 @@ public final class FileSinkBuilder<T> {
      * rolling by date is done. If the system clock goes back, the outcome is
      * unspecified and possibly corrupt.
      *
-     * @since 4.0
+     * @since Jet 4.0
      */
     @Nonnull
     public FileSinkBuilder<T> rollByDate(@Nullable String datePattern) {
@@ -115,7 +115,7 @@ public final class FileSinkBuilder<T> {
      * To disable rolling after certain size, pass {@code
      * DISABLE_ROLLING}. This is the default value.
      *
-     * @since 4.0
+     * @since Jet 4.0
      */
     @Nonnull
     public FileSinkBuilder<T> rollByFileSize(long maxFileSize) {
@@ -142,7 +142,7 @@ public final class FileSinkBuilder<T> {
      *               If false, sink's guarantee will be at-least-once even if
      *               job's is exactly-once
      * @return this instance for fluent API
-     * @since 4.0
+     * @since Jet 4.0
      */
     @Nonnull
     public FileSinkBuilder<T> exactlyOnce(boolean enable) {

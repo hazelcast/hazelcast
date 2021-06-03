@@ -18,7 +18,7 @@
  * This package contains various mock sources to help with pipeline testing
  * and development.
  *
- * @since 3.2
+ * @since Jet 3.2
  */
 package com.hazelcast.jet.pipeline.test;
 

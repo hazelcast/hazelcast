@@ -87,7 +87,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * The default local parallelism for sources in this class is 1 or 2, check the
  * documentation of individual methods.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public final class Sources {
 
@@ -1024,7 +1024,7 @@ public final class Sources {
      *
      * See {@link #filesBuilder(String)}, {@link #files(String)}.
      *
-     * @since 4.2
+     * @since Jet 4.2
      */
     @Nonnull
     public static <T> BatchSource<T> json(@Nonnull String directory, @Nonnull Class<T> type) {
@@ -1038,7 +1038,7 @@ public final class Sources {
      * if JSON string is just primitive ({@link String}, {@link Number},
      * {@link Boolean}) or JSON array ({@link List}).
      *
-     * @since 4.2
+     * @since Jet 4.2
      */
     @Nonnull
     public static BatchSource<Map<String, Object>> json(@Nonnull String directory) {
@@ -1097,7 +1097,7 @@ public final class Sources {
      *
      * See {@link #filesBuilder(String)}, {@link #fileWatcher(String)}.
      *
-     * @since 4.2
+     * @since Jet 4.2
      */
     @Nonnull
     public static <T> StreamSource<T> jsonWatcher(@Nonnull String watchedDirectory, @Nonnull Class<T> type) {
@@ -1109,7 +1109,7 @@ public final class Sources {
      * Convenience for {@link #jsonWatcher(String, Class)} which converts each
      * line appended to the {@link Map} representation of the JSON string.
      *
-     * @since 4.2
+     * @since Jet 4.2
      */
     @Nonnull
     public static StreamSource<Map<String, Object>> jsonWatcher(@Nonnull String watchedDirectory) {
@@ -1148,7 +1148,7 @@ public final class Sources {
      * @param factorySupplier supplier to obtain JMS connection factory. It
      *     must be stateless.
      *
-     * @since 4.1
+     * @since Jet 4.1
      */
     @Nonnull
     public static StreamSource<Message> jmsQueue(
@@ -1221,7 +1221,7 @@ public final class Sources {
      * @param factorySupplier supplier to obtain JMS connection factory. It
      *     must be stateless.
      *
-     * @since 4.1
+     * @since Jet 4.1
      */
     @Nonnull
     public static StreamSource<Message> jmsTopic(

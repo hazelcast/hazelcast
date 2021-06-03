@@ -21,7 +21,7 @@ package com.hazelcast.jet;
  * with the same name. Job is <em>active</em> if it is running, suspended or
  * waiting to be run, until it completes or fails.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public class JobAlreadyExistsException extends JetException {
 

@@ -35,7 +35,7 @@ import static com.hazelcast.jet.kafka.impl.StreamKafkaP.PREFERRED_LOCAL_PARALLEL
  * Static utility class with factories of Apache Kafka source and sink
  * processors.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public final class KafkaProcessors {
 

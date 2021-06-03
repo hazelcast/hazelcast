@@ -18,6 +18,6 @@
  * Contains Java program entry points that will start a Jet server
  * instance, submit jobs to a Jet cluster, etc.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 package com.hazelcast.jet.server;

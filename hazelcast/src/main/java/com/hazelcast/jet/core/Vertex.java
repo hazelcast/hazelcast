@@ -51,7 +51,7 @@ import static java.lang.Math.min;
  * <p>
  * A vertex is uniquely identified in a DAG by its name.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public class Vertex implements IdentifiedDataSerializable {
 

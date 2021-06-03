@@ -34,7 +34,7 @@ import com.hazelcast.nio.serialization.SerializerHook;
  *
  * @param <T> the Protocol Buffers {@link GeneratedMessageV3} type handled by
  *            this {@link SerializerHook}.
- * @since 4.1
+ * @since Jet 4.1
  */
 public abstract class ProtobufSerializerHook<T extends GeneratedMessageV3> implements SerializerHook<T> {
 

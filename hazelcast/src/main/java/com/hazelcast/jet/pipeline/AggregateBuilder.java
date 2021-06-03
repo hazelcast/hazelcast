@@ -44,7 +44,7 @@ import static com.hazelcast.jet.aggregate.AggregateOperations.coAggregateOperati
  * @param <R0> type of the result of the aggregate operation applied to stage-0
  *            (the one you obtained this builder from)
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public class AggregateBuilder<R0> {
     private final AggBuilder aggBuilder;

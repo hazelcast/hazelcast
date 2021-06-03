@@ -50,7 +50,7 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
  *
  * @param <C> type of the context object
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public final class SourceBuilder<C> {
     private final String name;
@@ -191,7 +191,7 @@ public final class SourceBuilder<C> {
      *                 must be stateless.
      * @param <C>      type of the context object
      *
-     * @since 3.0
+     * @since Jet 3.0
      */
     @Nonnull
     public static <C> SourceBuilder<C>.Batch<Void> batch(
@@ -252,7 +252,7 @@ public final class SourceBuilder<C> {
      *                 must be stateless.
      * @param <C>      type of the context object
      *
-     * @since 3.0
+     * @since Jet 3.0
      */
     @Nonnull
     public static <C> SourceBuilder<C>.Stream<Void> stream(
@@ -336,7 +336,7 @@ public final class SourceBuilder<C> {
      *     must be stateless.
      * @param <C> type of the context object
      *
-     * @since 3.0
+     * @since Jet 3.0
      */
     @Nonnull
     public static <C> SourceBuilder<C>.TimestampedStream<Void> timestampedStream(
@@ -424,7 +424,7 @@ public final class SourceBuilder<C> {
          *     state snapshot. It must be stateless.
          * @param <S> type of the snapshot object
          *
-         * @since 3.1
+         * @since Jet 3.1
          */
         @Nonnull
         abstract <S> FaultTolerant<? extends Base<T>, S> createSnapshotFn(
@@ -475,7 +475,7 @@ public final class SourceBuilder<C> {
      *
      * @param <T> type of emitted objects
      *
-     * @since 3.0
+     * @since Jet 3.0
      */
     public final class Batch<T> extends BaseNoTimestamps<T> {
         private Batch() {
@@ -529,7 +529,7 @@ public final class SourceBuilder<C> {
      *
      * @param <T> type of emitted objects
      *
-     * @since 3.0
+     * @since Jet 3.0
      */
     public final class Stream<T> extends BaseNoTimestamps<T> {
         private Stream() {
@@ -587,7 +587,7 @@ public final class SourceBuilder<C> {
      *
      * @param <T> type of emitted objects
      *
-     * @since 3.0
+     * @since Jet 3.0
      */
     public final class TimestampedStream<T> extends Base<T> {
         private BiConsumerEx<? super C, ? super TimestampedSourceBuffer<T>> fillBufferFn;
@@ -675,7 +675,7 @@ public final class SourceBuilder<C> {
      * @param <B> type of the builder this sub-builder was created from
      * @param <S> type of the object saved to the state snapshot
      *
-     * @since 3.1
+     * @since Jet 3.1
      */
     public final class FaultTolerant<B, S> {
         private final B parentBuilder;
@@ -710,7 +710,7 @@ public final class SourceBuilder<C> {
          * @param restoreSnapshotFn the function to restore the state into the
          *     context. It must be stateless.
          *
-         * @since 3.1
+         * @since Jet 3.1
          */
         @SuppressWarnings("unchecked")
         @Nonnull

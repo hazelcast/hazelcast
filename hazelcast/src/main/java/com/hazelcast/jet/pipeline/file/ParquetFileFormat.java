@@ -23,7 +23,7 @@ import javax.annotation.Nonnull;
  * more details.
  *
  * @param <T> type of items a source using this file format will emit
- * @since 4.4
+ * @since Jet 4.4
  */
 public class ParquetFileFormat<T> implements FileFormat<T> {
 

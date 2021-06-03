@@ -17,6 +17,6 @@
 /**
  * Annotations used for describing public API stability.
  *
- * @since 4.0
+ * @since Jet 4.0
  */
 package com.hazelcast.jet.annotation;

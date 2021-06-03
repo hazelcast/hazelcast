@@ -28,7 +28,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 /**
  * Defines the names and default values for internal Hazelcast Jet properties.
  *
- * @since 3.2
+ * @since Jet 3.2
  */
 public final class JetProperties {
 
@@ -37,7 +37,7 @@ public final class JetProperties {
      * unused resources. This property configures how often this check and
      * cleanup will be done. Value is in milliseconds.
      *
-     * @since 3.2
+     * @since Jet 3.2
      */
     public static final HazelcastProperty JOB_SCAN_PERIOD
             = new HazelcastProperty("jet.job.scan.period", SECONDS.toMillis(5), MILLISECONDS);
@@ -49,7 +49,7 @@ public final class JetProperties {
      * <p>
      * Default value is 7 days.
      *
-     * @since 3.2
+     * @since Jet 3.2
      */
     public static final HazelcastProperty JOB_RESULTS_TTL_SECONDS
             = new HazelcastProperty("jet.job.results.ttl.seconds", DAYS.toSeconds(7), SECONDS);
@@ -60,7 +60,7 @@ public final class JetProperties {
      * <p>
      * Default value is 1,000 jobs.
      *
-     * @since 3.2
+     * @since Jet 3.2
      */
     public static final HazelcastProperty JOB_RESULTS_MAX_SIZE
             = new HazelcastProperty("jet.job.results.max.size", 1_000);
@@ -70,7 +70,7 @@ public final class JetProperties {
      * restart store. By default it will be automatically set to the start of
      * the Jet installation path.
      *
-     * @since 3.2
+     * @since Jet 3.2
      */
     public static final HazelcastProperty JET_HOME
             = new HazelcastProperty("jet.home", "");
@@ -86,7 +86,7 @@ public final class JetProperties {
      * point in startup, it doesn't have an effect when you set it in a
      * Hazelcast configuration file. You must set it as a system property.
      *
-     * @since 4.4
+     * @since Jet 4.4
      */
     public static final HazelcastProperty JET_IMDG_VERSION_CHECK_DISABLED
             = new HazelcastProperty("jet.imdg.version.mismatch.check.disabled", "false");
@@ -108,7 +108,7 @@ public final class JetProperties {
      * <p>
      * See also: {@link #JET_IDLE_COOPERATIVE_MAX_MICROSECONDS}
      *
-     * @since 3.2
+     * @since Jet 3.2
      */
     public static final HazelcastProperty JET_IDLE_COOPERATIVE_MIN_MICROSECONDS
             = new HazelcastProperty("jet.idle.cooperative.min.microseconds", 25, MICROSECONDS);
@@ -130,7 +130,7 @@ public final class JetProperties {
      * <p>
      * See also: {@link #JET_IDLE_COOPERATIVE_MIN_MICROSECONDS}
      *
-     * @since 3.2
+     * @since Jet 3.2
      */
     public static final HazelcastProperty JET_IDLE_COOPERATIVE_MAX_MICROSECONDS
         = new HazelcastProperty("jet.idle.cooperative.max.microseconds", 500, MICROSECONDS);
@@ -152,7 +152,7 @@ public final class JetProperties {
      * <p>
      * See also: {@link #JET_IDLE_NONCOOPERATIVE_MAX_MICROSECONDS}
      *
-     * @since 3.2
+     * @since Jet 3.2
      */
     public static final HazelcastProperty JET_IDLE_NONCOOPERATIVE_MIN_MICROSECONDS
         = new HazelcastProperty("jet.idle.noncooperative.min.microseconds", 25, MICROSECONDS);
@@ -174,7 +174,7 @@ public final class JetProperties {
      * <p>
      * See also: {@link #JET_IDLE_NONCOOPERATIVE_MIN_MICROSECONDS}
      *
-     * @since 3.2
+     * @since Jet 3.2
      */
     public static final HazelcastProperty JET_IDLE_NONCOOPERATIVE_MAX_MICROSECONDS
         = new HazelcastProperty("jet.idle.noncooperative.max.microseconds", 5000, MICROSECONDS);

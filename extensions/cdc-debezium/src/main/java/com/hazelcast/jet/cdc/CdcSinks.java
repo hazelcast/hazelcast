@@ -87,7 +87,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * Restarting the CDC Jet source will not change sequence number sources,
  * only significant changes on the database side will.
  *
- * @since 4.2
+ * @since Jet 4.2
  */
 public final class CdcSinks {
 
@@ -99,7 +99,7 @@ public final class CdcSinks {
      * <p>
      * The default value is 10 seconds.
      *
-     * @since 4.2
+     * @since Jet 4.2
      */
     public static final HazelcastProperty SEQUENCE_CACHE_EXPIRATION_SECONDS
             = new HazelcastProperty("jet.cdc.sink.sequence.cache.expiration.seconds", 10, SECONDS);
@@ -137,7 +137,7 @@ public final class CdcSinks {
      * then the key will be deleted no matter the operation (ie. even for
      * update and insert records).
      *
-     * @since 4.2
+     * @since Jet 4.2
      */
     @Nonnull
     public static <K, V> Sink<ChangeRecord> map(
@@ -179,7 +179,7 @@ public final class CdcSinks {
      * then the key will be deleted no matter the operation (ie. even for
      * update and insert records).
      *
-     * @since 4.2
+     * @since Jet 4.2
      */
     @Nonnull
     public static <K, V> Sink<ChangeRecord> map(
@@ -205,7 +205,7 @@ public final class CdcSinks {
      * <p>
      * Due to the used API, the remote cluster must be at least version 4.0.
      *
-     * @since 4.2
+     * @since Jet 4.2
      */
     @Nonnull
     public static <K, V> Sink<ChangeRecord> remoteMap(
