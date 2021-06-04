@@ -76,6 +76,7 @@ import java.util.zip.DeflaterOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 import static com.hazelcast.jet.Util.idFromString;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.impl.util.IOUtil.fileNameFromUrl;
@@ -282,7 +283,7 @@ public class JobRepository {
                 if (zipEntry.isDirectory()) {
                     continue;
                 }
-                if (zipEntry.getName().toLowerCase().endsWith(".jar")) {
+                if (lowerCaseInternal(zipEntry.getName()).endsWith(".jar")) {
                     loadJarFromInputStream(map, zis);
                 }
             }

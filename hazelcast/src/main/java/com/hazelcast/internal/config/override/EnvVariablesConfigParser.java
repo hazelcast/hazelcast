@@ -19,6 +19,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import com.hazelcast.internal.util.StringUtil;
+
 import static java.util.stream.Collectors.toMap;
 
 /**
@@ -53,10 +55,9 @@ class EnvVariablesConfigParser {
     }
 
     private String processKey(Map.Entry<String, String> e) {
-        return e.getKey()
+        return StringUtil.lowerCaseInternal(e.getKey()
           .replaceFirst(prefix, rootNode + ".")
           .replace("_", ".")
-          .replace(" ", "")
-          .toLowerCase();
+          .replace(" ", ""));
     }
 }

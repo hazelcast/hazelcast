@@ -27,6 +27,7 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeParseException;
 
+import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
 import static com.hazelcast.sql.impl.expression.math.ExpressionMath.DECIMAL_MATH_CONTEXT;
 
 /**
@@ -46,9 +47,9 @@ public abstract class AbstractStringConverter extends Converter {
     public final boolean asBoolean(Object val) {
         String val0 = cast(val);
 
-        if (val0.equalsIgnoreCase(BooleanConverter.TRUE)) {
+        if (equalsIgnoreCase(val0, BooleanConverter.TRUE)) {
             return true;
-        } else if (val0.equalsIgnoreCase(BooleanConverter.FALSE)) {
+        } else if (equalsIgnoreCase(val0, BooleanConverter.FALSE)) {
             return false;
         }
 

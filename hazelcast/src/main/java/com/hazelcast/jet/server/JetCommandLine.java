@@ -94,7 +94,6 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -106,6 +105,9 @@ import java.util.logging.LogManager;
 
 import static com.hazelcast.instance.BuildInfoProvider.getBuildInfo;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
+import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
+import static com.hazelcast.internal.util.StringUtil.trim;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
@@ -246,16 +248,16 @@ public class JetCommandLine implements Runnable {
                 if ("".equals(command)) {
                     continue;
                 }
-                if ("clear".equalsIgnoreCase(command)) {
+                if (equalsIgnoreCase("clear", command)) {
                     reader.getTerminal().puts(InfoCmp.Capability.clear_screen);
                     continue;
                 }
-                if ("help".equalsIgnoreCase(command)) {
+                if (equalsIgnoreCase("help", command)) {
                     writer.println(helpPrompt(jet));
                     writer.flush();
                     continue;
                 }
-                if ("history".equalsIgnoreCase(command)) {
+                if (equalsIgnoreCase("history", command)) {
                     History hist = reader.getHistory();
                     ListIterator<History.Entry> iterator = hist.iterator();
                     while (iterator.hasNext()) {
@@ -277,7 +279,7 @@ public class JetCommandLine implements Runnable {
                     }
                     continue;
                 }
-                if ("exit".equalsIgnoreCase(command)) {
+                if (equalsIgnoreCase("exit", command)) {
                     writer.println(SQLCliConstants.EXIT_PROMPT);
                     writer.flush();
                     break;
@@ -1194,7 +1196,7 @@ public class JetCommandLine implements Runnable {
                 }
             }
 
-            if (SQLCliConstants.COMMAND_SET.contains(line.trim().toLowerCase(Locale.US))) {
+            if (SQLCliConstants.COMMAND_SET.contains(lowerCaseInternal(trim(line)))) {
                 return;
             }
             // These EOFError exceptions are captured in LineReader's

@@ -29,6 +29,7 @@ import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.util.Scanner;
 
+import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -317,7 +318,7 @@ public class ConfigRecognizerTest {
                 firstLine = scanner.nextLine();
             }
 
-            return "test-hazelcast-config".equalsIgnoreCase(firstLine);
+            return equalsIgnoreCase("test-hazelcast-config", firstLine);
         }
     }
 }
