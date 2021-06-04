@@ -22,6 +22,7 @@ import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Vertex;
@@ -243,6 +244,14 @@ public class LightMasterContext {
             ) {
                 result = (Throwable) response;
             }
+        }
+        if (result != null
+                && !(result instanceof CancellationException)
+                && !(result instanceof JobTerminateRequestedException)) {
+            // We must wrap the exception. Otherwise the error will become the error of the SubmitJobOp. And
+            // if the error is, for example, MemberLeftException, the job will be resubmitted even though it
+            // was already running. Fixes https://github.com/hazelcast/hazelcast/issues/18844
+            result = new JetException("Execution on a member failed: " + result, result);
         }
         return result;
     }

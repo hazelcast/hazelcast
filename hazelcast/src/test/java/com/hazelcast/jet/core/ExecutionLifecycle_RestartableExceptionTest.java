@@ -53,7 +53,7 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * This class tests that if a {@link RestartableException} is thrown in any
- * processor or processor supplier methods, the job restarts.
+ * processor or processor supplier method, the job restarts.
  * <p>
  * For light jobs it tests that the job fails with this exception.
  */

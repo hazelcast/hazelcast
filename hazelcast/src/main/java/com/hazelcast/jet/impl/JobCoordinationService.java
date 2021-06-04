@@ -311,7 +311,7 @@ public class JobCoordinationService {
         assert oldContext == UNINITIALIZED_LIGHT_JOB_MARKER;
 
         return mc.getCompletionFuture()
-                .whenComplete((t, r) -> {
+                .whenComplete((r, t) -> {
                     Object removed = lightMasterContexts.remove(jobId);
                     assert removed instanceof LightMasterContext : "LMC not found: " + removed;
                 });

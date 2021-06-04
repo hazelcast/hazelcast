@@ -18,6 +18,7 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.internal.cluster.MemberInfo;
@@ -675,6 +676,25 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
             // job status is XXX, should be RUNNING"
             job.restart();
         }
+    }
+
+    @Test
+    public void when_memberLeft_then_jobFails() {
+        // Test for https://github.com/hazelcast/hazelcast/issues/18844
+
+        // This test doesn't use the shared cluster because it shuts down one of the members
+        JetInstance inst1 = createJetMember();
+        JetInstance inst2 = createJetMember();
+
+        DAG dag = new DAG();
+        dag.newVertex("v", () -> new MockP().streaming());
+
+        Job job = inst1.newLightJob(dag);
+        assertJobRunningEventually(inst1, job, null);
+        inst2.getHazelcastInstance().getLifecycleService().terminate();
+
+        assertThatThrownBy(() -> job.join())
+                .hasRootCauseInstanceOf(MemberLeftException.class);
     }
 
     public static class NotSerializable_DataSerializable_ProcessorSupplier implements ProcessorSupplier, DataSerializable {
