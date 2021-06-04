@@ -44,7 +44,7 @@ import static java.lang.Math.floorMod;
  * value beyond the range covered by the frame. That timestamp denotes the
  * exact moment on the event timeline where the frame was closed.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public class SlidingWindowPolicy implements Serializable {
     private static final long serialVersionUID = 1L;

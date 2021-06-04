@@ -84,7 +84,7 @@ import static java.util.Collections.emptyMap;
  * @param <C> type of the shared context object
  * @param <S> type of the service object
  *
- * @since 4.0
+ * @since Jet 4.0
  */
 @SerializableByConvention
 public final class ServiceFactory<C, S> implements Serializable, Cloneable {
@@ -252,7 +252,7 @@ public final class ServiceFactory<C, S> implements Serializable, Cloneable {
      *
      * @return a copy of this factory with the file attached
      *
-     * @since 4.0
+     * @since Jet 4.0
      */
     @Nonnull
     public ServiceFactory<C, S> withAttachedFile(@Nonnull String id, @Nonnull File file) {
@@ -270,7 +270,7 @@ public final class ServiceFactory<C, S> implements Serializable, Cloneable {
      *
      * @return a copy of this factory with the directory attached
      *
-     * @since 4.0
+     * @since Jet 4.0
      */
     @Nonnull
     public ServiceFactory<C, S> withAttachedDirectory(@Nonnull String id, @Nonnull File directory) {
@@ -291,7 +291,7 @@ public final class ServiceFactory<C, S> implements Serializable, Cloneable {
      * Returns a copy of this {@link ServiceFactory} with any attached files
      * removed.
      *
-     * @since 4.0
+     * @since Jet 4.0
      */
     @Nonnull
     public ServiceFactory<C, S> withoutAttachedFiles() {
@@ -362,7 +362,7 @@ public final class ServiceFactory<C, S> implements Serializable, Cloneable {
      * {@link ProcessorSupplier.Context#attachedDirectory
      * procSupplierContext.attachedDirectory(directory.toString())}.
      *
-     * @since 4.0
+     * @since Jet 4.0
      */
     @Nonnull
     public Map<String, File> attachedFiles() {

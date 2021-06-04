@@ -48,7 +48,7 @@ import java.util.stream.Collectors;
  * {@code module=jet, job=jobId, exec=execId, vertex=filter, proc=3,
  * unit=count, metric=queuesCapacity, ...}
  *
- * @since 3.2
+ * @since Jet 3.2
  */
 public final class Measurement implements IdentifiedDataSerializable {
 

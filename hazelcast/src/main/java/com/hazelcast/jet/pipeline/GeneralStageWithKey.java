@@ -50,7 +50,7 @@ import static com.hazelcast.jet.pipeline.GeneralStage.DEFAULT_PRESERVE_ORDER;
  * @param <T> type of the stream item
  * @param <K> type of the grouping key
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public interface GeneralStageWithKey<T, K> {
 
@@ -400,7 +400,7 @@ public interface GeneralStageWithKey<T, K> {
      * @param <S> type of service object
      * @param <R> the future result type of the mapping function
      * @return the newly attached stage
-     * @since 4.0
+     * @since Jet 4.0
      *
      * @deprecated Jet now has first-class support for data rebalancing, see
      * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
@@ -455,7 +455,7 @@ public interface GeneralStageWithKey<T, K> {
      * @param <S> type of service object
      * @param <R> the future result type of the mapping function
      * @return the newly attached stage
-     * @since 4.0
+     * @since Jet 4.0
      *
      * @deprecated Jet now has first-class support for data rebalancing, see
      * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.

@@ -29,7 +29,7 @@ import java.util.List;
  * key.
  *
  * @param <T> the type of items a source using this file format will emit
- * @since 4.4
+ * @since Jet 4.4
  */
 public interface FileFormat<T> extends Serializable {
 

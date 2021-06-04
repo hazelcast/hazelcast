@@ -28,7 +28,7 @@ import java.util.function.Function;
  * A subset of {@code Queue<Object>} API restricted to the consumer side,
  * with additional support for bulk draining operations.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public interface Inbox extends Iterable<Object> {
 
@@ -92,7 +92,7 @@ public interface Inbox extends Iterable<Object> {
      * @param limit the maximum amount of items to drain
      * @return the number of elements actually drained
      *
-     * @since 4.0
+     * @since Jet 4.0
      */
     @SuppressWarnings("unchecked")
     default <E> int drainTo(@Nonnull Collection<E> target, int limit) {
@@ -112,7 +112,7 @@ public interface Inbox extends Iterable<Object> {
      * @param mapper mapping function to apply to this object's items
      * @return the number of elements actually drained
      *
-     * @since 4.1
+     * @since Jet 4.1
      */
     @SuppressWarnings("unchecked")
     default <E, M> int drainTo(@Nonnull Collection<M> target, int limit, @Nonnull Function<E, M> mapper) {

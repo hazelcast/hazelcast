@@ -88,6 +88,7 @@ import java.util.function.BiConsumer;
 import static com.hazelcast.internal.partition.TestPartitionUtils.getPartitionServiceState;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.OsHelper.isLinux;
+import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 import static com.hazelcast.test.TestEnvironment.isRunningCompatibilityTest;
 import static java.lang.Integer.getInteger;
 import static java.lang.String.format;
@@ -1643,7 +1644,7 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void assumeThatNoWindowsOS() {
-        assumeFalse(System.getProperty("os.name").toLowerCase().contains("windows"));
+        assumeFalse(lowerCaseInternal(System.getProperty("os.name")).contains("windows"));
     }
 
     public static void assumeThatLinuxOS() {

@@ -33,7 +33,7 @@ import java.util.concurrent.CancellationException;
  * A Jet computation job created by submitting a {@link DAG} or {@link
  * Pipeline}. Once submitted, Jet starts executing the job automatically.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public interface Job extends LightJob {
 
@@ -74,7 +74,7 @@ public interface Job extends LightJob {
      * led to the suspension of the job. Throws an {@code IllegalStateException}
      * if the job is not currently suspended.
      *
-     * @since 4.3
+     * @since Jet 4.3
      */
     @Nonnull
     JobSuspensionCause getSuspensionCause();
@@ -103,7 +103,7 @@ public interface Job extends LightJob {
      * was enabled. If a job fails, is cancelled or suspended, empty metrics
      * will be returned.
      *
-     * @since 3.2
+     * @since Jet 3.2
      */
     @Nonnull
     JobMetrics getMetrics();
@@ -269,7 +269,7 @@ public interface Job extends LightJob {
      * Forceful job-control actions will interrupt the export procedure.
      * <p>
      * You can access the exported state using {@link
-     * JetInstance#getJobStateSnapshot(String)}.
+     * JetService#getJobStateSnapshot(String)}.
      * <p>
      * The method call will block until it has fully exported the snapshot.
      *

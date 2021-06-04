@@ -150,7 +150,7 @@ import static java.util.stream.Collectors.toMap;
  * <h3>Example usage</h3>
  * This will test one of the jet-provided processors:
  * <pre>{@code
- * TestSupport.verifyProcessor(Processors.map((String s) -> s.toUpperCase()))
+ * TestSupport.verifyProcessor(Processors.map((String s) -> s.toUpperCase(Locale.ROOT)))
  *            .disableCompleteCall()             // enabled by default
  *            .disableLogging()                  // enabled by default
  *            .disableProgressAssertion()        // enabled by default
@@ -161,7 +161,7 @@ import static java.util.stream.Collectors.toMap;
  *            .expectOutput(asList("FOO", "BAR"));
  * }</pre>
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public final class TestSupport {
 

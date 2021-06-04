@@ -27,7 +27,7 @@ import static java.util.Objects.requireNonNull;
  * {@link FileFormat} for text files where the whole file is one {@code
  * String} data item. See {@link FileFormat#text} for more details.
  *
- * @since 4.4
+ * @since Jet 4.4
  */
 public class TextFileFormat implements FileFormat<String> {
 

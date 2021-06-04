@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
+import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
 import static java.lang.String.format;
 import static java.util.Collections.unmodifiableSet;
 
@@ -302,7 +303,7 @@ public class HazelcastProperties {
         String value = getString(property);
 
         for (E enumConstant : enumClazz.getEnumConstants()) {
-            if (enumConstant.name().equalsIgnoreCase(value)) {
+            if (equalsIgnoreCase(enumConstant.name(), value)) {
                 return enumConstant;
             }
         }

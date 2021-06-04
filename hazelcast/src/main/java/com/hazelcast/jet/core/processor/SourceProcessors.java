@@ -80,7 +80,7 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
  * entry points). For other kinds for a vertices refer to the {@link
  * com.hazelcast.jet.core.processor package-level documentation}.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public final class SourceProcessors {
 

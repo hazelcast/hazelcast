@@ -17,6 +17,6 @@
 /**
  * Protocol Buffers v3 support for Hazelcast Jet.
  *
- * @since 4.1
+ * @since Jet 4.1
  */
 package com.hazelcast.jet.protobuf;

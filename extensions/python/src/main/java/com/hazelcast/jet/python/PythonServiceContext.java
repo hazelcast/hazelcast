@@ -34,6 +34,7 @@ import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -250,7 +251,7 @@ class PythonServiceContext {
 
     private static void createParamsScript(@Nonnull Path paramsFile, String... namesAndVals) throws IOException {
         try (PrintWriter out = new PrintWriter(Files.newBufferedWriter(paramsFile))) {
-            String jetToPython = JET_TO_PYTHON_PREFIX.toUpperCase();
+            String jetToPython = JET_TO_PYTHON_PREFIX.toUpperCase(Locale.ROOT);
             for (int i = 0; i < namesAndVals.length; i += 2) {
                 String name = namesAndVals[i];
                 String value = namesAndVals[i + 1];

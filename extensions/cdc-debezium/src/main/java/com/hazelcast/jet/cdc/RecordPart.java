@@ -28,7 +28,7 @@ import java.util.Map;
  * Contains various methods for retrieving component values or for mapping
  * itself to data objects.
  *
- * @since 4.2
+ * @since Jet 4.2
  */
 @EvolvingApi
 public interface RecordPart {

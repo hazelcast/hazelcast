@@ -51,7 +51,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 /**
  * Defines the name and default value for Hazelcast properties.
  */
-@SuppressWarnings({"checkstyle:javadocvariable", "checkstyle:magicnumber"})
+@SuppressWarnings({"checkstyle:magicnumber"})
 public final class ClusterProperty {
     /*
      * NETWORKING / TCP PROPERTIES
@@ -383,6 +383,13 @@ public final class ClusterProperty {
      */
     public static final HazelcastProperty MULTICAST_SOCKET_SET_INTERFACE
             = new HazelcastProperty("hazelcast.multicast.socket.set.interface");
+
+    /**
+     * IP address of a multicast group. If not set, then the configuration is read from the
+     * {@link com.hazelcast.config.MulticastConfig} configuration.
+     */
+    public static final HazelcastProperty MULTICAST_GROUP
+            = new HazelcastProperty("hazelcast.multicast.group");
 
     /**
      * Timeout to connect all other cluster members when a member is joining to a cluster.

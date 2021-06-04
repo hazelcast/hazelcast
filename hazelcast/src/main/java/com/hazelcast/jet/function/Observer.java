@@ -33,7 +33,7 @@ import javax.annotation.Nonnull;
  *
  * @param <T> type of the observed event
  *
- * @since 4.0
+ * @since Jet 4.0
  */
 @FunctionalInterface
 public interface Observer<T> {

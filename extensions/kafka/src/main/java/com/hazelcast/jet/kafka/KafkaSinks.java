@@ -35,7 +35,7 @@ import static com.hazelcast.jet.kafka.KafkaProcessors.writeKafkaP;
 /**
  * Contains factory methods for Apache Kafka sinks.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public final class KafkaSinks {
 

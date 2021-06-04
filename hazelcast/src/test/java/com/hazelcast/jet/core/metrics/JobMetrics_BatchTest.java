@@ -31,6 +31,7 @@ import org.junit.experimental.categories.Category;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Locale;
 
 import static com.hazelcast.function.Functions.wholeItem;
 import static com.hazelcast.jet.Traversers.traverseArray;
@@ -147,7 +148,7 @@ public class JobMetrics_BatchTest extends TestInClusterSupport {
     private Pipeline createPipeline(String text) {
         Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items(text))
-         .flatMap(line -> traverseArray(line.toLowerCase().split("\\W+")))
+         .flatMap(line -> traverseArray(line.toLowerCase(Locale.ROOT).split("\\W+")))
          .filter(word -> !word.isEmpty())
          .groupingKey(wholeItem())
          .aggregate(counting())

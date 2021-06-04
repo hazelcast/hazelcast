@@ -42,7 +42,7 @@ import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
  * {@link ProcessorMetaSupplier.Context} implementation suitable to be used
  * in tests.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.Context {
 
