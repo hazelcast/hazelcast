@@ -330,6 +330,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      * @param includeValue {@code true} if {@code EntryEvent} should contain the value,
      *                     {@code false} otherwise
      * @return returns registration ID for the entry listener
+     * @since 5.0
      */
     @Nonnull
     UUID addLocalEntryListener(@Nonnull EntryListener<K, V> listener, boolean includeValue);
