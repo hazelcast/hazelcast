@@ -18,19 +18,23 @@ package com.hazelcast.jet.impl.client.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.task.AbstractMultiTargetMessageTask;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobIdsCodec;
 import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobIdsCodec.RequestParameters;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation;
+import com.hazelcast.jet.impl.operation.GetJobIdsOperation.GetJobIdsResult;
+import com.hazelcast.spi.exception.TargetDisconnectedException;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
 import java.util.Collection;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.function.Supplier;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
@@ -38,6 +42,8 @@ import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toMap;
 
 public class JetGetJobIdsMessageTask extends AbstractMultiTargetMessageTask<RequestParameters> {
+
+    private transient Address masterAddress;
 
     JetGetJobIdsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -50,15 +56,43 @@ public class JetGetJobIdsMessageTask extends AbstractMultiTargetMessageTask<Requ
 
     @Override
     public Collection<Member> getTargets() {
+        masterAddress = nodeEngine.getClusterService().getMasterAddress();
+        if (masterAddress == null) {
+            throw new IllegalStateException("Master is not known yet");
+        }
+
         // if onlyName != null, only send the operation to master. Light jobs cannot have a name
-        return parameters.onlyName != null
-                ? singleton(nodeEngine.getClusterService().getMembers().iterator().next())
-                : nodeEngine.getClusterService().getMembers(DATA_MEMBER_SELECTOR);
+        if (parameters.onlyName != null) {
+            Member masterMember = nodeEngine.getClusterService().getMember(masterAddress);
+            if (masterMember == null) {
+                throw new IllegalStateException("Master changed");
+            }
+            return singleton(masterMember);
+        } else {
+            return nodeEngine.getClusterService().getMembers(DATA_MEMBER_SELECTOR);
+        }
     }
 
     @Override
     protected Object reduce(Map<Member, Object> map) {
-        return map.entrySet().stream().collect(toMap(en -> en.getKey().getUuid(), Entry::getValue));
+        return map.entrySet().stream().collect(toMap(
+                en -> en.getKey().getUuid(),
+                en -> {
+                    Object response = en.getValue();
+                    if (response instanceof MemberLeftException
+                            || response instanceof TargetNotMemberException
+                            || response instanceof TargetDisconnectedException) {
+                        return GetJobIdsResult.EMPTY;
+                    }
+                    if (response instanceof Exception) {
+                        // ignore exceptions from non-master, but not from master
+                        if (en.getKey().getAddress().equals(masterAddress)) {
+                            throw new RuntimeException((Throwable) response);
+                        }
+                        return GetJobIdsResult.EMPTY;
+                    }
+                    return response;
+                }));
     }
 
     @Override
