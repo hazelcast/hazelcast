@@ -76,7 +76,7 @@ public class LocalElasticSourcesTest extends CommonElasticSourcesTest {
 
         assertThatThrownBy(() -> super.hz.getJet().newJob(p).join())
                 .hasCauseInstanceOf(JetException.class)
-                .hasMessageContaining("Shard locations are not equal to Jet nodes locations");
+                .hasMessageContaining("Shard locations are not equal to Hazelcast members locations");
     }
 
     @Test
