@@ -130,13 +130,19 @@ public class JobCoordinationService {
 
     private static final int MIN_JOB_SCAN_PERIOD_MILLIS = 100;
 
+    /**
+     * Inserted temporarily to {@link #lightMasterContexts} to safely check for double job submission.
+     * When reading, it's treated as if the job doesn't exist.
+     */
+    private static final Object UNINITIALIZED_LIGHT_JOB_MARKER = new Object();
+
     private final NodeEngineImpl nodeEngine;
     private final JetServiceBackend jetServiceBackend;
     private final JetConfig config;
     private final ILogger logger;
     private final JobRepository jobRepository;
     private final ConcurrentMap<Long, MasterContext> masterContexts = new ConcurrentHashMap<>();
-    private final ConcurrentMap<Long, LightMasterContext> lightMasterContexts = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Long, Object> lightMasterContexts = new ConcurrentHashMap<>();
     private final ConcurrentMap<UUID, CompletableFuture<Void>> membersShuttingDown = new ConcurrentHashMap<>();
     /**
      * Map of {memberUuid; removeTime}.
@@ -290,13 +296,24 @@ public class JobCoordinationService {
                 }
             });
         }
+
+        // First insert just a marker into the map. This is to prevent initializing the light job if the jobId
+        // was submitted twice. This can happen e.g. if the client retries.
+        Object oldContext = lightMasterContexts.putIfAbsent(jobId, UNINITIALIZED_LIGHT_JOB_MARKER);
+        if (oldContext != null) {
+            throw new JetException("duplicate jobId " + idToString(jobId));
+        }
+
+        // Initialize and start the job (happens in the constructor). We do this before adding the actual
+        // LightMasterContext to the map to avoid possible races of the the job initialization and cancellation.
         LightMasterContext mc = new LightMasterContext(nodeEngine, dag, jobId);
-        LightMasterContext oldContext = lightMasterContexts.put(jobId, mc);
-        assert oldContext == null : "duplicate jobId";
+        oldContext = lightMasterContexts.put(jobId, mc);
+        assert oldContext == UNINITIALIZED_LIGHT_JOB_MARKER;
+
         return mc.getCompletionFuture()
                 .whenComplete((t, r) -> {
-                    LightMasterContext removed = lightMasterContexts.remove(jobId);
-                    assert removed != null : "LMC not found";
+                    Object removed = lightMasterContexts.remove(jobId);
+                    assert removed instanceof LightMasterContext : "LMC not found: " + removed;
                 });
     }
 
@@ -421,11 +438,11 @@ public class JobCoordinationService {
     }
 
     public void terminateLightJob(long jobId) {
-        LightMasterContext mc = lightMasterContexts.get(jobId);
-        if (mc == null) {
+        Object mc = lightMasterContexts.get(jobId);
+        if (mc == null || mc == UNINITIALIZED_LIGHT_JOB_MARKER) {
             throw new JobNotFoundException(jobId);
         }
-        mc.requestTermination();
+        ((LightMasterContext) mc).requestTermination();
     }
 
     /**
@@ -452,23 +469,25 @@ public class JobCoordinationService {
 
             // add light jobs - only if no name is requested, light jobs can't have a name
             if (onlyName == null) {
-                for (LightMasterContext ctx : lightMasterContexts.values()) {
-                    result.add(tuple2(ctx.getJobId(), true));
+                for (Object ctx : lightMasterContexts.values()) {
+                    if (ctx != UNINITIALIZED_LIGHT_JOB_MARKER) {
+                        result.add(tuple2(((LightMasterContext) ctx).getJobId(), true));
+                    }
                 }
             }
 
             // add normal jobs - only on master
             if (isMaster()) {
-                // we need to collect to a map where the jobId is the key first, to eliminate possible duplicates
-                // in JobResult and also to be able to sort from newest to oldest
-                Map<Long, Long> jobs = new HashMap<>();
-                for (MasterContext ctx : masterContexts.values()) {
-                    if (onlyName == null || onlyName.equals(ctx.jobConfig().getName())) {
-                        jobs.put(ctx.jobId(), Long.MAX_VALUE);
-                    }
-                }
-
                 if (onlyName != null) {
+                    // we first need to collect to a map where the jobId is the key to eliminate possible duplicates
+                    // in JobResult and also to be able to sort from newest to oldest
+                    Map<Long, Long> jobs = new HashMap<>();
+                    for (MasterContext ctx : masterContexts.values()) {
+                        if (onlyName.equals(ctx.jobConfig().getName())) {
+                            jobs.put(ctx.jobId(), Long.MAX_VALUE);
+                        }
+                    }
+
                     for (JobResult jobResult : jobRepository.getJobResults(onlyName)) {
                         jobs.put(jobResult.getJobId(), jobResult.getCreationTime());
                     }
@@ -564,11 +583,11 @@ public class JobCoordinationService {
      */
     public CompletableFuture<Long> getJobSubmissionTime(long jobId, boolean isLightJob) {
         if (isLightJob) {
-            LightMasterContext mc = lightMasterContexts.get(jobId);
-            if (mc == null) {
+            Object mc = lightMasterContexts.get(jobId);
+            if (mc == null || mc == UNINITIALIZED_LIGHT_JOB_MARKER) {
                 throw new JobNotFoundException(jobId);
             }
-            return completedFuture(mc.getStartTime());
+            return completedFuture(((LightMasterContext) mc).getStartTime());
         }
         return callWithJob(jobId,
                 mc -> mc.jobRecord().getCreationTime(),
@@ -610,6 +629,8 @@ public class JobCoordinationService {
 
             // light jobs
             lightMasterContexts.values().stream()
+                    .filter(lmc -> lmc == UNINITIALIZED_LIGHT_JOB_MARKER)
+                    .map(LightMasterContext.class::cast)
                     .map(lmc -> new JobSummary(
                             lmc.getJobId(), lmc.getJobId(), idToString(lmc.getJobId()), RUNNING, lmc.getStartTime()))
                     .forEach(s -> jobs.put(s.getJobId(), s));
@@ -1169,8 +1190,8 @@ public class JobCoordinationService {
      */
     public long[] findUnknownExecutions(long[] executionIds) {
         return Arrays.stream(executionIds).filter(key -> {
-            LightMasterContext lmc = lightMasterContexts.get(key);
-            return lmc == null || lmc.isCancelled();
+            Object lmc = lightMasterContexts.get(key);
+            return lmc == null || lmc instanceof LightMasterContext && ((LightMasterContext) lmc).isCancelled();
         }).toArray();
     }
 }

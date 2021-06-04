@@ -127,14 +127,12 @@ public class LightMasterContext {
 
     private void finalizeJob(@Nullable Throwable failure) {
         // close ProcessorMetaSuppliers
-        if (vertices != null) {
-            for (Vertex vertex : vertices) {
-                try {
-                    vertex.getMetaSupplier().close(failure);
-                } catch (Throwable e) {
-                    logger.severe(jobIdString
-                            + " encountered an exception in ProcessorMetaSupplier.complete(), ignoring it", e);
-                }
+        for (Vertex vertex : vertices) {
+            try {
+                vertex.getMetaSupplier().close(failure);
+            } catch (Throwable e) {
+                logger.severe(jobIdString
+                        + " encountered an exception in ProcessorMetaSupplier.complete(), ignoring it", e);
             }
         }
 

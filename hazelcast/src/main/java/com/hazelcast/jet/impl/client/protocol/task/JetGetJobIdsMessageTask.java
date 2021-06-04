@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Supplier;
 
+import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toMap;
 
@@ -52,7 +53,7 @@ public class JetGetJobIdsMessageTask extends AbstractMultiTargetMessageTask<Requ
         // if onlyName != null, only send the operation to master. Light jobs cannot have a name
         return parameters.onlyName != null
                 ? singleton(nodeEngine.getClusterService().getMembers().iterator().next())
-                : nodeEngine.getClusterService().getMembers();
+                : nodeEngine.getClusterService().getMembers(DATA_MEMBER_SELECTOR);
     }
 
     @Override

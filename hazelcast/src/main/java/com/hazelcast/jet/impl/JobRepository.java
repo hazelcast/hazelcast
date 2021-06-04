@@ -572,17 +572,15 @@ public class JobRepository {
         return jobMetrics.get().get(jobId);
     }
 
-    /**
-     * Returns job results for jobs with the given name, or all job results, if
-     * the given name is null.
-     */
     Collection<JobResult> getJobResults() {
         return jobResults.get().values();
     }
 
-    List<JobResult> getJobResults(@Nonnull String name) {
-        return jobResults.get().values(new FilterJobResultByNamePredicate(name)).stream()
-                         .sorted(comparing(JobResult::getCreationTime).reversed()).collect(toList());
+    /**
+     * Returns job results for jobs with the given name.
+     */
+    Collection<JobResult> getJobResults(@Nonnull String name) {
+        return jobResults.get().values(new FilterJobResultByNamePredicate(name));
     }
 
     /**

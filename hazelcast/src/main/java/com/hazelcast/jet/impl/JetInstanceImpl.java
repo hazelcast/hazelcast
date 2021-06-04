@@ -20,6 +20,7 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
@@ -34,13 +35,14 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 
 import javax.annotation.Nonnull;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
+import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static java.util.Collections.singleton;
 
@@ -72,7 +74,8 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
         Map<Address, CompletableFuture<GetJobIdsResult>> futures = new HashMap<>();
         Address masterAddress = null;
         // if onlyName != null, only send the operation to master. Light jobs cannot have a name
-        Set<Member> targetMembers = onlyName == null ? getCluster().getMembers()
+        Collection<Member> targetMembers = onlyName == null
+                ? ((ClusterService) getCluster()).getMembers(DATA_MEMBER_SELECTOR)
                 : singleton(nodeEngine.getClusterService().getMembers().iterator().next());
         for (Member member : targetMembers) {
             if (masterAddress == null) {
