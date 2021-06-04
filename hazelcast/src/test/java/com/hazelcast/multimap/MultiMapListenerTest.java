@@ -63,6 +63,43 @@ public class MultiMapListenerTest extends HazelcastTestSupport {
         multiMap.addEntryListener(null, true);
     }
 
+    @Test(expected = NullPointerException.class)
+    public void testNullLocalEntryListener_whenValueIncluded() {
+        MultiMap<String, String> multiMap = createHazelcastInstance().getMultiMap(randomString());
+        multiMap.addLocalEntryListener(null, true);
+    }
+
+    @Test
+    public void testLocalListenerEntryAddEvent_whenValueIncluded() {
+        int maxKeys = 12;
+        int maxItems = 3;
+        MultiMap<Object, Object> multiMap = createHazelcastInstance().getMultiMap(randomString());
+        MyEntryListener listener = new CountDownValueNotNullListener(maxKeys * maxItems);
+        multiMap.addLocalEntryListener(listener, true);
+        for (int i = 0; i < maxKeys; i++) {
+            for (int j = 0; j < maxItems; j++) {
+                multiMap.put(i, j);
+            }
+        }
+        assertOpenEventually(listener.addLatch);
+    }
+
+    @Test
+    public void testLocalListenerEntryRemoveEvent_whenValueIncluded() {
+        int maxKeys = 12;
+        int maxItems = 3;
+        MultiMap<Object, Object> multiMap = createHazelcastInstance().getMultiMap(randomString());
+        MyEntryListener listener = new CountDownValueNotNullListener(maxKeys * maxItems);
+        multiMap.addLocalEntryListener(listener, true);
+        for (int i = 0; i < maxKeys; i++) {
+            for (int j = 0; j < maxItems; j++) {
+                multiMap.put(i, j);
+                multiMap.remove(i);
+            }
+        }
+        assertOpenEventually(listener.removeLatch);
+    }
+
     @Test
     public void testRemoveListener() {
         MultiMap<Object, Object> multiMap = createHazelcastInstance().getMultiMap(randomString());
