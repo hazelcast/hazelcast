@@ -34,6 +34,8 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.exec.scan.KeyValueIterator;
 import com.hazelcast.sql.impl.exec.scan.MapScanExecIterator;
 import com.hazelcast.sql.impl.exec.scan.MapScanRow;
@@ -109,11 +111,14 @@ public final class OnHeapMapScanP extends AbstractProcessor implements Identifie
     }
 
     private class IMapTraverser implements Traverser<Object[]> {
+        private final MapContainer mapContainer;
         private final KeyValueIterator iterator;
         private final Expression<Boolean> filter;
         private final List<Expression<?>> projections;
         private final SimpleExpressionEvalContext ctx;
         private final MapScanRow row;
+
+        private int migrationStamp;
 
         IMapTraverser(
                 @Nonnull NodeEngine nodeEngine,
@@ -123,7 +128,7 @@ public final class OnHeapMapScanP extends AbstractProcessor implements Identifie
 
         ) {
             MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
-            MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(scanMetadata.getMapName());
+            this.mapContainer = mapService.getMapServiceContext().getMapContainer(scanMetadata.getMapName());
             this.iterator = new MapScanExecIterator(mapContainer, partitions.iterator(), ctx.getSerializationService());
             this.filter = scanMetadata.getFilter();
             this.projections = scanMetadata.getProjects();
@@ -136,6 +141,8 @@ public final class OnHeapMapScanP extends AbstractProcessor implements Identifie
                     mapContainer.getExtractors(),
                     ctx.getSerializationService()
             );
+
+            migrationStamp = getMigrationStamp();
         }
 
         @Override
@@ -155,6 +162,16 @@ public final class OnHeapMapScanP extends AbstractProcessor implements Identifie
                     return row;
                 }
             }
+
+            // Check for concurrent migration
+            if (!validateMigrationStamp(migrationStamp)) {
+                throw QueryException.error(
+                        SqlErrorCode.PARTITION_DISTRIBUTION,
+                        "Map scan failed due to concurrent partition migration "
+                                + "(result consistency cannot be guaranteed)"
+                ).markInvalidate();
+            }
+
             done = true;
             return null;
         }
@@ -185,6 +202,14 @@ public final class OnHeapMapScanP extends AbstractProcessor implements Identifie
             }
 
             return row;
+        }
+
+        private int getMigrationStamp() {
+            return mapContainer.getMapServiceContext().getService().getMigrationStamp();
+        }
+
+        private boolean validateMigrationStamp(int migrationStamp) {
+            return mapContainer.getMapServiceContext().getService().validateMigrationStamp(migrationStamp);
         }
     }
 

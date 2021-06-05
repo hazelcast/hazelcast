@@ -16,13 +16,31 @@
 
 package com.hazelcast.jet.sql.impl.connector.map;
 
+import com.hazelcast.cluster.Address;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.test.TestOutbox;
+import com.hazelcast.jet.core.test.TestProcessorContext;
+import com.hazelcast.jet.core.test.TestProcessorMetaSupplierContext;
+import com.hazelcast.jet.core.test.TestProcessorSupplierContext;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.map.IMap;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.partition.Partition;
+import com.hazelcast.partition.PartitionService;
+import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.ConstantPredicateExpression;
@@ -33,6 +51,7 @@ import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.plan.node.MapScanMetadata;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -59,14 +78,23 @@ import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
 
+    private static final int BATCH_SIZE = 1024;
+    private static final int PARTITION_COUNT = 10;
+    private static final String MAP_OBJECT = "mo";
+    private static final String MAP_BINARY = "mb";
+
     @Parameterized.Parameters(name = "count:{0}")
     public static Collection<Integer> parameters() {
-        return asList(500, 25_000);
+        return asList(500, 20_000);
     }
 
     @Parameterized.Parameter()
@@ -262,6 +290,170 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
                 .expectOutput(expected);
     }
 
+    @Test
+    public void testConcurrentMigration() throws Exception {
+        final TestHazelcastInstanceFactory FACTORY = new TestHazelcastInstanceFactory(2);
+        HazelcastInstance instance1 = instance().getHazelcastInstance();
+
+        IMap<TestKey, TestValue> map = instance1.getMap(MAP_OBJECT);
+        List<Object[]> expected = new ArrayList<>();
+        MapProxyImpl<TestKey, TestValue> mapProxy = ((MapProxyImpl<TestKey, TestValue>) map);
+        PartitionService partitionService = instance1.getPartitionService();
+
+        // Get local partition.
+        int localPartition = -1;
+
+        for (int i = 0; i < PARTITION_COUNT; i++) {
+            for (Partition partition : instance1.getPartitionService().getPartitions()) {
+                if (instance1.getLocalEndpoint().getUuid().equals(partition.getOwner().getUuid())) {
+                    localPartition = partition.getPartitionId();
+
+                    break;
+                }
+            }
+        }
+
+        assertNotEquals(-1, localPartition);
+
+        // Load entries into the partition such that is spans several batches.
+        int loaded = 0;
+        int currentKey = 0;
+
+        while (loaded < BATCH_SIZE * 3 / 2) {
+            TestKey key = new TestKey(currentKey);
+            int partition = partitionService.getPartition(key).getPartitionId();
+
+            if (partition == localPartition) {
+                map.put(key, new TestValue(1, true));
+                expected.add(new Object[]{1});
+                loaded++;
+            }
+            currentKey++;
+        }
+
+        MapScanMetadata scanMetadata = new MapScanMetadata(
+                map.getName(),
+                GenericQueryTargetDescriptor.DEFAULT,
+                GenericQueryTargetDescriptor.DEFAULT,
+                Collections.singletonList(valuePath("val2")),
+                Collections.singletonList(INT),
+                singletonList(ColumnExpression.create(0, INT)),
+                new ConstantPredicateExpression(true)
+        );
+
+        Address address = instance1.getCluster().getLocalMember().getAddress();
+        assertNotNull(address);
+
+        ProcessorMetaSupplier pms = OnHeapMapScanP.onHeapMapScanP(scanMetadata);
+        pms.init(new TestProcessorMetaSupplierContext().setHazelcastInstance(instance1));
+
+        ProcessorSupplier ps = adaptSupplier(pms.get(Collections.singletonList(address)).apply(address));
+        ps.init(new TestProcessorSupplierContext().setHazelcastInstance(instance1));
+
+        Processor processor = ps.get(1).iterator().next();
+        assertNotNull(processor);
+        processor.init(new TestOutbox(),
+                new TestProcessorContext()
+                        .setHazelcastInstance(instance1)
+                        .setJobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
+        );
+
+        assertFalseEventually(processor::complete);
+
+        // Add member
+        int migrationStamp = mapProxy.getService().getMigrationStamp();
+
+        HazelcastInstance instance2 = FACTORY.newHazelcastInstance(getInstanceConfig());
+
+        Thread.sleep(200L);
+        try {
+            // Await for migration stamp to change.
+            assertTrueEventually(() -> assertNotEquals(migrationStamp, mapProxy.getService().getMigrationStamp()));
+
+            // Try advance, should fail.
+            QueryException exception = assertThrows(QueryException.class, processor::complete);
+            assertEquals(SqlErrorCode.PARTITION_DISTRIBUTION, exception.getCode());
+            assertTrue(exception.isInvalidatePlan());
+        } finally {
+            instance2.shutdown();
+        }
+    }
+
+    @Test
+    public void testConcurrentMapDestroy() {
+        HazelcastInstance instance1 = instance().getHazelcastInstance();
+        IMap<TestKey, TestValue> map = instance1.getMap(MAP_OBJECT);
+        List<Object[]> expected = new ArrayList<>();
+
+        // Collect local partitions.
+        PartitionIdSet partitionIdSet = new PartitionIdSet(PARTITION_COUNT);
+
+        for (int i = 0; i < PARTITION_COUNT; i++) {
+            for (Partition partition : instance1.getPartitionService().getPartitions()) {
+                if (instance1.getLocalEndpoint().getUuid().equals(partition.getOwner().getUuid())) {
+                    partitionIdSet.add(partition.getPartitionId());
+                    break;
+                }
+            }
+        }
+
+        for (int partition : partitionIdSet) {
+            int currentKey = 0;
+
+            while (true) {
+                TestKey key = new TestKey(currentKey);
+
+                if (instance1.getPartitionService().getPartition(key).getPartitionId() == partition) {
+                    map.put(key, new TestValue(1, true));
+                    expected.add(new Object[]{1});
+                    break;
+                }
+                currentKey++;
+            }
+        }
+
+        MapScanMetadata scanMetadata = new MapScanMetadata(
+                map.getName(),
+                GenericQueryTargetDescriptor.DEFAULT,
+                GenericQueryTargetDescriptor.DEFAULT,
+                Collections.singletonList(valuePath("val2")),
+                Collections.singletonList(INT),
+                singletonList(ColumnExpression.create(0, INT)),
+                new ConstantPredicateExpression(true)
+        );
+
+        TestSupport
+                .verifyProcessor(adaptSupplier(OnHeapMapScanP.onHeapMapScanP(scanMetadata)))
+                .hazelcastInstance(instance1)
+                .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
+                .outputChecker(LENIENT_SAME_ITEMS_ANY_ORDER)
+                .disableSnapshots()
+                .disableProgressAssertion()
+                .expectOutput(expected);
+
+        // Destroy the map.
+        instance1.getMap(MAP_OBJECT).destroy();
+        try {
+            Thread.sleep(50L);
+            TestSupport
+                    .verifyProcessor(adaptSupplier(OnHeapMapScanP.onHeapMapScanP(scanMetadata)))
+                    .hazelcastInstance(instance1)
+                    .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
+                    .disableSnapshots()
+                    .disableProgressAssertion()
+                    .expectOutput(emptyList());
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static Config getInstanceConfig() {
+        return new Config()
+                .addMapConfig(new MapConfig().setName(MAP_OBJECT).setInMemoryFormat(InMemoryFormat.OBJECT))
+                .addMapConfig(new MapConfig().setName(MAP_BINARY).setInMemoryFormat(InMemoryFormat.BINARY))
+                .setProperty("hazelcast.partition.count", Integer.toString(PARTITION_COUNT));
+    }
+
     private static class Person implements DataSerializable {
         private String name;
         private int age;
@@ -293,6 +485,56 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
         public void readData(ObjectDataInput in) throws IOException {
             this.name = in.readString();
             this.age = in.readInt();
+        }
+    }
+
+    private static class TestKey implements DataSerializable {
+
+        private int val1;
+
+        private TestKey() {
+            // No-op.
+        }
+
+        private TestKey(int val1) {
+            this.val1 = val1;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeInt(val1);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            val1 = in.readInt();
+        }
+    }
+
+    private static class TestValue implements DataSerializable {
+
+        private int val2;
+        private boolean val3;
+
+        private TestValue() {
+            // No-op.
+        }
+
+        private TestValue(int val2, boolean val3) {
+            this.val2 = val2;
+            this.val3 = val3;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeInt(val2);
+            out.writeBoolean(val3);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            val2 = in.readInt();
+            val3 = in.readBoolean();
         }
     }
 }
