@@ -60,6 +60,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -700,5 +701,24 @@ public final class Util {
             throw new IllegalArgumentException("This method can be called only member" +
                     " instances such as HazelcastInstanceImpl and HazelcastInstanceProxy.");
         }
+    }
+
+    /**
+     * Returns a predicate that can be applied as a filter to a non-parallel
+     * {@link Stream} to remove items that have duplicate key.
+     * <p>
+     * Don't use in parallel streams, it uses non-concurrent Set internally.
+     * Don't reuse the returned instance, it's not stateless.
+     * <p>
+     * <pre>{@code
+     *    List<String> list = asList("alice", "adela", "ben");
+     *    list.stream()
+     *        .filter(distinctBy(s -> s.charAt(0)))
+     *        ... // returns "alice", "ben", "adela" is filtered out
+     * }</pre>
+     */
+    public static <T> Predicate<T> distinctBy(Function<? super T, ?> keyFn) {
+        Set<Object> seen = new HashSet<>();
+        return t -> seen.add(keyFn.apply(t));
     }
 }

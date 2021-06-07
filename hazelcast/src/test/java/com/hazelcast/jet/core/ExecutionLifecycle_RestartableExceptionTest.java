@@ -19,7 +19,7 @@ package com.hazelcast.jet.core;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.function.SupplierEx;
-import com.hazelcast.jet.LightJob;
+import com.hazelcast.jet.Job;
 import com.hazelcast.jet.RestartableException;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
@@ -53,7 +53,7 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * This class tests that if a {@link RestartableException} is thrown in any
- * processor or processor supplier methods, the job restarts.
+ * processor or processor supplier method, the job restarts.
  * <p>
  * For light jobs it tests that the job fails with this exception.
  */
@@ -132,7 +132,7 @@ public class ExecutionLifecycle_RestartableExceptionTest extends SimpleTestInClu
         Vertex src = dag.newVertex("src", () -> new ListSource(1));
         Vertex v = dag.newVertex("v", new MockPS(supplier, MEMBER_COUNT));
         dag.edge(between(src, v));
-        LightJob job = newJob(dag);
+        Job job = newJob(dag);
         if (useLightJob) {
             assertThatThrownBy(() -> job.join())
                     .hasRootCause(RESTARTABLE_EXCEPTION);
@@ -155,7 +155,7 @@ public class ExecutionLifecycle_RestartableExceptionTest extends SimpleTestInClu
     }
 
     private void when_inProcessorSupplier(DAG dag) {
-        LightJob job = newJob(dag);
+        Job job = newJob(dag);
         if (useLightJob) {
             assertThatThrownBy(() -> job.join())
                     .hasRootCause(RESTARTABLE_EXCEPTION);
@@ -178,7 +178,7 @@ public class ExecutionLifecycle_RestartableExceptionTest extends SimpleTestInClu
     }
 
     private void whenInProcessorMetaSupplier(DAG dag) {
-        LightJob job = newJob(dag);
+        Job job = newJob(dag);
         if (useLightJob) {
             assertThatThrownBy(() -> job.join())
                     .hasRootCause(RESTARTABLE_EXCEPTION);
@@ -188,7 +188,7 @@ public class ExecutionLifecycle_RestartableExceptionTest extends SimpleTestInClu
         }
     }
 
-    private LightJob newJob(DAG dag) {
+    private Job newJob(DAG dag) {
         return useLightJob ? instance().getJet().newLightJob(dag) : instance().getJet().newJob(dag, jobConfigWithAutoScaling);
     }
 

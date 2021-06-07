@@ -210,7 +210,9 @@ public class JobRepositoryTest extends JetTestSupport {
 
     private long uploadResourcesForNewJob() {
         jobConfig.addClass(DummyClass.class);
-        return jobRepository.uploadJobResources(jobRepository.newJobId(), jobConfig);
+        long jobId = jobRepository.newJobId();
+        jobRepository.uploadJobResources(jobId, jobConfig);
+        return jobId;
     }
 
     private Data createDagData() {
