@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.jet.impl.util.Util.distinctBy;
 
 public class JetGetJobSummaryListMessageTask extends AbstractMultiTargetMessageTask<Void> {
@@ -49,7 +50,7 @@ public class JetGetJobSummaryListMessageTask extends AbstractMultiTargetMessageT
 
     @Override
     public Collection<Member> getTargets() {
-        return nodeEngine.getClusterService().getMembers();
+        return nodeEngine.getClusterService().getMembers(DATA_MEMBER_SELECTOR);
     }
 
     @SuppressWarnings("unchecked")

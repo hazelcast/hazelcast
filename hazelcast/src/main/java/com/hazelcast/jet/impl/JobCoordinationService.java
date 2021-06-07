@@ -629,7 +629,7 @@ public class JobCoordinationService {
 
             // light jobs
             lightMasterContexts.values().stream()
-                    .filter(lmc -> lmc == UNINITIALIZED_LIGHT_JOB_MARKER)
+                    .filter(lmc -> lmc != UNINITIALIZED_LIGHT_JOB_MARKER)
                     .map(LightMasterContext.class::cast)
                     .map(lmc -> new JobSummary(
                             lmc.getJobId(), lmc.getJobId(), idToString(lmc.getJobId()), RUNNING, lmc.getStartTime()))
