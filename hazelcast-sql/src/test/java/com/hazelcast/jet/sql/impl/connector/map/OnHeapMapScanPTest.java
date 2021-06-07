@@ -88,7 +88,7 @@ import static org.junit.Assert.assertTrue;
 public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
 
     private static final int BATCH_SIZE = 1024;
-    private static final int PARTITION_COUNT = 10;
+    private static final int PARTITION_COUNT = 11;
     private static final String MAP_OBJECT = "mo";
     private static final String MAP_BINARY = "mb";
 
@@ -292,7 +292,7 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
 
     @Test
     public void testConcurrentMigration() throws Exception {
-        final TestHazelcastInstanceFactory FACTORY = new TestHazelcastInstanceFactory(2);
+        final TestHazelcastInstanceFactory FACTORY = new TestHazelcastInstanceFactory(1);
         HazelcastInstance instance1 = instance().getHazelcastInstance();
 
         IMap<TestKey, TestValue> map = instance1.getMap(MAP_OBJECT);
@@ -315,19 +315,12 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
 
         assertNotEquals(-1, localPartition);
 
-        // Load entries into the partition such that is spans several batches.
-        int loaded = 0;
         int currentKey = 0;
 
-        while (loaded < BATCH_SIZE * 3 / 2) {
+        while (currentKey < BATCH_SIZE) {
             TestKey key = new TestKey(currentKey);
-            int partition = partitionService.getPartition(key).getPartitionId();
-
-            if (partition == localPartition) {
-                map.put(key, new TestValue(1, true));
-                expected.add(new Object[]{1});
-                loaded++;
-            }
+            map.put(key, new TestValue(1, true));
+            expected.add(new Object[]{1});
             currentKey++;
         }
 
@@ -358,14 +351,13 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
                         .setJobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
         );
 
-        assertFalseEventually(processor::complete);
+        assertTrueEventually(processor::complete);
 
         // Add member
         int migrationStamp = mapProxy.getService().getMigrationStamp();
 
         HazelcastInstance instance2 = FACTORY.newHazelcastInstance(getInstanceConfig());
 
-        Thread.sleep(200L);
         try {
             // Await for migration stamp to change.
             assertTrueEventually(() -> assertNotEquals(migrationStamp, mapProxy.getService().getMigrationStamp()));
@@ -380,7 +372,7 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void testConcurrentMapDestroy() {
+    public void testConcurrentMapDestroy() throws InterruptedException {
         HazelcastInstance instance1 = instance().getHazelcastInstance();
         IMap<TestKey, TestValue> map = instance1.getMap(MAP_OBJECT);
         List<Object[]> expected = new ArrayList<>();
@@ -433,18 +425,16 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
 
         // Destroy the map.
         instance1.getMap(MAP_OBJECT).destroy();
-        try {
-            Thread.sleep(50L);
-            TestSupport
-                    .verifyProcessor(adaptSupplier(OnHeapMapScanP.onHeapMapScanP(scanMetadata)))
-                    .hazelcastInstance(instance1)
-                    .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
-                    .disableSnapshots()
-                    .disableProgressAssertion()
-                    .expectOutput(emptyList());
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+
+        Thread.sleep(50L);
+
+        TestSupport
+                .verifyProcessor(adaptSupplier(OnHeapMapScanP.onHeapMapScanP(scanMetadata)))
+                .hazelcastInstance(instance1)
+                .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
+                .disableSnapshots()
+                .disableProgressAssertion()
+                .expectOutput(emptyList());
     }
 
     private static Config getInstanceConfig() {
