@@ -20,6 +20,7 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.FilteringClassLoader;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
 import com.hazelcast.query.Predicates;
@@ -37,9 +38,11 @@ import org.junit.runners.Parameterized;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
@@ -51,14 +54,19 @@ public abstract class CompactFormatIntegrationTest extends HazelcastTestSupport 
     protected HazelcastInstance instance1;
     protected HazelcastInstance instance2;
 
-    @Parameterized.Parameter
+    @Parameterized.Parameter(0)
     public InMemoryFormat inMemoryFormat;
 
-    @Parameterized.Parameters(name = "inMemoryFormat:{0}")
+    @Parameterized.Parameter(1)
+    public boolean serverDoesNotHaveClasses;
+
+    @Parameterized.Parameters(name = "inMemoryFormat:{0}, serverDoesNotHaveClasses:{1}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
-                {InMemoryFormat.BINARY},
-                {InMemoryFormat.OBJECT}
+                {InMemoryFormat.BINARY, true},
+                {InMemoryFormat.BINARY, false},
+                {InMemoryFormat.OBJECT, true},
+                {InMemoryFormat.OBJECT, false}
         });
     }
 
@@ -66,6 +74,11 @@ public abstract class CompactFormatIntegrationTest extends HazelcastTestSupport 
     protected Config getConfig() {
         Config config = super.smallInstanceConfig();
         config.getMapConfig("test").setInMemoryFormat(inMemoryFormat);
+        if (serverDoesNotHaveClasses) {
+            List<String> excludes = singletonList("example.serialization");
+            FilteringClassLoader classLoader = new FilteringClassLoader(excludes, null);
+            config.setClassLoader(classLoader);
+        }
         return config;
     }
 
