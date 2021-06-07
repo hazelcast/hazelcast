@@ -272,7 +272,7 @@ public class TestHazelcastInstanceFactory {
      * always master.
      * <p>
      * Spawns a separate thread to start each instance. This is required when
-     * starting a Hot Restart-enabled cluster, where the {@code newJetInstance()}
+     * starting a Hot Restart-enabled cluster, where the {@code newHazelcastInstance()}
      * call blocks until the whole cluster is re-formed.
      *
      * @param configFn a function that must return a separate config instance for each address
