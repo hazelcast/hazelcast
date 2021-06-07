@@ -42,7 +42,7 @@ public interface Job {
 
     /**
      * Returns {@code true} if this instance represents a {@linkplain
-     * JetInstance#newLightJob(Pipeline) light job}. For a light job, many of
+     * JetService#newLightJob(Pipeline) light job}. For a light job, many of
      * the methods in this interface throw {@link
      * UnsupportedOperationException}.
      */

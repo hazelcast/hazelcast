@@ -20,7 +20,6 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
-import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
@@ -75,7 +74,7 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
         Address masterAddress = null;
         // if onlyName != null, only send the operation to master. Light jobs cannot have a name
         Collection<Member> targetMembers = onlyName == null
-                ? ((ClusterService) getCluster()).getMembers(DATA_MEMBER_SELECTOR)
+                ? nodeEngine.getClusterService().getMembers(DATA_MEMBER_SELECTOR)
                 : singleton(nodeEngine.getClusterService().getMembers().iterator().next());
         for (Member member : targetMembers) {
             if (masterAddress == null) {

@@ -49,17 +49,20 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * Base {@link Job} implementation for both client and member proxy.
+ *
+ * @param <C> the type of container (the client instance or the node engine)
+ * @param <M> the type of member ID (UUID or Address)
  */
-public abstract class AbstractJobProxy<ContainerType, MemberIdType> implements Job {
+public abstract class AbstractJobProxy<C, M> implements Job {
 
     private static final long TERMINATE_RETRY_DELAY_NS = MILLISECONDS.toNanos(100);
 
     /** Null for normal jobs, non-null for light jobs  */
-    protected final MemberIdType lightJobCoordinator;
+    protected final M lightJobCoordinator;
 
     private final long jobId;
     private final ILogger logger;
-    private final ContainerType container;
+    private final C container;
 
     /**
      * Future that will be completed when we learn that the coordinator
@@ -80,7 +83,7 @@ public abstract class AbstractJobProxy<ContainerType, MemberIdType> implements J
      */
     private final boolean submittingInstance;
 
-    AbstractJobProxy(ContainerType container, long jobId, MemberIdType lightJobCoordinator) {
+    AbstractJobProxy(C container, long jobId, M lightJobCoordinator) {
         this.jobId = jobId;
         this.container = container;
         this.lightJobCoordinator = lightJobCoordinator;
@@ -91,7 +94,7 @@ public abstract class AbstractJobProxy<ContainerType, MemberIdType> implements J
         submittingInstance = false;
     }
 
-    AbstractJobProxy(ContainerType container, long jobId, boolean isLightJob, Object jobDefinition, JobConfig config) {
+    AbstractJobProxy(C container, long jobId, boolean isLightJob, Object jobDefinition, JobConfig config) {
         this.jobId = jobId;
         this.container = container;
         this.lightJobCoordinator = isLightJob ? findLightJobCoordinator() : null;
@@ -263,7 +266,7 @@ public abstract class AbstractJobProxy<ContainerType, MemberIdType> implements J
         return lightJobCoordinator != null;
     }
 
-    protected abstract MemberIdType findLightJobCoordinator();
+    protected abstract M findLightJobCoordinator();
 
     /**
      * Submit and join job with a given DAG and config
@@ -287,7 +290,7 @@ public abstract class AbstractJobProxy<ContainerType, MemberIdType> implements J
      * @throws IllegalStateException if the master isn't known
      */
     @Nonnull
-    protected abstract MemberIdType masterId();
+    protected abstract M masterId();
 
     protected abstract SerializationService serializationService();
 
@@ -295,7 +298,7 @@ public abstract class AbstractJobProxy<ContainerType, MemberIdType> implements J
 
     protected abstract boolean isRunning();
 
-    protected ContainerType container() {
+    protected C container() {
         return container;
     }
 
