@@ -17,8 +17,11 @@
 package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
+import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -42,5 +45,15 @@ public class GetJobMetricsOperation extends AsyncJobOperation implements Allowed
     @Override
     public int getClassId() {
         return JetInitDataSerializerHook.GET_JOB_METRICS_OP;
+    }
+
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
     }
 }

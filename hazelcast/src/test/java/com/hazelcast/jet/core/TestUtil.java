@@ -17,7 +17,7 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.function.SupplierEx;
-import com.hazelcast.jet.LightJob;
+import com.hazelcast.jet.Job;
 import com.hazelcast.jet.impl.util.ThrottleWrappedP;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.impl.util.WrappingProcessorMetaSupplier;
@@ -50,7 +50,7 @@ public final class TestUtil {
     private TestUtil() {
     }
 
-    public static void executeAndPeel(LightJob job) throws Throwable {
+    public static void executeAndPeel(Job job) throws Throwable {
         try {
             job.join();
         } catch (Exception e) {

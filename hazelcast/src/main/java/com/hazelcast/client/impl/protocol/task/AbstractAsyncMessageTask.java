@@ -60,7 +60,7 @@ public abstract class AbstractAsyncMessageTask<P, T> extends AbstractMessageTask
      * Called on node side, after sending the response to the client.
      *
      * @param response  The response sent to the client
-     * @param throwable The throwable to be sent to the client if an exception occured
+     * @param throwable The throwable to be sent to the client if an exception occurred
      */
     protected void afterSendingResponse(Object response, Throwable throwable) {
     }

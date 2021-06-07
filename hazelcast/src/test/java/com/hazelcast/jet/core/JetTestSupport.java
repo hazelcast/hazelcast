@@ -26,7 +26,6 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.LightJob;
 import com.hazelcast.jet.function.RunnableEx;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobExecutionRecord;
@@ -153,7 +152,7 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
         return file;
     }
 
-    public static void assertJobStatusEventually(Job job, JobStatus expected) {
+    public static void assertJobStatusEventually(Job job, @Nonnull JobStatus expected) {
         assertJobStatusEventually(job, expected, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
     }
 
@@ -371,10 +370,10 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
     }
 
     /**
-     * Cancel the job and wait until it cancels using LightJob.join(), ignoring the
-     * CancellationException.
+     * Cancel the job and wait until it cancels using {@link Job#join()},
+     * ignoring the CancellationException.
      */
-    public static void cancelAndJoin(@Nonnull LightJob job) {
+    public static void cancelAndJoin(@Nonnull Job job) {
         job.cancel();
         try {
             job.join();

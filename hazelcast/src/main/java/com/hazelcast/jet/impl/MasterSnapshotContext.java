@@ -224,8 +224,11 @@ class MasterSnapshotContext {
             }
 
             // In a typical case `missingResponses` will be empty. It will be non-empty if some member completed
-            // its execution and some other not, or near the completion of ao job, e.g. after a failure.
+            // its execution and some other did not, or near the completion of a job, e.g. after a failure.
             // `allOf` for an empty array returns a completed future immediately.
+            // Another edge case is that we'll be waiting for a response to start operation from a next execution,
+            // which can happen much later - we could handle it, but we ignore it: when it arrives, we'll find a
+            // changed executionId and ignore the response. It also doesn't occupy a thread - we're using a future.
             CompletableFuture.allOf(missingResponses.toArray(new CompletableFuture[0]))
                     .whenComplete(withTryCatch(logger, (r, t) ->
                             onSnapshotPhase1CompleteWithStartResponses(responses, executionId, snapshotId, snapshotMapName,

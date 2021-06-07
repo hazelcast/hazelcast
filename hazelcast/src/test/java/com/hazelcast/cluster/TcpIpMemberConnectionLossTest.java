@@ -25,13 +25,13 @@ import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
-import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -95,7 +95,7 @@ public class TcpIpMemberConnectionLossTest {
         }
     }
 
-    @NotNull
+    @Nonnull
     private Config getConfig() {
         Config config = new Config();
         config.setClusterName(randomName());
