@@ -20,19 +20,34 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicLongArray;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
+// TODO: per thread machines?
 public final class State {
+
+    public static final long PHASE_REST = 0;
+
+    public static final long PHASE_PREPARE_GROW = 1;
+    public static final long PHASE_GROWING = 2;
 
     private static final int PHASE_BITS = 3;
     private static final long PHASE_MASK = (1L << PHASE_BITS) - 1;
     private static final long INTERMEDIATE_MASK = 1L << (PHASE_BITS - 1);
     private static final int VERSION_SHIFT = PHASE_BITS;
 
-    public static final long PHASE_REST = 0;
-    public static final long PHASE_PREPARE_GROW = 1;
-    public static final long PHASE_GROWING = 2;
+    private static final long DETACHED = make(PHASE_REST, 0);
+    private static final long INITIAL = make(PHASE_REST, 1);
 
-    public static final long DETACHED = make(PHASE_REST, 0);
-    public static final long INITIAL = make(PHASE_REST, 1);
+    private static final AtomicLongFieldUpdater<State> STATE = AtomicLongFieldUpdater.newUpdater(State.class, "state");
+    private static final AtomicIntegerFieldUpdater<State> ACTIVE = AtomicIntegerFieldUpdater.newUpdater(State.class, "active");
+
+    private final AtomicLongArray threadStates;
+
+    private volatile long state = INITIAL;
+    private volatile int active;
+    private volatile State.Machine machine = NullStateMachine.INSTANCE;
+
+    public State(int maxThreads) {
+        this.threadStates = new AtomicLongArray(maxThreads);
+    }
 
     public static long phase(long state) {
         return state & PHASE_MASK;
@@ -46,11 +61,11 @@ public final class State {
         return phase | version << VERSION_SHIFT;
     }
 
-    public static long stable(long state) {
+    private static long stable(long state) {
         return state & ~INTERMEDIATE_MASK;
     }
 
-    public static long intermediate(long state) {
+    private static long intermediate(long state) {
         return state | INTERMEDIATE_MASK;
     }
 
@@ -66,7 +81,7 @@ public final class State {
 
     }
 
-    public static abstract class Machine {
+    public abstract static class Machine {
 
         private final Listener[] listeners;
 
@@ -117,24 +132,11 @@ public final class State {
 
     }
 
-    private static final AtomicLongFieldUpdater<State> STATE = AtomicLongFieldUpdater.newUpdater(State.class, "state");
-    private static final AtomicIntegerFieldUpdater<State> ACTIVE = AtomicIntegerFieldUpdater.newUpdater(State.class, "active");
-
-    private final AtomicLongArray threadStates;
-
-    private volatile long state = INITIAL;
-    private volatile int active;
-    private volatile State.Machine machine = NullStateMachine.INSTANCE;
-
-    public State(int maxThreads) {
-        this.threadStates = new AtomicLongArray(maxThreads);
-    }
-
     /**
      * Registers the current thread identified by its thread index in
      * this state instance.
      */
-    public long acquire(int threadIndex) {
+    public long register(int threadIndex) {
         // Determine the current state and machine (machine is acting
         // as a validation stamp).
 
@@ -153,13 +155,14 @@ public final class State {
             return state;
         }
 
-        // Step the thread until the current global state.
+        // Step the current thread until the current global state reached.
 
         long current = machine.cycleStart(state);
         assert current == stable(current) && phase(current) == PHASE_REST;
         long next;
         do {
             next = machine.nextState(current);
+            assert next == stable(next);
 
             machine.threadEntering(next, current);
             threadStates.set(threadIndex, next);
@@ -173,6 +176,9 @@ public final class State {
 
     /**
      * Starts the given state machine on this state instance.
+     * <p>
+     * Each passed machine instance should be a new instance, so we can
+     * always distinguish one machine from another.
      */
     public boolean start(int threadIndex, State.Machine machine) {
         if (!ACTIVE.compareAndSet(this, 0, 1)) {
@@ -196,7 +202,7 @@ public final class State {
         assert newState == stable(newState) && version(newState) >= version(oldState);
         if (phase(newState) == PHASE_REST) {
             // machine decided to abort itself
-            active = 0;
+            ACTIVE.set(this, 0);
             return false;
         }
 
@@ -210,7 +216,7 @@ public final class State {
         // Start the machine.
 
         machine.globalEntering(newState, oldState);
-        this.state = newState;
+        STATE.set(this, newState);
         machine.globalEntered(newState, oldState);
 
         long threadState = threadStates.get(threadIndex);
@@ -226,10 +232,10 @@ public final class State {
      * Steps the active state machine from the given expected state to
      * the next one provided by the machine.
      */
-    public void step(int threadIndex, long expected) {
-        assert expected == stable(expected) && expected != PHASE_REST;
+    public void step(int threadIndex, long expectedState) {
+        assert expectedState == stable(expectedState) && expectedState != PHASE_REST;
 
-        if (!STATE.compareAndSet(this, expected, intermediate(expected))) {
+        if (!STATE.compareAndSet(this, expectedState, intermediate(expectedState))) {
             // some other thread has changed the state
             return;
         }
@@ -238,10 +244,10 @@ public final class State {
         // threads can step the machine.
 
         State.Machine machine = this.machine;
-        long newState = machine.nextState(expected);
-        machine.globalEntering(newState, expected);
-        this.state = newState;
-        machine.globalEntered(newState, expected);
+        long newState = machine.nextState(expectedState);
+        machine.globalEntering(newState, expectedState);
+        STATE.set(this, newState);
+        machine.globalEntered(newState, expectedState);
 
         long threadState = threadStates.get(threadIndex);
         assert threadState == stable(threadState) && threadState != DETACHED;
@@ -251,7 +257,7 @@ public final class State {
 
         if (phase(newState) == PHASE_REST) {
             // machine has ended
-            this.active = 0;
+            ACTIVE.set(this, 0);
         }
     }
 
@@ -272,15 +278,30 @@ public final class State {
         }
         state = stable(state);
 
-        // TODO: Proper stepping of the thread through all the states
-        //       until the current one.
-
-        // Refresh.
+        // Check for changes.
 
         long threadState = threadStates.get(threadIndex);
-        machine.threadEntering(state, threadState);
-        threadStates.set(threadIndex, state);
-        machine.threadEntered(state, threadState);
+        assert threadState == stable(threadState) && threadState != DETACHED;
+        if (threadState == state) {
+            // nothing changed
+            return state;
+        }
+
+        // Step the current thread until the current global state reached.
+
+        long current = threadState;
+        long next;
+        do {
+            next = machine.nextState(current);
+            assert next == stable(next);
+
+            machine.threadEntering(next, current);
+            threadStates.set(threadIndex, next);
+            machine.threadEntered(next, current);
+
+            current = next;
+        } while (next != state);
+
         return state;
     }
 
@@ -288,17 +309,8 @@ public final class State {
      * Unregisters the current thread identified by the given thread index
      * in this state instance.
      */
-    public void release(int threadIndex) {
-        // TODO: Semantics of this method? Threads leaving in the middle
-        //       of the state machine cycle feel awkward.
-
-        State.Machine machine = this.machine;
-        long state = threadStates.get(threadIndex);
-        assert state == stable(state) && state != DETACHED;
-
-        machine.threadEntering(DETACHED, state);
+    public void unregister(int threadIndex) {
         threadStates.set(threadIndex, DETACHED);
-        machine.threadEntered(DETACHED, state);
     }
 
     private static final class NullStateMachine extends State.Machine {
