@@ -443,7 +443,7 @@
             <scope>compile</scope>
         </dependency>
 
-        <!-- JetCommandLine dependencies - optional, packaged in server distribution -->
+        <!-- HazelcastCommandLine dependencies - optional, packaged in server distribution -->
         <dependency>
             <groupId>info.picocli</groupId>
             <artifactId>picocli</artifactId>

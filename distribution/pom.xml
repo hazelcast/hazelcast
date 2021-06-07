@@ -109,7 +109,7 @@
             <artifactId>hazelcast-sql</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <!-- JetCommandLine dependencies-->
+        <!-- HazelcastCommandLine dependencies-->
         <dependency>
             <groupId>info.picocli</groupId>
             <artifactId>picocli</artifactId>
