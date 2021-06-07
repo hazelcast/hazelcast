@@ -497,7 +497,7 @@ public class HTTPCommunicator {
             data = URLEncodedUtils.format(nameValuePairs, charset);
         } else if (params.length == 1) {
             data = params[0];
-        } else if (params.length == 0){
+        } else if (params.length == 0) {
             data = "";
         } else {
             throw new AssertionError("Media Type is set to " + mediaType + ", but there are multiple"

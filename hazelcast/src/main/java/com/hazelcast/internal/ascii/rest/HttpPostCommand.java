@@ -22,14 +22,10 @@ import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.nio.ascii.TextDecoder;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.util.StringUtil;
-import org.jetbrains.annotations.Nullable;
 
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import java.nio.charset.IllegalCharsetNameException;
-import java.nio.charset.UnsupportedCharsetException;
-import java.util.Locale;
 
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.HTTP_POST;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
