@@ -363,10 +363,10 @@ public class CompactStreamSerializerValueReaderQuickTest extends HazelcastTestSu
     // Utilities
     //
 
-    public GenericRecordQueryReader reader(Car portable) throws IOException {
+    public GenericRecordQueryReader reader(Car car) throws IOException {
         SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
         InternalSerializationService ss = new DefaultSerializationServiceBuilder().setSchemaService(schemaService).build();
-        Data data = ss.toData(portable);
+        Data data = ss.toData(car);
         return new GenericRecordQueryReader(ss.readAsInternalGenericRecord(data));
     }
 
