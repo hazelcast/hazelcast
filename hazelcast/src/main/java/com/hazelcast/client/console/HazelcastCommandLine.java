@@ -480,8 +480,8 @@ public class HazelcastCommandLine implements Runnable {
                     boolean listAll
     ) {
         runWithHazelcast(targets, verbosity, false, hz -> {
-            JetClientInstanceImpl client = (JetClientInstanceImpl) hz.getJet();
-            List<JobSummary> summaries = client.getJobSummaryList();
+            JetClientInstanceImpl jetClientInstanceImpl = (JetClientInstanceImpl) hz.getJet();
+            List<JobSummary> summaries = jetClientInstanceImpl.getJobSummaryList();
             String format = "%-19s %-18s %-23s %s";
             printf(format, "ID", "STATUS", "SUBMISSION TIME", "NAME");
             summaries.stream()

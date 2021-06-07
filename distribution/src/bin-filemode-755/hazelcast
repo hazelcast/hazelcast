@@ -12,5 +12,4 @@ $JVM_OPTIONS \
 $JAVA_OPTS \
 )
 
-# TODO update command line class
 $JAVA "${JAVA_OPTS_ARRAY[@]}" -cp "$CLASSPATH" com.hazelcast.client.console.HazelcastCommandLine "$@"
