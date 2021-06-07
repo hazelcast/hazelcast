@@ -19,7 +19,7 @@ package com.hazelcast.jet.core;
 /**
  * Represents current status of the job from the perspective of the job coordinator.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public enum JobStatus {
 

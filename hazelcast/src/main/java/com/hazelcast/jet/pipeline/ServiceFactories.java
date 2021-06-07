@@ -30,7 +30,7 @@ import javax.annotation.Nonnull;
  * Utility class with methods that create several useful {@link ServiceFactory
  * service factories}.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public final class ServiceFactories {
 
@@ -61,7 +61,7 @@ public final class ServiceFactories {
      * @param <K> type of the map key
      * @param <V> type of the map value
      *
-     * @since 3.0
+     * @since Jet 3.0
      */
     @Nonnull
     public static <K, V> ServiceFactory<?, ReplicatedMap<K, V>> replicatedMapService(@Nonnull String mapName) {
@@ -87,7 +87,7 @@ public final class ServiceFactories {
      * @param <V> value type
      * @return the service factory
      *
-     * @since 3.0
+     * @since Jet 3.0
      */
     @Nonnull
     public static <K, V> ServiceFactory<?, IMap<K, V>> iMapService(@Nonnull String mapName) {
@@ -110,7 +110,7 @@ public final class ServiceFactories {
      * depend on the number of cores on the Jet machine, which makes no sense
      * for blocking code.
      *
-     * @since 4.0
+     * @since Jet 4.0
      */
     @Nonnull
     public static <S> ServiceFactory<?, S> sharedService(
@@ -171,7 +171,7 @@ public final class ServiceFactories {
      * depend on the number of cores on the Jet machine, which makes no sense
      * for blocking code.
      *
-     * @since 4.0
+     * @since Jet 4.0
      */
     @Nonnull
     public static <S> ServiceFactory<?, S> nonSharedService(

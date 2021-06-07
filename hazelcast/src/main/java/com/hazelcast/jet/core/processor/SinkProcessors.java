@@ -58,7 +58,7 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
  * of the DAG data flow). For other kinds of processors refer to the {@link
  * com.hazelcast.jet.core.processor package-level documentation}.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public final class SinkProcessors {
     private SinkProcessors() {
@@ -393,7 +393,7 @@ public final class SinkProcessors {
     /**
      * Returns a supplier of processors for {@link Sinks#observable}.
      *
-     * @since 4.0
+     * @since Jet 4.0
      */
     @Nonnull
     public static ProcessorMetaSupplier writeObservableP(@Nonnull String name) {

@@ -25,7 +25,7 @@ import java.util.Objects;
  * details.
  *
  * @param <T> type of items a source using this file format will emit
- * @since 4.4
+ * @since Jet 4.4
  */
 public class AvroFileFormat<T> implements FileFormat<T> {
 

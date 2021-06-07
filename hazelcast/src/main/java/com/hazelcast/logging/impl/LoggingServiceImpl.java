@@ -42,6 +42,7 @@ import java.util.logging.LogRecord;
 
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
 
 public class LoggingServiceImpl implements LoggingService {
 
@@ -125,7 +126,7 @@ public class LoggingServiceImpl implements LoggingService {
     public void setLevel(@Nonnull String level) {
         Level parsedLevel;
         try {
-            parsedLevel = Level.parse(level.toUpperCase());
+            parsedLevel = Level.parse(upperCaseInternal(level));
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException(
                     "Invalid level '" + level + "', known levels are: " + String.join(", ", Level.OFF.getName(),

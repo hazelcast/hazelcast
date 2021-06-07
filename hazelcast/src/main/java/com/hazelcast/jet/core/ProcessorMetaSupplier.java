@@ -72,7 +72,7 @@ import static java.util.Collections.singletonList;
  * precisely parameterize each {@code Processor} instance that will be created on
  * each member.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 @FunctionalInterface
 public interface ProcessorMetaSupplier extends Serializable {
@@ -82,7 +82,7 @@ public interface ProcessorMetaSupplier extends Serializable {
      * no predefined metadata; this facility exists to allow the DAG vertices
      * to contribute some information to the execution planning phase.
      *
-     * @since 4.0
+     * @since Jet 4.0
      */
     @Nonnull
     default Map<String, String> getTags() {

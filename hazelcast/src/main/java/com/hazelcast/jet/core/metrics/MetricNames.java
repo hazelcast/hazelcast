@@ -30,7 +30,7 @@ import com.hazelcast.jet.core.Vertex;
  * The constants described here represent the various names metrics can
  * take in Jet.
  *
- * @since 3.2
+ * @since Jet 3.2
  */
 public final class MetricNames {
 
@@ -122,7 +122,7 @@ public final class MetricNames {
      * by a particular {@link Vertex}. The name of the vertex can be found
      * in the {@link MetricTags#VERTEX} tag of the metric.
      *
-     * @since 4.0
+     * @since Jet 4.0
      */
     public static final String SNAPSHOT_BYTES = "snapshotBytes";
 
@@ -131,7 +131,7 @@ public final class MetricNames {
      * by a particular {@link Vertex}. The name of the vertex can be found
      * in the {@link MetricTags#VERTEX} tag of the metric.
      *
-     * @since 4.0
+     * @since Jet 4.0
      */
     public static final String SNAPSHOT_KEYS = "snapshotKeys";
 
@@ -141,7 +141,7 @@ public final class MetricNames {
      * {@link MetricTags#EXECUTION} & {@link MetricTags#JOB} tags of
      * the metric.
      *
-     * @since 4.0
+     * @since Jet 4.0
      */
     public static final String EXECUTION_START_TIME = "executionStartTime";
 
@@ -151,7 +151,7 @@ public final class MetricNames {
      * {@link MetricTags#EXECUTION} & {@link MetricTags#JOB} tags of
      * the metric.
      *
-     * @since 4.0
+     * @since Jet 4.0
      */
     public static final String EXECUTION_COMPLETION_TIME = "executionCompletionTime";
 
@@ -197,7 +197,7 @@ public final class MetricNames {
      * This metric is zero on non-master members. When a master fails and a new
      * master takes over, the count is reset.
      *
-     * @since 4.0
+     * @since Jet 4.0
      */
     public static final String JOBS_SUBMITTED = "jobs.submitted";
 
@@ -207,7 +207,7 @@ public final class MetricNames {
      * This metric is zero on non-master members. When a master fails and a new
      * master takes over, the count is reset.
      *
-     * @since 4.0
+     * @since Jet 4.0
      */
     public static final String JOBS_COMPLETED_SUCCESSFULLY = "jobs.completedSuccessfully";
 
@@ -217,7 +217,7 @@ public final class MetricNames {
      * This metric is zero on non-master members. When a master fails and a new
      * master takes over, the count is reset.
      *
-     * @since 4.0
+     * @since Jet 4.0
      */
     public static final String JOBS_COMPLETED_WITH_FAILURE = "jobs.completedWithFailure";
 
@@ -229,7 +229,7 @@ public final class MetricNames {
      * This metric is zero on non-master members. When a master fails and a new
      * master takes over, the count is reset.
      *
-     * @since 4.0
+     * @since Jet 4.0
      */
     public static final String JOB_EXECUTIONS_STARTED = "jobs.executionStarted";
 
@@ -241,7 +241,7 @@ public final class MetricNames {
      * This metric is zero on non-master members. When a master fails and a new
      * master takes over, the count is reset.
      *
-     * @since 4.0
+     * @since Jet 4.0
      */
     public static final String JOB_EXECUTIONS_COMPLETED = "jobs.executionCompleted";
 

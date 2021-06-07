@@ -43,7 +43,7 @@ import static com.hazelcast.jet.aggregate.AggregateOperations.coAggregateOperati
  *
  * @param <R0> type of the aggregated result for stream-0
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public class WindowAggregateBuilder<R0> {
     private final AggBuilder aggBuilder;

@@ -24,7 +24,7 @@ import java.util.Objects;
 /**
  * A simple event with a timestamp and a sequence number.
  *
- * @since 3.2
+ * @since Jet 3.2
  */
 public class SimpleEvent implements Serializable {
 

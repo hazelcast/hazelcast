@@ -31,7 +31,7 @@ import javax.annotation.Nonnull;
 /**
  * Contains factory methods for Apache Avro sources.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public final class AvroSources {
 

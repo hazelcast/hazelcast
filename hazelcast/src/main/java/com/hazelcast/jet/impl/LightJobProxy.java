@@ -21,8 +21,8 @@ import com.hazelcast.jet.LightJob;
 import com.hazelcast.jet.impl.operation.TerminateJobOperation;
 import com.hazelcast.jet.impl.util.NonCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
-import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nonnull;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
@@ -45,7 +45,7 @@ public class LightJobProxy implements LightJob {
         return jobId;
     }
 
-    @NotNull @Override
+    @Nonnull @Override
     public CompletableFuture<Void> getFuture() {
         return future;
     }

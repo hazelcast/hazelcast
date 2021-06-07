@@ -52,7 +52,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.checkS
  * @param <T1> the type of the right-hand stream item
  * @param <T1_OUT> the result type of the right-hand projection function
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 @SerializableByConvention
 public final class JoinClause<K, T0, T1, T1_OUT> implements Serializable {

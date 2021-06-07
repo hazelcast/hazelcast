@@ -37,7 +37,7 @@ import static java.lang.Math.max;
  * @see EventTimePolicy
  * @see EventTimeMapper
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public interface WatermarkPolicy {
 
@@ -96,7 +96,7 @@ public interface WatermarkPolicy {
      *
      * @param lag the desired difference between the top observed timestamp
      *            and the watermark
-     * @since 4.3
+     * @since Jet 4.3
      */
     @Nonnull
     static SupplierEx<WatermarkPolicy> limitingRealTimeLag(long lag) {

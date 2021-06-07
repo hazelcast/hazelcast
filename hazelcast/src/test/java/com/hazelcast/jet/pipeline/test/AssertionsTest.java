@@ -29,6 +29,7 @@ import org.junit.rules.ExpectedException;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
@@ -358,7 +359,7 @@ public class AssertionsTest extends PipelineTestSupport {
 
         p.readFrom(TestSources.items("some text here and here and some here"))
                 .apply(Assertions.assertOrdered(Arrays.asList("some text here and here and some here")))
-                .flatMap(line -> traverseArray(line.toLowerCase().split("\\W+")))
+                .flatMap(line -> traverseArray(line.toLowerCase(Locale.ROOT).split("\\W+")))
                 .apply(Assertions.assertAnyOrder(
                         Arrays.asList("some", "text", "here", "and", "here", "and", "some", "here")))
                 .filter(word -> !word.equals("and"))

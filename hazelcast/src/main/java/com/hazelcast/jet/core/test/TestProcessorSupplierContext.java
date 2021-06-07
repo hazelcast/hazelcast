@@ -33,7 +33,7 @@ import java.util.Map;
  * Implementation of {@link ProcessorSupplier.Context} suitable to be used
  * in tests.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public class TestProcessorSupplierContext
         extends TestProcessorMetaSupplierContext

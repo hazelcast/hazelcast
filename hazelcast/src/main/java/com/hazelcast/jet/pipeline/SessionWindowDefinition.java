@@ -21,7 +21,7 @@ import com.hazelcast.internal.serialization.SerializableByConvention;
 /**
  * Represents the definition of a session window.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 @SerializableByConvention
 public class SessionWindowDefinition extends WindowDefinition {

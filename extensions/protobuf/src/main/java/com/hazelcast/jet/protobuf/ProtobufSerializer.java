@@ -50,7 +50,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
  *
  * @param <T> the Protocol Buffers {@link GeneratedMessageV3} type handled by
  *            this {@link StreamSerializer}.
- * @since 4.1
+ * @since Jet 4.1
  */
 public abstract class ProtobufSerializer<T extends GeneratedMessageV3> implements StreamSerializer<T> {
 

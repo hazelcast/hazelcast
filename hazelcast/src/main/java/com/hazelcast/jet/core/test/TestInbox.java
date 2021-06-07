@@ -27,7 +27,7 @@ import java.util.Iterator;
 /**
  * {@link Inbox} implementation suitable to be used in tests.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public final class TestInbox implements Inbox {
 
