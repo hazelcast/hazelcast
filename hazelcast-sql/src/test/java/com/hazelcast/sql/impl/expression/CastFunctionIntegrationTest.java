@@ -148,8 +148,8 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         // LocalDate
         putAndCheckValue(new ExpressionValue.StringVal(), sql("field1", DATE), DATE, null);
         putAndCheckValue(LOCAL_DATE_VAL.toString(), sql("this", DATE), DATE, LOCAL_DATE_VAL);
-        /// Hazelcast also allows to cast VARCHAR as date without leading zeroes to DATE.
-        putAndCheckValue(NON_STANDARD_LOCAL_DATE_VAL, sql("this", DATE), DATE, LOCAL_DATE_VAL);
+        // SQL standard also accepts DATE without leading zeroes to DATE.
+        putAndCheckValue(STANDARD_LOCAL_DATE_VAL, sql("this", DATE), DATE, LOCAL_DATE_VAL);
         putAndCheckFailure("bad", sql("this", DATE), DATA_EXCEPTION, "Cannot parse VARCHAR value to DATE");
 
         // LocalTime

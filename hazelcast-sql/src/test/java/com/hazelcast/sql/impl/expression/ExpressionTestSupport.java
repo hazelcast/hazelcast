@@ -78,7 +78,7 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
     public static final ExpressionValue OBJECT_VAL = new ExpressionValue.ObjectVal();
 
     protected static final Object SKIP_VALUE_CHECK = new Object();
-    protected static final String NON_STANDARD_LOCAL_DATE_VAL = "2020-1-1";
+    protected static final String STANDARD_LOCAL_DATE_VAL = "2020-1-1";
 
     protected static HazelcastInstance member;
 

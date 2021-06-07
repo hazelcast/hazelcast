@@ -24,18 +24,34 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.MonthDay;
 import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
-import java.util.regex.Pattern;
+import java.time.format.SignStyle;
 
 import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
 import static com.hazelcast.sql.impl.expression.math.ExpressionMath.DECIMAL_MATH_CONTEXT;
+import static java.time.temporal.ChronoField.DAY_OF_MONTH;
+import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
+import static java.time.temporal.ChronoField.YEAR;
 
 /**
  * Common converter for string-based classes.
  */
 public abstract class AbstractStringConverter extends Converter {
+    private static final int MIN_YEAR_SYMBOLS = 4;
+    private static final int MAX_YEAR_SYMBOLS = 10;
+
+    static final DateTimeFormatter STANDARD_DATE_FORMAT = new DateTimeFormatterBuilder()
+            .parseCaseInsensitive()
+            .appendValue(YEAR, MIN_YEAR_SYMBOLS, MAX_YEAR_SYMBOLS, SignStyle.EXCEEDS_PAD)
+            .appendLiteral('-')
+            .appendValue(MONTH_OF_YEAR, 1, 2, SignStyle.NEVER)
+            .appendLiteral('-')
+            .appendValue(DAY_OF_MONTH, 1, 2, SignStyle.NEVER)
+            .toFormatter();
+
     protected AbstractStringConverter(int id) {
         super(id, QueryDataTypeFamily.VARCHAR);
     }
@@ -129,9 +145,9 @@ public abstract class AbstractStringConverter extends Converter {
     @Override
     public final LocalDate asDate(Object val) {
         try {
-            return LocalDate.parse(cast(val));
+            return LocalDate.parse(cast(val), STANDARD_DATE_FORMAT);
         } catch (DateTimeParseException e) {
-            return parseDateWithPossibleLeadingZeroes(val);
+            throw cannotParseError(QueryDataTypeFamily.DATE);
         }
     }
 
@@ -173,40 +189,6 @@ public abstract class AbstractStringConverter extends Converter {
     }
 
     protected abstract String cast(Object val);
-
-    /**
-     * Parse non-standard dates with possible leading zeroes.
-     * Before method tried to parse such a date, potential date candidate
-     */
-    private LocalDate parseDateWithPossibleLeadingZeroes(Object val) {
-        if (!(val instanceof String)) {
-            throw new DateTimeParseException("Can't parse date from non-String source", "", 0);
-        }
-
-        // This pattern checks both cases with and without leading zeroes in date.
-        Pattern pattern = Pattern.compile("\\d{4}-([1-9]|[0-1][0-2])-([1-9]|[0-2][0-9]|3[01])$");
-        String possibleDate = (String) val;
-
-        if (!pattern.matcher(possibleDate).matches()) {
-            throw cannotParseError(QueryDataTypeFamily.DATE);
-        }
-
-        final String[] dateParts = possibleDate.split("-");
-        if (dateParts.length != 3) {
-            throw new DateTimeParseException("Date can contain only 3 parts : year, month and day", possibleDate, 0);
-        }
-        String monthChars = dateParts[1];
-        String dayChars = dateParts[2];
-
-        int year = Integer.parseInt(dateParts[0]);
-        int monthNumerical = Integer.parseInt(monthChars);
-        int dayNumerical = Integer.parseInt(dayChars);
-
-        // It will throw an exception if query want to cast e.g., 31st of February.
-        MonthDay monthDay = MonthDay.of(monthNumerical, dayNumerical);
-
-        return LocalDate.of(year, monthDay.getMonth(), monthDay.getDayOfMonth());
-    }
 
     private static QueryException cannotParseError(QueryDataTypeFamily target) {
         String message = "Cannot parse " + QueryDataTypeFamily.VARCHAR + " value to " + target;
