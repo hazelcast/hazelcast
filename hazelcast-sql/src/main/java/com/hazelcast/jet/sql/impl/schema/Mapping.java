@@ -16,9 +16,10 @@
 
 package com.hazelcast.jet.sql.impl.schema;
 
+import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -29,7 +30,7 @@ import java.util.Objects;
 /**
  * An object stored in the internal storage for mappings created using DDL.
  */
-public class Mapping implements DataSerializable {
+public class Mapping implements IdentifiedDataSerializable {
 
     private String name;
     private String externalName;
@@ -37,8 +38,7 @@ public class Mapping implements DataSerializable {
     private List<MappingField> mappingFields;
     private Map<String, String> options;
 
-    @SuppressWarnings("unused")
-    private Mapping() {
+    public Mapping() {
     }
 
     public Mapping(
@@ -73,6 +73,16 @@ public class Mapping implements DataSerializable {
 
     public Map<String, String> options() {
         return Collections.unmodifiableMap(options);
+    }
+
+    @Override
+    public int getFactoryId() {
+        return JetSqlSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return JetSqlSerializerHook.MAPPING;
     }
 
     @Override
