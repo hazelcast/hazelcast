@@ -51,7 +51,7 @@ public class SplitBrainMergeTypes {
      */
     public interface MapMergeTypes<K, V>
             extends MergingEntry<K, V>, MergingCreationTime, MergingHits, MergingLastAccessTime, MergingLastUpdateTime,
-                    MergingTTL, MergingMaxIdle, MergingCosts, MergingVersion, MergingExpirationTime, MergingLastStoredTime {
+            MergingTTL, MergingMaxIdle, MergingCosts, MergingVersion, MergingExpirationTime, MergingLastStoredTime {
     }
 
     /**
@@ -74,7 +74,7 @@ public class SplitBrainMergeTypes {
      */
     public interface ReplicatedMapMergeTypes<K, V>
             extends MergingEntry<K, V>, MergingCreationTime, MergingHits, MergingLastAccessTime, MergingLastUpdateTime,
-                    MergingTTL {
+            MergingTTL {
     }
 
     /**
@@ -86,7 +86,7 @@ public class SplitBrainMergeTypes {
      */
     public interface MultiMapMergeTypes<K, V>
             extends MergingEntry<K, Collection<V>>, MergingCreationTime, MergingHits, MergingLastAccessTime,
-                    MergingLastUpdateTime {
+            MergingLastUpdateTime {
     }
 
     /**

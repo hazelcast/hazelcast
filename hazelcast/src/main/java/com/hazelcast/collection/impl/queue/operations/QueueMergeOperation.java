@@ -19,20 +19,19 @@ package com.hazelcast.collection.impl.queue.operations;
 import com.hazelcast.collection.impl.queue.QueueContainer;
 import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
 import com.hazelcast.collection.impl.queue.QueueItem;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.QueueMergeTypes;
-import com.hazelcast.internal.serialization.SerializationService;
 
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Queue;
 
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingValue;
-import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
 
 /**
  * Merges a {@link QueueMergeTypes} for split-brain healing with a {@link SplitBrainMergePolicy}.
@@ -41,8 +40,8 @@ import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
  */
 public class QueueMergeOperation extends QueueBackupAwareOperation implements MutatingOperation {
 
-    private SplitBrainMergePolicy<Collection<Object>, QueueMergeTypes<Object>, Collection<Object>> mergePolicy;
-    private QueueMergeTypes<Object> mergingValue;
+    private SplitBrainMergePolicy<Collection<QueueItem>, QueueMergeTypes<QueueItem>, Collection<QueueItem>> mergePolicy;
+    private QueueMergeTypes<QueueItem> mergingValue;
 
     private transient Collection<QueueItem> backupCollection;
     private transient boolean shouldBackup;
@@ -51,8 +50,9 @@ public class QueueMergeOperation extends QueueBackupAwareOperation implements Mu
     }
 
     public QueueMergeOperation(String name,
-                               SplitBrainMergePolicy<Collection<Object>, QueueMergeTypes<Object>, Collection<Object>> mergePolicy,
-                               QueueMergeTypes<Object> mergingValue) {
+                               SplitBrainMergePolicy<Collection<QueueItem>, QueueMergeTypes<QueueItem>,
+                                       Collection<QueueItem>> mergePolicy,
+                               QueueMergeTypes<QueueItem> mergingValue) {
         super(name);
         this.mergePolicy = mergePolicy;
         this.mergingValue = mergingValue;
@@ -68,35 +68,35 @@ public class QueueMergeOperation extends QueueBackupAwareOperation implements Mu
         shouldBackup = currentCollectionIsEmpty != backupCollection.isEmpty() || currentItemId != container.getCurrentId();
     }
 
-    private Queue<QueueItem> merge(QueueContainer container, QueueMergeTypes<Object> mergingValue,
-                                   SplitBrainMergePolicy<Collection<Object>, QueueMergeTypes<Object>,
-                                           Collection<Object>> mergePolicy) {
+    private Queue<QueueItem> merge(QueueContainer container, QueueMergeTypes<QueueItem> mergingValue,
+                                   SplitBrainMergePolicy<Collection<QueueItem>, QueueMergeTypes<QueueItem>,
+                                           Collection<QueueItem>> mergePolicy) {
         SerializationService serializationService = getNodeEngine().getSerializationService();
-        mergingValue = (QueueMergeTypes<Object>) serializationService.getManagedContext().initialize(mergingValue);
-        mergePolicy = (SplitBrainMergePolicy<Collection<Object>, QueueMergeTypes<Object>, Collection<Object>>)
+        mergingValue = (QueueMergeTypes<QueueItem>) serializationService.getManagedContext().initialize(mergingValue);
+        mergePolicy = (SplitBrainMergePolicy<Collection<QueueItem>, QueueMergeTypes<QueueItem>, Collection<QueueItem>>)
             serializationService.getManagedContext().initialize(mergePolicy);
 
         Queue<QueueItem> existingItems = container.getItemQueue();
-        QueueMergeTypes<Object> existingValue = createMergingValueOrNull(serializationService, existingItems);
-        Collection<Object> newValues = mergePolicy.merge(mergingValue, existingValue);
+        QueueMergeTypes<QueueItem> existingValue = createMergingValueOrNull(serializationService, existingItems);
+        mergePolicy.merge(mergingValue, existingValue);
 
-        if (isEmpty(newValues)) {
-            if (existingValue != null) {
-                container.clear();
-            }
-            getQueueService().destroyDistributedObject(name);
-        } else if (existingValue == null) {
-            createNewQueueItems(container, newValues, serializationService);
-        } else if (!newValues.equals(existingValue.getRawValue())) {
-            container.clear();
-            createNewQueueItems(container, newValues, serializationService);
-        }
+//        if (isEmpty(newValues)) {
+//            if (existingValue != null) {
+//                container.clear();
+//            }
+//            getQueueService().destroyDistributedObject(name);
+//        } else if (existingValue == null) {
+//            createNewQueueItems(container, newValues, serializationService);
+//        } else if (!newValues.equals(existingValue.getRawValue())) {
+//            container.clear();
+//            createNewQueueItems(container, newValues, serializationService);
+//        }
         return existingItems;
     }
 
-    private QueueMergeTypes<Object> createMergingValueOrNull(SerializationService serializationService,
+    private QueueMergeTypes<QueueItem> createMergingValueOrNull(SerializationService serializationService,
                                                              Queue<QueueItem> existingItems) {
-        return existingItems.isEmpty() ? null : createMergingValue(serializationService, existingItems);
+        return createMergingValue(serializationService, existingItems);
     }
 
     private void createNewQueueItems(QueueContainer container, Collection<Object> values,

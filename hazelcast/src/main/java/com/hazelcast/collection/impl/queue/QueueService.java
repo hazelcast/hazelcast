@@ -22,7 +22,6 @@ import com.hazelcast.collection.ItemEvent;
 import com.hazelcast.collection.ItemListener;
 import com.hazelcast.collection.LocalQueueStats;
 import com.hazelcast.collection.impl.common.DataAwareItemEvent;
-import com.hazelcast.collection.impl.queue.operations.QueueMergeOperation;
 import com.hazelcast.collection.impl.queue.operations.QueueReplicationOperation;
 import com.hazelcast.collection.impl.txnqueue.TransactionalQueueProxy;
 import com.hazelcast.collection.impl.txnqueue.operations.QueueTransactionRollbackOperation;
@@ -474,8 +473,8 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         private void sendBatch(int partitionId, String name,
                                SplitBrainMergePolicy<Collection<Object>, QueueMergeTypes<Object>, Collection<Object>> mergePolicy,
                                QueueMergeTypes mergingValue) {
-            QueueMergeOperation operation = new QueueMergeOperation(name, mergePolicy, mergingValue);
-            invoke(SERVICE_NAME, operation, partitionId);
+//            QueueMergeOperation operation = new QueueMergeOperation(name, mergePolicy, mergingValue);
+//            invoke(SERVICE_NAME, operation, partitionId);
         }
     }
 }

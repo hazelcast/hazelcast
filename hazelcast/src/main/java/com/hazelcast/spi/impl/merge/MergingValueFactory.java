@@ -73,13 +73,9 @@ public final class MergingValueFactory {
                 .setValue(values);
     }
 
-    public static <V> QueueMergeTypes<V> createMergingValue(SerializationService serializationService, Queue<QueueItem> items) {
-        Collection<Object> values = new ArrayList<>(items.size());
-        for (QueueItem item : items) {
-            values.add(item.getSerializedObject());
-        }
-        return new QueueMergingValueImpl<V>(serializationService)
-                .setValue(values);
+    public static QueueMergeTypes<QueueItem> createMergingValue(SerializationService serializationService, Queue items) {
+        return new QueueMergingValueImpl<QueueItem>(serializationService)
+                .setValue(items);
     }
 
     public static AtomicLongMergeTypes createMergingValue(SerializationService serializationService, Long value) {

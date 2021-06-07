@@ -34,6 +34,7 @@ public class QueueItem implements IdentifiedDataSerializable, Comparable<QueueIt
 
     protected long itemId;
     protected Data serializedObject;
+    protected boolean removed;
 
     protected transient long creationTime;
     protected transient Object deserializedObject;
@@ -81,6 +82,14 @@ public class QueueItem implements IdentifiedDataSerializable, Comparable<QueueIt
         this.itemId = itemId;
     }
 
+    public void setRemoved(boolean removed) {
+        this.removed = removed;
+    }
+
+    public boolean isRemoved() {
+        return removed;
+    }
+
     public long getCreationTime() {
         return creationTime;
     }
@@ -103,12 +112,14 @@ public class QueueItem implements IdentifiedDataSerializable, Comparable<QueueIt
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(itemId);
         IOUtil.writeData(out, serializedObject);
+        out.writeBoolean(removed);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         itemId = in.readLong();
         serializedObject = IOUtil.readData(in);
+        removed = in.readBoolean();
     }
 
     @Override
