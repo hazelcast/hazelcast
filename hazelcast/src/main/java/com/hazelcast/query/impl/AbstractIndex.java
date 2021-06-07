@@ -211,6 +211,21 @@ public abstract class AbstractIndex implements InternalIndex {
     }
 
     @Override
+    public Iterator<IndexValueBatch> getSqlRecordIteratorBatch(
+            Comparable from,
+            boolean fromInclusive,
+            Comparable to,
+            boolean toInclusive,
+            boolean descending
+    ) {
+        if (converter == null) {
+            return emptyIterator();
+        }
+
+        return indexStore.getSqlRecordIteratorBatch(convert(from), fromInclusive, convert(to), toInclusive, descending);
+    }
+
+    @Override
     public Set<QueryableEntry> getRecords(Comparable value) {
         long timestamp = stats.makeTimestamp();
 

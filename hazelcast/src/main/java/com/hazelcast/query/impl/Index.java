@@ -155,6 +155,14 @@ public interface Index {
     Iterator<QueryableEntry> getSqlRecordIterator(Comparable from, boolean fromInclusive, Comparable to,
                                                   boolean toInclusive, boolean descending);
 
+    Iterator<IndexValueBatch> getSqlRecordIteratorBatch(
+            Comparable from,
+            boolean fromInclusive,
+            Comparable to,
+            boolean toInclusive,
+            boolean descending
+    );
+
     /**
      * Produces a result set containing entries whose attribute values are equal
      * to the given value.

@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.internal.iteration.IndexIterationPointer;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapEntries;
@@ -32,7 +33,6 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
-import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 
 import java.util.List;
 import java.util.Set;
@@ -304,11 +304,11 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
     public MapOperation createFetchIndexOperation(
             String name,
             String indexName,
-            IndexFilter indexFilter,
-            boolean descending,
-            PartitionIdSet partitionIdSet
+            IndexIterationPointer[] pointers,
+            PartitionIdSet partitionIdSet,
+            int sizeHint
     ) {
-        return new MapFetchIndexOperation(name, indexName, indexFilter, descending, partitionIdSet);
+        return new MapFetchIndexOperation(name, indexName, pointers, partitionIdSet, sizeHint);
     }
 
     @Override

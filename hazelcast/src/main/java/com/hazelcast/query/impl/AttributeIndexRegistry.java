@@ -265,6 +265,17 @@ public class AttributeIndexRegistry {
         }
 
         @Override
+        public Iterator<IndexValueBatch> getSqlRecordIteratorBatch(
+                Comparable from,
+                boolean fromInclusive,
+                Comparable to,
+                boolean toInclusive,
+                boolean descending
+        ) {
+            throw new UnsupportedOperationException("Should not be called");
+        }
+
+        @Override
         public Set<QueryableEntry> getRecords(Comparable value) {
             Comparable from = new CompositeValue(width, value, NEGATIVE_INFINITY);
             Comparable to = new CompositeValue(width, value, POSITIVE_INFINITY);

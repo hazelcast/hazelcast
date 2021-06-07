@@ -179,6 +179,17 @@ public class UnorderedIndexStore extends BaseSingleValueIndexStore {
     }
 
     @Override
+    public Iterator<IndexValueBatch> getSqlRecordIteratorBatch(
+            Comparable from,
+            boolean fromInclusive,
+            Comparable to,
+            boolean toInclusive,
+            boolean descending
+    ) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public Set<QueryableEntry> getRecords(Comparable value) {
         takeReadLock();
         try {
