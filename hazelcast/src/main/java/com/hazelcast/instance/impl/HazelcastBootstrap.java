@@ -546,8 +546,8 @@ public final class HazelcastBootstrap {
         }
     }
 
-    private static class BootstrappedJetProxy<MemberIdType> extends AbstractJetInstance<MemberIdType> {
-        private final AbstractJetInstance<MemberIdType> jet;
+    private static class BootstrappedJetProxy<M> extends AbstractJetInstance<M> {
+        private final AbstractJetInstance<M> jet;
         private final String jar;
         private final String snapshotName;
         private final String jobName;
@@ -560,7 +560,7 @@ public final class HazelcastBootstrap {
                 @Nullable String jobName
         ) {
             super(((AbstractJetInstance) jet).getHazelcastInstance());
-            this.jet = (AbstractJetInstance<MemberIdType>) jet;
+            this.jet = (AbstractJetInstance<M>) jet;
             this.jar = jar;
             this.snapshotName = snapshotName;
             this.jobName = jobName;
@@ -679,7 +679,7 @@ public final class HazelcastBootstrap {
         }
 
         @Override
-        public Job newJobProxy(long jobId, MemberIdType lightJobCoordinator) {
+        public Job newJobProxy(long jobId, M lightJobCoordinator) {
             return jet.newJobProxy(jobId, lightJobCoordinator);
         }
 
@@ -689,12 +689,12 @@ public final class HazelcastBootstrap {
         }
 
         @Override
-        public MemberIdType getMasterId() {
+        public M getMasterId() {
             return jet.getMasterId();
         }
 
         @Override
-        public Map<MemberIdType, GetJobIdsResult> getJobsInt(String onlyName, Long onlyJobId) {
+        public Map<M, GetJobIdsResult> getJobsInt(String onlyName, Long onlyJobId) {
             return jet.getJobsInt(onlyName, onlyJobId);
         }
     }

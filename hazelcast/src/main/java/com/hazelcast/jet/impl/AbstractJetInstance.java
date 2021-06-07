@@ -64,9 +64,11 @@ import static java.util.stream.Collectors.toList;
  * instances of {@link AbstractJetInstance} to {@link JetInstance}
  * there. Search for casts to {@link JetInstance} before you consider
  * removing this.
+ *
+ * @param <M> the type of member ID (UUID or Address)
  */
 @SuppressWarnings("deprecation") // we implement a deprecated API here
-public abstract class AbstractJetInstance<MemberIdType> implements JetInstance {
+public abstract class AbstractJetInstance<M> implements JetInstance {
 
     private final HazelcastInstance hazelcastInstance;
     private final JetCacheManagerImpl cacheManager;
@@ -173,7 +175,7 @@ public abstract class AbstractJetInstance<MemberIdType> implements JetInstance {
     }
 
     @Nonnull
-    private List<Job> mergeJobIdsResults(Map<MemberIdType, GetJobIdsResult> results) {
+    private List<Job> mergeJobIdsResults(Map<M, GetJobIdsResult> results) {
         return results.entrySet().stream()
                 .flatMap(en -> IntStream.range(0, en.getValue().getJobIds().length)
                         .mapToObj(i -> {
@@ -301,14 +303,14 @@ public abstract class AbstractJetInstance<MemberIdType> implements JetInstance {
      * Create a job proxy for a submitted job. {@code lightJobCoordinator} must
      * be non-null iff it's a light job.
      */
-    public abstract Job newJobProxy(long jobId, MemberIdType lightJobCoordinator);
+    public abstract Job newJobProxy(long jobId, M lightJobCoordinator);
 
     /**
      * Submit a new job and return the job proxy.
      */
     public abstract Job newJobProxy(long jobId, boolean isLightJob, Object jobDefinition, JobConfig config);
 
-    public abstract Map<MemberIdType, GetJobIdsResult> getJobsInt(String onlyName, Long onlyJobId);
+    public abstract Map<M, GetJobIdsResult> getJobsInt(String onlyName, Long onlyJobId);
 
-    public abstract MemberIdType getMasterId();
+    public abstract M getMasterId();
 }
