@@ -672,7 +672,6 @@ public final class Util {
         };
     }
 
-
     public static InternalSerializationService getSerializationService(HazelcastInstance instance) {
         if (instance instanceof HazelcastInstanceImpl) {
             return ((HazelcastInstanceImpl) instance).getSerializationService();
