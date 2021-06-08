@@ -46,7 +46,7 @@ public class ExceptionUtilTest extends JetTestSupport {
     public final ExpectedException exceptionRule = ExpectedException.none();
 
     @Test
-    public void when_throwableIsRuntimeException_then_peelReJobSummaryTestturnsOriginal() {
+    public void when_throwableIsRuntimeException_then_peelReturnsOriginal() {
         Throwable throwable = new RuntimeException("expected exception");
         Throwable result = peel(throwable);
 
