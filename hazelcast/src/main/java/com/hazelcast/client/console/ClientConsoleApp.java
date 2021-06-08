@@ -1583,8 +1583,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
      * Starts the test application. It loads the client configuration using the resolution logic as described in
      * {@link HazelcastClient#newHazelcastClient()}.
      */
-    public static void run(String[] args) {
-        HazelcastInstance client = HazelcastClient.newHazelcastClient();
+    public static void run(HazelcastInstance client, String[] args) {
         ClientConsoleApp clientConsoleApp = new ClientConsoleApp(client);
         clientConsoleApp.start(args);
     }
