@@ -25,9 +25,11 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 /**
  * Represents the schema of a class.
@@ -52,22 +54,44 @@ public class Schema implements IdentifiedDataSerializable {
     }
 
     private void init() {
-        primitivesLength = 0;
-        numberOfComplexFields = 0;
-        int numberOfBooleans = 0;
-        for (FieldDescriptor descriptor : fieldDefinitionMap.values()) {
-            FieldType fieldType = descriptor.getType();
-            if (FieldType.BOOLEAN.equals(fieldType)) {
-                if (numberOfBooleans % Byte.SIZE == 0) {
-                    primitivesLength++;
-                }
-                numberOfBooleans++;
-            } else if (fieldType.hasDefiniteSize()) {
-                primitivesLength += fieldType.getTypeSize();
-            } else {
-                numberOfComplexFields++;
+        List<FieldDescriptor> booleanFieldsList = fieldDefinitionMap.values().stream()
+                .filter(fieldDescriptor -> fieldDescriptor.getType().equals(FieldType.BOOLEAN))
+                .collect(Collectors.toList());
+        int offset = 0;
+        int bitOffset = 0;
+        for (FieldDescriptor fieldDefinition : booleanFieldsList) {
+            fieldDefinition.setOffset(offset);
+            fieldDefinition.setBitOffset((byte) (bitOffset % Byte.SIZE));
+            bitOffset++;
+            if (bitOffset % Byte.SIZE == 0) {
+                offset += 1;
             }
         }
+        if (bitOffset % Byte.SIZE != 0) {
+            offset++;
+        }
+
+        List<FieldDescriptor> definiteSizedList = fieldDefinitionMap.values().stream()
+                .filter(fieldDescriptor -> fieldDescriptor.getType().hasDefiniteSize())
+                .filter(fieldDescriptor -> !fieldDescriptor.getType().equals(FieldType.BOOLEAN))
+                .sorted(Comparator.comparingInt(o -> o.getType().getTypeSize())).collect(Collectors.toList());
+        for (FieldDescriptor fieldDefinition : definiteSizedList) {
+            fieldDefinition.setOffset(offset);
+            offset += fieldDefinition.getType().getTypeSize();
+        }
+
+        primitivesLength = offset;
+
+        int index = 0;
+        List<FieldDescriptor> varSizeList = fieldDefinitionMap.values().stream()
+                .filter(fieldDescriptor -> !fieldDescriptor.getType().hasDefiniteSize())
+                .collect(Collectors.toList());
+
+        for (FieldDescriptor fieldDefinition : varSizeList) {
+            fieldDefinition.setIndex(index++);
+        }
+
+        numberOfComplexFields = index;
     }
 
     /**
@@ -140,14 +164,6 @@ public class Schema implements IdentifiedDataSerializable {
         for (FieldDescriptor descriptor : fields) {
             out.writeString(descriptor.getFieldName());
             out.writeByte(descriptor.getType().getId());
-            if (FieldType.BOOLEAN.equals(descriptor.getType())) {
-                out.writeInt(descriptor.getOffset());
-                out.writeByte(descriptor.getBitOffset());
-            } else if (descriptor.getType().hasDefiniteSize()) {
-                out.writeInt(descriptor.getOffset());
-            } else {
-                out.writeInt(descriptor.getIndex());
-            }
         }
     }
 
@@ -161,14 +177,6 @@ public class Schema implements IdentifiedDataSerializable {
             byte type = in.readByte();
             FieldType fieldType = FieldType.get(type);
             FieldDescriptor descriptor = new FieldDescriptor(fieldName, fieldType);
-            if (FieldType.BOOLEAN.equals(fieldType)) {
-                descriptor.setOffset(in.readInt());
-                descriptor.setBitOffset(in.readByte());
-            } else if (fieldType.hasDefiniteSize()) {
-                descriptor.setOffset(in.readInt());
-            } else {
-                descriptor.setIndex(in.readInt());
-            }
             fieldDefinitionMap.put(fieldName, descriptor);
         }
         init();

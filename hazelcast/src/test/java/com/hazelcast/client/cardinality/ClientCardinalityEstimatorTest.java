@@ -127,9 +127,9 @@ public class ClientCardinalityEstimatorTest extends HazelcastTestSupport {
     }
 
     @Test(expected = com.hazelcast.nio.serialization.HazelcastSerializationException.class)
-    public void addCustomObject() {
+    public void addNotSerializableObject() {
         estimator = client.getCardinalityEstimator("aggregateCustomObject");
-        estimator.add(new CustomObject(1, 2));
+        estimator.add(new Object());
     }
 
     @Test
@@ -148,7 +148,7 @@ public class ClientCardinalityEstimatorTest extends HazelcastTestSupport {
         assertEquals(1L, estimator.estimate());
     }
 
-    private class CustomObject {
+    private static class CustomObject {
 
         private final int x;
         private final int y;
