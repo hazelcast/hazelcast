@@ -83,6 +83,7 @@ public interface EventTimePolicySupplier extends IdentifiedDataSerializable {
             limitingLagMillis = in.readLong();
         }
 
+        // We use the equals method in tests to assert the watermark policy
         @Override
         public boolean equals(Object o) {
             if (this == o) {

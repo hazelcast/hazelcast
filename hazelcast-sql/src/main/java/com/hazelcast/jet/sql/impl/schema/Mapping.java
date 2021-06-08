@@ -113,6 +113,7 @@ public class Mapping implements IdentifiedDataSerializable {
         options = in.readObject();
     }
 
+    // We use the equals method in tests to assert the mapping
     @Override
     public boolean equals(Object o) {
         if (this == o) {
