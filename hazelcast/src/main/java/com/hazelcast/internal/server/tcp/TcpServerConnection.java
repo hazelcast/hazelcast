@@ -29,7 +29,6 @@ import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.util.AddressUtil;
 import com.hazelcast.logging.ILogger;
-import org.jetbrains.annotations.NotNull;
 
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
@@ -268,7 +267,6 @@ public class TcpServerConnection implements ServerConnection {
         }
     }
 
-    @NotNull
     private List<Address> addressAliases() {
         List<Address> addressAliases = new ArrayList<>();
         addressAliases.add(remoteAddress);
