@@ -77,19 +77,14 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>license-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>add-third-party</id>
-                        <configuration>
-                            <includedLicenses combine.children="append">
-                                <includedLicense>The Go license</includedLicense>
-                                <includedLicense>CDDL</includedLicense>
-                                <includedLicense>CDDL 1.1</includedLicense>
-                                <includedLicense>Eclipse Distribution License - v 1.0</includedLicense>
-                            </includedLicenses>
-                        </configuration>
-                    </execution>
-                </executions>
+                <configuration>
+                    <includedLicenses combine.children="append">
+                        <includedLicense>The Go license</includedLicense>
+                        <includedLicense>CDDL</includedLicense>
+                        <includedLicense>CDDL 1.1</includedLicense>
+                        <includedLicense>Eclipse Distribution License - v 1.0</includedLicense>
+                    </includedLicenses>
+                </configuration>
             </plugin>
         </plugins>
     </build>
