@@ -26,6 +26,7 @@ public class FieldDescriptor {
     private final FieldType type;
     private int index = -1;
     private int offset = -1;
+    private byte bitOffset = -1;
 
     public FieldDescriptor(@Nonnull String fieldName, @Nonnull FieldType type) {
         this.fieldName = fieldName;
@@ -38,6 +39,10 @@ public class FieldDescriptor {
 
     public void setOffset(int offset) {
         this.offset = offset;
+    }
+
+    public void setBitOffset(byte bitOffset) {
+        this.bitOffset = bitOffset;
     }
 
     public FieldType getType() {
@@ -57,10 +62,18 @@ public class FieldDescriptor {
 
     /**
      * @return the offset to read  the primitive field from. If field is not primitive returns -1
-     * for boolean field offset is in bits, for the others it is in bytes
      */
     public int getOffset() {
         return offset;
+    }
+
+    /**
+     * Applicable only for boolean field
+     *
+     * @return the offset of the boolean within the given byte via `offset`
+     */
+    public byte getBitOffset() {
+        return bitOffset;
     }
 
     @Override
@@ -94,6 +107,7 @@ public class FieldDescriptor {
                 + ", type=" + type
                 + ", index=" + index
                 + ", offset=" + offset
+                + ", bitOffset=" + bitOffset
                 + '}';
     }
 }

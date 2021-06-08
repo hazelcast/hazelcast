@@ -44,11 +44,18 @@ public final class SchemaWriter implements CompactWriter {
                 .filter(fieldDescriptor -> fieldDescriptor.getType().equals(FieldType.BOOLEAN))
                 .collect(Collectors.toList());
         int offset = 0;
+        int bitOffset = 0;
         for (FieldDescriptor fieldDefinition : booleanFieldsList) {
             fieldDefinition.setOffset(offset);
-            offset += 1;
+            fieldDefinition.setBitOffset((byte) (bitOffset % 8));
+            bitOffset++;
+            if (bitOffset % 8 == 0) {
+                offset += 1;
+            }
         }
-        offset = offset == 0 ? 0 : (offset / Byte.SIZE) + 1;
+        if (bitOffset % 8 != 0) {
+            offset++;
+        }
 
         List<FieldDescriptor> definiteSizedList = fieldDefinitionMap.values().stream()
                 .filter(fieldDescriptor -> fieldDescriptor.getType().hasDefiniteSize())
@@ -67,7 +74,7 @@ public final class SchemaWriter implements CompactWriter {
         for (FieldDescriptor fieldDefinition : varSizeList) {
             fieldDefinition.setIndex(index++);
         }
-        return new Schema(className, fieldDefinitionMap, index, offset);
+        return new Schema(className, fieldDefinitionMap);
     }
 
     public void addField(FieldDescriptor fieldDefinition) {

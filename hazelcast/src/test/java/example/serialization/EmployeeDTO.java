@@ -17,11 +17,14 @@
 package example.serialization;
 
 import javax.annotation.Nonnull;
+import java.util.Objects;
 
 public class EmployeeDTO implements Comparable<EmployeeDTO> {
 
     private int age;
     private long id;
+    private boolean isHired;
+    private boolean isFired;
 
     public EmployeeDTO() {
     }
@@ -29,30 +32,18 @@ public class EmployeeDTO implements Comparable<EmployeeDTO> {
     public EmployeeDTO(int age, long id) {
         this.age = age;
         this.id = id;
+        this.isFired = false;
+        this.isHired = true;
     }
 
     @Override
     public String toString() {
-        return "EmployeeDTO{"
-                + "age=" + age + ", id=" + id
-                + '}';
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        EmployeeDTO that = (EmployeeDTO) o;
-
-        if (age != that.age) {
-            return false;
-        }
-        return id == that.id;
+        return "EmployeeDTO{" +
+                "age=" + age +
+                ", id=" + id +
+                ", isHired=" + isHired +
+                ", isFired=" + isFired +
+                '}';
     }
 
     public void setAge(int age) {
@@ -68,10 +59,20 @@ public class EmployeeDTO implements Comparable<EmployeeDTO> {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        EmployeeDTO that = (EmployeeDTO) o;
+        return age == that.age && id == that.id && isHired == that.isHired && isFired == that.isFired;
+    }
+
+    @Override
     public int hashCode() {
-        int result = age;
-        result = 31 * result + (int) (id ^ (id >>> 32));
-        return result;
+        return Objects.hash(age, id, isHired, isFired);
     }
 
     @Override

@@ -45,12 +45,29 @@ public class Schema implements IdentifiedDataSerializable {
     public Schema() {
     }
 
-    public Schema(String typeName, TreeMap<String, FieldDescriptor> fieldDefinitionMap,
-                  int numberOfComplexFields, int primitivesLength) {
+    public Schema(String typeName, TreeMap<String, FieldDescriptor> fieldDefinitionMap) {
         this.typeName = typeName;
         this.fieldDefinitionMap = fieldDefinitionMap;
-        this.numberOfComplexFields = numberOfComplexFields;
-        this.primitivesLength = primitivesLength;
+        init();
+    }
+
+    private void init() {
+        primitivesLength = 0;
+        numberOfComplexFields = 0;
+        int numberOfBooleans = 0;
+        for (FieldDescriptor descriptor : fieldDefinitionMap.values()) {
+            FieldType fieldType = descriptor.getType();
+            if (FieldType.BOOLEAN.equals(fieldType)) {
+                if (numberOfBooleans % 8 == 0) {
+                    primitivesLength++;
+                }
+                numberOfBooleans++;
+            } else if (fieldType.hasDefiniteSize()) {
+                primitivesLength += fieldType.getTypeSize();
+            } else {
+                numberOfComplexFields++;
+            }
+        }
     }
 
     /**
@@ -109,6 +126,8 @@ public class Schema implements IdentifiedDataSerializable {
     public String toString() {
         return "Schema {"
                 + " className = " + typeName
+                + " numberOfComplexFields = " + numberOfComplexFields
+                + " primitivesLength = " + primitivesLength
                 + ", map = " + fieldDefinitionMap
                 + '}';
     }
@@ -121,7 +140,10 @@ public class Schema implements IdentifiedDataSerializable {
         for (FieldDescriptor descriptor : fields) {
             out.writeString(descriptor.getFieldName());
             out.writeByte(descriptor.getType().getId());
-            if (descriptor.getType().hasDefiniteSize()) {
+            if (FieldType.BOOLEAN.equals(descriptor.getType())) {
+                out.writeInt(descriptor.getOffset());
+                out.writeByte(descriptor.getBitOffset());
+            } else if (descriptor.getType().hasDefiniteSize()) {
                 out.writeInt(descriptor.getOffset());
             } else {
                 out.writeInt(descriptor.getIndex());
@@ -134,22 +156,22 @@ public class Schema implements IdentifiedDataSerializable {
         typeName = in.readString();
         int fieldDefinitionsSize = in.readInt();
         fieldDefinitionMap = new TreeMap<>(Comparator.naturalOrder());
-        primitivesLength = 0;
-        numberOfComplexFields = 0;
         for (int i = 0; i < fieldDefinitionsSize; i++) {
             String fieldName = in.readString();
             byte type = in.readByte();
             FieldType fieldType = FieldType.get(type);
             FieldDescriptor descriptor = new FieldDescriptor(fieldName, fieldType);
-            if (fieldType.hasDefiniteSize()) {
+            if (FieldType.BOOLEAN.equals(fieldType)) {
                 descriptor.setOffset(in.readInt());
-                primitivesLength += fieldType.getTypeSize();
+                descriptor.setBitOffset(in.readByte());
+            } else if (fieldType.hasDefiniteSize()) {
+                descriptor.setOffset(in.readInt());
             } else {
-                numberOfComplexFields++;
                 descriptor.setIndex(in.readInt());
             }
             fieldDefinitionMap.put(fieldName, descriptor);
         }
+        init();
     }
 
     @Override

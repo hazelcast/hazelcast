@@ -23,6 +23,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.FilteringClassLoader;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
+import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -139,8 +140,12 @@ public abstract class CompactFormatIntegrationTest extends HazelcastTestSupport 
             map.put(i, employeeDTO);
         }
 
-        IMap<Integer, EmployeeDTO> map2 = instance2.getMap("test");
-        map2.executeOnEntries(new IncreaseAgeEntryProcessor());
+        IMap map2 = instance2.getMap("test");
+        if (serverDoesNotHaveClasses) {
+            map2.executeOnEntries(new GenericIncreaseAgeEntryProcessor());
+        } else {
+            map2.executeOnEntries(new IncreaseAgeEntryProcessor());
+        }
 
         for (int i = 0; i < 100; i++) {
             EmployeeDTO employeeDTO = map.get(i);
@@ -154,6 +159,18 @@ public abstract class CompactFormatIntegrationTest extends HazelcastTestSupport 
             EmployeeDTO value = entry.getValue();
             value.setAge(value.getAge() + 1000);
             entry.setValue(value);
+            return null;
+        }
+    }
+
+    static class GenericIncreaseAgeEntryProcessor implements EntryProcessor<Integer, GenericRecord, Object>, Serializable {
+        @Override
+        public Object process(Map.Entry<Integer, GenericRecord> entry) {
+            GenericRecord value = entry.getValue();
+            GenericRecord newValue = value.cloneWithBuilder()
+                    .setInt("age", value.getInt("age") + 1000)
+                    .build();
+            entry.setValue(newValue);
             return null;
         }
     }

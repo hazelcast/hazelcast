@@ -32,6 +32,7 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
@@ -173,7 +174,7 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
     //========================== READ =============================//
 
     @Override
-    public Object read(ObjectDataInput in) throws IOException {
+    public Object read(@Nonnull ObjectDataInput in) throws IOException {
         BufferObjectDataInput input = (BufferObjectDataInput) in;
         return read(input, false);
     }
@@ -218,7 +219,7 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
             schemaService.put(schema);
             return schema;
         }
-        throw new HazelcastSerializationException("The cchema can not be found with id " + schemaId);
+        throw new HazelcastSerializationException("The schema can not be found with id " + schemaId);
     }
 
     public <T> T readObject(ObjectDataInput in, boolean schemaIncludedInBinary) throws IOException {

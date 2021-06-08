@@ -29,7 +29,7 @@ public class BitsDTO {
     public boolean f;
     public boolean g;
     public boolean h;
-    public boolean i;
+    public int id;
     public boolean[] booleans;
 
     @Override
@@ -43,12 +43,12 @@ public class BitsDTO {
         BitsDTO bitsDTO = (BitsDTO) o;
         return a == bitsDTO.a && b == bitsDTO.b && c == bitsDTO.c
                 && d == bitsDTO.d && e == bitsDTO.e && f == bitsDTO.f && g == bitsDTO.g
-                && h == bitsDTO.h && i == bitsDTO.i && Arrays.equals(booleans, bitsDTO.booleans);
+                && h == bitsDTO.h && id == bitsDTO.id && Arrays.equals(booleans, bitsDTO.booleans);
     }
 
     @Override
     public int hashCode() {
-        int result = Objects.hash(a, b, c, d, e, f, g, h, i);
+        int result = Objects.hash(a, b, c, d, e, f, g, h, id);
         result = 31 * result + Arrays.hashCode(booleans);
         return result;
     }
@@ -57,6 +57,6 @@ public class BitsDTO {
     public String toString() {
         return "BitsDTO{"
                 + "a=" + a + ", b=" + b + ", c=" + c + ", d=" + d + ", e=" + e + ", f=" + f + ", g=" + g
-                + ", h=" + h + ", i=" + i + ", booleans=" + Arrays.toString(booleans) + '}';
+                + ", h=" + h + ", id=" + id + ", booleans=" + Arrays.toString(booleans) + '}';
     }
 }
