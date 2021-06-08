@@ -548,9 +548,6 @@ SqlLiteral DayTimeIntervalLiteral() :
     }
 }
 
-/**
- * Parses INTERVAL_DAY_TIME interval literal.
- */
 SqlIntervalQualifier DayTimeIntervalQualifier() :
 {
     TimeUnit start;
