@@ -167,7 +167,7 @@ public class HazelcastCommandLine implements Runnable {
 
     public static void main(String[] args) {
         runCommandLine(
-                config -> (HazelcastInstance) HazelcastClient.newHazelcastClient(config).getJet(),
+                HazelcastClient::newHazelcastClient,
                 System.out,
                 System.err,
                 true,
