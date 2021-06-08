@@ -25,15 +25,33 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
+import java.time.format.SignStyle;
 
 import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
 import static com.hazelcast.sql.impl.expression.math.ExpressionMath.DECIMAL_MATH_CONTEXT;
+import static java.time.temporal.ChronoField.DAY_OF_MONTH;
+import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
+import static java.time.temporal.ChronoField.YEAR;
 
 /**
  * Common converter for string-based classes.
  */
 public abstract class AbstractStringConverter extends Converter {
+    private static final int MIN_YEAR_SYMBOLS = 4;
+    private static final int MAX_YEAR_SYMBOLS = 10;
+
+    static final DateTimeFormatter STANDARD_DATE_FORMAT = new DateTimeFormatterBuilder()
+            .parseCaseInsensitive()
+            .appendValue(YEAR, MIN_YEAR_SYMBOLS, MAX_YEAR_SYMBOLS, SignStyle.EXCEEDS_PAD)
+            .appendLiteral('-')
+            .appendValue(MONTH_OF_YEAR, 1, 2, SignStyle.NEVER)
+            .appendLiteral('-')
+            .appendValue(DAY_OF_MONTH, 1, 2, SignStyle.NEVER)
+            .toFormatter();
+
     protected AbstractStringConverter(int id) {
         super(id, QueryDataTypeFamily.VARCHAR);
     }
@@ -127,7 +145,7 @@ public abstract class AbstractStringConverter extends Converter {
     @Override
     public final LocalDate asDate(Object val) {
         try {
-            return LocalDate.parse(cast(val));
+            return LocalDate.parse(cast(val), STANDARD_DATE_FORMAT);
         } catch (DateTimeParseException e) {
             throw cannotParseError(QueryDataTypeFamily.DATE);
         }

@@ -601,8 +601,17 @@ public class ConvertersTest {
         checkDataException(() -> c.asTime(invalid));
 
         assertEquals(LocalDate.parse("2020-01-01"), c.asDate("2020-01-01"));
+        assertEquals(LocalDate.parse("2020-01-01"), c.asDate("2020-1-01"));
+        assertEquals(LocalDate.parse("2020-01-01"), c.asDate("2020-01-1"));
+        assertEquals(LocalDate.parse("2020-01-01"), c.asDate("2020-1-1"));
+        assertEquals(LocalDate.parse("2020-12-01"), c.asDate("2020-12-1"));
+        assertEquals(LocalDate.parse("2020-01-12"), c.asDate("2020-1-12"));
+        assertEquals(LocalDate.parse("2020-09-12"), c.asDate("2020-09-12"));
+        assertEquals(LocalDate.parse("2020-09-12"), c.asDate("2020-9-12"));
         checkDataException(() -> c.asDate("2020-13-01"));
         checkDataException(() -> c.asDate("2020-01-35"));
+        checkDataException(() -> c.asDate("2020-13-1"));
+        checkDataException(() -> c.asDate("2020-1-35"));
         checkDataException(() -> c.asDate(invalid));
 
         assertEquals(LocalDateTime.parse("2020-01-01T11:22"), c.asTimestamp("2020-01-01T11:22"));
