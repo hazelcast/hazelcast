@@ -85,8 +85,12 @@ public interface EventTimePolicySupplier extends IdentifiedDataSerializable {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
             LagEventTimePolicySupplier that = (LagEventTimePolicySupplier) o;
             return limitingLagMillis == that.limitingLagMillis && Objects.equals(fieldName, that.fieldName);
         }
