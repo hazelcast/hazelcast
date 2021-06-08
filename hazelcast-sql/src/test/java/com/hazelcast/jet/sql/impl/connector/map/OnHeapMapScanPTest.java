@@ -21,6 +21,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
@@ -33,12 +34,12 @@ import com.hazelcast.jet.core.test.TestProcessorMetaSupplierContext;
 import com.hazelcast.jet.core.test.TestProcessorSupplierContext;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.map.IMap;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.partition.Partition;
-import com.hazelcast.partition.PartitionService;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
@@ -56,6 +57,7 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -79,6 +81,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -290,33 +293,18 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
                 .expectOutput(expected);
     }
 
+    @Ignore
     @Test
     public void testConcurrentMigration() throws Exception {
-        final TestHazelcastInstanceFactory FACTORY = new TestHazelcastInstanceFactory(1);
-        HazelcastInstance instance1 = instance().getHazelcastInstance();
+        final TestHazelcastInstanceFactory FACTORY = new TestHazelcastInstanceFactory(2);
+        HazelcastInstance instance1 = FACTORY.newHazelcastInstance(getInstanceConfig());
+        HazelcastInstance instance2 = FACTORY.newHazelcastInstance(getInstanceConfig());
 
         IMap<TestKey, TestValue> map = instance1.getMap(MAP_OBJECT);
         List<Object[]> expected = new ArrayList<>();
         MapProxyImpl<TestKey, TestValue> mapProxy = ((MapProxyImpl<TestKey, TestValue>) map);
-        PartitionService partitionService = instance1.getPartitionService();
-
-        // Get local partition.
-        int localPartition = -1;
-
-        for (int i = 0; i < PARTITION_COUNT; i++) {
-            for (Partition partition : instance1.getPartitionService().getPartitions()) {
-                if (instance1.getLocalEndpoint().getUuid().equals(partition.getOwner().getUuid())) {
-                    localPartition = partition.getPartitionId();
-
-                    break;
-                }
-            }
-        }
-
-        assertNotEquals(-1, localPartition);
 
         int currentKey = 0;
-
         while (currentKey < BATCH_SIZE) {
             TestKey key = new TestKey(currentKey);
             map.put(key, new TestValue(1, true));
@@ -334,20 +322,24 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
                 new ConstantPredicateExpression(true)
         );
 
-        Address address = instance1.getCluster().getLocalMember().getAddress();
+
+        HazelcastInstanceProxy instanceProxy = (HazelcastInstanceProxy) instance1;
+        HazelcastInstance instance = instanceProxy.getOriginal();
+
+        Address address = instanceProxy.getOriginal().getCluster().getLocalMember().getAddress();
         assertNotNull(address);
 
         ProcessorMetaSupplier pms = OnHeapMapScanP.onHeapMapScanP(scanMetadata);
-        pms.init(new TestProcessorMetaSupplierContext().setHazelcastInstance(instance1));
+        pms.init(new TestProcessorMetaSupplierContext().setHazelcastInstance(instanceProxy.getOriginal()));
 
         ProcessorSupplier ps = adaptSupplier(pms.get(Collections.singletonList(address)).apply(address));
-        ps.init(new TestProcessorSupplierContext().setHazelcastInstance(instance1));
+        ps.init(new TestProcessorSupplierContext().setHazelcastInstance(instanceProxy.getOriginal()));
 
         Processor processor = ps.get(1).iterator().next();
         assertNotNull(processor);
         processor.init(new TestOutbox(),
                 new TestProcessorContext()
-                        .setHazelcastInstance(instance1)
+                        .setHazelcastInstance(instanceProxy.getOriginal())
                         .setJobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
         );
 
@@ -356,7 +348,7 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
         // Add member
         int migrationStamp = mapProxy.getService().getMigrationStamp();
 
-        HazelcastInstance instance2 = FACTORY.newHazelcastInstance(getInstanceConfig());
+        HazelcastInstance instance3 = FACTORY.newHazelcastInstance(getInstanceConfig());
 
         try {
             // Await for migration stamp to change.
@@ -367,12 +359,12 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
             assertEquals(SqlErrorCode.PARTITION_DISTRIBUTION, exception.getCode());
             assertTrue(exception.isInvalidatePlan());
         } finally {
-            instance2.shutdown();
+            instance3.shutdown();
         }
     }
 
     @Test
-    public void testConcurrentMapDestroy() throws InterruptedException {
+    public void testConcurrentMapDestroy() {
         HazelcastInstance instance1 = instance().getHazelcastInstance();
         IMap<TestKey, TestValue> map = instance1.getMap(MAP_OBJECT);
         List<Object[]> expected = new ArrayList<>();
@@ -426,7 +418,10 @@ public class OnHeapMapScanPTest extends SimpleTestInClusterSupport {
         // Destroy the map.
         instance1.getMap(MAP_OBJECT).destroy();
 
-        Thread.sleep(50L);
+        MapServiceContext mapServiceContext = ((MapProxyImpl<TestKey, TestValue>) map)
+                .getService()
+                .getMapServiceContext();
+        assertTrueEventually(() -> assertFalse(mapServiceContext.getMapContainers().keySet().contains("MAP_OBJECT")));
 
         TestSupport
                 .verifyProcessor(adaptSupplier(OnHeapMapScanP.onHeapMapScanP(scanMetadata)))
