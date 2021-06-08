@@ -109,10 +109,10 @@ public abstract class CardinalityEstimatorAbstractTest extends HazelcastTestSupp
     }
 
     @Test(expected = com.hazelcast.nio.serialization.HazelcastSerializationException.class)
-    public void addCustomObject() {
+    public void addNonSerializableObject() {
         assumeTrue(config == null);
 
-        estimator.add(new CustomObject(1, 2));
+        estimator.add(new Object());
     }
 
     @Test()

@@ -542,6 +542,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
         // 3-Custom registered types by user
         // 4-JDK serialization ( Serializable and Externalizable ) if a global serializer with Java serialization not registered
         // 5-Global serializer if registered by user
+        // 6-A good candidate to be serialized via compact serializer
 
         //1-NULL serializer
         if (object == null) {
@@ -554,10 +555,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
 
         //3-Custom registered types by user
         if (serializer == null || allowOverrideDefaultSerializers) {
-            final SerializerAdapter customSerializer = lookupCustomSerializer(type);
-            if (customSerializer != null) {
-                serializer = customSerializer;
-            }
+            serializer = lookupCustomSerializer(type);
         }
 
         //4-JDK serialization ( Serializable and Externalizable )
@@ -570,14 +568,29 @@ public abstract class AbstractSerializationService implements InternalSerializat
             serializer = lookupGlobalSerializer(type);
         }
 
+        //6-A good candidate to be serialized via compact serializer
         if (serializer == null) {
-            if (includeSchema) {
-                return compactWithSchemaSerializerAdapter;
-            } else {
-                return compactSerializerAdapter;
+            serializer = lookupCompactSerializer(type, includeSchema);
+        }
+
+        if (serializer == null) {
+            if (active) {
+                throw new HazelcastSerializationException("There is no suitable serializer for " + type);
             }
+            throw notActiveExceptionSupplier.get();
         }
         return serializer;
+    }
+
+    private SerializerAdapter lookupCompactSerializer(Class type, boolean includeSchema) {
+        if (type.getName().startsWith("java.")) {
+            return null;
+        }
+        if (includeSchema) {
+            return compactWithSchemaSerializerAdapter;
+        } else {
+            return compactSerializerAdapter;
+        }
     }
 
     public boolean isCompactSerializable(Object object) {

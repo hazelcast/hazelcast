@@ -280,17 +280,6 @@ hazelcast:
       allowed-future-millis: 15000
       statistics-enabled: true
 
-  serialization:
-    compact-serializer:
-      classes:
-        domainClass.Employee:
-        domainClass.Person:
-          #change alias to type-name
-          alias: person
-        domainClass.Intern:
-          alias: employee
-          serializer: serializers.InternSerializer
-
   cardinality-estimator:
     default:
       backup-count: 1

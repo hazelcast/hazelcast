@@ -21,6 +21,7 @@ import com.hazelcast.nio.serialization.compact.CompactSerializer;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -125,5 +126,23 @@ public class CompactSerializationConfig {
 
     public Map<String, TriTuple<Class, String, CompactSerializer>> getRegistries() {
         return Collections.unmodifiableMap(classNameToRegistryMap);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        CompactSerializationConfig that = (CompactSerializationConfig) o;
+        return Objects.equals(classNameToRegistryMap, that.classNameToRegistryMap)
+                && Objects.equals(classToRegistryMap, that.classToRegistryMap);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(classNameToRegistryMap, classToRegistryMap);
     }
 }

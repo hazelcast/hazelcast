@@ -98,7 +98,7 @@ public class DelegatingSerializationServiceTest {
 
         // When
         // Then
-        assertThatThrownBy(() -> service.serializerFor(new UnregisteredValue(), false))
+        assertThatThrownBy(() -> service.serializerFor(new Object(), false))
                 .isInstanceOf(JetException.class);
         assertThatThrownBy(() -> service.serializerFor(Integer.MAX_VALUE))
                 .isInstanceOf(JetException.class);
@@ -140,9 +140,6 @@ public class DelegatingSerializationServiceTest {
     }
 
     private static class Value {
-    }
-
-    private static class UnregisteredValue {
     }
 
     private static class ValueSerializer implements StreamSerializer<Value> {
