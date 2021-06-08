@@ -217,11 +217,10 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         try {
             FieldDescriptor fd = getFieldDefinition(fieldName, BOOLEAN);
             int booleanOffset = fd.getOffset();
-            int booleanOffsetInBytes = booleanOffset == 0 ? 0 : (booleanOffset / Byte.SIZE);
-            int booleanOffsetWithinLastByte = booleanOffset % Byte.SIZE;
-            int getOffset = booleanOffsetInBytes + offset;
+            int bitOffset = fd.getBitOffset();
+            int getOffset = booleanOffset + offset;
             byte lastByte = in.readByte(getOffset);
-            return ((lastByte >>> booleanOffsetWithinLastByte) & 1) != 0;
+            return ((lastByte >>> bitOffset) & 1) != 0;
         } catch (IOException e) {
             throw illegalStateException(e);
         }

@@ -24,12 +24,13 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("cc4e7f9fc361a4ade3bc92f4d6126947")
+@Generated("8731ffbea4ef00110e54e6f340181a66")
 public final class FieldDescriptorCodec {
     private static final int TYPE_FIELD_OFFSET = 0;
     private static final int INDEX_FIELD_OFFSET = TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int OFFSET_FIELD_OFFSET = INDEX_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int INITIAL_FRAME_SIZE = OFFSET_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int BIT_OFFSET_FIELD_OFFSET = OFFSET_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int INITIAL_FRAME_SIZE = BIT_OFFSET_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private FieldDescriptorCodec() {
     }
@@ -41,6 +42,7 @@ public final class FieldDescriptorCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, fieldDescriptor.getType());
         encodeInt(initialFrame.content, INDEX_FIELD_OFFSET, fieldDescriptor.getIndex());
         encodeInt(initialFrame.content, OFFSET_FIELD_OFFSET, fieldDescriptor.getOffset());
+        encodeByte(initialFrame.content, BIT_OFFSET_FIELD_OFFSET, fieldDescriptor.getBitOffset());
         clientMessage.add(initialFrame);
 
         StringCodec.encode(clientMessage, fieldDescriptor.getFieldName());
@@ -56,11 +58,12 @@ public final class FieldDescriptorCodec {
         int type = decodeInt(initialFrame.content, TYPE_FIELD_OFFSET);
         int index = decodeInt(initialFrame.content, INDEX_FIELD_OFFSET);
         int offset = decodeInt(initialFrame.content, OFFSET_FIELD_OFFSET);
+        byte bitOffset = decodeByte(initialFrame.content, BIT_OFFSET_FIELD_OFFSET);
 
         java.lang.String fieldName = StringCodec.decode(iterator);
 
         fastForwardToEndFrame(iterator);
 
-        return CustomTypeFactory.createFieldDescriptor(fieldName, type, index, offset);
+        return CustomTypeFactory.createFieldDescriptor(fieldName, type, index, offset, bitOffset);
     }
 }

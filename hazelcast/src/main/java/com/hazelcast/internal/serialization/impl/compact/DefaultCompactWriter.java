@@ -138,12 +138,11 @@ public class DefaultCompactWriter implements CompactWriter {
     @Override
     public void writeBoolean(@Nonnull String fieldName, boolean value) {
         FieldDescriptor fieldDefinition = checkFieldDefinition(fieldName, BOOLEAN);
-        int offsetInBits = fieldDefinition.getOffset();
-        int offsetInBytes = offsetInBits == 0 ? 0 : (offsetInBits / Byte.SIZE);
+        int offsetInBytes = fieldDefinition.getOffset();
+        int offsetInBits = fieldDefinition.getBitOffset();
         int writeOffset = offsetInBytes + offset;
-        int booleanOffsetWithinLastByte = offsetInBits % Byte.SIZE;
         try {
-            out.writeBooleanBit(writeOffset, booleanOffsetWithinLastByte, value);
+            out.writeBooleanBit(writeOffset, offsetInBits, value);
         } catch (IOException e) {
             throw illegalStateException(e);
         }

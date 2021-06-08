@@ -19,8 +19,10 @@ package com.hazelcast.internal.serialization.impl.compact;
 import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.internal.serialization.impl.GenericRecordQueryReader;
 import com.hazelcast.nio.serialization.AbstractGenericRecord;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.GenericRecordBuilder;
@@ -120,25 +122,46 @@ public class CompactStreamSerializerTest {
     }
 
     @Test
-    public void testBits() {
-        SerializationService serializationService = new DefaultSerializationServiceBuilder()
+    public void testBits() throws IOException {
+        InternalSerializationService ss1 = new DefaultSerializationServiceBuilder()
+                .setSchemaService(schemaService).build();
+        InternalSerializationService ss2 = new DefaultSerializationServiceBuilder()
                 .setSchemaService(schemaService).build();
 
         BitsDTO bitsDTO = new BitsDTO();
         bitsDTO.a = true;
         bitsDTO.h = true;
+        bitsDTO.id = 121;
         bitsDTO.booleans = new boolean[8];
         bitsDTO.booleans[0] = true;
         bitsDTO.booleans[4] = true;
 
+        Data data = ss1.toData(bitsDTO);
 
-        Data data = serializationService.toData(bitsDTO);
-
-        // hash(4) + typeid(4) + schemaId(8) + (4 byte length) + (2 bytes for 9 bits) +
+        // hash(4) + typeid(4) + schemaId(8) + (4 byte length) + (1 bytes for 8 bits) + (4 bytes for int)
         // (4 byte length of byte array) + (1 byte for booleans array of 8 bits) + (4 byte offset bytes)
-        assertEquals(31, data.toByteArray().length);
+        assertEquals(34, data.toByteArray().length);
 
-        Object object = serializationService.toObject(data);
+        GenericRecordQueryReader reader = new GenericRecordQueryReader(ss2.readAsInternalGenericRecord(data));
+        assertEquals(121, reader.read("id"));
+        assertTrue((Boolean) reader.read("a"));
+        assertFalse((Boolean) reader.read("b"));
+        assertFalse((Boolean) reader.read("c"));
+        assertFalse((Boolean) reader.read("d"));
+        assertFalse((Boolean) reader.read("e"));
+        assertFalse((Boolean) reader.read("f"));
+        assertFalse((Boolean) reader.read("g"));
+        assertTrue((Boolean) reader.read("h"));
+        assertTrue((Boolean) reader.read("booleans[0]"));
+        assertFalse((Boolean) reader.read("booleans[1]"));
+        assertFalse((Boolean) reader.read("booleans[2]"));
+        assertFalse((Boolean) reader.read("booleans[3]"));
+        assertTrue((Boolean) reader.read("booleans[4]"));
+        assertFalse((Boolean) reader.read("booleans[5]"));
+        assertFalse((Boolean) reader.read("booleans[6]"));
+        assertFalse((Boolean) reader.read("booleans[7]"));
+
+        Object object = ss2.toObject(data);
         BitsDTO o = (BitsDTO) object;
         assertEquals(bitsDTO, o);
     }
