@@ -38,12 +38,12 @@ public class EmployeeDTO implements Comparable<EmployeeDTO> {
 
     @Override
     public String toString() {
-        return "EmployeeDTO{" +
-                "age=" + age +
-                ", id=" + id +
-                ", isHired=" + isHired +
-                ", isFired=" + isFired +
-                '}';
+        return "EmployeeDTO{"
+                + "age=" + age
+                + ", id=" + id
+                + ", isHired=" + isHired
+                + ", isFired=" + isFired
+                + '}';
     }
 
     public void setAge(int age) {
