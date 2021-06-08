@@ -42,17 +42,11 @@ public class ConnectorPermission extends InstancePermission {
     }
 
     public static ConnectorPermission jms(@Nullable String destination, String action) {
-        if (destination == null) {
-            return new ConnectorPermission(JMS_PREFIX, action);
-        }
-        return new ConnectorPermission(JMS_PREFIX + destination, action);
+        return new ConnectorPermission(JMS_PREFIX + (destination == null ? "" : destination), action);
     }
 
     public static ConnectorPermission jdbc(@Nullable String connectionUrl, String action) {
-        if (connectionUrl == null) {
-            return new ConnectorPermission(JDBC_PREFIX, action);
-        }
-        return new ConnectorPermission(connectionUrl, action);
+        return new ConnectorPermission(JDBC_PREFIX + (connectionUrl == null ? "" : connectionUrl), action);
     }
 
     @Override

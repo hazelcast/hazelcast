@@ -411,6 +411,11 @@ public interface ProcessorMetaSupplier extends Serializable {
                 supplier = in.readObject();
                 memberAddress = in.readObject();
             }
+
+            @Override
+            public Permission getRequiredPermission() {
+                return supplier.getRequiredPermission();
+            }
         }
 
         return new SpecificMemberPms(supplier, memberAddress);
