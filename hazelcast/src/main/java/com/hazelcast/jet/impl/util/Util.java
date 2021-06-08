@@ -698,7 +698,7 @@ public final class Util {
         } else if (instance instanceof HazelcastInstanceProxy) {
             return ((HazelcastInstanceProxy) instance).getOriginal();
         } else {
-            throw new IllegalArgumentException("This method can be called only member" +
+            throw new IllegalArgumentException("This method can be called only with member" +
                     " instances such as HazelcastInstanceImpl and HazelcastInstanceProxy.");
         }
     }
