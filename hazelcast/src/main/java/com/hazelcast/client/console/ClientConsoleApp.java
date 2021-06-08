@@ -17,6 +17,10 @@
 package com.hazelcast.client.console;
 
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.management.MCClusterMetadata;
+import com.hazelcast.client.impl.spi.ClientClusterService;
+import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.collection.IList;
 import com.hazelcast.collection.IQueue;
@@ -24,7 +28,6 @@ import com.hazelcast.collection.ISet;
 import com.hazelcast.collection.ItemEvent;
 import com.hazelcast.collection.ItemListener;
 import com.hazelcast.console.Echo;
-import com.hazelcast.console.LineReader;
 import com.hazelcast.console.SimulateLoadTask;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryEvent;
@@ -34,6 +37,7 @@ import com.hazelcast.core.IExecutorService;
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapEvent;
@@ -43,15 +47,21 @@ import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.Message;
 import com.hazelcast.topic.MessageListener;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.jline.reader.EndOfFileException;
+import org.jline.reader.LineReader;
+import org.jline.reader.LineReaderBuilder;
+import org.jline.reader.UserInterruptException;
+import org.jline.utils.AttributedStringBuilder;
+import org.jline.utils.AttributedStyle;
 
-import java.io.PrintStream;
-import java.io.FileReader;
-import java.io.File;
+import javax.annotation.Nullable;
 import java.io.BufferedReader;
-import java.io.InputStreamReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOError;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.lang.management.ManagementFactory;
-import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -68,6 +78,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 
+import static com.hazelcast.client.console.HazelcastCommandLine.getClusterMetadata;
+import static com.hazelcast.client.console.HazelcastCommandLine.getHazelcastClientInstanceImpl;
 import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
 import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 import static java.lang.String.format;
@@ -89,6 +101,9 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     private static final int BYTE_TO_BIT = 8;
     private static final int LENGTH_BORDER = 4;
 
+    private static final int PRIMARY_COLOR = AttributedStyle.YELLOW;
+    private static final int SECONDARY_COLOR = 12;
+
     private IQueue<Object> queue;
     private ITopic<Object> topic;
     private IMap<Object, Object> map;
@@ -103,49 +118,64 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     private boolean silent;
     private boolean echo;
 
-    private volatile LineReader lineReader;
+    private final LineReader lineReader;
+    private final PrintWriter writer;
     private volatile boolean running;
 
-    private final PrintStream outOrig;
-    private final HazelcastInstance hazelcast;
+    private final HazelcastInstance client;
 
-    public ClientConsoleApp(HazelcastInstance hazelcast, PrintStream outOrig) {
-        this.hazelcast = hazelcast;
-        this.outOrig = outOrig;
+    public ClientConsoleApp(HazelcastInstance client) {
+       this(client, null);
+    }
+
+    public ClientConsoleApp(HazelcastInstance client, @Nullable PrintWriter writer) {
+        this.client = client;
+        lineReader = LineReaderBuilder.builder()
+                .variable(LineReader.SECONDARY_PROMPT_PATTERN, new AttributedStringBuilder()
+                        .style(AttributedStyle.BOLD.foreground(SECONDARY_COLOR)).append("%M%P > ").toAnsi())
+                .variable(LineReader.INDENTATION, 2)
+                .option(LineReader.Option.DISABLE_EVENT_EXPANSION, true)
+                .appName("hazelcast-client-console-app")
+                .build();
+        if (writer == null) {
+            this.writer = lineReader.getTerminal().writer();
+        } else {
+            this.writer = writer;
+        }
     }
 
     public IQueue<Object> getQueue() {
-        queue = hazelcast.getQueue(namespace);
+        queue = client.getQueue(namespace);
         return queue;
     }
 
     public ITopic<Object> getTopic() {
-        topic = hazelcast.getTopic(namespace);
+        topic = client.getTopic(namespace);
         return topic;
     }
 
     public IMap<Object, Object> getMap() {
-        map = hazelcast.getMap(namespace);
+        map = client.getMap(namespace);
         return map;
     }
 
     public MultiMap<Object, Object> getMultiMap() {
-        multiMap = hazelcast.getMultiMap(namespace);
+        multiMap = client.getMultiMap(namespace);
         return multiMap;
     }
 
     public IAtomicLong getAtomicNumber() {
-        atomicNumber = hazelcast.getCPSubsystem().getAtomicLong(namespace);
+        atomicNumber = client.getCPSubsystem().getAtomicLong(namespace);
         return atomicNumber;
     }
 
     public ISet<Object> getSet() {
-        set = hazelcast.getSet(namespace);
+        set = client.getSet(namespace);
         return set;
     }
 
     public IList<Object> getList() {
-        list = hazelcast.getList(namespace);
+        list = client.getList(namespace);
         return list;
     }
 
@@ -160,31 +190,27 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         getQueue().size();
         getMultiMap().size();
 
-        if (lineReader == null) {
-            lineReader = new DefaultLineReader();
-        }
+        writer.println(startPrompt(client));
+        writer.flush();
         running = true;
         while (running) {
-            print("hazelcast[" + namespace + "] > ");
             try {
-                final String command = lineReader.readLine();
+                final String command = lineReader.readLine(
+                        new AttributedStringBuilder().style(AttributedStyle.DEFAULT.foreground(SECONDARY_COLOR))
+                                .append("hazelcast[")
+                                .append(namespace)
+                                .append("] > ").toAnsi());
                 handleCommand(command);
-            } catch (Throwable e) {
-                e.printStackTrace();
+            } catch (EndOfFileException | IOError e) {
+                // Ctrl+D, and kill signals result in exit
+//                writer.println(Constants.EXIT_PROMPT);
+                writer.flush();
+                break;
+            } catch (UserInterruptException e) {
+                // Ctrl+C cancels the not-yet-submitted query
+                continue;
             }
-            running = running && hazelcast.getLifecycleService().isRunning();
-        }
-    }
-
-    /**
-     * A line reader
-     */
-    static class DefaultLineReader implements LineReader {
-
-        BufferedReader in = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8));
-
-        public String readLine() throws Exception {
-            return in.readLine();
+            running = running && client.getLifecycleService().isRunning();
         }
     }
 
@@ -267,7 +293,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         } else if ("silent".equals(first)) {
             silent = Boolean.parseBoolean(args[1]);
         } else if ("shutdown".equals(first)) {
-            hazelcast.getLifecycleService().shutdown();
+            client.getLifecycleService().shutdown();
         } else if ("echo".equals(first)) {
             echo = Boolean.parseBoolean(args[1]);
             println("echo: " + echo);
@@ -432,18 +458,18 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
 
         long startMs = System.currentTimeMillis();
 
-        IExecutorService executor = hazelcast.getExecutorService(executorNamespace + ' ' + threadCount);
+        IExecutorService executor = client.getExecutorService(executorNamespace + ' ' + threadCount);
         List<Future> futures = new LinkedList<Future>();
-        List<Member> members = new LinkedList<Member>(hazelcast.getCluster().getMembers());
+        List<Member> members = new LinkedList<Member>(client.getCluster().getMembers());
 
-        int totalThreadCount = hazelcast.getCluster().getMembers().size() * threadCount;
+        int totalThreadCount = client.getCluster().getMembers().size() * threadCount;
 
         int latchId = 0;
         for (int k = 0; k < taskCount; k++) {
             Member member = members.get(k % members.size());
             if (taskCount % totalThreadCount == 0) {
                 latchId = taskCount / totalThreadCount;
-                hazelcast.getCPSubsystem().getCountDownLatch("latch" + latchId).trySetCount(totalThreadCount);
+                client.getCPSubsystem().getCountDownLatch("latch" + latchId).trySetCount(totalThreadCount);
 
             }
             Future f = executor.submitToMember(new SimulateLoadTask(durationSec, k + 1, "latch" + latchId), member);
@@ -537,12 +563,12 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     }
 
     private void handleWhoami() {
-        println(hazelcast.getCluster().getLocalMember());
+        println(client.getCluster().getLocalMember());
     }
 
     private void handleWho() {
         StringBuilder sb = new StringBuilder("\n\nMembers [");
-        final Collection<Member> members = hazelcast.getCluster().getMembers();
+        final Collection<Member> members = client.getCluster().getMembers();
         sb.append(members != null ? members.size() : 0);
         sb.append("] {");
         if (members != null) {
@@ -576,7 +602,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     }
 
     protected void handlePartitions(String[] args) {
-        Set<Partition> partitions = hazelcast.getPartitionService().getPartitions();
+        Set<Partition> partitions = client.getPartitionService().getPartitions();
         Map<Member, Integer> partitionCounts = new HashMap<Member, Integer>();
         for (Partition partition : partitions) {
             Member owner = partition.getOwner();
@@ -597,7 +623,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     }
 
     protected void handleInstances(String[] args) {
-        Collection<DistributedObject> distributedObjects = hazelcast.getDistributedObjects();
+        Collection<DistributedObject> distributedObjects = client.getDistributedObjects();
         for (DistributedObject distributedObject : distributedObjects) {
             println(distributedObject);
         }
@@ -942,7 +968,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     protected void handleLock(String[] args) {
         String lockStr = args[0];
         String key = args[1];
-        Lock lock = hazelcast.getCPSubsystem().getLock(key);
+        Lock lock = client.getCPSubsystem().getLock(key);
         if (equalsIgnoreCase(lockStr, "lock")) {
             lock.lock();
             println("true");
@@ -1269,7 +1295,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     private void doExecute(boolean onKey, boolean onMember, String[] args) {
         // executeOnKey <echo-string> <key>
         try {
-            IExecutorService executorService = hazelcast.getExecutorService("default");
+            IExecutorService executorService = client.getExecutorService("default");
             Echo callable = new Echo(args[1]);
             Future<String> future;
             if (onKey) {
@@ -1277,7 +1303,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
                 future = executorService.submitToKeyOwner(callable, key);
             } else if (onMember) {
                 int memberIndex = Integer.parseInt(args[2]);
-                List<Member> members = new LinkedList<Member>(hazelcast.getCluster().getMembers());
+                List<Member> members = new LinkedList<>(client.getCluster().getMembers());
                 if (memberIndex >= members.size()) {
                     throw new IndexOutOfBoundsException("Member index: " + memberIndex + " must be smaller than " + members
                             .size());
@@ -1299,7 +1325,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     private void executeOnMembers(String[] args) {
         // executeOnMembers <echo-string>
         try {
-            IExecutorService executorService = hazelcast.getExecutorService("default");
+            IExecutorService executorService = client.getExecutorService("default");
             Echo task = new Echo(args[1]);
             Map<Member, Future<String>> results = executorService.submitToAllMembers(task);
 
@@ -1523,14 +1549,34 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
 
     public void println(Object obj) {
         if (!silent) {
-            outOrig.println(obj);
+            writer.println(obj);
         }
     }
 
     public void print(Object obj) {
         if (!silent) {
-            outOrig.print(obj);
+            writer.print(obj);
         }
+    }
+
+    private static String startPrompt(HazelcastInstance hz) {
+        HazelcastClientInstanceImpl hazelcastClientImpl = getHazelcastClientInstanceImpl(hz);
+        ClientClusterService clientClusterService = hazelcastClientImpl.getClientClusterService();
+        MCClusterMetadata clusterMetadata =
+                FutureUtil.getValue(getClusterMetadata(hazelcastClientImpl, clientClusterService.getMasterMember()));
+        Cluster cluster = hazelcastClientImpl.getCluster();
+        Set<Member> members = cluster.getMembers();
+        String versionString = "Hazelcast " + clusterMetadata.getMemberVersion();
+        return new AttributedStringBuilder()
+                .append("Connected to ")
+                .append(versionString)
+                .append(" at ")
+                .append(members.iterator().next().getAddress().toString())
+                .append(" (+")
+                .append(String.valueOf(members.size() - 1))
+                .append(" more)\n")
+                .append("Type 'help' for instructions")
+                .toAnsi();
     }
 
     /**
@@ -1539,7 +1585,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
      */
     public static void run(String[] args) {
         HazelcastInstance client = HazelcastClient.newHazelcastClient();
-        ClientConsoleApp clientConsoleApp = new ClientConsoleApp(client, System.out);
+        ClientConsoleApp clientConsoleApp = new ClientConsoleApp(client);
         clientConsoleApp.start(args);
     }
 }
